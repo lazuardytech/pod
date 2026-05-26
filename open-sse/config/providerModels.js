@@ -652,6 +652,51 @@ export const PROVIDER_MODELS = {
     { id: "pplx-opus", name: "Claude Opus 4.6 (via Perplexity)" },
     { id: "pplx-nemotron", name: "Nemotron 3 Super (via Perplexity)" },
   ],
+  qoder: [
+    // Synced from omniroute providerRegistry.ts (qoder section)
+    { id: "qoder-rome-30ba3b", name: "Qoder ROME" },
+    { id: "qwen3-coder-plus", name: "Qwen3 Coder Plus" },
+    { id: "qwen3-max", name: "Qwen3 Max" },
+    { id: "qwen3-vl-plus", name: "Qwen3 Vision Plus" },
+    { id: "kimi-k2-0905", name: "Kimi K2 0905" },
+    { id: "qwen3-max-preview", name: "Qwen3 Max Preview" },
+    { id: "kimi-k2", name: "Kimi K2" },
+    { id: "deepseek-v3.2", name: "DeepSeek-V3.2-Exp" },
+    { id: "deepseek-r1", name: "DeepSeek R1" },
+    { id: "deepseek-v3", name: "DeepSeek V3" },
+    { id: "qwen3-32b", name: "Qwen3 32B" },
+    { id: "qwen3-235b-a22b-thinking-2507", name: "Qwen3 235B A22B Thinking 2507" },
+    { id: "qwen3-235b-a22b-instruct", name: "Qwen3 235B A22B Instruct" },
+    { id: "qwen3-235b", name: "Qwen3 235B" },
+  ],
+  chutes: [
+    // Generic OpenAI-compatible. Curated subset of popular models on chutes.ai.
+    // Users can also enter custom model IDs via the dashboard.
+    { id: "deepseek-ai/DeepSeek-V3.2-Exp", name: "DeepSeek V3.2 Exp" },
+    { id: "deepseek-ai/DeepSeek-V3.1", name: "DeepSeek V3.1" },
+    { id: "deepseek-ai/DeepSeek-R1", name: "DeepSeek R1" },
+    { id: "moonshotai/Kimi-K2.5", name: "Kimi K2.5" },
+    { id: "zai-org/GLM-4.7", name: "GLM 4.7" },
+    { id: "openai/gpt-oss-120b", name: "GPT OSS 120B" },
+    { id: "Qwen/Qwen3-235B-A22B-Instruct-2507", name: "Qwen3 235B Instruct" },
+    { id: "Qwen/Qwen3-Coder-480B-A35B-Instruct", name: "Qwen3 Coder 480B" },
+  ],
+  gitlab: [
+    // GitLab Duo Chat — curated set of models exposed via /api/v4/chat/completions.
+    // GitLab restricts which Duo plan tier sees which model.
+    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet (Duo)" },
+    { id: "claude-sonnet-4", name: "Claude Sonnet 4 (Duo)" },
+    { id: "gpt-4o", name: "GPT-4o (Duo)" },
+    { id: "gpt-4o-mini", name: "GPT-4o Mini (Duo)" },
+  ],
+  codebuddy: [
+    // Tencent CodeBuddy (copilot.tencent.com). Curated subset.
+    { id: "hunyuan-code-32B-instruct", name: "Hunyuan Code 32B Instruct" },
+    { id: "hunyuan-turbo", name: "Hunyuan Turbo" },
+    { id: "deepseek-chat", name: "DeepSeek Chat" },
+    { id: "deepseek-r1", name: "DeepSeek R1" },
+    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet" },
+  ],
 
   // TTS entries are loaded from ttsModels.js via buildTtsProviderModels()
   ...buildTtsProviderModels(),
