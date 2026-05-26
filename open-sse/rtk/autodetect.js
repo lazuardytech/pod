@@ -2,6 +2,7 @@
 // Order: git-diff → git-status → grep → find → tree → ls → search-list
 //        → read-numbered → dedup-log → smart-truncate → null
 import { DETECT_WINDOW, READ_NUMBERED_MIN_HIT_RATIO, SMART_TRUNCATE_MIN_LINES } from "./constants.js";
+import { buildOutput } from "./filters/buildOutput.js";
 import { dedupLog } from "./filters/dedupLog.js";
 import { find } from "./filters/find.js";
 import { gitDiff } from "./filters/gitDiff.js";
@@ -21,11 +22,29 @@ const RE_TREE_GLYPH = /[├└]──|│ {2}/;
 const RE_LS_ROW = /^[-dlbcps][rwx-]{9}/m;
 const RE_LS_TOTAL = /^total \d+$/m;
 
+// Build-log signals (cargo / npm / yarn / pnpm)
+const RE_BUILD_NPM = /^(npm\s+(WARN|warn|notice|ERR|err)|>\s+\S+@\S+\s+\S+)/m;
+const RE_BUILD_NPM_SUMMARY = /^(added|removed|changed|audited)\s+\d+\s+packages?/im;
+const RE_BUILD_CARGO = /^\s*(Compiling|Checking|Building|Finished|Downloading|Updating|Fresh)\s+\S/m;
+const RE_BUILD_YARN = /^(yarn|pnpm)\s+/m;
+
 export function autoDetectFilter(text) {
   // Rust: floor_char_boundary to avoid UTF-8 split — JS .slice() by char is safe
   const head = text.length > DETECT_WINDOW ? text.slice(0, DETECT_WINDOW) : text;
 
   if (RE_GIT_DIFF.test(head) || RE_GIT_DIFF_HUNK.test(head)) return gitDiff;
+
+  // Build logs (npm/yarn/pnpm/cargo) before git-status: cargo's `   Compiling foo`
+  // looks like git porcelain `   M file`, so it must be checked first.
+  if (
+    RE_BUILD_NPM.test(head) ||
+    RE_BUILD_NPM_SUMMARY.test(head) ||
+    RE_BUILD_CARGO.test(head) ||
+    RE_BUILD_YARN.test(head)
+  ) {
+    return buildOutput;
+  }
+
   if (RE_GIT_STATUS.test(head) || isMostlyPorcelain(head)) return gitStatus;
 
   const lines = head.split("\n");

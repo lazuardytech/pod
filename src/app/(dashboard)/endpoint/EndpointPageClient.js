@@ -49,7 +49,6 @@ export default function APIPageClient({ machineId }) {
   const [tunnelChecking, setTunnelChecking] = useState(true);
   const [tunnelEnabled, setTunnelEnabled] = useState(false);
   const [tunnelUrl, setTunnelUrl] = useState("");
-  const [tunnelPublicUrl, setTunnelPublicUrl] = useState("");
   const [tunnelLoading, setTunnelLoading] = useState(false);
   const [tunnelProgress, setTunnelProgress] = useState("");
   const [tunnelStatus, setTunnelStatus] = useState(null);
@@ -124,9 +123,7 @@ export default function APIPageClient({ machineId }) {
       const data = await statusRes.json();
       const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
       const tUrl = data.tunnel?.tunnelUrl || "";
-      const tPublicUrl = data.tunnel?.publicUrl || "";
       setTunnelUrl(tUrl);
-      setTunnelPublicUrl(tPublicUrl);
       setTunnelEnabled(tEnabled);
 
       const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
@@ -159,9 +156,7 @@ export default function APIPageClient({ machineId }) {
         const data = await statusRes.json();
         const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
         const tUrl = data.tunnel?.tunnelUrl || "";
-        const tPublicUrl = data.tunnel?.publicUrl || "";
         setTunnelUrl(tUrl);
-        setTunnelPublicUrl(tPublicUrl);
         // Trust user intent: stays enabled while watchdog restores process
         setTunnelEnabled(tEnabled);
 
@@ -171,8 +166,8 @@ export default function APIPageClient({ machineId }) {
         setTsEnabled(tsEn);
 
         // Background reachability probes (non-blocking, only show warning)
-        if (tEnabled && (tPublicUrl || tUrl)) {
-          const healthUrl = `${tPublicUrl || tUrl}/api/health`;
+        if (tEnabled && tUrl) {
+          const healthUrl = `${tUrl}/api/health`;
           fetch(healthUrl, { cache: "no-store" })
             .then((r) => {
               if (!r.ok) setTunnelStatus({ type: "warning", message: "Tunnel reconnecting..." });
@@ -341,12 +336,11 @@ export default function APIPageClient({ machineId }) {
         // Tunnel is live — show URL immediately
         if (s.tunnel?.enabled && s.tunnel?.tunnelUrl) {
           setTunnelUrl(s.tunnel.tunnelUrl || "");
-          setTunnelPublicUrl(s.tunnel.publicUrl || "");
           setTunnelEnabled(true);
           setTunnelLoading(false);
           setTunnelProgress("");
           // Background health check — non-blocking
-          backgroundTunnelHealth(s.tunnel.tunnelUrl || s.tunnel.publicUrl);
+          backgroundTunnelHealth(s.tunnel.tunnelUrl);
           // Refresh full data — non-fatal
           fetchData().catch(() => {});
           return;
@@ -363,11 +357,10 @@ export default function APIPageClient({ machineId }) {
         const s = await r.json();
         if (s.tunnel?.enabled && s.tunnel?.tunnelUrl) {
           setTunnelUrl(s.tunnel.tunnelUrl || "");
-          setTunnelPublicUrl(s.tunnel.publicUrl || "");
           setTunnelEnabled(true);
           setTunnelLoading(false);
           setTunnelProgress("");
-          backgroundTunnelHealth(s.tunnel.tunnelUrl || s.tunnel.publicUrl);
+          backgroundTunnelHealth(s.tunnel.tunnelUrl);
           fetchData().catch(() => {});
           return;
         }
@@ -390,7 +383,6 @@ export default function APIPageClient({ machineId }) {
       if (res.ok) {
         setTunnelEnabled(false);
         setTunnelUrl("");
-        setTunnelPublicUrl("");
         setShowDisableTunnelModal(false);
         setTunnelStatus({ type: "success", message: "Tunnel disabled" });
       } else {
@@ -789,9 +781,9 @@ export default function APIPageClient({ machineId }) {
             </span>
             {tunnelEnabled && !tunnelLoading ? (
               <>
-                <Input value={`${tunnelPublicUrl || tunnelUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
+                <Input value={`${tunnelUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
                 <button
-                  onClick={() => copy(`${tunnelPublicUrl || tunnelUrl}/v1`, "tunnel_url")}
+                  onClick={() => copy(`${tunnelUrl}/v1`, "tunnel_url")}
                   className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">

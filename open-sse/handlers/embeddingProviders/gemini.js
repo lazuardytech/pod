@@ -13,12 +13,27 @@ export default {
     return `${BASE}/${path}:${op}?key=${encodeURIComponent(apiKey)}`;
   },
   buildHeaders: () => ({ "Content-Type": "application/json" }),
-  buildBody: (model, { input }) => {
+  buildBody: (model, { input, dimensions } = {}) => {
     const m = modelPath(model);
-    if (Array.isArray(input)) {
-      return { requests: input.map((text) => ({ model: m, content: { parts: [{ text: String(text) }] } })) };
+    let outputDimensionality;
+    if (dimensions != null && dimensions !== "") {
+      const dim = Number(dimensions);
+      if (Number.isFinite(dim) && dim > 0) outputDimensionality = dim;
     }
-    return { model: m, content: { parts: [{ text: String(input) }] } };
+    if (Array.isArray(input)) {
+      return {
+        requests: input.map((text) => ({
+          model: m,
+          content: { parts: [{ text: String(text) }] },
+          ...(outputDimensionality ? { outputDimensionality } : {}),
+        })),
+      };
+    }
+    return {
+      model: m,
+      content: { parts: [{ text: String(input) }] },
+      ...(outputDimensionality ? { outputDimensionality } : {}),
+    };
   },
   normalize: (responseBody, model) => {
     if (responseBody.object === "list" && Array.isArray(responseBody.data)) return responseBody;

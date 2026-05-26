@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 ARG BUN_IMAGE=oven/bun:1.3.14-alpine
-FROM --platform=linux/amd64 ${BUN_IMAGE} AS builder
+FROM ${BUN_IMAGE} AS builder
 WORKDIR /app
 
 COPY package.json bun.lock ./

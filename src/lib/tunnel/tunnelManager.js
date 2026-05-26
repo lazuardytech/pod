@@ -14,7 +14,6 @@ import {
 
 // Removed initDbHooks call
 
-const WORKER_URL = process.env.TUNNEL_WORKER_URL || "https://pod.lazuardytech.com";
 const MACHINE_ID_SALT = "pod-tunnel-salt";
 
 // Per-service state (independent: tunnel ≠ tailscale)
@@ -64,21 +63,10 @@ function getMachineId() {
 }
 
 // ─── Cloudflare Tunnel ───────────────────────────────────────────────────────
-
-async function registerTunnelUrl(shortId, tunnelUrl) {
-  try {
-    await fetch(`${WORKER_URL}/api/tunnel/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shortId, tunnelUrl }),
-      signal: AbortSignal.timeout(5000),
-    });
-  } catch (err) {
-    // Non-fatal — tunnel works without registration (publicUrl shortlink won't resolve
-    // but the direct trycloudflare.com URL still works).
-    console.warn("[tunnel] registerTunnelUrl failed (non-fatal):", err?.message);
-  }
-}
+//
+// Pod uses Cloudflare's standard trycloudflare.com quick-tunnel URLs directly.
+// `shortId` is kept in persisted state for backward compatibility with installs
+// from earlier versions, but is no longer used to build a public URL.
 
 function throwIfCancelled(token, label) {
   if (token.cancelled) throw new Error(`${label} cancelled`);
@@ -94,12 +82,10 @@ export async function enableTunnel(localPort = 20128) {
     if (isCloudflaredRunning()) {
       const existing = loadState();
       if (existing?.tunnelUrl && (await probeUrlAlive(existing.tunnelUrl))) {
-        const publicUrl = `https://r${existing.shortId}.9router.com`;
         return {
           success: true,
           tunnelUrl: existing.tunnelUrl,
           shortId: existing.shortId,
-          publicUrl,
           alreadyRunning: true,
         };
       }
@@ -114,7 +100,6 @@ export async function enableTunnel(localPort = 20128) {
 
     const onUrlUpdate = async (url) => {
       if (token.cancelled) return;
-      await registerTunnelUrl(shortId, url);
       saveState({ shortId, machineId, tunnelUrl: url });
       await updateSettings({ tunnelEnabled: true, tunnelUrl: url });
     };
@@ -122,15 +107,13 @@ export async function enableTunnel(localPort = 20128) {
     const { tunnelUrl } = await spawnQuickTunnel(localPort, onUrlUpdate);
     throwIfCancelled(token, "tunnel");
 
-    const publicUrl = `https://r${shortId}.9router.com`;
-    await registerTunnelUrl(shortId, tunnelUrl);
     saveState({ shortId, machineId, tunnelUrl });
     await updateSettings({ tunnelEnabled: true, tunnelUrl });
 
     // Health probe is done client-side (pingTunnelHealth) — skip server-side
-    // waitForHealth to avoid false failures when DNS/worker is slow to propagate.
+    // waitForHealth to avoid false failures when DNS is slow to propagate.
 
-    return { success: true, tunnelUrl, shortId, publicUrl };
+    return { success: true, tunnelUrl, shortId };
   } finally {
     tunnelSvc.spawnInProgress = false;
   }
@@ -153,14 +136,12 @@ export async function getTunnelStatus() {
   const running = isCloudflaredRunning();
   const settings = await getSettings();
   const shortId = state?.shortId || "";
-  const publicUrl = shortId ? `https://r${shortId}.9router.com` : "";
 
   return {
     enabled: settings.tunnelEnabled === true && running,
     settingsEnabled: settings.tunnelEnabled === true,
     tunnelUrl: state?.tunnelUrl || "",
     shortId,
-    publicUrl,
     running,
   };
 }

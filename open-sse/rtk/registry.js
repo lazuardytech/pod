@@ -1,4 +1,5 @@
 import { FILTERS } from "./constants.js";
+import { buildOutput } from "./filters/buildOutput.js";
 import { dedupLog } from "./filters/dedupLog.js";
 import { find } from "./filters/find.js";
 import { gitDiff } from "./filters/gitDiff.js";
@@ -21,6 +22,7 @@ const REGISTRY = {
   [FILTERS.SMART_TRUNCATE]: smartTruncate,
   [FILTERS.READ_NUMBERED]: readNumbered,
   [FILTERS.SEARCH_LIST]: searchList,
+  [FILTERS.BUILD_OUTPUT]: buildOutput,
 };
 
 // Rust resolve_filter aliases (pipe_cmd.rs): grep|rg, find|fd

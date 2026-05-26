@@ -121,4 +121,164 @@ describe("openaiToClaudeRequest", () => {
       expect(systemText).toContain("You must respond with valid JSON");
     });
   });
+
+  describe("Read tool argument sanitization", () => {
+    const readTool = {
+      type: "function",
+      function: {
+        name: "Read",
+        description: "Read a file",
+        parameters: { type: "object", properties: { file_path: { type: "string" } } },
+      },
+    };
+
+    it("strips empty pages from tool_calls before forwarding to Claude", () => {
+      const body = {
+        tools: [readTool],
+        messages: [
+          {
+            role: "assistant",
+            content: "",
+            tool_calls: [
+              {
+                id: "toolu_1",
+                type: "function",
+                function: {
+                  name: "Read",
+                  arguments: JSON.stringify({ file_path: "/etc/hosts", pages: "" }),
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = openaiToClaudeRequest("claude-sonnet-4.5", body, false);
+      const toolUse = result.messages
+        .flatMap((m) => (Array.isArray(m.content) ? m.content : []))
+        .find((b) => b?.type === "tool_use");
+
+      expect(toolUse).toBeDefined();
+      expect(toolUse.name).toBe("Read");
+      expect(toolUse.input).toEqual({ file_path: "/etc/hosts" });
+      expect("pages" in toolUse.input).toBe(false);
+    });
+
+    it("keeps valid pages range like '1-3' on Read", () => {
+      const body = {
+        tools: [readTool],
+        messages: [
+          {
+            role: "assistant",
+            content: "",
+            tool_calls: [
+              {
+                id: "toolu_2",
+                type: "function",
+                function: {
+                  name: "Read",
+                  arguments: JSON.stringify({ file_path: "/tmp/doc.pdf", pages: "1-3" }),
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = openaiToClaudeRequest("claude-sonnet-4.5", body, false);
+      const toolUse = result.messages
+        .flatMap((m) => (Array.isArray(m.content) ? m.content : []))
+        .find((b) => b?.type === "tool_use");
+
+      expect(toolUse.input.pages).toBe("1-3");
+    });
+
+    it("coerces numeric string limit/offset to numbers", () => {
+      const body = {
+        tools: [readTool],
+        messages: [
+          {
+            role: "assistant",
+            content: "",
+            tool_calls: [
+              {
+                id: "toolu_3",
+                type: "function",
+                function: {
+                  name: "Read",
+                  arguments: JSON.stringify({ file_path: "/etc/hosts", limit: "100", offset: "5" }),
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = openaiToClaudeRequest("claude-sonnet-4.5", body, false);
+      const toolUse = result.messages
+        .flatMap((m) => (Array.isArray(m.content) ? m.content : []))
+        .find((b) => b?.type === "tool_use");
+
+      expect(toolUse.input.limit).toBe(100);
+      expect(toolUse.input.offset).toBe(5);
+    });
+
+    it("does not touch arguments for non-Read tools", () => {
+      const body = {
+        tools: [
+          {
+            type: "function",
+            function: { name: "Bash", description: "", parameters: { type: "object", properties: {} } },
+          },
+        ],
+        messages: [
+          {
+            role: "assistant",
+            content: "",
+            tool_calls: [
+              {
+                id: "toolu_4",
+                type: "function",
+                function: { name: "Bash", arguments: JSON.stringify({ command: "ls", pages: "" }) },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = openaiToClaudeRequest("claude-sonnet-4.5", body, false);
+      const toolUse = result.messages
+        .flatMap((m) => (Array.isArray(m.content) ? m.content : []))
+        .find((b) => b?.type === "tool_use");
+
+      expect(toolUse.input.pages).toBe("");
+      expect(toolUse.input.command).toBe("ls");
+    });
+
+    it("sanitizes structured tool_use blocks in assistant history (not just tool_calls)", () => {
+      const body = {
+        tools: [readTool],
+        messages: [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "tool_use",
+                id: "toolu_5",
+                name: "Read",
+                input: { file_path: "/etc/passwd", pages: "   " },
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = openaiToClaudeRequest("claude-sonnet-4.5", body, false);
+      const toolUse = result.messages
+        .flatMap((m) => (Array.isArray(m.content) ? m.content : []))
+        .find((b) => b?.type === "tool_use");
+
+      expect(toolUse.input).toEqual({ file_path: "/etc/passwd" });
+    });
+  });
 });

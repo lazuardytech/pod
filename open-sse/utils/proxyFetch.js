@@ -3,6 +3,14 @@ import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
 const originalFetch = globalThis.fetch;
 const proxyDispatchers = new Map();
 
+// Faster fail-over for unreachable upstreams. Default undici connect timeout is ~10s
+// (varies by environment); 20s gives slow networks room without hanging the request
+// for the full 30s+ TCP retry window. Tunable via env for ops.
+const CONNECT_TIMEOUT_MS = (() => {
+  const raw = Number(process.env.PROXY_CONNECT_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 20_000;
+})();
+
 function normalizeString(value) {
   if (value === undefined || value === null) return "";
   return String(value).trim();
@@ -92,7 +100,7 @@ async function getDispatcher(proxyUrl) {
       proxyDispatchers.delete(proxyDispatchers.keys().next().value);
     }
     const { ProxyAgent } = await import("undici");
-    proxyDispatchers.set(normalized, new ProxyAgent({ uri: normalized }));
+    proxyDispatchers.set(normalized, new ProxyAgent({ uri: normalized, connect: { timeout: CONNECT_TIMEOUT_MS } }));
   }
 
   return proxyDispatchers.get(normalized);

@@ -258,7 +258,12 @@ function getContentBlocksFromMessage(msg, toolNameMap = new Map()) {
           blocks.push({ type: "text", text: part.text });
         } else if (part.type === "tool_use") {
           // Tool name already has prefix from tool declarations, keep as-is
-          blocks.push({ type: "tool_use", id: part.id, name: part.name, input: part.input });
+          blocks.push({
+            type: "tool_use",
+            id: part.id,
+            name: part.name,
+            input: sanitizeToolArguments(part.name, part.input),
+          });
         } else if (part.type === "thinking") {
           // Include thinking block but strip cache_control (not allowed on thinking blocks)
           const { cache_control, ...thinkingBlock } = part;
@@ -281,7 +286,7 @@ function getContentBlocksFromMessage(msg, toolNameMap = new Map()) {
             type: "tool_use",
             id: tc.id,
             name: toolName,
-            input: tryParseJSON(tc.function.arguments),
+            input: sanitizeToolArguments(toolName, tryParseJSON(tc.function.arguments)),
           });
         }
       }
@@ -323,6 +328,34 @@ function tryParseJSON(str) {
   } catch {
     return str;
   }
+}
+
+// Strip optional empty-string args that some OpenAI-compatible providers emit but Claude rejects.
+// Currently scoped to the Read tool's `pages` field (used for PDF page ranges) — if pages
+// arrives as "" or whitespace, drop it instead of letting Claude reject the entire tool call.
+// Coerce numeric string bounds for limit/offset so they can be clamped downstream.
+function sanitizeToolArguments(toolName, input) {
+  if (!input || typeof input !== "object") return input;
+  const baseName = toolName?.startsWith(CLAUDE_OAUTH_TOOL_PREFIX)
+    ? toolName.slice(CLAUDE_OAUTH_TOOL_PREFIX.length)
+    : toolName;
+  if (baseName !== "Read") return input;
+
+  const out = { ...input };
+  // Drop empty/whitespace `pages` — it's optional and only meaningful for PDF.
+  if (typeof out.pages === "string" && out.pages.trim() === "") {
+    delete out.pages;
+  } else if (out.pages == null) {
+    delete out.pages;
+  }
+  // Coerce numeric string bounds so Claude's clamp doesn't trip on "100" vs 100.
+  for (const key of ["limit", "offset"]) {
+    if (typeof out[key] === "string" && out[key].trim() !== "") {
+      const n = Number(out[key]);
+      if (Number.isFinite(n)) out[key] = n;
+    }
+  }
+  return out;
 }
 
 // OpenAI -> Claude format for Antigravity (without system prompt modifications)

@@ -12,7 +12,50 @@ export class DefaultExecutor extends BaseExecutor {
   }
 
   transformRequest(model, body) {
-    return injectReasoningContent({ provider: this.provider, model, body });
+    let next = body;
+    // For openai-compatible-* providers (DeepSeek, Ollama, custom local LLMs, etc.) that don't
+    // natively support Structured Output, fall back: inject the schema into the system prompt
+    // and downgrade response_format to json_object so the model still produces valid JSON.
+    // Native OpenAI / first-party providers keep their json_schema as-is.
+    if (
+      this.provider?.startsWith?.("openai-compatible-") &&
+      next?.response_format?.type === "json_schema" &&
+      next.response_format.json_schema?.schema
+    ) {
+      const schema = next.response_format.json_schema.schema;
+      const schemaName = next.response_format.json_schema.name || "response";
+      const schemaInstruction = `You must respond with valid JSON matching this JSON schema ("${schemaName}"):
+\`\`\`json
+${JSON.stringify(schema, null, 2)}
+\`\`\`
+Respond ONLY with the JSON object, no other text.`;
+
+      next = { ...next };
+      next.response_format = { type: "json_object" };
+      next.messages = Array.isArray(next.messages) ? [...next.messages] : [];
+
+      // Prepend a system message (or merge into the first one) so the schema is in front.
+      const firstSystemIdx = next.messages.findIndex((m) => m?.role === "system");
+      if (firstSystemIdx === -1) {
+        next.messages.unshift({ role: "system", content: schemaInstruction });
+      } else {
+        const sys = next.messages[firstSystemIdx];
+        const existing =
+          typeof sys.content === "string"
+            ? sys.content
+            : Array.isArray(sys.content)
+              ? sys.content
+                  .map((c) => (typeof c === "string" ? c : c?.text || ""))
+                  .filter(Boolean)
+                  .join("\n")
+              : "";
+        next.messages[firstSystemIdx] = {
+          ...sys,
+          content: existing ? `${existing}\n\n${schemaInstruction}` : schemaInstruction,
+        };
+      }
+    }
+    return injectReasoningContent({ provider: this.provider, model, body: next });
   }
 
   buildUrl(model, stream, urlIndex = 0, credentials = null) {

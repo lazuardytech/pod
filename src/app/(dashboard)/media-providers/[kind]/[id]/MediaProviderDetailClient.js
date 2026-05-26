@@ -192,7 +192,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
     fetch("/api/tunnel/status")
       .then((r) => r.json())
       .then((d) => {
-        if (d.publicUrl) setTunnelEndpoint(d.publicUrl);
+        if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
       .catch(() => {});
   }, []);
@@ -474,7 +474,7 @@ function TtsExampleCard({ providerId }) {
     fetch("/api/tunnel/status")
       .then((r) => r.json())
       .then((d) => {
-        if (d.publicUrl) setTunnelEndpoint(d.publicUrl);
+        if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
       .catch(() => {});
 
@@ -1078,7 +1078,7 @@ function GenericExampleCard({ providerId, kind }) {
     fetch("/api/tunnel/status")
       .then((r) => r.json())
       .then((d) => {
-        if (d.publicUrl) setTunnelEndpoint(d.publicUrl);
+        if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
       .catch(() => {});
     // Load active connections of this provider for pinning
@@ -1636,7 +1636,7 @@ function SttExampleCard({ providerId }) {
     fetch("/api/tunnel/status")
       .then((r) => r.json())
       .then((d) => {
-        if (d.publicUrl) setTunnelEndpoint(d.publicUrl);
+        if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
       .catch(() => {});
     const loadCustom = () => {
