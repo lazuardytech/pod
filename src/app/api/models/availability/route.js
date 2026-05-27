@@ -87,17 +87,18 @@ export async function POST(request) {
 
     // Test first, then clear only if passing — re-lock with minimum lockout if still failing
     if (action === "recheckAndClear") {
-      const requestBase = (() => {
-        const u = new URL(request.url);
-        return `${u.protocol}//${u.host}`;
-      })();
       const envBase = process.env.BASE_URL;
+      // Validate BASE_URL env var if set; fall back to localhost with port from request
+      // Using localhost avoids Host-header SSRF (the request hostname is not trusted for fetch).
       const baseUrl = (() => {
         if (envBase) {
           const check = validateFetchUrl(envBase, { allowPrivate: true });
           if (check.ok) return envBase.replace(/\/$/, "");
         }
-        return requestBase;
+        // Derive port from request URL but use localhost to avoid Host header SSRF
+        const u = new URL(request.url);
+        const port = u.port || (u.protocol === "https:" ? "443" : "80");
+        return `http://localhost:${port}`;
       })();
 
       // Get an active internal API key for auth

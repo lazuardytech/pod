@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
+import { getProviderConnections } from "@/lib/localDb";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
 const GITLAB_DEFAULT_BASE = "https://gitlab.com";
@@ -30,7 +31,31 @@ export async function POST(request) {
       return NextResponse.json({ error: `Invalid GitLab base URL: ${urlCheck.error}` }, { status: 400 });
     }
 
-    // base is validated by validateFetchUrl above. lgtm[js/request-forgery]
+    // Hostname allowlist: gitlab.com + its subdomains, or an existing provider connection.
+    const parsedHost = urlCheck.url.hostname.toLowerCase();
+    const isGitLabHosted =
+      parsedHost === "gitlab.com" || parsedHost === "www.gitlab.com" || parsedHost.endsWith(".gitlab.com");
+    if (!isGitLabHosted) {
+      // Allow self-hosted GitLab instances the user has already configured as a provider connection
+      const existingConnections = await getProviderConnections({ provider: "gitlab" }).catch(() => []);
+      const hasExisting = existingConnections.some((conn) => {
+        const connBase = conn.providerSpecificData?.baseUrl;
+        if (!connBase) return false;
+        try {
+          return new URL(connBase).hostname.toLowerCase() === parsedHost;
+        } catch {
+          return false;
+        }
+      });
+      if (!hasExisting) {
+        return NextResponse.json(
+          { error: "GitLab base URL must be gitlab.com or match an existing GitLab provider connection" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // base is validated by validateFetchUrl above and hostname allowlist. lgtm[js/request-forgery]
     const userRes = await fetch(`${base}/api/v4/user`, {
       // lgtm[js/request-forgery]
       headers: { "Private-Token": token.trim(), Accept: "application/json" },

@@ -8,19 +8,18 @@ export async function POST(request) {
     const { model, kind } = await request.json();
     if (!model) return NextResponse.json({ error: "Model required" }, { status: 400 });
 
-    // Derive base URL from request host (internal loopback call — allowPrivate is intentional)
-    const requestBase = (() => {
-      const u = new URL(request.url);
-      return `${u.protocol}//${u.host}`;
-    })();
     const envBase = process.env.BASE_URL;
-    // Validate BASE_URL env var if set; fall back to request host
+    // Validate BASE_URL env var if set; fall back to localhost with port from request
+    // Using localhost avoids Host-header SSRF (the request hostname is not trusted for fetch).
     const baseUrl = (() => {
       if (envBase) {
         const check = validateFetchUrl(envBase, { allowPrivate: true });
         if (check.ok) return envBase.replace(/\/$/, "");
       }
-      return requestBase;
+      // Derive port from request URL but use localhost to avoid Host header SSRF
+      const u = new URL(request.url);
+      const port = u.port || (u.protocol === "https:" ? "443" : "80");
+      return `http://localhost:${port}`;
     })();
 
     // Get an active internal API key for auth (if requireApiKey is enabled)
