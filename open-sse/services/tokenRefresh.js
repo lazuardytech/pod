@@ -314,31 +314,72 @@ export async function refreshCodexToken(refreshToken, log) {
  * Supports both AWS SSO OIDC (Builder ID/IDC) and Social Auth (Google/GitHub)
  */
 export async function refreshKiroToken(refreshToken, providerSpecificData, log, proxyOptions = null) {
-  const authMethod = providerSpecificData?.authMethod;
-  const clientId = providerSpecificData?.clientId;
-  const clientSecret = providerSpecificData?.clientSecret;
-  const region = providerSpecificData?.region;
+  try {
+    const authMethod = providerSpecificData?.authMethod;
+    const clientId = providerSpecificData?.clientId;
+    const clientSecret = providerSpecificData?.clientSecret;
+    const region = providerSpecificData?.region;
 
-  // AWS SSO OIDC (Builder ID or IDC)
-  // If clientId and clientSecret exist, assume AWS SSO OIDC (default to builder-id if authMethod not specified)
-  if (clientId && clientSecret) {
-    const isIDC = authMethod === "idc";
-    const endpoint =
-      isIDC && region ? `https://oidc.${region}.amazonaws.com/token` : "https://oidc.us-east-1.amazonaws.com/token";
+    // AWS SSO OIDC (Builder ID or IDC)
+    // If clientId and clientSecret exist, assume AWS SSO OIDC (default to builder-id if authMethod not specified)
+    if (clientId && clientSecret) {
+      const isIDC = authMethod === "idc";
+      const endpoint =
+        isIDC && region ? `https://oidc.${region}.amazonaws.com/token` : "https://oidc.us-east-1.amazonaws.com/token";
 
+      const response = await proxyAwareFetch(
+        endpoint,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            clientId: clientId,
+            clientSecret: clientSecret,
+            refreshToken: refreshToken,
+            grantType: "refresh_token",
+          }),
+        },
+        proxyOptions,
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        log?.error?.("TOKEN_REFRESH", "Failed to refresh Kiro AWS token", {
+          status: response.status,
+          error: errorText,
+        });
+        return null;
+      }
+
+      const tokens = await response.json();
+
+      log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro AWS token", {
+        hasNewAccessToken: !!tokens.accessToken,
+        expiresIn: tokens.expiresIn,
+      });
+
+      return {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken || refreshToken,
+        expiresIn: tokens.expiresIn,
+      };
+    }
+
+    // Social Auth (Google/GitHub) - use Kiro's refresh endpoint
     const response = await proxyAwareFetch(
-      endpoint,
+      PROVIDERS.kiro.tokenUrl,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "User-Agent": "kiro-cli/1.0.0",
         },
         body: JSON.stringify({
-          clientId: clientId,
-          clientSecret: clientSecret,
           refreshToken: refreshToken,
-          grantType: "refresh_token",
         }),
       },
       proxyOptions,
@@ -346,7 +387,7 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
 
     if (!response.ok) {
       const errorText = await response.text();
-      log?.error?.("TOKEN_REFRESH", "Failed to refresh Kiro AWS token", {
+      log?.error?.("TOKEN_REFRESH", "Failed to refresh Kiro social token", {
         status: response.status,
         error: errorText,
       });
@@ -355,7 +396,7 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
 
     const tokens = await response.json();
 
-    log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro AWS token", {
+    log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro social token", {
       hasNewAccessToken: !!tokens.accessToken,
       expiresIn: tokens.expiresIn,
     });
@@ -365,137 +406,111 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
       refreshToken: tokens.refreshToken || refreshToken,
       expiresIn: tokens.expiresIn,
     };
-  }
-
-  // Social Auth (Google/GitHub) - use Kiro's refresh endpoint
-  const response = await proxyAwareFetch(
-    PROVIDERS.kiro.tokenUrl,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "User-Agent": "kiro-cli/1.0.0",
-      },
-      body: JSON.stringify({
-        refreshToken: refreshToken,
-      }),
-    },
-    proxyOptions,
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    log?.error?.("TOKEN_REFRESH", "Failed to refresh Kiro social token", {
-      status: response.status,
-      error: errorText,
-    });
+  } catch (error) {
+    log?.error?.("TOKEN_REFRESH", `Error refreshing Kiro token: ${error.message}`);
     return null;
   }
-
-  const tokens = await response.json();
-
-  log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro social token", {
-    hasNewAccessToken: !!tokens.accessToken,
-    expiresIn: tokens.expiresIn,
-  });
-
-  return {
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken || refreshToken,
-    expiresIn: tokens.expiresIn,
-  };
 }
 
 /**
  * Specialized refresh for iFlow OAuth tokens
  */
 export async function refreshIflowToken(refreshToken, log) {
-  const basicAuth = btoa(`${PROVIDERS.iflow.clientId}:${PROVIDERS.iflow.clientSecret}`);
+  try {
+    const basicAuth = btoa(`${PROVIDERS.iflow.clientId}:${PROVIDERS.iflow.clientSecret}`);
 
-  const response = await fetch(OAUTH_ENDPOINTS.iflow.token, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-      Authorization: `Basic ${basicAuth}`,
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-      client_id: PROVIDERS.iflow.clientId,
-      client_secret: PROVIDERS.iflow.clientSecret,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    log?.error?.("TOKEN_REFRESH", "Failed to refresh iFlow token", {
-      status: response.status,
-      error: errorText,
+    const response = await fetch(OAUTH_ENDPOINTS.iflow.token, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+        Authorization: `Basic ${basicAuth}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: PROVIDERS.iflow.clientId,
+        client_secret: PROVIDERS.iflow.clientSecret,
+      }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log?.error?.("TOKEN_REFRESH", "Failed to refresh iFlow token", {
+        status: response.status,
+        error: errorText,
+      });
+      return null;
+    }
+
+    const tokens = await response.json();
+
+    log?.info?.("TOKEN_REFRESH", "Successfully refreshed iFlow token", {
+      hasNewAccessToken: !!tokens.access_token,
+      hasNewRefreshToken: !!tokens.refresh_token,
+      expiresIn: tokens.expires_in,
+    });
+
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || refreshToken,
+      expiresIn: tokens.expires_in,
+    };
+  } catch (error) {
+    log?.error?.("TOKEN_REFRESH", `Error refreshing iFlow token: ${error.message}`);
     return null;
   }
-
-  const tokens = await response.json();
-
-  log?.info?.("TOKEN_REFRESH", "Successfully refreshed iFlow token", {
-    hasNewAccessToken: !!tokens.access_token,
-    hasNewRefreshToken: !!tokens.refresh_token,
-    expiresIn: tokens.expires_in,
-  });
-
-  return {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token || refreshToken,
-    expiresIn: tokens.expires_in,
-  };
 }
 
 /**
  * Specialized refresh for GitHub Copilot OAuth tokens
  */
 export async function refreshGitHubToken(refreshToken, log) {
-  const params = {
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-    client_id: PROVIDERS.github.clientId,
-  };
-  if (PROVIDERS.github.clientSecret) {
-    params.client_secret = PROVIDERS.github.clientSecret;
-  }
+  try {
+    const params = {
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: PROVIDERS.github.clientId,
+    };
+    if (PROVIDERS.github.clientSecret) {
+      params.client_secret = PROVIDERS.github.clientSecret;
+    }
 
-  const response = await fetch(OAUTH_ENDPOINTS.github.token, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-    },
-    body: new URLSearchParams(params),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    log?.error?.("TOKEN_REFRESH", "Failed to refresh GitHub token", {
-      status: response.status,
-      error: errorText,
+    const response = await fetch(OAUTH_ENDPOINTS.github.token, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: new URLSearchParams(params),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log?.error?.("TOKEN_REFRESH", "Failed to refresh GitHub token", {
+        status: response.status,
+        error: errorText,
+      });
+      return null;
+    }
+
+    const tokens = await response.json();
+
+    log?.info?.("TOKEN_REFRESH", "Successfully refreshed GitHub token", {
+      hasNewAccessToken: !!tokens.access_token,
+      hasNewRefreshToken: !!tokens.refresh_token,
+      expiresIn: tokens.expires_in,
+    });
+
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || refreshToken,
+      expiresIn: tokens.expires_in,
+    };
+  } catch (error) {
+    log?.error?.("TOKEN_REFRESH", `Error refreshing GitHub token: ${error.message}`);
     return null;
   }
-
-  const tokens = await response.json();
-
-  log?.info?.("TOKEN_REFRESH", "Successfully refreshed GitHub token", {
-    hasNewAccessToken: !!tokens.access_token,
-    hasNewRefreshToken: !!tokens.refresh_token,
-    expiresIn: tokens.expires_in,
-  });
-
-  return {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token || refreshToken,
-    expiresIn: tokens.expires_in,
-  };
 }
 
 /**
