@@ -76,6 +76,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
               }}
               onKeyDown={handleKeyDown}
               placeholder="e.g. claude-opus-4-5"
+              name="model-id"
               className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               autoFocus
             />

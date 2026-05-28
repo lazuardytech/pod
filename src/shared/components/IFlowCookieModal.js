@@ -99,6 +99,7 @@ export default function IFlowCookieModal({ isOpen, onSuccess, onClose }) {
                 className="w-full px-3 py-2 bg-surface-secondary border border-border rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 rows={4}
                 disabled={loading}
+                name="cookie"
               />
             </div>
 

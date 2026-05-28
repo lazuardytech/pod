@@ -492,6 +492,7 @@ export default function ProfilePage() {
                 type="file"
                 accept="application/json,.json"
                 className="hidden"
+                aria-label="Import backup file"
                 onChange={handleImportDatabase}
               />
             </div>

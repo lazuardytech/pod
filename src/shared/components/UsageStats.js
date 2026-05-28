@@ -511,6 +511,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
             onChange={(e) => setTableView(e.target.value)}
             className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 sm:w-auto"
             style={{ colorScheme: "auto" }}
+            name="table-view"
           >
             {TABLE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

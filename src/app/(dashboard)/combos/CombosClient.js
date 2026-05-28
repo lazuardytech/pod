@@ -535,6 +535,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
           onBlur={commit}
           onKeyDown={handleKeyDown}
           className="min-w-0 flex-1 rounded border border-primary/40 bg-white px-1.5 py-0.5 font-mono text-xs text-text-main outline-none dark:bg-black/20"
+          name="model-value"
         />
       ) : (
         <div

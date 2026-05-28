@@ -1,6 +1,20 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
+
+/**
+ * Slugify a label for use as a form field name when no explicit `name` prop is provided.
+ * Returns "" for falsy input so the caller can decide to omit the attribute entirely.
+ */
+function deriveName(label) {
+  if (typeof label !== "string" || !label) return "";
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
 
 export default function Input({
   label,
@@ -15,12 +29,19 @@ export default function Input({
   required = false,
   className,
   inputClassName,
+  id,
+  name,
   ...props
 }) {
+  // Stable, deterministic per-instance ID for label association and browser autofill.
+  const reactId = useId();
+  const inputId = id || `input-${reactId}`;
+  const inputName = name || deriveName(label) || inputId;
+
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label className="text-[12px] font-[510] text-storm-cloud tracking-[-0.1px]">
+        <label htmlFor={inputId} className="text-[12px] font-[510] text-storm-cloud tracking-[-0.1px]">
           {label}
           {required && <span className="text-warning-red ml-1">*</span>}
         </label>
@@ -32,6 +53,8 @@ export default function Input({
           </div>
         )}
         <input
+          id={inputId}
+          name={inputName}
           type={type}
           placeholder={placeholder}
           value={value}

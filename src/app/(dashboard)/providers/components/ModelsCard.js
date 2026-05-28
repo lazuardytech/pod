@@ -136,6 +136,7 @@ function AddCustomModelModal({ isOpen, onSave, onClose }) {
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder="e.g. tts-1-hd"
             autoFocus
+            name="model-id"
           />
         </div>
         <div className="flex gap-2">

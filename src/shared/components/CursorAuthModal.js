@@ -159,6 +159,7 @@ export default function CursorAuthModal({ isOpen, onSuccess, onClose }) {
                 placeholder="Access token will be auto-filled..."
                 rows={3}
                 className="w-full px-3 py-2 text-sm font-mono border border-border rounded-lg bg-background focus:outline-none focus:border-primary resize-none"
+                name="access-token"
               />
             </div>
 

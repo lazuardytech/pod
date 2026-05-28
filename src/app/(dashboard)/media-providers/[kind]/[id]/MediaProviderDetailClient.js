@@ -271,12 +271,14 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="e.g. voyage-3, embed-english-v3.0, text-embedding-3-small"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              name="model"
             />
           ) : (
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="model"
             >
               {embeddingModels.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -295,6 +297,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
               onChange={(e) => (useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value))}
               className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               placeholder="http://localhost:3000"
+              name="endpoint"
             />
             {/* Tunnel toggle — only show if tunnel URL is available */}
             {tunnelEndpoint && (
@@ -322,6 +325,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="sk-..."
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+            name="api-key"
           />
         </Row>
 
@@ -332,6 +336,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="input-text"
             />
             {input && (
               <button
@@ -354,6 +359,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             onChange={(e) => setDimensions(e.target.value)}
             placeholder="optional, e.g. 512, 1024 (leave empty for default)"
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+            name="dimensions"
           />
         </Row>
 
@@ -686,6 +692,7 @@ function TtsExampleCard({ providerId }) {
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                name="model"
               >
                 {(
                   (AI_PROVIDERS[providerId]?.ttsConfig?.models?.length
@@ -707,6 +714,7 @@ function TtsExampleCard({ providerId }) {
                 value={languageHint}
                 onChange={(e) => setLanguageHint(e.target.value)}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                name="language"
               >
                 <option value="">Auto-detect</option>
                 {GOOGLE_TTS_LANGUAGES.map((l) => (
@@ -794,6 +802,7 @@ function TtsExampleCard({ providerId }) {
                     }}
                     placeholder="e.g. CwhRBWXzGAHq8TQ4Fs17"
                     className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+                    name="voice-id"
                   />
                   {voiceId && (
                     <button
@@ -817,6 +826,7 @@ function TtsExampleCard({ providerId }) {
             <Row label="Language">
               <select
                 value={selectedVoice}
+                name="language"
                 onChange={(e) => {
                   const m = getModelsByProviderId(providerId)
                     .filter((m) => m.type === "tts")
@@ -844,6 +854,7 @@ function TtsExampleCard({ providerId }) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                name="input-text"
               />
               {input && (
                 <button
@@ -863,6 +874,7 @@ function TtsExampleCard({ providerId }) {
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="output-format"
             >
               <option value="mp3">MP3 (Binary)</option>
               <option value="json">JSON (Base64)</option>
@@ -984,6 +996,7 @@ function TtsExampleCard({ providerId }) {
                 onChange={(e) => setModalSearch(e.target.value)}
                 placeholder="Search language..."
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                name="search"
               />
             </div>
 
@@ -1250,6 +1263,7 @@ function GenericExampleCard({ providerId, kind }) {
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="model"
             >
               {kindModels.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -1265,6 +1279,7 @@ function GenericExampleCard({ providerId, kind }) {
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="Enter model id (provider-specific)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              name="model"
             />
           </Row>
         ) : null}
@@ -1311,6 +1326,7 @@ function GenericExampleCard({ providerId, kind }) {
               value={pinnedConnectionId}
               onChange={(e) => setPinnedConnectionId(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="connection"
             >
               <option value="">Auto (by priority)</option>
               {connections.map((c) => {
@@ -1335,6 +1351,7 @@ function GenericExampleCard({ providerId, kind }) {
               onChange={(e) => setInput(e.target.value)}
               placeholder={exConfig.inputPlaceholder}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="input-text"
             />
             {input && (
               <button
@@ -1358,6 +1375,7 @@ function GenericExampleCard({ providerId, kind }) {
                   onChange={(e) => setRefImage(e.target.value)}
                   placeholder={imageEditDefaults.image || "https://example.com/source.png"}
                   className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  name="ref-image"
                 />
                 {refImage && (
                   <button
@@ -1395,6 +1413,7 @@ function GenericExampleCard({ providerId, kind }) {
                   onChange={(e) => setMaskImage(e.target.value)}
                   placeholder={imageEditDefaults.mask_image || "https://example.com/mask.png"}
                   className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  name="mask-image"
                 />
                 {maskImage && (
                   <button
@@ -1437,6 +1456,7 @@ function GenericExampleCard({ providerId, kind }) {
                   value={extraValues[f.key] ?? ""}
                   onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  name={`param-${f.key}`}
                 >
                   {(f.options || []).map((opt) => (
                     <option key={opt} value={opt}>
@@ -1451,6 +1471,7 @@ function GenericExampleCard({ providerId, kind }) {
                   placeholder={f.placeholder}
                   onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  name={`param-${f.key}`}
                 />
               ) : (
                 <input
@@ -1462,6 +1483,7 @@ function GenericExampleCard({ providerId, kind }) {
                     setExtraValues((s) => ({ ...s, [f.key]: e.target.value === "" ? "" : Number(e.target.value) }))
                   }
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  name={`param-${f.key}`}
                 />
               )}
             </Row>
@@ -1474,6 +1496,7 @@ function GenericExampleCard({ providerId, kind }) {
               value={imageOutputFormat}
               onChange={(e) => setImageOutputFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="output-format"
             >
               <option value="json">JSON (Base64)</option>
               <option value="binary">Binary File</option>
@@ -1712,6 +1735,7 @@ function SttExampleCard({ providerId }) {
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="model"
             >
               {sttModels.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -1727,6 +1751,7 @@ function SttExampleCard({ providerId }) {
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="Enter model id"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              name="model"
             />
           </Row>
         )}
@@ -1773,6 +1798,7 @@ function SttExampleCard({ providerId }) {
               accept="audio/*,video/mp4,.m4a,.mp3,.wav,.ogg,.flac,.webm,.opus"
               onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
               className="w-full text-xs text-text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border file:border-border file:bg-background file:text-text-main hover:file:bg-sidebar file:cursor-pointer"
+              aria-label="Audio file"
             />
             {audioFile && (
               <span className="text-xs text-text-muted font-mono">
@@ -1790,6 +1816,7 @@ function SttExampleCard({ providerId }) {
               onChange={(e) => setLanguage(e.target.value)}
               placeholder="e.g. en, vi, ja (auto-detect if empty)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              name="language"
             />
           </Row>
         )}
@@ -1802,6 +1829,7 @@ function SttExampleCard({ providerId }) {
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="optional context to improve accuracy"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="prompt"
             />
           </Row>
         )}
@@ -1818,6 +1846,7 @@ function SttExampleCard({ providerId }) {
               onChange={(e) => setTemperature(e.target.value)}
               placeholder="0 - 1 (default 0)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="temperature"
             />
           </Row>
         )}
@@ -1829,6 +1858,7 @@ function SttExampleCard({ providerId }) {
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="response-format"
             >
               <option value="json">json</option>
               <option value="text">text</option>

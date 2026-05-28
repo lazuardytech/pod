@@ -207,6 +207,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search console logs..."
               className="w-full h-7 pl-9 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
+              name="search"
             />
           </div>
           <div className="flex items-center gap-1">

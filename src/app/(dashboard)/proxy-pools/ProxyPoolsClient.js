@@ -518,6 +518,7 @@ export default function ProxyPoolsPage() {
                 checked={allSelected}
                 onChange={toggleSelectAll}
                 className="size-4 rounded border-black/20 dark:border-white/20"
+                name="select-all"
               />
               {allSelected ? "Unselect all" : "Select all"}
             </label>
@@ -604,6 +605,7 @@ export default function ProxyPoolsPage() {
                     checked={selectedIds.includes(pool.id)}
                     onChange={() => toggleSelect(pool.id)}
                     className="mt-1 size-4 shrink-0 rounded border-black/20 dark:border-white/20"
+                    name="select-proxy"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -689,6 +691,7 @@ export default function ProxyPoolsPage() {
               onChange={(e) => setBatchImportText(e.target.value)}
               placeholder={"http://user:pass@127.0.0.1:7897\n127.0.0.1:7897:user:pass"}
               className="w-full min-h-[180px] py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all"
+              name="proxy-list"
             />
             <p className="text-xs text-text-muted mt-1">
               Supported formats: protocol://user:pass@host:port, host:port:user:pass

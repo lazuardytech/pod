@@ -421,6 +421,7 @@ export default function ModelSelectModal({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 bg-surface border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+            name="search"
           />
         </div>
       </div>

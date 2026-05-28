@@ -1,6 +1,16 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
+
+function deriveName(label) {
+  if (typeof label !== "string" || !label) return "";
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
 
 export default function Select({
   label,
@@ -14,18 +24,26 @@ export default function Select({
   required = false,
   className,
   selectClassName,
+  id,
+  name,
   ...props
 }) {
+  const reactId = useId();
+  const selectId = id || `select-${reactId}`;
+  const selectName = name || deriveName(label) || selectId;
+
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label className="text-[12px] font-[510] text-storm-cloud tracking-[-0.1px]">
+        <label htmlFor={selectId} className="text-[12px] font-[510] text-storm-cloud tracking-[-0.1px]">
           {label}
           {required && <span className="text-warning-red ml-1">*</span>}
         </label>
       )}
       <div className="relative">
         <select
+          id={selectId}
+          name={selectName}
           value={value}
           onChange={onChange}
           disabled={disabled}

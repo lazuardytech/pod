@@ -41,6 +41,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-gunmetal text-[12px] text-porcelain focus:outline-none focus:border-porcelain/50 cursor-pointer"
               style={{ colorScheme: "dark" }}
+              name="page-size"
             >
               {[10, 20, 50].map((s) => (
                 <option key={s} value={s} className="bg-graphite">

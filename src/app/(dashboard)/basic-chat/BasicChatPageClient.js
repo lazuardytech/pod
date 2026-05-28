@@ -1024,6 +1024,7 @@ export default function BasicChatPageClient() {
                   placeholder="Message AI"
                   rows={1}
                   className="w-full resize-none bg-transparent px-2 text-[15px] leading-6 text-white outline-none placeholder:text-white/40 custom-scrollbar max-h-[25vh] overflow-y-auto"
+                  name="message"
                 />
 
                 <div className="mt-2 flex items-center justify-between gap-3">
@@ -1042,6 +1043,7 @@ export default function BasicChatPageClient() {
                       accept="image/*"
                       multiple
                       className="hidden"
+                      aria-label="Attach images"
                       onChange={handleAttachFiles}
                     />
                     <span className="text-xs font-medium text-white/30 truncate max-w-[120px]">

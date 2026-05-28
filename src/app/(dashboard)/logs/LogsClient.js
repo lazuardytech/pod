@@ -32,6 +32,7 @@ function RequestLogsToolbar({
           value={filterProvider}
           onChange={(e) => setFilterProvider(e.target.value)}
           className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[130px]"
+          name="filter-provider"
         >
           <option value="all">All Providers</option>
           {providerOptions.map((p) => (
@@ -45,6 +46,7 @@ function RequestLogsToolbar({
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
         className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[120px]"
+        name="sort-by"
       >
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>
@@ -85,6 +87,7 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
         className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[120px]"
+        name="sort-by"
       >
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>

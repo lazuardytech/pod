@@ -1124,6 +1124,7 @@ export default function ProviderDetailPage() {
                   value={effortMode}
                   onChange={(e) => handleEffortModeChange(e.target.value)}
                   className="text-xs px-2 py-1 border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                  name="thinking-effort"
                 >
                   <option value="default">Default</option>
                   <option value="none">None</option>
@@ -1147,6 +1148,7 @@ export default function ProviderDetailPage() {
                       onChange={(e) => handleStickyLimitChange(e.target.value)}
                       placeholder="1"
                       className="w-14 px-2 py-1 text-xs border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                      name="sticky-limit"
                     />
                   </div>
                 )}

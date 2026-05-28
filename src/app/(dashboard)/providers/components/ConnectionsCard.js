@@ -337,6 +337,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Production Key"
+            name="connection-name"
           />
         </div>
         <div className="flex gap-2">
@@ -347,6 +348,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
               className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               value={formData.apiKey}
               onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+              name="api-key"
             />
           </div>
           <div className="pt-6">
@@ -367,6 +369,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={formData.priority}
             onChange={(e) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })}
+            name="priority"
           />
         </div>
         <Select
@@ -599,6 +602,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
                     saveStrategy("round-robin", e.target.value);
                   }}
                   className="w-16 px-2 py-1 text-xs border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                  name="sticky-limit"
                 />
               </div>
             )}
