@@ -485,6 +485,10 @@ export async function handleChatCore({
   // Upstream timeout: combined AbortController for client disconnect + upstream deadline
   const upstreamTimeoutMs =
     Number(process.env.API_TIMEOUT_MS) > 0 ? Number(process.env.API_TIMEOUT_MS) : LOCAL_UPSTREAM_TIMEOUT_MS;
+
+  // Pass timeout to proxy layer so Vercel relay can enforce its own AbortController
+  proxyOptions.upstreamTimeoutMs = upstreamTimeoutMs;
+
   const isUpstreamTimeoutError = (error) => error?.name === "TimeoutError" || error?.cause?.name === "TimeoutError";
   const buildAbortStatus = (error) => (isUpstreamTimeoutError(error) ? HTTP_STATUS.REQUEST_TIMEOUT : 499);
   const createUpstreamSignal = () => {
@@ -542,6 +546,20 @@ export async function handleChatCore({
     providerHeaders = result.headers;
     finalBody = result.transformedBody;
     reqLogger.logTargetRequest(providerUrl, providerHeaders, finalBody);
+
+    // Fix 4: One-shot retry on Vercel relay 502/504 (cold start mitigation).
+    // Vercel free-tier often returns 502/504 on first request after deploy or idle.
+    // Retrying once with a brief delay resolves most cold starts transparently.
+    if (proxyOptions.vercelRelayUrl && (providerResponse.status === 502 || providerResponse.status === 504)) {
+      console.error(`[VERCEL-RELAY-RETRY] ${provider}/${model} | attempt 2/2 after ${providerResponse.status}`);
+      await new Promise((r) => setTimeout(r, 2000));
+      const retryResult = await executeUpstream();
+      providerResponse = retryResult.response;
+      providerUrl = retryResult.url;
+      providerHeaders = retryResult.headers;
+      finalBody = retryResult.transformedBody;
+      reqLogger.logTargetRequest(providerUrl, providerHeaders, finalBody);
+    }
   } catch (error) {
     trackPendingRequest(model, provider, connectionId, false, true);
     const abortStatus = buildAbortStatus(error);
@@ -587,6 +605,19 @@ export async function handleChatCore({
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
     console.log(`${COLORS.red}[ERROR] ${errMsg}${COLORS.reset}`);
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+  }
+
+  // Fix 2: Detect Vercel platform 504 — free-tier hard-kills functions at 10s.
+  // The relay emits a 504 with a JSON error body, but if Vercel itself kills the
+  // function before the relay responds, we get a generic platform 504.
+  // Surface this as a clear relay-timeout error rather than treating it as an
+  // upstream provider failure.
+  if (providerResponse && providerResponse.status === 504 && proxyOptions.vercelRelayUrl) {
+    const relayUrl = proxyOptions.vercelRelayUrl;
+    console.error(
+      `[VERCEL-RELAY-TIMEOUT] ${provider}/${model} → ${relayUrl} | platform 504 (function exceeded 10s limit)`,
+    );
+    return createErrorResult(HTTP_STATUS.GATEWAY_TIMEOUT, "Vercel relay timeout — function exceeded platform limit");
   }
 
   // Handle 401/403 - try token refresh (skip for noAuth providers)

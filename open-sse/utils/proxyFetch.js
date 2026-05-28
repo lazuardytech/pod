@@ -118,6 +118,15 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       "x-relay-target": `${parsed.protocol}//${parsed.host}`,
       "x-relay-path": `${parsed.pathname}${parsed.search}`,
     };
+
+    // Forward configured upstream timeout so relay can enforce its own AbortController.
+    // Subtract 5s from pod's timeout so relay times out first — deterministic race outcome.
+    // Minimum 1s to avoid zero/negative timeout on very short upstream deadlines.
+    const upstreamTimeoutMs = proxyOptions?.upstreamTimeoutMs;
+    if (upstreamTimeoutMs > 0) {
+      const relayTimeoutMs = Math.max(1000, upstreamTimeoutMs - 5000);
+      relayHeaders["x-relay-timeout"] = String(relayTimeoutMs);
+    }
     return originalFetch(vercelRelayUrl, { ...options, headers: relayHeaders });
   }
 

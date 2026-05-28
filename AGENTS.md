@@ -4,9 +4,9 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 
 ## Current Baseline
 
-- Release baseline: **v0.0.54**
+- Release baseline: **v0.0.55**
 - Package: `pod`
-- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.54, latest)
+- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.55, latest)
 - GitHub: `lazuardytech/pod`, branch `main`
 - Data dir: `~/.pod/pod.sqlite`
 - Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap instead)
@@ -34,6 +34,9 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 19. **Cloud worker `testClaude.js` stub must exist** — `cloud/src/index.js` statically imports `./handlers/testClaude.js`. This file must be present and return a 410 deprecated response. Missing it causes the worker to fail to deploy.
 20. **Semantic cache signature includes `memoryOwnerId`** — requests from different API keys never share cache entries even if messages are identical. Temperature `null` and `1` produce identical signatures (both normalize to `1`). Do not remove `memoryOwnerId` from `generateSignature` inputs.
 21. **SQLite cache TTL uses ISO 8601 format** — `expires_at` is stored as `2026-05-17T...Z`. Always compare with `strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`, never `datetime('now')`. SQLite's `datetime('now')` returns `2026-05-17 ...` (space separator, no `Z`) which fails string comparison against ISO 8601 values silently.
+22. **Vercel relay timeout has 5s safety margin** — pod's `upstreamTimeoutMs` minus 5s is sent as `x-relay-timeout` header. Relay always times out before pod, so the error message is deterministic. Minimum 1s for `relayTimeoutMs`. Do not remove this gap.
+23. **Vercel relay 502/504 gets one retry** — `chatCore.js` retries once with 2s delay when `proxyOptions.vercelRelayUrl` is set AND response is 502/504. Mitigates cold starts. Do not remove without replacement.
+24. **Vercel relay test uses google.com/generate_204** — `proxy-pools/[id]/test` MUST use `https://www.google.com/generate_204` (returns 204 No Content). Do not switch to httpbin.org or other public endpoints — they are unreliable.
 
 ## Verification Before Push
 

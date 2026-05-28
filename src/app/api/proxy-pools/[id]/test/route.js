@@ -11,8 +11,10 @@ async function testVercelRelay(relayUrl, timeoutMs = 10000) {
     const res = await undiciFetch(relayUrl, {
       method: "GET",
       headers: {
-        "x-relay-target": "https://httpbin.org",
-        "x-relay-path": "/get",
+        "x-relay-target": "https://www.google.com",
+        "x-relay-path": "/generate_204",
+        Accept: "*/*",
+        "User-Agent": "pod-relay-healthcheck/1.0",
       },
       signal: controller.signal,
     });
