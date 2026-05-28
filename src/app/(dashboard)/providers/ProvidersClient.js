@@ -768,6 +768,10 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
     if (!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim()) return;
     setSubmitting(true);
     try {
+      // Auto-prepend the required prefix if user supplies a custom identifier
+      // without it. Server validates that identifier starts with `openai-compatible-`.
+      const rawId = formData.identifier.trim();
+      const normalizedId = rawId && !rawId.startsWith("openai-compatible-") ? `openai-compatible-${rawId}` : rawId;
       const res = await fetch("/api/provider-nodes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -777,10 +781,10 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           apiType: formData.apiType,
           baseUrl: formData.baseUrl,
           type: "openai-compatible",
-          identifier: formData.identifier,
+          identifier: normalizedId,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         onCreated(data.node);
         setFormData({
@@ -792,9 +796,13 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
         });
         setCheckKey("");
         setValidationResult(null);
+        toast.success("Provider node created");
+      } else {
+        toast.error(data?.error || `Failed to create node (HTTP ${res.status})`);
       }
     } catch (error) {
       console.log("Error creating OpenAI Compatible node:", error);
+      toast.error("Network error — could not reach the server");
     } finally {
       setSubmitting(false);
     }
@@ -858,7 +866,9 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           value={formData.identifier}
           onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
           placeholder="my-openai-prod"
-          hint="Optional. Custom ID for this provider. Auto-generated if left empty."
+          hint={
+            'Optional. Custom suffix — the prefix "openai-compatible-" is auto-prepended. Leave empty to auto-generate.'
+          }
         />
         <Input
           label="Prefix"
@@ -952,6 +962,11 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
     if (!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim()) return;
     setSubmitting(true);
     try {
+      // Auto-prepend the required prefix if user supplies a custom identifier
+      // without it. Server validates that identifier starts with `anthropic-compatible-`.
+      const rawId = formData.identifier.trim();
+      const normalizedId =
+        rawId && !rawId.startsWith("anthropic-compatible-") ? `anthropic-compatible-${rawId}` : rawId;
       const res = await fetch("/api/provider-nodes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -960,10 +975,10 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
           prefix: formData.prefix,
           baseUrl: formData.baseUrl,
           type: "anthropic-compatible",
-          identifier: formData.identifier,
+          identifier: normalizedId,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         onCreated(data.node);
         setFormData({
@@ -974,9 +989,13 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
         });
         setCheckKey("");
         setValidationResult(null);
+        toast.success("Provider node created");
+      } else {
+        toast.error(data?.error || `Failed to create node (HTTP ${res.status})`);
       }
     } catch (error) {
       console.log("Error creating Anthropic Compatible node:", error);
+      toast.error("Network error — could not reach the server");
     } finally {
       setSubmitting(false);
     }
@@ -1040,7 +1059,9 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
           value={formData.identifier}
           onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
           placeholder="my-anthropic-prod"
-          hint="Optional. Custom ID for this provider. Auto-generated if left empty."
+          hint={
+            'Optional. Custom suffix — the prefix "anthropic-compatible-" is auto-prepended. Leave empty to auto-generate.'
+          }
         />
         <Input
           label="Prefix"

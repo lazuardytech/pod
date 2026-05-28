@@ -2,6 +2,7 @@
 
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Badge, Button, Input, Modal } from "@/shared/components";
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
@@ -54,13 +55,17 @@ export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, on
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         if (isEdit) onSaved?.(data.node);
         else onCreated?.(data.node);
+        toast.success(isEdit ? "Embedding node saved" : "Embedding node created");
+      } else {
+        toast.error(data?.error || `Failed to ${isEdit ? "save" : "create"} node (HTTP ${res.status})`);
       }
     } catch (error) {
       console.log("Error saving custom embedding node:", error);
+      toast.error("Network error — could not reach the server");
     } finally {
       setSubmitting(false);
     }
