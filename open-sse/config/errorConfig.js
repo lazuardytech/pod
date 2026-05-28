@@ -83,6 +83,14 @@ export const ERROR_RULES = [
   { text: "quota exceeded", backoff: true },
   { text: "capacity", backoff: true },
   { text: "overloaded", backoff: true },
+  // Transient "server busy" patterns — surfaced via 500/503 with reason code
+  // (e.g. AWS CodeWhisperer / Kiro: MODEL_TEMPORARILY_UNAVAILABLE,
+  // "encountered unexpectedly high load"). Treat like rate limit so account
+  // fallback + exponential backoff kick in instead of a 30s flat lock.
+  { text: "model_temporarily_unavailable", backoff: true },
+  { text: "model temporarily unavailable", backoff: true },
+  { text: "unexpectedly high load", backoff: true },
+  { text: "server is busy", backoff: true },
 
   // --- Status-based rules (fallback when text doesn't match) ---
   { status: 401, cooldownMs: COOLDOWN.long },
@@ -100,3 +108,37 @@ export const COOLDOWN_MS = {
   transient: TRANSIENT_COOLDOWN_MS,
   requestNotAllowed: COOLDOWN.short,
 };
+
+/**
+ * Body-text patterns that indicate a transient "server busy" error
+ * dressed up as HTTP 500 (or any status). When a 500 body matches one of
+ * these, it is safe to retry the request — the upstream is healthy but
+ * the specific model/region is overloaded.
+ *
+ * Examples:
+ *   - AWS CodeWhisperer / Kiro: { reason: "MODEL_TEMPORARILY_UNAVAILABLE" }
+ *     "Encountered unexpectedly high load when processing the request, please try again."
+ *   - Anthropic: "Overloaded"
+ *   - Google AI Studio: "The model is overloaded. Please try again later."
+ */
+const TRANSIENT_BODY_PATTERNS = [
+  /model[_\s]+temporarily[_\s]+unavailable/i,
+  /unexpectedly\s+high\s+load/i,
+  /temporarily\s+unavailable/i,
+  /server\s+is\s+busy/i,
+  /\boverloaded\b/i,
+  /model\s+is\s+overloaded/i,
+];
+
+/**
+ * Check whether an upstream error body indicates a transient/retryable condition.
+ * Used by executors to gate body-aware retries (e.g. retry HTTP 500 only when the
+ * body says the model is temporarily overloaded, not for generic server errors).
+ *
+ * @param {string} bodyText
+ * @returns {boolean}
+ */
+export function isTransientErrorBody(bodyText) {
+  if (!bodyText || typeof bodyText !== "string") return false;
+  return TRANSIENT_BODY_PATTERNS.some((pattern) => pattern.test(bodyText));
+}

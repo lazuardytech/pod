@@ -196,6 +196,10 @@ export const PROVIDERS = {
     baseUrl: "https://codewhisperer.us-east-1.amazonaws.com/generateAssistantResponse",
     format: "kiro",
     retry: { 429: 2 },
+    // Body-gated retry for HTTP 500/503 with transient reason codes
+    // (e.g. MODEL_TEMPORARILY_UNAVAILABLE, "unexpectedly high load").
+    // attempts=3, baseDelayMs=1000, maxDelayMs=8000 → ~1s, 2s, 4s with 0.5x–1.5x jitter.
+    transientRetry: { attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 },
     headers: {
       "Content-Type": "application/json",
       Accept: "application/vnd.amazon.eventstream",

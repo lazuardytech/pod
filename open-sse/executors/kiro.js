@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { PROVIDERS } from "../config/providers.js";
+import { isTransientErrorBody } from "../config/errorConfig.js";
 import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.js";
 import { refreshKiroToken } from "../services/tokenRefresh.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
@@ -34,6 +35,17 @@ export class KiroExecutor extends BaseExecutor {
 
   /**
    * Custom execute for Kiro - handles AWS EventStream binary response with retry support
+   *
+   * Retry strategy (in-request, before falling back to next account):
+   *   - 429 / 502 / 503: standard status-based retry from retryConfig
+   *   - 500 with transient body (e.g. MODEL_TEMPORARILY_UNAVAILABLE,
+   *     "unexpectedly high load"): treated as retryable. AWS CodeWhisperer
+   *     surfaces overload as HTTP 500 with a reason code in the body, so a
+   *     plain 500 retry would be unsafe but a body-gated one is.
+   *   - Generic 500 without transient body: not retried (would mask real bugs).
+   *
+   * Delay uses exponential backoff with jitter: base * 2^attempt * (0.5..1.5)
+   * to avoid synchronized retries hammering an already-degraded upstream.
    */
   async execute({ model, body, stream, credentials, signal, log, proxyOptions = null }) {
     const url = this.buildUrl(model, stream, 0);
@@ -42,6 +54,21 @@ export class KiroExecutor extends BaseExecutor {
     // Merge default retry config with provider-specific config
     const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...this.config.retry };
     let retryAttempts = 0;
+    let transientAttempts = 0;
+
+    // Body-gated retry budget for HTTP 500 with transient reason codes.
+    // Kept separate from status-based retryConfig because a plain 500 retry
+    // would be dangerous (could mask client-side bugs); we only retry when the
+    // body explicitly signals "server busy".
+    const transientRetry = this.config.transientRetry || { attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 };
+
+    const sleepWithJitter = (baseMs, attempt) => {
+      const exponential = baseMs * 2 ** attempt;
+      const capped = Math.min(exponential, transientRetry.maxDelayMs || 8000);
+      // Jitter: 50%–150% of capped delay, rounded to ms
+      const jitter = capped * (0.5 + Math.random());
+      return new Promise((resolve) => setTimeout(resolve, Math.round(jitter)));
+    };
 
     while (true) {
       const headers = this.buildHeaders(credentials, stream);
@@ -57,13 +84,40 @@ export class KiroExecutor extends BaseExecutor {
         proxyOptions,
       );
 
-      // Check if should retry based on status code
+      // Check if should retry based on status code (existing path)
       const { attempts: maxRetries, delayMs } = resolveRetryEntry(retryConfig[response.status]);
       if (!response.ok && maxRetries > 0 && retryAttempts < maxRetries) {
         retryAttempts++;
         log?.debug?.("RETRY", `${response.status} retry ${retryAttempts}/${maxRetries} after ${delayMs / 1000}s`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
         continue;
+      }
+
+      // Body-gated retry for transient 500/503 (e.g. MODEL_TEMPORARILY_UNAVAILABLE).
+      // We need to peek the body to decide — clone the response so the original
+      // can still be returned/streamed if we choose not to retry.
+      if (
+        !response.ok &&
+        (response.status === 500 || response.status === 503) &&
+        transientAttempts < (transientRetry.attempts || 0)
+      ) {
+        let bodyText = "";
+        try {
+          // Use a clone so consuming the body here doesn't break the fallback path
+          bodyText = await response.clone().text();
+        } catch {
+          bodyText = "";
+        }
+
+        if (isTransientErrorBody(bodyText)) {
+          transientAttempts++;
+          log?.warn?.(
+            "RETRY",
+            `KIRO ${response.status} transient (${transientAttempts}/${transientRetry.attempts}) | ${bodyText.slice(0, 120)}`,
+          );
+          await sleepWithJitter(transientRetry.baseDelayMs || 1000, transientAttempts - 1);
+          continue;
+        }
       }
 
       if (!response.ok) {

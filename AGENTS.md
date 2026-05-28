@@ -4,9 +4,9 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 
 ## Current Baseline
 
-- Release baseline: **v0.0.55**
+- Release baseline: **v0.0.56**
 - Package: `pod`
-- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.55, latest)
+- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.56, latest)
 - GitHub: `lazuardytech/pod`, branch `main`
 - Data dir: `~/.pod/pod.sqlite`
 - Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap instead)
@@ -37,6 +37,8 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 22. **Vercel relay timeout has 5s safety margin** — pod's `upstreamTimeoutMs` minus 5s is sent as `x-relay-timeout` header. Relay always times out before pod, so the error message is deterministic. Minimum 1s for `relayTimeoutMs`. Do not remove this gap.
 23. **Vercel relay 502/504 gets one retry** — `chatCore.js` retries once with 2s delay when `proxyOptions.vercelRelayUrl` is set AND response is 502/504. Mitigates cold starts. Do not remove without replacement.
 24. **Vercel relay test uses google.com/generate_204** — `proxy-pools/[id]/test` MUST use `https://www.google.com/generate_204` (returns 204 No Content). Do not switch to httpbin.org or other public endpoints — they are unreliable.
+25. **Vercel `RELAY_FUNCTION_CODE` must honour `x-relay-timeout`** — the relay function source string in `vercel-deploy/route.js` reads `req.headers.get("x-relay-timeout")`, parses to int, and aborts upstream fetch via its own `AbortController` if exceeded. On timeout returns 504 with `{ error: "Upstream relay request timed out" }`. Pod sends `upstreamTimeoutMs - 5000` so relay times out first. Re-deploy the relay (via `/proxy-pools/vercel-deploy`) after editing this code or it stays out of sync with rules #22–#23.
+26. **Kiro 500 with `MODEL_TEMPORARILY_UNAVAILABLE` is body-gated retryable** — AWS CodeWhisperer surfaces overload as HTTP 500 with `{ reason: "MODEL_TEMPORARILY_UNAVAILABLE" }`. `KiroExecutor` retries via separate `transientRetry` budget (`{ attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 }`) with exponential backoff + 50%–150% jitter. `errorConfig.js` `isTransientErrorBody()` is the single classifier (matches `model_temporarily_unavailable`, `unexpectedly high load`, `overloaded`, `temporarily unavailable`). Do not retry generic 500 — only when body matches.
 
 ## Verification Before Push
 

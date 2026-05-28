@@ -6,9 +6,8 @@ const VERCEL_API = "https://api.vercel.com";
 
 // Relay function source code deployed to Vercel
 // Forwards requests to target URL specified in x-relay-target header
+// Supports configurable timeout via x-relay-timeout header (no hardcoding)
 const RELAY_FUNCTION_CODE = `
-export const config = { runtime: "edge" };
-
 export default async function handler(req) {
   const target = req.headers.get("x-relay-target");
   const relayPath = req.headers.get("x-relay-path") || "/";
@@ -21,22 +20,43 @@ export default async function handler(req) {
 
   const targetUrl = target.replace(/\\/$/, "") + relayPath;
 
+  // Read relay timeout from header (configurable at request time, no hardcoding)
+  const timeoutMs = parseInt(req.headers.get("x-relay-timeout"), 10) || 0;
+  let controller, timeoutId;
+  if (timeoutMs > 0) {
+    controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  }
+
   const headers = new Headers(req.headers);
   headers.delete("x-relay-target");
   headers.delete("x-relay-path");
+  headers.delete("x-relay-timeout");
   headers.delete("host");
 
-  const response = await fetch(targetUrl, {
-    method: req.method,
-    headers,
-    body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
-    duplex: "half",
-  });
-
-  return new Response(response.body, {
-    status: response.status,
-    headers: response.headers,
-  });
+  try {
+    const response = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+      duplex: "half",
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+    return new Response(response.body, {
+      status: response.status,
+      headers: response.headers,
+    });
+  } catch (err) {
+    if (timeoutId) clearTimeout(timeoutId);
+    const isTimeout = controller && controller.signal.aborted;
+    return new Response(JSON.stringify({
+      error: isTimeout ? "Upstream relay request timed out" : (err.message || "Relay error")
+    }), {
+      status: 504,
+      headers: { "content-type": "application/json" },
+    });
+  }
 }
 `;
 
