@@ -942,3 +942,135 @@ describe("unmapped model", () => {
     expect(capturedBody.params.mode).toBe("copilot");
   });
 });
+
+describe("PerplexityWebExecutor — x-pod-skip-reasoning header", () => {
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  function mockStreamWithThinking() {
+    return mockPplxStream([
+      // Thinking chunk: search step
+      {
+        blocks: [
+          {
+            intended_usage: "pro_search_steps",
+            plan_block: {
+              steps: [
+                {
+                  step_type: "SEARCH_WEB",
+                  search_web_content: { queries: [{ query: "test query" }] },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      // Markdown chunk: actual answer (in-progress so it streams as delta)
+      {
+        blocks: [
+          {
+            intended_usage: "markdown",
+            markdown_block: { chunks: ["final answer"], progress: "IN_PROGRESS" },
+          },
+        ],
+      },
+      // Final DONE marker
+      {
+        blocks: [
+          {
+            intended_usage: "markdown",
+            markdown_block: { chunks: ["final answer"], progress: "DONE" },
+          },
+        ],
+        status: "COMPLETED",
+      },
+    ]);
+  }
+
+  it("includes reasoning_content when header is absent", async () => {
+    global.fetch = vi.fn(async () => mockStreamWithThinking());
+    const exec = new PerplexityWebExecutor();
+    const { response } = await exec.execute({
+      model: "pplx-auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: false,
+      credentials: { apiKey: "c" },
+    });
+    const j = await response.json();
+    // Default behaviour: thinking is collected into reasoning_content
+    expect(j.choices[0].message.reasoning_content).toContain("Searching: test query");
+  });
+
+  it("omits reasoning_content when x-pod-skip-reasoning: true", async () => {
+    global.fetch = vi.fn(async () => mockStreamWithThinking());
+    const exec = new PerplexityWebExecutor();
+    const { response } = await exec.execute({
+      model: "pplx-auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: false,
+      credentials: { apiKey: "c" },
+      clientHeaders: { "x-pod-skip-reasoning": "true" },
+    });
+    const j = await response.json();
+    expect(j.choices[0].message.reasoning_content).toBeUndefined();
+    expect(j.choices[0].message.content).toBe("final answer");
+  });
+
+  it("omits reasoning_content when x-omniroute-skip-reasoning: true (back-compat)", async () => {
+    global.fetch = vi.fn(async () => mockStreamWithThinking());
+    const exec = new PerplexityWebExecutor();
+    const { response } = await exec.execute({
+      model: "pplx-auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: false,
+      credentials: { apiKey: "c" },
+      clientHeaders: { "x-omniroute-skip-reasoning": "true" },
+    });
+    const j = await response.json();
+    expect(j.choices[0].message.reasoning_content).toBeUndefined();
+  });
+
+  it("is case-insensitive on header name", async () => {
+    global.fetch = vi.fn(async () => mockStreamWithThinking());
+    const exec = new PerplexityWebExecutor();
+    const { response } = await exec.execute({
+      model: "pplx-auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: false,
+      credentials: { apiKey: "c" },
+      clientHeaders: { "X-Pod-Skip-Reasoning": "true" },
+    });
+    const j = await response.json();
+    expect(j.choices[0].message.reasoning_content).toBeUndefined();
+  });
+
+  it("streaming: drops reasoning_content chunks when skipReasoning enabled", async () => {
+    global.fetch = vi.fn(async () => mockStreamWithThinking());
+    const exec = new PerplexityWebExecutor();
+    const { response } = await exec.execute({
+      model: "pplx-auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: true,
+      credentials: { apiKey: "c" },
+      clientHeaders: { "x-pod-skip-reasoning": "true" },
+    });
+    const text = await response.text();
+    expect(text).not.toContain("reasoning_content");
+    expect(text).toContain("final answer");
+  });
+
+  it("streaming: keeps reasoning_content chunks when skipReasoning disabled", async () => {
+    global.fetch = vi.fn(async () => mockStreamWithThinking());
+    const exec = new PerplexityWebExecutor();
+    const { response } = await exec.execute({
+      model: "pplx-auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: true,
+      credentials: { apiKey: "c" },
+    });
+    const text = await response.text();
+    expect(text).toContain("reasoning_content");
+    expect(text).toContain("Searching: test query");
+  });
+});

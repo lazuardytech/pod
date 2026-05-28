@@ -308,7 +308,8 @@ function sseChunk(data) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
-function buildStreamingResponse(eventStream, model, cid, created, history, currentMsg, signal) {
+function buildStreamingResponse(eventStream, model, cid, created, history, currentMsg, signal, opts = {}) {
+  const skipReasoning = opts.skipReasoning === true;
   const encoder = new TextEncoder();
   return new ReadableStream({
     async start(controller) {
@@ -349,6 +350,7 @@ function buildStreamingResponse(eventStream, model, cid, created, history, curre
             break;
           }
           if (chunk.thinking) {
+            if (skipReasoning) continue;
             controller.enqueue(
               encoder.encode(
                 sseChunk({
@@ -438,7 +440,8 @@ function buildStreamingResponse(eventStream, model, cid, created, history, curre
   });
 }
 
-async function buildNonStreamingResponse(eventStream, model, cid, created, history, currentMsg, signal) {
+async function buildNonStreamingResponse(eventStream, model, cid, created, history, currentMsg, signal, opts = {}) {
+  const skipReasoning = opts.skipReasoning === true;
   let fullAnswer = "";
   let respBackendUuid = null;
   const thinkingParts = [];
@@ -454,7 +457,7 @@ async function buildNonStreamingResponse(eventStream, model, cid, created, histo
       );
     }
     if (chunk.thinking) {
-      thinkingParts.push(chunk.thinking);
+      if (!skipReasoning) thinkingParts.push(chunk.thinking);
       continue;
     }
     if (chunk.done) {
@@ -497,7 +500,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
     super("perplexity-web", PROVIDERS["perplexity-web"]);
   }
 
-  async execute({ model, body, stream, credentials, signal, log }) {
+  async execute({ model, body, stream, credentials, signal, log, clientHeaders = null }) {
     const messages = body?.messages;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       const errResp = new Response(
@@ -607,6 +610,24 @@ export class PerplexityWebExecutor extends BaseExecutor {
     const cid = `chatcmpl-pplx-${crypto.randomUUID().slice(0, 12)}`;
     const created = Math.floor(Date.now() / 1000);
 
+    // Skip-reasoning hint: when client sets x-pod-skip-reasoning: true, drop
+    // the search/read/plan thinking chunks and stream only the final answer.
+    // Improves perceived TTFT for clients that don't render reasoning_content.
+    const skipReasoning = (() => {
+      if (!clientHeaders) return false;
+      const get = (name) => {
+        if (typeof clientHeaders.get === "function") return clientHeaders.get(name);
+        const lo = String(name).toLowerCase();
+        for (const [k, v] of Object.entries(clientHeaders)) {
+          if (String(k).toLowerCase() === lo) return typeof v === "string" ? v : null;
+        }
+        return null;
+      };
+      const v = get("x-pod-skip-reasoning") || get("x-omniroute-skip-reasoning");
+      return String(v || "").toLowerCase() === "true";
+    })();
+    if (skipReasoning) log?.info?.("PPLX-WEB", "Skip-reasoning enabled (drop thinking chunks)");
+
     let finalResponse;
     if (stream) {
       const sseStream = buildStreamingResponse(
@@ -617,6 +638,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
         parsed.history,
         parsed.currentMsg,
         signal,
+        { skipReasoning },
       );
       finalResponse = new Response(sseStream, {
         status: 200,
@@ -631,6 +653,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
         parsed.history,
         parsed.currentMsg,
         signal,
+        { skipReasoning },
       );
     }
     return { response: finalResponse, url: PPLX_SSE_ENDPOINT, headers, transformedBody: pplxBody };

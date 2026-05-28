@@ -518,7 +518,16 @@ export async function handleChatCore({
   const executeUpstream = async () => {
     const { signal, cleanup } = createUpstreamSignal();
     try {
-      return await executor.execute({ model, body: translatedBody, stream, credentials, signal, log, proxyOptions });
+      return await executor.execute({
+        model,
+        body: translatedBody,
+        stream,
+        credentials,
+        signal,
+        log,
+        proxyOptions,
+        clientHeaders: clientRawRequest?.headers || null,
+      });
     } finally {
       cleanup();
     }
