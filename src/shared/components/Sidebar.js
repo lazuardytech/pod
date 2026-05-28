@@ -75,6 +75,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
           {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
             <Link
               key={kind.id}
+              prefetch={false}
               href={`/media-providers/${kind.id}`}
               onClick={() => {
                 setOpen(false);
@@ -92,6 +93,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
             </Link>
           ))}
           <Link
+            prefetch={false}
             href={COMBINED_WEB_ITEM.href}
             onClick={() => {
               setOpen(false);
@@ -154,6 +156,7 @@ function NavSection({ label, children, collapsed }) {
 function NavItem({ href, label, icon, active, onClick, collapsed }) {
   return (
     <Link
+      prefetch={false}
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
@@ -224,6 +227,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         <div className="flex items-center h-14 px-3 border-b border-charcoal-grey shrink-0 gap-2">
           {!collapsed && (
             <Link
+              prefetch={false}
               href="/endpoint"
               className="flex items-center gap-2.5 flex-1 min-w-0 group px-2 py-4"
               onClick={onClose}
@@ -241,6 +245,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
 
           {collapsed && (
             <Link
+              prefetch={false}
               href="/endpoint"
               onClick={onClose}
               title={APP_CONFIG.name}
@@ -307,6 +312,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                     {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
                       <Link
                         key={kind.id}
+                        prefetch={false}
                         href={`/media-providers/${kind.id}`}
                         onClick={onClose}
                         className={cn(
@@ -321,6 +327,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                       </Link>
                     ))}
                     <Link
+                      prefetch={false}
                       href={COMBINED_WEB_ITEM.href}
                       onClick={onClose}
                       className={cn(
