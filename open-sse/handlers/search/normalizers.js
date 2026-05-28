@@ -69,21 +69,6 @@ function normalizeBrave(data, _query, searchType) {
   return { results, totalResults: container?.totalCount ?? null };
 }
 
-function normalizePerplexity(data, _query, _searchType) {
-  const now = new Date().toISOString();
-  const items = data.results;
-  if (!Array.isArray(items)) return { results: [], totalResults: null };
-  const results = items.map((item, idx) =>
-    makeResult(
-      "perplexity",
-      { title: item.title, url: item.url, snippet: item.snippet, published_at: item.date || item.last_updated },
-      idx,
-      now,
-    ),
-  );
-  return { results, totalResults: results.length };
-}
-
 function normalizeExa(data, _query, _searchType) {
   const now = new Date().toISOString();
   const items = data.results;
@@ -266,7 +251,6 @@ function normalizeSearxng(data, _query, _searchType) {
 const NORMALIZERS = {
   serper: normalizeSerper,
   "brave-search": normalizeBrave,
-  perplexity: normalizePerplexity,
   exa: normalizeExa,
   tavily: normalizeTavily,
   "google-pse": normalizeGooglePse,

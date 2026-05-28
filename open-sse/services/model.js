@@ -30,8 +30,6 @@ const ALIAS_TO_PROVIDER_ID = {
   groq: "groq",
   xai: "xai",
   mistral: "mistral",
-  pplx: "perplexity",
-  perplexity: "perplexity",
   together: "together",
   fireworks: "fireworks",
   cerebras: "cerebras",

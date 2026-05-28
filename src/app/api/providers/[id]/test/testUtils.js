@@ -647,14 +647,6 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         );
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
-      case "perplexity": {
-        const res = await fetchWithConnectionProxy(
-          "https://api.perplexity.ai/models",
-          { headers: { Authorization: `Bearer ${connection.apiKey}` } },
-          effectiveProxy,
-        );
-        return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
-      }
       case "together": {
         const res = await fetchWithConnectionProxy(
           "https://api.together.xyz/v1/models",

@@ -530,10 +530,6 @@ export const PROVIDER_MODELS = {
     { id: "mistral-medium-latest", name: "Mistral Medium 3" },
     { id: "mistral-embed", name: "Mistral Embed", type: "embedding" },
   ],
-  perplexity: [
-    { id: "sonar-pro", name: "Sonar Pro" },
-    { id: "sonar", name: "Sonar" },
-  ],
   together: [
     { id: "meta-llama/Llama-3.3-70B-Instruct-Turbo", name: "Llama 3.3 70B Turbo" },
     { id: "deepseek-ai/DeepSeek-R1", name: "DeepSeek R1" },

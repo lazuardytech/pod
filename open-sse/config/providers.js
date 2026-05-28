@@ -266,10 +266,6 @@ export const PROVIDERS = {
     baseUrl: "https://api.mistral.ai/v1/chat/completions",
     format: "openai",
   },
-  perplexity: {
-    baseUrl: "https://api.perplexity.ai/chat/completions",
-    format: "openai",
-  },
   together: {
     baseUrl: "https://api.together.xyz/v1/chat/completions",
     format: "openai",

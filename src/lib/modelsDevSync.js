@@ -44,7 +44,6 @@ const MODELS_DEV_PROVIDER_MAP = {
   ollama: "ollama",
   blackbox: "blackbox",
   minimax: "minimax",
-  perplexity: "perplexity",
   "amazon-bedrock": "bedrock",
   bedrock: "bedrock",
   azure: "azure",

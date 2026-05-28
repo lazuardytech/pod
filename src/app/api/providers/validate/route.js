@@ -413,7 +413,6 @@ export async function POST(request) {
         case "groq":
         case "xai":
         case "mistral":
-        case "perplexity":
         case "together":
         case "fireworks":
         case "cerebras":
@@ -433,7 +432,6 @@ export async function POST(request) {
             groq: "https://api.groq.com/openai/v1/models",
             xai: "https://api.x.ai/v1/models",
             mistral: "https://api.mistral.ai/v1/models",
-            perplexity: "https://api.perplexity.ai/models",
             together: "https://api.together.xyz/v1/models",
             fireworks: "https://api.fireworks.ai/inference/v1/models",
             cerebras: "https://api.cerebras.ai/v1/models",

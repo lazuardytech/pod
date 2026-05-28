@@ -1,6 +1,6 @@
 /**
  * Wrap chat-completions endpoints (with built-in web search) into the unified
- * /v1/search response format. Supports gemini, openai, xai, kimi, minimax, perplexity.
+ * /v1/search response format. Supports gemini, openai, xai, kimi, minimax.
  */
 
 const REQUEST_TIMEOUT_MS = 15000;
@@ -240,27 +240,6 @@ const CHAT_SEARCH_CONFIG = {
           }
         }
       }
-      const tokens = data?.usage?.total_tokens || 0;
-      return { text, citations, tokens };
-    },
-  },
-
-  perplexity: {
-    endpoint: () => "https://api.perplexity.ai/chat/completions",
-    defaultModel: "sonar",
-    buildBody: (query, model) => ({
-      model,
-      messages: [{ role: "user", content: query }],
-    }),
-    buildHeaders: (token) => ({
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    }),
-    extractAnswer: (data) => {
-      const msg = data?.choices?.[0]?.message || {};
-      const text = msg.content || "";
-      const raw = data?.citations || [];
-      const citations = Array.isArray(raw) ? raw.map(normalizeCitation).filter(Boolean) : [];
       const tokens = data?.usage?.total_tokens || 0;
       return { text, citations, tokens };
     },
