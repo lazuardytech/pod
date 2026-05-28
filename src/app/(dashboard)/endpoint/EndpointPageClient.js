@@ -184,7 +184,7 @@ export default function APIPageClient({ machineId }) {
         }
       }
     } catch (error) {
-      console.log("Error loading settings:", error);
+      console.error("Error loading settings:", error);
     } finally {
       setTunnelChecking(false);
     }
@@ -199,7 +199,7 @@ export default function APIPageClient({ machineId }) {
       });
       if (res.ok) setTunnelDashboardAccess(value);
     } catch (error) {
-      console.log("Error updating tunnelDashboardAccess:", error);
+      console.error("Error updating tunnelDashboardAccess:", error);
     }
   };
 
@@ -212,7 +212,7 @@ export default function APIPageClient({ machineId }) {
       });
       if (res.ok) setRequireApiKey(value);
     } catch (error) {
-      console.log("Error updating requireApiKey:", error);
+      console.error("Error updating requireApiKey:", error);
     }
   };
 
@@ -225,7 +225,7 @@ export default function APIPageClient({ machineId }) {
       });
       if (res.ok) setRtkEnabledState(value);
     } catch (error) {
-      console.log("Error updating rtkEnabled:", error);
+      console.error("Error updating rtkEnabled:", error);
     }
   };
 
@@ -237,7 +237,7 @@ export default function APIPageClient({ machineId }) {
         body: JSON.stringify(patch),
       });
     } catch (error) {
-      console.log("Error updating setting:", error);
+      console.error("Error updating setting:", error);
     }
   };
 
@@ -259,7 +259,7 @@ export default function APIPageClient({ machineId }) {
         setKeys(keysData.keys || []);
       }
     } catch (error) {
-      console.log("Error fetching data:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -659,7 +659,7 @@ export default function APIPageClient({ machineId }) {
         resetCreateKeyForm();
       }
     } catch (error) {
-      console.log("Error creating key:", error);
+      console.error("Error creating key:", error);
     }
   };
 
@@ -683,7 +683,7 @@ export default function APIPageClient({ machineId }) {
         });
       }
     } catch (error) {
-      console.log("Error deleting key:", error);
+      console.error("Error deleting key:", error);
     }
   };
 
@@ -706,7 +706,7 @@ export default function APIPageClient({ machineId }) {
         setEditKeyName("");
       }
     } catch (error) {
-      console.log("Error updating key:", error);
+      console.error("Error updating key:", error);
     }
   };
 
@@ -721,7 +721,7 @@ export default function APIPageClient({ machineId }) {
         setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, isActive } : k)));
       }
     } catch (error) {
-      console.log("Error toggling key:", error);
+      console.error("Error toggling key:", error);
     }
   };
 

@@ -120,7 +120,7 @@ export default function PassthroughModelsSection({
       await onSetAlias(modelId, defaultAlias);
       setNewModel("");
     } catch (error) {
-      console.log("Error adding model:", error);
+      console.error("Error adding model:", error);
     } finally {
       setAdding(false);
     }

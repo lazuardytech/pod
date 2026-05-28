@@ -442,7 +442,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
       setProviderStrategy(override.fallbackStrategy || null);
       setProviderStickyLimit(override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1");
     } catch (e) {
-      console.log("ConnectionsCard fetch error:", e);
+      console.error("ConnectionsCard fetch error:", e);
     } finally {
       setLoading(false);
     }
@@ -469,7 +469,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
         body: JSON.stringify({ providerStrategies: updated }),
       });
     } catch (e) {
-      console.log("saveStrategy error:", e);
+      console.error("saveStrategy error:", e);
     }
   };
 
@@ -501,7 +501,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
       const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
       if (res.ok) setConnections((prev) => prev.filter((c) => c.id !== id));
     } catch (e) {
-      console.log("delete error:", e);
+      console.error("delete error:", e);
     }
   };
 
@@ -514,7 +514,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
       });
       if (res.ok) setConnections((prev) => prev.map((c) => (c.id === id ? { ...c, isActive } : c)));
     } catch (e) {
-      console.log("toggle error:", e);
+      console.error("toggle error:", e);
     }
   };
 
@@ -534,7 +534,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
           ),
         );
     } catch (e) {
-      console.log("proxy error:", e);
+      console.error("proxy error:", e);
     }
   };
 
@@ -550,7 +550,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
         setShowAddModal(false);
       }
     } catch (e) {
-      console.log("save apikey error:", e);
+      console.error("save apikey error:", e);
     }
   };
 
@@ -566,7 +566,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
         setShowEditModal(false);
       }
     } catch (e) {
-      console.log("update connection error:", e);
+      console.error("update connection error:", e);
     }
   };
 

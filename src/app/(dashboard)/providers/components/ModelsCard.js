@@ -189,7 +189,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
       if (connRes.ok) setConnections((connData.connections || []).filter((c) => c.provider === providerId));
       if (customRes.ok) setCustomModels(customData.models || []);
     } catch (e) {
-      console.log("ModelsCard fetch error:", e);
+      console.error("ModelsCard fetch error:", e);
     }
   }, [providerId]);
 
@@ -207,7 +207,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
       });
       if (res.ok) await fetchData();
     } catch (e) {
-      console.log("set alias error:", e);
+      console.error("set alias error:", e);
     }
   };
 
@@ -216,7 +216,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
       const res = await fetch(`/api/models/alias?alias=${encodeURIComponent(alias)}`, { method: "DELETE" });
       if (res.ok) await fetchData();
     } catch (e) {
-      console.log("delete alias error:", e);
+      console.error("delete alias error:", e);
     }
   };
 
@@ -232,7 +232,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
         window.dispatchEvent(new CustomEvent("customModelChanged"));
       }
     } catch (e) {
-      console.log("add custom model error:", e);
+      console.error("add custom model error:", e);
     }
   };
 
@@ -245,7 +245,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
         window.dispatchEvent(new CustomEvent("customModelChanged"));
       }
     } catch (e) {
-      console.log("delete custom model error:", e);
+      console.error("delete custom model error:", e);
     }
   };
 

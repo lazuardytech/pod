@@ -66,7 +66,7 @@ export default function ProxyPoolsPage() {
         setProxyPools(data.proxyPools || []);
       }
     } catch (error) {
-      console.log("Error fetching proxy pools:", error);
+      console.error("Error fetching proxy pools:", error);
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ export default function ProxyPoolsPage() {
         toast.error(data.error || "Failed to save proxy pool");
       }
     } catch (error) {
-      console.log("Error saving proxy pool:", error);
+      console.error("Error saving proxy pool:", error);
     } finally {
       setSaving(false);
     }
@@ -148,7 +148,7 @@ export default function ProxyPoolsPage() {
         toast.error(data.error || "Failed to delete proxy pool");
       }
     } catch (error) {
-      console.log("Error deleting proxy pool:", error);
+      console.error("Error deleting proxy pool:", error);
       toast.error("Failed to delete proxy pool");
     }
   };
@@ -167,7 +167,7 @@ export default function ProxyPoolsPage() {
       await fetchProxyPools();
       toast.success(data.ok ? "Proxy test passed" : "Proxy test failed");
     } catch (error) {
-      console.log("Error testing proxy pool:", error);
+      console.error("Error testing proxy pool:", error);
       toast.error("Failed to test proxy");
     } finally {
       setTestingId(null);
@@ -188,7 +188,7 @@ export default function ProxyPoolsPage() {
         toast.error("Failed to update active state");
       }
     } catch (error) {
-      console.log("Error toggling active:", error);
+      console.error("Error toggling active:", error);
       setProxyPools((prev) => prev.map((p) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
     }
   };
@@ -357,7 +357,7 @@ export default function ProxyPoolsPage() {
         toast.error(data.error || "Deploy failed");
       }
     } catch (error) {
-      console.log("Error deploying Vercel relay:", error);
+      console.error("Error deploying Vercel relay:", error);
       toast.error("Deploy failed");
     } finally {
       setDeploying(false);
@@ -468,7 +468,7 @@ export default function ProxyPoolsPage() {
       setShowBatchImportModal(false);
       toast.success(`Batch import completed: Created ${created}, Skipped ${skipped}, Failed ${failed}`);
     } catch (error) {
-      console.log("Error batch importing proxies:", error);
+      console.error("Error batch importing proxies:", error);
       toast.error("Batch import failed");
     } finally {
       setImporting(false);

@@ -36,6 +36,6 @@ export async function callCloudWithMachineId(request) {
 // Function to periodically sync provider data to cloud (now a no-op)
 export function startProviderSync(cloudUrl, intervalMs = 900000) {
   // Default 15 minutes
-  console.log("Frontend sync is disabled. Use backend sync instead.");
+  console.warn("Frontend sync is disabled. Use backend sync instead.");
   return null;
 }

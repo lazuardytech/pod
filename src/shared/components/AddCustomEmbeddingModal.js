@@ -64,7 +64,7 @@ export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, on
         toast.error(data?.error || `Failed to ${isEdit ? "save" : "create"} node (HTTP ${res.status})`);
       }
     } catch (error) {
-      console.log("Error saving custom embedding node:", error);
+      console.error("Error saving custom embedding node:", error);
       toast.error("Network error — could not reach the server");
     } finally {
       setSubmitting(false);

@@ -21,7 +21,7 @@ export async function getConsistentMachineId(salt = null) {
     // Return only first 16 characters for brevity
     return hashedMachineId.substring(0, 16);
   } catch (error) {
-    console.log("Error getting machine ID:", error);
+    console.error("Error getting machine ID:", error);
     // Fallback to random ID if node-machine-id fails
     return crypto.randomUUID
       ? crypto.randomUUID()
@@ -42,7 +42,7 @@ export async function getRawMachineId() {
   try {
     return machineIdSync();
   } catch (error) {
-    console.log("Error getting raw machine ID:", error);
+    console.error("Error getting raw machine ID:", error);
     // Fallback to random ID if node-machine-id fails
     return crypto.randomUUID
       ? crypto.randomUUID()

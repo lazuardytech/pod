@@ -137,7 +137,7 @@ export default function ProvidersPage() {
         if (connectionsRes.ok) setConnections(connectionsData.connections || []);
         if (nodesRes.ok) setProviderNodes(nodesData.nodes || []);
       } catch (error) {
-        console.log("Error fetching data:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -801,7 +801,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
         toast.error(data?.error || `Failed to create node (HTTP ${res.status})`);
       }
     } catch (error) {
-      console.log("Error creating OpenAI Compatible node:", error);
+      console.error("Error creating OpenAI Compatible node:", error);
       toast.error("Network error — could not reach the server");
     } finally {
       setSubmitting(false);
@@ -994,7 +994,7 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
         toast.error(data?.error || `Failed to create node (HTTP ${res.status})`);
       }
     } catch (error) {
-      console.log("Error creating Anthropic Compatible node:", error);
+      console.error("Error creating Anthropic Compatible node:", error);
       toast.error("Network error — could not reach the server");
     } finally {
       setSubmitting(false);
