@@ -4,9 +4,9 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 
 ## Current Baseline
 
-- Release baseline: **v0.0.63**
+- Release baseline: **v0.0.64**
 - Package: `pod`
-- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.63, latest)
+- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.64, latest)
 - GitHub: `lazuardytech/pod`, branch `main`
 - Data dir: `~/.pod/pod.sqlite`
 - Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap instead)

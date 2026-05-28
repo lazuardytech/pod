@@ -1,13 +1,11 @@
-import os from "node:os";
 import fs from "node:fs";
-import path from "node:path";
+import os from "node:os";
 import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings } from "@/lib/localDb.js";
-import { getDatabase } from "@/lib/sqlite/connection.js";
-import { getQueueDepths, getPendingStats, getConnectionNameCacheStats } from "@/lib/usageDb.js";
-import { getCacheStats } from "@/lib/semanticCache.js";
-import { getInFlightStats } from "@/lib/semanticCache.js";
 import { getPromptCache } from "@/lib/cacheLayer.js";
 import { getMemoryStoreStats } from "@/lib/memory/store.js";
+import { getCacheStats, getInFlightStats } from "@/lib/semanticCache.js";
+import { DATA_DIR, SQLITE_FILE, getDatabase } from "@/lib/sqlite/connection.js";
+import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/lib/usageDb.js";
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync.js";
 import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler.js";
 import { displayVersion } from "@/shared/constants/config.js";
@@ -47,23 +45,37 @@ function humanizeBytes(bytes) {
 
 function getSystemInfo() {
   const mem = process.memoryUsage();
-  const memoryPressure = mem.heapTotal > 0 ? mem.heapUsed / mem.heapTotal : 0;
+  const totalMemory = os.totalmem();
+  const freeMemory = os.freemem();
+  // Heap pressure: heapUsed / heapTotal. Clamp to [0, 1] because Bun can
+  // report transient heapUsed > heapTotal during GC sweeps when external
+  // ArrayBuffers / shared memory are accounted differently from V8.
+  const rawHeapPressure = mem.heapTotal > 0 ? mem.heapUsed / mem.heapTotal : 0;
+  const heapPressure = Math.max(0, Math.min(1, rawHeapPressure));
+  // RSS pressure: process resident size vs total system memory — closer to
+  // what `docker stats` shows. Useful for OOM forecasting.
+  const rssPressure = totalMemory > 0 ? Math.min(1, mem.rss / totalMemory) : 0;
   return {
     uptime: Math.floor((Date.now() - START_TIME) / 1000),
     nodeVersion: process.version,
     bunVersion: process.versions.bun ?? null,
     platform: process.platform,
     arch: process.arch,
-    memoryUsage: { rss: mem.rss, heapUsed: mem.heapUsed, heapTotal: mem.heapTotal },
+    memoryUsage: { rss: mem.rss, heapUsed: mem.heapUsed, heapTotal: mem.heapTotal, external: mem.external ?? 0 },
     memoryUsageHumanized: {
       rss: humanizeBytes(mem.rss),
       heapUsed: humanizeBytes(mem.heapUsed),
       heapTotal: humanizeBytes(mem.heapTotal),
+      external: humanizeBytes(mem.external ?? 0),
     },
-    memoryPressure: Math.round(memoryPressure * 10000) / 10000,
-    memoryPressurePercent: `${(memoryPressure * 100).toFixed(1)}%`,
-    freeMemory: os.freemem(),
-    totalMemory: os.totalmem(),
+    // Heap pressure (V8/JSCore heap saturation) — always 0..1.
+    memoryPressure: Math.round(heapPressure * 10000) / 10000,
+    memoryPressurePercent: `${(heapPressure * 100).toFixed(1)}%`,
+    // RSS pressure (process vs system memory) — better leak indicator.
+    rssPressure: Math.round(rssPressure * 10000) / 10000,
+    rssPressurePercent: `${(rssPressure * 100).toFixed(1)}%`,
+    freeMemory,
+    totalMemory,
     loadAvg: os.loadavg(),
     cpus: os.cpus().length,
     processStartedAt: new Date(START_TIME).toISOString(),
@@ -92,12 +104,29 @@ function getDbInfo() {
 
 function getDataDirSizeBytes() {
   try {
-    const homeDir = process.env.HOME || process.env.USERPROFILE || "/root";
-    const dataDir = path.join(homeDir, ".pod");
-    // Best-effort — stat the sqlite file (data dir itself may be large)
-    const dbPath = path.join(dataDir, "pod.sqlite");
-    const stat = fs.statSync(dbPath);
-    return stat.size;
+    // Use the canonical SQLITE_FILE path resolved by sqlite/connection.js so
+    // we report the actual file location, including DATA_DIR env override and
+    // the read-only fallback path used in containers.
+    if (fs.existsSync(SQLITE_FILE)) {
+      let total = fs.statSync(SQLITE_FILE).size;
+      // Add WAL + SHM if present (can be sizeable on a busy DB)
+      for (const suffix of ["-wal", "-shm"]) {
+        const f = SQLITE_FILE + suffix;
+        try {
+          if (fs.existsSync(f)) total += fs.statSync(f).size;
+        } catch {}
+      }
+      return total;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getDataDirPath() {
+  try {
+    return DATA_DIR;
   } catch {
     return null;
   }
@@ -404,9 +433,12 @@ export async function buildHealthPayload() {
       memoryUsageHumanized: system.memoryUsageHumanized,
       memoryPressure: system.memoryPressure,
       memoryPressurePercent: system.memoryPressurePercent,
+      rssPressure: system.rssPressure,
+      rssPressurePercent: system.rssPressurePercent,
+      dataDir: getDataDirPath(),
       dataDirSizeBytes,
+      dataDirSizeHumanized: dataDirSizeBytes ? humanizeBytes(dataDirSizeBytes) : null,
       processStartedAt: system.processStartedAt,
-      dataDir: dataDirSizeBytes ? humanizeBytes(dataDirSizeBytes) : null,
     },
     database,
     providers,

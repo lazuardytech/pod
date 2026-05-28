@@ -213,16 +213,16 @@ describe("health endpoint auth", () => {
   });
 
   it("returns 401 when requireApiKey=true and no key provided", async () => {
-    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true });
+    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true, requireLogin: true });
     const request = new Request("http://localhost/api/monitoring/health");
     const response = await GET(request);
     expect(response.status).toBe(401);
     const body = await response.json();
-    expect(body.error).toBe("API key required");
+    expect(body.error).toBe("Unauthorized");
   });
 
   it("returns 401 when requireApiKey=true and invalid key", async () => {
-    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true });
+    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true, requireLogin: true });
     vi.mocked(validateApiKey).mockResolvedValue(false);
     const request = new Request("http://localhost/api/monitoring/health", {
       headers: { Authorization: "Bearer invalid-key" },
@@ -232,7 +232,7 @@ describe("health endpoint auth", () => {
   });
 
   it("returns 200 when requireApiKey=true and valid key", async () => {
-    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true });
+    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true, requireLogin: true });
     vi.mocked(validateApiKey).mockResolvedValue(true);
     const request = new Request("http://localhost/api/monitoring/health", {
       headers: { Authorization: "Bearer valid-key" },
@@ -243,8 +243,8 @@ describe("health endpoint auth", () => {
     expect(body).toHaveProperty("status");
   });
 
-  it("returns 200 when requireApiKey=false without auth", async () => {
-    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: false });
+  it("returns 200 when requireApiKey=false and requireLogin=false (fully public)", async () => {
+    vi.mocked(getSettings).mockResolvedValue({ requireApiKey: false, requireLogin: false });
     const request = new Request("http://localhost/api/monitoring/health");
     const response = await GET(request);
     expect(response.status).toBe(200);

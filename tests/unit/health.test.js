@@ -146,6 +146,8 @@ describe("GET /api/monitoring/health (integration)", () => {
         { id: "key-2", key: "sk-test-2" },
       ],
       getSettings: async () => ({
+        requireApiKey: false,
+        requireLogin: false,
         tunnelEnabled: true,
         tunnelUrl: "https://test.trycloudflare.com",
         tailscaleEnabled: false,
@@ -281,7 +283,7 @@ describe("GET /api/monitoring/health — degraded DB", () => {
       getProviderConnections: async () => [],
       getCombos: async () => [],
       getApiKeys: async () => [],
-      getSettings: async () => ({}),
+      getSettings: async () => ({ requireApiKey: false, requireLogin: false }),
       getProviderNodes: async () => [],
     }));
 
@@ -317,7 +319,7 @@ describe("GET /api/monitoring/health — SQLite unavailable", () => {
       getProviderConnections: async () => [],
       getCombos: async () => [],
       getApiKeys: async () => [],
-      getSettings: async () => ({}),
+      getSettings: async () => ({ requireApiKey: false, requireLogin: false }),
       getProviderNodes: async () => [],
     }));
 
@@ -373,7 +375,7 @@ describe("GET /api/monitoring/health — localDb partial failure", () => {
       },
       getCombos: async () => [],
       getApiKeys: async () => [],
-      getSettings: async () => ({}),
+      getSettings: async () => ({ requireApiKey: false, requireLogin: false }),
       getProviderNodes: async () => [],
     }));
 

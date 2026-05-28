@@ -1,5 +1,4 @@
-import { getSettings, validateApiKey } from "@/lib/localDb";
-import { extractApiKey } from "@/sse/services/auth.js";
+import { checkMonitoringAuth } from "../_auth.js";
 import { buildHealthPayload } from "../_health.js";
 
 export const dynamic = "force-dynamic";
@@ -7,27 +6,11 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/monitoring/health/stream
  * SSE stream — pushes full health snapshot every 10s.
- * Auth-protected when requireApiKey=true.
+ * Auth (see ../_auth.js): API key (Bearer / x-api-key) OR dashboard JWT cookie.
  */
 export async function GET(request) {
-  // Auth check
-  const settings = await getSettings();
-  if (settings.requireApiKey) {
-    const apiKey = extractApiKey(request);
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: "API key required" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    const valid = await validateApiKey(apiKey);
-    if (!valid) {
-      return new Response(JSON.stringify({ error: "API key required" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-  }
+  const unauthorized = await checkMonitoringAuth(request);
+  if (unauthorized) return unauthorized;
 
   let closed = false;
   const encoder = new TextEncoder();
