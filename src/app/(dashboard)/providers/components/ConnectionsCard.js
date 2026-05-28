@@ -333,6 +333,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
         <div>
           <label className="text-xs text-text-muted mb-1 block">Name</label>
           <input
+            aria-label="Name"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -344,6 +345,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
           <div className="flex-1">
             <label className="text-xs text-text-muted mb-1 block">API Key</label>
             <input
+              aria-label="API Key"
               type="password"
               className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               value={formData.apiKey}
@@ -365,6 +367,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
         <div>
           <label className="text-xs text-text-muted mb-1 block">Priority</label>
           <input
+            aria-label="Priority"
             type="number"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={formData.priority}
@@ -594,6 +597,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-text-muted">Sticky:</span>
                 <input
+                  aria-label="Sticky limit"
                   type="number"
                   min={1}
                   value={providerStickyLimit}

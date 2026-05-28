@@ -93,6 +93,7 @@ export default function IFlowCookieModal({ isOpen, onSuccess, onClose }) {
             <div className="space-y-2">
               <label className="block text-sm font-medium text-text-primary">Cookie String</label>
               <textarea
+                aria-label="Cookie string"
                 value={cookie}
                 onChange={(e) => setCookie(e.target.value)}
                 placeholder="BXAuth=xxx; ..."

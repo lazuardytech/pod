@@ -202,6 +202,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
               search
             </span>
             <input
+              aria-label="Search console logs"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

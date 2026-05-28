@@ -4,7 +4,7 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 
 ## Current Baseline
 
-- Release baseline: **v0.0.59**
+- Release baseline: **v0.0.60**
 - Package: `pod`
 - Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.58, latest)
 - GitHub: `lazuardytech/pod`, branch `main`

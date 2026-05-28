@@ -5,7 +5,7 @@ export const APP_CONFIG = {
   name: "Pod",
   description: "AI Infrastructure Management",
   version: pkg.version,
-  displayVersion: "0.0.59",
+  displayVersion: "0.0.60",
 };
 
 // GitHub configuration

@@ -256,6 +256,7 @@ function HeaderSearch() {
         search
       </span>
       <input
+        aria-label="Search"
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}

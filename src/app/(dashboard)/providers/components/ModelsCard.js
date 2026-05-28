@@ -130,6 +130,7 @@ function AddCustomModelModal({ isOpen, onSave, onClose }) {
         <div>
           <label className="text-xs text-text-muted mb-1 block">Model ID</label>
           <input
+            aria-label="Model ID"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={modelId}
             onChange={(e) => setModelId(e.target.value)}

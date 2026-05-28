@@ -67,6 +67,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
           <label className="text-sm font-medium mb-1.5 block">Model ID</label>
           <div className="flex gap-2">
             <input
+              aria-label="Model ID"
               type="text"
               value={modelId}
               onChange={(e) => {

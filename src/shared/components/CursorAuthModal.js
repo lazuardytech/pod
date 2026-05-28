@@ -154,6 +154,7 @@ export default function CursorAuthModal({ isOpen, onSuccess, onClose }) {
                 Access Token <span className="text-red-500">*</span>
               </label>
               <textarea
+                aria-label="Access token"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
                 placeholder="Access token will be auto-filled..."

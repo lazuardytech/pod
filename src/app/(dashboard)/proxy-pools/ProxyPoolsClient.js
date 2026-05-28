@@ -601,6 +601,7 @@ export default function ProxyPoolsPage() {
               <div key={pool.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <input
+                    aria-label="Select proxy pool"
                     type="checkbox"
                     checked={selectedIds.includes(pool.id)}
                     onChange={() => toggleSelect(pool.id)}
@@ -687,6 +688,7 @@ export default function ProxyPoolsPage() {
           <div>
             <label className="text-sm font-medium text-text-main mb-1 block">Paste Proxy List (One per line)</label>
             <textarea
+              aria-label="Proxy list"
               value={batchImportText}
               onChange={(e) => setBatchImportText(e.target.value)}
               placeholder={"http://user:pass@127.0.0.1:7897\n127.0.0.1:7897:user:pass"}

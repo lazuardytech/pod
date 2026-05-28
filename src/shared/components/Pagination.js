@@ -37,6 +37,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-fog-grey">Rows</span>
             <select
+              aria-label="Rows per page"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-gunmetal text-[12px] text-porcelain focus:outline-none focus:border-porcelain/50 cursor-pointer"

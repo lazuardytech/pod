@@ -29,6 +29,7 @@ function RequestLogsToolbar({
     <div className="flex items-center gap-2">
       {providerOptions.length > 0 && (
         <select
+          aria-label="Filter by provider"
           value={filterProvider}
           onChange={(e) => setFilterProvider(e.target.value)}
           className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[130px]"
@@ -43,6 +44,7 @@ function RequestLogsToolbar({
         </select>
       )}
       <select
+        aria-label="Sort logs"
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
         className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[120px]"
@@ -84,6 +86,7 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
       <span className="text-[11px] text-fog-grey">{count} configured</span>
       <div className="w-px h-4 bg-charcoal-grey" />
       <select
+        aria-label="Sort proxy logs"
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
         className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[120px]"

@@ -1006,7 +1006,6 @@ export default function BasicChatPageClient() {
                       type="button"
                       onClick={() => removeAttachment(attachment.id)}
                       className="text-white/55 hover:text-white"
-                      aria-label="Remove attachment"
                     >
                       <span className="material-symbols-outlined text-[18px]">close</span>
                     </button>
@@ -1018,6 +1017,7 @@ export default function BasicChatPageClient() {
             <div className="mx-auto w-full max-w-3xl px-4 pb-2">
               <div className="rounded-[26px] bg-[#2f2f2f] px-3 pt-3 pb-2 shadow-[0_0_15px_rgba(0,0,0,0.10)] ring-1 ring-white/5">
                 <textarea
+                  aria-label="Message"
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={handleKeyDown}
@@ -1038,12 +1038,12 @@ export default function BasicChatPageClient() {
                       <span className="material-symbols-outlined text-[20px]">attach_file</span>
                     </button>
                     <input
+                      aria-label="Attach images"
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       multiple
                       className="hidden"
-                      aria-label="Attach images"
                       onChange={handleAttachFiles}
                     />
                     <span className="text-xs font-medium text-white/30 truncate max-w-[120px]">

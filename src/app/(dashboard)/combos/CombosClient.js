@@ -231,7 +231,6 @@ export default function CombosPage() {
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40 disabled:opacity-50"
             }`}
             title="Test all combos"
-            aria-label="Test all combos"
           >
             <span className={`material-symbols-outlined text-[14px]${testingAll ? " animate-spin" : ""}`}>
               {testingAll ? "progress_activity" : "play_arrow"}
@@ -529,6 +528,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
       {/* Inline editable model value */}
       {editing ? (
         <input
+          aria-label="Model value"
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

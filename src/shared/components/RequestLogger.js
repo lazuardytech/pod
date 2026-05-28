@@ -256,6 +256,7 @@ export default function RequestLogger({
               search
             </span>
             <input
+              aria-label="Search request logs"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

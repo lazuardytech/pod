@@ -416,6 +416,7 @@ export default function ModelSelectModal({
             search
           </span>
           <input
+            aria-label="Search models"
             type="text"
             placeholder="Search..."
             value={searchQuery}

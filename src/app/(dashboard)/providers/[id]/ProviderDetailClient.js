@@ -1121,6 +1121,7 @@ export default function ProviderDetailPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-muted font-medium">Thinking Effort</span>
                 <select
+                  aria-label="Thinking effort"
                   value={effortMode}
                   onChange={(e) => handleEffortModeChange(e.target.value)}
                   className="text-xs px-2 py-1 border border-border rounded-md bg-background focus:outline-none focus:border-primary"
@@ -1142,6 +1143,7 @@ export default function ProviderDetailPage() {
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-text-muted">Sticky:</span>
                     <input
+                      aria-label="Sticky limit"
                       type="number"
                       min={1}
                       value={providerStickyLimit}
