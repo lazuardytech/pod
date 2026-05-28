@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardSkeleton, Input, Modal, Select, Toggle } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
-import { APIKEY_PROVIDERS, OAUTH_PROVIDERS } from "@/shared/constants/config";
+import { APIKEY_PROVIDERS, OAUTH_PROVIDERS, WEB_COOKIE_PROVIDERS } from "@/shared/constants/config";
 import {
   AI_PROVIDERS,
   ANTHROPIC_COMPATIBLE_PREFIX,
@@ -458,11 +458,9 @@ export default function ProvidersPage() {
       )}
 
       {/* Web Cookie Providers — use browser subscription cookie instead of API key */}
-      {/* <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            Web Cookie Providers{" "}
-          </h2>
+          <h2 className="text-xl font-semibold flex items-center gap-2">Web Cookie Providers</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Object.entries(WEB_COOKIE_PROVIDERS).map(([key, info]) => (
@@ -476,7 +474,7 @@ export default function ProvidersPage() {
             />
           ))}
         </div>
-      </div> */}
+      </div>
 
       <AddOpenAICompatibleModal
         isOpen={showAddCompatibleModal}
