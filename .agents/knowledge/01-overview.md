@@ -2,7 +2,7 @@
 
 Pod is Lazuardy Tech's internal AI routing proxy.
 
-Current baseline: **v0.0.31**.
+Current baseline: **v0.0.56**.
 
 ## Core Capabilities
 

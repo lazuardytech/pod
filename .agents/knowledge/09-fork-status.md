@@ -37,6 +37,24 @@
 | `v0.0.29` | Tunnel enable error sanitization + non-fatal `fetchData()`; cloud worker `testClaude.js` stub (410 deprecated); Vertex AI stream guard tests (26); console logs scroll-to-bottom on `init`; quota hide-disabled toggle fix; README env vars (`INITIAL_PASSWORD`, `BASE_URL`, `CLOUD_URL`); 533 total tests (31 files) |
 | `v0.0.30` | (intermediate) |
 | `v0.0.31` | Semantic cache fixes: SQLite TTL (`strftime` ISO 8601), `memoryOwnerId` in signature (cross-user cache bleed prevention), temperature `null`→`1` normalization, 512KB response limit, `clearInFlight` unconditional in all 3 response paths; memory strategy fixes (`"recent"` explicit alias for `"exact"`, `/api/memory` added to `PROTECTED_API_PATHS`); 711 total tests (37 files) |
+| `v0.0.32` | Codex 502 invalid JSON response fix; remove `disableCodexStreaming` workaround |
+| `v0.0.33` | /quota double-click expand bug + Last Request At column; localStorage toggle hydration fix |
+| `v0.0.34–v0.0.35` | (intermediate, no published changelog) |
+| `v0.0.36` | UI polish: rename 'Providers' → 'LLM Providers', breadcrumb fixes, /media-providers placeholder centering, ReactFlow viewport persists to sessionStorage |
+| `v0.0.37–v0.0.41` | (intermediate, no published changelog) |
+| `v0.0.42` | Tunnel enable 'Unable to connect' error — 3 root-cause fixes; /usage Details 502 fix, datetime-local → DatePicker, Est. Cost to 2dp |
+| `v0.0.43–v0.0.45` | (intermediate, no published changelog) |
+| `v0.0.46` | Adopt selected fixes from decolua/9router v0.4.40–v0.4.62; remove 9router.com short-URL dependency from Cloudflare tunnel; Codex OAuth `redirect_uri` hardcoded to `localhost:1455`; remove dead MITM exports; 781 tests pass |
+| `v0.0.47` | Provider smoketest audit (`tests/smoke/all-providers.smoke.test.js`, +80 tests); fix all 4 minor inconsistencies caught by audit (icons for qoder/gitlab/codebuddy, curated model lists for qoder/chutes/gitlab/codebuddy); 861 total tests |
+| `v0.0.48` | Provider verification sweep — close 6 unverified gaps from v0.0.46 smoketest. +307 tests across 13 new files (response parsing, OAuth refresh for 9 providers, cookie/web canary, Vertex SA + Cloudflare AI, rate-limit/lockout, region-aware). **3 latent crash fixes**: `refreshGitHubToken`, `refreshIflowToken`, `refreshKiroToken` wrapped in try/catch matching existing pattern. 1168 tests pass |
+| `v0.0.49` | Sink-level log sanitizer (`src/sse/utils/logger.js`) closes CodeQL #39 clear-text-logging. Sensitive object keys (apiKey, access_token, refresh_token, cookie, authorization, password, secret, private_key, sa_json) redacted; token-shaped strings (Bearer, sk-, JWT eyJ) masked inline. Defense-in-depth on top of call-site `maskKey()`. +20 tests, 1188 total |
+| `v0.0.50` | Resolve all 14 open CodeQL alerts: 4 fixed (SSRF in `models/test/route.js`, `models/availability/route.js`, `oauth/gitlab/pat/route.js` — hostname allowlist + URL reconstruct), 10 dismissed with justification (request-forgery in by-design proxy endpoints, xss-through-dom in React JSX with sanitizers, insufficient-password-hash for high-entropy API key tokens) |
+| `v0.0.51` | Harden CodeQL #32–#35 fixes after re-scan still flagged. `models/test|availability/route.js` now derive port from `process.env.PORT` (validated 1–65535) with fallback 20128 — no `request.url` is touched. `oauth/gitlab/pat/route.js` reconstructs fetch URL from parsed components. **0 open CodeQL alerts** |
+| `v0.0.52` | Remove paid Perplexity API provider entirely (104 lines across 14 files); `perplexity-web` (cookie) untouched. Configs, search, normalizer, caller, model alias, validation, models.dev sync all stripped of `perplexity` (API). 1187 tests |
+| `v0.0.53` | Render Web Cookie Providers section in `/providers` UI (was JSX-comment-wrapped). Import `WEB_COOKIE_PROVIDERS` from `@/shared/constants/config` and un-comment. `grok-web` and `perplexity-web` cards now visible |
+| `v0.0.54` | `x-pod-skip-reasoning: true` opt-in header for `perplexity-web` perceived TTFT. Drops upstream search/read/plan thinking chunks; only markdown answer streamed. Same total latency, cleaner UX for clients that don't render `reasoning_content`. Cache + in-flight dedup verified to already work for perplexity-web (signature excludes `frontend_uuid`). +6 tests |
+| `v0.0.55` | Vercel relay hardening: pod sends `x-relay-timeout = upstreamTimeoutMs - 5000` (min 1s) for deterministic race outcome; `chatCore.js` detects Vercel platform 504 + retries cold-start 502/504 once with 2s delay; `/proxy-pools/[id]/test` switched from httpbin.org to `www.google.com/generate_204`. AGENTS.md rules #22–#24 added. +17 tests |
+| `v0.0.56` | Complete v0.0.55: `RELAY_FUNCTION_CODE` (deployed-to-Vercel string) now reads `x-relay-timeout` and aborts upstream via own `AbortController` — v0.0.55 only fixed pod-side; relay function still ignored the header. Removed `runtime: "edge"` from relay (default Node 20.x is more compatible with `duplex: "half"`). **Kiro transient retry**: HTTP 500 with `MODEL_TEMPORARILY_UNAVAILABLE` body now body-gated retryable via separate `transientRetry` config (3 attempts, exp backoff 1s/2s/4s + 50%–150% jitter). `errorConfig.js` adds `isTransientErrorBody()` classifier. AGENTS.md rules #25–#26 added. +14 tests, 1224 total |
 
 ## Current Remote Setup
 
@@ -61,5 +79,5 @@ Branch is intentionally customized for Lazuardy Tech needs:
 ## Docker Hub
 
 - Image: `lazuardytech/pod`
-- Tags: `v0.0.1`–`v0.0.31`, `latest`
+- Tags: `v0.0.1`–`v0.0.56`, `latest`
 - Platform: `linux/amd64`

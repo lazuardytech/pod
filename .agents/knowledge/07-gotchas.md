@@ -327,3 +327,90 @@ Temperature `null` and `1` are normalized to the same value — omitting the fie
 
 If any path skips `clearInFlight`, concurrent identical requests will stall for 60 seconds waiting
 for the in-flight entry to expire. Do not gate this call on cache miss or response type.
+
+## 55) Kiro 500 with `MODEL_TEMPORARILY_UNAVAILABLE` is transient — body-gated retry only
+
+AWS CodeWhisperer (Kiro backend) returns HTTP **500** with a JSON body when the model is overloaded:
+```json
+{
+  "message": "Encountered unexpectedly high load when processing the request, please try again.",
+  "reason": "MODEL_TEMPORARILY_UNAVAILABLE"
+}
+```
+Generic 500 retry would mask real bugs (e.g. malformed payload, deserialization), so we **only**
+retry HTTP 500/503 when the body matches `isTransientErrorBody()` patterns (defined in
+`open-sse/config/errorConfig.js`):
+- `MODEL_TEMPORARILY_UNAVAILABLE` (Kiro)
+- `unexpectedly high load`
+- `temporarily unavailable`
+- `overloaded` (Anthropic-style)
+- `server is busy` (some Bedrock variants)
+- `model is overloaded` (Google AI Studio)
+
+Kiro executor (`open-sse/executors/kiro.js`) implements this in `execute()`. Defaults from
+`config/providers.js`: `transientRetry: { attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 }`.
+Delay uses exponential backoff with **0.5x–1.5x jitter** to avoid synchronized retries hammering
+an already-degraded upstream.
+
+Three layers of self-healing:
+1. **In-request retry** (kiro executor) — body-aware, fast (sub-10s)
+2. **Account-level backoff** (`ERROR_RULES` in `errorConfig.js`) — escalates `backoffLevel`
+   on consecutive failures, lock duration grows exponentially
+3. **Account fallback** (`markAccountUnavailable` in `sse/services/auth.js`) — switches to next
+   connection automatically
+
+When reading the response body to peek for transient patterns, **always use `response.clone()`**
+so the original body remains consumable by `parseUpstreamError` if the retry budget is exhausted.
+
+## 56) Vercel relay must be re-deployed after RELAY_FUNCTION_CODE changes
+
+The relay function source string in `src/app/api/proxy-pools/vercel-deploy/route.js` is
+deployed to Vercel as the project's `api/relay.js` file. Editing that string in pod source
+does NOT update relays already running in users' Vercel projects.
+
+If you change `RELAY_FUNCTION_CODE` (e.g. to honour a new header, change runtime, fix a bug),
+existing pools must be redeployed via the same `POST /api/proxy-pools/vercel-deploy` endpoint
+with the user's Vercel token. There is currently no auto-update mechanism — document the
+requirement in release notes whenever the string changes.
+
+Pod sends `x-relay-timeout: max(1000, upstreamTimeoutMs - 5000)` to the relay so the relay
+times out first and emits a controlled 504. If the deployed relay code ignores
+`x-relay-timeout`, that race is no longer deterministic — pod's outer AbortController kicks in
+instead and error messages flip between "Request aborted" and "Upstream relay request timed out".
+
+Verified by AGENTS.md rules #22 (5s margin), #23 (one retry on 502/504), #25 (relay function
+must honour header).
+
+## 57) `src/sse/utils/logger.js` redacts at the sink — do not weaken
+
+CodeQL alert #39 (`js/clear-text-logging`) flagged the logger because static taint analysis
+traced `apiKey` reaching `console.log`. Existing call-site masking via `maskKey()` was correct
+in practice but invisible to the analyzer. v0.0.49 added `sanitizeForLog()` that runs at every
+log call:
+
+- Sensitive object keys (`apiKey`, `access_token`, `refresh_token`, `id_token`, `cookie`,
+  `authorization`, `password`, `secret`, `client_secret`, `private_key`, `sa_json`,
+  `service_account`) get prefix...suffix masking; non-string values become `[redacted]`.
+- Token-shaped values inside strings (`Bearer …`, `sk-…`, JWT `eyJ…`) are masked inline.
+- Recursion depth-capped at 4 to prevent infinite loops on cyclic refs.
+
+This complements (does not replace) call-site `maskKey()`. **Both layers run** — defense in
+depth. If you remove the sink-level sanitizer, the CodeQL alert returns and a future contributor
+forgetting to mask leaks credentials in production logs.
+
+## 58) `x-pod-skip-reasoning: true` is opt-in for `perplexity-web` only
+
+Perplexity's web product (`/rest/sse/perplexity_ask`) takes 5–15s per query because the upstream
+runs search → read sources → plan → reason → generate. Pod streams chunks as they arrive
+(`X-Accel-Buffering: no`), but the first 3–4s only emits `reasoning_content` chunks
+(Searching:/Reading:/Plan:). Clients that don't render reasoning see that as idle time.
+
+`v0.0.54` adds opt-in header `x-pod-skip-reasoning: true` (back-compat alias
+`x-omniroute-skip-reasoning: true`). When set, perplexity-web's executor drops thinking chunks
+and streams only the markdown answer. Total upstream latency unchanged — only perceived TTFT.
+
+The header is checked case-insensitively and works for both `Headers` instances and plain
+objects. The plumbing path is `chatCore.js → executor.execute({ clientHeaders }) →
+buildStreamingResponse({ skipReasoning })`. Do not propagate the flag to other providers — it
+is currently perplexity-web-specific because that is the only executor that emits
+`reasoning_content` for non-reasoning models.
