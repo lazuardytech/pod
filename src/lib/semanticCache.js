@@ -310,3 +310,10 @@ export function setInFlight(signature, promise) {
 export function clearInFlight(signature) {
   inFlightRequests.delete(signature);
 }
+
+/**
+ * Returns in-flight dedup map size for monitoring.
+ */
+export function getInFlightStats() {
+  return { count: inFlightRequests.size };
+}

@@ -4,9 +4,9 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 
 ## Current Baseline
 
-- Release baseline: **v0.0.62**
+- Release baseline: **v0.0.63**
 - Package: `pod`
-- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.62, latest)
+- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.63, latest)
 - GitHub: `lazuardytech/pod`, branch `main`
 - Data dir: `~/.pod/pod.sqlite`
 - Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap instead)
@@ -39,6 +39,7 @@ Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
 24. **Vercel relay test uses google.com/generate_204** — `proxy-pools/[id]/test` MUST use `https://www.google.com/generate_204` (returns 204 No Content). Do not switch to httpbin.org or other public endpoints — they are unreliable.
 25. **Vercel `RELAY_FUNCTION_CODE` must honour `x-relay-timeout`** — the relay function source string in `vercel-deploy/route.js` reads `req.headers.get("x-relay-timeout")`, parses to int, and aborts upstream fetch via its own `AbortController` if exceeded. On timeout returns 504 with `{ error: "Upstream relay request timed out" }`. Pod sends `upstreamTimeoutMs - 5000` so relay times out first. Re-deploy the relay (via `/proxy-pools/vercel-deploy`) after editing this code or it stays out of sync with rules #22–#23.
 26. **Kiro 500 with `MODEL_TEMPORARILY_UNAVAILABLE` is body-gated retryable** — AWS CodeWhisperer surfaces overload as HTTP 500 with `{ reason: "MODEL_TEMPORARILY_UNAVAILABLE" }`. `KiroExecutor` retries via separate `transientRetry` budget (`{ attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 }`) with exponential backoff + 50%–150% jitter. `errorConfig.js` `isTransientErrorBody()` is the single classifier (matches `model_temporarily_unavailable`, `unexpectedly high load`, `overloaded`, `temporarily unavailable`). Do not retry generic 500 — only when body matches.
+27. **`/api/monitoring/health` requires API key when `requireApiKey=true`** — mirrors `/v1/models` and `/v1/chat/completions` auth pattern. Use `extractApiKey()` + `isValidApiKey()` from `src/sse/services/auth.js`. The bare `/api/health` heartbeat stays public for liveness probes (Docker `HEALTHCHECK`, Kubernetes, etc.) and returns only `{ ok: true }`. Stream endpoint `/api/monitoring/health/stream` follows the same auth as the snapshot endpoint.
 
 ## Verification Before Push
 

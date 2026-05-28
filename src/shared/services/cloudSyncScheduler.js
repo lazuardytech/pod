@@ -100,6 +100,7 @@ export class CloudSyncScheduler {
     }
 
     const result = await response.json();
+    this._lastSyncAt = new Date().toISOString();
     return result;
   }
 
@@ -119,4 +120,18 @@ export async function getCloudSyncScheduler(machineId = null, intervalMinutes = 
     cloudSyncScheduler = new CloudSyncScheduler(machineId, intervalMinutes);
   }
   return cloudSyncScheduler;
+}
+
+/**
+ * Returns cloud sync status for monitoring.
+ */
+export function getCloudSyncStatus() {
+  if (!cloudSyncScheduler) {
+    return { enabled: false, isRunning: false, lastSyncAt: null };
+  }
+  return {
+    enabled: true,
+    isRunning: cloudSyncScheduler.isRunning(),
+    lastSyncAt: cloudSyncScheduler._lastSyncAt ?? null,
+  };
 }

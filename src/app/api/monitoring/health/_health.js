@@ -1,7 +1,16 @@
 import os from "node:os";
+import fs from "node:fs";
+import path from "node:path";
 import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings } from "@/lib/localDb.js";
 import { getDatabase } from "@/lib/sqlite/connection.js";
-import { getQueueDepths } from "@/lib/usageDb.js";
+import { getQueueDepths, getPendingStats, getConnectionNameCacheStats } from "@/lib/usageDb.js";
+import { getCacheStats } from "@/lib/semanticCache.js";
+import { getInFlightStats } from "@/lib/semanticCache.js";
+import { getPromptCache } from "@/lib/cacheLayer.js";
+import { getMemoryStoreStats } from "@/lib/memory/store.js";
+import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync.js";
+import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler.js";
+import { displayVersion } from "@/shared/constants/config.js";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
@@ -29,18 +38,35 @@ function getCachedIntegrity(db) {
   return _integrityCache;
 }
 
+function humanizeBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 function getSystemInfo() {
   const mem = process.memoryUsage();
+  const memoryPressure = mem.heapTotal > 0 ? mem.heapUsed / mem.heapTotal : 0;
   return {
     uptime: Math.floor((Date.now() - START_TIME) / 1000),
     nodeVersion: process.version,
+    bunVersion: process.versions.bun ?? null,
     platform: process.platform,
     arch: process.arch,
     memoryUsage: { rss: mem.rss, heapUsed: mem.heapUsed, heapTotal: mem.heapTotal },
-    loadAvg: os.loadavg(),
-    cpus: os.cpus().length,
+    memoryUsageHumanized: {
+      rss: humanizeBytes(mem.rss),
+      heapUsed: humanizeBytes(mem.heapUsed),
+      heapTotal: humanizeBytes(mem.heapTotal),
+    },
+    memoryPressure: Math.round(memoryPressure * 10000) / 10000,
+    memoryPressurePercent: `${(memoryPressure * 100).toFixed(1)}%`,
     freeMemory: os.freemem(),
     totalMemory: os.totalmem(),
+    loadAvg: os.loadavg(),
+    cpus: os.cpus().length,
+    processStartedAt: new Date(START_TIME).toISOString(),
   };
 }
 
@@ -61,6 +87,19 @@ function getDbInfo() {
     };
   } catch (err) {
     return { ok: false, error: err.message };
+  }
+}
+
+function getDataDirSizeBytes() {
+  try {
+    const homeDir = process.env.HOME || process.env.USERPROFILE || "/root";
+    const dataDir = path.join(homeDir, ".pod");
+    // Best-effort — stat the sqlite file (data dir itself may be large)
+    const dbPath = path.join(dataDir, "pod.sqlite");
+    const stat = fs.statSync(dbPath);
+    return stat.size;
+  } catch {
+    return null;
   }
 }
 
@@ -91,6 +130,37 @@ export async function buildHealthPayload() {
     apiKeys: keys.length,
   };
 
+  // — Provider breakdown by status —
+  const now = Date.now();
+  const byStatus = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
+  const byProvider = {};
+
+  for (const c of conns) {
+    const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
+    const hasModelLocks = Object.keys(c).some(
+      (k) => k.startsWith("modelLock_") && c[k] && new Date(c[k]).getTime() > now,
+    );
+
+    let status;
+    if (isRateLimited) status = "rateLimited";
+    else if (hasModelLocks) status = "modelLocked";
+    else if (c.testStatus === "error" || c.testStatus === "unavailable") status = "error";
+    else if (c.testStatus === "active") status = "active";
+    else status = "untested";
+
+    byStatus[status] = (byStatus[status] || 0) + 1;
+
+    const pKey = c.provider;
+    if (!byProvider[pKey]) byProvider[pKey] = { total: 0, active: 0, error: 0, rateLimited: 0 };
+    byProvider[pKey].total++;
+    if (status === "active" || status === "untested") byProvider[pKey].active++;
+    else if (status === "error") byProvider[pKey].error++;
+    else if (status === "rateLimited") byProvider[pKey].rateLimited++;
+  }
+
+  providers.byStatus = byStatus;
+  providers.byProvider = byProvider;
+
   const tunnel = {
     cloudflareEnabled: cfg.tunnelEnabled ?? false,
     cloudflareUrl: cfg.tunnelUrl ?? "",
@@ -104,7 +174,128 @@ export async function buildHealthPayload() {
     ttlMs: cfg.semanticCacheTTL ?? 1800000,
   };
 
-  const now = Date.now();
+  // — Cache occupancy —
+  const caches = {};
+  try {
+    const semStats = getCacheStats();
+    const semMemoryStats =
+      semStats.memoryEntries !== undefined
+        ? {
+            currentSize: semStats.memoryEntries,
+            maxSize:
+              semStats.dbEntries !== undefined ? (cfg.semanticCacheMaxSize ?? 100) : (cfg.semanticCacheMaxSize ?? 100),
+            currentBytes: null,
+            maxBytes: parseInt(process.env.SEMANTIC_CACHE_MAX_BYTES || String(4 * 1024 * 1024), 10),
+            hitRate: semStats.hitRate,
+            hits: semStats.hits,
+            misses: semStats.misses,
+            tokensSaved: semStats.tokensSaved,
+          }
+        : null;
+    caches.semanticCache = {
+      enabled: cfg.semanticCacheEnabled ?? false,
+      ...semStats,
+      ...(semMemoryStats || {}),
+      ttlMs: cfg.semanticCacheTTL ?? 1800000,
+    };
+  } catch {
+    caches.semanticCache = { enabled: cfg.semanticCacheEnabled ?? false, error: "unavailable" };
+  }
+
+  try {
+    const promptCache = getPromptCache();
+    const pStats = promptCache.getStats();
+    caches.promptCache = {
+      enabled: true,
+      currentSize: pStats.size,
+      maxSize: pStats.maxSize,
+      currentBytes: pStats.bytes,
+      maxBytes: pStats.maxBytes,
+      hitRate: `${pStats.hitRate.toFixed(1)}%`,
+      hits: pStats.hits,
+      misses: pStats.misses,
+      evictions: pStats.evictions,
+      ttlMs: parseInt(process.env.PROMPT_CACHE_TTL_MS || "300000", 10),
+    };
+  } catch {
+    caches.promptCache = { enabled: true, error: "unavailable" };
+  }
+
+  try {
+    const mStats = getMemoryStoreStats();
+    caches.memoryStore = {
+      size: mStats.size,
+      maxSize: mStats.maxSize,
+      bytes: mStats.bytes,
+      maxBytes: mStats.maxBytes,
+      hitRate: `${mStats.hitRate.toFixed(1)}%`,
+      hits: mStats.hits,
+      misses: mStats.misses,
+    };
+  } catch {
+    caches.memoryStore = { error: "unavailable" };
+  }
+
+  try {
+    const cStats = getConnectionNameCacheStats();
+    caches.connectionNameCache = {
+      size: cStats.size,
+      maxSize: cStats.maxSize,
+      bytes: cStats.bytes,
+      maxBytes: cStats.maxBytes,
+    };
+  } catch {
+    caches.connectionNameCache = { error: "unavailable" };
+  }
+
+  // — In-flight dedup —
+  let inFlight;
+  try {
+    inFlight = getInFlightStats();
+  } catch {
+    inFlight = { count: 0 };
+  }
+
+  // — Pending requests —
+  let pending;
+  try {
+    pending = getPendingStats();
+  } catch {
+    pending = { total: 0, byProvider: {} };
+  }
+
+  // — Background sync —
+  let sync;
+  try {
+    const mDevStatus = getModelsDevSyncStatus();
+    let cloudSync;
+    try {
+      const cStatus = getCloudSyncStatus();
+      cloudSync = {
+        enabled: cStatus.enabled,
+        lastSyncAt: cStatus.lastSyncAt,
+      };
+    } catch {
+      cloudSync = { enabled: false, lastSyncAt: null };
+    }
+    sync = {
+      modelsDev: {
+        enabled: true,
+        intervalHours: (mDevStatus.intervalMs || 3600000) / 3600000,
+        lastSyncAt: mDevStatus.lastSync,
+        lastSyncOk: mDevStatus.lastSync != null,
+        lastError: null,
+      },
+      cloud: cloudSync,
+    };
+  } catch {
+    sync = {
+      modelsDev: { enabled: true, intervalHours: 1, lastSyncAt: null, lastSyncOk: false, lastError: null },
+      cloud: { enabled: false, lastSyncAt: null },
+    };
+  }
+
+  // — Provider health (existing circuit-breaker section) —
   const providerHealthMap = {};
   for (const c of conns) {
     const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
@@ -197,14 +388,34 @@ export async function buildHealthPayload() {
   const status = database.ok && database.integrity === "ok" ? "healthy" : "issues";
   const queueDepths = getQueueDepths();
 
+  // — Data dir size —
+  const dataDirSizeBytes = getDataDirSizeBytes();
+
   return {
     status,
     timestamp: Date.now(),
+    version: {
+      pod: displayVersion,
+      bun: process.versions.bun ?? null,
+      node: process.version,
+    },
     system,
+    runtime: {
+      memoryUsageHumanized: system.memoryUsageHumanized,
+      memoryPressure: system.memoryPressure,
+      memoryPressurePercent: system.memoryPressurePercent,
+      dataDirSizeBytes,
+      processStartedAt: system.processStartedAt,
+      dataDir: dataDirSizeBytes ? humanizeBytes(dataDirSizeBytes) : null,
+    },
     database,
     providers,
     tunnel,
     semanticCache,
+    caches,
+    inFlight,
+    pending,
+    sync,
     queueDepths,
     providerHealth: Object.values(providerHealthMap),
     rateLimitStatus: Object.values(rateLimitByProvider),

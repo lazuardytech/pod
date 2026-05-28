@@ -266,3 +266,10 @@ export async function listMemories(options = {}) {
     byType,
   };
 }
+
+/**
+ * Returns memory store LRU cache stats for monitoring.
+ */
+export function getMemoryStoreStats() {
+  return memoryCache.getStats();
+}

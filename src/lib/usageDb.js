@@ -1175,6 +1175,30 @@ export function getQueueDepths() {
   };
 }
 
+/**
+ * Returns pending request counts for monitoring.
+ * Aggregates byModel into per-provider totals.
+ */
+export function getPendingStats() {
+  const byProvider = {};
+  let total = 0;
+  for (const [modelKey, count] of Object.entries(pendingRequests.byModel)) {
+    // modelKey format: "model (provider)" or bare "model"
+    const match = modelKey.match(/\((.+)\)$/);
+    const provider = match ? match[1] : "unknown";
+    byProvider[provider] = (byProvider[provider] || 0) + count;
+    total += count;
+  }
+  return { total, byProvider };
+}
+
+/**
+ * Returns connection-name LRU cache stats for monitoring.
+ */
+export function getConnectionNameCacheStats() {
+  return connectionNameCache.getStats();
+}
+
 // Re-export request details for back-compat (existing routes import these
 // names from @/lib/usageDb)
 export { generateDetailId, getRequestDetailById, getRequestDetails, saveRequestDetail } from "./requestDetailsDb.js";

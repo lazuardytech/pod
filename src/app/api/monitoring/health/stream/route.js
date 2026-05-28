@@ -1,13 +1,34 @@
+import { getSettings, validateApiKey } from "@/lib/localDb";
+import { extractApiKey } from "@/sse/services/auth.js";
 import { buildHealthPayload } from "../_health.js";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/monitoring/health/stream
- * SSE stream — pushes full health snapshot every 5s.
- * Client reconnects automatically via EventSource.
+ * SSE stream — pushes full health snapshot every 10s.
+ * Auth-protected when requireApiKey=true.
  */
 export async function GET(request) {
+  // Auth check
+  const settings = await getSettings();
+  if (settings.requireApiKey) {
+    const apiKey = extractApiKey(request);
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "API key required" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const valid = await validateApiKey(apiKey);
+    if (!valid) {
+      return new Response(JSON.stringify({ error: "API key required" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   let closed = false;
   const encoder = new TextEncoder();
   const INTERVAL_MS = 10000;
@@ -29,7 +50,7 @@ export async function GET(request) {
         send({ error: err.message });
       }
 
-      // Poll every 5s
+      // Poll every 10s
       const poll = async () => {
         if (closed) return;
         try {
