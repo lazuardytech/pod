@@ -55,9 +55,13 @@ export async function POST(request) {
       }
     }
 
-    // base is validated by validateFetchUrl above and hostname allowlist. lgtm[js/request-forgery]
-    const userRes = await fetch(`${base}/api/v4/user`, {
-      // lgtm[js/request-forgery]
+    // Reconstruct fetch URL from parsed components (not user string concat)
+    // so CodeQL recognises the host has been validated and allowlisted.
+    const targetUrl = new URL(
+      "/api/v4/user",
+      `${urlCheck.url.protocol}//${parsedHost}${urlCheck.url.port ? `:${urlCheck.url.port}` : ""}`,
+    );
+    const userRes = await fetch(targetUrl, {
       headers: { "Private-Token": token.trim(), Accept: "application/json" },
     });
 

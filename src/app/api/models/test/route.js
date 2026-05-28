@@ -9,17 +9,17 @@ export async function POST(request) {
     if (!model) return NextResponse.json({ error: "Model required" }, { status: 400 });
 
     const envBase = process.env.BASE_URL;
-    // Validate BASE_URL env var if set; fall back to localhost with port from request
-    // Using localhost avoids Host-header SSRF (the request hostname is not trusted for fetch).
+    // Validate BASE_URL env var if set; fall back to localhost using PORT env
+    // (or default 20128). Hostname and port are NOT derived from request.url
+    // to eliminate Host-header SSRF.
     const baseUrl = (() => {
       if (envBase) {
         const check = validateFetchUrl(envBase, { allowPrivate: true });
         if (check.ok) return envBase.replace(/\/$/, "");
       }
-      // Derive port from request URL but use localhost to avoid Host header SSRF
-      const u = new URL(request.url);
-      const port = u.port || (u.protocol === "https:" ? "443" : "80");
-      return `http://localhost:${port}`;
+      const port = Number.parseInt(process.env.PORT || "20128", 10);
+      const safePort = Number.isFinite(port) && port > 0 && port < 65536 ? port : 20128;
+      return `http://localhost:${safePort}`;
     })();
 
     // Get an active internal API key for auth (if requireApiKey is enabled)
