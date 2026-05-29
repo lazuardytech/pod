@@ -3,6 +3,9 @@ import { getProviderConnections, getSettings, updateProviderConnection } from "@
 import { validateFetchUrl } from "@/lib/validateUrl";
 
 const MODEL_LOCK_PREFIX = "modelLock_";
+const CONN_LOCK_UNTIL_KEY = "connectionLockUntil";
+const CONN_LOCK_COUNT_KEY = "connectionLockCount";
+const CONN_LOCK_REASON_KEY = "connectionLockReason";
 
 function getActiveModelLocks(connection) {
   const now = Date.now();
@@ -17,12 +20,41 @@ function getActiveModelLocks(connection) {
     .filter((lock) => lock.active);
 }
 
+function getActiveConnectionLock(connection) {
+  const until = connection[CONN_LOCK_UNTIL_KEY];
+  if (!until) return null;
+  const now = Date.now();
+  if (new Date(until).getTime() <= now) return null;
+  return {
+    until,
+    count: connection[CONN_LOCK_COUNT_KEY] || 1,
+    reason: connection[CONN_LOCK_REASON_KEY] || null,
+  };
+}
+
 export async function GET() {
   try {
     const connections = await getProviderConnections();
     const models = [];
 
     for (const connection of connections) {
+      // Connection-level lock (account-wide)
+      const connLock = getActiveConnectionLock(connection);
+      if (connLock) {
+        models.push({
+          provider: connection.provider,
+          model: "__connection",
+          status: "connection-locked",
+          until: connLock.until,
+          lockCount: connLock.count,
+          lockReason: connLock.reason,
+          connectionId: connection.id,
+          connectionName: connection.name || connection.email || connection.id,
+          lastError: connection.lastError || null,
+        });
+        continue; // connection locked — skip model lock check
+      }
+
       const locks = getActiveModelLocks(connection);
       for (const lock of locks) {
         models.push({

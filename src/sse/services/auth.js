@@ -1,13 +1,20 @@
 import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import {
+  buildConnectionLockUpdate,
   buildModelLockUpdate,
   checkFallbackError,
+  CONN_LOCK_COUNT_KEY,
+  CONN_LOCK_REASON_KEY,
+  CONN_LOCK_UNTIL_KEY,
   formatRetryAfter,
+  getConnectionLockUntil,
   getEarliestModelLockUntil,
   getModelLockCount,
   getModelLockCountKey,
-  MODEL_LOCK_COUNT_PREFIX,
+  isConnectionLevelError,
+  isConnectionLockActive,
   isModelLockActive,
+  MODEL_LOCK_COUNT_PREFIX,
 } from "open-sse/services/accountFallback.js";
 import { getProviderConnections, getSettings, updateProviderConnection, validateApiKey } from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
@@ -119,9 +126,10 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
       return null;
     }
 
-    // Filter out model-locked and excluded connections
+    // Filter out model-locked, connection-locked, and excluded connections
     const availableConnections = connections.filter((c) => {
       if (excludeSet.has(c.id)) return false;
+      if (isConnectionLockActive(c)) return false;
       if (isModelLockActive(c, model)) return false;
       return true;
     });
@@ -129,23 +137,25 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
     log.debug("AUTH", `${provider} | available: ${availableConnections.length}/${connections.length}`);
     connections.forEach((c) => {
       const excluded = excludeSet.has(c.id);
+      const connLocked = isConnectionLockActive(c);
       const locked = isModelLockActive(c, model);
-      if (excluded || locked) {
-        const lockUntil = getEarliestModelLockUntil(c);
+      if (excluded || connLocked || locked) {
+        const lockUntil = getConnectionLockUntil(c) || getEarliestModelLockUntil(c);
         log.debug(
           "AUTH",
-          `  → ${c.id?.slice(0, 8)} | ${excluded ? "excluded" : ""} ${locked ? `modelLocked(${model}) until ${lockUntil}` : ""}`,
+          `  → ${c.id?.slice(0, 8)} | ${excluded ? "excluded" : ""} ${connLocked ? `connLocked until ${lockUntil}` : ""} ${locked ? `modelLocked(${model}) until ${lockUntil}` : ""}`,
         );
       }
     });
 
     if (availableConnections.length === 0) {
-      // Find earliest lock expiry across all connections for retry timing
-      const lockedConns = connections.filter((c) => isModelLockActive(c, model));
-      const expiries = lockedConns.map((c) => getEarliestModelLockUntil(c)).filter(Boolean);
+      // Find earliest lock expiry across all connections (connection-level OR model-level)
+      const expiries = connections
+        .map((c) => getConnectionLockUntil(c) || getEarliestModelLockUntil(c))
+        .filter(Boolean);
       const earliest = expiries.sort()[0] || null;
       if (earliest) {
-        const earliestConn = lockedConns[0];
+        const earliestConn = connections[0];
         log.warn(
           "AUTH",
           `${provider} | all ${connections.length} accounts locked for ${model || "all"} (${formatRetryAfter(earliest)}) | lastError=${earliestConn?.lastError?.slice(0, 50)}`,
@@ -259,7 +269,8 @@ export async function getProviderCredentials(provider, excludeConnectionIds = nu
 
 /**
  * Mark account+model as unavailable — locks modelLock_${model} in DB.
- * All errors (429, 401, 5xx, etc.) lock per model, not per account.
+ * Connection-level errors (suspicious activity, auth fail) lock the entire connection.
+ * Model-level errors (quota, rate-limit) lock per model.
  * @param {string} connectionId
  * @param {number} status - HTTP status code from upstream
  * @param {string} errorText
@@ -279,6 +290,30 @@ export async function markAccountUnavailable(
   const connections = await getProviderConnections({ provider });
   const conn = connections.find((c) => c.id === connectionId);
   const backoffLevel = conn?.backoffLevel || 0;
+
+  // -------------------------------------------------------------------------
+  // Connection-level lock: account-wide errors (suspicious activity, auth fail)
+  // Lock the entire connection with exponential cooldown (1h, 2h, 3h, ...)
+  // so the retry loop immediately moves to the next account.
+  // -------------------------------------------------------------------------
+  if (isConnectionLevelError(status, errorText)) {
+    const { update, cooldownMs, newCount, until } = buildConnectionLockUpdate(conn, errorText);
+    await updateProviderConnection(connectionId, update);
+    if (provider) invalidateConnectionsCache(resolveProviderId(provider));
+    const connName = conn?.displayName || conn?.name || conn?.email || connectionId.slice(0, 8);
+    log.warn(
+      "AUTH",
+      `${connName} connection locked for ${Math.round(cooldownMs / 60000)}m (count=${newCount}, until=${until}) [${status}]`,
+    );
+    if (provider && status && errorText) {
+      console.error(`\u274C ${provider} [${status}] connection lock #${newCount}: ${String(errorText).slice(0, 120)}`);
+    }
+    return { shouldFallback: true, cooldownMs };
+  }
+
+  // -------------------------------------------------------------------------
+  // Model-level lock: quota/rate-limit errors specific to a model
+  // -------------------------------------------------------------------------
 
   // Provider-specific precise cooldown (e.g. codex usage_limit_reached resets_at) overrides backoff
   let shouldFallback, cooldownMs, newBackoffLevel;
@@ -357,7 +392,11 @@ export async function clearAccountError(connectionId, currentConnection, model =
   const allLockKeys = Object.keys(conn).filter((k) => k.startsWith("modelLock_"));
   const allLockCountKeys = Object.keys(conn).filter((k) => k.startsWith(MODEL_LOCK_COUNT_PREFIX));
 
-  if (!conn.testStatus && !conn.lastError && allLockKeys.length === 0) return;
+  // Lazy-clear expired connection-level lock on success
+  const connLockUntil = conn[CONN_LOCK_UNTIL_KEY];
+  const connLockExpired = connLockUntil && new Date(connLockUntil).getTime() <= now;
+
+  if (!conn.testStatus && !conn.lastError && allLockKeys.length === 0 && !connLockExpired) return;
 
   // Keys to clear: current model's lock + all expired locks
   const keysToClear = allLockKeys.filter((k) => {
@@ -367,7 +406,7 @@ export async function clearAccountError(connectionId, currentConnection, model =
     return expiry && new Date(expiry).getTime() <= now; // expired
   });
 
-  if (keysToClear.length === 0 && conn.testStatus !== "unavailable" && !conn.lastError) return;
+  if (keysToClear.length === 0 && conn.testStatus !== "unavailable" && !conn.lastError && !connLockExpired) return;
 
   // Check if any active locks remain after clearing
   const remainingActiveLocks = allLockKeys.filter((k) => {
@@ -378,8 +417,16 @@ export async function clearAccountError(connectionId, currentConnection, model =
 
   const clearObj = Object.fromEntries(keysToClear.map((k) => [k, null]));
 
+  // Clear expired connection-level lock
+  if (connLockExpired) {
+    clearObj[CONN_LOCK_UNTIL_KEY] = null;
+    clearObj[CONN_LOCK_COUNT_KEY] = null;
+    clearObj[CONN_LOCK_REASON_KEY] = null;
+  }
+
   // Only reset error state and lock counts if no active locks remain
-  if (remainingActiveLocks.length === 0) {
+  const hasActiveConnLock = connLockUntil && !connLockExpired;
+  if (remainingActiveLocks.length === 0 && !hasActiveConnLock) {
     Object.assign(clearObj, { testStatus: "active", lastError: null, lastErrorAt: null, backoffLevel: 0 });
     // Clear all lock count keys too
     for (const k of allLockCountKeys) clearObj[k] = null;

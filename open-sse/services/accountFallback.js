@@ -110,6 +110,108 @@ export function formatRetryAfter(rateLimitedUntil) {
   return `reset after ${parts.join(" ")}`;
 }
 
+// ---------------------------------------------------------------------------
+// Connection-level lock (account-wide, not per-model)
+// ---------------------------------------------------------------------------
+
+/**
+ * Keys used for connection-level lockdown.
+ * Unlike model locks (per model per connection), connection locks apply to
+ * the entire connection regardless of which model is requested.
+ * Triggered by account-level errors: suspicious activity, auth failure, etc.
+ */
+export const CONN_LOCK_UNTIL_KEY = "connectionLockUntil";
+export const CONN_LOCK_COUNT_KEY = "connectionLockCount";
+export const CONN_LOCK_REASON_KEY = "connectionLockReason";
+
+/** Base cooldown for connection-level lock: 1 hour */
+export const CONN_LOCK_BASE_MS = 60 * 60 * 1000;
+
+/**
+ * Patterns that indicate a connection-level (account-wide) error,
+ * not a model-specific quota error.
+ * When matched, the entire connection is locked (not just one model).
+ */
+const CONN_LEVEL_ERROR_PATTERNS = [
+  /suspicious activity/i,
+  /temporary limit/i,
+  /temporarily limit/i,
+  /account.*suspend/i,
+  /account.*block/i,
+  /account.*restrict/i,
+  /account.*ban/i,
+  /your account/i,
+  /this account/i,
+];
+
+/**
+ * Returns true when the error is account-wide (connection-level),
+ * not model-specific. These errors should lock the entire connection
+ * so the retry loop immediately moves to the next account.
+ */
+export function isConnectionLevelError(status, bodyText) {
+  // 401/403 = auth failure — always connection-level
+  if (status === 401 || status === 403) return true;
+  if (!bodyText) return false;
+  const text = typeof bodyText === "string" ? bodyText : JSON.stringify(bodyText);
+  return CONN_LEVEL_ERROR_PATTERNS.some((re) => re.test(text));
+}
+
+/**
+ * Check if a connection-level lock is currently active.
+ */
+export function isConnectionLockActive(connection) {
+  const until = connection?.[CONN_LOCK_UNTIL_KEY] || connection?.data?.[CONN_LOCK_UNTIL_KEY];
+  if (!until) return false;
+  return new Date(until).getTime() > Date.now();
+}
+
+/**
+ * Get connection lock expiry (ISO string) or null.
+ */
+export function getConnectionLockUntil(connection) {
+  const until = connection?.[CONN_LOCK_UNTIL_KEY] || connection?.data?.[CONN_LOCK_UNTIL_KEY];
+  if (!until) return null;
+  return new Date(until).getTime() > Date.now() ? until : null;
+}
+
+/**
+ * Build update object to set a connection-level lock.
+ * Cooldown = base * lockCount (1h, 2h, 3h, ...)
+ */
+export function buildConnectionLockUpdate(connection, reason) {
+  const prevCount = Number(connection?.[CONN_LOCK_COUNT_KEY] || connection?.data?.[CONN_LOCK_COUNT_KEY] || 0);
+  const newCount = prevCount + 1;
+  const cooldownMs = CONN_LOCK_BASE_MS * newCount;
+  const until = new Date(Date.now() + cooldownMs).toISOString();
+  return {
+    update: {
+      [CONN_LOCK_UNTIL_KEY]: until,
+      [CONN_LOCK_COUNT_KEY]: newCount,
+      [CONN_LOCK_REASON_KEY]: typeof reason === "string" ? reason.slice(0, 200) : "Connection error",
+      testStatus: "unavailable",
+      lastError: typeof reason === "string" ? reason.slice(0, 100) : "Connection error",
+      lastErrorAt: new Date().toISOString(),
+    },
+    cooldownMs,
+    newCount,
+    until,
+  };
+}
+
+/**
+ * Build update object to clear a connection-level lock.
+ */
+export function buildClearConnectionLockUpdate() {
+  return {
+    [CONN_LOCK_UNTIL_KEY]: null,
+    [CONN_LOCK_COUNT_KEY]: null,
+    [CONN_LOCK_REASON_KEY]: null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+
 /** Prefix for model lock flat fields on connection record */
 export const MODEL_LOCK_PREFIX = "modelLock_";
 
