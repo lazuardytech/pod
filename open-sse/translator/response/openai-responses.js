@@ -367,7 +367,7 @@ function flushEvents(state) {
 // currentToolCallId is intentionally sticky for the current turn so flush/completion
 // can still finalize as tool_calls even if the tool call was emitted before stream end.
 function computeFinishReason(state) {
-  return state.toolCallIndex > 0 || state.currentToolCallId ? "tool_calls" : "stop";
+  return state.nextToolCallIndex > 0 || state.currentToolCallId ? "tool_calls" : "stop";
 }
 
 /**
@@ -417,6 +417,12 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
     state.toolCallIndex = 0;
     state.currentToolCallId = null;
     state.maxOutputIndex = -1; // Track highest output_index seen
+    // Map from Codex output_index → zero-based tool_call index.
+    // Codex xhigh puts reasoning at output_index=0 and function_calls at
+    // output_index=1,2,... Clients (pi, codex-cli) expect tool_calls[].index
+    // to start at 0, so we remap via this map.
+    state.outputIndexToToolCallIndex = new Map();
+    state.nextToolCallIndex = 0;
   }
 
   // Text content delta
@@ -452,10 +458,15 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
     const item = data.item;
     state.currentToolCallId = item.call_id || `call_${Date.now()}`;
 
-    // Use output_index from the event if available, otherwise use tracked index
+    // Remap Codex output_index → zero-based tool_call index.
+    // Codex xhigh places reasoning at output_index=0 and function_calls at
+    // output_index=1,2,... Clients expect tool_calls[].index starting at 0.
     const outputIndex = data.output_index;
     if (outputIndex !== undefined && outputIndex !== null) {
-      state.toolCallIndex = outputIndex;
+      if (!state.outputIndexToToolCallIndex.has(outputIndex)) {
+        state.outputIndexToToolCallIndex.set(outputIndex, state.nextToolCallIndex++);
+      }
+      state.toolCallIndex = state.outputIndexToToolCallIndex.get(outputIndex);
       state.maxOutputIndex = Math.max(state.maxOutputIndex, outputIndex);
     }
 
@@ -491,6 +502,17 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
     const argsDelta = data.delta || "";
     if (!argsDelta) return null;
 
+    // Resolve remapped index from output_index if present, else use current toolCallIndex
+    let tcIdx = state.toolCallIndex;
+    const argOutputIndex = data.output_index;
+    if (
+      argOutputIndex !== undefined &&
+      argOutputIndex !== null &&
+      state.outputIndexToToolCallIndex?.has(argOutputIndex)
+    ) {
+      tcIdx = state.outputIndexToToolCallIndex.get(argOutputIndex);
+    }
+
     return {
       id: state.chatId,
       object: "chat.completion.chunk",
@@ -502,7 +524,7 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
           delta: {
             tool_calls: [
               {
-                index: state.toolCallIndex,
+                index: tcIdx,
                 function: { arguments: argsDelta },
               },
             ],
@@ -514,11 +536,11 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
   }
 
   // Function call done (standard or custom_tool_call variant)
+  // Do NOT increment toolCallIndex here — index is now managed by outputIndexToToolCallIndex map.
   if (
     eventType === "response.output_item.done" &&
     (data.item?.type === "function_call" || data.item?.type === "custom_tool_call")
   ) {
-    state.toolCallIndex++;
     return null;
   }
 
