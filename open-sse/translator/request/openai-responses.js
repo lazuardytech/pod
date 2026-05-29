@@ -149,10 +149,8 @@ export function openaiResponsesToOpenAIRequest(model, body, stream, credentials)
   // Cleanup Responses API specific fields
   delete result.input;
   delete result.instructions;
-  delete result.include;
   delete result.prompt_cache_key;
   delete result.store;
-  delete result.reasoning;
 
   return result;
 }
@@ -302,7 +300,15 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
   // Pass through other relevant fields
   if (body.temperature !== undefined) result.temperature = body.temperature;
   if (body.max_tokens !== undefined) result.max_tokens = body.max_tokens;
+  if (body.max_completion_tokens !== undefined) result.max_completion_tokens = body.max_completion_tokens;
   if (body.top_p !== undefined) result.top_p = body.top_p;
+
+  // Pass reasoning effort through (set by client or chatCore from model suffix)
+  if (body.reasoning !== undefined) result.reasoning = body.reasoning;
+  if (body.reasoning_effort !== undefined) result.reasoning_effort = body.reasoning_effort;
+
+  // Pass include through (e.g. reasoning.encrypted_content, custom fields)
+  if (body.include !== undefined) result.include = body.include;
 
   return result;
 }

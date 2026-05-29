@@ -579,7 +579,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
   );
 }
 
-const SYSTEM_PROMPT_MAX = 25000;
+const SYSTEM_PROMPT_MAX = 50000;
 
 function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindFilter = null }) {
   // Initialize state with combo values - key prop on parent handles reset on remount
@@ -780,7 +780,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               id="combo-system-prompt"
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value.slice(0, SYSTEM_PROMPT_MAX))}
-              placeholder="Optional system prompt injected into every request routed through this combo (max 25000 chars)."
+              placeholder="Optional system prompt injected into every request routed through this combo (max 50000 chars)."
               rows={6}
               className="w-full rounded-[6px] border border-charcoal-grey bg-deep-slate px-3 py-2 text-[13px] text-porcelain placeholder:text-fog-grey outline-none focus:border-porcelain/30 resize-y min-h-[96px] transition-colors duration-100"
             />

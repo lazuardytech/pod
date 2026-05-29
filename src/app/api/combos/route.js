@@ -53,8 +53,8 @@ export async function POST(request) {
     if (systemPrompt != null && typeof systemPrompt !== "string") {
       return NextResponse.json({ error: "systemPrompt must be a string" }, { status: 400 });
     }
-    if (typeof systemPrompt === "string" && systemPrompt.length > 25000) {
-      return NextResponse.json({ error: "systemPrompt exceeds 25000 characters" }, { status: 400 });
+    if (typeof systemPrompt === "string" && systemPrompt.length > 50000) {
+      return NextResponse.json({ error: "systemPrompt exceeds 50000 characters" }, { status: 400 });
     }
 
     if (modelId != null && typeof modelId !== "string") {

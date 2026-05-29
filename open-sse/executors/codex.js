@@ -209,7 +209,7 @@ export class CodexExecutor extends BaseExecutor {
       }
     }
 
-    // Priority: explicit reasoning.effort > reasoning_effort param > model suffix > default (medium)
+    // Priority: explicit reasoning.effort > reasoning_effort param > model suffix > default (low)
     if (!body.reasoning) {
       const effort = body.reasoning_effort || modelEffort || "low";
       body.reasoning = { effort, summary: "auto" };
@@ -218,9 +218,43 @@ export class CodexExecutor extends BaseExecutor {
     }
     delete body.reasoning_effort;
 
-    // Include reasoning encrypted content (required by Codex backend for reasoning models)
+    // Include reasoning encrypted content (required by Codex backend for reasoning models).
+    // Preserve any existing include values from the client.
     if (body.reasoning && body.reasoning.effort && body.reasoning.effort !== "none") {
-      body.include = ["reasoning.encrypted_content"];
+      const reasoningInclude = "reasoning.encrypted_content";
+      if (Array.isArray(body.include)) {
+        if (!body.include.includes(reasoningInclude)) {
+          body.include.push(reasoningInclude);
+        }
+      } else {
+        body.include = [reasoningInclude];
+      }
+    }
+
+    // Normalise max token fields for Codex Responses API.
+    // Codex Responses API uses max_output_tokens. Convert from chat-completions
+    // fields (max_tokens, max_completion_tokens) so the model has enough budget
+    // for both reasoning AND tool calls. Clients that send xhigh
+    // reasoning + tools need more headroom.
+    if (body.max_output_tokens === undefined) {
+      // max_completion_tokens includes reasoning budget — more relevant for
+      // Responses API than the plain max_tokens field.
+      if (body.max_completion_tokens !== undefined) {
+        body.max_output_tokens = body.max_completion_tokens;
+      } else if (body.max_tokens !== undefined) {
+        body.max_output_tokens = body.max_tokens;
+      }
+    }
+    delete body.max_tokens;
+    delete body.max_completion_tokens;
+
+    // When reasoning effort > none and no explicit max_output_tokens, set a
+    // generous default so reasoning doesn't eat the whole budget leaving nothing
+    // for tool calls.
+    if (body.reasoning?.effort && body.reasoning.effort !== "none" && body.max_output_tokens === undefined) {
+      // xhigh / high need 16k+ to leave room after thinking; medium/low need 8k+
+      const MIN_FOR_REASONING = body.reasoning.effort === "xhigh" || body.reasoning.effort === "high" ? 16384 : 8192;
+      body.max_output_tokens = MIN_FOR_REASONING;
     }
 
     // Remove unsupported parameters for Codex API
@@ -232,9 +266,6 @@ export class CodexExecutor extends BaseExecutor {
     delete body.top_logprobs;
     delete body.n;
     delete body.seed;
-    delete body.max_tokens;
-    delete body.max_completion_tokens;
-    delete body.max_output_tokens; // Responses API clients send this but Codex rejects it
     delete body.user; // Cursor sends this but Codex doesn't support it
     delete body.prompt_cache_retention; // Cursor sends this but Codex doesn't support it
     delete body.metadata; // Cursor sends this but Codex doesn't support it
