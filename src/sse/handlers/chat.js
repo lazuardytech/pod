@@ -26,9 +26,15 @@ import * as log from "../utils/logger.js";
  * Format detection and translation handled by translator
  */
 export async function handleChat(request, clientRawRequest = null) {
+  // Read body text first to enforce size limit
+  const text = await request.text();
+  if (text.length > 10 * 1024 * 1024) {
+    log.warn("CHAT", "Request body too large");
+    return errorResponse(413, "Request body too large");
+  }
   let body;
   try {
-    body = await request.json();
+    body = JSON.parse(text);
   } catch {
     log.warn("CHAT", "Invalid JSON body");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");

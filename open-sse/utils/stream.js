@@ -63,6 +63,54 @@ function decloakSSELine(line, toolNameMap, allowSuffixFallback = false) {
   }
 }
 
+/**
+ * Extract reasoning summary text from a reasoning_summary payload.
+ * Supports both direct `{ content: "..." }` and nested `{ summary: { content: "..." } }` shapes.
+ */
+function extractReasoningSummaryText(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const direct = typeof value.content === "string" ? value.content.trim() : "";
+  if (direct.length > 0) return direct;
+
+  const nested = value.summary;
+  const nestedContent =
+    nested && typeof nested === "object" && !Array.isArray(nested) && typeof nested.content === "string"
+      ? nested.content.trim()
+      : "";
+  return nestedContent.length > 0 ? nestedContent : null;
+}
+
+/**
+ * Build an OpenAI-style chat.completion.chunk delta with reasoning_content
+ * from a reasoning_summary envelope, so clients that consume delta.reasoning_content
+ * (rather than top-level reasoning_summary) see the final summary.
+ */
+function buildReasoningSummaryCompatChunk(chunk, summaryText) {
+  const compatChunk = {
+    id: typeof chunk.id === "string" && chunk.id.trim().length > 0 ? chunk.id : `chatcmpl-${Date.now()}`,
+    object: typeof chunk.object === "string" && chunk.object.trim().length > 0 ? chunk.object : "chat.completion.chunk",
+    created:
+      typeof chunk.created === "number" && Number.isFinite(chunk.created)
+        ? chunk.created
+        : Math.floor(Date.now() / 1000),
+    model: typeof chunk.model === "string" && chunk.model.trim().length > 0 ? chunk.model : "unknown",
+    choices: [
+      {
+        index: 0,
+        delta: { reasoning_content: summaryText },
+        finish_reason: null,
+      },
+    ],
+  };
+
+  if (chunk.system_fingerprint !== undefined) {
+    compatChunk.system_fingerprint = chunk.system_fingerprint;
+  }
+
+  return compatChunk;
+}
+
 // sharedEncoder is stateless — safe to share across streams
 const sharedEncoder = new TextEncoder();
 
@@ -180,6 +228,28 @@ export function createSSEStream(options = {}) {
               const parsed = JSON.parse(trimmed.slice(5).trim());
 
               const idFixed = fixInvalidId(parsed);
+
+              // Reasoning summary forwarding: mirror top-level reasoning_summary envelope to
+              // an OpenAI-style delta.reasoning_content chunk for clients that don't consume
+              // the summary envelope directly.
+              const summaryText = extractReasoningSummaryText(parsed.reasoning_summary);
+              const firstChoice = Array.isArray(parsed.choices) ? parsed.choices[0] || {} : {};
+              const firstDelta = (firstChoice && firstChoice.delta) || {};
+              const hasTextDelta = typeof firstDelta.content === "string" && firstDelta.content.length > 0;
+              const hasReasoningDelta =
+                typeof firstDelta.reasoning_content === "string" && firstDelta.reasoning_content.length > 0;
+              const hasToolDelta = Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
+              const hasFinishReason =
+                typeof firstChoice.finish_reason === "string" && firstChoice.finish_reason.length > 0;
+
+              if (summaryText && !hasTextDelta && !hasReasoningDelta && !hasToolDelta && !hasFinishReason) {
+                const compatChunk = buildReasoningSummaryCompatChunk(parsed, summaryText);
+                const compatOutput = `data: ${JSON.stringify(compatChunk)}\n`;
+                accumulatedThinking += summaryText;
+                totalContentLength += summaryText.length;
+                reqLogger?.appendConvertedChunk?.(compatOutput);
+                controller.enqueue(sharedEncoder.encode(compatOutput));
+              }
 
               // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
               let fieldsInjected = false;

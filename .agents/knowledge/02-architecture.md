@@ -63,6 +63,9 @@ while (true):
 | `GET /api/proxy-pools/stream` | Proxy pool events |
 | `GET /api/monitoring/health/stream` | Health snapshot every 10s |
 
+**Note**: All SSE routes enforce a cap of 100 concurrent connections via `src/app/api/monitoring/_sseConnectionCap.js`. Returns 503 if exceeded.
+- All SSE routes have a **5-minute idle timeout** — closes connection if no activity, prevents resource leak from abandoned streams
+
 **Critical**: Every SSE endpoint using `setInterval`/`setTimeout` MUST attach `request.signal.addEventListener("abort", cleanup)`. Missing this was the primary cause of a 1.2GB memory leak (fixed v0.0.13).
 
 ## Cache & Memory Integration
@@ -75,6 +78,7 @@ while (true):
 - `memoryOwnerId` in signature prevents cross-key cache bleed
 - `MAX_SEMANTIC_CACHE_BYTES = 512KB`
 - SQLite TTL comparison: always `strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`
+- Connection lock updates use SQLite `tx()` (`BEGIN IMMEDIATE`) for atomic read-check-write — prevents TOCTOU race in concurrent credential selection
 
 **Conversational memory**:
 - Tables: `memories`, `memory_fts` (FTS5)
@@ -95,7 +99,8 @@ Three tiers:
 
 1. **Dashboard**: JWT cookie (`auth_token`, 24h expiry) via login form
 2. **API keys**: `Authorization: Bearer` or `x-api-key` header
-3. **Per-key rate limiting**: `limitType: unlimited|limited`, RPM + concurrent
+3. **Per-key rate limiting**: `limitType: unlimited|limited`, RPM + concurrent enforced at runtime via `withApiKeyRateLimit` middleware. Also on model listing endpoints (`checkRateLimitByKey`).
+   Rate limiting is in-memory (single-process only)
 4. **Model listing auth**: `GET /v1/models`, `/v1beta/models` enforce when `requireApiKey=true`
 
 ## Request Detail Linking
@@ -112,3 +117,13 @@ Three tiers:
 ## Cloud Worker
 
 Self-hosted Cloudflare Worker (edge reverse proxy). Stores credentials in D1 (SQLite). Syncs data from Pod via `POST /sync/{machineId}`. Handles LLM requests, OAuth refresh, auto-cleanup (7-day stale records). Relies on `open-sse` for core execution.
+
+## Graceful Shutdown
+
+SIGINT/SIGTERM triggers:
+1. `initializeApp.js` stops periodic timers + cloudflared, sets 5s force-exit timeout
+2. `usageDb.js` and `requestDetailsDb.js` flush write queues to SQLite
+3. `closeDatabase()` called on main SQLite database
+4. Process exits naturally when event loop drains
+
+Critical: SIGINT handler in `initializeApp.js` does NOT call `process.exit()` directly — allows later-registered handlers to complete.

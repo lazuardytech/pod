@@ -2,7 +2,7 @@
 
 **Repository**: `github.com/lazuardytech/pod`, branch `main`
 **Origin**: Fork of [9Router](https://github.com/9router/9router) (which forked from simple-llm-proxy)
-**Current version**: **v0.0.75**
+**Current version**: **v0.0.76**
 **No upstream remote configured**.
 
 ## Release History
@@ -31,6 +31,7 @@
 | v0.0.54 | `x-pod-skip-reasoning: true` for perplexity-web |
 | v0.0.55–56 | **Vercel relay hardening**: timeout margin, 502/504 retry, `RELAY_FUNCTION_CODE` honours header. **Kiro transient retry**: body-gated 500 retry |
 | v0.0.57–75 | Continued stability improvements, UI polish, test expansion |
+| v0.0.76 | **Security + race hardening**: `/api/restart` auth, JWT_SECRET warnings, graceful SIGINT, rate limit enforcement, SSE cap, connection lock transaction, SSRF hardening, SSE idle timeout, body size limit, Vertex token dedup. **Upstream adoption**: Codex executor overhaul (+9 functions), Qoder full rewrite (COSY auth), CommandCode executor, reasoning passthrough, debugLog/toolDeduper utils, DeepSeek V4 aliases, connect timeout, Kiro leak fixes |
 
 ## Divergence from Upstream
 
@@ -49,5 +50,5 @@
 ## Docker Hub
 
 - Image: `lazuardytech/pod`
-- Tags: `v0.0.1`–`v0.0.75`, `latest`
+- Tags: `v0.0.1`–`v0.0.76`, `latest`
 - Platform: `linux/amd64`

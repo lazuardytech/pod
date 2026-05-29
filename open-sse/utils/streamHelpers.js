@@ -37,7 +37,13 @@ export function parseSSELine(line, format = null) {
 // Check if chunk has valuable content (not empty)
 export function hasValuableContent(chunk, format) {
   // OpenAI format
-  if (format === FORMATS.OPENAI && chunk.choices?.[0]?.delta) {
+  if (format === FORMATS.OPENAI) {
+    // Keep chunks that carry top-level reasoning summary envelopes, even when
+    // `choices` is empty (Inception-style final summary chunk).
+    if (chunk && typeof chunk === "object" && Object.prototype.hasOwnProperty.call(chunk, "reasoning_summary")) {
+      return true;
+    }
+    if (!chunk.choices?.[0]?.delta) return false;
     const delta = chunk.choices[0].delta;
 
     if (delta.content && delta.content !== "") {

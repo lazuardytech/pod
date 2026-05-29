@@ -11,18 +11,31 @@ export async function GET(request) {
     sendPending: null,
     cachedStats: null,
     debounceTimer: null,
+    idleTimeout: null,
   };
 
   const cleanup = () => {
     if (state.closed) return;
     state.closed = true;
+    clearTimeout(state.idleTimeout);
     if (state.send) statsEmitter.off("update", state.send);
     if (state.sendPending) statsEmitter.off("pending", state.sendPending);
     if (state.keepalive) clearInterval(state.keepalive);
     if (state.debounceTimer) clearTimeout(state.debounceTimer);
   };
 
-  request.signal.addEventListener("abort", cleanup);
+  // Idle timeout — close connection if inactive for 5 minutes
+  state.idleTimeout = setTimeout(
+    () => {
+      cleanup();
+    },
+    5 * 60 * 1000,
+  );
+
+  request.signal.addEventListener("abort", () => {
+    clearTimeout(state.idleTimeout);
+    cleanup();
+  });
 
   const stream = new ReadableStream({
     async start(controller) {

@@ -1,21 +1,36 @@
 import { checkMonitoringAuth } from "../_auth.js";
 import { buildHealthPayload } from "../_health.js";
+import { releaseSSESlot, tryAcquireSSESlot } from "../_sseConnectionCap.js";
 
 export const dynamic = "force-dynamic";
+
+const ROUTE_PATH = "/api/monitoring/health/stream";
 
 /**
  * GET /api/monitoring/health/stream
  * SSE stream — pushes full health snapshot every 10s.
  * Auth (see ../_auth.js): API key (Bearer / x-api-key) OR dashboard JWT cookie.
+ * Max concurrent connections: 100 (enforced by _sseConnectionCap.js).
  */
 export async function GET(request) {
   const unauthorized = await checkMonitoringAuth(request);
   if (unauthorized) return unauthorized;
 
+  // Enforce SSE connection cap
+  const slot = tryAcquireSSESlot(ROUTE_PATH);
+  if (!slot.allowed) return slot.response;
+
   let closed = false;
   const encoder = new TextEncoder();
   const INTERVAL_MS = 10000;
   const HEARTBEAT_MS = 25000;
+
+  const releaseSlot = () => {
+    if (!closed) {
+      closed = true;
+      releaseSSESlot(ROUTE_PATH);
+    }
+  };
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -54,16 +69,34 @@ export async function GET(request) {
         } catch {}
       }, HEARTBEAT_MS);
 
+      let idleTimeout;
+
       const cleanup = () => {
-        closed = true;
+        clearTimeout(idleTimeout);
+        releaseSlot();
         clearInterval(heartbeat);
       };
 
-      request.signal.addEventListener("abort", cleanup, { once: true });
+      // Idle timeout — close connection if inactive for 5 minutes
+      idleTimeout = setTimeout(
+        () => {
+          cleanup();
+        },
+        5 * 60 * 1000,
+      );
+
+      request.signal.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(idleTimeout);
+          cleanup();
+        },
+        { once: true },
+      );
       return cleanup;
     },
     cancel() {
-      closed = true;
+      releaseSlot();
     },
   });
 

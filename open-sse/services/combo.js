@@ -7,6 +7,11 @@ import { checkFallbackError, formatRetryAfter } from "./accountFallback.js";
 
 /**
  * Track rotation state per combo (for round-robin strategy)
+ *
+ * SAFETY: All access to this map happens in `getRotatedModels()` which is
+ * purely synchronous (no `await`). Node.js single-threaded event loop
+ * guarantees no interleaving between read and write — each call completes
+ * atomically within one JS tick. No mutex needed.
  * @type {Map<string, { index: number, consecutiveUseCount: number }>}
  */
 const comboRotationState = new Map();

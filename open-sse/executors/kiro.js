@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import { PROVIDERS } from "../config/providers.js";
 import { isTransientErrorBody } from "../config/errorConfig.js";
+import { PROVIDERS } from "../config/providers.js";
 import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.js";
 import { refreshKiroToken } from "../services/tokenRefresh.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
@@ -62,12 +62,24 @@ export class KiroExecutor extends BaseExecutor {
     // body explicitly signals "server busy".
     const transientRetry = this.config.transientRetry || { attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 };
 
-    const sleepWithJitter = (baseMs, attempt) => {
+    // Abort-aware sleep helper
+    const sleep = (ms, signal) =>
+      new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, ms);
+        if (signal) {
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(new DOMException("Aborted", "AbortError"));
+          };
+          signal.addEventListener("abort", onAbort, { once: true });
+        }
+      });
+
+    // Calculate jittered delay: exponential backoff with 50%–150% jitter
+    const jitteredDelay = (baseMs, attempt) => {
       const exponential = baseMs * 2 ** attempt;
       const capped = Math.min(exponential, transientRetry.maxDelayMs || 8000);
-      // Jitter: 50%–150% of capped delay, rounded to ms
-      const jitter = capped * (0.5 + Math.random());
-      return new Promise((resolve) => setTimeout(resolve, Math.round(jitter)));
+      return Math.round(capped * (0.5 + Math.random()));
     };
 
     while (true) {
@@ -89,7 +101,7 @@ export class KiroExecutor extends BaseExecutor {
       if (!response.ok && maxRetries > 0 && retryAttempts < maxRetries) {
         retryAttempts++;
         log?.debug?.("RETRY", `${response.status} retry ${retryAttempts}/${maxRetries} after ${delayMs / 1000}s`);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        await sleep(delayMs, signal);
         continue;
       }
 
@@ -110,12 +122,15 @@ export class KiroExecutor extends BaseExecutor {
         }
 
         if (isTransientErrorBody(bodyText)) {
+          if (signal?.aborted) {
+            throw new DOMException("Aborted", "AbortError");
+          }
           transientAttempts++;
           log?.warn?.(
             "RETRY",
             `KIRO ${response.status} transient (${transientAttempts}/${transientRetry.attempts}) | ${bodyText.slice(0, 120)}`,
           );
-          await sleepWithJitter(transientRetry.baseDelayMs || 1000, transientAttempts - 1);
+          await sleep(jitteredDelay(transientRetry.baseDelayMs || 1000, transientAttempts - 1), signal);
           continue;
         }
       }
@@ -147,265 +162,305 @@ export class KiroExecutor extends BaseExecutor {
       hasToolCalls: false,
       toolCallIndex: 0,
       seenToolIds: new Map(),
+      messageStopEvent: false,
+      hasMeteringEvent: false,
+      hasContextUsage: false,
+      totalContentLength: 0,
+      contextUsagePercentage: 0,
+    };
+
+    // Pipe response body through transform stream
+    if (!response.body) {
+      return new Response("data: [DONE]\n\n", {
+        status: response.status,
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    }
+
+    let upstreamReader = null;
+
+    // Event parsing logic - called from start() for each chunk
+    const processChunk = async (chunk, controller) => {
+      // Append to buffer
+      const newBuffer = new Uint8Array(buffer.length + chunk.length);
+      newBuffer.set(buffer);
+      newBuffer.set(chunk, buffer.length);
+      buffer = newBuffer;
+
+      // Parse events from buffer
+      let iterations = 0;
+      const maxIterations = 1000;
+      while (buffer.length >= 16 && iterations < maxIterations) {
+        iterations++;
+        const view = new DataView(buffer.buffer, buffer.byteOffset);
+        const totalLength = view.getUint32(0, false);
+
+        if (totalLength < 16 || totalLength > buffer.length || buffer.length < totalLength) break;
+
+        const eventData = buffer.slice(0, totalLength);
+        buffer = buffer.slice(totalLength);
+
+        const event = parseEventFrame(eventData);
+        if (!event) continue;
+
+        const eventType = event.headers[":event-type"] || "";
+
+        // Track total content length for token estimation
+        if (!state.totalContentLength) state.totalContentLength = 0;
+        if (!state.contextUsagePercentage) state.contextUsagePercentage = 0;
+
+        // Handle assistantResponseEvent
+        if (eventType === "assistantResponseEvent" && event.payload?.content) {
+          const content = event.payload.content;
+          state.totalContentLength += content.length;
+
+          const chunk = {
+            id: responseId,
+            object: "chat.completion.chunk",
+            created,
+            model,
+            choices: [
+              {
+                index: 0,
+                delta: chunkIndex === 0 ? { role: "assistant", content } : { content },
+                finish_reason: null,
+              },
+            ],
+          };
+          chunkIndex++;
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
+        }
+
+        // Handle codeEvent
+        if (eventType === "codeEvent" && event.payload?.content) {
+          const chunk = {
+            id: responseId,
+            object: "chat.completion.chunk",
+            created,
+            model,
+            choices: [
+              {
+                index: 0,
+                delta: { content: event.payload.content },
+                finish_reason: null,
+              },
+            ],
+          };
+          chunkIndex++;
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
+        }
+
+        // Handle toolUseEvent
+        if (eventType === "toolUseEvent" && event.payload) {
+          state.hasToolCalls = true;
+          const toolUse = event.payload;
+          const toolUses = Array.isArray(toolUse) ? toolUse : [toolUse];
+
+          for (const singleToolUse of toolUses) {
+            const toolCallId = singleToolUse.toolUseId || `call_${Date.now()}`;
+            const toolName = singleToolUse.name || "";
+            const toolInput = singleToolUse.input;
+
+            let toolIndex;
+            const isNewTool = !state.seenToolIds.has(toolCallId);
+
+            if (isNewTool) {
+              toolIndex = state.toolCallIndex++;
+              state.seenToolIds.set(toolCallId, toolIndex);
+
+              const startChunk = {
+                id: responseId,
+                object: "chat.completion.chunk",
+                created,
+                model,
+                choices: [
+                  {
+                    index: 0,
+                    delta: {
+                      ...(chunkIndex === 0 ? { role: "assistant" } : {}),
+                      tool_calls: [
+                        {
+                          index: toolIndex,
+                          id: toolCallId,
+                          type: "function",
+                          function: {
+                            name: toolName,
+                            arguments: "",
+                          },
+                        },
+                      ],
+                    },
+                    finish_reason: null,
+                  },
+                ],
+              };
+              chunkIndex++;
+              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(startChunk)}\n\n`));
+            } else {
+              toolIndex = state.seenToolIds.get(toolCallId);
+            }
+
+            if (toolInput !== undefined) {
+              let argumentsStr;
+
+              if (typeof toolInput === "string") {
+                argumentsStr = toolInput;
+              } else if (typeof toolInput === "object") {
+                argumentsStr = JSON.stringify(toolInput);
+              } else {
+                continue;
+              }
+
+              const argsChunk = {
+                id: responseId,
+                object: "chat.completion.chunk",
+                created,
+                model,
+                choices: [
+                  {
+                    index: 0,
+                    delta: {
+                      tool_calls: [
+                        {
+                          index: toolIndex,
+                          function: {
+                            arguments: argumentsStr,
+                          },
+                        },
+                      ],
+                    },
+                    finish_reason: null,
+                  },
+                ],
+              };
+              chunkIndex++;
+              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(argsChunk)}\n\n`));
+            }
+          }
+        }
+
+        // Handle messageStopEvent
+        if (eventType === "messageStopEvent") {
+          state.messageStopEvent = true;
+          if (!state.finishEmitted) {
+            const chunk = {
+              id: responseId,
+              object: "chat.completion.chunk",
+              created,
+              model,
+              choices: [
+                {
+                  index: 0,
+                  delta: {},
+                  finish_reason: state.hasToolCalls ? "tool_calls" : "stop",
+                },
+              ],
+            };
+            state.finishEmitted = true;
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
+          }
+        }
+
+        // Handle contextUsageEvent to extract contextUsagePercentage
+        if (eventType === "contextUsageEvent" && event.payload?.contextUsagePercentage) {
+          state.contextUsagePercentage = event.payload.contextUsagePercentage;
+          // Mark that we received context usage event
+          state.hasContextUsage = true;
+        }
+
+        // Handle meteringEvent - mark that we received it
+        if (eventType === "meteringEvent") {
+          state.hasMeteringEvent = true;
+        }
+
+        // Handle metricsEvent for token usage
+        if (eventType === "metricsEvent") {
+          // Extract usage data from metricsEvent payload
+          const metrics = event.payload?.metricsEvent || event.payload;
+          if (metrics && typeof metrics === "object") {
+            const inputTokens = metrics.inputTokens || 0;
+            const outputTokens = metrics.outputTokens || 0;
+
+            if (inputTokens > 0 || outputTokens > 0) {
+              state.usage = {
+                prompt_tokens: inputTokens,
+                completion_tokens: outputTokens,
+                total_tokens: inputTokens + outputTokens,
+              };
+            }
+          }
+        }
+
+        // Emit final chunk after messageStopEvent or after receiving BOTH meteringEvent AND contextUsageEvent
+        if ((state.messageStopEvent || (state.hasMeteringEvent && state.hasContextUsage)) && !state.finishEmitted) {
+          state.finishEmitted = true;
+
+          // Estimate tokens if not available from events
+          if (!state.usage) {
+            // Estimate output tokens from content length
+            const estimatedOutputTokens =
+              state.totalContentLength > 0 ? Math.max(1, Math.floor(state.totalContentLength / 4)) : 0;
+
+            // Estimate input tokens from contextUsagePercentage
+            // Kiro models typically have 200k context window
+            const estimatedInputTokens =
+              state.contextUsagePercentage > 0 ? Math.floor((state.contextUsagePercentage * 200000) / 100) : 0;
+
+            state.usage = {
+              prompt_tokens: estimatedInputTokens,
+              completion_tokens: estimatedOutputTokens,
+              total_tokens: estimatedInputTokens + estimatedOutputTokens,
+            };
+          }
+
+          const finishChunk = {
+            id: responseId,
+            object: "chat.completion.chunk",
+            created,
+            model,
+            choices: [
+              {
+                index: 0,
+                delta: {},
+                finish_reason: state.hasToolCalls ? "tool_calls" : "stop",
+              },
+            ],
+          };
+
+          // Include usage in final chunk if available
+          if (state.usage) {
+            finishChunk.usage = state.usage;
+          }
+
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(finishChunk)}\n\n`));
+        }
+      }
+
+      if (iterations >= maxIterations) {
+        console.warn("[Kiro] Max iterations reached in event parsing");
+      }
     };
 
     const transformStream = new TransformStream({
-      async transform(chunk, controller) {
-        // Append to buffer
-        const newBuffer = new Uint8Array(buffer.length + chunk.length);
-        newBuffer.set(buffer);
-        newBuffer.set(chunk, buffer.length);
-        buffer = newBuffer;
-
-        // Parse events from buffer
-        let iterations = 0;
-        const maxIterations = 1000;
-        while (buffer.length >= 16 && iterations < maxIterations) {
-          iterations++;
-          const view = new DataView(buffer.buffer, buffer.byteOffset);
-          const totalLength = view.getUint32(0, false);
-
-          if (totalLength < 16 || totalLength > buffer.length || buffer.length < totalLength) break;
-
-          const eventData = buffer.slice(0, totalLength);
-          buffer = buffer.slice(totalLength);
-
-          const event = parseEventFrame(eventData);
-          if (!event) continue;
-
-          const eventType = event.headers[":event-type"] || "";
-
-          // Track total content length for token estimation
-          if (!state.totalContentLength) state.totalContentLength = 0;
-          if (!state.contextUsagePercentage) state.contextUsagePercentage = 0;
-
-          // Handle assistantResponseEvent
-          if (eventType === "assistantResponseEvent" && event.payload?.content) {
-            const content = event.payload.content;
-            state.totalContentLength += content.length;
-
-            const chunk = {
-              id: responseId,
-              object: "chat.completion.chunk",
-              created,
-              model,
-              choices: [
-                {
-                  index: 0,
-                  delta: chunkIndex === 0 ? { role: "assistant", content } : { content },
-                  finish_reason: null,
-                },
-              ],
-            };
-            chunkIndex++;
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
-          }
-
-          // Handle codeEvent
-          if (eventType === "codeEvent" && event.payload?.content) {
-            const chunk = {
-              id: responseId,
-              object: "chat.completion.chunk",
-              created,
-              model,
-              choices: [
-                {
-                  index: 0,
-                  delta: { content: event.payload.content },
-                  finish_reason: null,
-                },
-              ],
-            };
-            chunkIndex++;
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
-          }
-
-          // Handle toolUseEvent
-          if (eventType === "toolUseEvent" && event.payload) {
-            state.hasToolCalls = true;
-            const toolUse = event.payload;
-            const toolUses = Array.isArray(toolUse) ? toolUse : [toolUse];
-
-            for (const singleToolUse of toolUses) {
-              const toolCallId = singleToolUse.toolUseId || `call_${Date.now()}`;
-              const toolName = singleToolUse.name || "";
-              const toolInput = singleToolUse.input;
-
-              let toolIndex;
-              const isNewTool = !state.seenToolIds.has(toolCallId);
-
-              if (isNewTool) {
-                toolIndex = state.toolCallIndex++;
-                state.seenToolIds.set(toolCallId, toolIndex);
-
-                const startChunk = {
-                  id: responseId,
-                  object: "chat.completion.chunk",
-                  created,
-                  model,
-                  choices: [
-                    {
-                      index: 0,
-                      delta: {
-                        ...(chunkIndex === 0 ? { role: "assistant" } : {}),
-                        tool_calls: [
-                          {
-                            index: toolIndex,
-                            id: toolCallId,
-                            type: "function",
-                            function: {
-                              name: toolName,
-                              arguments: "",
-                            },
-                          },
-                        ],
-                      },
-                      finish_reason: null,
-                    },
-                  ],
-                };
-                chunkIndex++;
-                controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(startChunk)}\n\n`));
-              } else {
-                toolIndex = state.seenToolIds.get(toolCallId);
-              }
-
-              if (toolInput !== undefined) {
-                let argumentsStr;
-
-                if (typeof toolInput === "string") {
-                  argumentsStr = toolInput;
-                } else if (typeof toolInput === "object") {
-                  argumentsStr = JSON.stringify(toolInput);
-                } else {
-                  continue;
-                }
-
-                const argsChunk = {
-                  id: responseId,
-                  object: "chat.completion.chunk",
-                  created,
-                  model,
-                  choices: [
-                    {
-                      index: 0,
-                      delta: {
-                        tool_calls: [
-                          {
-                            index: toolIndex,
-                            function: {
-                              arguments: argumentsStr,
-                            },
-                          },
-                        ],
-                      },
-                      finish_reason: null,
-                    },
-                  ],
-                };
-                chunkIndex++;
-                controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(argsChunk)}\n\n`));
-              }
+      start(controller) {
+        upstreamReader = response.body.getReader();
+        (async () => {
+          try {
+            while (true) {
+              const { done, value } = await upstreamReader.read();
+              if (done) break;
+              await processChunk(value, controller);
+            }
+          } catch (err) {
+            if (err.name !== "AbortError") {
+              controller.error(err);
             }
           }
+        })();
+      },
 
-          // Handle messageStopEvent
-          if (eventType === "messageStopEvent") {
-            const chunk = {
-              id: responseId,
-              object: "chat.completion.chunk",
-              created,
-              model,
-              choices: [
-                {
-                  index: 0,
-                  delta: {},
-                  finish_reason: state.hasToolCalls ? "tool_calls" : "stop",
-                },
-              ],
-            };
-            state.finishEmitted = true;
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`));
-          }
-
-          // Handle contextUsageEvent to extract contextUsagePercentage
-          if (eventType === "contextUsageEvent" && event.payload?.contextUsagePercentage) {
-            state.contextUsagePercentage = event.payload.contextUsagePercentage;
-            // Mark that we received context usage event
-            state.hasContextUsage = true;
-          }
-
-          // Handle meteringEvent - mark that we received it
-          if (eventType === "meteringEvent") {
-            state.hasMeteringEvent = true;
-          }
-
-          // Handle metricsEvent for token usage
-          if (eventType === "metricsEvent") {
-            // Extract usage data from metricsEvent payload
-            const metrics = event.payload?.metricsEvent || event.payload;
-            if (metrics && typeof metrics === "object") {
-              const inputTokens = metrics.inputTokens || 0;
-              const outputTokens = metrics.outputTokens || 0;
-
-              if (inputTokens > 0 || outputTokens > 0) {
-                state.usage = {
-                  prompt_tokens: inputTokens,
-                  completion_tokens: outputTokens,
-                  total_tokens: inputTokens + outputTokens,
-                };
-              }
-            }
-          }
-
-          // Emit final chunk only after receiving BOTH meteringEvent AND contextUsageEvent
-          if (state.hasMeteringEvent && state.hasContextUsage && !state.finishEmitted) {
-            state.finishEmitted = true;
-
-            // Estimate tokens if not available from events
-            if (!state.usage) {
-              // Estimate output tokens from content length
-              const estimatedOutputTokens =
-                state.totalContentLength > 0 ? Math.max(1, Math.floor(state.totalContentLength / 4)) : 0;
-
-              // Estimate input tokens from contextUsagePercentage
-              // Kiro models typically have 200k context window
-              const estimatedInputTokens =
-                state.contextUsagePercentage > 0 ? Math.floor((state.contextUsagePercentage * 200000) / 100) : 0;
-
-              state.usage = {
-                prompt_tokens: estimatedInputTokens,
-                completion_tokens: estimatedOutputTokens,
-                total_tokens: estimatedInputTokens + estimatedOutputTokens,
-              };
-            }
-
-            const finishChunk = {
-              id: responseId,
-              object: "chat.completion.chunk",
-              created,
-              model,
-              choices: [
-                {
-                  index: 0,
-                  delta: {},
-                  finish_reason: state.hasToolCalls ? "tool_calls" : "stop",
-                },
-              ],
-            };
-
-            // Include usage in final chunk if available
-            if (state.usage) {
-              finishChunk.usage = state.usage;
-            }
-
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(finishChunk)}\n\n`));
-          }
-        }
-
-        if (iterations >= maxIterations) {
-          console.warn("[Kiro] Max iterations reached in event parsing");
-        }
+      transform() {
+        // No-op - reading and parsing handled in start()
       },
 
       flush(controller) {
@@ -431,18 +486,19 @@ export class KiroExecutor extends BaseExecutor {
         // Send final done message
         controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
       },
+
+      cancel(reason) {
+        try {
+          if (upstreamReader && typeof upstreamReader.cancel === "function") {
+            upstreamReader.cancel(reason);
+          }
+        } catch {
+          // upstream reader already cancelled
+        }
+      },
     });
 
-    // Pipe response body through transform stream
-    if (!response.body) {
-      return new Response("data: [DONE]\n\n", {
-        status: response.status,
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    }
-    const transformedStream = response.body.pipeThrough(transformStream);
-
-    return new Response(transformedStream, {
+    return new Response(transformStream.readable, {
       status: response.status,
       statusText: response.statusText,
       headers: {

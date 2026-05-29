@@ -75,13 +75,27 @@ export async function GET(request) {
         } catch {}
       }, 30000);
 
+      let idleTimeout;
+
       const cleanup = () => {
         closed = true;
+        clearTimeout(idleTimeout);
         clearInterval(heartbeat);
       };
 
+      // Idle timeout — close connection if inactive for 5 minutes
+      idleTimeout = setTimeout(
+        () => {
+          cleanup();
+        },
+        5 * 60 * 1000,
+      );
+
       // Fires reliably on client disconnect in Next.js standalone + Bun
-      request.signal.addEventListener("abort", cleanup, { once: true });
+      request.signal.addEventListener("abort", () => {
+        clearTimeout(idleTimeout);
+        cleanup();
+      }, { once: true });
 
       return cleanup;
     },

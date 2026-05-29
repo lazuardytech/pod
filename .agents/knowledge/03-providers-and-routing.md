@@ -25,7 +25,9 @@
 
 ## Executors
 
-Registry at `open-sse/executors/index.js`. Specialized executors for some providers (Kiro, Codex, etc.). Default executor for generic OpenAI-compatible providers.
+Registry at `open-sse/executors/index.js`. 20 executors (antigravity, azure, base, codex, commandcode, cursor, default, gemini-cli, github, grok-web, iflow, kiro, ollama-local, opencode-go, opencode, perplexity-web, qoder, qwen, vertex). Specialized executors for some providers (Kiro, Codex, CommandCode, Qoder, etc.). Default executor for generic OpenAI-compatible providers.
+
+Note: `commandcode.js` was recently added from 9router upstream.
 
 ## Format Translation
 
@@ -38,8 +40,9 @@ Translators lazy-initialized at first request via `initTranslators()`.
 ## Provider Types
 
 1. **Built-in API Key**: OpenAI, Anthropic, Google, etc.
-2. **OAuth**: GitHub, Google/Kiro, Cursor, Codex, Qwen, GitLab, Claude, Gemini
+2. **OAuth/COSY**: GitHub, Google/Kiro, Cursor, Codex, Qwen, GitLab, Claude, Gemini. Qoder uses COSY auth (RSA + AES + MD5) — a custom signed-header scheme, not standard OAuth.
 3. **OpenAI/Anthropic Compatible**: User-defined with custom base URLs
 4. **Free tier**: No-auth (opencode, etc.)
 5. **Web cookie**: iFlow (BXAuth), grok-web, perplexity-web
-6. **Custom Embedding**: User-defined embedding endpoints
+6. **Direct API key**: CommandCode (standalone provider, `api.commandcode.ai`)
+7. **Custom Embedding**: User-defined embedding endpoints

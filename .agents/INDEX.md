@@ -1,6 +1,6 @@
 # .agents Index
 
-Knowledge base for Pod contributors. Synced at **v0.0.75**.
+Knowledge base for Pod contributors. Synced at **v0.0.76**.
 
 - [Overview](knowledge/01-overview.md)
 - [Architecture](knowledge/02-architecture.md)

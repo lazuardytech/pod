@@ -61,3 +61,15 @@ bun run check      # pre-push lint
 bun run test:run   # vitest
 bun run build      # next build
 ```
+
+## Production Hardening
+
+- Rate limiting enforced at runtime (`checkRateLimitByKey`, `withApiKeyRateLimit`)
+- SSE capped at 100 concurrent connections
+- Connection locks use SQLite `tx()` for atomicity
+- `debugLog.js` available for executor-level debug logging (dev only)
+- `toolDeduper.js` deduplicates MCP tools to reduce token bloat
+- Reasoning passthrough: `extractReasoningSummaryText()` + `buildReasoningSummaryCompatChunk()`
+- DeepSeek V4 Pro alias: `applyDeepSeekV4ProAlias()` maps max/none aliases
+- Graceful shutdown: SIGINT drains queues before exit
+

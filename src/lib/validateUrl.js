@@ -5,6 +5,7 @@
 
 // Private/internal IP ranges that should not be reachable from server-side fetch
 const PRIVATE_IP_PATTERNS = [
+  /^0\./, // current host (0.0.0.0)
   /^127\./, // loopback
   /^10\./, // RFC1918
   /^172\.(1[6-9]|2\d|3[01])\./, // RFC1918
@@ -16,7 +17,16 @@ const PRIVATE_IP_PATTERNS = [
   /^fe80:/i, // IPv6 link-local
 ];
 
-const PRIVATE_HOSTNAMES = new Set(["localhost", "metadata.google.internal"]);
+const PRIVATE_HOSTNAMES = new Set([
+  "localhost",
+  "metadata.google.internal",
+  "metadata.internal", // GCP metadata alternative
+  "1.0.0.127.nip.io", // DNS rebinding
+  "127.0.0.1.nip.io", // DNS rebinding
+  "localtest.me", // DNS rebinding (resolves to 127.0.0.1)
+  "lvh.me", // DNS rebinding (resolves to 127.0.0.1)
+  "127.0.0.1.sslip.io", // DNS rebinding
+]);
 
 /**
  * Check if a hostname resolves to a private/internal address.

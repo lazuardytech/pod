@@ -4,13 +4,13 @@ Operational rules for AI agents working on **Pod** (`~/projects/lt/pod`).
 
 ## Baseline
 
-- Version: **v0.0.75**
+- Version: **v0.0.76**
 - Package: `pod`
-- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.75, latest)
+- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.76, latest)
 - GitHub: `lazuardytech/pod`, branch `main`
 - Data dir: `~/.pod/pod.sqlite`
 - Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap)
-- Tests: **~1500+** across 63 files
+- Tests: **~1300+** across 66 files
 
 ## Non-Negotiable Rules
 
@@ -41,6 +41,20 @@ Operational rules for AI agents working on **Pod** (`~/projects/lt/pod`).
 25. **Vercel `RELAY_FUNCTION_CODE` must honour `x-relay-timeout`** — the relay function source string in `vercel-deploy/route.js` reads `req.headers.get("x-relay-timeout")`, parses to int, and aborts upstream fetch via its own `AbortController` if exceeded. On timeout returns 504 with `{ error: "Upstream relay request timed out" }`. Pod sends `upstreamTimeoutMs - 5000` so relay times out first. Re-deploy the relay (via `/proxy-pools/vercel-deploy`) after editing this code or it stays out of sync with rules #22–#23.
 26. **Kiro 500 with `MODEL_TEMPORARILY_UNAVAILABLE` is body-gated retryable** — AWS CodeWhisperer surfaces overload as HTTP 500 with `{ reason: "MODEL_TEMPORARILY_UNAVAILABLE" }`. `KiroExecutor` retries via separate `transientRetry` budget (`{ attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 }`) with exponential backoff + 50%–150% jitter. `errorConfig.js` `isTransientErrorBody()` is the single classifier (matches `model_temporarily_unavailable`, `unexpectedly high load`, `overloaded`, `temporarily unavailable`). Do not retry generic 500 — only when body matches.
 27. **`/api/monitoring/health` requires API key when `requireApiKey=true`** — mirrors `/v1/models` and `/v1/chat/completions` auth pattern. Use `extractApiKey()` + `isValidApiKey()` from `src/sse/services/auth.js`. The bare `/api/health` heartbeat stays public for liveness probes (Docker `HEALTHCHECK`, Kubernetes, etc.) and returns only `{ ok: true }`. Stream endpoint `/api/monitoring/health/stream` follows the same auth as the snapshot endpoint.
+28. **`/api/restart` requires `SHUTDOWN_SECRET` auth** — mirrors `/api/shutdown` auth pattern. Route must never be unprotected. Also in `ALWAYS_PROTECTED` list in `dashboardGuard.js` and proxy middleware matcher.
+29. **Global error handlers required** — `process.on('unhandledRejection')` and `process.on('uncaughtException')` in `server-init.js`. Never remove — prevents silent process death.
+30. **Kiro TransformStream must have `cancel()` callback** — `transformEventStreamToSSE()` TransformStream must implement `cancel(reason)` that cancels upstream reader. Missing this leaks upstream HTTP connections on client disconnect.
+31. **Rate limiting enforced at runtime** — `api_keys.requests_per_minute` and `concurrent_requests` enforced via `withApiKeyRateLimit` and `checkRateLimitByKey`. Model listing endpoints (`/v1/models`, `/[kind]`, `/v1beta/models`) also enforce. Do not bypass.
+32. **SSE connection cap at 100** — `_sseConnectionCap.js` shared utility enforces max 100 concurrent SSE streams per route. Returns 503 when exceeded.
+33. **Connection lock acquisition uses SQLite transaction** — `updateConnectionRow()` in `localDb.js` wraps read-check-write in `tx()` (`BEGIN IMMEDIATE`). Prevents TOCTOU race where two concurrent requests select the same connection. Never convert back to async read-modify-write.
+34. **SIGINT handler must not call `process.exit()` immediately** — `initializeApp.js` SIGINT handler now sets a 5s timeout instead of immediate exit. Lets later-registered handlers (usageDb, requestDetailsDb queue flushes) complete. Queue data loss otherwise.
+35. **Qoder executor uses COSY auth** — RSA+AES+MD5 signing via `src/lib/qoder/cosy.js`. Live model catalog from `/algo/api/v2/model/list` via `open-sse/services/qoderModels.js`. SSE response wraps `{statusCodeValue, body}` envelope — must unwrap before forwarding.
+36. **`debugLog.js` utility available** — `open-sse/utils/debugLog.js` exports `dbg(tag, msg)` active only when `NODE_ENV != "production"`. Used by codex.js and base.js executors.
+37. **`toolDeduper.js` deduplicates MCP tools** — drops built-in tools when equivalent MCP tools present (Exa, Tavily, Browser). Reduces token bloat in Claude requests.
+38. **Reasoning passthrough from omniroute** — `stream.js` has `extractReasoningSummaryText()` and `buildReasoningSummaryCompatChunk()`. `streamHelpers.js` `hasValuableContent()` keeps chunks with `reasoning_summary` even when `choices` is empty. Prevents terminal reasoning from being filtered out.
+39. **SSE idle timeout — 5 minutes** — all SSE stream routes (`usage/stream`, `proxy-pools/stream`, `health/stream`, `request-logs/stream`) enforce a 5-minute idle timeout via `setTimeout`. On timeout, the stream is closed and cleanup runs. The timeout is cleared on normal client disconnect. Prevents abandoned connection structs from accumulating.
+40. **SSRF validation blocks `0.0.0.0` + DNS rebinding** — `src/lib/validateUrl.js` `PRIVATE_IP_PATTERNS` includes `/^0\./` (blocks `0.0.0.0`). `PRIVATE_HOSTNAMES` includes DNS rebinding domains: `nip.io`, `sslip.io`, `localtest.me`, `lvh.me`, `metadata.internal`. Never remove these — user-supplied URLs are validated against this list before server-side fetch.
+41. **Vertex token refresh has in-flight dedup** — `refreshVertexToken()` uses `vertexRefreshPromiseCache` Map to dedup concurrent calls for the same service account email. Prevents redundant JWT minting and OAuth calls. Same pattern as all other provider token refreshes.
 
 ## Verification Before Push
 

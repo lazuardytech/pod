@@ -304,7 +304,12 @@ export function getInFlight(signature) {
 export function setInFlight(signature, promise) {
   inFlightRequests.set(signature, promise);
   // Auto-clear after 60s to prevent memory leak if upstream never resolves
-  setTimeout(() => inFlightRequests.delete(signature), 60000);
+  const timer = setTimeout(() => inFlightRequests.delete(signature), 60000);
+  // Clean up timer when promise settles — prevents dangling Map entries
+  promise.then(
+    () => clearTimeout(timer),
+    () => clearTimeout(timer),
+  );
 }
 
 export function clearInFlight(signature) {

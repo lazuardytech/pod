@@ -1,6 +1,8 @@
 import { DEFAULT_RETRY_CONFIG, HTTP_STATUS, resolveRetryEntry } from "../config/runtimeConfig.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 
+const FETCH_CONNECT_TIMEOUT_MS = 15_000;
+
 /**
  * BaseExecutor - Base class for provider executors
  */
@@ -128,6 +130,14 @@ export class BaseExecutor {
 
       if (!retryAttemptsByUrl[urlIndex]) retryAttemptsByUrl[urlIndex] = 0;
 
+      // Abort if upstream doesn't return response headers within FETCH_CONNECT_TIMEOUT_MS
+      const connectCtrl = new AbortController();
+      const connectTimer = setTimeout(
+        () => connectCtrl.abort(new Error("fetch connect timeout")),
+        FETCH_CONNECT_TIMEOUT_MS,
+      );
+      const mergedSignal = signal ? AbortSignal.any([signal, connectCtrl.signal]) : connectCtrl.signal;
+
       try {
         const response = await proxyAwareFetch(
           url,
@@ -135,10 +145,11 @@ export class BaseExecutor {
             method: "POST",
             headers,
             body: JSON.stringify(transformedBody),
-            signal,
+            signal: mergedSignal,
           },
           proxyOptions,
         );
+        clearTimeout(connectTimer);
 
         if (await tryRetry(urlIndex, response.status, `status ${response.status}`)) {
           urlIndex--;
@@ -153,8 +164,11 @@ export class BaseExecutor {
 
         return { response, url, headers, transformedBody };
       } catch (error) {
+        clearTimeout(connectTimer);
         lastError = error;
-        if (error.name === "AbortError") throw error;
+        const isConnectTimeout = connectCtrl.signal.aborted && error.name === "AbortError";
+        // Connect timeout is internal — convert to retryable network error, don't propagate AbortError
+        if (error.name === "AbortError" && !isConnectTimeout) throw error;
 
         // Map network/fetch exceptions to 502 retry config
         if (await tryRetry(urlIndex, HTTP_STATUS.BAD_GATEWAY, `network "${error.message}"`)) {

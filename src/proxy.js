@@ -18,6 +18,7 @@ export const config = {
     "/basic-chat/:path*",
     "/media-providers/:path*",
     "/api/shutdown",
+    "/api/restart",
     "/api/settings/:path*",
     "/api/keys",
     "/api/keys/:path*",

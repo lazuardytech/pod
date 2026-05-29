@@ -21,7 +21,7 @@ async function hasValidCliToken(request) {
 }
 
 // Always require JWT token regardless of requireLogin setting
-const ALWAYS_PROTECTED = ["/api/shutdown", "/api/settings/database", "/api/settings/migrate-sqlite"];
+const ALWAYS_PROTECTED = ["/api/shutdown", "/api/restart", "/api/settings/database", "/api/settings/migrate-sqlite"];
 
 // Require auth, but allow through if requireLogin is disabled
 const PROTECTED_API_PATHS = [

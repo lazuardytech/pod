@@ -5,7 +5,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { Low } from "lowdb";
 import { v4 as uuidv4 } from "uuid";
-import { getDatabase } from "./sqlite/connection.js";
+import { getDatabase, tx } from "./sqlite/connection.js";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
 
@@ -278,19 +278,19 @@ async function insertConnectionRow(conn) {
     );
 }
 
-async function updateConnectionRow(id, patch) {
-  const current = await getProviderConnectionById(id);
-  if (!current) return null;
-  const merged = { ...current, ...patch, updatedAt: nowIso() };
-  const extras = splitExtras(merged, CONN_COLS);
-  db()
-    .prepare(`
+function updateConnectionRow(id, patch) {
+  return tx((db) => {
+    const row = db.prepare("SELECT * FROM provider_connections WHERE id = ?").get(id);
+    if (!row) return null;
+    const current = rowToConnection(row);
+    const merged = { ...current, ...patch, updatedAt: nowIso() };
+    const extras = splitExtras(merged, CONN_COLS);
+    db.prepare(`
     UPDATE provider_connections
     SET provider = ?, auth_type = ?, name = ?, priority = ?, is_active = ?,
         data = ?, updated_at = ?
     WHERE id = ?
-  `)
-    .run(
+  `).run(
       merged.provider,
       merged.authType || null,
       merged.name ?? null,
@@ -300,7 +300,8 @@ async function updateConnectionRow(id, patch) {
       merged.updatedAt,
       id,
     );
-  return merged;
+    return merged;
+  });
 }
 
 export async function createProviderConnection(data) {
@@ -474,10 +475,9 @@ export async function updateProviderConnection(id, data) {
     return d.data.providerConnections[idx];
   }
 
-  const current = await getProviderConnectionById(id);
-  if (!current) return null;
-  const merged = await updateConnectionRow(id, data);
-  if (data.priority !== undefined) await reorderProviderConnections(current.provider);
+  const merged = updateConnectionRow(id, data);
+  if (!merged) return null;
+  if (data.priority !== undefined) await reorderProviderConnections(merged.provider);
   return merged;
 }
 

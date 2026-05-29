@@ -180,6 +180,21 @@ function finalizeResponse(response, release) {
   return wrapStreamingResponse(response, release);
 }
 
+/**
+ * Standalone rate limit check for routes that already handle auth themselves.
+ * Call after auth succeeds. Returns { ok, response } where response is a 429 Response if limited.
+ */
+export async function checkRateLimitByKey(apiKey) {
+  if (!apiKey) return { ok: true, release: null, response: undefined };
+  const apiKeyRecord = await getApiKeyByKey(apiKey).catch(() => null);
+  if (!apiKeyRecord) return { ok: true, release: null, response: undefined };
+  const permit = acquirePermit(apiKeyRecord);
+  if (!permit.ok) {
+    return { ok: false, release: null, response: rateLimitResponse(permit.reason, permit.retryAfterSeconds) };
+  }
+  return { ok: true, release: permit.release, response: undefined };
+}
+
 export async function withApiKeyRateLimit(request, handler) {
   const apiKey = extractApiKey(request);
   if (!apiKey) return await handler();

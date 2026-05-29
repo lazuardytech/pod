@@ -104,3 +104,38 @@ Read before changing core flow.
 
 57. **`text-primary-fg` required on `bg-primary`** — `--color-primary` flips between near-black (light) and near-white (dark). `text-primary-fg` is the dedicated readable foreground.
 58. **Refresh buttons: `size-7` square** — not `<Button size="sm">`. Standardized across app.
+
+## Rate Limiting & SSE
+
+59. **Rate limiting NOW enforced** — `api_keys.requests_per_minute` and `concurrent_requests` are actively checked. Model listing endpoints also enforce via `checkRateLimitByKey`. Don't assume they're advisory.
+60. **SSE connection cap at 100** — `_sseConnectionCap.js` per-route. Returns 503 when hit. Idle connections eventually timeout.
+
+## Race Conditions
+
+61. **Connection lock uses SQLite tx()** — `updateConnectionRow()` in `localDb.js` wraps read-modify-write in `BEGIN IMMEDIATE`. Two concurrent requests cannot both select the same connection. Don't convert back to async pattern — the `await` between read and write creates a TOCTOU window.
+62. **SIGINT must not process.exit()** — `initializeApp.js` handler now sets 5s timeout only. Process exits naturally after queue flushes. Adding `process.exit()` in SIGINT/SIGTERM will lose usage data.
+63. **Kiro TransformStream must have cancel()** — `transformEventStreamToSSE()` needs `cancel(reason)` to cancel upstream reader on client disconnect. Missing this leaks HTTP connections until upstream timeout.
+64. **Qoder SSE wrap must have cancel()** — Same pattern as Kiro. The `wrapQoderSSE()` TransformStream needs `cancel(reason)` callback.
+65. **Qoder SSE unwrap must catch parse errors** — `processLine()` throws on malformed SSE. Wrap in try/catch with `console.warn` logging. Uncaught parse errors terminate the TransformStream abruptly.
+66. **codex.js setInterval unref'd** — assistant session cleanup interval has `.unref()`. If converting to a different cleanup mechanism, ensure it doesn't block process exit.
+
+## Security
+
+67. **`/api/restart` auth required** — same `SHUTDOWN_SECRET` Bearer auth as `/api/shutdown`. In `ALWAYS_PROTECTED` list. Don't remove.
+68. **`process.on('unhandledRejection')` required** — registered in `server-init.js`. Never remove. Without it, any unhandled promise rejection crashes the process silently.
+69. **JWT_SECRET/API_KEY_SECRET defaults warned** — startup prints security warnings if secrets match defaults. `login/route.js` no longer falls back to `"123456"` — requires `INITIAL_PASSWORD` env var.
+70. **Debug logging only in dev** — `debugLog.js` `dbg()` function active only when `NODE_ENV != "production"`. Don't remove this guard.
+
+## SSE
+
+71. **SSE idle timeout is 5 minutes** — all 4 SSE routes have a `setTimeout` that calls `cleanup()` after 5 min of inactivity. Normal disconnect clears the timeout. Don't change the duration without considering the SSE connection cap (100). Together they prevent resource exhaustion.
+72. **`cleanup()` must clear idleTimeout** — every SSE route's `cleanup()` function clears the idle timeout as a safety net. If you refactor cleanup, make sure the timeout is cleared in all three paths: idle timeout fires, abort event fires, cancel() fires.
+
+## Security
+
+73. **`0.0.0.0` blocked in SSRF validation** — `src/lib/validateUrl.js` includes `/^0\./` in `PRIVATE_IP_PATTERNS`. Never remove. Also 6 DNS rebinding domains in `PRIVATE_HOSTNAMES`: `nip.io`, `sslip.io`, `localtest.me`, `lvh.me`, `metadata.internal`. If you add more, also add the corresponding URL patterns.
+74. **Request body size limited to 10MB** — `src/sse/handlers/chat.js` reads body as text first, checks length (returns 413 if over), then parses JSON (returns 400 on parse failure). Don't remove the limit or skip the text-read step — `request.json()` without limit can OOM the process.
+
+## Vertex
+
+75. **Vertex token refresh has in-flight dedup** — `refreshVertexToken()` uses `vertexRefreshPromiseCache` Map. Two concurrent requests for same SA email share one JWT mint + OAuth call. Don't convert to direct cache-read pattern without the dedup.

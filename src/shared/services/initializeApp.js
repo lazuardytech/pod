@@ -24,6 +24,19 @@ const g = (global.__appSingleton ??= {
   lastWatchdogTick: Date.now(),
 });
 
+// Warn about default secrets
+if (process.env.JWT_SECRET === "pod-default-secret-change-me" || !process.env.JWT_SECRET) {
+  console.warn("[SECURITY] WARNING: JWT_SECRET is set to default value. Set a strong random secret in production.");
+}
+if ((process.env.API_KEY_SECRET || "endpoint-proxy-api-key-secret") === "endpoint-proxy-api-key-secret") {
+  console.warn("[SECURITY] WARNING: API_KEY_SECRET is set to default value. Set a strong random secret in production.");
+}
+if (!process.env.INITIAL_PASSWORD && !process.env.JWT_SECRET) {
+  console.warn(
+    "[SECURITY] WARNING: No INITIAL_PASSWORD and no JWT_SECRET set. Default login password is '123456'. Set INITIAL_PASSWORD in production.",
+  );
+}
+
 export async function initializeApp() {
   try {
     await cleanupProviderConnections();
@@ -55,7 +68,11 @@ export async function initializeApp() {
           /* best effort */
         }
         killCloudflared();
-        process.exit();
+        // Don't call process.exit() here — later handlers (usageDb, requestDetailsDb)
+        // registered on module import need time to flush their queues.
+        // Process exits naturally when event loop drains.
+        // Safety net: force exit after 5s in case something hangs.
+        setTimeout(() => process.exit(1), 5000).unref();
       };
       process.on("SIGINT", cleanup);
       process.on("SIGTERM", cleanup);

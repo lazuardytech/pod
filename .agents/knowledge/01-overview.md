@@ -2,7 +2,7 @@
 
 Pod is Lazuardy Tech's AI routing proxy — sits between client apps and 50+ LLM providers. Exposes OpenAI/Anthropic/Gemini-compatible endpoints with routing, fallback, caching, rate limiting, and a dashboard.
 
-Current baseline: **v0.0.75**.
+Current baseline: **v0.0.76**.
 
 ## Core Capabilities
 
@@ -10,11 +10,20 @@ Current baseline: **v0.0.75**.
 - Streaming + non-streaming via `open-sse` engine
 - Semantic response cache (streaming cached too)
 - Conversational memory injection/extraction (EN + ID patterns)
+   - **CommandCode provider** executor + translator
+   - **Qoder provider** with COSY auth (RSA+AES+MD5) and live model catalog
+   - **Reasoning passthrough** — reasoning_summary chunks forwarded to delta.reasoning_content
+   - **Runtime rate limiting** enforcement on model listing endpoints
+   - **Graceful shutdown** — SIGINT flushes queues before exit
+   - **Connection lock atomicity** via SQLite transactions
 - API key auth with per-key rate limiting (RPM + concurrency)
 - Proxy pool support with Vercel relay option
 - Tailscale and Cloudflare tunnel integration
 - Model cost sync from models.dev (auto on boot, configurable interval)
 - OAuth flows for 12+ providers (Code + PKCE, Device Code, Cookie, PAT)
+- **SSRF hardening**: `0.0.0.0` and DNS rebinding domains (`nip.io`, `sslip.io`, `localtest.me`, `lvh.me`) blocked in URL validation
+- **SSE idle timeout**: 5-minute timeout on all SSE streams — abandoned connections auto-closed
+- **Request body size limit**: 10MB max, returns 413 on oversized payloads
 
 ## Dashboard Sections
 
@@ -37,7 +46,7 @@ Current baseline: **v0.0.75**.
 | `src/` | Next.js app — dashboard UI, API routes (95+), server libs |
 | `open-sse/` | Core routing engine — executors, translators, stream handling |
 | `cloud/` | Cloudflare Worker companion deployment |
-| `tests/` | ~1500 tests across 63 files |
+| `tests/` | ~1300 tests across 66 files |
 | `.agents/` | Agent-oriented project knowledge (10 docs, 13 reports) |
 
 ## Ground Rules

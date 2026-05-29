@@ -764,6 +764,8 @@ export function parseVertexSaJson(apiKey) {
 
 // Cache Vertex tokens keyed by service account email { token, expiresAt }
 const vertexTokenCache = new Map();
+// In-flight dedup for concurrent Vertex token refresh requests
+const vertexRefreshPromiseCache = new Map();
 
 /**
  * Mint a short-lived OAuth2 Bearer token for Google Cloud Vertex AI
@@ -779,46 +781,58 @@ export async function refreshVertexToken(saJson, log) {
     return { accessToken: cached.token, expiresAt: cached.expiresAt };
   }
 
-  try {
-    const { SignJWT, importPKCS8 } = await import("jose");
-    log?.debug?.("TOKEN_REFRESH", `Vertex minting token for ${saJson.client_email}`);
-    const privateKey = await importPKCS8(saJson.private_key.replace(/\\n/g, "\n"), "RS256");
-    const now = Math.floor(Date.now() / 1000);
-
-    const jwt = await new SignJWT({ scope: "https://www.googleapis.com/auth/cloud-platform" })
-      .setProtectedHeader({ alg: "RS256" })
-      .setIssuer(saJson.client_email)
-      .setAudience("https://oauth2.googleapis.com/token")
-      .setIssuedAt(now)
-      .setExpirationTime(now + 3600)
-      .sign(privateKey);
-
-    const res = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion: jwt,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      log?.error?.("TOKEN_REFRESH", `Vertex token mint failed: ${err}`);
-      return null;
-    }
-
-    const { access_token, expires_in } = await res.json();
-    const expiresAt = Date.now() + (expires_in ?? 3600) * 1000;
-
-    vertexTokenCache.set(cacheKey, { token: access_token, expiresAt });
-    log?.info?.("TOKEN_REFRESH", `Vertex token minted for ${saJson.client_email}`);
-
-    return { accessToken: access_token, expiresAt };
-  } catch (error) {
-    log?.error?.("TOKEN_REFRESH", `Vertex token error: ${error.message}`);
-    return null;
+  // In-flight dedup: if same SA key is already refreshing, reuse result
+  if (vertexRefreshPromiseCache.has(cacheKey)) {
+    return vertexRefreshPromiseCache.get(cacheKey);
   }
+
+  const promise = (async () => {
+    try {
+      const { SignJWT, importPKCS8 } = await import("jose");
+      log?.debug?.("TOKEN_REFRESH", `Vertex minting token for ${saJson.client_email}`);
+      const privateKey = await importPKCS8(saJson.private_key.replace(/\\n/g, "\n"), "RS256");
+      const now = Math.floor(Date.now() / 1000);
+
+      const jwt = await new SignJWT({ scope: "https://www.googleapis.com/auth/cloud-platform" })
+        .setProtectedHeader({ alg: "RS256" })
+        .setIssuer(saJson.client_email)
+        .setAudience("https://oauth2.googleapis.com/token")
+        .setIssuedAt(now)
+        .setExpirationTime(now + 3600)
+        .sign(privateKey);
+
+      const res = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+          assertion: jwt,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        log?.error?.("TOKEN_REFRESH", `Vertex token mint failed: ${err}`);
+        return null;
+      }
+
+      const { access_token, expires_in } = await res.json();
+      const expiresAt = Date.now() + (expires_in ?? 3600) * 1000;
+
+      vertexTokenCache.set(cacheKey, { token: access_token, expiresAt });
+      log?.info?.("TOKEN_REFRESH", `Vertex token minted for ${saJson.client_email}`);
+
+      return { accessToken: access_token, expiresAt };
+    } catch (error) {
+      log?.error?.("TOKEN_REFRESH", `Vertex token error: ${error.message}`);
+      return null;
+    } finally {
+      vertexRefreshPromiseCache.delete(cacheKey);
+    }
+  })();
+
+  vertexRefreshPromiseCache.set(cacheKey, promise);
+  return promise;
 }
 
 /**

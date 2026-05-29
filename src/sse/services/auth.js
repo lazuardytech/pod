@@ -70,11 +70,6 @@ function schedulePersist(connectionId, fields) {
   persistQueue.set(connectionId, merged);
 }
 
-const _credentialsCache = new Map();
-const _pendingRequests = new Map();
-const _CACHE_TTL_MS = 5000;
-const _MAX_CREDENTIALS_CACHE_SIZE = 500;
-
 /**
  * Get provider credentials from localDb
  * Filters out unavailable accounts and returns the selected account based on strategy

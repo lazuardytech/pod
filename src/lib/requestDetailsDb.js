@@ -4,7 +4,7 @@
 // runs on batch threshold or after a debounce timer.
 
 import { error as logError } from "@/sse/utils/logger.js";
-import { getDatabase } from "./sqlite/connection.js";
+import { closeDatabase, getDatabase } from "./sqlite/connection.js";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
 
@@ -301,6 +301,11 @@ const _shutdownHandler = async () => {
     flushTimer = null;
   }
   if (writeBuffer.length > 0) await flushToDatabase();
+  try {
+    closeDatabase();
+  } catch {
+    /* best effort during shutdown */
+  }
 };
 
 function ensureShutdownHandler() {

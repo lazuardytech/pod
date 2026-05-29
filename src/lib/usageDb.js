@@ -3,12 +3,12 @@
 // (same global state, same observable semantics) because consumers subscribe
 // to `statsEmitter` events from SSE routes.
 
-import fs from "node:fs";
 import { EventEmitter } from "node:events";
-import { error as logError } from "@/sse/utils/logger.js";
+import fs from "node:fs";
 import { DATA_DIR } from "@/lib/dataDir.js";
+import { error as logError } from "@/sse/utils/logger.js";
 import { LRUCache } from "./cacheLayer.js";
-import { getDatabase } from "./sqlite/connection.js";
+import { closeDatabase, getDatabase } from "./sqlite/connection.js";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
 
@@ -446,6 +446,11 @@ if (!isCloud && !global._flushHooksRegistered) {
   const flushAll = () => {
     flushSummaryQueue();
     flushLogs();
+    try {
+      closeDatabase();
+    } catch {
+      /* best effort during shutdown */
+    }
   };
   process.on("beforeExit", flushAll);
   process.on("SIGINT", flushAll);

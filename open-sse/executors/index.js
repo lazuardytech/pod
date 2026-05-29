@@ -1,6 +1,7 @@
 import { AntigravityExecutor } from "./antigravity.js";
 import { AzureExecutor } from "./azure.js";
 import { CodexExecutor } from "./codex.js";
+import { CommandCodeExecutor } from "./commandcode.js";
 import { CursorExecutor } from "./cursor.js";
 import { DefaultExecutor } from "./default.js";
 import { GeminiCLIExecutor } from "./gemini-cli.js";
@@ -35,6 +36,7 @@ const executors = {
   "grok-web": new GrokWebExecutor(),
   "perplexity-web": new PerplexityWebExecutor(),
   "ollama-local": new OllamaLocalExecutor(),
+  commandcode: new CommandCodeExecutor(),
 };
 
 const defaultCache = new Map();
@@ -53,6 +55,7 @@ export { AntigravityExecutor } from "./antigravity.js";
 export { AzureExecutor } from "./azure.js";
 export { BaseExecutor } from "./base.js";
 export { CodexExecutor } from "./codex.js";
+export { CommandCodeExecutor } from "./commandcode.js";
 export { CursorExecutor } from "./cursor.js";
 export { DefaultExecutor } from "./default.js";
 export { GeminiCLIExecutor } from "./gemini-cli.js";

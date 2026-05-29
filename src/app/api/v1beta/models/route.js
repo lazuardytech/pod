@@ -1,3 +1,4 @@
+import { checkRateLimitByKey } from "@/app/api/v1/_utils/apiKeyRateLimit.js";
 import { getSettings, validateApiKey } from "@/lib/localDb";
 import { PROVIDER_MODELS } from "@/shared/constants/models";
 import { extractApiKey } from "@/sse/services/auth.js";
@@ -35,6 +36,12 @@ export async function GET(request) {
         { error: { message: "Invalid API key", code: 401 } },
         { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
       );
+    }
+
+    // Rate limit check
+    const rateCheck = await checkRateLimitByKey(apiKey);
+    if (!rateCheck.ok) {
+      return rateCheck.response;
     }
   }
 

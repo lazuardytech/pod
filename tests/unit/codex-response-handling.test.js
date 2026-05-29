@@ -416,7 +416,7 @@ describe("CodexExecutor.transformRequest — stream always true", () => {
     };
     executor.transformRequest("gpt-5.3-codex", body, false, { accessToken: "test" });
     expect(body.tools).toHaveLength(1);
-    expect(body.tools[0].function.name).toBe("my_tool");
+    expect(body.tools[0].name).toBe("my_tool");
   });
 
   it("removes unsupported params (temperature, top_p, max_tokens, etc.)", () => {
