@@ -257,6 +257,27 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
     }
   }
 
+  // Post-process: merge consecutive same-role message items.
+  // The Responses API rejects consecutive assistant messages ("Cannot continue from
+  // message role: assistant"). This can happen when a user message with empty content
+  // is skipped (content.length === 0 above) or when the client sends malformed input.
+  if (result.input.length > 1) {
+    const merged = [result.input[0]];
+    for (let i = 1; i < result.input.length; i++) {
+      const prev = merged[merged.length - 1];
+      const curr = result.input[i];
+      if (prev.type === "message" && curr.type === "message" && prev.role === curr.role) {
+        // Merge content arrays
+        const prevContent = prev.content || [];
+        const currContent = curr.content || [];
+        prev.content = [...prevContent, ...currContent];
+      } else {
+        merged.push(curr);
+      }
+    }
+    result.input = merged;
+  }
+
   // If no system message, leave instructions empty (will be filled by executor)
   if (!hasSystemMessage) {
     result.instructions = "";

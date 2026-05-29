@@ -55,12 +55,16 @@ export function filterToOpenAIFormat(body) {
     return msg;
   });
 
-  // Filter out messages with only empty text (but NEVER filter tool messages)
+  // Filter out messages with only empty text (but NEVER filter tool messages
+  // or user messages — removing a user message can leave two assistant messages
+  // adjacent, causing upstream "Cannot continue from message role: assistant").
   body.messages = body.messages.filter((msg) => {
     // Always keep tool messages
     if (msg.role === "tool") return true;
     // Always keep assistant messages with tool_calls
     if (msg.role === "assistant" && msg.tool_calls) return true;
+    // Never remove user messages — empty content is still a valid turn boundary
+    if (msg.role === "user") return true;
 
     if (typeof msg.content === "string") return msg.content.trim() !== "";
     if (Array.isArray(msg.content)) {
