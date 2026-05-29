@@ -1,6 +1,6 @@
 import { checkMonitoringAuth } from "../_auth.js";
 import { buildHealthPayload } from "../_health.js";
-import { releaseSSESlot, tryAcquireSSESlot } from "../_sseConnectionCap.js";
+import { releaseSSESlot, tryAcquireSSESlot } from "../../_sseConnectionCap.js";
 
 export const dynamic = "force-dynamic";
 
