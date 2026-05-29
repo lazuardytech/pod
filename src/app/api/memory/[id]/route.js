@@ -3,7 +3,8 @@ import { deleteMemory, getMemory, updateMemory } from "@/lib/memory/store.js";
 
 export async function GET(_request, { params }) {
   try {
-    const memory = await getMemory(params.id);
+    const { id } = await params;
+    const memory = await getMemory(id);
     if (!memory) return NextResponse.json({ error: "Memory not found" }, { status: 404 });
     return NextResponse.json(memory);
   } catch (error) {
@@ -13,6 +14,7 @@ export async function GET(_request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const updates = {};
 
@@ -23,10 +25,10 @@ export async function PATCH(request, { params }) {
     if (body.expiresAt !== undefined) updates.expiresAt = body.expiresAt;
     if (body.sessionId !== undefined) updates.sessionId = body.sessionId;
 
-    const updated = await updateMemory(params.id, updates);
+    const updated = await updateMemory(id, updates);
     if (!updated) return NextResponse.json({ error: "Memory not found or no changes applied" }, { status: 404 });
 
-    const memory = await getMemory(params.id);
+    const memory = await getMemory(id);
     return NextResponse.json({ success: true, data: memory });
   } catch (error) {
     return NextResponse.json({ error: error?.message || String(error) }, { status: 400 });
@@ -35,7 +37,8 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(_request, { params }) {
   try {
-    const deleted = await deleteMemory(params.id);
+    const { id } = await params;
+    const deleted = await deleteMemory(id);
     if (!deleted) return NextResponse.json({ error: "Memory not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
