@@ -385,6 +385,30 @@ export async function buildHealthPayload() {
   }
 
   const MODEL_LOCK_PREFIX = "modelLock_";
+  const CONN_LOCK_UNTIL_KEY = "connectionLockUntil";
+  const CONN_LOCK_COUNT_KEY = "connectionLockCount";
+  const CONN_LOCK_REASON_KEY = "connectionLockReason";
+
+  // — Connection-level lockout status —
+  const lockedAccounts = [];
+  for (const c of conns) {
+    const lockUntil = c[CONN_LOCK_UNTIL_KEY];
+    if (!lockUntil) continue;
+    const expiry = new Date(lockUntil).getTime();
+    if (expiry <= now) continue;
+    const providerInfo = AI_PROVIDERS[c.provider];
+    lockedAccounts.push({
+      connectionId: c.id,
+      connectionName: c.name || c.email || c.provider,
+      provider: c.provider,
+      providerName: providerInfo?.name || c.provider,
+      lockedUntil: lockUntil,
+      retryAfterMs: expiry - now,
+      lockCount: c[CONN_LOCK_COUNT_KEY] || 1,
+      lockReason: c[CONN_LOCK_REASON_KEY] || c.lastError || null,
+    });
+  }
+
   const blockedByModel = {};
   for (const c of conns) {
     const providerInfo = AI_PROVIDERS[c.provider];
@@ -452,5 +476,6 @@ export async function buildHealthPayload() {
     providerHealth: Object.values(providerHealthMap),
     rateLimitStatus: Object.values(rateLimitByProvider),
     blockedModelStatus: Object.values(blockedByModel),
+    connectionLockStatus: lockedAccounts,
   };
 }

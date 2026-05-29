@@ -605,6 +605,101 @@ export default function HealthPage() {
           </div>
         )}
       </div>
+
+      {/* Account Lockout Status */}
+      <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
+        <SectionHeader icon="manage_accounts" title="Account Lockout Status">
+          {data.connectionLockStatus?.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-fog-grey">
+                {data.connectionLockStatus.length} account{data.connectionLockStatus.length !== 1 ? "s" : ""} locked
+              </span>
+              <button
+                onClick={async () => {
+                  setRefreshing(true);
+                  await fetchHealth();
+                  setRefreshing(false);
+                }}
+                disabled={refreshing}
+                className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh account lockout status"
+              >
+                <span className={`material-symbols-outlined text-[15px] ${refreshing ? "animate-spin" : ""}`}>
+                  refresh
+                </span>
+              </button>
+            </div>
+          )}
+        </SectionHeader>
+        {!data.connectionLockStatus?.length ? (
+          <p className="text-[12px] text-fog-grey text-center py-4">No account lockouts.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {data.connectionLockStatus.map((acc) => (
+              <div key={acc.connectionId} className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-[510] text-porcelain truncate max-w-[160px]">
+                      {acc.connectionName}
+                    </span>
+                    <span className="text-[11px] text-fog-grey">{acc.providerName}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="error" size="sm">
+                      lock #{acc.lockCount}
+                    </Badge>
+                    <button
+                      onClick={async () => {
+                        const key = `conn-${acc.connectionId}`;
+                        setClearingLock(key);
+                        try {
+                          await fetch(`/api/provider-nodes/${acc.connectionId}/clear-connection-lock`, {
+                            method: "POST",
+                          });
+                          toast.success(`Account lock cleared for ${acc.connectionName}`);
+                          await fetchHealth();
+                        } catch {
+                          toast.error("Failed to clear account lock");
+                        } finally {
+                          setClearingLock(null);
+                        }
+                      }}
+                      disabled={clearingLock !== null}
+                      className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Clear account lock"
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[15px] ${
+                          clearingLock === `conn-${acc.connectionId}` ? "animate-spin" : ""
+                        }`}
+                      >
+                        {clearingLock === `conn-${acc.connectionId}` ? "progress_activity" : "lock_open"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                {acc.lockReason && (
+                  <p className="text-[10px] text-fog-grey/80 mb-2 line-clamp-2" title={acc.lockReason}>
+                    {acc.lockReason.slice(0, 120)}
+                  </p>
+                )}
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-storm-cloud">
+                    {(() => {
+                      const secs = Math.max(0, Math.round(acc.retryAfterMs / 1000));
+                      if (secs >= 3600)
+                        return `unlocks in ${Math.floor(secs / 3600)}h ${Math.round((secs % 3600) / 60)}m`;
+                      if (secs >= 60) return `unlocks in ${Math.round(secs / 60)}m`;
+                      return `unlocks in ${secs}s`;
+                    })()}
+                  </span>
+                  <span className="text-fog-grey/70 text-[10px]">{new Date(acc.lockedUntil).toLocaleTimeString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
