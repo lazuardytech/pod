@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
+import { useHeaderActionStore } from "@/store/headerActionStore";
 import { AI_PROVIDERS, getProvidersByKind } from "@/shared/constants/providers";
 
 function getEffectiveStatus(conn) {
@@ -192,6 +193,41 @@ export default function WebProvidersPage() {
   const router = useRouter();
   const [connections, setConnections] = useState([]);
   const [combos, setCombos] = useState([]);
+  const registerAction = useHeaderActionStore((s) => s.register);
+  const unregisterAction = useHeaderActionStore((s) => s.unregister);
+  const [showConnectedOnly, setShowConnectedOnly] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("web-providers:connectedOnly") === "true";
+  });
+
+  const toggleConnectedOnly = (v) => {
+    const next = typeof v === "boolean" ? v : !showConnectedOnly;
+    setShowConnectedOnly(next);
+    window.localStorage.setItem("web-providers:connectedOnly", String(next));
+  };
+
+  useEffect(() => {
+    registerAction({
+      label: "Connected only",
+      icon: "wifi",
+      active: showConnectedOnly,
+      title: "Show connected providers only",
+      onClick: () => toggleConnectedOnly(),
+    });
+    return () => unregisterAction();
+  }, [showConnectedOnly, registerAction, unregisterAction]);
+
+  const matchConnected = (providerId) => {
+    if (!showConnectedOnly) return true;
+    const providerInfo = AI_PROVIDERS[providerId];
+    if (providerInfo?.noAuth) return true;
+    const providerConns = connections.filter((c) => c.provider === providerId);
+    const connected = providerConns.filter((c) => {
+      const s = getEffectiveStatus(c);
+      return s === "active" || s === "success";
+    }).length;
+    return connected > 0;
+  };
 
   const fetchAll = async () => {
     try {
@@ -210,8 +246,8 @@ export default function WebProvidersPage() {
     fetchAll();
   }, []);
 
-  const searchProviders = getProvidersByKind("webSearch");
-  const fetchProviders = getProvidersByKind("webFetch");
+  const searchProviders = getProvidersByKind("webSearch").filter((p) => matchConnected(p.id));
+  const fetchProviders = getProvidersByKind("webFetch").filter((p) => matchConnected(p.id));
   const searchCombos = combos.filter((c) => c.kind === "webSearch");
   const fetchCombos = combos.filter((c) => c.kind === "webFetch");
 
