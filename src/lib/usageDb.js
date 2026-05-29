@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import { EventEmitter } from "node:events";
+import { error as logError } from "@/sse/utils/logger.js";
 import { DATA_DIR } from "@/lib/dataDir.js";
 import { LRUCache } from "./cacheLayer.js";
 import { getDatabase } from "./sqlite/connection.js";
@@ -242,7 +243,7 @@ function flushSummaryQueue() {
     run();
     statsEmitter.emit("update");
   } catch (err) {
-    console.error("Failed to flush daily_summary batch:", err?.message || err);
+    logError("usageDb", "Failed to flush daily_summary batch", { error: err?.message || err });
   }
 }
 

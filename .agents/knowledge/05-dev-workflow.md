@@ -2,93 +2,62 @@
 
 ## Package Manager
 
-Use **bun only** (v1.3.14).
+**bun only** (v1.3.14). Lockfile: `bun.lock`. Pinned in `package.json`.
 
 ```bash
-bun install
-bun install --frozen-lockfile
+bun install                  # install
+bun install --frozen-lockfile # CI install
 ```
-
-Repo config:
-- `bun.lock` is the lockfile
-- `packageManager` pinned in `package.json`
 
 ## Run / Build
 
 ```bash
 bun run dev        # next dev --webpack --port 20128
-bun run build      # production build
-bun run start      # bun ./.next/standalone/server.js (Next.js standalone)
+bun run build      # NODE_ENV=production next build --webpack
+bun run start      # bun ./.next/standalone/server.js
 ```
 
-## Validation Commands
+## Validation (Pre-Push Order)
 
 ```bash
-bun run check      # biome format + biome lint + eslint (all-in-one, canonical pre-push)
-bun run format     # biome format --write . (format only)
-bun x eslint .     # lint only
-bun run test:run   # vitest
+bun run check      # biome format + biome lint + eslint (all-in-one)
+bun run test:run   # vitest run --reporter=verbose
 bun run build      # next build
 ```
 
-Always run in this order before release: `bun run check` → `bun run test:run` → `bun run build`.
+`bun run format` for format-only passes.
 
-> Test count as of v0.0.56: **1224 tests passed** (60 test files), 19 skipped (3 require live infra).
-
-## Docker (Local)
+## Docker
 
 ```bash
 docker run -d --name pod -p 20128:20128 --env-file .env -v pod-data:/app/data lazuardytech/pod:latest
 ```
 
-(`start.sh` was removed in v0.0.20; release baseline is v0.0.56.)
+Dockerfile: multi-stage (builder `oven/bun:1.3.14-alpine` + runner). CMD: `bun /app/server.js` (no `--smol`). Cache env vars bound memory.
 
-Dockerfile facts:
-- Multi-stage build:
-  - Builder: `oven/bun:1.3.14-alpine` + `--ignore-scripts` (skips native compile)
-  - Runner: `oven/bun:1.3.14-alpine`
-- Entrypoint: `/entrypoint.sh` — fixes volume permissions, starts `tailscaled` in userspace mode, then `exec su-exec bun`
-- CMD: `bun /app/server.js` (no `--smol`; memory bounded via cache env vars)
-- Cache env vars set in Dockerfile: `SEMANTIC_CACHE_MAX_BYTES=2097152`, `SEMANTIC_CACHE_MAX_SIZE=50`, `PROMPT_CACHE_MAX_BYTES=1048576`, `PROMPT_CACHE_MAX_SIZE=25`
-- Runtime port: `20128`
-- Data dir: `/app/data` (volume mount); `~/.pod` symlinked to `/app/data-home` inside container
+## CI/CD
 
-## CI/CD Workflows
+| Workflow | File | Trigger |
+|---|---|---|
+| Build & Test | `.github/workflows/ci.yml` | Push/PR to `main` |
+| Docker Publish | `.github/workflows/docker-publish.yml` | Tag push `v*` |
+| Format (rwx) | `.rwx/format.yml` | Manual |
+| Build (rwx) | `.rwx/build.yml` | Manual |
+| Test (rwx) | `.rwx/test.yml` | Manual |
 
-### Build & Test
-File: `.github/workflows/ci.yml`
-- Trigger: push/PR to `main`, manual dispatch
-- Steps: bun install → `bun run check` (lint) → `bun run test:run` → `bun run build`
-
-### Format
-File: `.rwx/format.yml` — runs `bun run format` via rwx
-
-### Build (rwx)
-File: `.rwx/build.yml` — runs `bun run build` via rwx
-
-### Test (rwx)
-File: `.rwx/test.yml` — runs `bun run test:run` via rwx
-
-### Build & Push Docker Image
-File: `.github/workflows/docker-publish.yml`
-- Trigger: tag push `v*`, manual dispatch
-- Image: `docker.io/lazuardytech/pod`
-- Platforms: `linux/amd64`
-- Tags: semver + `latest`
+Docker image: `docker.io/lazuardytech/pod` (semver + latest). Platform: `linux/amd64`.
 
 ## Release Flow
 
 1. Implement + validate: `bun run check` → `bun run test:run` → `bun run build`
-2. Run rwx build: `rwx run .rwx/build.yml` — wait for success
-3. Bump version in **both**:
-   - `package.json` → `"version"`
-   - `src/shared/constants/config.js` → `displayVersion`
+2. Run `rwx run .rwx/build.yml` — wait for success
+3. Bump version in **both** files: `package.json` + `src/shared/constants/config.js` `displayVersion`
 4. Commit, tag `vX.Y.Z`, push branch + tag
 5. Docker workflow publishes image from tag
 
-## Storage Notes
+## Storage
 
-- SQLite file: `~/.pod/pod.sqlite`
-- Schema migrations run automatically at boot via `src/lib/sqlite/connection.js`
-- `better-sqlite3` is devDependency only (tests run under Node/vitest)
+- SQLite: `~/.pod/pod.sqlite` (default, overridable via `DATA_DIR`)
+- Schema migrations auto-apply at boot via `src/lib/sqlite/connection.js`
+- `better-sqlite3` is devDependency only (tests under Node/vitest)
 - Production uses `bun:sqlite`

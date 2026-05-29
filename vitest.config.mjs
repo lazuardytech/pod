@@ -11,5 +11,20 @@ export default defineConfig({
     // file; isolate it from other tests by running suites sequentially.
     pool: "forks",
     poolOptions: { forks: { singleFork: true } },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "json-summary"],
+      reportsDirectory: "coverage",
+      include: ["src/**/*.{js,mjs}"],
+      // Start with low floors — raise as coverage improves.
+      thresholds: {
+        lines: 1,
+        functions: 1,
+        branches: 1,
+        statements: 1,
+        "src/lib/**": { lines: 3, functions: 3, branches: 2, statements: 3 },
+        "src/app/api/**": { lines: 0, functions: 0, branches: 0, statements: 0 },
+      },
+    },
   },
 });

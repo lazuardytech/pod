@@ -11,12 +11,12 @@ export async function ensureOutboundProxyInitialized() {
     applyOutboundProxyEnv(settings);
     initialized = true;
   } catch (error) {
-    console.error("[ServerInit] Error initializing outbound proxy:", error);
+    console.error("[ServerInit] Error initializing outbound proxy:", error); // boot-time, keep console
   }
 
   return initialized;
 }
 
-ensureOutboundProxyInitialized().catch(console.log);
+ensureOutboundProxyInitialized().catch((err) => console.error("[ServerInit] Outbound proxy init error:", err));
 
 export default ensureOutboundProxyInitialized;

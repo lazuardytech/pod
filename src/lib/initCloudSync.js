@@ -12,7 +12,7 @@ export async function ensureAppInitialized() {
       await initializeApp();
       g.initialized = true;
     } catch (error) {
-      console.error("[ServerInit] Error initializing app:", error);
+      console.error("[ServerInit] Error initializing app:", error); // boot-time, keep console
     } finally {
       g.inProgress = null;
     }
@@ -23,7 +23,7 @@ export async function ensureAppInitialized() {
 
 // Auto-initialize at runtime only, not during next build
 if (process.env.NEXT_PHASE !== "phase-production-build") {
-  ensureAppInitialized().catch(console.log);
+  ensureAppInitialized().catch((err) => console.error("[ServerInit] Background init error:", err));
 }
 
 export default ensureAppInitialized;

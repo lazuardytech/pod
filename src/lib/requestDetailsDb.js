@@ -3,6 +3,7 @@
 // callers push into an in-memory buffer and a single transactional INSERT
 // runs on batch threshold or after a debounce timer.
 
+import { error as logError } from "@/sse/utils/logger.js";
 import { getDatabase } from "./sqlite/connection.js";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
@@ -172,7 +173,7 @@ async function flushToDatabase() {
     });
     run();
   } catch (err) {
-    console.error("[requestDetailsDb] Batch write failed:", err);
+    logError("requestDetailsDb", "Batch write failed", { error: err.message });
   } finally {
     isFlushing = false;
   }

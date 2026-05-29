@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { warn } from "@/sse/utils/logger.js";
 
 const DB_JSON = "db.json";
 const USAGE_JSON = "usage.json";
@@ -51,7 +52,7 @@ function readJson(filePath) {
   try {
     return JSON.parse(raw);
   } catch (err) {
-    console.warn(`[sqlite] could not parse ${filePath}, skipping:`, err.message);
+    warn("sqlite", `could not parse ${filePath}, skipping`, { error: err.message });
     return null;
   }
 }
@@ -60,7 +61,7 @@ function renameToBak(filePath) {
   try {
     fs.renameSync(filePath, `${filePath}.bak`);
   } catch (err) {
-    console.warn(`[sqlite] could not rename ${filePath} → .bak:`, err.message);
+    warn("sqlite", `could not rename ${filePath} to .bak`, { error: err.message });
   }
 }
 

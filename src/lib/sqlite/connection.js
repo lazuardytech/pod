@@ -7,6 +7,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
+import { warn, info } from "@/sse/utils/logger.js";
 import { migrateFromJson } from "./migrate-from-json.js";
 import { SCHEMA_SQL } from "./schema.js";
 
@@ -42,7 +43,7 @@ export const DATA_DIR = (() => {
   if (tryEnsureDir(primary)) return primary;
   // Fallback to ~/.pod if primary is inaccessible (EACCES/EPERM)
   const fallback = path.join(os.homedir(), ".pod");
-  console.warn(`[sqlite] DATA_DIR ${primary} not accessible, falling back to ${fallback}`);
+  warn("sqlite", `DATA_DIR ${primary} not accessible, falling back to ${fallback}`);
   tryEnsureDir(fallback);
   return fallback;
 })();
@@ -158,7 +159,7 @@ function runInitialMigration(db) {
 
   const summary = migrateFromJson(db, DATA_DIR);
   if (summary && summary.imported > 0) {
-    console.log("[sqlite] migrated legacy JSON:", summary);
+    info("sqlite", "migrated legacy JSON", summary);
   }
   writeMeta(db, "schema_version", SCHEMA_VERSION);
 }

@@ -13,9 +13,11 @@ const assistantSessionMap = new Map();
 
 // Cache machine ID at module level (resolved once)
 let cachedMachineId = null;
-getConsistentMachineId().then((id) => {
-  cachedMachineId = id;
-});
+getConsistentMachineId()
+  .then((id) => {
+    cachedMachineId = id;
+  })
+  .catch(() => {});
 
 function hashContent(text) {
   return createHash("sha256").update(text).digest("hex").slice(0, 16);

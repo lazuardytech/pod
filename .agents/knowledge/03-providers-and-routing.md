@@ -1,58 +1,45 @@
-# Providers and Routing
+# Providers & Routing
 
-## Provider Configuration Sources
+## Configuration Sources
 
 | File | Purpose |
 |---|---|
-| `open-sse/config/providers.js` | provider transport config (base URL, format, headers) |
-| `open-sse/config/providerModels.js` | per-model target format and strip rules |
-| `open-sse/config/errorConfig.js` | fallback/backoff behavior |
-| `src/shared/constants/providers.js` | dashboard/provider catalog and metadata |
-| `src/shared/constants/models.js` | static model catalog used by UI |
+| `open-sse/config/providers.js` | Transport config (base URL, format, headers) for 50+ providers |
+| `open-sse/config/providerModels.js` | Per-model target format and strip rules |
+| `open-sse/config/errorConfig.js` | Fallback/backoff/retry behavior |
+| `src/shared/constants/providers.js` | Dashboard catalog + metadata |
+| `src/shared/constants/models.js` | Static model catalog for UI |
 
-## Routing Pipeline
+## Routing Pipeline (Chat-Compatible Requests)
 
-Main flow for chat-compatible requests:
+1. **Model resolution** (`sse/services/model.js`): parse `provider/model`, resolve aliases, detect combos
+2. **Combo check** (`open-sse/services/combo.js`): expand model list with fallback/round-robin strategy
+3. **Credential selection** (`sse/services/auth.js`): active-state checks, 3-tier lock system (connection/model/precise), strategy (round-robin with sticky limit, fill-first)
+4. **Core execution** (`open-sse/handlers/chatCore.js`): translation, cache, memory, executor dispatch
 
-1. `src/sse/handlers/chat.js` resolves model/provider
-2. Combo check:
-   - combo model list fallback/round-robin
-3. Provider account selection:
-   - `src/sse/services/auth.js`
-   - applies active-state checks, model lock checks, and strategy
-4. Core execution:
-   - `open-sse/handlers/chatCore.js`
-   - translation, token tools, cache/memory, executor dispatch
+## Fallback Layers (3 Levels)
 
-## Fallback Layers
-
-1. Combo-level fallback (`open-sse/services/combo.js`)
-2. Account-level fallback (`src/sse/services/auth.js` + `open-sse/services/accountFallback.js`)
-3. Token refresh/retry inside executor path for auth-expired accounts
-
-`modelLock_*` cooldown remains model-scoped (not global account lock).
+1. **Combo-level**: Try next model in combo list
+2. **Account-level**: Switch to next connection/API key (same provider)
+3. **Token refresh/retry**: Inside executor path for auth-expired accounts
 
 ## Executors
 
-Executor registry:
-- `open-sse/executors/index.js`
-- Specialized executors for some providers
-- `default.js` for generic OpenAI-compatible providers
+Registry at `open-sse/executors/index.js`. Specialized executors for some providers (Kiro, Codex, etc.). Default executor for generic OpenAI-compatible providers.
 
-Execution contract is still request/response based, with streaming handled in chatCore handlers.
+## Format Translation
 
-## Auth Layers
+2-step pipeline: Source → OpenAI-normalized → Target format.
 
-1. Dashboard session auth (JWT/cookie, guarded routes in `dashboardGuard.js`)
-2. API key auth for `/v1/*` (toggle via `settings.requireApiKey`)
-3. Per-key traffic limiting:
-   - `limitType: unlimited | limited`
-   - limited mode enforces req/min and concurrent caps
-   - wrapper: `withApiKeyRateLimit` on `/api/v1/*` routes
+Supported formats: OPENAI, CLAUDE, GEMINI, VERTEX, CODEX, ANTIGRAVITY, KIRO, CURSOR, OLLAMA, OPENAI_RESPONSES, GEMINI_CLI.
 
-## Translation and Output Handling
+Translators lazy-initialized at first request via `initTranslators()`.
 
-- OpenAI-like request/response shapes are the canonical transform center
-- Format adapters live in `open-sse/translator/*`
-- Streaming/non-streaming handlers are split in `open-sse/handlers/chatCore/*`
-- Reasoning/thinking metadata passthrough fixes are active in current `open-sse` baseline.
+## Provider Types
+
+1. **Built-in API Key**: OpenAI, Anthropic, Google, etc.
+2. **OAuth**: GitHub, Google/Kiro, Cursor, Codex, Qwen, GitLab, Claude, Gemini
+3. **OpenAI/Anthropic Compatible**: User-defined with custom base URLs
+4. **Free tier**: No-auth (opencode, etc.)
+5. **Web cookie**: iFlow (BXAuth), grok-web, perplexity-web
+6. **Custom Embedding**: User-defined embedding endpoints

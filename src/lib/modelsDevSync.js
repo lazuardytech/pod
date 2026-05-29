@@ -2,6 +2,7 @@
 // pricing data in the local SQLite DB. Runs on a configurable interval and
 // survives Next.js HMR via globalThis singleton.
 
+import { info, warn, error as logError } from "@/sse/utils/logger.js";
 import { getDatabase } from "@/lib/sqlite/connection.js";
 
 // ─── HMR-safe singleton ───────────────────────────────────────────────────────
@@ -275,7 +276,7 @@ export async function syncModelsDev(opts = {}) {
 
 async function _doSync(opts = {}) {
   try {
-    console.log("[modelsDevSync] Starting sync...");
+    info("modelsDevSync", "Starting sync...");
     const raw = await fetchModelsDev(opts.signal);
     const pricing = transformModelsDevToPricing(raw);
 
@@ -297,16 +298,16 @@ async function _doSync(opts = {}) {
         metaStmt.run("lastSyncModelCount", String(modelCount));
       })();
     } catch (metaErr) {
-      console.warn("[modelsDevSync] Failed to write sync meta:", metaErr.message);
+      warn("modelsDevSync", "Failed to write sync meta", { error: metaErr.message });
     }
 
     g.lastSync = new Date().toISOString();
     g.lastSyncModelCount = modelCount;
 
-    console.log(`[modelsDevSync] Sync complete: ${modelCount} models across ${providerCount} providers`);
+    info("modelsDevSync", `Sync complete: ${modelCount} models across ${providerCount} providers`);
     return { success: true, modelCount, providerCount };
   } catch (err) {
-    console.error("[modelsDevSync] Sync failed:", err.message);
+    logError("modelsDevSync", "Sync failed", { error: err.message });
     return { success: false, modelCount: 0, providerCount: 0, error: err.message };
   }
 }
@@ -324,14 +325,14 @@ export function startPeriodicSync(intervalMs = 3600000) {
   g.intervalMs = intervalMs;
 
   // Run immediately (non-blocking)
-  syncModelsDev().catch((err) => console.error("[modelsDevSync] Initial sync error:", err.message));
+  syncModelsDev().catch((err) => logError("modelsDevSync", "Initial sync error", { error: err.message }));
 
   g.timer = setInterval(() => {
-    syncModelsDev().catch((err) => console.error("[modelsDevSync] Periodic sync error:", err.message));
+    syncModelsDev().catch((err) => logError("modelsDevSync", "Periodic sync error", { error: err.message }));
   }, intervalMs);
 
   if (g.timer.unref) g.timer.unref();
-  console.log(`[modelsDevSync] Periodic sync started (interval: ${intervalMs}ms)`);
+  info("modelsDevSync", `Periodic sync started (interval: ${intervalMs}ms)`);
 }
 
 /**
@@ -341,7 +342,7 @@ export function stopPeriodicSync() {
   if (g.timer) {
     clearInterval(g.timer);
     g.timer = null;
-    console.log("[modelsDevSync] Periodic sync stopped");
+    info("modelsDevSync", "Periodic sync stopped");
   }
 }
 

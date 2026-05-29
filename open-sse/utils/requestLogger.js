@@ -12,7 +12,7 @@ let LOGS_DIR = null;
 async function ensureNodeModules() {
   if (!isNode || !LOGGING_ENABLED || fs) return;
   try {
-    fs = await import("fs");
+    fs = await import("node:fs");
     path = await import("node:path");
     LOGS_DIR = path.join(typeof process !== "undefined" && process.cwd ? process.cwd() : ".", "logs");
   } catch {

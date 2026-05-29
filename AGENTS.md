@@ -1,19 +1,20 @@
 # AGENTS.md
 
-Operational notes for AI agents working on **Pod** (`~/projects/lt/pod`).
+Operational rules for AI agents working on **Pod** (`~/projects/lt/pod`).
 
-## Current Baseline
+## Baseline
 
-- Release baseline: **v0.0.67**
+- Version: **v0.0.75**
 - Package: `pod`
-- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.67, latest)
+- Docker: `lazuardytech/pod` (tags v0.0.1–v0.0.75, latest)
 - GitHub: `lazuardytech/pod`, branch `main`
 - Data dir: `~/.pod/pod.sqlite`
-- Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap instead)
+- Runtime: `bun /app/server.js` (no `--smol`; cache env vars limit heap)
+- Tests: **~1500+** across 63 files
 
 ## Non-Negotiable Rules
 
-1. **bun only** — use `bun` for install/run/test/build. Never npm or pnpm.
+1. **bun only** — install/run/test/build. Never npm or pnpm.
 2. **Keep internal naming as `pod`** — package, DB filename, data dir, Docker image.
 3. **`open-sse` is local source** — imported via `jsconfig.json` aliases. Do not install from npm.
 4. **Use storage facade** — prefer `src/lib/localDb.js` and `src/lib/sqlite/connection.js`.
@@ -71,3 +72,4 @@ bun run build      # next build
 - Gotchas: `.agents/knowledge/07-gotchas.md`
 - Skills System: `.agents/knowledge/08-skills-system.md`
 - Fork Status: `.agents/knowledge/09-fork-status.md`
+- Open Issues: `.agents/knowledge/10-open-issues.md`

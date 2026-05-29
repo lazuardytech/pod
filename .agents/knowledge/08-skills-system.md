@@ -1,20 +1,19 @@
 # Skills System
 
-Status for this repo snapshot (v0.0.14):
+**No skills system exists in Pod.**
 
-- There is **no `skills/` directory** at repository root.
-- There is **no dashboard `/dashboard/skills` page** in current route tree.
-- There is no active `src/shared/constants/skills.js` registry in this branch.
+- No `skills/` directory at repo root
+- No dashboard `/skills` page
+- No `src/shared/constants/skills.js` registry
 
-## What `.agents` means here
+## What `.agents/` Is
 
-In this repo, `.agents/` is an internal knowledge base for coding agents and contributors.
-It is not a runtime feature consumed by the pod dashboard or API server.
+`.agents/` is an internal knowledge base for coding agents and contributors — not a runtime feature consumed by the dashboard or API server.
 
-## If a "skills" feature is needed later
+## If Skills Feature Is Needed Later
 
-Treat it as a new feature request and define explicitly:
-1. data/source of truth
-2. dashboard route and UI scope
-3. repository location for skill manifests
-4. publish/hosting rules
+Define explicitly:
+1. Data source of truth
+2. Dashboard route and UI scope
+3. Repository location for manifests
+4. Publish/hosting rules

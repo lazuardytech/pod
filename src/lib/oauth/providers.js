@@ -250,7 +250,7 @@ const PROVIDERS = {
           projectId = data.cloudaicompanionProject?.id || data.cloudaicompanionProject || "";
         }
       } catch (e) {
-        console.log("Failed to fetch project ID:", e);
+        console.log("Failed to fetch project ID:", e); // keep console - user-facing CLI output
       }
 
       return { userInfo, projectId };
@@ -346,7 +346,7 @@ const PROVIDERS = {
           }
         }
       } catch (e) {
-        console.log("Failed to load code assist:", e);
+        console.log("Failed to load code assist:", e); // keep console - user-facing CLI output
       }
 
       // Fire-and-forget onboarding — does not block DB save
@@ -1319,6 +1319,6 @@ export async function backfillCodexEmails() {
     }
   } catch (err) {
     codexBackfillDone = false;
-    console.log("backfillCodexEmails failed:", err?.message || err);
+    console.log("backfillCodexEmails failed:", err?.message || err); // keep console - user-facing CLI output
   }
 }

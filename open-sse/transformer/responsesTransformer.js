@@ -4,7 +4,7 @@
  * Can be used in both Next.js and Cloudflare Workers
  */
 
-import fs from "fs";
+import fs from "node:fs";
 import path from "node:path";
 
 // Create log directory for responses (Node.js only)

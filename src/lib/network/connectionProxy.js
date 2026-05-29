@@ -1,3 +1,4 @@
+import { error as logError } from "@/sse/utils/logger.js";
 import { getProxyPoolById } from "@/models";
 
 // Safely normalize any value into a trimmed string.
@@ -123,7 +124,7 @@ export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
       ...legacy,
     };
   } catch (error) {
-    console.error("[resolveConnectionProxyConfig] Failed to resolve proxy config:", error);
+    logError("resolveConnectionProxyConfig", "Failed to resolve proxy config", { error: error.message });
 
     return {
       source: "error",

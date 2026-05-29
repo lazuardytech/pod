@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { warn } from "@/sse/utils/logger.js";
 
 const APP_NAME = "pod";
 
@@ -19,7 +20,7 @@ export function getDataDir() {
     return configured;
   } catch (e) {
     if (e?.code === "EACCES" || e?.code === "EPERM") {
-      console.warn(`[DATA_DIR] '${configured}' not writable → fallback ~/.${APP_NAME}`);
+      warn("DATA_DIR", `'${configured}' not writable, falling back to ~/.${APP_NAME}`);
       return defaultDir();
     }
     throw e;

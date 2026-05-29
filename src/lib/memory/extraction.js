@@ -108,24 +108,38 @@ export function extractFacts(text, apiKeyId, sessionId) {
   if (!text || !apiKeyId || !sessionId) return;
   const cappedText = capExtractionText(text);
 
-  setImmediate(() => {
-    const facts = extractFactsFromText(cappedText);
-    if (facts.length === 0) return;
+  setImmediate(async () => {
+    try {
+      const facts = extractFactsFromText(cappedText);
+      if (facts.length === 0) return;
 
-    for (const fact of facts) {
-      createMemory({
-        apiKeyId,
-        sessionId,
-        type: fact.type,
-        key: fact.key,
-        content: fact.content,
-        metadata: {
-          category: fact.category,
-          extractedAt: new Date().toISOString(),
-          source: "llm_response",
-        },
-        expiresAt: null,
-      }).catch(() => {});
+      const results = await Promise.allSettled(
+        facts.map((fact) =>
+          createMemory({
+            apiKeyId,
+            sessionId,
+            type: fact.type,
+            key: fact.key,
+            content: fact.content,
+            metadata: {
+              category: fact.category,
+              extractedAt: new Date().toISOString(),
+              source: "llm_response",
+            },
+            expiresAt: null,
+          }),
+        ),
+      );
+
+      const rejected = results.filter((r) => r.status === "rejected");
+      if (rejected.length > 0) {
+        console.warn(
+          "[extraction] Memory creation errors:",
+          rejected.map((r) => r.reason),
+        );
+      }
+    } catch (err) {
+      console.warn("[extraction] Background extraction failed:", err);
     }
   });
 }
