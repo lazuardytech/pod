@@ -476,6 +476,31 @@ describe("CodexExecutor.transformRequest — stream always true", () => {
     executor.transformRequest("gpt-5.3-codex", body, true, { accessToken: "test" });
     expect(body.reasoning.effort).toBe("low");
   });
+
+  it("normalizes extra-high reasoning_effort to xhigh", () => {
+    const body = { input: [{ role: "user", content: "hello" }], reasoning_effort: "extra-high" };
+    executor.transformRequest("gpt-5.3-codex", body, true, { accessToken: "test" });
+    expect(body.reasoning.effort).toBe("xhigh");
+  });
+
+  it("normalizes extra-high reasoning.effort inline", () => {
+    const body = { input: [{ role: "user", content: "hello" }], reasoning: { effort: "extra-high", summary: "auto" } };
+    executor.transformRequest("gpt-5.3-codex", body, true, { accessToken: "test" });
+    expect(body.reasoning.effort).toBe("xhigh");
+  });
+
+  it("passes xhigh through unchanged", () => {
+    const body = { input: [{ role: "user", content: "hello" }], reasoning_effort: "xhigh" };
+    executor.transformRequest("gpt-5.3-codex", body, true, { accessToken: "test" });
+    expect(body.reasoning.effort).toBe("xhigh");
+  });
+
+  it("recognizes minimal effort level", () => {
+    const body = { input: [{ role: "user", content: "hello" }] };
+    executor.transformRequest("gpt-5.3-codex-minimal", body, true, { accessToken: "test" });
+    expect(body.reasoning.effort).toBe("minimal");
+    expect(body.model).toBe("gpt-5.3-codex");
+  });
 });
 
 // ── Group 5: parseSSEToOpenAIResponse (standard SSE safety net) ───────────

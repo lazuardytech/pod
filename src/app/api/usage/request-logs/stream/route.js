@@ -92,10 +92,14 @@ export async function GET(request) {
       );
 
       // Fires reliably on client disconnect in Next.js standalone + Bun
-      request.signal.addEventListener("abort", () => {
-        clearTimeout(idleTimeout);
-        cleanup();
-      }, { once: true });
+      request.signal.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(idleTimeout);
+          cleanup();
+        },
+        { once: true },
+      );
 
       return cleanup;
     },

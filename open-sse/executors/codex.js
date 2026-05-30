@@ -349,6 +349,7 @@ export class CodexExecutor extends BaseExecutor {
   // Peek first N bytes of SSE body to detect upstream "overloaded" errors.
   // Returns { matched: string|null, replacementBody: ReadableStream|null }.
   // Caller MUST use replacementBody (original body has been read).
+  // Uses TransformStream to avoid fragile releaseLock+getReader double-reader pattern.
   async _peekSseOverloaded(response) {
     if (!response || !response.ok || !response.body) return { matched: null, replacementBody: null };
     const reader = response.body.getReader();
@@ -371,37 +372,29 @@ export class CodexExecutor extends BaseExecutor {
     } catch (e) {
       dbg("CODEX", `peek read error: ${e.message}`);
     }
-    reader.releaseLock();
+    // Re-assemble stream via TransformStream — single reader, no releaseLock+getReader.
+    // Write peeked chunks first, then read remaining from same reader, then close.
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    for (const c of chunks) {
+      writer.write(c);
+    }
+    // Drain rest of body from the same reader, then close.
+    (async () => {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          await writer.write(value);
+        }
+      } catch (e) {
+        await writer.abort(e).catch(() => {});
+        return;
+      }
+      await writer.close();
+    })();
 
-    // Re-assemble stream: prefix chunks + remaining upstream body
-    const upstream = response.body;
-    let upstreamReader = null;
-    const replacementBody = new ReadableStream({
-      start(controller) {
-        for (const c of chunks) controller.enqueue(c);
-        upstreamReader = upstream.getReader();
-      },
-      async pull(controller) {
-        try {
-          const { done, value } = await upstreamReader.read();
-          if (done) {
-            controller.close();
-            return;
-          }
-          controller.enqueue(value);
-        } catch (e) {
-          controller.error(e);
-        }
-      },
-      cancel(reason) {
-        try {
-          upstreamReader?.cancel(reason);
-        } catch {
-          /* noop */
-        }
-      },
-    });
-    return { matched, replacementBody };
+    return { matched, replacementBody: readable };
   }
 
   // Parse Codex usage_limit_reached to extract precise resetsAtMs; fallback to default otherwise
@@ -477,7 +470,7 @@ export class CodexExecutor extends BaseExecutor {
 
     // Extract thinking level from model name suffix
     // e.g., gpt-5.3-codex-high -> high, gpt-5.3-codex -> medium (default)
-    const effortLevels = ["none", "low", "medium", "high", "xhigh"];
+    const effortLevels = ["none", "minimal", "low", "medium", "high", "xhigh"];
     let modelEffort = null;
     for (const level of effortLevels) {
       if (body.model.endsWith(`-${level}`)) {
@@ -488,12 +481,27 @@ export class CodexExecutor extends BaseExecutor {
       }
     }
 
+    // Normalize: UI/client sends "extra-high" but Codex API expects "xhigh"
+    const EFFORT_ALIASES = { "extra-high": "xhigh", extrahigh: "xhigh", "very-high": "xhigh" };
+
+    // Normalize reasoning_effort before use
+    if (body.reasoning_effort) {
+      const raw = String(body.reasoning_effort).toLowerCase();
+      body.reasoning_effort = EFFORT_ALIASES[raw] || raw;
+    }
+
     // Priority: explicit reasoning.effort > reasoning_effort param > model suffix > default (low)
     if (!body.reasoning) {
       const effort = body.reasoning_effort || modelEffort || "low";
       body.reasoning = { effort, summary: "auto" };
     } else if (!body.reasoning.summary) {
       body.reasoning.summary = "auto";
+    } else {
+      // Normalize reasoning.effort inline
+      if (body.reasoning.effort) {
+        const raw = String(body.reasoning.effort).toLowerCase();
+        body.reasoning.effort = EFFORT_ALIASES[raw] || raw;
+      }
     }
     delete body.reasoning_effort;
 

@@ -255,7 +255,7 @@ describe("request-logs/stream: SSE abort cleanup", () => {
     const source = fs.readFileSync(routePath, "utf8");
 
     // Abort listener must be present to prevent timer leaks on disconnect
-    expect(source).toMatch(/request\.signal\.addEventListener\("abort"/);
+    expect(source).toMatch(/request\.signal\.addEventListener\(\s*"abort"/);
   });
 
   it("cleanup sets closed=true and clears heartbeat interval", async () => {
