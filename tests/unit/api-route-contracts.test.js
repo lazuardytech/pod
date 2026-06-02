@@ -215,7 +215,13 @@ describe("v1 route contracts", () => {
     });
 
     it("returns 200 with object list shape", async () => {
-      const { GET } = await import("@/app/api/v1beta/models/[...path]/route.js");
+      const { GET } = await import("@/app/api/v1/models/route.js");
+      const req = makeRequest("/v1/models");
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const json = await readJson(res);
+      expect(json.object).toBe("list");
+      expect(Array.isArray(json.data)).toBe(true);
     });
   });
 

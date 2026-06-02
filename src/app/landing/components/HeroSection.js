@@ -1,4 +1,5 @@
 "use client";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function HeroSection() {
   return (
@@ -35,7 +36,7 @@ export default function HeroSection() {
             href="/dashboard"
             className="inline-flex items-center gap-2 h-9 px-5 rounded-[6px] bg-[#E5E5E6] hover:bg-white text-pitch-black text-[13px] font-[590] transition-colors duration-100 shadow-[var(--shadow-sm)]"
           >
-            <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+            <LucideIcon name="rocket_launch" className="text-[16px]" />
             Get Started
           </a>
           <a
@@ -44,7 +45,7 @@ export default function HeroSection() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 h-9 px-5 rounded-[6px] border border-charcoal-grey bg-graphite hover:bg-deep-slate text-porcelain text-[13px] font-[400] transition-colors duration-100"
           >
-            <span className="material-symbols-outlined text-[16px]">code</span>
+            <LucideIcon name="code" className="text-[16px]" />
             View on GitHub
           </a>
         </div>

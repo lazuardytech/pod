@@ -1,7 +1,15 @@
-import { ProxyAgent, fetch as undiciFetch } from "undici";
-
 const DEFAULT_TEST_URL = "https://google.com/";
 const DEFAULT_TIMEOUT_MS = 8000;
+
+let undiciProxyApiPromise = null;
+
+async function getUndiciProxyApi() {
+  undiciProxyApiPromise ||= import("undici").then(({ ProxyAgent, fetch }) => ({
+    ProxyAgent,
+    undiciFetch: fetch,
+  }));
+  return undiciProxyApiPromise;
+}
 
 function getErrorMessage(err) {
   if (!err) return "Unknown error";
@@ -39,6 +47,8 @@ export async function testProxyUrl({ proxyUrl, testUrl, timeoutMs } = {}) {
   let dispatcher;
 
   try {
+    const { ProxyAgent, undiciFetch } = await getUndiciProxyApi();
+
     try {
       dispatcher = new ProxyAgent({ uri: normalizedProxyUrl });
     } catch (err) {

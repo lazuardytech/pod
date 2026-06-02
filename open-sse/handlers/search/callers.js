@@ -74,6 +74,26 @@ export function resolveBaseUrl(config, params) {
 }
 
 /**
+ * Resolve base URL for SearXNG with env fallback used by docker-compose.
+ * Priority: provider_options/baseUrl -> SEARXNG_BASE_URL -> provider default.
+ *
+ * @param {SearchProviderConfig} config
+ * @param {SearchRequestParams} params
+ * @returns {string}
+ */
+function resolveSearxngBaseUrl(config, params) {
+  const override = getProviderSetting(params, "baseUrl");
+  if (override) return override.replace(/\/+$/, "");
+
+  const envBaseUrl =
+    typeof process !== "undefined" && typeof process.env?.SEARXNG_BASE_URL === "string"
+      ? process.env.SEARXNG_BASE_URL.trim()
+      : "";
+
+  return (envBaseUrl || config.baseUrl).replace(/\/+$/, "");
+}
+
+/**
  * Convert offset+maxResults to 1-indexed page number.
  * @param {number|undefined} offset
  * @param {number} maxResults
@@ -284,7 +304,7 @@ function buildYouComRequest(config, params) {
 }
 
 function buildSearxngRequest(config, params) {
-  const baseUrl = resolveBaseUrl(config, params);
+  const baseUrl = resolveSearxngBaseUrl(config, params);
   const url = baseUrl.endsWith("/search") ? baseUrl : `${baseUrl}/search`;
   const qp = new URLSearchParams({
     q: params.query,

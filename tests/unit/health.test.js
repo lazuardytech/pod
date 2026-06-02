@@ -6,6 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { APP_CONFIG } from "@/shared/constants/config.js";
 
 // ─── Helpers (duplicated from page/route for isolated testing) ────────────────
 
@@ -184,6 +185,12 @@ describe("GET /api/monitoring/health (integration)", () => {
     expect(json).toHaveProperty("providers");
     expect(json).toHaveProperty("tunnel");
     expect(json).toHaveProperty("semanticCache");
+  });
+
+  it("returns configured pod display version in payload.version.pod", async () => {
+    const res = await GET();
+    const json = await res.json();
+    expect(json.version?.pod).toBe(APP_CONFIG.displayVersion);
   });
 
   it("status is healthy when db integrity is ok", async () => {

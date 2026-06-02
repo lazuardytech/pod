@@ -1,129 +1,33 @@
 # Architecture
 
-## Package Layout
+## Main Modules
 
-```
-src/         Next.js app — dashboard, API routes, server libs
-open-sse/    Core engine — executors, translators, stream handling (local, not npm)
-cloud/       Cloudflare Worker companion
-```
+- `src/`: Next.js app (dashboard UI + API routes)
+- `open-sse/`: local routing engine, translators, executors
+- `cloud/`: Cloudflare Worker companion
 
-`open-sse` resolves via `jsconfig.json` aliases: `"open-sse": ["./open-sse"]`.
+## Request Flow (high level)
 
-## Boot & Routing
+1. Client calls compatibility endpoint (`/v1/*`, `/v1beta/*`, `/api/*`)
+2. Next route applies auth + rate-limit checks
+3. Request enters `open-sse` routing pipeline
+4. Model/provider resolution + fallback strategy
+5. Optional cache read and memory injection
+6. Provider executor call
+7. Stream/JSON translation back to client format
+8. Usage and logs persisted
 
-1. `bun run dev` / `bun run start` starts Next.js on port 20128
-2. `next.config.mjs` rewrites:
-   - `/v1/:path*` → `/api/v1/:path*`
-   - `/codex/:path*` → `/api/v1/responses`
-3. Auth guard: `src/dashboardGuard.js` (JWT cookie + CLI token)
-4. SSE handlers delegate to `open-sse` core pipeline
+## Data and Reliability Layers
 
-## Request Path (Chat)
+- SQLite-backed configuration and usage storage
+- Transactional connection-lock updates to avoid race conditions
+- SSE connection caps and idle timeouts
+- Graceful shutdown with queue flush
 
-```
-POST /v1/chat/completions
-  → rewrite to /api/v1/chat/completions
-  → withApiKeyRateLimit (RPM + concurrent cap)
-  → sse/handlers/chat.js
-      → resolve model/provider (alias → combo → single)
-      → combo expansion (fallback/round-robin)
-      → credential loop (getProviderCredentials → checkAndRefreshToken)
-  → open-sse/handlers/chatCore.js
-      → format detection + 2-step translation (source→OpenAI→target)
-      → RTK/compressMessages (tool output trimming)
-      → semantic cache read (pre-compute signature BEFORE injectMemory)
-      → memory retrieval + injection
-      → upstream executor (streaming or non-streaming)
-      → response translation back to source format
-      → memory extraction (async fire-and-forget)
-      → usage tracking + SSE updates
-```
+## PWA / Offline Layers
 
-## Credential Fallback Loop
-
-```
-while (true):
-  credentials = getProviderCredentials(provider, excludeConnectionIds, model)
-  if (!credentials || all rate-limited) → return 429/503
-  refreshed = checkAndRefreshToken(provider, credentials)
-  result = handleChatCore(...)
-  if (success) → clearAccountError() + return
-  markAccountUnavailable(connectionId, status, error, model, resetsAtMs)
-  if (shouldFallback) → excludeConnectionId, continue
-  else → return error response
-```
-
-## SSE Live Streams
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/console-log` | Console log stream |
-| `GET /api/usage/request-logs/stream` | Live request log entries |
-| `GET /api/proxy-pools/stream` | Proxy pool events |
-| `GET /api/monitoring/health/stream` | Health snapshot every 10s |
-
-**Note**: All SSE routes enforce a cap of 100 concurrent connections via `src/app/api/monitoring/_sseConnectionCap.js`. Returns 503 if exceeded.
-- All SSE routes have a **5-minute idle timeout** — closes connection if no activity, prevents resource leak from abandoned streams
-
-**Critical**: Every SSE endpoint using `setInterval`/`setTimeout` MUST attach `request.signal.addEventListener("abort", cleanup)`. Missing this was the primary cause of a 1.2GB memory leak (fixed v0.0.13).
-
-## Cache & Memory Integration
-
-**Semantic cache**:
-- Tables: `semantic_cache`, `cache_metrics`
-- Layers: LRU (memory) → SQLite (persistence) → In-flight dedup (thundering herd)
-- Streaming responses cached after `onStreamComplete`, served as SSE chunks
-- Signature pre-computed BEFORE `injectMemory()` — never recompute from `body.messages` at write time
-- `memoryOwnerId` in signature prevents cross-key cache bleed
-- `MAX_SEMANTIC_CACHE_BYTES = 512KB`
-- SQLite TTL comparison: always `strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`
-- Connection lock updates use SQLite `tx()` (`BEGIN IMMEDIATE`) for atomic read-check-write — prevents TOCTOU race in concurrent credential selection
-
-**Conversational memory**:
-- Tables: `memories`, `memory_fts` (FTS5)
-- Store: LRUCache (500 entries, 4MB, 300s TTL) + SQLite
-- 3 retrieval strategies: exact (keyword), semantic (FTS5), hybrid
-- 2 languages: EN + Indonesian
-
-## Model Lock System
-
-Three tiers:
-1. **Connection-level**: Account-wide errors, exponential cooldown (1h, 2h, 3h...)
-2. **Model-level**: Per-model quota/rate errors, minimum lockout configurable
-3. **Precise cooldown**: Some providers return `resetsAtMs` — used directly
-
-`modelLockCount_${model}` tracks consecutive failures, cleared on success. Multiplier for minimum lockout (1x, 2x, 3x...).
-
-## Auth Flow
-
-1. **Dashboard**: JWT cookie (`auth_token`, 24h expiry) via login form
-2. **API keys**: `Authorization: Bearer` or `x-api-key` header
-3. **Per-key rate limiting**: `limitType: unlimited|limited`, RPM + concurrent enforced at runtime via `withApiKeyRateLimit` middleware. Also on model listing endpoints (`checkRateLimitByKey`).
-   Rate limiting is in-memory (single-process only)
-4. **Model listing auth**: `GET /v1/models`, `/v1beta/models` enforce when `requireApiKey=true`
-
-## Request Detail Linking
-
-`request_log.details_id` directly references `request_details.id`. Pre-generate ID with `generateDetailId(model)`, pass to both `appendRequestLog` and `saveRequestDetail`. Eliminates fuzzy timestamp matching.
-
-## Docker Runtime
-
-- Multi-stage build: `oven/bun:1.3.14-alpine`
-- CMD: `bun /app/server.js` (no `--smol`)
-- Memory bounded via cache env vars in Dockerfile
-- Data dir: `/app/data` (volume mount), `~/.pod` symlinked inside container
-
-## Cloud Worker
-
-Self-hosted Cloudflare Worker (edge reverse proxy). Stores credentials in D1 (SQLite). Syncs data from Pod via `POST /sync/{machineId}`. Handles LLM requests, OAuth refresh, auto-cleanup (7-day stale records). Relies on `open-sse` for core execution.
-
-## Graceful Shutdown
-
-SIGINT/SIGTERM triggers:
-1. `initializeApp.js` stops periodic timers + cloudflared, sets 5s force-exit timeout
-2. `usageDb.js` and `requestDetailsDb.js` flush write queues to SQLite
-3. `closeDatabase()` called on main SQLite database
-4. Process exits naturally when event loop drains
-
-Critical: SIGINT handler in `initializeApp.js` does NOT call `process.exit()` directly — allows later-registered handlers to complete.
+- Manifest: `src/app/manifest.webmanifest`
+- Service worker: `public/sw.js`
+- Offline read cache: `offlineJsonCache`
+- Offline write queue: `offlineMutationQueue`
+- Background drain + status UI: `OfflineMutationProcessor`, `OfflineSyncStatus`

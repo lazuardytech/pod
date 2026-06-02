@@ -1,4 +1,5 @@
 "use client";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="size-7 rounded-[6px] bg-porcelain flex items-center justify-center">
-                <span className="material-symbols-outlined text-pitch-black text-[16px]">hub</span>
+                <LucideIcon name="hub" className="text-pitch-black text-[16px]" />
               </div>
               <span className="text-[14px] font-[510] text-porcelain tracking-[-0.13px]">Pod</span>
             </div>
@@ -22,7 +23,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
             >
-              <span className="material-symbols-outlined text-[15px]">code</span>
+              <LucideIcon name="code" className="text-[15px]" />
             </a>
           </div>
 

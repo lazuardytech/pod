@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Pagination({ currentPage, pageSize, totalItems, onPageChange, onPageSizeChange, className }) {
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -20,7 +21,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 py-3", className)}>
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3", className)}>
       {/* Info */}
       {totalItems > 0 && (
         <p className="text-[12px] text-fog-grey tracking-[-0.1px]">
@@ -61,7 +62,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
               disabled={currentPage === 1}
               className="flex items-center justify-center size-7 rounded-[6px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-100"
             >
-              <span className="material-symbols-outlined text-[14px]">chevron_left</span>
+              <LucideIcon name="chevron_left" className="text-[14px]" />
             </button>
 
             {pageNumbers[0] > 1 && (
@@ -110,7 +111,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
               disabled={currentPage === totalPages}
               className="flex items-center justify-center size-7 rounded-[6px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-100"
             >
-              <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+              <LucideIcon name="chevron_right" className="text-[14px]" />
             </button>
           </div>
         )}

@@ -94,6 +94,9 @@ vi.mock("@/shared/services/cloudSyncScheduler.js", () => ({
 }));
 
 vi.mock("@/shared/constants/config.js", () => ({
+  APP_CONFIG: {
+    displayVersion: "0.0.63",
+  },
   displayVersion: "0.0.63",
 }));
 

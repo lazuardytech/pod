@@ -1,19 +1,17 @@
 # Skills System
 
-**No skills system exists in Pod.**
+Pod has **no runtime skills feature**.
 
-- No `skills/` directory at repo root
-- No dashboard `/skills` page
-- No `src/shared/constants/skills.js` registry
+## Clarification
 
-## What `.agents/` Is
+- `.agents/` is documentation for contributors/agents.
+- It is not consumed by dashboard runtime or API routes.
 
-`.agents/` is an internal knowledge base for coding agents and contributors — not a runtime feature consumed by the dashboard or API server.
+## If Introduced Later
 
-## If Skills Feature Is Needed Later
+Define these first:
 
-Define explicitly:
-1. Data source of truth
-2. Dashboard route and UI scope
-3. Repository location for manifests
-4. Publish/hosting rules
+1. Data model and source of truth
+2. API surface and auth model
+3. UI scope and route placement
+4. Deployment and update strategy

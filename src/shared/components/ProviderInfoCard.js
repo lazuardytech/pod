@@ -1,6 +1,7 @@
 "use client";
 
 import Card from "./Card";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 // Only show fields user actually cares about
 const FIELD_SCHEMA = {
@@ -48,7 +49,7 @@ export default function ProviderInfoCard({ config, provider, title = "Provider I
             rel="noopener noreferrer"
             className="text-xs text-primary hover:underline inline-flex items-center gap-1"
           >
-            <span className="material-symbols-outlined text-sm">open_in_new</span>
+            <LucideIcon name="open_in_new" className="text-sm" />
             Get API Key
           </a>
         )}

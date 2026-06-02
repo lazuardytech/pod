@@ -10,6 +10,7 @@ import { APIKEY_PROVIDERS, OAUTH_PROVIDERS } from "@/shared/constants/config";
 import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { useHeaderActionStore } from "@/store/headerActionStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const getPageInfo = (pathname) => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };
@@ -164,7 +165,7 @@ export default function Header({ onMenuClick, showMenuButton = true, sidebarColl
               onClick={onMenuClick}
               className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
             >
-              <span className="material-symbols-outlined text-[18px]">menu</span>
+              <LucideIcon name="menu" className="text-[18px]" />
             </button>
           </div>
         )}
@@ -175,13 +176,13 @@ export default function Header({ onMenuClick, showMenuButton = true, sidebarColl
         {breadcrumbs.length > 0 ? (
           breadcrumbs.map((crumb, index) => (
             <div key={`${crumb.label}-${crumb.href || "current"}`} className="flex items-center gap-1.5">
-              {index > 0 && <span className="material-symbols-outlined text-fog-grey text-[14px]">chevron_right</span>}
+              {index > 0 && <LucideIcon name="chevron_right" className="text-fog-grey text-[14px]" />}
               {crumb.href ? (
                 <Link
                   href={crumb.href}
                   className="flex items-center gap-1 text-[13px] text-storm-cloud hover:text-porcelain transition-colors duration-100 tracking-[-0.12px]"
                 >
-                  {crumb.icon && <span className="material-symbols-outlined text-[15px]">{crumb.icon}</span>}
+                  {crumb.icon && <LucideIcon name={crumb.icon} className="text-[15px]" />}
                   <span className="mt-0.5 ms-0.5">{crumb.label}</span>
                 </Link>
               ) : (
@@ -206,7 +207,7 @@ export default function Header({ onMenuClick, showMenuButton = true, sidebarColl
           ))
         ) : title ? (
           <div className="flex items-center gap-1.5">
-            {icon && <span className="material-symbols-outlined text-storm-cloud text-[16px]">{icon}</span>}
+            {icon && <LucideIcon name={icon} className="text-storm-cloud text-[16px]" />}
             <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] truncate mt-0.5">{title}</span>
           </div>
         ) : null}
@@ -236,7 +237,7 @@ function HeaderAction() {
           : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain"
       }`}
     >
-      {action.icon && <span className="material-symbols-outlined text-[13px]">{action.icon}</span>}
+      {action.icon && <LucideIcon name={action.icon} className="text-[13px]" />}
       <span className="hidden sm:inline">{action.label}</span>
     </button>
   );
@@ -252,9 +253,10 @@ function HeaderSearch() {
 
   return (
     <div className="relative w-[160px] sm:w-[200px]">
-      <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-storm-cloud text-[14px] pointer-events-none">
-        search
-      </span>
+      <LucideIcon
+        name="search"
+        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-storm-cloud text-[14px] pointer-events-none"
+      />
       <input
         aria-label="Search"
         type="text"
@@ -271,7 +273,7 @@ function HeaderSearch() {
           className="absolute right-1.5 top-1/2 -translate-y-1/2 text-storm-cloud hover:text-porcelain transition-colors"
           aria-label="Clear search"
         >
-          <span className="material-symbols-outlined text-[13px]">close</span>
+          <LucideIcon name="close" className="text-[13px]" />
         </button>
       )}
     </div>

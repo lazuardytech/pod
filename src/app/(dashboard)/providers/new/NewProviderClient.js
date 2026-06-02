@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Input, Select, Toggle } from "@/shared/components";
 import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const providerOptions = Object.values(AI_PROVIDERS).map((p) => ({
   value: p.id,
@@ -98,9 +99,11 @@ export default function NewProviderPage() {
           {selectedProvider && (
             <Card.Section className="flex items-center gap-3">
               <div className="size-10 rounded-lg flex items-center justify-center bg-bg border border-border">
-                <span className="material-symbols-outlined text-xl" style={{ color: selectedProvider.color }}>
-                  {selectedProvider.icon}
-                </span>
+                <LucideIcon
+                  name={selectedProvider.icon}
+                  className="text-xl"
+                  style={{ color: selectedProvider.color }}
+                />
               </div>
               <div>
                 <p className="font-medium">{selectedProvider.name}</p>
@@ -126,7 +129,7 @@ export default function NewProviderPage() {
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <span className="material-symbols-outlined">{method.value === "api_key" ? "key" : "lock"}</span>
+                  <LucideIcon name={method.value === "api_key" ? "key" : "lock"} className="" />
                   <span className="font-medium">{method.label}</span>
                 </button>
               ))}

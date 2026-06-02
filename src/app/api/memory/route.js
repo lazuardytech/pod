@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createMemory, listMemories } from "@/lib/memory/store.js";
+import { clearMemories, createMemory, listMemories } from "@/lib/memory/store.js";
 import { MemoryType } from "@/lib/memory/types.js";
 
 function parsePositiveInt(value, fallback) {
@@ -66,5 +66,22 @@ export async function POST(request) {
     return NextResponse.json({ success: true, data: memory });
   } catch (error) {
     return NextResponse.json({ error: error?.message || String(error) }, { status: 400 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const apiKeyIdRaw = searchParams.get("apiKeyId");
+    const apiKeyId = typeof apiKeyIdRaw === "string" ? apiKeyIdRaw.trim() : "";
+    const removed = await clearMemories(apiKeyId || null);
+    return NextResponse.json({
+      success: true,
+      removed,
+      scope: apiKeyId ? "apiKey" : "all",
+      apiKeyId: apiKeyId || null,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
   }
 }

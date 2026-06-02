@@ -8,6 +8,7 @@ import { APP_CONFIG } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { cn } from "@/shared/utils/cn";
 import { ConfirmModal } from "./Modal";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function MediaFlyout({ isMediaActive, pathname, onClose }) {
   const [open, setOpen] = useState(false);
@@ -54,11 +55,10 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
           isMediaActive ? "bg-porcelain/8 text-porcelain" : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
         )}
       >
-        <span
-          className={cn("material-symbols-outlined text-[18px]", isMediaActive ? "text-porcelain" : "text-fog-grey")}
-        >
-          perm_media
-        </span>
+        <LucideIcon
+          name="perm_media"
+          className={cn("text-[14px]", isMediaActive ? "text-porcelain" : "text-fog-grey")}
+        />
       </div>
 
       {open && (
@@ -88,7 +88,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
                   : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
               )}
             >
-              <span className="material-symbols-outlined text-[14px]">{kind.icon}</span>
+              <LucideIcon name={kind.icon} className="text-[12px]" />
               <span className="text-[12px] tracking-[-0.1px]">{kind.label}</span>
             </Link>
           ))}
@@ -106,7 +106,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
                 : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
             )}
           >
-            <span className="material-symbols-outlined text-[14px]">{COMBINED_WEB_ITEM.icon}</span>
+            <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[12px]" />
             <span className="text-[12px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
           </Link>
         </div>
@@ -132,8 +132,8 @@ const apiItems = [
 ];
 
 const analyticsItems = [
-  { href: "/usage", label: "Usage", icon: "bar_chart" },
-  { href: "/quota", label: "Quota", icon: "data_usage" },
+  { href: "/usage", label: "Usage", icon: "chart-no-axes-combined" },
+  { href: "/quota", label: "Quota", icon: "chart-pie" },
 ];
 
 const systemItems = [
@@ -166,15 +166,14 @@ function NavItem({ href, label, icon, active, onClick, collapsed }) {
         active ? "bg-porcelain/8 text-porcelain" : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
       )}
     >
-      <span
+      <LucideIcon
+        name={icon}
         className={cn(
-          "material-symbols-outlined shrink-0",
-          collapsed ? "text-[18px]" : "text-[15px]",
+          "shrink-0",
+          collapsed ? "text-[14px]" : "text-[12px]",
           active ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
         )}
-      >
-        {icon}
-      </span>
+      />
       {!collapsed && <span className="text-[13px] font-[400] tracking-[-0.12px] truncate">{label}</span>}
     </Link>
   );
@@ -236,7 +235,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 <img src="/logo.svg" alt="Pod" className="size-7 dark:invert" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xl font-[590] text-porcelain tracking-[-0.2px] leading-none truncate">
+                <span className="font-brand text-xl font-[590] text-porcelain tracking-[-0.2px] leading-none truncate">
                   {APP_CONFIG.name}
                 </span>
               </div>
@@ -263,7 +262,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               title="Collapse sidebar"
               className="hidden lg:flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 shrink-0"
             >
-              <span className="material-symbols-outlined text-[15px]">left_panel_close</span>
+              <LucideIcon name="left_panel_close" className="text-[15px]" />
             </button>
           )}
         </div>
@@ -288,23 +287,21 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                       : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
                   )}
                 >
-                  <span
+                  <LucideIcon
+                    name="perm_media"
                     className={cn(
-                      "material-symbols-outlined text-[15px] shrink-0",
+                      "text-[12px] shrink-0",
                       isMediaActive ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
                     )}
-                  >
-                    perm_media
-                  </span>
+                  />
                   <span className="text-[13px] font-[400] tracking-[-0.12px] flex-1 text-left truncate">
                     Media Providers
                   </span>
-                  <span
-                    className="material-symbols-outlined text-[13px] text-fog-grey transition-transform duration-150"
+                  <LucideIcon
+                    name="expand_more"
+                    className="text-[13px] text-fog-grey transition-transform duration-150"
                     style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                  >
-                    expand_more
-                  </span>
+                  />
                 </button>
 
                 {mediaOpen && (
@@ -322,7 +319,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                             : "text-fog-grey hover:bg-deep-slate hover:text-storm-cloud",
                         )}
                       >
-                        <span className="material-symbols-outlined text-[13px]">{kind.icon}</span>
+                        <LucideIcon name={kind.icon} className="text-[11px]" />
                         <span className="text-[12px] tracking-[-0.1px]">{kind.label}</span>
                       </Link>
                     ))}
@@ -337,7 +334,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                           : "text-fog-grey hover:bg-deep-slate hover:text-storm-cloud",
                       )}
                     >
-                      <span className="material-symbols-outlined text-[13px]">{COMBINED_WEB_ITEM.icon}</span>
+                      <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[11px]" />
                       <span className="text-[12px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
                     </Link>
                   </div>
@@ -383,7 +380,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 title="Expand sidebar"
                 className="hidden lg:flex items-center justify-center size-8 rounded-[6px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
               >
-                <span className="material-symbols-outlined text-[14px]">left_panel_open</span>
+                <LucideIcon name="left_panel_open" className="text-[14px]" />
               </button>
             )}
             <button
@@ -396,9 +393,9 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               )}
             >
               {isRestarting ? (
-                <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                <LucideIcon name="progress_activity" className="text-[14px] animate-spin" />
               ) : (
-                <span className="material-symbols-outlined text-[14px]">restart_alt</span>
+                <LucideIcon name="restart_alt" className="text-[14px]" />
               )}
               {!collapsed && "Restart"}
             </button>
@@ -410,7 +407,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 collapsed ? "size-8" : "flex-1 h-7",
               )}
             >
-              <span className="material-symbols-outlined text-[14px]">power_settings_new</span>
+              <LucideIcon name="power_settings_new" className="text-[14px]" />
               {!collapsed && "Shutdown"}
             </button>
           </div>
@@ -433,7 +430,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-pitch-black/90 backdrop-blur-sm p-6">
           <div className="text-center p-8">
             <div className="flex items-center justify-center size-12 rounded-full bg-warning-red/10 text-warning-red mx-auto mb-4">
-              <span className="material-symbols-outlined text-[24px]">power_off</span>
+              <LucideIcon name="power_off" className="text-[24px]" />
             </div>
             <h2 className="text-[15px] font-[510] text-porcelain mb-1.5 tracking-[-0.13px]">Server Disconnected</h2>
             <p className="text-[13px] text-storm-cloud mb-5">The proxy server has been stopped.</p>

@@ -116,6 +116,32 @@ export default function CacheClient() {
     }
   };
 
+  const handleToggleSemanticCache = async (semanticCacheEnabled) => {
+    const previous = config.semanticCacheEnabled;
+    setConfig((prev) => ({ ...prev, semanticCacheEnabled }));
+    setSaving(true);
+    try {
+      const res = await fetch("/api/settings/cache-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ semanticCacheEnabled }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to update cache state");
+      }
+
+      toast.success(`Semantic cache ${semanticCacheEnabled ? "enabled" : "disabled"}`);
+      await loadData(false);
+    } catch (error) {
+      setConfig((prev) => ({ ...prev, semanticCacheEnabled: previous }));
+      toast.error(error?.message || "Failed to update cache state");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const runInvalidation = async (query) => {
     setInvalidating(true);
     try {
@@ -154,7 +180,8 @@ export default function CacheClient() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Toggle
             checked={config.semanticCacheEnabled}
-            onChange={(semanticCacheEnabled) => setConfig((prev) => ({ ...prev, semanticCacheEnabled }))}
+            onChange={handleToggleSemanticCache}
+            disabled={saving}
             label="Enable Semantic Cache"
             description="Allow cache reads/writes for non-streaming deterministic requests."
           />
@@ -203,7 +230,7 @@ export default function CacheClient() {
 
       <Card title="Maintenance" subtitle="Invalidate cache entries by scope" icon="cleaning_services">
         <div className="flex flex-col gap-3">
-          <div className="flex gap-2 items-end">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_14rem] md:items-end">
             <Input
               label="Invalidate by Model"
               placeholder="example: melma/zen"
@@ -217,13 +244,14 @@ export default function CacheClient() {
               icon="delete_sweep"
               loading={invalidating}
               disabled={!maintenance.model.trim()}
+              className="w-full justify-center"
               onClick={() => runInvalidation(`model=${encodeURIComponent(maintenance.model.trim())}`)}
             >
               Invalidate Model
             </Button>
           </div>
 
-          <div className="flex gap-2 items-end">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_14rem] md:items-end">
             <Input
               label="Invalidate by Signature"
               placeholder="sha256 signature"
@@ -237,13 +265,14 @@ export default function CacheClient() {
               icon="delete_sweep"
               loading={invalidating}
               disabled={!maintenance.signature.trim()}
+              className="w-full justify-center"
               onClick={() => runInvalidation(`signature=${encodeURIComponent(maintenance.signature.trim())}`)}
             >
               Invalidate Signature
             </Button>
           </div>
 
-          <div className="flex gap-2 items-end">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_14rem] md:items-end">
             <Input
               label="Invalidate Stale (minutes)"
               type="number"
@@ -257,6 +286,7 @@ export default function CacheClient() {
               size="lg"
               icon="auto_delete"
               loading={invalidating}
+              className="w-full justify-center"
               onClick={() =>
                 runInvalidation(`staleMs=${encodeURIComponent(String(staleMinutesToMs(maintenance.staleMinutes)))}`)
               }

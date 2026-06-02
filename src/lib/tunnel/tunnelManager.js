@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { machineIdSync } from "node-machine-id";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { isCloudflaredRunning, killCloudflared, setUnexpectedExitHandler, spawnQuickTunnel } from "./cloudflared.js";
 import { probeUrlAlive } from "./networkProbe.js";
@@ -50,7 +51,6 @@ export function isTailscaleReconnecting() {
 
 function getMachineId() {
   try {
-    const { machineIdSync } = require("node-machine-id");
     const raw = machineIdSync();
     return crypto
       .createHash("sha256")

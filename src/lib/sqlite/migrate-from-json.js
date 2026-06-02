@@ -46,8 +46,8 @@ function pickExtraAsJson(obj, structured) {
 }
 
 function readJson(filePath) {
-  if (!fs.existsSync(filePath)) return null;
-  const raw = fs.readFileSync(filePath, "utf-8");
+  if (!fs.existsSync(/*turbopackIgnore: true*/ filePath)) return null;
+  const raw = fs.readFileSync(/*turbopackIgnore: true*/ filePath, "utf-8");
   if (!raw.trim()) return null;
   try {
     return JSON.parse(raw);
@@ -59,7 +59,7 @@ function readJson(filePath) {
 
 function renameToBak(filePath) {
   try {
-    fs.renameSync(filePath, `${filePath}.bak`);
+    fs.renameSync(/*turbopackIgnore: true*/ filePath, /*turbopackIgnore: true*/ `${filePath}.bak`);
   } catch (err) {
     warn("sqlite", `could not rename ${filePath} to .bak`, { error: err.message });
   }
@@ -374,7 +374,7 @@ function importRequestDetails(db, data) {
 export function migrateFromJson(db, dataDir) {
   const summary = { imported: 0, files: [] };
 
-  const cfgPath = path.join(dataDir, DB_JSON);
+  const cfgPath = path.join(/*turbopackIgnore: true*/ dataDir, DB_JSON);
   const cfg = readJson(cfgPath);
   if (cfg) {
     const count = db.transaction(() => importConfigDb(db, cfg)).immediate();
@@ -383,7 +383,7 @@ export function migrateFromJson(db, dataDir) {
     renameToBak(cfgPath);
   }
 
-  const usagePath = path.join(dataDir, USAGE_JSON);
+  const usagePath = path.join(/*turbopackIgnore: true*/ dataDir, USAGE_JSON);
   const usage = readJson(usagePath);
   if (usage) {
     const count = db.transaction(() => importUsageDb(db, usage)).immediate();
@@ -392,7 +392,7 @@ export function migrateFromJson(db, dataDir) {
     renameToBak(usagePath);
   }
 
-  const rdPath = path.join(dataDir, REQUEST_DETAILS_JSON);
+  const rdPath = path.join(/*turbopackIgnore: true*/ dataDir, REQUEST_DETAILS_JSON);
   const rd = readJson(rdPath);
   if (rd) {
     const count = db.transaction(() => importRequestDetails(db, rd)).immediate();

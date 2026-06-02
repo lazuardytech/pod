@@ -1,7 +1,13 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import LucideIcon from "@/shared/components/LucideIcon";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
+
+const OFFLINE_USAGE_CHART_CACHE_KEY = "usage:chart";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 const fmtNum = (n) => {
   if (!n && n !== 0) return "—";
@@ -129,17 +135,39 @@ const METRICS = [
 export default function MetricsLineChart({ period = "7d" }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const offlineNoticeShownRef = useRef(false);
+
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached usage chart.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/usage/chart?period=${period}`);
-      if (res.ok) setData(await res.json());
+      const result = await loadJsonStaleWhileRevalidate({
+        url: `/api/usage/chart?period=${period}`,
+        cacheKey: `${OFFLINE_USAGE_CHART_CACHE_KEY}:${period}`,
+        maxStaleMs: OFFLINE_MAX_STALE_MS,
+        onCacheData: (chartData) => {
+          setData(Array.isArray(chartData) ? chartData : []);
+        },
+        onFreshData: (chartData) => {
+          setData(Array.isArray(chartData) ? chartData : []);
+        },
+      });
+      if (result.source === "cache") notifyOfflineCache();
+      else clearOfflineCacheNotice();
     } catch {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [clearOfflineCacheNotice, notifyOfflineCache, period]);
 
   useEffect(() => {
     fetchData();
@@ -166,9 +194,7 @@ export default function MetricsLineChart({ period = "7d" }) {
         >
           {/* Header */}
           <div className="flex items-center gap-1.5 px-3 pt-3 pb-1">
-            <span className="material-symbols-outlined text-[14px]" style={{ color: m.color }}>
-              {m.icon}
-            </span>
+            <LucideIcon name={m.icon} className="text-[14px]" style={{ color: m.color }} />
             <span className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">{m.label}</span>
           </div>
 

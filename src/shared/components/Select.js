@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function deriveName(label) {
   if (typeof label !== "string" || !label) return "";
@@ -48,7 +49,7 @@ export default function Select({
           onChange={onChange}
           disabled={disabled}
           className={cn(
-            "w-full py-2.5 px-3.5 pr-9 text-[13px] text-porcelain",
+            "h-9 w-full px-3.5 pr-9 text-[13px] text-porcelain",
             "bg-gunmetal border border-charcoal-grey rounded-[6px] appearance-none",
             "focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
             "transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed",
@@ -68,12 +69,12 @@ export default function Select({
           ))}
         </select>
         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-storm-cloud">
-          <span className="material-symbols-outlined text-[16px]">expand_more</span>
+          <LucideIcon name="expand_more" className="text-[16px]" />
         </div>
       </div>
       {error && (
         <p className="text-[11px] text-warning-red flex items-center gap-1">
-          <span className="material-symbols-outlined text-[13px]">error</span>
+          <LucideIcon name="error" className="text-[13px]" />
           {error}
         </p>
       )}

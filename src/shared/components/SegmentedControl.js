@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function SegmentedControl({ options = [], value, onChange, size = "md", className }) {
   const sizes = {
@@ -26,7 +27,7 @@ export default function SegmentedControl({ options = [], value, onChange, size =
             value === option.value ? "bg-surface text-text-main shadow-sm" : "text-text-muted hover:text-text-main",
           )}
         >
-          {option.icon && <span className="material-symbols-outlined text-[14px]">{option.icon}</span>}
+          {option.icon && <LucideIcon name={option.icon} className="text-[14px]" />}
           {option.label}
         </button>
       ))}

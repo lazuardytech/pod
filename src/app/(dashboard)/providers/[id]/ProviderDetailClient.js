@@ -29,6 +29,7 @@ import {
   Toggle,
 } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,
@@ -875,7 +876,7 @@ export default function ProviderDetailPage() {
           onClick={() => setShowAddCustomModel(true)}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 px-3 py-2 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/5 sm:w-auto"
         >
-          <span className="material-symbols-outlined text-sm">add</span>
+          <LucideIcon name="add" className="text-sm" />
           Add Model
         </button>
 
@@ -902,7 +903,7 @@ export default function ProviderDetailPage() {
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs text-text-muted hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
                       title={`${m.name} · ${(m.contextLength / 1000).toFixed(0)}k ctx`}
                     >
-                      <span className="material-symbols-outlined text-[13px]">add</span>
+                      <LucideIcon name="add" className="text-[13px]" />
                       {m.id.split("/").pop()}
                     </button>
                   ))}
@@ -923,7 +924,7 @@ export default function ProviderDetailPage() {
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-black/10 dark:border-white/10 text-xs text-text-muted hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
                   title="Restore model"
                 >
-                  <span className="material-symbols-outlined text-[13px]">add</span>
+                  <LucideIcon name="add" className="text-[13px]" />
                   {m.id}
                 </button>
               ))}
@@ -997,7 +998,7 @@ export default function ProviderDetailPage() {
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  <LucideIcon name="open_in_new" className="text-sm" />
                   {providerInfo.notice?.apiKeyUrl ? "Get API Key" : "Sign up / Learn more"}
                 </a>
               )}
@@ -1011,14 +1012,14 @@ export default function ProviderDetailPage() {
 
       {providerInfo.deprecated && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-          <span className="material-symbols-outlined text-[16px] text-yellow-500 mt-0.5 shrink-0">warning</span>
+          <LucideIcon name="warning" className="text-[16px] text-yellow-500 mt-0.5 shrink-0" />
           <p className="text-xs text-red-600 dark:text-yellow-400 leading-relaxed">{providerInfo.deprecationNotice}</p>
         </div>
       )}
 
       {providerInfo.notice?.text && !providerInfo.deprecated && (
         <div className="flex flex-col gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 sm:flex-row sm:items-center">
-          <span className="material-symbols-outlined text-[16px] text-blue-500 shrink-0">info</span>
+          <LucideIcon name="info" className="text-[16px] text-blue-500 shrink-0" />
           <p className="min-w-0 flex-1 text-xs leading-relaxed text-blue-600 dark:text-blue-400">
             {providerInfo.notice.text}
           </p>
@@ -1162,7 +1163,7 @@ export default function ProviderDetailPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary shrink-0">
-                  <span className="material-symbols-outlined text-[18px]">{isOAuth ? "lock" : "key"}</span>
+                  <LucideIcon name={isOAuth ? "lock" : "key"} className="text-[18px]" />
                 </div>
                 <p className="text-sm text-text-muted">No connections yet</p>
               </div>
@@ -1394,7 +1395,7 @@ function SortableConnectionRow({ conn, proxyPools, isOAuth, onToggleActive, onUp
         title="Drag to reorder"
         tabIndex={-1}
       >
-        <span className="material-symbols-outlined text-[16px]">drag_indicator</span>
+        <LucideIcon name="drag_indicator" className="text-[16px]" />
       </button>
       <div className="flex-1 min-w-0">
         <ConnectionRow

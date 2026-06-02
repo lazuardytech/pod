@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { cn } from "@/shared/utils/cn";
 import Badge from "./Badge";
 import { DetailRow, DetailSection, JsonBlock, LogDrawer, LogDrawerBody, LogDrawerHeader } from "./LogDrawer";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function PayloadSection({ title, icon, data }) {
   if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
@@ -127,7 +128,7 @@ export default function RequestLogDetail({ log, detail, loading, onClose }) {
         {/* Payload sections — only shown when detail logging is on */}
         {loading && (
           <div className="flex items-center gap-2 text-[12px] text-fog-grey">
-            <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+            <LucideIcon name="progress_activity" className="text-[14px] animate-spin" />
             Loading detail...
           </div>
         )}
@@ -143,7 +144,7 @@ export default function RequestLogDetail({ log, detail, loading, onClose }) {
 
         {!loading && !hasPayloads && (
           <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-4 text-center">
-            <span className="material-symbols-outlined text-[20px] text-fog-grey mb-2 block">info</span>
+            <LucideIcon name="info" className="text-[20px] text-fog-grey mb-2 block" />
             <p className="text-[12px] text-fog-grey">No detailed payload available for this request.</p>
             <p className="text-[11px] text-fog-grey/60 mt-1">
               Enable observability in Settings to capture request/response payloads.

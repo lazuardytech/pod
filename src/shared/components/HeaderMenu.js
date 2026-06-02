@@ -3,6 +3,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/shared/hooks/useTheme";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function MenuItem({ icon, label, onClick, danger }) {
   return (
@@ -12,7 +13,7 @@ function MenuItem({ icon, label, onClick, danger }) {
         danger ? "text-warning-red hover:bg-warning-red/8" : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
       }`}
     >
-      <span className="material-symbols-outlined text-[15px]">{icon}</span>
+      <LucideIcon name={icon} className="text-[15px]" />
       <span className="flex-1 text-left">{label}</span>
     </button>
   );
@@ -51,7 +52,7 @@ export default function HeaderMenu({ onLogout }) {
         className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
         title="Menu"
       >
-        <span className="material-symbols-outlined text-[16px]">more_horiz</span>
+        <LucideIcon name="more_horiz" className="text-[16px]" />
       </button>
 
       {isOpen && (

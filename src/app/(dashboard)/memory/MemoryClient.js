@@ -32,6 +32,7 @@ export default function MemoryClient() {
   const [refreshing, setRefreshing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [clearingAll, setClearingAll] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
     title: "",
@@ -169,6 +170,32 @@ export default function MemoryClient() {
     }
   };
 
+  const handleToggleMemoryEnabled = async (enabled) => {
+    const previous = settings.enabled;
+    setSettings((prev) => ({ ...prev, enabled }));
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/settings/memory", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to update memory state");
+      }
+
+      toast.success(`Memory ${enabled ? "enabled" : "disabled"}`);
+      await loadData(false);
+    } catch (error) {
+      setSettings((prev) => ({ ...prev, enabled: previous }));
+      toast.error(error?.message || "Failed to update memory state");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleDeleteMemory = async (id) => {
     if (!id) return;
 
@@ -185,6 +212,28 @@ export default function MemoryClient() {
       toast.error(error?.message || "Failed to delete memory");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleClearAllMemories = async () => {
+    setClearingAll(true);
+    try {
+      const res = await fetch("/api/memory", { method: "DELETE" });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to clear memories");
+      }
+      const payload = await res.json().catch(() => ({}));
+      const removed = Number(payload?.removed || 0);
+      toast.success(
+        removed > 0 ? `Cleared ${removed} memory ${removed === 1 ? "entry" : "entries"}` : "No memory entries to clear",
+      );
+      setPage(1);
+      await loadData(false);
+    } catch (error) {
+      toast.error(error?.message || "Failed to clear memories");
+    } finally {
+      setClearingAll(false);
     }
   };
 
@@ -220,7 +269,8 @@ export default function MemoryClient() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Toggle
             checked={settings.enabled}
-            onChange={(enabled) => setSettings((prev) => ({ ...prev, enabled }))}
+            onChange={handleToggleMemoryEnabled}
+            disabled={savingSettings}
             label="Enable Memory"
             description="Inject memory context into chat requests."
           />
@@ -376,6 +426,26 @@ export default function MemoryClient() {
               Next
             </Button>
           </div>
+        </div>
+
+        <div className="mt-4 border-t border-border-subtle pt-4">
+          <Button
+            variant="danger"
+            icon="delete_forever"
+            loading={clearingAll}
+            disabled={loading || clearingAll}
+            onClick={() =>
+              openConfirm(
+                "Clear all memory",
+                "Are you sure you want to delete all memory entries?",
+                handleClearAllMemories,
+                "danger",
+              )
+            }
+            className="w-full sm:w-auto"
+          >
+            Clear All Memory
+          </Button>
         </div>
       </Card>
 

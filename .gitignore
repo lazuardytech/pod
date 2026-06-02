@@ -27,7 +27,7 @@ product
 # misc
 .DS_Store
 *.pem
-paseo.json
+/paseo.json
 
 # debug
 npm-debug.log*

@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const REFRESH_MS = 30_000;
 const MAX_SAMPLES = 24;
@@ -86,44 +87,23 @@ function Sparkline({ samples, field, fmt }) {
   );
 }
 
-const TelemetryCard = forwardRef(function TelemetryCard(_, ref) {
-  const [health, setHealth] = useState(null);
+export default function TelemetryCard({ health }) {
   const [samples, setSamples] = useState([]);
-  const [_loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch("/api/monitoring/health");
-      if (!res.ok) return;
-      const json = await res.json();
-      setHealth(json);
-      setLastUpdated(new Date());
-      const mem = json.system?.memoryUsage?.rss ?? 0;
-      const heap = json.system?.memoryUsage?.heapUsed ?? 0;
-      const newSample = { timestamp: Date.now(), memoryBytes: mem, heapUsed: heap };
-      setSamples((prev) => {
-        // Seed with 2 identical points on first load so sparkline renders immediately
-        if (prev.length === 0) {
-          return [{ ...newSample, timestamp: Date.now() - REFRESH_MS }, newSample];
-        }
-        return [...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)), newSample];
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
-
-  useImperativeHandle(ref, () => ({ refresh: load }), [load]);
+    if (!health) return;
+    setLastUpdated(new Date());
+    const mem = health.system?.memoryUsage?.rss ?? 0;
+    const heap = health.system?.memoryUsage?.heapUsed ?? 0;
+    const newSample = { timestamp: Date.now(), memoryBytes: mem, heapUsed: heap };
+    setSamples((prev) => {
+      if (prev.length === 0) return [{ ...newSample, timestamp: Date.now() - REFRESH_MS }, newSample];
+      return [...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)), newSample];
+    });
+  }, [health]);
 
   const sys = health?.system ?? {};
-
   const metrics = useMemo(
     () => [
       {
@@ -170,7 +150,7 @@ const TelemetryCard = forwardRef(function TelemetryCard(_, ref) {
     <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-porcelain">monitoring</span>
+          <LucideIcon name="monitoring" className="text-[18px] text-porcelain" />
           <h2 className="text-[14px] font-[510] text-porcelain tracking-[-0.13px]">System Telemetry</h2>
         </div>
         {lastUpdated && <span className="text-[11px] text-fog-grey">{lastUpdated.toLocaleTimeString()}</span>}
@@ -181,7 +161,7 @@ const TelemetryCard = forwardRef(function TelemetryCard(_, ref) {
           <div key={m.label} className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-3">
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">{m.label}</p>
-              <span className={`material-symbols-outlined text-[14px] rounded-[4px] p-0.5 ${m.tone}`}>{m.icon}</span>
+              <LucideIcon name={m.icon} className={`text-[14px] rounded-[4px] p-0.5 ${m.tone}`} />
             </div>
             <p className="text-[15px] font-[510] text-porcelain tracking-[-0.13px]">{m.value}</p>
           </div>
@@ -200,6 +180,4 @@ const TelemetryCard = forwardRef(function TelemetryCard(_, ref) {
       </div>
     </div>
   );
-});
-
-export default TelemetryCard;
+}

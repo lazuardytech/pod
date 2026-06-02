@@ -6,6 +6,7 @@ import GetStarted from "./components/GetStarted";
 import HeroSection from "./components/HeroSection";
 import HowItWorks from "./components/HowItWorks";
 import Navigation from "./components/Navigation";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function LandingPage() {
                   onClick={() => router.push("/dashboard")}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-9 px-6 rounded-[6px] bg-[#E5E5E6] hover:bg-white text-pitch-black text-[13px] font-[590] transition-colors duration-100 shadow-[var(--shadow-sm)]"
                 >
-                  <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+                  <LucideIcon name="rocket_launch" className="text-[16px]" />
                   Start Free
                 </button>
                 <button

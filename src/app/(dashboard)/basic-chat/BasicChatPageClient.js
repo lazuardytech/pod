@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button } from "@/shared/components";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const STORAGE_KEYS = {
   sessions: "basic-chat.sessions",
@@ -796,7 +797,7 @@ export default function BasicChatPageClient() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-white">{modelLabel}</span>
-                  <span className="material-symbols-outlined text-[18px] text-white/70">expand_more</span>
+                  <LucideIcon name="expand_more" className="text-[18px] text-white/70" />
                 </div>
                 <p className="truncate text-xs text-white/55">{modelSubLabel}</p>
               </div>
@@ -833,9 +834,7 @@ export default function BasicChatPageClient() {
                                   <p className="truncate text-[11px] text-white/45">{model.requestModel}</p>
                                 </div>
                                 {isActive ? (
-                                  <span className="material-symbols-outlined text-[18px] text-blue-300">
-                                    check_circle
-                                  </span>
+                                  <LucideIcon name="check_circle" className="text-[18px] text-blue-300" />
                                 ) : null}
                               </div>
                             </button>
@@ -917,7 +916,7 @@ export default function BasicChatPageClient() {
         {loadError ? (
           <div className="mt-4 rounded-[18px] border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-rose-100">
             <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-[20px]">error</span>
+              <LucideIcon name="error" className="text-[20px]" />
               <p className="text-sm leading-6">{loadError}</p>
             </div>
           </div>
@@ -929,7 +928,7 @@ export default function BasicChatPageClient() {
               <div className="flex min-h-[50vh] items-center justify-center px-4 text-center">
                 <div className="max-w-xl space-y-4">
                   <div className="mx-auto flex size-16 items-center justify-center rounded-[20px] border border-white/10 bg-white/5 text-white/80">
-                    <span className="material-symbols-outlined text-[30px]">chat</span>
+                    <LucideIcon name="chat" className="text-[30px]" />
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-2xl font-semibold text-white">Start a conversation</h2>
@@ -1007,7 +1006,7 @@ export default function BasicChatPageClient() {
                       onClick={() => removeAttachment(attachment.id)}
                       className="text-white/55 hover:text-white"
                     >
-                      <span className="material-symbols-outlined text-[18px]">close</span>
+                      <LucideIcon name="close" className="text-[18px]" />
                     </button>
                   </div>
                 ))}
@@ -1035,7 +1034,7 @@ export default function BasicChatPageClient() {
                       disabled={!activeModel || loadingData}
                       className="p-2 text-white/50 hover:text-white transition rounded-full hover:bg-white/5"
                     >
-                      <span className="material-symbols-outlined text-[20px]">attach_file</span>
+                      <LucideIcon name="attach_file" className="text-[20px]" />
                     </button>
                     <input
                       aria-label="Attach images"
@@ -1058,7 +1057,7 @@ export default function BasicChatPageClient() {
                         onClick={handleStop}
                         className="p-2 text-white bg-white/10 hover:bg-white/20 transition rounded-full h-8 w-8 flex items-center justify-center"
                       >
-                        <span className="material-symbols-outlined text-[16px]">stop</span>
+                        <LucideIcon name="stop" className="text-[16px]" />
                       </button>
                     ) : null}
                     <button
@@ -1066,7 +1065,7 @@ export default function BasicChatPageClient() {
                       disabled={!canSend}
                       className={`h-8 w-8 rounded-full flex items-center justify-center transition ${canSend ? "bg-white text-black hover:opacity-90" : "bg-white/10 text-white/30 cursor-not-allowed"}`}
                     >
-                      <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+                      <LucideIcon name="arrow_upward" className="text-[16px]" />
                     </button>
                   </div>
                 </div>

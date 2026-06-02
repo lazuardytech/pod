@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { fetch as undiciFetch } from "undici";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
@@ -8,6 +7,7 @@ async function testVercelRelay(relayUrl, timeoutMs = 10000) {
   const startedAt = Date.now();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const { fetch: undiciFetch } = await import("undici");
     const res = await undiciFetch(relayUrl, {
       method: "GET",
       headers: {

@@ -15,6 +15,27 @@ const GLOBAL_TIMEOUT_MS = 15000;
 const NON_RETRIABLE = new Set([400, 401, 403, 404]);
 
 const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
+const LOCALHOST_URL_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?/i;
+
+function formatSearxngError({ status, statusText = "", text = "", fetchUrl = "" }) {
+  const endpointLabel = fetchUrl ? fetchUrl.split("?")[0] : "configured endpoint";
+  if (status === 403) {
+    return `searxng returned 403 from ${endpointLabel}. This instance may block JSON API requests (format=json). Use a SearXNG instance that allows JSON or run your own instance.`;
+  }
+  if (status === 429) {
+    return `searxng rate-limited request (429) from ${endpointLabel}. Try another instance or reduce request frequency.`;
+  }
+  const detail = text || statusText || "upstream error";
+  return `searxng returned ${status} from ${endpointLabel}: ${detail.slice(0, 200)}`;
+}
+
+function formatSearxngNetworkError({ err, fetchUrl = "" }) {
+  const endpointLabel = fetchUrl ? fetchUrl.split("?")[0] : "configured endpoint";
+  if (LOCALHOST_URL_RE.test(endpointLabel)) {
+    return `Unable to connect to ${endpointLabel}. Start SearXNG locally on that URL or set provider_options.baseUrl to a reachable SearXNG instance.`;
+  }
+  return `searxng connection error at ${endpointLabel}: ${err?.message || "network error"}`;
+}
 
 /** Normalize and validate query string. */
 function sanitizeQuery(query) {
@@ -108,6 +129,18 @@ async function tryDedicatedProvider({ provider, providerConfig, body, credential
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
       log?.error?.("SEARCH", `${provider.id} ${resp.status}: ${errText.slice(0, 200)}`);
+      if (provider.id === "searxng") {
+        return {
+          success: false,
+          status: resp.status,
+          error: formatSearxngError({
+            status: resp.status,
+            statusText: resp.statusText,
+            text: errText,
+            fetchUrl: url,
+          }),
+        };
+      }
       return {
         success: false,
         status: resp.status,
@@ -140,6 +173,13 @@ async function tryDedicatedProvider({ provider, providerConfig, body, credential
     const isTimeout = err.name === "AbortError";
     const status = isTimeout ? 504 : 502;
     log?.error?.("SEARCH", `${provider.id} ${isTimeout ? "timeout" : "error"}: ${err.message}`);
+    if (provider.id === "searxng" && !isTimeout) {
+      return {
+        success: false,
+        status,
+        error: formatSearxngNetworkError({ err, fetchUrl: url }),
+      };
+    }
     return { success: false, status, error: `${provider.id} ${isTimeout ? "timeout" : "error"}: ${err.message}` };
   }
 }

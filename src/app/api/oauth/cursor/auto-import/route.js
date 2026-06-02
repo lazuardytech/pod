@@ -54,8 +54,8 @@ const _normalize = (value) => {
  */
 function extractTokensViaBetterSqlite(dbPath) {
   // Dynamic require so the route stays importable even if native bindings fail.
-  // `bun:sqlite` is marked external in next.config.mjs so webpack passes the
-  // require through to the runtime resolver.
+  // `bun:sqlite` is marked as a server external package in next.config.mjs,
+  // so require() resolves it at runtime under Bun.
   const isBun = typeof Bun !== "undefined";
   const Database = isBun ? require("bun:sqlite").Database : require("better-sqlite3");
   // bun:sqlite uses `create: false` to require an existing file;

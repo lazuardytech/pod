@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function Navigation() {
           aria-label="Navigate to home"
         >
           <div className="size-7 rounded-[6px] bg-porcelain flex items-center justify-center">
-            <span className="material-symbols-outlined text-pitch-black text-[16px]">hub</span>
+            <LucideIcon name="hub" className="text-pitch-black text-[16px]" />
           </div>
           <span className="text-porcelain text-[14px] font-[510] tracking-[-0.13px]">Pod</span>
         </button>
@@ -54,7 +55,7 @@ export default function Navigation() {
             className="md:hidden flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <span className="material-symbols-outlined text-[18px]">{mobileMenuOpen ? "close" : "menu"}</span>
+            <LucideIcon name={mobileMenuOpen ? "close" : "menu"} className="text-[18px]" />
           </button>
         </div>
       </div>

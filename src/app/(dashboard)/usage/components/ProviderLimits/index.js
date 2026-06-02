@@ -8,13 +8,13 @@ import Toggle from "@/shared/components/Toggle";
 import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
 import { cn } from "@/shared/utils/cn";
 import { calculatePercentage, formatResetTime, getStatusColor, parseQuotaData } from "./utils";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 // Connection is eligible for the quota page when it uses OAuth or is an apikey provider whitelisted for quota
 const isUsageEligible = (conn) =>
   USAGE_SUPPORTED_PROVIDERS.includes(conn.provider) &&
   (conn.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(conn.provider));
 
-const REFRESH_INTERVAL_MS = 60000; // 60 seconds
 const DEPLETED_QUOTA_THRESHOLD = 5; // percent
 const AUTO_REFRESH_STORAGE_KEY = "quotaAutoRefresh";
 const QUOTA_CACHE_KEY = "providerQuotaCache";
@@ -84,8 +84,8 @@ export default function ProviderLimits() {
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
 
-  const intervalRef = useRef(null);
   const countdownRef = useRef(null);
+  const refreshingAllRef = useRef(false);
 
   // Hydrate toggle states from localStorage after mount (avoids SSR/hydration mismatch)
   useEffect(() => {
@@ -205,6 +205,23 @@ export default function ProviderLimits() {
     [fetchQuota],
   );
 
+  const applySnapshot = useCallback((snapshot) => {
+    if (!snapshot || typeof snapshot !== "object") return;
+    if (Array.isArray(snapshot.connections)) setConnections(snapshot.connections);
+    if (snapshot.quotaData && typeof snapshot.quotaData === "object") {
+      setQuotaData(snapshot.quotaData);
+      setLoading({});
+    }
+    if (snapshot.errors && typeof snapshot.errors === "object") {
+      setErrors(snapshot.errors);
+    } else {
+      setErrors({});
+    }
+    setConnectionsLoading(false);
+    setLastUpdated(new Date());
+    setCountdown(60);
+  }, []);
+
   const handleDeleteConnection = useCallback(async (id) => {
     setDeletingId(id);
     try {
@@ -295,8 +312,9 @@ export default function ProviderLimits() {
 
   // Refresh all providers
   const refreshAll = useCallback(async () => {
-    if (refreshingAll) return;
+    if (refreshingAllRef.current) return;
 
+    refreshingAllRef.current = true;
     setRefreshingAll(true);
     setCountdown(60);
 
@@ -312,9 +330,10 @@ export default function ProviderLimits() {
     } catch (error) {
       console.error("Error refreshing all providers:", error);
     } finally {
+      refreshingAllRef.current = false;
       setRefreshingAll(false);
     }
-  }, [refreshingAll, fetchConnections, fetchQuota]);
+  }, [fetchConnections, fetchQuota]);
 
   // Initial load: fetch connections first so cards render immediately, then fetch quotas
   useEffect(() => {
@@ -361,13 +380,48 @@ export default function ProviderLimits() {
     window.localStorage.setItem(HIDE_DISABLED_STORAGE_KEY, String(hideDisabled));
   }, [hideDisabled]);
 
-  // Auto-refresh interval
+  // Live updates via SSE stream (replaces polling interval)
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    let closed = false;
+    let reconnectTimer = null;
+    let es = null;
+
+    const connect = () => {
+      if (closed) return;
+      es = new EventSource("/api/usage/provider-limits/stream");
+
+      es.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload?.error) return;
+          applySnapshot(payload);
+        } catch {
+          // keep stream alive on malformed chunk
+        }
+      };
+
+      es.onerror = () => {
+        es.close();
+        refreshAll().catch(() => {});
+        if (!closed) reconnectTimer = setTimeout(connect, 3000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      closed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (es) es.close();
+    };
+  }, [applySnapshot, autoRefresh, refreshAll]);
+
+  // Countdown indicator for live mode
   useEffect(() => {
     if (!autoRefresh) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      setCountdown(60);
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
@@ -375,51 +429,17 @@ export default function ProviderLimits() {
       return;
     }
 
-    // Main refresh interval
-    intervalRef.current = setInterval(() => {
-      refreshAll();
-    }, REFRESH_INTERVAL_MS);
-
-    // Countdown interval
     countdownRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) return 60;
-        return prev - 1;
-      });
+      setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
     }, 1000);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
-  }, [autoRefresh, refreshAll]);
-
-  // Pause auto-refresh when tab is hidden (Page Visibility API)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        if (countdownRef.current) {
-          clearInterval(countdownRef.current);
-          countdownRef.current = null;
-        }
-      } else if (autoRefresh) {
-        // Resume auto-refresh when tab becomes visible
-        intervalRef.current = setInterval(refreshAll, REFRESH_INTERVAL_MS);
-        countdownRef.current = setInterval(() => {
-          setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
-        }, 1000);
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
       }
     };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [autoRefresh, refreshAll]);
+  }, [autoRefresh]);
 
   // Filter eligible connections (OAuth + whitelisted apikey)
   const filteredConnections = connections.filter(isUsageEligible);
@@ -540,8 +560,8 @@ export default function ProviderLimits() {
   if (!connectionsLoading && sortedConnections.length === 0) {
     return (
       <div className="rounded-[6px] border border-charcoal-grey overflow-hidden">
-        <div className="text-center py-16">
-          <span className="material-symbols-outlined text-[48px] text-storm-cloud opacity-30">cloud_off</span>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <LucideIcon name="cloud_off" className="text-[48px] text-storm-cloud opacity-30" />
           <h3 className="mt-3 text-[13px] font-[510] text-porcelain">No Providers Connected</h3>
           <p className="mt-1 text-[11px] text-storm-cloud max-w-xs mx-auto">
             Connect to providers with OAuth to track your API quota limits and usage.
@@ -566,7 +586,7 @@ export default function ProviderLimits() {
             title="Filter quota providers"
           >
             {providerFilter === "all" ? (
-              <span className="material-symbols-outlined text-[13px]">apps</span>
+              <LucideIcon name="apps" className="text-[13px]" />
             ) : (
               <ProviderIcon
                 src={`/providers/${providerFilter}.png`}
@@ -577,7 +597,7 @@ export default function ProviderLimits() {
               />
             )}
             <span className="capitalize hidden lg:inline">{selectedProviderLabel}</span>
-            <span className="material-symbols-outlined text-[13px]">expand_more</span>
+            <LucideIcon name="expand_more" className="text-[13px]" />
           </button>
 
           {providerMenuOpen && (
@@ -601,11 +621,9 @@ export default function ProviderLimits() {
                       : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[14px]">apps</span>
+                  <LucideIcon name="apps" className="text-[14px]" />
                   <span>All providers</span>
-                  {providerFilter === "all" && (
-                    <span className="material-symbols-outlined ml-auto text-[13px]">check</span>
-                  )}
+                  {providerFilter === "all" && <LucideIcon name="check" className="ml-auto text-[13px]" />}
                 </button>
                 <div className="my-1 h-px bg-charcoal-grey" />
                 <div className="max-h-60 overflow-y-auto">
@@ -631,9 +649,7 @@ export default function ProviderLimits() {
                         fallbackText={provider.slice(0, 2).toUpperCase()}
                       />
                       <span className="capitalize">{provider}</span>
-                      {providerFilter === provider && (
-                        <span className="material-symbols-outlined ml-auto text-[13px]">check</span>
-                      )}
+                      {providerFilter === provider && <LucideIcon name="check" className="ml-auto text-[13px]" />}
                     </button>
                   ))}
                 </div>
@@ -666,7 +682,7 @@ export default function ProviderLimits() {
           )}
           title="Collapse all rows"
         >
-          <span className="material-symbols-outlined text-[13px]">unfold_less</span>
+          <LucideIcon name="unfold_less" className="text-[13px]" />
           <span className="hidden sm:inline">Collapse all</span>
         </button>
 
@@ -682,7 +698,7 @@ export default function ProviderLimits() {
           )}
           title="Sort accounts by earliest quota reset time"
         >
-          <span className="material-symbols-outlined text-[13px]">hourglass_top</span>
+          <LucideIcon name="hourglass_top" className="text-[13px]" />
           <span className="hidden sm:inline">Expiring first</span>
         </button>
 
@@ -698,7 +714,7 @@ export default function ProviderLimits() {
           )}
           title="Hide disabled connections"
         >
-          <span className="material-symbols-outlined text-[13px]">visibility_off</span>
+          <LucideIcon name="visibility_off" className="text-[13px]" />
           <span className="hidden sm:inline">Hide disabled</span>
         </button>
 
@@ -710,7 +726,7 @@ export default function ProviderLimits() {
           className="h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:text-porcelain hover:bg-deep-slate transition-colors flex items-center gap-1 disabled:opacity-50"
           title="Disable connections with depleted quota"
         >
-          <span className="material-symbols-outlined text-[13px]">block</span>
+          <LucideIcon name="block" className="text-[13px]" />
           <span className="hidden sm:inline">Turn off Empty</span>
         </button>
 
@@ -722,7 +738,7 @@ export default function ProviderLimits() {
           className="h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:text-porcelain hover:bg-deep-slate transition-colors flex items-center gap-1 disabled:opacity-50"
           title="Enable connections that still have quota"
         >
-          <span className="material-symbols-outlined text-[13px]">check_circle</span>
+          <LucideIcon name="check_circle" className="text-[13px]" />
           <span className="hidden sm:inline">Turn on Available</span>
         </button>
 
@@ -734,9 +750,7 @@ export default function ProviderLimits() {
           className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Refresh all"
         >
-          <span className={`material-symbols-outlined text-[15px] ${refreshingAll ? "animate-spin" : ""}`}>
-            refresh
-          </span>
+          <LucideIcon name="refresh" className={`text-[15px] ${refreshingAll ? "animate-spin" : ""}`} />
         </button>
 
         {/* Live toggle */}
@@ -843,9 +857,10 @@ export default function ProviderLimits() {
                   >
                     {/* Provider identity */}
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="material-symbols-outlined text-[13px] text-fog-grey shrink-0">
-                        {providerExpanded ? "expand_more" : "chevron_right"}
-                      </span>
+                      <LucideIcon
+                        name={providerExpanded ? "expand_more" : "chevron_right"}
+                        className="text-[13px] text-fog-grey shrink-0"
+                      />
                       <div className="w-5 h-5 shrink-0 rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
                         <ProviderIcon
                           src={`/providers/${provider}.png`}
@@ -932,9 +947,10 @@ export default function ProviderLimits() {
                           >
                             {/* Account identity */}
                             <div className="flex items-center gap-2 pl-6 min-w-0">
-                              <span className="material-symbols-outlined text-[12px] text-fog-grey/70 shrink-0">
-                                {accountExpanded ? "expand_more" : "chevron_right"}
-                              </span>
+                              <LucideIcon
+                                name={accountExpanded ? "expand_more" : "chevron_right"}
+                                className="text-[12px] text-fog-grey/70 shrink-0"
+                              />
                               <span
                                 className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                   isInactive ? "bg-storm-cloud" : "bg-emerald-400"
@@ -990,11 +1006,10 @@ export default function ProviderLimits() {
                                 className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-charcoal-grey hover:text-porcelain transition-colors duration-100 disabled:opacity-40"
                                 title="Refresh quota"
                               >
-                                <span
-                                  className={`material-symbols-outlined text-[14px] ${isLoading ? "animate-spin" : ""}`}
-                                >
-                                  refresh
-                                </span>
+                                <LucideIcon
+                                  name="refresh"
+                                  className={`text-[14px] ${isLoading ? "animate-spin" : ""}`}
+                                />
                               </button>
                               <button
                                 type="button"
@@ -1006,7 +1021,7 @@ export default function ProviderLimits() {
                                 className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-charcoal-grey hover:text-porcelain transition-colors duration-100 disabled:opacity-40"
                                 title="Edit connection"
                               >
-                                <span className="material-symbols-outlined text-[14px]">edit</span>
+                                <LucideIcon name="edit" className="text-[14px]" />
                               </button>
                               <button
                                 type="button"
@@ -1022,13 +1037,10 @@ export default function ProviderLimits() {
                                 className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red transition-colors duration-100 disabled:opacity-40"
                                 title="Delete connection"
                               >
-                                <span
-                                  className={`material-symbols-outlined text-[14px] ${
-                                    deletingId === conn.id ? "animate-pulse" : ""
-                                  }`}
-                                >
-                                  delete
-                                </span>
+                                <LucideIcon
+                                  name="delete"
+                                  className={`text-[14px] ${deletingId === conn.id ? "animate-pulse" : ""}`}
+                                />
                               </button>
                               <div className="pl-0.5">
                                 <Toggle
@@ -1048,7 +1060,7 @@ export default function ProviderLimits() {
                             >
                               {error ? (
                                 <div className="flex items-center gap-2 px-14 py-3">
-                                  <span className="material-symbols-outlined text-[16px] text-red-400">error</span>
+                                  <LucideIcon name="error" className="text-[16px] text-red-400" />
                                   <span className="text-[11px] text-storm-cloud">{error}</span>
                                 </div>
                               ) : quota?.message ? (

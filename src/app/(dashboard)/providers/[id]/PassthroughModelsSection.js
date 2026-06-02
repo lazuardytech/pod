@@ -3,6 +3,7 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 import { Button } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
   const borderColor =
@@ -12,12 +13,11 @@ function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias
 
   return (
     <div className={`flex items-center gap-3 p-3 rounded-lg border ${borderColor} hover:bg-sidebar/50`}>
-      <span
-        className="material-symbols-outlined text-base text-text-muted"
+      <LucideIcon
+        name={testStatus === "ok" ? "check_circle" : testStatus === "error" ? "cancel" : "smart_toy"}
+        className="text-base text-text-muted"
         style={iconColor ? { color: iconColor } : undefined}
-      >
-        {testStatus === "ok" ? "check_circle" : testStatus === "error" ? "cancel" : "smart_toy"}
-      </span>
+      />
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{modelId}</p>
@@ -29,9 +29,7 @@ function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias
               onClick={() => onCopy(fullModel, `model-${modelId}`)}
               className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
             >
-              <span className="material-symbols-outlined text-sm">
-                {copied === `model-${modelId}` ? "check" : "content_copy"}
-              </span>
+              <LucideIcon name={copied === `model-${modelId}` ? "check" : "content_copy"} className="text-sm" />
             </button>
             <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
               {copied === `model-${modelId}` ? "Copied!" : "Copy"}
@@ -44,12 +42,11 @@ function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias
                 disabled={isTesting}
                 className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary transition-colors"
               >
-                <span
-                  className="material-symbols-outlined text-sm"
+                <LucideIcon
+                  name={isTesting ? "progress_activity" : "science"}
+                  className="text-sm"
                   style={isTesting ? { animation: "spin 1s linear infinite" } : undefined}
-                >
-                  {isTesting ? "progress_activity" : "science"}
-                </span>
+                />
               </button>
               <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
                 {isTesting ? "Testing..." : "Test"}
@@ -61,7 +58,7 @@ function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias
 
       {/* Delete button */}
       <button onClick={onDeleteAlias} className="p-1 hover:bg-red-50 rounded text-red-500" title="Remove model">
-        <span className="material-symbols-outlined text-sm">delete</span>
+        <LucideIcon name="delete" className="text-sm" />
       </button>
     </div>
   );

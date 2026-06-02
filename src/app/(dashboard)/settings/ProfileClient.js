@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button, Input, Toggle } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { useTheme } from "@/shared/hooks/useTheme";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
+import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
+
+const OFFLINE_SETTINGS_CACHE_KEY = "settings:profile";
+const OFFLINE_LEGACY_INFO_CACHE_KEY = "settings:legacy-info";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 // ─── Section header ───────────────────────────────────────────────────────────
 function SectionHeader({ icon, title }) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      <span className="material-symbols-outlined text-storm-cloud text-[16px]">{icon}</span>
+      <LucideIcon name={icon} className="text-storm-cloud text-[16px]" />
       <h3 className="text-[13px] font-[590] text-porcelain uppercase tracking-[0.05em]">{title}</h3>
     </div>
   );
@@ -84,33 +91,110 @@ export default function ProfilePage() {
   const [proxyLoading, setProxyLoading] = useState(false);
   const [proxyTestLoading, setProxyTestLoading] = useState(false);
   const [syncingCost, setSyncingCost] = useState(false);
+  const offlineNoticeShownRef = useRef(false);
 
-  useEffect(() => {
-    fetch("/api/settings/migrate-sqlite")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) setLegacyInfo(data);
-      })
-      .catch(() => {});
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached settings.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
+  }, []);
+
+  const applySettingsData = useCallback((data) => {
+    if (!data || typeof data !== "object") return;
+    setSettings(data);
+    setProxyForm({
+      outboundProxyEnabled: data?.outboundProxyEnabled === true,
+      outboundProxyUrl: data?.outboundProxyUrl || "",
+      outboundNoProxy: data?.outboundNoProxy || "",
+    });
+  }, []);
+
+  const patchSettings = useCallback(async (patch, { feature = "profile-settings" } = {}) => {
+    try {
+      const result = await mutateJsonWithOfflineQueue({
+        url: "/api/settings",
+        method: "PATCH",
+        body: patch,
+        queueMeta: { feature, patch },
+      });
+
+      if (result.queued) {
+        setSettings((prev) => ({ ...prev, ...patch }));
+        return { ok: true, queued: true, data: patch };
+      }
+
+      const nextData = result.data && typeof result.data === "object" ? result.data : patch;
+      setSettings((prev) => ({ ...prev, ...nextData }));
+      return { ok: true, queued: false, data: nextData };
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+      return { ok: false, queued: false, error };
+    }
   }, []);
 
   useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        setSettings(data);
-        setProxyForm({
-          outboundProxyEnabled: data?.outboundProxyEnabled === true,
-          outboundProxyUrl: data?.outboundProxyUrl || "",
-          outboundNoProxy: data?.outboundNoProxy || "",
-        });
-        setLoading(false);
+    let mounted = true;
+
+    loadJsonStaleWhileRevalidate({
+      url: "/api/settings/migrate-sqlite",
+      cacheKey: OFFLINE_LEGACY_INFO_CACHE_KEY,
+      maxStaleMs: OFFLINE_MAX_STALE_MS,
+      onCacheData: (data) => {
+        if (!mounted) return;
+        if (data && !data.error) setLegacyInfo(data);
+      },
+      onFreshData: (data) => {
+        if (!mounted) return;
+        if (data && !data.error) setLegacyInfo(data);
+      },
+    })
+      .then((result) => {
+        if (result.source === "cache") notifyOfflineCache();
+        else clearOfflineCacheNotice();
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [clearOfflineCacheNotice, notifyOfflineCache]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    loadJsonStaleWhileRevalidate({
+      url: "/api/settings",
+      cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
+      maxStaleMs: OFFLINE_MAX_STALE_MS,
+      onCacheData: (data) => {
+        if (!mounted) return;
+        applySettingsData(data);
+      },
+      onFreshData: (data) => {
+        if (!mounted) return;
+        applySettingsData(data);
+      },
+    })
+      .then((result) => {
+        if (result.source === "cache") notifyOfflineCache();
+        else clearOfflineCacheNotice();
       })
       .catch((err) => {
         console.error("Failed to fetch settings:", err);
+      })
+      .finally(() => {
+        if (!mounted) return;
         setLoading(false);
       });
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [applySettingsData, clearOfflineCacheNotice, notifyOfflineCache]);
 
   const updateOutboundProxy = async (e) => {
     e.preventDefault();
@@ -118,22 +202,20 @@ export default function ProfilePage() {
     setProxyLoading(true);
     setProxyStatus({ type: "", message: "" });
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          outboundProxyUrl: proxyForm.outboundProxyUrl,
-          outboundNoProxy: proxyForm.outboundNoProxy,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSettings((prev) => ({ ...prev, ...data }));
-        setProxyStatus({ type: "success", message: "Proxy settings applied" });
+      const patch = {
+        outboundProxyUrl: proxyForm.outboundProxyUrl,
+        outboundNoProxy: proxyForm.outboundNoProxy,
+      };
+      const result = await patchSettings(patch, { feature: "profile-outbound-proxy" });
+      if (!result.ok) {
+        setProxyStatus({ type: "error", message: "Failed to update proxy settings" });
+      } else if (result.queued) {
+        setProxyStatus({ type: "success", message: "Offline: proxy settings queued for sync" });
       } else {
-        setProxyStatus({ type: "error", message: data.error || "Failed to update proxy settings" });
+        setProxyStatus({ type: "success", message: "Proxy settings applied" });
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to update proxy settings:", error);
       setProxyStatus({ type: "error", message: "An error occurred" });
     } finally {
       setProxyLoading(false);
@@ -175,21 +257,22 @@ export default function ProfilePage() {
     setProxyLoading(true);
     setProxyStatus({ type: "", message: "" });
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ outboundProxyEnabled }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSettings((prev) => ({ ...prev, ...data }));
-        setProxyForm((prev) => ({ ...prev, outboundProxyEnabled: data?.outboundProxyEnabled === true }));
+      const result = await patchSettings({ outboundProxyEnabled }, { feature: "profile-outbound-proxy-enabled" });
+      if (result.ok) {
+        setProxyForm((prev) => ({
+          ...prev,
+          outboundProxyEnabled: (result.data?.outboundProxyEnabled ?? outboundProxyEnabled) === true,
+        }));
         setProxyStatus({
           type: "success",
-          message: outboundProxyEnabled ? "Proxy enabled" : "Proxy disabled",
+          message: result.queued
+            ? `Offline: proxy ${outboundProxyEnabled ? "enable" : "disable"} queued`
+            : outboundProxyEnabled
+              ? "Proxy enabled"
+              : "Proxy disabled",
         });
       } else {
-        setProxyStatus({ type: "error", message: data.error || "Failed to update proxy settings" });
+        setProxyStatus({ type: "error", message: "Failed to update proxy settings" });
       }
     } catch {
       setProxyStatus({ type: "error", message: "An error occurred" });
@@ -230,100 +313,37 @@ export default function ProfilePage() {
   };
 
   const updateFallbackStrategy = async (strategy) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fallbackStrategy: strategy }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, fallbackStrategy: strategy }));
-    } catch (err) {
-      console.error("Failed to update settings:", err);
-    }
+    await patchSettings({ fallbackStrategy: strategy }, { feature: "profile-fallback-strategy" });
   };
 
   const updateComboStrategy = async (strategy) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comboStrategy: strategy }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, comboStrategy: strategy }));
-    } catch (err) {
-      console.error("Failed to update combo strategy:", err);
-    }
+    await patchSettings({ comboStrategy: strategy }, { feature: "profile-combo-strategy" });
   };
 
   const updateStickyLimit = async (limit) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stickyRoundRobinLimit: numLimit }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, stickyRoundRobinLimit: numLimit }));
-    } catch (err) {
-      console.error("Failed to update sticky limit:", err);
-    }
+    await patchSettings({ stickyRoundRobinLimit: numLimit }, { feature: "profile-sticky-limit" });
   };
 
   const updateComboStickyLimit = async (limit) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comboStickyRoundRobinLimit: numLimit }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, comboStickyRoundRobinLimit: numLimit }));
-    } catch (err) {
-      console.error("Failed to update combo sticky limit:", err);
-    }
+    await patchSettings({ comboStickyRoundRobinLimit: numLimit }, { feature: "profile-combo-sticky-limit" });
   };
 
   const updateMinimumLockout = async (minutes) => {
     const val = Math.max(1, parseInt(minutes, 10) || 60);
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ minimumLockoutMinutes: val }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, minimumLockoutMinutes: val }));
-    } catch (err) {
-      console.error("Failed to update minimum lockout:", err);
-    }
+    await patchSettings({ minimumLockoutMinutes: val }, { feature: "profile-minimum-lockout" });
   };
 
   const updateRequireLogin = async (requireLogin) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requireLogin }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, requireLogin }));
-    } catch (err) {
-      console.error("Failed to update require login:", err);
-    }
+    await patchSettings({ requireLogin }, { feature: "profile-require-login" });
   };
 
   const updateModelCostSyncInterval = async (val) => {
     const hours = Math.max(1, parseInt(val) || 1);
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelCostSyncIntervalHours: hours }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, modelCostSyncIntervalHours: hours }));
-    } catch (err) {
-      console.error("Failed to update modelCostSyncIntervalHours:", err);
-    }
+    await patchSettings({ modelCostSyncIntervalHours: hours }, { feature: "profile-model-cost-sync-interval" });
   };
 
   const handleSyncNow = async () => {
@@ -344,24 +364,27 @@ export default function ProfilePage() {
   };
 
   const updateObservabilityEnabled = async (enabled) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ observabilityEnabled: enabled, enableObservability: enabled }),
-      });
-      if (res.ok) setSettings((prev) => ({ ...prev, enableObservability: enabled }));
-    } catch (err) {
-      console.error("Failed to update enableObservability:", err);
-    }
+    await patchSettings(
+      { observabilityEnabled: enabled, enableObservability: enabled },
+      { feature: "profile-observability-enabled" },
+    );
   };
 
   const reloadSettings = async () => {
     try {
-      const res = await fetch("/api/settings");
-      if (!res.ok) return;
-      const data = await res.json();
-      setSettings(data);
+      const result = await loadJsonStaleWhileRevalidate({
+        url: "/api/settings",
+        cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
+        maxStaleMs: OFFLINE_MAX_STALE_MS,
+        onCacheData: (data) => {
+          applySettingsData(data);
+        },
+        onFreshData: (data) => {
+          applySettingsData(data);
+        },
+      });
+      if (result.source === "cache") notifyOfflineCache();
+      else clearOfflineCacheNotice();
     } catch (err) {
       console.error("Failed to reload settings:", err);
     }
@@ -454,9 +477,10 @@ export default function ProfilePage() {
                     theme === option ? "bg-deep-slate text-porcelain" : "text-fog-grey hover:text-storm-cloud",
                   )}
                 >
-                  <span className="material-symbols-outlined text-[14px]">
-                    {option === "light" ? "light_mode" : option === "dark" ? "dark_mode" : "contrast"}
-                  </span>
+                  <LucideIcon
+                    name={option === "light" ? "light_mode" : option === "dark" ? "dark_mode" : "contrast"}
+                    className="text-[14px]"
+                  />
                   {option}
                 </button>
               ))}
@@ -470,7 +494,7 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-4">
             {/* DB path */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-[4px] border border-charcoal-grey bg-pitch-black/40">
-              <span className="material-symbols-outlined text-storm-cloud text-[14px]">storage</span>
+              <LucideIcon name="storage" className="text-storm-cloud text-[14px]" />
               <code className="text-[12px] text-storm-cloud font-mono">~/.pod/pod.sqlite</code>
             </div>
 

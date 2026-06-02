@@ -190,10 +190,12 @@ export async function deleteMemory(id) {
   return (result.changes || 0) > 0;
 }
 
-export async function clearMemories(apiKeyId) {
-  if (!apiKeyId) return 0;
+export async function clearMemories(apiKeyId = null) {
   const db = getDatabase();
-  const result = db.prepare("DELETE FROM memories WHERE api_key_id = ?").run(apiKeyId);
+  const hasApiKeyScope = typeof apiKeyId === "string" && apiKeyId.trim().length > 0;
+  const result = hasApiKeyScope
+    ? db.prepare("DELETE FROM memories WHERE api_key_id = ?").run(apiKeyId)
+    : db.prepare("DELETE FROM memories").run();
   memoryCache.clear();
   return result.changes || 0;
 }

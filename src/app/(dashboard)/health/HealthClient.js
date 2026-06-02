@@ -5,7 +5,12 @@ import { toast } from "sonner";
 import { Badge, Button, CardSkeleton } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { ANTHROPIC_COMPATIBLE_PREFIX } from "@/shared/constants/providers";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import TelemetryCard from "./TelemetryCard";
+import LucideIcon from "@/shared/components/LucideIcon";
+
+const OFFLINE_HEALTH_CACHE_KEY = "health:snapshot";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 function getProviderIconSrc(p) {
   if (p.isCompatible) {
@@ -35,7 +40,7 @@ function StatCard({ icon, label, value, sub, tone = "bg-deep-slate" }) {
   return (
     <div className={`rounded-[6px] border border-charcoal-grey p-4 ${tone}`}>
       <div className="flex items-center gap-2 mb-2">
-        <span className="material-symbols-outlined text-[16px] text-fog-grey">{icon}</span>
+        <LucideIcon name={icon} className="text-[16px] text-fog-grey" />
         <span className="text-[11px] font-[590] uppercase tracking-[0.05em] text-fog-grey">{label}</span>
       </div>
       <p className="text-[20px] font-[510] text-porcelain tracking-[-0.2px]">{value}</p>
@@ -48,7 +53,7 @@ function SectionHeader({ icon, title, children }) {
   return (
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-[16px] text-fog-grey">{icon}</span>
+        <LucideIcon name={icon} className="text-[16px] text-fog-grey" />
         <h2 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">{title}</h2>
       </div>
       {children}
@@ -58,24 +63,52 @@ function SectionHeader({ icon, title, children }) {
 
 export default function HealthPage() {
   const [data, setData] = useState(null);
-  const telemetryRef = useRef(null);
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [clearingLock, setClearingLock] = useState(null);
   const esRef = useRef(null);
+  const offlineNoticeShownRef = useRef(false);
+
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached health snapshot.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
+  }, []);
 
   const fetchHealth = useCallback(async () => {
     try {
-      const res = await fetch("/api/monitoring/health");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setData(await res.json());
-      setError(null);
-      setLastRefresh(new Date());
+      const result = await loadJsonStaleWhileRevalidate({
+        url: "/api/monitoring/health",
+        cacheKey: OFFLINE_HEALTH_CACHE_KEY,
+        maxStaleMs: OFFLINE_MAX_STALE_MS,
+        fetchOptions: { cache: "no-store" },
+        onCacheData: (snapshot, meta) => {
+          setData(snapshot);
+          setError(null);
+          setLastRefresh(new Date(meta?.updatedAt || Date.now()));
+        },
+        onFreshData: (snapshot, meta) => {
+          setData(snapshot);
+          setError(null);
+          setLastRefresh(new Date(meta?.updatedAt || Date.now()));
+        },
+      });
+
+      if (result.source === "cache") notifyOfflineCache();
+      else clearOfflineCacheNotice();
     } catch (err) {
       setError(err.message);
     }
-  }, []);
+  }, [clearOfflineCacheNotice, notifyOfflineCache]);
+
+  useEffect(() => {
+    fetchHealth();
+  }, [fetchHealth]);
 
   // SSE connection
   useEffect(() => {
@@ -136,7 +169,7 @@ export default function HealthPage() {
     return (
       <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
         <div className="rounded-[6px] border border-warning-red/30 bg-warning-red/8 p-5 text-center">
-          <span className="material-symbols-outlined text-[28px] text-warning-red mb-2">error</span>
+          <LucideIcon name="error" className="text-[28px] text-warning-red mb-2" />
           <p className="text-[13px] text-warning-red">{error}</p>
           <Button size="sm" variant="secondary" onClick={fetchHealth} className="mt-3">
             Retry
@@ -167,14 +200,14 @@ export default function HealthPage() {
           <button
             onClick={async () => {
               setRefreshing(true);
-              await Promise.all([fetchHealth(), telemetryRef.current?.refresh()]);
+              await fetchHealth();
               setRefreshing(false);
             }}
             disabled={refreshing}
             className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh"
           >
-            <span className={`material-symbols-outlined text-[15px] ${refreshing ? "animate-spin" : ""}`}>refresh</span>
+            <LucideIcon name="refresh" className={`text-[15px] ${refreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -185,13 +218,10 @@ export default function HealthPage() {
           data.status === "healthy" ? "border-emerald/30 bg-emerald/8" : "border-warning-red/30 bg-warning-red/8"
         }`}
       >
-        <span
-          className={`material-symbols-outlined text-[20px] ${
-            data.status === "healthy" ? "text-emerald" : "text-warning-red"
-          }`}
-        >
-          {data.status === "healthy" ? "check_circle" : "error"}
-        </span>
+        <LucideIcon
+          name={data.status === "healthy" ? "check_circle" : "error"}
+          className={`text-[20px] ${data.status === "healthy" ? "text-emerald" : "text-warning-red"}`}
+        />
         <span className={`text-[13px] font-[510] ${data.status === "healthy" ? "text-emerald" : "text-warning-red"}`}>
           {data.status === "healthy" ? "All systems operational" : "Issues detected"}
         </span>
@@ -199,7 +229,7 @@ export default function HealthPage() {
       </div>
 
       {/* Telemetry */}
-      <TelemetryCard ref={telemetryRef} />
+      <TelemetryCard health={data} />
 
       {/* System + DB */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -510,9 +540,7 @@ export default function HealthPage() {
                 className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Refresh lockout status"
               >
-                <span className={`material-symbols-outlined text-[15px] ${refreshing ? "animate-spin" : ""}`}>
-                  refresh
-                </span>
+                <LucideIcon name="refresh" className={`text-[15px] ${refreshing ? "animate-spin" : ""}`} />
               </button>
             </div>
           )}
@@ -568,11 +596,10 @@ export default function HealthPage() {
                       className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Clear lockout and recheck"
                     >
-                      <span
-                        className={`material-symbols-outlined text-[15px] ${clearingLock === bm.model ? "animate-spin" : ""}`}
-                      >
-                        {clearingLock === bm.model ? "progress_activity" : "lock_open"}
-                      </span>
+                      <LucideIcon
+                        name={clearingLock === bm.model ? "progress_activity" : "lock_open"}
+                        className={`text-[15px] ${clearingLock === bm.model ? "animate-spin" : ""}`}
+                      />
                     </button>
                   </div>
                 </div>
@@ -624,9 +651,7 @@ export default function HealthPage() {
                 className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Refresh account lockout status"
               >
-                <span className={`material-symbols-outlined text-[15px] ${refreshing ? "animate-spin" : ""}`}>
-                  refresh
-                </span>
+                <LucideIcon name="refresh" className={`text-[15px] ${refreshing ? "animate-spin" : ""}`} />
               </button>
             </div>
           )}
@@ -668,13 +693,10 @@ export default function HealthPage() {
                       className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Clear account lock"
                     >
-                      <span
-                        className={`material-symbols-outlined text-[15px] ${
-                          clearingLock === `conn-${acc.connectionId}` ? "animate-spin" : ""
-                        }`}
-                      >
-                        {clearingLock === `conn-${acc.connectionId}` ? "progress_activity" : "lock_open"}
-                      </span>
+                      <LucideIcon
+                        name={clearingLock === `conn-${acc.connectionId}` ? "progress_activity" : "lock_open"}
+                        className={`text-[15px] ${clearingLock === `conn-${acc.connectionId}` ? "animate-spin" : ""}`}
+                      />
                     </button>
                   </div>
                 </div>

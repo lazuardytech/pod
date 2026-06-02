@@ -1,11 +1,14 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardSkeleton, Input, Modal, SegmentedControl, Toggle } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import LucideIcon from "@/shared/components/LucideIcon";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
+import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 
 const TUNNEL_BENEFITS = [
   { icon: "public", title: "Access Anywhere", desc: "Use your API from any network" },
@@ -16,7 +19,10 @@ const TUNNEL_BENEFITS = [
 
 const TUNNEL_PING_INTERVAL_MS = 2000;
 const TUNNEL_PING_MAX_MS = 300000;
-const STATUS_POLL_INTERVAL_MS = 5000;
+const OFFLINE_SETTINGS_CACHE_KEY = "endpoint:settings";
+const OFFLINE_TUNNEL_STATUS_CACHE_KEY = "endpoint:tunnel-status";
+const OFFLINE_KEYS_CACHE_KEY = "endpoint:keys";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 const CAVEMAN_LEVELS = [
   { id: "lite", label: "Lite", desc: "Drop filler, keep grammar" },
@@ -76,6 +82,8 @@ export default function APIPageClient({ machineId }) {
   const [showTsModal, setShowTsModal] = useState(false);
   const [showDisableTsModal, setShowDisableTsModal] = useState(false);
   const tsLogRef = useRef(null);
+  const tunnelStatusSigRef = useRef("");
+  const offlineNoticeShownRef = useRef(false);
 
   // API key visibility toggle state
   const [visibleKeys, setVisibleKeys] = useState(new Set());
@@ -101,69 +109,163 @@ export default function APIPageClient({ machineId }) {
   useEffect(() => {
     fetchData();
     loadSettings();
-    // Poll status periodically + on tab visible to sync after watchdog restarts
-    const interval = setInterval(() => {
-      syncTunnelStatus();
-    }, STATUS_POLL_INTERVAL_MS);
-    const onVisible = () => {
-      if (!document.hidden) syncTunnelStatus();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
+  }, []);
+
+  const applyTunnelStatus = useCallback((data) => {
+    if (!data || typeof data !== "object") return;
+
+    const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
+    const tUrl = data.tunnel?.tunnelUrl || "";
+    const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
+    const tsUrlVal = data.tailscale?.tunnelUrl || "";
+    const sig = `${tEnabled}|${tUrl}|${tsEn}|${tsUrlVal}`;
+
+    if (sig === tunnelStatusSigRef.current) return;
+    tunnelStatusSigRef.current = sig;
+
+    setTunnelUrl((prev) => (prev === tUrl ? prev : tUrl));
+    setTunnelEnabled((prev) => (prev === tEnabled ? prev : tEnabled));
+    setTsUrl((prev) => (prev === tsUrlVal ? prev : tsUrlVal));
+    setTsEnabled((prev) => (prev === tsEn ? prev : tsEn));
+  }, []);
+
+  const applySettingsData = useCallback((data) => {
+    if (!data || typeof data !== "object") return;
+    setRequireApiKey(data.requireApiKey || false);
+    setRequireLogin(data.requireLogin !== false);
+    setHasPassword(data.hasPassword || false);
+    setTunnelDashboardAccess(data.tunnelDashboardAccess || false);
+    setRtkEnabledState(data.rtkEnabled !== false);
+    setCavemanEnabled(!!data.cavemanEnabled);
+    setCavemanLevel(data.cavemanLevel || "full");
+  }, []);
+
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached data.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
   }, []);
 
   // Trust user intent (settingsEnabled): UI stays "enabled" while watchdog restarts process
-  const syncTunnelStatus = async () => {
+  const syncTunnelStatus = useCallback(async () => {
     try {
-      const statusRes = await fetch("/api/tunnel/status", { cache: "no-store" });
-      if (!statusRes.ok) return;
-      const data = await statusRes.json();
-      const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
-      const tUrl = data.tunnel?.tunnelUrl || "";
-      setTunnelUrl(tUrl);
-      setTunnelEnabled(tEnabled);
+      const result = await loadJsonStaleWhileRevalidate({
+        url: "/api/tunnel/status",
+        cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
+        maxStaleMs: OFFLINE_MAX_STALE_MS,
+        fetchOptions: { cache: "no-store" },
+        onCacheData: (data) => {
+          applyTunnelStatus(data);
+        },
+        onFreshData: (data) => {
+          applyTunnelStatus(data);
+        },
+      });
 
-      const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
-      const tsUrlVal = data.tailscale?.tunnelUrl || "";
-      setTsUrl(tsUrlVal);
-      setTsEnabled(tsEn);
+      if (result.source === "cache") notifyOfflineCache();
+      else clearOfflineCacheNotice();
+
+      return result.data || null;
     } catch {
-      /* ignore poll errors */
+      return null;
     }
-  };
+  }, [applyTunnelStatus, clearOfflineCacheNotice, notifyOfflineCache]);
+
+  const shouldPollTunnelStatus =
+    tunnelEnabled || tsEnabled || tunnelLoading || tsLoading || tunnelChecking || tsConnecting;
+
+  useEffect(() => {
+    if (!shouldPollTunnelStatus) return;
+
+    let closed = false;
+    let reconnectTimer = null;
+    let es = null;
+
+    const connect = () => {
+      if (closed) return;
+      es = new EventSource("/api/tunnel/status/stream");
+
+      es.addEventListener("status", (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload?.error) return;
+          applyTunnelStatus(payload);
+        } catch {
+          // ignore malformed event and keep stream alive
+        }
+      });
+
+      es.onerror = () => {
+        es.close();
+        syncTunnelStatus().catch(() => {});
+        if (!closed) {
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+    };
+
+    // Keep a one-shot fetch to avoid waiting for reconnect backoff.
+    syncTunnelStatus().catch(() => {});
+    connect();
+
+    const onVisible = () => {
+      if (!document.hidden) syncTunnelStatus().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      closed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (es) es.close();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [applyTunnelStatus, shouldPollTunnelStatus, syncTunnelStatus]);
 
   const loadSettings = async () => {
     setTunnelChecking(true);
     try {
-      const [settingsRes, statusRes] = await Promise.all([
-        fetch("/api/settings"),
-        fetch("/api/tunnel/status", { cache: "no-store" }),
+      const [settingsResult, statusResult] = await Promise.all([
+        loadJsonStaleWhileRevalidate({
+          url: "/api/settings",
+          cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
+          maxStaleMs: OFFLINE_MAX_STALE_MS,
+          onCacheData: (data) => {
+            applySettingsData(data);
+          },
+          onFreshData: (data) => {
+            applySettingsData(data);
+          },
+        }),
+        loadJsonStaleWhileRevalidate({
+          url: "/api/tunnel/status",
+          cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
+          maxStaleMs: OFFLINE_MAX_STALE_MS,
+          fetchOptions: { cache: "no-store" },
+          onCacheData: (data) => {
+            applyTunnelStatus(data);
+          },
+          onFreshData: (data) => {
+            applyTunnelStatus(data);
+          },
+        }),
       ]);
-      if (settingsRes.ok) {
-        const data = await settingsRes.json();
-        setRequireApiKey(data.requireApiKey || false);
-        setRequireLogin(data.requireLogin !== false);
-        setHasPassword(data.hasPassword || false);
-        setTunnelDashboardAccess(data.tunnelDashboardAccess || false);
-        setRtkEnabledState(data.rtkEnabled !== false);
-        setCavemanEnabled(!!data.cavemanEnabled);
-        setCavemanLevel(data.cavemanLevel || "full");
+
+      if (settingsResult.source === "cache" || statusResult.source === "cache") {
+        notifyOfflineCache();
+      } else {
+        clearOfflineCacheNotice();
       }
-      if (statusRes.ok) {
-        const data = await statusRes.json();
+
+      if (statusResult?.data) {
+        const data = statusResult.data;
         const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
         const tUrl = data.tunnel?.tunnelUrl || "";
-        setTunnelUrl(tUrl);
-        // Trust user intent: stays enabled while watchdog restores process
-        setTunnelEnabled(tEnabled);
-
         const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
         const tsUrlVal = data.tailscale?.tunnelUrl || "";
-        setTsUrl(tsUrlVal);
-        setTsEnabled(tsEn);
 
         // Background reachability probes (non-blocking, only show warning)
         if (tEnabled && tUrl) {
@@ -191,72 +293,85 @@ export default function APIPageClient({ machineId }) {
   };
 
   const handleTunnelDashboardAccess = async (value) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tunnelDashboardAccess: value }),
-      });
-      if (res.ok) setTunnelDashboardAccess(value);
-    } catch (error) {
-      console.error("Error updating tunnelDashboardAccess:", error);
+    const previous = tunnelDashboardAccess;
+    setTunnelDashboardAccess(value);
+    const result = await patchSetting(
+      { tunnelDashboardAccess: value },
+      { feature: "endpoint-tunnel-dashboard-access" },
+    );
+    if (result?.error) {
+      setTunnelDashboardAccess(previous);
     }
   };
 
   const handleRequireApiKey = async (value) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requireApiKey: value }),
-      });
-      if (res.ok) setRequireApiKey(value);
-    } catch (error) {
-      console.error("Error updating requireApiKey:", error);
+    const previous = requireApiKey;
+    setRequireApiKey(value);
+    const result = await patchSetting({ requireApiKey: value }, { feature: "endpoint-require-api-key" });
+    if (result?.error) {
+      setRequireApiKey(previous);
     }
   };
 
   const handleRtkEnabled = async (value) => {
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rtkEnabled: value }),
-      });
-      if (res.ok) setRtkEnabledState(value);
-    } catch (error) {
-      console.error("Error updating rtkEnabled:", error);
+    const previous = rtkEnabled;
+    setRtkEnabledState(value);
+    const result = await patchSetting({ rtkEnabled: value }, { feature: "endpoint-rtk-enabled" });
+    if (result?.error) {
+      setRtkEnabledState(previous);
     }
   };
 
-  const patchSetting = async (patch) => {
+  const patchSetting = async (patch, { feature = "endpoint-settings" } = {}) => {
     try {
-      await fetch("/api/settings", {
+      const result = await mutateJsonWithOfflineQueue({
+        url: "/api/settings",
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
+        body: patch,
+        queueMeta: { feature, patch },
       });
+      return result;
     } catch (error) {
       console.error("Error updating setting:", error);
+      toast.error("Failed to update settings");
+      return { error };
     }
   };
 
   const handleCavemanEnabled = (value) => {
+    const previous = cavemanEnabled;
     setCavemanEnabled(value);
-    patchSetting({ cavemanEnabled: value });
+    patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then((result) => {
+      if (result?.error) setCavemanEnabled(previous);
+    });
   };
 
   const handleCavemanLevel = (level) => {
+    const previous = cavemanLevel;
     setCavemanLevel(level);
-    patchSetting({ cavemanLevel: level });
+    patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then((result) => {
+      if (result?.error) setCavemanLevel(previous);
+    });
   };
 
   const fetchData = async () => {
     try {
-      const keysRes = await fetch("/api/keys");
-      const keysData = await keysRes.json();
-      if (keysRes.ok) {
-        setKeys(keysData.keys || []);
+      const result = await loadJsonStaleWhileRevalidate({
+        url: "/api/keys",
+        cacheKey: OFFLINE_KEYS_CACHE_KEY,
+        maxStaleMs: OFFLINE_MAX_STALE_MS,
+        onCacheData: (data) => {
+          setKeys(data?.keys || []);
+        },
+        onFreshData: (data) => {
+          setKeys(data?.keys || []);
+        },
+      });
+
+      if (result.source === "cache") {
+        notifyOfflineCache();
+      } else {
+        clearOfflineCacheNotice();
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -762,7 +877,7 @@ export default function APIPageClient({ machineId }) {
       {/* Endpoint Card */}
       <Card>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">api</span>
+          <LucideIcon name="api" className="text-primary" />
           API Endpoint
         </h2>
 
@@ -786,22 +901,20 @@ export default function APIPageClient({ machineId }) {
                   onClick={() => copy(`${tunnelUrl}/v1`, "tunnel_url")}
                   className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {copied === "tunnel_url" ? "check" : "content_copy"}
-                  </span>
+                  <LucideIcon name={copied === "tunnel_url" ? "check" : "content_copy"} className="text-[18px]" />
                 </button>
                 <button
                   onClick={() => setShowDisableTunnelModal(true)}
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
                   title="Disable Tunnel"
                 >
-                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                  <LucideIcon name="power_settings_new" className="text-[18px]" />
                 </button>
               </>
             ) : tunnelLoading ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  <LucideIcon name="progress_activity" className="animate-spin text-sm" />
                   {tunnelProgress || "Creating tunnel..."}
                 </div>
                 <button
@@ -812,13 +925,13 @@ export default function APIPageClient({ machineId }) {
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
                   title="Stop"
                 >
-                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                  <LucideIcon name="power_settings_new" className="text-[18px]" />
                 </button>
               </>
             ) : tunnelStatus?.type === "error" ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
-                  <span className="material-symbols-outlined text-sm">error</span>
+                  <LucideIcon name="error" className="text-sm" />
                   {tunnelStatus.message}
                 </div>
                 <Button size="sm" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>
@@ -828,7 +941,7 @@ export default function APIPageClient({ machineId }) {
             ) : tunnelChecking ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  <LucideIcon name="progress_activity" className="animate-spin text-sm" />
                   Checking...
                 </div>
                 <button
@@ -836,7 +949,7 @@ export default function APIPageClient({ machineId }) {
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
                   title="Stop"
                 >
-                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                  <LucideIcon name="power_settings_new" className="text-[18px]" />
                 </button>
               </>
             ) : (
@@ -874,22 +987,20 @@ export default function APIPageClient({ machineId }) {
                   onClick={() => copy(`${tsUrl}/v1`, "ts_url")}
                   className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {copied === "ts_url" ? "check" : "content_copy"}
-                  </span>
+                  <LucideIcon name={copied === "ts_url" ? "check" : "content_copy"} className="text-[18px]" />
                 </button>
                 <button
                   onClick={() => setShowDisableTsModal(true)}
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
                   title="Disable Tailscale"
                 >
-                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                  <LucideIcon name="power_settings_new" className="text-[18px]" />
                 </button>
               </>
             ) : tsLoading || tsConnecting ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  <LucideIcon name="progress_activity" className="animate-spin text-sm" />
                   {tsProgress || "Connecting..."}
                 </div>
                 <button
@@ -901,13 +1012,13 @@ export default function APIPageClient({ machineId }) {
                   className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
                   title="Stop"
                 >
-                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                  <LucideIcon name="power_settings_new" className="text-[18px]" />
                 </button>
               </>
             ) : tsStatus?.type === "error" ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
-                  <span className="material-symbols-outlined text-sm">error</span>
+                  <LucideIcon name="error" className="text-sm" />
                   {tsStatus.message}
                 </div>
                 <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>
@@ -966,7 +1077,7 @@ export default function APIPageClient({ machineId }) {
       <Card id="rtk">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">bolt</span>
+            <LucideIcon name="bolt" className="text-primary" />
             Token Saver
           </h2>
         </div>
@@ -1030,7 +1141,7 @@ export default function APIPageClient({ machineId }) {
       <Card id="require-api-key">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">vpn_key</span>
+            <LucideIcon name="vpn_key" className="text-primary" />
             API Keys
           </h2>
           <Button icon="add" onClick={() => setShowAddModal(true)}>
@@ -1055,7 +1166,7 @@ export default function APIPageClient({ machineId }) {
         ) : keys.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-              <span className="material-symbols-outlined text-[32px]">vpn_key</span>
+              <LucideIcon name="vpn_key" className="text-[32px]" />
             </div>
             <p className="text-text-main font-medium mb-1">No API keys yet</p>
             <p className="text-sm text-text-muted mb-4">Create your first API key to get started</p>
@@ -1116,18 +1227,17 @@ export default function APIPageClient({ machineId }) {
                             className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
                             title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
                           >
-                            <span className="material-symbols-outlined text-[12px]">
-                              {visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
-                            </span>
+                            <LucideIcon
+                              name={visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
+                              className="text-[12px]"
+                            />
                           </button>
                           <button
                             onClick={() => copy(key.key, key.id)}
                             className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
                             title="Copy key"
                           >
-                            <span className="material-symbols-outlined text-[12px]">
-                              {copied === key.id ? "check" : "content_copy"}
-                            </span>
+                            <LucideIcon name={copied === key.id ? "check" : "content_copy"} className="text-[12px]" />
                           </button>
                         </div>
                       </td>
@@ -1197,7 +1307,7 @@ export default function APIPageClient({ machineId }) {
                             className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
                             title="Edit key"
                           >
-                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                            <LucideIcon name="edit" className="text-[14px]" />
                           </button>
                           <button
                             onClick={() =>
@@ -1211,7 +1321,7 @@ export default function APIPageClient({ machineId }) {
                             className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red transition-colors duration-100"
                             title="Delete key"
                           >
-                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                            <LucideIcon name="delete" className="text-[14px]" />
                           </button>
                         </div>
                       </td>
@@ -1233,7 +1343,7 @@ export default function APIPageClient({ machineId }) {
                     disabled={keysPage === 1}
                     className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
                   >
-                    <span className="material-symbols-outlined text-[14px]">chevron_left</span>
+                    <LucideIcon name="chevron_left" className="text-[14px]" />
                   </button>
                   {Array.from({ length: Math.ceil(keys.length / KEYS_PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
                     <button
@@ -1253,7 +1363,7 @@ export default function APIPageClient({ machineId }) {
                     disabled={keysPage === Math.ceil(keys.length / KEYS_PAGE_SIZE)}
                     className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
                   >
-                    <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                    <LucideIcon name="chevron_right" className="text-[14px]" />
                   </button>
                 </div>
               </div>
@@ -1404,7 +1514,7 @@ export default function APIPageClient({ machineId }) {
         <div className="flex flex-col gap-4">
           <div className="bg-surface-2 border border-border-subtle rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-primary">cloud_upload</span>
+              <LucideIcon name="cloud_upload" className="text-primary" />
               <div>
                 <p className="text-sm text-text-main font-medium mb-1">Cloudflare Tunnel</p>
                 <p className="text-sm text-text-muted">
@@ -1418,7 +1528,7 @@ export default function APIPageClient({ machineId }) {
           <div className="grid grid-cols-2 gap-3">
             {TUNNEL_BENEFITS.map((benefit) => (
               <div key={benefit.title} className="flex flex-col items-center text-center p-3 rounded-lg bg-sidebar/50">
-                <span className="material-symbols-outlined text-xl text-primary mb-1">{benefit.icon}</span>
+                <LucideIcon name={benefit.icon} className="text-xl text-primary mb-1" />
                 <p className="text-xs font-semibold">{benefit.title}</p>
                 <p className="text-xs text-text-muted">{benefit.desc}</p>
               </div>
@@ -1475,7 +1585,7 @@ export default function APIPageClient({ machineId }) {
           {/* Checking state */}
           {tsInstalled === null && (
             <p className="text-sm text-text-muted flex items-center gap-2">
-              <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              <LucideIcon name="progress_activity" className="animate-spin text-sm" />
               Checking...
             </p>
           )}
@@ -1499,7 +1609,7 @@ export default function APIPageClient({ machineId }) {
           {tsInstalling && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm text-text-muted">
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                <LucideIcon name="progress_activity" className="animate-spin text-sm" />
                 Installing Tailscale...
               </div>
               {tsInstallLog.length > 0 && (
@@ -1519,7 +1629,7 @@ export default function APIPageClient({ machineId }) {
           {tsInstalled === true && !tsInstalling && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 mb-2">
-                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                <LucideIcon name="check_circle" className="text-[16px]" />
                 Tailscale installed
               </div>
               <div className="flex gap-2">
@@ -1587,7 +1697,7 @@ function EndpointRow({ label, url, copyId, copied, onCopy, badge, actions }) {
         onClick={() => onCopy(url, copyId)}
         className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
       >
-        <span className="material-symbols-outlined text-[18px]">{copied === copyId ? "check" : "content_copy"}</span>
+        <LucideIcon name={copied === copyId ? "check" : "content_copy"} className="text-[18px]" />
       </button>
       {actions}
     </div>
@@ -1631,7 +1741,7 @@ function StatusAlert({ status, className = "" }) {
 function Tooltip({ text }) {
   return (
     <span className="relative group inline-flex items-center">
-      <span className="material-symbols-outlined text-[14px] text-text-muted cursor-help">help</span>
+      <LucideIcon name="help" className="text-[14px] text-text-muted cursor-help" />
       <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 w-64 rounded bg-gray-900 dark:bg-gray-800 text-white text-xs px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
         {text}
       </span>
@@ -1643,7 +1753,7 @@ function Tooltip({ text }) {
 function SecurityWarning({ message, action }) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
-      <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">warning</span>
+      <LucideIcon name="warning" className="text-[16px] shrink-0 mt-0.5" />
       <p className="text-xs flex-1">{message}</p>
       {action && (
         <a

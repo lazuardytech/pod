@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 /**
  * DatePicker — shadcn-style date picker using react-day-picker.
@@ -49,14 +50,15 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
           !displayValue && "text-text-muted",
         )}
       >
-        <span className="material-symbols-outlined text-[16px] text-text-muted shrink-0">calendar_today</span>
+        <LucideIcon name="calendar_today" className="text-[16px] text-text-muted shrink-0" />
         <span className="flex-1 text-left truncate">{displayValue || placeholder}</span>
         {value && (
-          <span
+          <LucideIcon
+            name="close"
             role="button"
             tabIndex={0}
             aria-label="Clear date"
-            className="material-symbols-outlined text-[14px] text-text-muted hover:text-text-main shrink-0"
+            className="text-[14px] text-text-muted hover:text-text-main shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onChange(null);
@@ -67,9 +69,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
                 onChange(null);
               }
             }}
-          >
-            close
-          </span>
+          />
         )}
       </button>
 
@@ -78,7 +78,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
         <div
           className={cn(
             "absolute z-50 mt-1 rounded-lg border border-black/10 dark:border-white/10",
-            "bg-surface shadow-xl shadow-black/20 p-3",
+            "min-w-[260px] bg-surface shadow-xl shadow-black/20 p-3",
             "left-0 top-full",
           )}
         >
@@ -93,34 +93,42 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
             classNames={{
               months: "flex flex-col",
               month: "space-y-3",
-              caption: "flex justify-center items-center relative px-8 py-1",
+              month_caption: "relative flex items-center justify-center px-8 py-1",
               caption_label: "text-sm font-medium text-text-main",
-              nav: "flex items-center gap-1",
-              nav_button: cn(
+              nav: "absolute inset-x-0 top-1",
+              button_previous: cn(
                 "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
                 "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
               ),
-              nav_button_previous: "absolute left-0",
-              nav_button_next: "absolute right-0",
-              table: "w-full border-collapse",
-              head_row: "flex",
-              head_cell: "text-text-muted text-[11px] font-medium w-9 text-center",
-              row: "flex w-full mt-1",
-              cell: cn("relative p-0 text-center text-sm", "focus-within:relative focus-within:z-20"),
-              day: cn(
-                "flex items-center justify-center size-9 rounded-md text-sm font-normal",
+              button_next: cn(
+                "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
+                "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
+              ),
+              chevron: "size-4 text-text-muted",
+              month_grid: "w-full border-collapse",
+              weekdays: "flex w-full",
+              weekday: "w-9 text-center text-[11px] font-medium text-text-muted",
+              weeks: "mt-1 flex flex-col gap-1",
+              week: "flex w-full",
+              day: cn("h-9 w-9 p-0 text-center text-sm", "focus-within:relative focus-within:z-20"),
+              day_button: cn(
+                "size-9 rounded-md text-sm font-normal",
                 "text-text-main hover:bg-surface-2 transition-colors cursor-pointer",
                 "focus:outline-none focus:ring-2 focus:ring-primary/20",
               ),
-              day_selected: "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
-              day_today: "border border-primary/40 text-primary font-medium",
-              day_outside: "text-text-muted opacity-40",
-              day_disabled: "text-text-muted opacity-30 cursor-not-allowed",
-              day_hidden: "invisible",
+              selected: "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
+              today: "border border-primary/40 text-primary font-medium",
+              outside: "text-text-muted opacity-40",
+              disabled: "text-text-muted opacity-30",
+              hidden: "invisible",
             }}
             components={{
-              IconLeft: () => <span className="material-symbols-outlined text-[16px]">chevron_left</span>,
-              IconRight: () => <span className="material-symbols-outlined text-[16px]">chevron_right</span>,
+              Chevron: ({ orientation, className }) => (
+                <LucideIcon
+                  name={orientation === "left" ? "chevron_left" : "chevron_right"}
+                  className={cn("text-[16px]", className)}
+                />
+              ),
             }}
           />
         </div>

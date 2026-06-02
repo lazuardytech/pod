@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { cn } from "@/shared/utils/cn";
 import Button from "./Button";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Modal({
   isOpen,
@@ -74,7 +75,7 @@ export default function Modal({
                 onClick={onClose}
                 className="flex items-center justify-center size-6 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
               >
-                <span className="material-symbols-outlined text-[15px]">close</span>
+                <LucideIcon name="close" className="text-[15px]" />
               </button>
             )}
           </div>

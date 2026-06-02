@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const variants = {
   primary:
@@ -17,9 +18,15 @@ const variants = {
 };
 
 const sizes = {
-  sm: "h-7 px-3 text-[12px] gap-1.5 rounded-[6px]",
-  md: "h-8 px-3.5 text-[13px] gap-2 rounded-[6px]",
-  lg: "h-9 px-4 text-[13px] gap-2 rounded-[6px]",
+  sm: "h-8 px-3 text-[12px] gap-1.5 rounded-[6px]",
+  md: "h-9 px-3.5 text-[13px] gap-2 rounded-[6px]",
+  lg: "h-10 px-4 text-[13px] gap-2 rounded-[6px]",
+};
+
+const iconSizes = {
+  sm: 14,
+  md: 15,
+  lg: 16,
 };
 
 export default function Button({
@@ -34,6 +41,8 @@ export default function Button({
   className,
   ...props
 }) {
+  const iconSize = iconSizes[size] ?? iconSizes.md;
+
   return (
     <button
       className={cn(
@@ -48,12 +57,12 @@ export default function Button({
       {...props}
     >
       {loading ? (
-        <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+        <LucideIcon name="progress_activity" size={iconSize} className="animate-spin shrink-0" />
       ) : icon ? (
-        <span className="material-symbols-outlined text-[16px]">{icon}</span>
+        <LucideIcon name={icon} size={iconSize} className="shrink-0" />
       ) : null}
       {children}
-      {iconRight && !loading && <span className="material-symbols-outlined text-[16px]">{iconRight}</span>}
+      {iconRight && !loading && <LucideIcon name={iconRight} size={iconSize} className="shrink-0" />}
     </button>
   );
 }

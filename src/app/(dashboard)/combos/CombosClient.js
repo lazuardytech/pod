@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button, Card, CardSkeleton, Input, Modal, ModelSelectModal, Toggle } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
@@ -232,9 +233,10 @@ export default function CombosPage() {
             }`}
             title="Test all combos"
           >
-            <span className={`material-symbols-outlined text-[14px]${testingAll ? " animate-spin" : ""}`}>
-              {testingAll ? "progress_activity" : "play_arrow"}
-            </span>
+            <LucideIcon
+              name={testingAll ? "progress_activity" : "play_arrow"}
+              className={`text-[14px]${testingAll ? " animate-spin" : ""}`}
+            />
             {testingAll ? "Testing..." : "Test All"}
           </button>
           <Button icon="add" onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
@@ -253,7 +255,7 @@ export default function CombosPage() {
         <Card>
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-              <span className="material-symbols-outlined text-[32px]">layers</span>
+              <LucideIcon name="layers" className="text-[32px]" />
             </div>
             <p className="text-text-main font-medium mb-1">No combos yet</p>
             <p className="text-sm text-text-muted mb-4">Create model combos with fallback support</p>
@@ -402,10 +404,10 @@ function ComboCard({
             title="Drag to reorder"
             tabIndex={-1}
           >
-            <span className="material-symbols-outlined text-[18px]">drag_indicator</span>
+            <LucideIcon name="drag_indicator" className="text-[18px]" />
           </button>
           <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-primary text-[18px]">layers</span>
+            <LucideIcon name="layers" className="text-primary text-[18px]" />
           </div>
           <div className="min-w-0 flex-1">
             <code className="block truncate font-mono text-sm font-medium">{combo.name}</code>
@@ -453,15 +455,18 @@ function ComboCard({
               }`}
               title="Test combo"
             >
-              <span className={`material-symbols-outlined text-[18px] ${isTesting ? "animate-spin" : ""}`}>
-                {isTesting
-                  ? "progress_activity"
-                  : testStatus === "ok"
-                    ? "check_circle"
-                    : testStatus === "error"
-                      ? "error"
-                      : "play_arrow"}
-              </span>
+              <LucideIcon
+                name={
+                  isTesting
+                    ? "progress_activity"
+                    : testStatus === "ok"
+                      ? "check_circle"
+                      : testStatus === "error"
+                        ? "error"
+                        : "play_arrow"
+                }
+                className={`text-[18px] ${isTesting ? "animate-spin" : ""}`}
+              />
               <span className="text-[10px] leading-tight">Test</span>
             </button>
             <button
@@ -472,9 +477,7 @@ function ComboCard({
               className="flex flex-col items-center rounded px-2 py-1 text-text-muted transition-colors hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
               title="Copy combo name"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                {copied === `combo-${combo.id}` ? "check" : "content_copy"}
-              </span>
+              <LucideIcon name={copied === `combo-${combo.id}` ? "check" : "content_copy"} className="text-[18px]" />
               <span className="text-[10px] leading-tight">Copy</span>
             </button>
             <button
@@ -482,7 +485,7 @@ function ComboCard({
               className="flex flex-col items-center rounded px-2 py-1 text-text-muted transition-colors hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
               title="Edit"
             >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
+              <LucideIcon name="edit" className="text-[18px]" />
               <span className="text-[10px] leading-tight">Edit</span>
             </button>
             <button
@@ -490,7 +493,7 @@ function ComboCard({
               className="flex flex-col items-center rounded px-2 py-1 text-red-500 transition-colors hover:bg-red-500/10"
               title="Delete"
             >
-              <span className="material-symbols-outlined text-[18px]">delete</span>
+              <LucideIcon name="delete" className="text-[18px]" />
               <span className="text-[10px] leading-tight">Delete</span>
             </button>
           </div>
@@ -555,7 +558,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
           className={`p-0.5 rounded ${isFirst ? "text-text-muted/20 cursor-not-allowed" : "text-text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5"}`}
           title="Move up"
         >
-          <span className="material-symbols-outlined text-[12px]">arrow_upward</span>
+          <LucideIcon name="arrow_upward" className="text-[12px]" />
         </button>
         <button
           onClick={onMoveDown}
@@ -563,7 +566,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
           className={`p-0.5 rounded ${isLast ? "text-text-muted/20 cursor-not-allowed" : "text-text-muted hover:text-primary hover:bg-black/5 dark:hover:bg-white/5"}`}
           title="Move down"
         >
-          <span className="material-symbols-outlined text-[12px]">arrow_downward</span>
+          <LucideIcon name="arrow_downward" className="text-[12px]" />
         </button>
       </div>
 
@@ -573,7 +576,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
         className="p-0.5 hover:bg-red-500/10 rounded text-text-muted hover:text-red-500 transition-all"
         title="Remove"
       >
-        <span className="material-symbols-outlined text-[12px]">close</span>
+        <LucideIcon name="close" className="text-[12px]" />
       </button>
     </div>
   );
@@ -693,8 +696,8 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
             <label className="text-sm font-medium mb-1.5 block">Models</label>
 
             {models.length === 0 ? (
-              <div className="text-center py-4 border border-dashed border-black/10 dark:border-white/10 rounded-lg bg-black/[0.01] dark:bg-white/[0.01]">
-                <span className="material-symbols-outlined text-text-muted text-xl mb-1">layers</span>
+              <div className="flex flex-col items-center justify-center gap-1 py-4 border border-dashed border-black/10 dark:border-white/10 rounded-lg bg-black/[0.01] dark:bg-white/[0.01]">
+                <LucideIcon name="layers" className="text-[20px] text-text-muted" />
                 <p className="text-xs text-text-muted">No models added yet</p>
               </div>
             ) : (
@@ -724,7 +727,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               onClick={() => setShowModelSelect(true)}
               className="w-full mt-2 py-2 border border-dashed border-black/10 dark:border-white/10 rounded-lg text-xs text-primary font-medium hover:text-primary hover:border-primary/50 transition-colors flex items-center justify-center gap-1"
             >
-              <span className="material-symbols-outlined text-[16px]">add</span>
+              <LucideIcon name="add" className="text-[16px]" />
               Add Model
             </button>
           </div>

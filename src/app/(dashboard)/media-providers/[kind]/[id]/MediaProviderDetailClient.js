@@ -9,6 +9,7 @@ import ModelsCard from "@/app/(dashboard)/providers/components/ModelsCard";
 import { AddCustomEmbeddingModal, Badge, Button, Card, NoAuthProxyCard, ProviderInfoCard } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,
@@ -313,7 +314,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
                     : "border-border text-text-muted hover:text-primary"
                 }`}
               >
-                <span className="material-symbols-outlined text-[14px]">wifi_tethering</span>
+                <LucideIcon name="wifi_tethering" className="text-[14px]" />
                 Tunnel
               </button>
             )}
@@ -349,7 +350,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
                 onClick={() => setInput("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">close</span>
+                <LucideIcon name="close" className="text-[14px]" />
               </button>
             )}
           </div>
@@ -378,7 +379,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
                 onClick={() => copyCurl(curlSnippet)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">{copiedCurl ? "check" : "content_copy"}</span>
+                <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
                 {copiedCurl ? "Copied" : "Copy"}
               </button>
               <button
@@ -386,12 +387,11 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
                 disabled={running || !input.trim() || !modelFull}
                 className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span
-                  className="material-symbols-outlined text-[14px]"
-                  style={running ? { animation: "spin 1s linear infinite" } : undefined}
-                >
-                  play_arrow
-                </span>
+                <LucideIcon
+                  name={running ? "progress_activity" : "play_arrow"}
+                  size={12}
+                  className={running ? "shrink-0 animate-spin" : "shrink-0"}
+                />
                 {running ? "Running..." : "Run"}
               </button>
             </div>
@@ -415,7 +415,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
                 onClick={() => copyRes(resultJson)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">{copiedRes ? "check" : "content_copy"}</span>
+                <LucideIcon name={copiedRes ? "check" : "content_copy"} size={12} className="shrink-0" />
                 {copiedRes ? "Copied" : "Copy"}
               </button>
             )}
@@ -675,7 +675,7 @@ function TtsExampleCard({ providerId }) {
                       : "border-border text-text-muted hover:text-primary"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[14px]">wifi_tethering</span>
+                  <LucideIcon name="wifi_tethering" className="text-[14px]" />
                   Tunnel
                 </button>
               )}
@@ -754,7 +754,7 @@ function TtsExampleCard({ providerId }) {
                   onClick={openModal}
                   className="flex w-full items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border text-text-muted hover:text-primary hover:border-primary/40 transition-colors sm:w-auto sm:shrink-0"
                 >
-                  <span className="material-symbols-outlined text-[14px]">language</span>
+                  <LucideIcon name="language" className="text-[14px]" />
                   Select language
                 </button>
               </div>
@@ -822,7 +822,7 @@ function TtsExampleCard({ providerId }) {
                       }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[14px]">close</span>
+                      <LucideIcon name="close" className="text-[14px]" />
                     </button>
                   )}
                 </div>
@@ -873,7 +873,7 @@ function TtsExampleCard({ providerId }) {
                   onClick={() => setInput("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
+                  <LucideIcon name="close" className="text-[14px]" />
                 </button>
               )}
             </div>
@@ -902,7 +902,7 @@ function TtsExampleCard({ providerId }) {
                   onClick={() => copyCurl(curlSnippet)}
                   className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[14px]">{copiedCurl ? "check" : "content_copy"}</span>
+                  <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
                   {copiedCurl ? "Copied" : "Copy"}
                 </button>
                 <button
@@ -910,12 +910,11 @@ function TtsExampleCard({ providerId }) {
                   disabled={running || !input.trim() || !modelFull}
                   className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span
-                    className="material-symbols-outlined text-[14px]"
-                    style={running ? { animation: "spin 1s linear infinite" } : undefined}
-                  >
-                    play_arrow
-                  </span>
+                  <LucideIcon
+                    name={running ? "progress_activity" : "play_arrow"}
+                    size={12}
+                    className={running ? "shrink-0 animate-spin" : "shrink-0"}
+                  />
                   {running ? "Generating..." : "Run"}
                 </button>
               </div>
@@ -939,7 +938,7 @@ function TtsExampleCard({ providerId }) {
                   download="speech.mp3"
                   className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[14px]">download</span>
+                  <LucideIcon name="download" size={12} className="shrink-0" />
                   Download
                 </a>
               </div>
@@ -996,7 +995,7 @@ function TtsExampleCard({ providerId }) {
                 onClick={() => setModalOpen(false)}
                 className="text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <LucideIcon name="close" className="text-[20px]" />
               </button>
             </div>
 
@@ -1031,9 +1030,7 @@ function TtsExampleCard({ providerId }) {
                       <span className="text-sm">{c.name}</span>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs text-text-muted">{c.voices.length} voices</span>
-                        {selectedLang === c.code && (
-                          <span className="material-symbols-outlined text-[16px] text-primary">check</span>
-                        )}
+                        {selectedLang === c.code && <LucideIcon name="check" className="text-[16px] text-primary" />}
                       </div>
                     </button>
                   ))}
@@ -1052,6 +1049,9 @@ function TtsExampleCard({ providerId }) {
 
 // Generic Example Card — config-driven for webSearch, webFetch, image, imageToText, stt, video, music
 function GenericExampleCard({ providerId, kind }) {
+  const provider = AI_PROVIDERS[providerId];
+  const defaultBaseUrl = provider?.searchConfig?.baseUrl || provider?.fetchConfig?.baseUrl || "";
+  const supportsBaseUrlOverride = Boolean(defaultBaseUrl) && (kind === "webSearch" || kind === "webFetch");
   const providerAlias = getProviderAlias(providerId);
   const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kind);
   const exConfig = KIND_EXAMPLE_CONFIG[kind];
@@ -1078,6 +1078,7 @@ function GenericExampleCard({ providerId, kind }) {
     }, {}),
   );
   const [apiKey, setApiKey] = useState("");
+  const [baseUrlOverride, setBaseUrlOverride] = useState("");
   const [useTunnel, setUseTunnel] = useState(false);
   const [localEndpoint, setLocalEndpoint] = useState("");
   const [tunnelEndpoint, setTunnelEndpoint] = useState("");
@@ -1117,6 +1118,14 @@ function GenericExampleCard({ providerId, kind }) {
       .catch(() => {});
   }, [providerId]);
 
+  useEffect(() => {
+    if (supportsBaseUrlOverride) {
+      setBaseUrlOverride(defaultBaseUrl);
+    } else {
+      setBaseUrlOverride("");
+    }
+  }, [defaultBaseUrl, supportsBaseUrlOverride]);
+
   // Safe to early-return now that all hooks are declared
   if (!kindConfig || !exConfig) return null;
 
@@ -1150,6 +1159,9 @@ function GenericExampleCard({ providerId, kind }) {
     ...extraBodyFromFields,
     ...(supportsEdit && effectiveRefImage ? { image: effectiveRefImage } : {}),
     ...(supportsMask && effectiveMaskImage ? { mask_image: effectiveMaskImage } : {}),
+    ...(supportsBaseUrlOverride && baseUrlOverride.trim()
+      ? { provider_options: { baseUrl: baseUrlOverride.trim() } }
+      : {}),
   };
 
   // Streaming supported for codex image (Plus/Pro accounts) — disabled when binary output requested
@@ -1316,7 +1328,7 @@ function GenericExampleCard({ providerId, kind }) {
                     : "border-border text-text-muted hover:text-primary"
                 }`}
               >
-                <span className="material-symbols-outlined text-[14px]">wifi_tethering</span>
+                <LucideIcon name="wifi_tethering" className="text-[14px]" />
                 Tunnel
               </button>
             )}
@@ -1376,7 +1388,7 @@ function GenericExampleCard({ providerId, kind }) {
                 onClick={() => setInput("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">close</span>
+                <LucideIcon name="close" className="text-[14px]" />
               </button>
             )}
           </div>
@@ -1401,7 +1413,7 @@ function GenericExampleCard({ providerId, kind }) {
                     onClick={() => setRefImage("")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <LucideIcon name="close" className="text-[14px]" />
                   </button>
                 )}
               </div>
@@ -1440,7 +1452,7 @@ function GenericExampleCard({ providerId, kind }) {
                     onClick={() => setMaskImage("")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <LucideIcon name="close" className="text-[14px]" />
                   </button>
                 )}
               </div>
@@ -1511,6 +1523,20 @@ function GenericExampleCard({ providerId, kind }) {
             </Row>
           ))}
 
+        {supportsBaseUrlOverride && (
+          <Row label="Base URL">
+            <input
+              aria-label="Provider base URL"
+              type="text"
+              value={baseUrlOverride}
+              placeholder={defaultBaseUrl}
+              onChange={(e) => setBaseUrlOverride(e.target.value)}
+              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              name="provider-base-url"
+            />
+          </Row>
+        )}
+
         {/* Output Format toggle (image only) — last */}
         {kind === "image" && (
           <Row label="Output Format">
@@ -1536,7 +1562,7 @@ function GenericExampleCard({ providerId, kind }) {
                 onClick={() => copyCurl(curlSnippet)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">{copiedCurl ? "check" : "content_copy"}</span>
+                <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
                 {copiedCurl ? "Copied" : "Copy"}
               </button>
               <button
@@ -1544,12 +1570,11 @@ function GenericExampleCard({ providerId, kind }) {
                 disabled={running || !input.trim() || !modelFull}
                 className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span
-                  className="material-symbols-outlined text-[14px]"
-                  style={running ? { animation: "spin 1s linear infinite" } : undefined}
-                >
-                  play_arrow
-                </span>
+                <LucideIcon
+                  name={running ? "progress_activity" : "play_arrow"}
+                  size={12}
+                  className={running ? "shrink-0 animate-spin" : "shrink-0"}
+                />
                 {running ? "Running..." : "Run"}
               </button>
             </div>
@@ -1562,12 +1587,11 @@ function GenericExampleCard({ providerId, kind }) {
         {/* Streaming progress */}
         {(running || progress) && useStreaming && (
           <div className="flex flex-col gap-2 px-3 py-2 rounded-lg bg-sidebar border border-border sm:flex-row sm:items-center sm:gap-3">
-            <span
-              className="material-symbols-outlined text-[16px] text-primary"
+            <LucideIcon
+              name={running ? "progress_activity" : "check_circle"}
+              className="text-[16px] text-primary"
               style={running ? { animation: "spin 1s linear infinite" } : undefined}
-            >
-              {running ? "progress_activity" : "check_circle"}
-            </span>
+            />
             <span className="text-xs text-text-muted">
               {progress?.stage || "starting"}
               {!running && progress?.bytesReceived ? ` · ${(progress.bytesReceived / 1024).toFixed(1)} KB` : ""}
@@ -1601,7 +1625,7 @@ function GenericExampleCard({ providerId, kind }) {
                 onClick={() => copyRes(resultJson)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">{copiedRes ? "check" : "content_copy"}</span>
+                <LucideIcon name={copiedRes ? "check" : "content_copy"} size={12} className="shrink-0" />
                 {copiedRes ? "Copied" : "Copy"}
               </button>
             )}
@@ -1622,7 +1646,7 @@ function GenericExampleCard({ providerId, kind }) {
                   download="image.png"
                   className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[14px]">download</span>
+                  <LucideIcon name="download" size={12} className="shrink-0" />
                   Download
                 </a>
               </div>
@@ -1797,7 +1821,7 @@ function SttExampleCard({ providerId }) {
                     : "border-border text-text-muted hover:text-primary"
                 }`}
               >
-                <span className="material-symbols-outlined text-[14px]">wifi_tethering</span>
+                <LucideIcon name="wifi_tethering" className="text-[14px]" />
                 Tunnel
               </button>
             )}
@@ -1907,7 +1931,7 @@ function SttExampleCard({ providerId }) {
                 onClick={() => copyCurl(curlSnippet)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">{copiedCurl ? "check" : "content_copy"}</span>
+                <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
                 {copiedCurl ? "Copied" : "Copy"}
               </button>
               <button
@@ -1915,12 +1939,11 @@ function SttExampleCard({ providerId }) {
                 disabled={running || !audioFile || !modelFull}
                 className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span
-                  className="material-symbols-outlined text-[14px]"
-                  style={running ? { animation: "spin 1s linear infinite" } : undefined}
-                >
-                  play_arrow
-                </span>
+                <LucideIcon
+                  name={running ? "progress_activity" : "play_arrow"}
+                  size={12}
+                  className={running ? "shrink-0 animate-spin" : "shrink-0"}
+                />
                 {running ? "Transcribing..." : "Run"}
               </button>
             </div>
@@ -1943,7 +1966,7 @@ function SttExampleCard({ providerId }) {
                 onClick={() => copyRes(resultStr)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
-                <span className="material-symbols-outlined text-[14px]">{copiedRes ? "check" : "content_copy"}</span>
+                <LucideIcon name={copiedRes ? "check" : "content_copy"} size={12} className="shrink-0" />
                 {copiedRes ? "Copied" : "Copy"}
               </button>
             )}
@@ -2054,7 +2077,7 @@ export default function MediaProviderDetailPage() {
                 rel="noopener noreferrer"
                 className="text-xs text-primary hover:underline inline-flex items-center gap-1"
               >
-                <span className="material-symbols-outlined text-sm">open_in_new</span>
+                <LucideIcon name="open_in_new" className="text-sm" />
                 Get API Key
               </a>
             )}
@@ -2099,7 +2122,7 @@ export default function MediaProviderDetailPage() {
       {/* Kind-specific notice (e.g. codex/image requires Plus) */}
       {!isCustom && provider.kindNotice?.[kind] && (
         <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
-          <span className="material-symbols-outlined text-[20px] mt-0.5">warning</span>
+          <LucideIcon name="warning" className="text-[20px] mt-0.5" />
           <p className="text-sm">{provider.kindNotice[kind]}</p>
         </div>
       )}
@@ -2107,7 +2130,7 @@ export default function MediaProviderDetailPage() {
       {/* Provider notice text (only when there's actual text content) */}
       {!isCustom && provider.notice?.text && !provider.deprecated && (
         <div className="flex flex-col gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 sm:flex-row sm:items-center">
-          <span className="material-symbols-outlined text-[16px] text-blue-500 shrink-0">info</span>
+          <LucideIcon name="info" className="text-[16px] text-blue-500 shrink-0" />
           <p className="min-w-0 flex-1 text-xs leading-relaxed text-blue-600 dark:text-blue-400">
             {provider.notice.text}
           </p>

@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { Badge, Toggle } from "@/shared/components";
 import CooldownTimer from "./CooldownTimer";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function ConnectionRow({
   connection,
@@ -132,7 +133,7 @@ export default function ConnectionRow({
       className={`group flex min-w-0 flex-col gap-3 rounded-lg p-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between ${connection.isActive === false ? "opacity-60" : ""}`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center sm:gap-3">
-        <span className="material-symbols-outlined shrink-0 text-base text-text-muted">{isOAuth ? "lock" : "key"}</span>
+        <LucideIcon name={isOAuth ? "lock" : "key"} className="shrink-0 text-base text-text-muted" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{displayName}</p>
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
@@ -187,9 +188,7 @@ export default function ConnectionRow({
                 className={`flex w-full flex-col items-center rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
               >
-                <span className="material-symbols-outlined text-[18px]">
-                  {updatingProxy ? "progress_activity" : "lan"}
-                </span>
+                <LucideIcon name={updatingProxy ? "progress_activity" : "lan"} className="text-[18px]" />
                 <span className="text-[10px] leading-tight">Proxy</span>
               </button>
               {showProxyDropdown && (
@@ -217,14 +216,14 @@ export default function ConnectionRow({
             onClick={onEdit}
             className="flex flex-col items-center rounded px-2 py-1 text-text-muted hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
           >
-            <span className="material-symbols-outlined text-[18px]">edit</span>
+            <LucideIcon name="edit" className="text-[18px]" />
             <span className="text-[10px] leading-tight">Edit</span>
           </button>
           <button
             onClick={onDelete}
             className="flex flex-col items-center rounded px-2 py-1 text-red-500 hover:bg-red-500/10"
           >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
+            <LucideIcon name="delete" className="text-[18px]" />
             <span className="text-[10px] leading-tight">Delete</span>
           </button>
         </div>

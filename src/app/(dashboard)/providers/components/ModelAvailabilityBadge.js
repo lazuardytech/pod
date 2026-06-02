@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 /**
  * ModelAvailabilityBadge — compact inline status indicator
@@ -41,9 +42,40 @@ export default function ModelAvailabilityBadge() {
   }, []);
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000);
-    return () => clearInterval(interval);
+    let closed = false;
+    let reconnectTimer = null;
+    let es = null;
+
+    const connect = () => {
+      if (closed) return;
+      es = new EventSource("/api/models/availability/stream");
+
+      es.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload?.error) return;
+          setData(payload);
+          setLoading(false);
+        } catch {
+          // keep stream alive on bad chunk
+        }
+      };
+
+      es.onerror = () => {
+        es.close();
+        fetchStatus().catch(() => {});
+        if (!closed) reconnectTimer = setTimeout(connect, 3000);
+      };
+    };
+
+    fetchStatus().catch(() => {});
+    connect();
+
+    return () => {
+      closed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (es) es.close();
+    };
   }, [fetchStatus]);
 
   // Close popover on outside click
@@ -101,9 +133,7 @@ export default function ModelAvailabilityBadge() {
             : "bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/15"
         }`}
       >
-        <span className="material-symbols-outlined text-[14px]">
-          {isHealthy ? "verified" : "warning"}
-        </span>
+        <LucideIcon name={isHealthy ? "verified" : "warning"} className="text-[14px]" />
         {isHealthy
           ? "All models operational"
           : `${unavailableCount} model${unavailableCount !== 1 ? "s" : ""} with issues`}
@@ -113,12 +143,11 @@ export default function ModelAvailabilityBadge() {
         <div className="absolute top-full right-0 mt-2 w-80 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg">
             <div className="flex items-center gap-2">
-              <span
-                className="material-symbols-outlined text-[16px]"
+              <LucideIcon
+                name={isHealthy ? "verified" : "warning"}
+                className="text-[16px]"
                 style={{ color: isHealthy ? "#22c55e" : "#f59e0b" }}
-              >
-                {isHealthy ? "verified" : "warning"}
-              </span>
+              />
               <span className="text-sm font-semibold text-text-main">Model Status</span>
             </div>
             <button
@@ -126,7 +155,7 @@ export default function ModelAvailabilityBadge() {
               className="p-1 rounded-lg hover:bg-surface text-text-muted hover:text-text-main transition-colors"
               title="Refresh"
             >
-              <span className="material-symbols-outlined text-[14px]">refresh</span>
+              <LucideIcon name="refresh" className="text-[14px]" />
             </button>
           </div>
 
@@ -148,12 +177,11 @@ export default function ModelAvailabilityBadge() {
                             className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface/30"
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span
-                                className="material-symbols-outlined text-[14px] shrink-0"
+                              <LucideIcon
+                                name={status.icon}
+                                className="text-[14px] shrink-0"
                                 style={{ color: status.color }}
-                              >
-                                {status.icon}
-                              </span>
+                              />
                               <span className="font-mono text-xs text-text-main truncate">{m.model}</span>
                             </div>
                             {m.status === "cooldown" && (

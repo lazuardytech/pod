@@ -17,7 +17,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, expect } from "vitest";
+import { expect } from "vitest";
 
 let tempDir;
 let originalDataDir;

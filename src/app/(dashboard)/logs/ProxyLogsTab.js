@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function TypeBadge({ type }) {
   const styles = {
@@ -145,7 +146,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
     <div className="flex flex-col gap-3">
       {/* Info banner */}
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-[6px] border border-charcoal-grey bg-deep-slate">
-        <span className="material-symbols-outlined text-[14px] text-fog-grey shrink-0">info</span>
+        <LucideIcon name="info" className="text-[14px] text-fog-grey shrink-0" />
         <p className="text-[11px] text-fog-grey leading-[1.5]">
           Live proxy request logging is not available. Showing configured proxy pools. Manage pools in{" "}
           <a
@@ -162,12 +163,12 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
       <div className="rounded-[6px] border border-charcoal-grey overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-[12px] text-fog-grey">
-            <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+            <LucideIcon name="progress_activity" className="text-[16px] animate-spin" />
             Loading proxy pools...
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <span className="material-symbols-outlined text-[28px] text-warning-red">error</span>
+            <LucideIcon name="error" className="text-[28px] text-warning-red" />
             <p className="text-[12px] text-warning-red">{error}</p>
             <button
               onClick={fetchPools}
@@ -178,7 +179,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
           </div>
         ) : activePools.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <span className="material-symbols-outlined text-[28px] text-fog-grey">lan</span>
+            <LucideIcon name="lan" className="text-[28px] text-fog-grey" />
             <p className="text-[12px] text-fog-grey">No proxy pools configured.</p>
             <a
               href="/proxy-pools"
@@ -248,11 +249,9 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                           className="flex items-center gap-1.5 h-6 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-50 transition-colors duration-100"
                         >
                           {testing === pool.id ? (
-                            <span className="material-symbols-outlined text-[12px] animate-spin">
-                              progress_activity
-                            </span>
+                            <LucideIcon name="progress_activity" className="text-[12px] animate-spin" />
                           ) : (
-                            <span className="material-symbols-outlined text-[12px]">network_check</span>
+                            <LucideIcon name="network_check" className="text-[12px]" />
                           )}
                           Test
                         </button>
@@ -269,9 +268,10 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                                 : "bg-warning-red/8 text-warning-red border border-warning-red/20",
                             )}
                           >
-                            <span className="material-symbols-outlined text-[13px]">
-                              {testResults[pool.id].ok ? "check_circle" : "error"}
-                            </span>
+                            <LucideIcon
+                              name={testResults[pool.id].ok ? "check_circle" : "error"}
+                              className="text-[13px]"
+                            />
                             {testResults[pool.id].message}
                           </div>
                         </td>
@@ -326,9 +326,10 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                         : "bg-warning-red/8 text-warning-red border border-warning-red/20",
                     )}
                   >
-                    <span className="material-symbols-outlined text-[13px]">
-                      {testResults[selectedPool.id].ok ? "check_circle" : "error"}
-                    </span>
+                    <LucideIcon
+                      name={testResults[selectedPool.id].ok ? "check_circle" : "error"}
+                      className="text-[13px]"
+                    />
                     {testResults[selectedPool.id].message}
                   </div>
                 </DetailSection>
@@ -344,9 +345,9 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                   className="flex items-center gap-1.5 h-7 px-3 rounded-[6px] border border-charcoal-grey text-[12px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-50 transition-colors duration-100"
                 >
                   {testing === selectedPool.id ? (
-                    <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
+                    <LucideIcon name="progress_activity" className="text-[13px] animate-spin" />
                   ) : (
-                    <span className="material-symbols-outlined text-[13px]">network_check</span>
+                    <LucideIcon name="network_check" className="text-[13px]" />
                   )}
                   Test Connection
                 </button>

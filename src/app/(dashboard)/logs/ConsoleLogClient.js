@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const LEVEL_RE = /\[(LOG|INFO|WARN|ERROR|DEBUG)\]/i;
 
@@ -68,7 +69,7 @@ function LogLine({ entry, idx, onCopy, copied }) {
         className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-deep-slate transition-all duration-100"
         title="Copy line"
       >
-        <span className="material-symbols-outlined text-[12px]">{copied === idx ? "check" : "content_copy"}</span>
+        <LucideIcon name={copied === idx ? "check" : "content_copy"} className="text-[12px]" />
       </button>
     </div>
   );
@@ -198,9 +199,10 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         {/* Left: Search + filter pills */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[14px] text-fog-grey">
-              search
-            </span>
+            <LucideIcon
+              name="search"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[14px] text-fog-grey"
+            />
             <input
               aria-label="Search console logs"
               type="text"
@@ -266,7 +268,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         >
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-fog-grey">
-              <span className="material-symbols-outlined text-[28px]">terminal</span>
+              <LucideIcon name="terminal" className="text-[28px]" />
               <p className="text-[12px]">
                 {logs.length === 0 ? "No console logs yet." : "No logs match your filters."}
               </p>

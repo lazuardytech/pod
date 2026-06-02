@@ -7,6 +7,7 @@ import { AddCustomEmbeddingModal, Badge, Button, Card } from "@/shared/component
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { AI_PROVIDERS, getProvidersByKind, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { useHeaderActionStore } from "@/store/headerActionStore";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 // Kinds that support combos (currently disabled for image/tts — temporarily hidden).
 // webSearch/webFetch handled by /web page.
@@ -121,7 +122,7 @@ function ComboList({ combos }) {
             className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <span className="material-symbols-outlined text-primary text-[18px]">layers</span>
+              <LucideIcon name="layers" className="text-primary text-[18px]" />
               <code className="text-sm font-mono font-medium flex-1 truncate">{combo.name}</code>
               <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
                 {combo.models.slice(0, 6).map((entry, i) => {
@@ -150,7 +151,7 @@ function ComboList({ combos }) {
                 )}
               </div>
               <span className="text-[11px] text-text-muted shrink-0">{combo.models.length}</span>
-              <span className="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+              <LucideIcon name="chevron_right" className="text-text-muted text-[16px]" />
             </div>
           </Card>
         </Link>
@@ -292,7 +293,7 @@ export default function MediaProviderKindPage() {
         <div className="text-center py-12 border border-dashed border-border rounded-xl text-text-muted text-sm">
           {showConnectedOnly ? (
             <div className="flex items-center justify-center gap-0 py-12">
-              <span className="material-symbols-outlined text-[32px]">wifi_off</span>
+              <LucideIcon name="wifi_off" className="text-[32px]" />
               <span className="ms-2">No connected providers available</span>
             </div>
           ) : (

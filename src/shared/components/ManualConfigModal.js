@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import Modal from "./Modal";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function ManualConfigModal({ isOpen, onClose, title = "Manual Configuration", configs = [] }) {
   const { copy } = useCopyToClipboard();
@@ -23,9 +24,7 @@ export default function ManualConfigModal({ isOpen, onClose, title = "Manual Con
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-text-main">{config.filename}</span>
               <Button variant="ghost" size="sm" onClick={() => copyConfig(config.content, index)}>
-                <span className="material-symbols-outlined text-[14px] mr-1">
-                  {copiedIndex === index ? "check" : "content_copy"}
-                </span>
+                <LucideIcon name={copiedIndex === index ? "check" : "content_copy"} className="text-[14px] mr-1" />
                 {copiedIndex === index ? "Copied!" : "Copy"}
               </Button>
             </div>

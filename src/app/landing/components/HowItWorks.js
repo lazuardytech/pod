@@ -1,4 +1,5 @@
 "use client";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const STEPS = [
   {
@@ -52,13 +53,10 @@ export default function HowItWorks() {
                     step.accent ? "bg-porcelain" : "bg-deep-slate border border-charcoal-grey"
                   }`}
                 >
-                  <span
-                    className={`material-symbols-outlined text-[18px] ${
-                      step.accent ? "text-pitch-black" : "text-storm-cloud"
-                    }`}
-                  >
-                    {step.icon}
-                  </span>
+                  <LucideIcon
+                    name={step.icon}
+                    className={`text-[18px] ${step.accent ? "text-pitch-black" : "text-storm-cloud"}`}
+                  />
                 </div>
                 <span className="text-[11px] font-[590] text-fog-grey tracking-[0.04em]">{step.number}</span>
               </div>

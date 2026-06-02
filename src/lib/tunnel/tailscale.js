@@ -1,36 +1,66 @@
-import { execSync, spawn } from "node:child_process";
+import { execSync, spawn, spawnSync } from "node:child_process";
 import fs from "fs";
 import os from "node:os";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/dataDir.js";
 
-const BIN_DIR = path.join(DATA_DIR, "bin");
+const BIN_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "bin");
 const IS_MAC = os.platform() === "darwin";
 const _IS_LINUX = os.platform() === "linux";
 const IS_WINDOWS = os.platform() === "win32";
-const TAILSCALE_BIN = path.join(BIN_DIR, IS_WINDOWS ? "tailscale.exe" : "tailscale");
+const TAILSCALE_BIN = path.join(/*turbopackIgnore: true*/ BIN_DIR, IS_WINDOWS ? "tailscale.exe" : "tailscale");
 
 // Custom socket for userspace-networking mode (no root required)
-const TAILSCALE_DIR = path.join(DATA_DIR, "tailscale");
-export const TAILSCALE_SOCKET = path.join(TAILSCALE_DIR, "tailscaled.sock");
+const TAILSCALE_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "tailscale");
+export const TAILSCALE_SOCKET = path.join(/*turbopackIgnore: true*/ TAILSCALE_DIR, "tailscaled.sock");
 const SOCKET_FLAG = IS_WINDOWS ? [] : ["--socket", TAILSCALE_SOCKET];
+const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
 
 // Well-known Windows install path
 const WINDOWS_TAILSCALE_BIN = "C:\\Program Files\\Tailscale\\tailscale.exe";
+const SUDO_PASSWORD_ERROR_RE = /(incorrect password|sorry, try again|a password is required)/i;
+
+function runCommandSync(command, args, { timeout = 5000, env } = {}) {
+  const result = spawnSync(command, args, {
+    encoding: "utf8",
+    windowsHide: true,
+    timeout,
+    env,
+  });
+  if (result.error || result.status !== 0) return null;
+  return typeof result.stdout === "string" ? result.stdout : "";
+}
+
+function runTailscaleJson(args, { timeout = 5000 } = {}) {
+  const bin = getTailscaleBin();
+  if (!bin) return null;
+  const out = runCommandSync(bin, tsArgs(...args), {
+    timeout,
+    env: { ...process.env, PATH: EXTENDED_PATH },
+  });
+  if (!out) return null;
+  try {
+    return JSON.parse(out);
+  } catch {
+    return null;
+  }
+}
 
 // Prefer system tailscale, fallback to local bin, then Windows default path
 function getTailscaleBin() {
   try {
-    const systemPath = execSync("which tailscale 2>/dev/null || where tailscale 2>nul", {
-      encoding: "utf8",
-      windowsHide: true,
-    }).trim();
+    const lookupCommand = IS_WINDOWS ? "where" : "which";
+    const lookupArg = "tailscale";
+    const systemPath = runCommandSync(lookupCommand, [lookupArg], {
+      timeout: 3000,
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    })?.trim();
     if (systemPath) return systemPath;
   } catch (_e) {
     /* not in PATH */
   }
-  if (fs.existsSync(TAILSCALE_BIN)) return TAILSCALE_BIN;
-  if (IS_WINDOWS && fs.existsSync(WINDOWS_TAILSCALE_BIN)) return WINDOWS_TAILSCALE_BIN;
+  if (fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_BIN)) return TAILSCALE_BIN;
+  if (IS_WINDOWS && fs.existsSync(/*turbopackIgnore: true*/ WINDOWS_TAILSCALE_BIN)) return WINDOWS_TAILSCALE_BIN;
   return null;
 }
 
@@ -44,50 +74,24 @@ function tsArgs(...args) {
 }
 
 export function isTailscaleLoggedIn() {
-  const bin = getTailscaleBin();
-  if (!bin) return false;
-  try {
-    const out = execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} status --json`, {
-      encoding: "utf8",
-      windowsHide: true,
-      env: { ...process.env, PATH: EXTENDED_PATH },
-      timeout: 5000,
-    });
-    const json = JSON.parse(out);
-    // BackendState "Running" means fully logged in and connected
-    return json.BackendState === "Running";
-  } catch (_e) {
-    return false;
-  }
+  const json = runTailscaleJson(["status", "--json"], { timeout: 5000 });
+  if (!json) return false;
+  // BackendState "Running" means fully logged in and connected
+  return json.BackendState === "Running";
 }
 
 export function isTailscaleRunning() {
-  const bin = getTailscaleBin();
-  if (!bin) return false;
-  try {
-    const out = execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} funnel status --json 2>/dev/null`, {
-      encoding: "utf8",
-      windowsHide: true,
-    });
-    const json = JSON.parse(out);
-    return Object.keys(json.AllowFunnel || {}).length > 0;
-  } catch (_e) {
-    return false;
-  }
+  const json = runTailscaleJson(["funnel", "status", "--json"], { timeout: 5000 });
+  if (!json) return false;
+  return Object.keys(json.AllowFunnel || {}).length > 0;
 }
 
 /** Get funnel URL from tailscale status */
 export function getTailscaleFunnelUrl(port) {
-  const bin = getTailscaleBin();
-  if (!bin) return null;
-  try {
-    const out = execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} status --json`, { encoding: "utf8", windowsHide: true });
-    const json = JSON.parse(out);
-    const dnsName = json.Self?.DNSName?.replace(/\.$/, "");
-    if (dnsName) return `https://${dnsName}`;
-  } catch (_e) {
-    /* ignore */
-  }
+  const json = runTailscaleJson(["status", "--json"], { timeout: 5000 });
+  if (!json) return null;
+  const dnsName = json.Self?.DNSName?.replace(/\.$/, "");
+  if (dnsName) return `https://${dnsName}`;
   return null;
 }
 
@@ -113,8 +117,6 @@ export async function installTailscale(sudoPassword, hostname, onProgress) {
   return startLogin(hostname);
 }
 
-const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
-
 function hasBrew() {
   try {
     execSync("which brew", { stdio: "ignore", windowsHide: true, env: { ...process.env, PATH: EXTENDED_PATH } });
@@ -122,6 +124,57 @@ function hasBrew() {
   } catch {
     return false;
   }
+}
+
+/**
+ * Run a shell command through sudo.
+ * - If `sudoPassword` provided, pass it via stdin (`sudo -S`).
+ * - If not provided, require passwordless sudo (`sudo -n`), fail fast otherwise.
+ */
+function execWithPassword(command, sudoPassword) {
+  return new Promise((resolve, reject) => {
+    if (IS_WINDOWS) {
+      resolve();
+      return;
+    }
+
+    const hasPassword = typeof sudoPassword === "string" && sudoPassword.length > 0;
+    const args = hasPassword ? ["-S", "sh", "-c", command] : ["-n", "sh", "-c", command];
+    const child = spawn("sudo", args, {
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    });
+
+    let stderr = "";
+    let stdout = "";
+
+    child.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+    child.on("error", reject);
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      const message = stderr.trim() || stdout.trim() || `sudo command failed (code ${code})`;
+      if (SUDO_PASSWORD_ERROR_RE.test(message)) {
+        reject(new Error("Wrong sudo password"));
+        return;
+      }
+      reject(new Error(message));
+    });
+
+    if (hasPassword) {
+      child.stdin.write(`${sudoPassword}\n`);
+    }
+    child.stdin.end();
+  });
 }
 
 async function installTailscaleMac(sudoPassword, log) {
@@ -152,7 +205,7 @@ async function installTailscaleMac(sudoPassword, log) {
 
   // No brew: download .pkg and install via sudo installer
   const pkgUrl = "https://pkgs.tailscale.com/stable/tailscale-latest.pkg";
-  const pkgPath = path.join(os.tmpdir(), "tailscale.pkg");
+  const pkgPath = path.join(/*turbopackIgnore: true*/ os.tmpdir(), "tailscale.pkg");
 
   log("Downloading Tailscale package...");
   await new Promise((resolve, reject) => {
@@ -187,7 +240,7 @@ async function installTailscaleMac(sudoPassword, log) {
     });
     child.on("close", (c) => {
       try {
-        execSync(`rm -f ${pkgPath}`, { stdio: "ignore", windowsHide: true });
+        fs.unlinkSync(/*turbopackIgnore: true*/ pkgPath);
       } catch {
         /* ignore */
       }
@@ -254,7 +307,7 @@ async function installTailscaleLinux(sudoPassword, log) {
 
 async function installTailscaleWindows(log) {
   const msiUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi";
-  const msiPath = path.join(os.tmpdir(), "tailscale-setup.msi");
+  const msiPath = path.join(/*turbopackIgnore: true*/ os.tmpdir(), "tailscale-setup.msi");
 
   // Download MSI via curl.exe (built-in on Win10+) — no PowerShell window, streams progress
   log("Downloading Tailscale installer...");
@@ -292,7 +345,7 @@ async function installTailscaleWindows(log) {
     });
     child.on("close", (c) => {
       try {
-        fs.unlinkSync(msiPath);
+        fs.unlinkSync(/*turbopackIgnore: true*/ msiPath);
       } catch {
         /* ignore */
       }
@@ -306,7 +359,7 @@ async function installTailscaleWindows(log) {
   const maxWait = 10000;
   const start = Date.now();
   while (Date.now() - start < maxWait) {
-    if (fs.existsSync(WINDOWS_TAILSCALE_BIN)) {
+    if (fs.existsSync(/*turbopackIgnore: true*/ WINDOWS_TAILSCALE_BIN)) {
       log("Installation complete.");
       return;
     }
@@ -352,14 +405,15 @@ export async function startDaemonWithPassword(sudoPassword) {
   }
 
   // Ensure config dir exists
-  if (!fs.existsSync(TAILSCALE_DIR)) fs.mkdirSync(TAILSCALE_DIR, { recursive: true });
+  if (!fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_DIR)) {
+    fs.mkdirSync(/*turbopackIgnore: true*/ TAILSCALE_DIR, { recursive: true });
+  }
 
   // tailscaled requires root for TUN (needed for Funnel)
   const tailscaledBin = IS_MAC ? "/usr/local/bin/tailscaled" : "tailscaled";
   const daemonCmd = `${tailscaledBin} --socket=${TAILSCALE_SOCKET} --statedir=${TAILSCALE_DIR}`;
 
   // Start via sudo in background (nohup keeps it alive)
-  // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
   await execWithPassword(`nohup ${daemonCmd} > /dev/null 2>&1 &`, sudoPassword || "");
 
   // Wait for daemon to be ready
@@ -561,7 +615,6 @@ export async function stopDaemon(sudoPassword) {
   // Kill with sudo password
   if (!IS_WINDOWS) {
     try {
-      // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
       await execWithPassword("pkill -x tailscaled", sudoPassword || "");
     } catch {
       /* ignore */
@@ -570,7 +623,9 @@ export async function stopDaemon(sudoPassword) {
 
   // Cleanup socket
   try {
-    if (fs.existsSync(TAILSCALE_SOCKET)) fs.unlinkSync(TAILSCALE_SOCKET);
+    if (fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_SOCKET)) {
+      fs.unlinkSync(/*turbopackIgnore: true*/ TAILSCALE_SOCKET);
+    }
   } catch {
     /* ignore */
   }

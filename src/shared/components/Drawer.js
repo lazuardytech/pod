@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Drawer({ isOpen, onClose, title, children, width = "md", className }) {
   const widths = {
@@ -63,7 +64,7 @@ export default function Drawer({ isOpen, onClose, title, children, width = "md",
             onClick={onClose}
             className="p-1.5 rounded-[10px] text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <LucideIcon name="close" className="text-[20px]" />
           </button>
         </div>
 

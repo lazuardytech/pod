@@ -22,16 +22,20 @@ function getDataDir() {
 
   const homeDir = os.homedir();
   if (process.platform === "win32") {
-    return path.join(process.env.APPDATA || path.join(homeDir, "AppData", "Roaming"), APP_NAME);
+    return path.join(
+      /*turbopackIgnore: true*/ process.env.APPDATA || path.join(homeDir, "AppData", "Roaming"),
+      APP_NAME,
+    );
   }
-  return path.join(homeDir, `.${APP_NAME}`);
+  return path.join(/*turbopackIgnore: true*/ homeDir, `.${APP_NAME}`);
 }
 
 function tryEnsureDir(dirPath) {
   try {
-    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+    if (!fs.existsSync(/*turbopackIgnore: true*/ dirPath))
+      fs.mkdirSync(/*turbopackIgnore: true*/ dirPath, { recursive: true });
     // Verify we can actually write to it
-    fs.accessSync(dirPath, fs.constants.W_OK);
+    fs.accessSync(/*turbopackIgnore: true*/ dirPath, fs.constants.W_OK);
     return true;
   } catch {
     return false;
@@ -42,13 +46,13 @@ export const DATA_DIR = (() => {
   const primary = getDataDir();
   if (tryEnsureDir(primary)) return primary;
   // Fallback to ~/.pod if primary is inaccessible (EACCES/EPERM)
-  const fallback = path.join(os.homedir(), ".pod");
+  const fallback = path.join(/*turbopackIgnore: true*/ os.homedir(), ".pod");
   warn("sqlite", `DATA_DIR ${primary} not accessible, falling back to ${fallback}`);
   tryEnsureDir(fallback);
   return fallback;
 })();
 
-export const SQLITE_FILE = path.join(DATA_DIR, SQLITE_FILE_NAME);
+export const SQLITE_FILE = path.join(/*turbopackIgnore: true*/ DATA_DIR, SQLITE_FILE_NAME);
 
 let dbInstance = null;
 let schemaReady = false;
@@ -170,9 +174,9 @@ export function getDatabase() {
   // DATA_DIR is already ensured at module load time via tryEnsureDir
 
   // Under Bun, better-sqlite3 (native N-API) is unsupported — use the
-  // built-in `bun:sqlite` instead. Both modules are kept external in
-  // next.config.mjs so webpack leaves the require calls untouched and
-  // they're resolved by the runtime's createRequire at call time.
+  // built-in `bun:sqlite` instead. `bun:sqlite` is marked as a server
+  // external package in next.config.mjs, so the runtime resolves it via
+  // createRequire at call time.
   const Database = typeof Bun !== "undefined" ? require("bun:sqlite").Database : require("better-sqlite3");
   const db = new Database(SQLITE_FILE);
   applyPragmas(db);

@@ -161,6 +161,16 @@ describe("clearMemories", () => {
     const list = await listMemories({ apiKeyId: "mem-test-2" });
     expect(list.total).toBeGreaterThanOrEqual(1);
   });
+
+  it("removes all memories when apiKeyId is omitted", async () => {
+    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.js");
+    await createMemory({ apiKeyId: KEY, type: "factual", content: "mine" });
+    await createMemory({ apiKeyId: "mem-test-2", type: "factual", content: "theirs" });
+    const removed = await clearMemories();
+    expect(removed).toBeGreaterThanOrEqual(2);
+    expect((await listMemories({ apiKeyId: KEY })).total).toBe(0);
+    expect((await listMemories({ apiKeyId: "mem-test-2" })).total).toBe(0);
+  });
 });
 
 // ── listMemories ──────────────────────────────────────────────────────────────
@@ -521,6 +531,38 @@ describe("GET /api/memory", () => {
     const data = await res.json();
     expect(data.total).toBeGreaterThanOrEqual(1);
     expect(Array.isArray(data.data)).toBe(true);
+  });
+});
+
+describe("DELETE /api/memory", () => {
+  it("clears all memories and returns removed count", async () => {
+    const memRoute = await import("@/app/api/memory/route.js");
+    await memRoute.POST(
+      new Request("http://localhost/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKeyId: "mem-route", type: "factual", key: "pref:clear-a", content: "a" }),
+      }),
+    );
+    await memRoute.POST(
+      new Request("http://localhost/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKeyId: "mem-test-2", type: "factual", key: "pref:clear-b", content: "b" }),
+      }),
+    );
+
+    const delRes = await memRoute.DELETE(new Request("http://localhost/api/memory", { method: "DELETE" }));
+    expect(delRes.status).toBe(200);
+    const delJson = await delRes.json();
+    expect(delJson.success).toBe(true);
+    expect(delJson.scope).toBe("all");
+    expect(Number(delJson.removed)).toBeGreaterThanOrEqual(2);
+
+    const listRes = await memRoute.GET(new Request("http://localhost/api/memory"));
+    expect(listRes.status).toBe(200);
+    const listJson = await listRes.json();
+    expect(listJson.total).toBe(0);
   });
 });
 

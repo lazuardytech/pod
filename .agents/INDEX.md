@@ -1,22 +1,28 @@
 # .agents Index
 
-Knowledge base for Pod contributors. Synced at **v0.0.76**.
+Compact project knowledge for contributors and coding agents.
 
-- [Overview](knowledge/01-overview.md)
-- [Architecture](knowledge/02-architecture.md)
-- [Providers & Routing](knowledge/03-providers-and-routing.md)
-- [API Surface](knowledge/04-api-surface.md)
-- [Dev Workflow](knowledge/05-dev-workflow.md)
-- [Conventions](knowledge/06-conventions.md)
-- [Gotchas](knowledge/07-gotchas.md)
-- [Skills System](knowledge/08-skills-system.md)
-- [Fork Status](knowledge/09-fork-status.md)
-- [Open Issues (historical)](knowledge/10-open-issues.md)
+## Current Baseline
+
+- Project: `pod`
+- Version: `v0.0.78`
+- Runtime: bun + Next.js 16 + local `open-sse`
+- Focus areas: routing reliability, provider compatibility, security hardening, PWA/offline-first
+
+## Core Knowledge
+
+- [01 Overview](knowledge/01-overview.md)
+- [02 Architecture](knowledge/02-architecture.md)
+- [03 Providers and Routing](knowledge/03-providers-and-routing.md)
+- [04 API Surface](knowledge/04-api-surface.md)
+- [05 Dev Workflow](knowledge/05-dev-workflow.md)
+- [06 Conventions](knowledge/06-conventions.md)
+- [07 Gotchas](knowledge/07-gotchas.md)
+- [08 Skills System](knowledge/08-skills-system.md)
+- [09 Fork Status](knowledge/09-fork-status.md)
+- [10 Open Issues](knowledge/10-open-issues.md)
+- [20 Edit Tool Guidelines](knowledge/20-edit-tool-guidelines.md)
 
 ## Reports
 
-- [Release rollup v0.0.32–v0.0.56](reports/release-rollup-v0.0.32-v0.0.56.md)
-- [Vercel relay robustness v0.0.55](reports/vercel-relay-robustness-v0.0.55.md)
-- [CodeQL cleanup v0.0.50](reports/codeql-cleanup-v0.0.50.md)
-- [Verification summary v0.0.48](reports/verify-summary-v0.0.48.md)
-- [Provider smoketest v0.0.46](reports/provider-smoketest-v0.0.46.md)
+Historical reports are under `.agents/reports/` and now use concise executive format.

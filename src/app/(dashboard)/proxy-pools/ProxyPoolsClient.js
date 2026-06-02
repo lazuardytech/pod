@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 function getStatusVariant(status) {
   if (status === "active") return "success";
@@ -529,7 +530,7 @@ export default function ProxyPoolsPage() {
 
         {(selectedIds.length > 0 || healthChecking) && (
           <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
-            <span className="material-symbols-outlined text-[18px] text-primary">checklist</span>
+            <LucideIcon name="checklist" className="text-[18px] text-primary" />
             <span className="text-xs font-medium text-primary">
               {selectedIds.length > 0 ? `${selectedIds.length} selected` : "All pools"}
             </span>
@@ -648,19 +649,18 @@ export default function ProxyPoolsPage() {
                     title="Test proxy"
                     disabled={testingId === pool.id}
                   >
-                    <span
-                      className="material-symbols-outlined text-[18px]"
+                    <LucideIcon
+                      name={testingId === pool.id ? "progress_activity" : "science"}
+                      className="text-[18px]"
                       style={testingId === pool.id ? { animation: "spin 1s linear infinite" } : undefined}
-                    >
-                      {testingId === pool.id ? "progress_activity" : "science"}
-                    </span>
+                    />
                   </button>
                   <button
                     onClick={() => openEditModal(pool)}
                     className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
                     title="Edit"
                   >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                    <LucideIcon name="edit" className="text-[18px]" />
                   </button>
                   <button
                     onClick={() =>
@@ -674,7 +674,7 @@ export default function ProxyPoolsPage() {
                     className="p-2 rounded hover:bg-red-500/10 text-red-500"
                     title="Delete"
                   >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                    <LucideIcon name="delete" className="text-[18px]" />
                   </button>
                 </div>
               </div>

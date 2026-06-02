@@ -1,92 +1,24 @@
 # API Surface
 
-All public endpoints rewrite via `next.config.mjs`: `/v1/:path*` → `/api/v1/:path*`, `/codex/:path*` → `/api/v1/responses`.
+## Compatibility Endpoints
 
-## Public Compatibility Endpoints
+- OpenAI-style: `/v1/chat/completions`, `/v1/responses`, `/v1/embeddings`, etc.
+- Anthropic-style: `/v1/messages`, `/v1/messages/count_tokens`
+- Gemini-style: `/v1beta/models` and subpaths
 
-### OpenAI-Compatible
+## Dashboard/Management Endpoints
 
-| Endpoint | Auth |
-|---|---|
-| `POST /v1/chat/completions` | API key + rate limit |
-| `POST /v1/responses` | API key + rate limit |
-| `POST /v1/responses/compact` | API key + rate limit |
-| `POST /v1/embeddings` | API key + rate limit |
-| `POST /v1/audio/speech` | API key + rate limit |
-| `POST /v1/audio/transcriptions` | API key + rate limit |
-| `POST /v1/images/generations` | API key + rate limit |
-| `GET /v1/models` | API key (optional, enforced when `requireApiKey=true`) |
-| `GET /v1/models/{kind}` | API key (optional, enforced when `requireApiKey=true`) |
-| `POST /v1/search` | API key + rate limit |
-| `POST /v1/web/fetch` | API key + rate limit |
+- Providers, API keys, combos, settings, usage, proxy pools, tunnels, health
 
-### Anthropic-Compatible
+## Auth and Rate Limit Rules
 
-| Endpoint | Auth |
-|---|---|
-| `POST /v1/messages` | API key + rate limit |
-| `POST /v1/messages/count_tokens` | API key + rate limit |
+- `/v1/*` write routes enforce API key rate limiting
+- Model-list routes enforce auth when `requireApiKey=true`
+- `/api/monitoring/health` mirrors auth behavior
+- `/api/health` is always public heartbeat
 
-### Gemini-Compatible
+## Streaming Endpoints
 
-| Endpoint | Auth |
-|---|---|
-| `GET /v1beta/models` | API key (enforced when `requireApiKey=true`) |
-| `* /v1beta/models/{...path}` | API key |
-
-### Ollama-Compatible
-
-| Endpoint | Auth |
-|---|---|
-| `POST /v1/api/chat` | API key + rate limit |
-
-## Dashboard & Management APIs
-
-| Group | Endpoints |
-|---|---|
-| Auth | `POST /api/auth/login`, `POST /api/auth/logout` |
-| Providers | `providers/*`, `provider-nodes/*` (CRUD, test, rename, validate) |
-| API Keys | `keys/*` |
-| Combos | `combos/*` |
-| Usage | `usage/*` (stats, chart, history, logs, stream, request-details) |
-| Cache | `GET/DELETE /api/cache`, `GET/PUT /api/settings/cache-config` |
-| Memory | `GET/POST /api/memory`, `GET/PATCH/DELETE /api/memory/[id]` |
-| Settings | `settings/*` (appearance, database, proxy, cache, memory, pricing) |
-| Tunnel | `tunnel/*` (status, enable, disable, tailscale-*) |
-| Proxy Pools | `proxy-pools/*` (CRUD, test, stream, vercel-deploy) |
-| OAuth | `oauth/[provider]/*` (authorize, exchange, device-code, poll, import) |
-| Translator | `translator/*` (load, save, send, translate, console-logs) |
-| Pricing | `GET/POST /api/pricing/sync` |
-| Cloud | `cloud/*` (sync, auth, credentials, models) |
-| Monitoring | `GET /api/health` (public), `GET /api/monitoring/health` (auth) + SSE stream |
-
-## SSE Streaming Endpoints
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/usage/request-logs/stream` | Live request log entries |
-| `GET /api/proxy-pools/stream` | Proxy pool events |
-| `GET /api/console-log` | Console logs stream |
-| `GET /api/monitoring/health/stream` | Health snapshot every 10s |
-
-## Per-Key Rate Limiting
-
-`withApiKeyRateLimit` wraps all `/api/v1/*` POST routes. `checkRateLimitByKey` wraps GET model listing endpoints (`/v1/models`, `/[kind]`, `/v1beta/models`). Both enforce:
-- **unlimited**: no limiter
-- **limited**: req/min + concurrent request ceilings
-- 429 with `Retry-After` when exceeded
-- In-memory counters (single-process only — commented warning)
-
-## Health Monitoring
-
-**`GET /api/health`** — Always public. Returns `{ ok: true }`. Used by Docker HEALTHCHECK.
-
-**`GET /api/monitoring/health`** — Full snapshot: system info, DB health, provider breakdown (by status/by provider), circuit breaker states, rate-limit status, model lockouts, cache stats (semantic/prompt/memory/connection-name), in-flight requests, pending requests, sync status, queue depths. Protected when `requireApiKey=true`.
-
-**`GET /api/monitoring/health/stream`** — SSE stream of full snapshots every 10s. Same auth as snapshot.
-
-## SSE Connection Cap
-
-All SSE streaming endpoints enforce a cap of 100 concurrent connections. Returns HTTP 503 with `{ error: "Too many connections" }` when exceeded. Shared utility at `src/app/api/monitoring/_sseConnectionCap.js`.
-
-All SSE routes also enforce a **5-minute idle timeout** — idle connections are auto-closed. Prevents abandoned stream structs from consuming resources.
+- Usage, request logs, proxy pools, health streams
+- SSE cap: 100 connections per route
+- SSE idle timeout: 5 minutes

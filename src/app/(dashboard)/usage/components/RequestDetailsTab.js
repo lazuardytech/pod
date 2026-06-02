@@ -1,37 +1,53 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import Button from "@/shared/components/Button";
 import Card from "@/shared/components/Card";
 import DatePicker from "@/shared/components/DatePicker";
 import Drawer from "@/shared/components/Drawer";
 import Pagination from "@/shared/components/Pagination";
+import Select from "@/shared/components/Select";
 import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
+
+const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:list";
+const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY = "usage:provider-nodes";
+const OFFLINE_USAGE_DETAILS_CACHE_KEY = "usage:request-details";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
+const DEFAULT_PAGE_SIZE = 20;
 
 let providerNameCache = null;
 let providerNodesCache = null;
 
 async function fetchProviderNames() {
   if (providerNameCache && providerNodesCache) {
-    return { providerNameCache, providerNodesCache };
+    return { providerNameCache, providerNodesCache, source: "memory" };
   }
 
-  const nodesRes = await fetch("/api/provider-nodes");
-  const nodesData = await nodesRes.json();
-  const nodes = nodesData.nodes || [];
-  providerNodesCache = {};
-
-  for (const node of nodes) {
-    providerNodesCache[node.id] = node.name;
-  }
-
-  providerNameCache = {
-    ...AI_PROVIDERS,
-    ...providerNodesCache,
+  const applyNodesData = (nodesData) => {
+    const nodes = nodesData?.nodes || [];
+    providerNodesCache = {};
+    for (const node of nodes) {
+      providerNodesCache[node.id] = node.name;
+    }
+    providerNameCache = {
+      ...AI_PROVIDERS,
+      ...providerNodesCache,
+    };
   };
 
-  return { providerNameCache, providerNodesCache };
+  const result = await loadJsonStaleWhileRevalidate({
+    url: "/api/provider-nodes",
+    cacheKey: OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY,
+    maxStaleMs: OFFLINE_MAX_STALE_MS,
+    onCacheData: applyNodesData,
+    onFreshData: applyNodesData,
+  });
+
+  return { providerNameCache, providerNodesCache, source: result.source };
 }
 
 function getProviderName(providerId, cache) {
@@ -63,17 +79,13 @@ function CollapsibleSection({ title, children, defaultOpen = false, icon = null 
         className="w-full flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
       >
         <div className="flex items-center gap-2">
-          {icon && <span className="material-symbols-outlined text-[18px] text-text-muted">{icon}</span>}
+          {icon && <LucideIcon name={icon} className="text-[18px] text-text-muted" />}
           <span className="font-semibold text-sm text-text-main">{title}</span>
         </div>
-        <span
-          className={cn(
-            "material-symbols-outlined text-[20px] text-text-muted transition-transform duration-200",
-            isOpen ? "rotate-90" : "",
-          )}
-        >
-          chevron_right
-        </span>
+        <LucideIcon
+          name="chevron_right"
+          className={cn("text-[20px] text-text-muted transition-transform duration-200", isOpen ? "rotate-90" : "")}
+        />
       </button>
 
       {isOpen && <div className="p-4 border-t border-black/5 dark:border-white/5">{children}</div>}
@@ -106,23 +118,68 @@ export default function RequestDetailsTab() {
     startDate: null,
     endDate: null,
   });
+  const offlineNoticeShownRef = useRef(false);
+
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached request data.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
+  }, []);
 
   const fetchProviders = useCallback(async () => {
     try {
-      const res = await fetch("/api/usage/providers");
-      const data = await res.json();
-      setProviders(data.providers || []);
+      const [providersResult, namesResult] = await Promise.allSettled([
+        loadJsonStaleWhileRevalidate({
+          url: "/api/usage/providers",
+          cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
+          maxStaleMs: OFFLINE_MAX_STALE_MS,
+          onCacheData: (data) => {
+            setProviders(data?.providers || []);
+          },
+          onFreshData: (data) => {
+            setProviders(data?.providers || []);
+          },
+        }),
+        fetchProviderNames(),
+      ]);
 
-      const cache = await fetchProviderNames();
-      setProviderNameCache(cache.providerNameCache);
+      if (namesResult.status === "fulfilled") {
+        setProviderNameCache(namesResult.value.providerNameCache);
+      }
+
+      const sources = [];
+      if (providersResult.status === "fulfilled") sources.push(providersResult.value?.source);
+      if (namesResult.status === "fulfilled") sources.push(namesResult.value?.source);
+
+      if (sources.includes("cache")) notifyOfflineCache();
+      else if (sources.includes("network")) clearOfflineCacheNotice();
     } catch (error) {
       console.error("Failed to fetch providers:", error);
+    }
+  }, [clearOfflineCacheNotice, notifyOfflineCache]);
+
+  const applyRequestDetailsData = useCallback((data) => {
+    setDetails(data?.details || []);
+    if (data?.pagination) {
+      setPagination((prev) => ({ ...prev, ...data.pagination }));
     }
   }, []);
 
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
+
+    const isDefaultSnapshot =
+      pagination.page === 1 &&
+      pagination.pageSize === DEFAULT_PAGE_SIZE &&
+      !filters.provider &&
+      !filters.startDate &&
+      !filters.endDate;
+
     try {
       const params = new URLSearchParams({
         page: pagination.page.toString(),
@@ -132,22 +189,41 @@ export default function RequestDetailsTab() {
       if (filters.startDate) params.append("startDate", filters.startDate.toISOString());
       if (filters.endDate) params.append("endDate", filters.endDate.toISOString());
 
-      const res = await fetch(`/api/usage/request-details?${params}`);
+      if (isDefaultSnapshot) {
+        const result = await loadJsonStaleWhileRevalidate({
+          url: `/api/usage/request-details?${params.toString()}`,
+          cacheKey: OFFLINE_USAGE_DETAILS_CACHE_KEY,
+          maxStaleMs: OFFLINE_MAX_STALE_MS,
+          onCacheData: applyRequestDetailsData,
+          onFreshData: applyRequestDetailsData,
+        });
+        if (result.source === "cache") notifyOfflineCache();
+        else clearOfflineCacheNotice();
+        return;
+      }
+
+      const res = await fetch(`/api/usage/request-details?${params.toString()}`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-
-      setDetails(data.details || []);
-      setPagination((prev) => ({ ...prev, ...data.pagination }));
+      applyRequestDetailsData(data);
+      clearOfflineCacheNotice();
     } catch (error) {
       console.error("Failed to fetch request details:", error);
       setFetchError(error.message || "Failed to fetch request details");
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize, filters]);
+  }, [
+    applyRequestDetailsData,
+    clearOfflineCacheNotice,
+    filters,
+    notifyOfflineCache,
+    pagination.page,
+    pagination.pageSize,
+  ]);
 
   useEffect(() => {
     fetchProviders();
@@ -182,24 +258,27 @@ export default function RequestDetailsTab() {
             <label htmlFor="provider-filter" className="text-sm font-medium text-text-main">
               Provider
             </label>
-            <select
+            <Select
               id="provider-filter"
-              value={filters.provider}
-              onChange={(e) => setFilters({ ...filters, provider: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
+              value={filters.provider || "__all__"}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  provider: e.target.value === "__all__" ? "" : e.target.value,
+                })
+              }
+              options={[
+                { value: "__all__", label: "All Providers" },
+                ...providers.map((provider) => ({ value: provider.id, label: provider.name })),
+              ]}
+              placeholder="Select provider"
+              className="w-full min-w-0"
+              selectClassName={cn(
+                "h-9 py-0 px-3 pr-9 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
                 "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20",
-                "w-full min-w-0 cursor-pointer",
+                "hover:border-black/20 dark:hover:border-white/20",
               )}
-              style={{ colorScheme: "auto" }}
-            >
-              <option value="">All Providers</option>
-              {providers.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="flex min-w-0 flex-col gap-2">
@@ -255,7 +334,7 @@ export default function RequestDetailsTab() {
                 <tr>
                   <td colSpan="7" className="p-8 text-center text-text-muted">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                      <LucideIcon name="progress_activity" className="animate-spin text-[20px]" />
                       Loading...
                     </div>
                   </td>
@@ -264,7 +343,7 @@ export default function RequestDetailsTab() {
                 <tr>
                   <td colSpan="7" className="p-8 text-center text-text-muted">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined text-[20px] text-warning-red">error</span>
+                      <LucideIcon name="error" className="text-[20px] text-warning-red" />
                       Failed to load request details: {fetchError}
                     </div>
                   </td>
@@ -404,7 +483,7 @@ export default function RequestDetailsTab() {
                 {selectedDetail.response?.thinking && (
                   <div className="mb-4">
                     <h4 className="font-semibold text-text-main mb-2 flex items-center gap-2 text-xs uppercase tracking-wide opacity-70">
-                      <span className="material-symbols-outlined text-[16px]">psychology</span>
+                      <LucideIcon name="psychology" className="text-[16px]" />
                       Thinking Process
                     </h4>
                     <pre className="max-h-[200px] max-w-full overflow-auto rounded-lg border border-amber-200 bg-amber-50 p-3 font-mono text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 sm:p-4">

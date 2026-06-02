@@ -1,8 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AI_PROVIDERS, FREE_PROVIDERS } from "@/shared/constants/providers";
+import LucideIcon from "@/shared/components/LucideIcon";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 
 // Keep providers without serviceKinds (default LLM) or with "llm" in serviceKinds
 function isLLMProvider(id) {
@@ -207,6 +210,10 @@ const PERIODS = [
   { value: "60d", label: "60D" },
 ];
 
+const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:connected";
+const OFFLINE_USAGE_STATS_CACHE_KEY = "usage:stats";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
+
 export default function UsageStats({ period: periodProp, setPeriod: setPeriodProp, hidePeriodSelector = false } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -221,48 +228,106 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
   const [viewMode, setViewMode] = useState("costs");
   const [providers, setProviders] = useState([]);
   const [periodLocal, setPeriodLocal] = useState("7d");
+  const offlineNoticeShownRef = useRef(false);
+  const hasLoadedStatsRef = useRef(false);
   const period = periodProp ?? periodLocal;
   const setPeriod = setPeriodProp ?? setPeriodLocal;
+
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached usage data.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
+  }, []);
+
+  const applyConnectedProviders = useCallback((payload) => {
+    const seen = new Set();
+    const unique = (payload?.connections || []).filter((c) => {
+      if (c.isActive === false) return false;
+      if (!isLLMProvider(c.provider)) return false;
+      if (seen.has(c.provider)) return false;
+      seen.add(c.provider);
+      return true;
+    });
+
+    const noAuthProviders = Object.values(FREE_PROVIDERS)
+      .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))
+      .map((p) => ({ provider: p.id, name: p.name }));
+
+    setProviders([...unique, ...noAuthProviders]);
+  }, []);
 
   // Fetch connected providers once, deduplicate by provider type
   // Always include noAuth free providers (e.g. opencode) regardless of connections
   useEffect(() => {
-    fetch("/api/providers")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        const seen = new Set();
-        const unique = (d?.connections || []).filter((c) => {
-          if (c.isActive === false) return false;
-          if (!isLLMProvider(c.provider)) return false;
-          if (seen.has(c.provider)) return false;
-          seen.add(c.provider);
-          return true;
-        });
-        const noAuthProviders = Object.values(FREE_PROVIDERS)
-          .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))
-          .map((p) => ({ provider: p.id, name: p.name }));
-        setProviders([...unique, ...noAuthProviders]);
+    let cancelled = false;
+
+    loadJsonStaleWhileRevalidate({
+      url: "/api/providers",
+      cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
+      maxStaleMs: OFFLINE_MAX_STALE_MS,
+      onCacheData: (payload) => {
+        if (cancelled) return;
+        applyConnectedProviders(payload);
+      },
+      onFreshData: (payload) => {
+        if (cancelled) return;
+        applyConnectedProviders(payload);
+      },
+    })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.source === "cache") notifyOfflineCache();
+        else clearOfflineCacheNotice();
       })
       .catch(() => {});
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyConnectedProviders, clearOfflineCacheNotice, notifyOfflineCache]);
 
   // Fetch filtered stats via REST when period changes
   useEffect(() => {
+    let cancelled = false;
+
     // First load: show full spinner; subsequent: show subtle fetching indicator
-    if (!stats) setLoading(true);
+    if (!hasLoadedStatsRef.current) setLoading(true);
     else setFetching(true);
 
-    fetch(`/api/usage/stats?period=${period}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) setStats((prev) => ({ ...prev, ...data }));
+    loadJsonStaleWhileRevalidate({
+      url: `/api/usage/stats?period=${period}`,
+      cacheKey: `${OFFLINE_USAGE_STATS_CACHE_KEY}:${period}`,
+      maxStaleMs: OFFLINE_MAX_STALE_MS,
+      onCacheData: (data) => {
+        if (cancelled || !data) return;
+        setStats((prev) => ({ ...(prev || {}), ...data }));
+      },
+      onFreshData: (data) => {
+        if (cancelled || !data) return;
+        setStats((prev) => ({ ...(prev || {}), ...data }));
+      },
+    })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.source === "cache") notifyOfflineCache();
+        else clearOfflineCacheNotice();
       })
       .catch(() => {})
       .finally(() => {
+        if (cancelled) return;
+        hasLoadedStatsRef.current = true;
         setLoading(false);
         setFetching(false);
       });
-  }, [period]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clearOfflineCacheNotice, notifyOfflineCache, period]);
 
   // SSE connection - real-time updates for activeRequests + recentRequests only
   useEffect(() => {
@@ -454,7 +519,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
 
   const spinner = (
     <div className="flex items-center justify-center py-12 text-text-muted">
-      <span className="material-symbols-outlined text-[32px] animate-spin">progress_activity</span>
+      <LucideIcon name="progress_activity" className="text-[32px] animate-spin" />
     </div>
   );
 
@@ -475,11 +540,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
               </button>
             ))}
           </div>
-          {fetching && (
-            <span className="material-symbols-outlined text-[16px] text-text-muted animate-spin">
-              progress_activity
-            </span>
-          )}
+          {fetching && <LucideIcon name="progress_activity" className="text-[16px] text-text-muted animate-spin" />}
         </div>
       )}
 

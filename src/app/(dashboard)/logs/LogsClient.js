@@ -7,6 +7,7 @@ import SegmentedControl from "@/shared/components/SegmentedControl";
 import { cn } from "@/shared/utils/cn";
 import ConsoleLogClient from "./ConsoleLogClient";
 import ProxyLogsTab from "./ProxyLogsTab";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const TABS = [
   { key: "request-logs", label: "Request Logs", icon: "receipt_long" },
@@ -61,7 +62,7 @@ function RequestLogsToolbar({
         className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
       >
-        <span className={cn("material-symbols-outlined text-[15px]", refreshing && "animate-spin")}>refresh</span>
+        <LucideIcon name="refresh" className={cn("text-[15px]", refreshing && "animate-spin")} />
       </button>
       <button
         onClick={() => setRecording((v) => !v)}
@@ -101,7 +102,7 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
         className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
       >
-        <span className={cn("material-symbols-outlined text-[15px]", refreshing && "animate-spin")}>refresh</span>
+        <LucideIcon name="refresh" className={cn("text-[15px]", refreshing && "animate-spin")} />
       </button>
       <button
         onClick={() => setLive((v) => !v)}
@@ -129,7 +130,7 @@ function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refresh
         className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
       >
-        <span className={cn("material-symbols-outlined text-[15px]", refreshing && "animate-spin")}>refresh</span>
+        <LucideIcon name="refresh" className={cn("text-[15px]", refreshing && "animate-spin")} />
       </button>
       <button
         onClick={() => setLive((v) => !v)}
@@ -154,14 +155,14 @@ function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refresh
             : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain",
         )}
       >
-        <span className="material-symbols-outlined text-[13px]">vertical_align_bottom</span>
+        <LucideIcon name="vertical_align_bottom" className="text-[13px]" />
         Auto-scroll
       </button>
       <button
         onClick={onClear}
         className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:bg-warning-red/8 hover:border-warning-red/30 hover:text-warning-red transition-colors duration-100"
       >
-        <span className="material-symbols-outlined text-[13px]">delete</span>
+        <LucideIcon name="delete" className="text-[13px]" />
         Clear
       </button>
     </div>

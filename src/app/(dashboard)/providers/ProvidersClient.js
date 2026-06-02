@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardSkeleton, Input, Modal, Select, Toggle } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { APIKEY_PROVIDERS, OAUTH_PROVIDERS, WEB_COOKIE_PROVIDERS } from "@/shared/constants/config";
 import {
@@ -14,10 +15,16 @@ import {
   FREE_TIER_PROVIDERS,
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
+import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 import { getErrorCode, getRelativeTime } from "@/shared/utils";
 import { useHeaderActionStore } from "@/store/headerActionStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import ModelAvailabilityBadge from "./components/ModelAvailabilityBadge";
+
+const OFFLINE_PROVIDERS_CACHE_KEY = "providers:connections";
+const OFFLINE_PROVIDER_NODES_CACHE_KEY = "providers:nodes";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 function getStatusDisplay(connected, error, errorCode) {
   const parts = [];
@@ -86,6 +93,7 @@ export default function ProvidersPage() {
   const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] = useState(false);
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
+  const offlineNoticeShownRef = useRef(false);
   const searchQuery = useHeaderSearchStore((s) => s.query);
   const registerSearch = useHeaderSearchStore((s) => s.register);
   const unregisterSearch = useHeaderSearchStore((s) => s.unregister);
@@ -101,6 +109,16 @@ export default function ProvidersPage() {
     setShowConnectedOnly(next);
     window.localStorage.setItem("providers:connectedOnly", String(next));
   };
+
+  const notifyOfflineCache = useCallback(() => {
+    if (offlineNoticeShownRef.current) return;
+    offlineNoticeShownRef.current = true;
+    toast.info("Network unavailable. Showing cached data.");
+  }, []);
+
+  const clearOfflineCacheNotice = useCallback(() => {
+    offlineNoticeShownRef.current = false;
+  }, []);
 
   useEffect(() => {
     registerSearch("Search providers...");
@@ -131,11 +149,40 @@ export default function ProvidersPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [connectionsRes, nodesRes] = await Promise.all([fetch("/api/providers"), fetch("/api/provider-nodes")]);
-        const connectionsData = await connectionsRes.json();
-        const nodesData = await nodesRes.json();
-        if (connectionsRes.ok) setConnections(connectionsData.connections || []);
-        if (nodesRes.ok) setProviderNodes(nodesData.nodes || []);
+        const [connectionsResult, nodesResult] = await Promise.allSettled([
+          loadJsonStaleWhileRevalidate({
+            url: "/api/providers",
+            cacheKey: OFFLINE_PROVIDERS_CACHE_KEY,
+            maxStaleMs: OFFLINE_MAX_STALE_MS,
+            onCacheData: (data) => {
+              setConnections(data?.connections || []);
+            },
+            onFreshData: (data) => {
+              setConnections(data?.connections || []);
+            },
+          }),
+          loadJsonStaleWhileRevalidate({
+            url: "/api/provider-nodes",
+            cacheKey: OFFLINE_PROVIDER_NODES_CACHE_KEY,
+            maxStaleMs: OFFLINE_MAX_STALE_MS,
+            onCacheData: (data) => {
+              setProviderNodes(data?.nodes || []);
+            },
+            onFreshData: (data) => {
+              setProviderNodes(data?.nodes || []);
+            },
+          }),
+        ]);
+
+        const usedCache = [connectionsResult, nodesResult].some(
+          (result) => result.status === "fulfilled" && result.value?.source === "cache",
+        );
+        const gotFreshData = [connectionsResult, nodesResult].some(
+          (result) => result.status === "fulfilled" && result.value?.source === "network",
+        );
+
+        if (usedCache) notifyOfflineCache();
+        else if (gotFreshData) clearOfflineCacheNotice();
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -143,7 +190,7 @@ export default function ProvidersPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [clearOfflineCacheNotice, notifyOfflineCache]);
 
   const getProviderStats = (providerId, authType) => {
     const providerConnections = connections.filter((c) => c.provider === providerId && c.authType === authType);
@@ -182,15 +229,22 @@ export default function ProvidersPage() {
     setConnections((prev) =>
       prev.map((c) => (c.provider === providerId && c.authType === authType ? { ...c, isActive: newActive } : c)),
     );
-    await Promise.allSettled(
+
+    const results = await Promise.allSettled(
       providerConns.map((c) =>
-        fetch(`/api/providers/${c.id}`, {
+        mutateJsonWithOfflineQueue({
+          url: `/api/providers/${c.id}`,
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isActive: newActive }),
+          body: { isActive: newActive },
+          queueMeta: { feature: "providers-toggle", providerId, authType, connectionId: c.id },
         }),
       ),
     );
+
+    const failedCount = results.filter((r) => r.status === "rejected").length;
+    if (failedCount > 0) {
+      toast.error(`${failedCount} provider updates failed`);
+    }
   };
 
   const handleBatchTest = async (mode, providerId = null) => {
@@ -265,9 +319,10 @@ export default function ProvidersPage() {
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
       {!loading && !hasAnyResult && (
         <div className="text-center py-8 border border-dashed border-border rounded-xl">
-          <span className="material-symbols-outlined text-[32px] text-text-muted mb-2">
-            {showConnectedOnly ? "wifi_off" : "search_off"}
-          </span>
+          <LucideIcon
+            name={showConnectedOnly ? "wifi_off" : "search_off"}
+            className="text-[32px] text-text-muted mb-2"
+          />
           <p className="text-text-muted text-sm">
             {showConnectedOnly ? "No connected providers available" : "No providers match your search"}
           </p>
@@ -306,7 +361,7 @@ export default function ProvidersPage() {
           </div>
         ) : compatibleProviders.length === 0 && anthropicCompatibleProviders.length === 0 ? (
           <div className="mt-2 flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
-            <span className="material-symbols-outlined text-[18px]">extension</span>
+            <LucideIcon name="extension" className="text-[18px]" />
             <span>No custom providers available</span>
           </div>
         ) : (
@@ -343,11 +398,10 @@ export default function ProvidersPage() {
                 title="Test all OAuth connections"
                 aria-label="Test all OAuth connections"
               >
-                <span
-                  className={`material-symbols-outlined text-[14px]${testingMode === "oauth" ? " animate-spin" : ""}`}
-                >
-                  {testingMode === "oauth" ? "progress_activity" : "play_arrow"}
-                </span>
+                <LucideIcon
+                  name={testingMode === "oauth" ? "progress_activity" : "play_arrow"}
+                  className={`text-[14px]${testingMode === "oauth" ? " animate-spin" : ""}`}
+                />
                 {testingMode === "oauth" ? "Testing..." : "Test All"}
               </button>
             </div>
@@ -385,9 +439,10 @@ export default function ProvidersPage() {
               title="Test all Free connections"
               aria-label="Test all Free provider connections"
             >
-              <span className={`material-symbols-outlined text-[14px]${testingMode === "free" ? " animate-spin" : ""}`}>
-                {testingMode === "free" ? "progress_activity" : "play_arrow"}
-              </span>
+              <LucideIcon
+                name={testingMode === "free" ? "progress_activity" : "play_arrow"}
+                className={`text-[14px]${testingMode === "free" ? " animate-spin" : ""}`}
+              />
               {testingMode === "free" ? "Testing..." : "Test All"}
             </button>
           </div>
@@ -434,11 +489,10 @@ export default function ProvidersPage() {
               title="Test all API Key connections"
               aria-label="Test all API Key connections"
             >
-              <span
-                className={`material-symbols-outlined text-[14px]${testingMode === "apikey" ? " animate-spin" : ""}`}
-              >
-                {testingMode === "apikey" ? "progress_activity" : "play_arrow"}
-              </span>
+              <LucideIcon
+                name={testingMode === "apikey" ? "progress_activity" : "play_arrow"}
+                className={`text-[14px]${testingMode === "apikey" ? " animate-spin" : ""}`}
+              />
               {testingMode === "apikey" ? "Testing..." : "Test All"}
             </button>
           </div>
@@ -519,7 +573,7 @@ export default function ProvidersPage() {
                 className="p-1 rounded-lg hover:bg-bg text-text-muted hover:text-text-main transition-colors"
                 aria-label="Close test results"
               >
-                <span className="material-symbols-outlined text-lg">close</span>
+                <LucideIcon name="close" className="text-lg" />
               </button>
             </div>
             <div className="p-5">
@@ -573,7 +627,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                 {allDisabled ? (
                   <Badge variant="default" size="sm">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[12px]">pause_circle</span>
+                      <LucideIcon name="pause_circle" className="text-[12px]" />
                       Disabled
                     </span>
                   </Badge>
@@ -681,7 +735,7 @@ function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle })
                 {allDisabled ? (
                   <Badge variant="default" size="sm">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[12px]">pause_circle</span>
+                      <LucideIcon name="pause_circle" className="text-[12px]" />
                       Disabled
                     </span>
                   </Badge>
@@ -1136,7 +1190,7 @@ function ProviderTestResultsView({ results }) {
   if (results.error && !results.results) {
     return (
       <div className="text-center py-6">
-        <span className="material-symbols-outlined text-red-500 text-[32px] mb-2 block">error</span>
+        <LucideIcon name="error" className="text-red-500 text-[32px] mb-2 block" />
         <p className="text-sm text-red-400">{results.error}</p>
       </div>
     );
@@ -1168,9 +1222,10 @@ function ProviderTestResultsView({ results }) {
           key={r.connectionId || i}
           className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-black/[0.03] px-3 py-2 text-xs dark:bg-white/[0.03] sm:flex-nowrap"
         >
-          <span className={`material-symbols-outlined text-[16px] ${r.valid ? "text-emerald-500" : "text-red-500"}`}>
-            {r.valid ? "check_circle" : "error"}
-          </span>
+          <LucideIcon
+            name={r.valid ? "check_circle" : "error"}
+            className={`text-[16px] ${r.valid ? "text-emerald-500" : "text-red-500"}`}
+          />
           <div className="min-w-0 flex-[1_1_160px]">
             <span className="block truncate font-medium sm:inline">{r.connectionName}</span>
             <span className="block truncate text-text-muted sm:ml-1.5 sm:inline">({r.provider})</span>

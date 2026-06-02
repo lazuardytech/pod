@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/shared/utils/cn";
 import RequestLogDetail from "./RequestLogDetail";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -252,9 +253,10 @@ export default function RequestLogger({
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-[14px] text-fog-grey">
-              search
-            </span>
+            <LucideIcon
+              name="search"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[14px] text-fog-grey"
+            />
             <input
               aria-label="Search request logs"
               type="text"
@@ -310,13 +312,13 @@ export default function RequestLogger({
       <div className="rounded-[6px] border border-charcoal-grey overflow-hidden">
         <div className="overflow-x-auto h-[70vh] overflow-y-auto custom-scrollbar">
           {loading && logs.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-[12px] text-fog-grey">
-              <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+            <div className="flex h-full min-h-[18rem] items-center justify-center gap-2 text-[12px] text-fog-grey">
+              <LucideIcon name="progress_activity" className="text-[16px] animate-spin" />
               Loading logs...
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <span className="material-symbols-outlined text-[28px] text-fog-grey">receipt_long</span>
+            <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-2">
+              <LucideIcon name="receipt_long" className="text-[28px] text-fog-grey" />
               <p className="text-[12px] text-fog-grey">
                 {logs.length === 0 ? "No logs recorded yet." : "No logs match your filters."}
               </p>

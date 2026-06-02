@@ -1,5 +1,6 @@
 "use client";
 
+import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
 const variants = {
@@ -34,7 +35,7 @@ export default function Badge({ children, variant = "default", size = "md", dot 
       className={cn("inline-flex items-center font-[400] rounded-[4px]", variants[variant], sizes[size], className)}
     >
       {dot && <span className={cn("size-1.5 rounded-full shrink-0", dotColors[variant])} />}
-      {icon && <span className="material-symbols-outlined text-[12px]">{icon}</span>}
+      {icon && <LucideIcon name={icon} className="text-[12px]" />}
       {children}
     </span>
   );

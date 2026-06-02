@@ -14,7 +14,7 @@ const LOG_FILES = ["usage.json", "request-details.json"];
 
 export async function GET() {
   try {
-    const configPresent = fs.existsSync(path.join(DATA_DIR, CONFIG_FILE));
+    const configPresent = fs.existsSync(path.join(/*turbopackIgnore: true*/ DATA_DIR, CONFIG_FILE));
     return NextResponse.json({
       dataDir: DATA_DIR,
       legacyFilesFound: configPresent ? [CONFIG_FILE] : [],
@@ -33,10 +33,10 @@ export async function POST() {
     // then restore so user can inspect/delete later.
     const renamed = [];
     for (const f of LOG_FILES) {
-      const p = path.join(DATA_DIR, f);
-      if (fs.existsSync(p)) {
+      const p = path.join(/*turbopackIgnore: true*/ DATA_DIR, f);
+      if (fs.existsSync(/*turbopackIgnore: true*/ p)) {
         const tmp = `${p}.skip-${Date.now()}`;
-        fs.renameSync(p, tmp);
+        fs.renameSync(/*turbopackIgnore: true*/ p, /*turbopackIgnore: true*/ tmp);
         renamed.push({ tmp, original: p });
       }
     }
@@ -47,7 +47,8 @@ export async function POST() {
     } finally {
       for (const r of renamed) {
         try {
-          if (fs.existsSync(r.tmp)) fs.renameSync(r.tmp, r.original);
+          if (fs.existsSync(/*turbopackIgnore: true*/ r.tmp))
+            fs.renameSync(/*turbopackIgnore: true*/ r.tmp, /*turbopackIgnore: true*/ r.original);
         } catch {}
       }
     }

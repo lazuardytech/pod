@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Card({
   children,
@@ -45,7 +46,7 @@ export default function Card({
           <div className="flex items-center gap-2">
             {icon && (
               <div className="flex items-center justify-center size-7 rounded-[6px] bg-deep-slate text-storm-cloud">
-                <span className="material-symbols-outlined text-[16px]">{icon}</span>
+                <LucideIcon name={icon} className="text-[16px]" />
               </div>
             )}
             <div>

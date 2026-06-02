@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 /**
  * Kiro Social OAuth Modal (Google/GitHub)
@@ -104,7 +105,7 @@ export default function KiroSocialOAuthModal({ isOpen, provider, onSuccess, onCl
         {step === "loading" && (
           <div className="text-center py-6">
             <div className="size-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl text-primary animate-spin">progress_activity</span>
+              <LucideIcon name="progress_activity" className="text-3xl text-primary animate-spin" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Initializing...</h3>
             <p className="text-sm text-text-muted">Setting up {providerName} authentication</p>
@@ -158,7 +159,7 @@ export default function KiroSocialOAuthModal({ isOpen, provider, onSuccess, onCl
         {step === "success" && (
           <div className="text-center py-6">
             <div className="size-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl text-green-600">check_circle</span>
+              <LucideIcon name="check_circle" className="text-3xl text-green-600" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Connected Successfully!</h3>
             <p className="text-sm text-text-muted mb-4">Your Kiro account via {providerName} has been connected.</p>
@@ -172,7 +173,7 @@ export default function KiroSocialOAuthModal({ isOpen, provider, onSuccess, onCl
         {step === "error" && (
           <div className="text-center py-6">
             <div className="size-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl text-red-600">error</span>
+              <LucideIcon name="error" className="text-3xl text-red-600" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Connection Failed</h3>
             <p className="text-sm text-red-600 mb-4">{error}</p>

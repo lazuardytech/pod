@@ -6,6 +6,7 @@ import { Badge, Button, Card, Modal } from "@/shared/components";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import { getProviderAlias } from "@/shared/constants/providers";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 // ── ModelRow ───────────────────────────────────────────────────
 export function ModelRow({
@@ -37,15 +38,19 @@ export function ModelRow({
       } hover:bg-sidebar/50`}
     >
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-base" style={iconColor ? { color: iconColor } : undefined}>
-          {isTesting
-            ? "smart_toy"
-            : testStatus === "ok"
-              ? "check_circle"
-              : testStatus === "error"
-                ? "cancel"
-                : "smart_toy"}
-        </span>
+        <LucideIcon
+          name={
+            isTesting
+              ? "smart_toy"
+              : testStatus === "ok"
+                ? "check_circle"
+                : testStatus === "error"
+                  ? "cancel"
+                  : "smart_toy"
+          }
+          className="text-base"
+          style={iconColor ? { color: iconColor } : undefined}
+        />
         <div className="flex flex-col gap-1">
           <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">{fullModel}</code>
           {model.name && <span className="text-[9px] text-text-muted/70 italic pl-1">{model.name}</span>}
@@ -57,12 +62,11 @@ export function ModelRow({
               disabled={isTesting}
               className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
             >
-              <span
-                className="material-symbols-outlined text-sm"
+              <LucideIcon
+                name={isTesting ? "progress_activity" : "science"}
+                className="text-sm"
                 style={isTesting ? { animation: "spin 1s linear infinite" } : undefined}
-              >
-                {isTesting ? "progress_activity" : "science"}
-              </span>
+              />
             </button>
             <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
               {isTesting ? "Testing..." : "Test"}
@@ -74,9 +78,7 @@ export function ModelRow({
             onClick={() => onCopy(fullModel, `model-${model.id}`)}
             className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
           >
-            <span className="material-symbols-outlined text-sm">
-              {copied === `model-${model.id}` ? "check" : "content_copy"}
-            </span>
+            <LucideIcon name={copied === `model-${model.id}` ? "check" : "content_copy"} className="text-sm" />
           </button>
           <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
             {copied === `model-${model.id}` ? "Copied!" : "Copy"}
@@ -93,7 +95,7 @@ export function ModelRow({
             className="p-0.5 hover:bg-red-500/10 rounded text-text-muted hover:text-red-500 ml-auto"
             title="Remove custom model"
           >
-            <span className="material-symbols-outlined text-sm">close</span>
+            <LucideIcon name="close" className="text-sm" />
           </button>
         )}
       </div>
@@ -341,7 +343,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
             onClick={() => setShowAddCustomModel(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-black/15 dark:border-white/15 text-xs text-text-muted hover:text-primary hover:border-primary/40 transition-colors"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
+            <LucideIcon name="add" className="text-sm" />
             Add Model
           </button>
         </div>

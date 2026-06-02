@@ -8,7 +8,7 @@ import { DATA_DIR, SQLITE_FILE, getDatabase } from "@/lib/sqlite/connection.js";
 import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/lib/usageDb.js";
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync.js";
 import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler.js";
-import { displayVersion } from "@/shared/constants/config.js";
+import { APP_CONFIG } from "@/shared/constants/config.js";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
@@ -448,7 +448,7 @@ export async function buildHealthPayload() {
     status,
     timestamp: Date.now(),
     version: {
-      pod: displayVersion,
+      pod: APP_CONFIG.displayVersion,
       bun: process.versions.bun ?? null,
       node: process.version,
     },

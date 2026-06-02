@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 /**
  * Slugify a label for use as a form field name when no explicit `name` prop is provided.
@@ -49,7 +50,7 @@ export default function Input({
       <div className="relative">
         {icon && (
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pr-2 pointer-events-none text-storm-cloud">
-            <span className="material-symbols-outlined text-[16px]">{icon}</span>
+            <LucideIcon name={icon} className="text-[16px]" />
           </div>
         )}
         <input
@@ -61,7 +62,7 @@ export default function Input({
           onChange={onChange}
           disabled={disabled}
           className={cn(
-            "w-full py-2.5 px-3.5 text-[13px] text-porcelain bg-gunmetal",
+            "h-9 w-full px-3.5 text-[13px] text-porcelain bg-gunmetal",
             "rounded-[6px] border border-charcoal-grey",
             "placeholder:text-fog-grey",
             "focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
@@ -77,7 +78,7 @@ export default function Input({
       </div>
       {error && (
         <p className="text-[11px] text-warning-red flex items-center gap-1">
-          <span className="material-symbols-outlined text-[13px]">error</span>
+          <LucideIcon name="error" className="text-[13px]" />
           {error}
         </p>
       )}

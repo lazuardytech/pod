@@ -1,4 +1,5 @@
 "use client";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 const FEATURES = [
   { icon: "link", title: "Unified Endpoint", desc: "Access all providers via a single standard API URL." },
@@ -33,7 +34,7 @@ export default function Features() {
               className="p-4 rounded-[6px] bg-graphite border border-charcoal-grey hover:border-muted-ash hover:bg-deep-slate transition-colors duration-150 group"
             >
               <div className="flex items-center justify-center size-8 rounded-[6px] bg-deep-slate text-storm-cloud mb-3 group-hover:text-porcelain transition-colors duration-150">
-                <span className="material-symbols-outlined text-[17px]">{feature.icon}</span>
+                <LucideIcon name={feature.icon} className="text-[17px]" />
               </div>
               <h3 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] mb-1.5">{feature.title}</h3>
               <p className="text-[12px] text-fog-grey leading-[1.6] tracking-[-0.1px]">{feature.desc}</p>

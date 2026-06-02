@@ -6,11 +6,11 @@ import path from "node:path";
 import { DATA_DIR } from "@/lib/dataDir.js";
 import { clearPid, loadPid, savePid } from "./state.js";
 
-const BIN_DIR = path.join(DATA_DIR, "bin");
+const BIN_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "bin");
 const BINARY_NAME = "cloudflared";
 const IS_WINDOWS = os.platform() === "win32";
 const BIN_NAME = IS_WINDOWS ? `${BINARY_NAME}.exe` : BINARY_NAME;
-const BIN_PATH = path.join(BIN_DIR, BIN_NAME);
+const BIN_PATH = path.join(/*turbopackIgnore: true*/ BIN_DIR, BIN_NAME);
 const POWERSHELL_HIDDEN_COMMAND = "powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command";
 
 const GITHUB_BASE_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download";
@@ -60,20 +60,20 @@ export function getDownloadStatus() {
 
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
+    const file = fs.createWriteStream(/*turbopackIgnore: true*/ dest);
 
     https
       .get(url, (response) => {
         if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
           file.close();
-          fs.unlinkSync(dest);
+          fs.unlinkSync(/*turbopackIgnore: true*/ dest);
           downloadFile(response.headers.location, dest).then(resolve).catch(reject);
           return;
         }
 
         if (response.statusCode !== 200) {
           file.close();
-          fs.unlinkSync(dest);
+          fs.unlinkSync(/*turbopackIgnore: true*/ dest);
           reject(new Error(`Download failed with status ${response.statusCode}`));
           return;
         }
@@ -100,7 +100,7 @@ function downloadFile(url, dest) {
           dlState.downloading = false;
           dlState.progress = 0;
           file.close();
-          fs.unlinkSync(dest);
+          fs.unlinkSync(/*turbopackIgnore: true*/ dest);
           reject(err);
         });
       })
@@ -108,7 +108,7 @@ function downloadFile(url, dest) {
         dlState.downloading = false;
         dlState.progress = 0;
         file.close();
-        if (fs.existsSync(dest)) fs.unlinkSync(dest);
+        if (fs.existsSync(/*turbopackIgnore: true*/ dest)) fs.unlinkSync(/*turbopackIgnore: true*/ dest);
         reject(err);
       });
   });
@@ -119,9 +119,9 @@ const MIN_BINARY_SIZE = 1024 * 1024; // 1MB - cloudflared is ~30MB+
 // Validate binary is executable on current platform and not truncated
 function isValidBinary(filePath) {
   try {
-    const stat = fs.statSync(filePath);
+    const stat = fs.statSync(/*turbopackIgnore: true*/ filePath);
     if (stat.size < MIN_BINARY_SIZE) return false;
-    const fd = fs.openSync(filePath, "r");
+    const fd = fs.openSync(/*turbopackIgnore: true*/ filePath, "r");
     const buf = Buffer.alloc(4);
     fs.readSync(fd, buf, 0, 4, 0);
     fs.closeSync(fd);
@@ -145,45 +145,45 @@ export async function ensureCloudflared() {
 }
 
 async function _ensureCloudflared() {
-  if (!fs.existsSync(BIN_DIR)) {
-    fs.mkdirSync(BIN_DIR, { recursive: true });
+  if (!fs.existsSync(/*turbopackIgnore: true*/ BIN_DIR)) {
+    fs.mkdirSync(/*turbopackIgnore: true*/ BIN_DIR, { recursive: true });
   }
 
   // Clean up incomplete downloads from previous runs
   const tmpPath = `${BIN_PATH}.tmp`;
-  if (fs.existsSync(tmpPath)) {
+  if (fs.existsSync(/*turbopackIgnore: true*/ tmpPath)) {
     try {
-      fs.unlinkSync(tmpPath);
+      fs.unlinkSync(/*turbopackIgnore: true*/ tmpPath);
     } catch {
       /* ignore */
     }
   }
 
-  if (fs.existsSync(BIN_PATH)) {
+  if (fs.existsSync(/*turbopackIgnore: true*/ BIN_PATH)) {
     if (!isValidBinary(BIN_PATH)) {
       console.log("[cloudflared] Invalid binary detected, re-downloading...");
-      fs.unlinkSync(BIN_PATH);
+      fs.unlinkSync(/*turbopackIgnore: true*/ BIN_PATH);
     } else {
-      if (!IS_WINDOWS) fs.chmodSync(BIN_PATH, "755");
+      if (!IS_WINDOWS) fs.chmodSync(/*turbopackIgnore: true*/ BIN_PATH, "755");
       return BIN_PATH;
     }
   }
 
   const url = getDownloadUrl();
   const isArchive = url.endsWith(".tgz");
-  const downloadDest = isArchive ? path.join(BIN_DIR, "cloudflared.tgz.tmp") : tmpPath;
+  const downloadDest = isArchive ? path.join(/*turbopackIgnore: true*/ BIN_DIR, "cloudflared.tgz.tmp") : tmpPath;
 
   await downloadFile(url, downloadDest);
 
   if (isArchive) {
     execSync(`tar -xzf "${downloadDest}" -C "${BIN_DIR}"`, { stdio: "pipe", windowsHide: true });
-    fs.unlinkSync(downloadDest);
+    fs.unlinkSync(/*turbopackIgnore: true*/ downloadDest);
   } else {
-    fs.renameSync(downloadDest, BIN_PATH);
+    fs.renameSync(/*turbopackIgnore: true*/ downloadDest, /*turbopackIgnore: true*/ BIN_PATH);
   }
 
   if (!IS_WINDOWS) {
-    fs.chmodSync(BIN_PATH, "755");
+    fs.chmodSync(/*turbopackIgnore: true*/ BIN_PATH, "755");
   }
 
   return BIN_PATH;
@@ -284,17 +284,17 @@ export async function spawnCloudflared(tunnelToken) {
 export async function spawnQuickTunnel(localPort, onUrlUpdate) {
   const binaryPath = await ensureCloudflared();
 
-  const configDir = fs.mkdtempSync(path.join(os.tmpdir(), "cloudflared-quick-"));
-  const configPath = path.join(configDir, "config.yml");
+  const configDir = fs.mkdtempSync(path.join(/*turbopackIgnore: true*/ os.tmpdir(), "cloudflared-quick-"));
+  const configPath = path.join(/*turbopackIgnore: true*/ configDir, "config.yml");
   // Avoid using default ~/.cloudflared/config.yml, which can conflict with quick tunnel behavior.
-  fs.writeFileSync(configPath, "# quick-tunnel config placeholder\n", "utf8");
+  fs.writeFileSync(/*turbopackIgnore: true*/ configPath, "# quick-tunnel config placeholder\n", "utf8");
 
   let isCleaned = false;
   const cleanup = () => {
     if (isCleaned) return;
     isCleaned = true;
     try {
-      fs.rmSync(configDir, { recursive: true, force: true });
+      fs.rmSync(/*turbopackIgnore: true*/ configDir, { recursive: true, force: true });
     } catch (_e) {
       /* ignore */
     }
@@ -410,10 +410,7 @@ function killCloudflaredByPort(port) {
       const psCmd = `Get-CimInstance Win32_Process -Filter \\"Name='cloudflared.exe'\\" | Where-Object { $_.CommandLine -match ':${port}(\\D|$)' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }`;
       execSync(`${POWERSHELL_HIDDEN_COMMAND} "${psCmd}"`, { stdio: "ignore", windowsHide: true });
     } else {
-      execSync(`pkill -f "cloudflared.*:${port}([^0-9]|$)" 2>/dev/null || true`, {
-        stdio: "ignore",
-        windowsHide: true,
-      });
+      execSync(`pkill -f "cloudflared.*:${port}([^0-9]|$)"`, { stdio: "ignore", windowsHide: true });
     }
   } catch (_e) {
     /* ignore */

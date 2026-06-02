@@ -1,31 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  serverExternalPackages: ["bun:sqlite"],
   images: {
     unoptimized: true,
   },
   env: {},
-  webpack: (config, { isServer }) => {
-    // Ignore fs/path modules in browser bundle
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-      };
-    }
-    // Mark `bun:sqlite` as external on the server so webpack doesn't try to
-    // resolve it at build time. At runtime it's only required when running
-    // under Bun, where createRequire resolves it via Bun's builtin loader.
-    if (isServer) {
-      config.externals = [
-        ...(Array.isArray(config.externals) ? config.externals : config.externals ? [config.externals] : []),
-        { "bun:sqlite": "commonjs bun:sqlite" },
-      ];
-    }
-    // Stop watching logs directory to prevent HMR during streaming
-    config.watchOptions = { ...config.watchOptions, ignored: /[\\/](logs|\.next)[\\/]/ };
-    return config;
+  outputFileTracingExcludes: {
+    "/api/tunnel/**": ["./.agents/**/*", "./cloud/**/*", "./coverage/**/*", "./tests/**/*", "./*.md", "./Dockerfile"],
+  },
+  turbopack: {
+    // Keep server-only node modules out of browser bundles.
+    resolveAlias: {
+      fs: { browser: "./src/lib/empty-module.js" },
+      path: { browser: "./src/lib/empty-module.js" },
+      "node:fs": { browser: "./src/lib/empty-module.js" },
+      "node:path": { browser: "./src/lib/empty-module.js" },
+      "bun:sqlite": { browser: "./src/lib/empty-module.js" },
+    },
   },
   async headers() {
     return [

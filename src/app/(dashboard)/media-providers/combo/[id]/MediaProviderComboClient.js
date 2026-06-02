@@ -7,6 +7,7 @@ import { Button, Card, Input, ModelSelectModal, Toggle } from "@/shared/componen
 import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 // Parse "providerId/model" or just "providerId" → { providerId, model }
 function parseModelEntry(entry) {
@@ -277,10 +278,10 @@ export default function ComboDetailPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <Link href={backHref} className="text-text-muted hover:text-primary">
-            <span className="material-symbols-outlined">arrow_back</span>
+            <LucideIcon name="arrow_back" className="" />
           </Link>
           <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary">layers</span>
+            <LucideIcon name="layers" className="text-primary" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-text-muted">{kindLabel} Combo</p>
@@ -373,7 +374,7 @@ export default function ComboDetailPage() {
                       className={`p-1 rounded ${idx === 0 ? "text-text-muted/20" : "text-text-muted hover:text-primary hover:bg-black/5"}`}
                       title="Move up"
                     >
-                      <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+                      <LucideIcon name="arrow_upward" className="text-[16px]" />
                     </button>
                     <button
                       onClick={() => handleMove(idx, 1)}
@@ -381,14 +382,14 @@ export default function ComboDetailPage() {
                       className={`p-1 rounded ${idx === providers.length - 1 ? "text-text-muted/20" : "text-text-muted hover:text-primary hover:bg-black/5"}`}
                       title="Move down"
                     >
-                      <span className="material-symbols-outlined text-[16px]">arrow_downward</span>
+                      <LucideIcon name="arrow_downward" className="text-[16px]" />
                     </button>
                     <button
                       onClick={() => handleRemoveProvider(idx)}
                       className="p-1 rounded text-text-muted hover:text-red-500 hover:bg-red-500/10"
                       title="Remove"
                     >
-                      <span className="material-symbols-outlined text-[16px]">close</span>
+                      <LucideIcon name="close" className="text-[16px]" />
                     </button>
                   </div>
                 </div>
@@ -403,7 +404,13 @@ export default function ComboDetailPage() {
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
             <h2 className="text-lg font-semibold">Test Example</h2>
-            <Button size="sm" icon="play_arrow" onClick={handleTest} disabled={testing || providers.length === 0}>
+            <Button
+              size="sm"
+              icon="play_arrow"
+              loading={testing}
+              onClick={handleTest}
+              disabled={providers.length === 0}
+            >
               {testing ? "Running..." : "Run"}
             </Button>
           </div>
@@ -424,7 +431,7 @@ export default function ComboDetailPage() {
                       download="image.png"
                       className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[14px]">download</span>
+                      <LucideIcon name="download" className="text-[14px]" />
                       Download
                     </a>
                   </div>
@@ -443,7 +450,7 @@ export default function ComboDetailPage() {
                       download="speech.mp3"
                       className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[14px]">download</span>
+                      <LucideIcon name="download" className="text-[14px]" />
                       Download
                     </a>
                   </div>

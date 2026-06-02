@@ -3,6 +3,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 /**
  * Kiro Auth Method Selection Modal
@@ -114,7 +115,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
               className="w-full p-4 text-left border border-border rounded-lg hover:bg-sidebar transition-colors"
             >
               <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-primary mt-0.5">shield</span>
+                <LucideIcon name="shield" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">AWS Builder ID</h3>
                   <p className="text-sm text-text-muted">Recommended for most users. Free AWS account required.</p>
@@ -128,7 +129,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
               className="w-full p-4 text-left border border-border rounded-lg hover:bg-sidebar transition-colors"
             >
               <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-primary mt-0.5">business</span>
+                <LucideIcon name="business" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">AWS IAM Identity Center</h3>
                   <p className="text-sm text-text-muted">For enterprise users with custom AWS IAM Identity Center.</p>
@@ -142,7 +143,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
               className="hidden w-full p-4 text-left border border-border rounded-lg hover:bg-sidebar transition-colors"
             >
               <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-primary mt-0.5">account_circle</span>
+                <LucideIcon name="account_circle" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">Google Account</h3>
                   <p className="text-sm text-text-muted">Login with your Google account (manual callback).</p>
@@ -156,7 +157,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
               className="hidden w-full p-4 text-left border border-border rounded-lg hover:bg-sidebar transition-colors"
             >
               <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-primary mt-0.5">code</span>
+                <LucideIcon name="code" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">GitHub Account</h3>
                   <p className="text-sm text-text-muted">Login with your GitHub account (manual callback).</p>
@@ -170,7 +171,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
               className="w-full p-4 text-left border border-border rounded-lg hover:bg-sidebar transition-colors"
             >
               <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-primary mt-0.5">file_upload</span>
+                <LucideIcon name="file_upload" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">Import Token</h3>
                   <p className="text-sm text-text-muted">Paste refresh token from Kiro IDE.</p>
@@ -225,7 +226,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
           <div className="space-y-4">
             <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
               <div className="flex gap-2">
-                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">info</span>
+                <LucideIcon name="info" className="text-amber-600 dark:text-amber-400" />
                 <div className="flex-1 text-sm">
                   <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Manual Callback Required</p>
                   <p className="text-amber-800 dark:text-amber-200">
@@ -251,7 +252,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
           <div className="space-y-4">
             <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
               <div className="flex gap-2">
-                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">info</span>
+                <LucideIcon name="info" className="text-amber-600 dark:text-amber-400" />
                 <div className="flex-1 text-sm">
                   <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Manual Callback Required</p>
                   <p className="text-amber-800 dark:text-amber-200">
@@ -279,9 +280,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
             {autoDetecting && (
               <div className="text-center py-6">
                 <div className="size-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-3xl text-primary animate-spin">
-                    progress_activity
-                  </span>
+                  <LucideIcon name="progress_activity" className="text-3xl text-primary animate-spin" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Auto-detecting token...</h3>
                 <p className="text-sm text-text-muted">Reading from AWS SSO cache</p>
@@ -295,7 +294,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
                 {autoDetected && (
                   <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                     <div className="flex gap-2">
-                      <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+                      <LucideIcon name="check_circle" className="text-green-600 dark:text-green-400" />
                       <p className="text-sm text-green-800 dark:text-green-200">
                         Token auto-detected from Kiro IDE successfully!
                       </p>
@@ -307,7 +306,7 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
                 {!autoDetected && !error && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="flex gap-2">
-                      <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
+                      <LucideIcon name="info" className="text-blue-600 dark:text-blue-400" />
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         Kiro IDE not detected. Please paste your refresh token manually.
                       </p>

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, Card, Input } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function LoginClient() {
   const [password, setPassword] = useState("");
@@ -67,7 +68,7 @@ export default function LoginClient() {
   if (hasPassword === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-pitch-black">
-        <span className="material-symbols-outlined animate-spin text-storm-cloud text-[28px]">progress_activity</span>
+        <LucideIcon name="progress_activity" className="animate-spin text-storm-cloud text-[28px]" />
       </div>
     );
   }
@@ -83,7 +84,7 @@ export default function LoginClient() {
           <div className="flex items-center justify-center size-10 mb-4">
             <img src="/logo.svg" alt="Pod" className="size-10 dark:invert" />
           </div>
-          <h1 className="text-[20px] font-[510] text-porcelain tracking-[-0.22px]">Pod</h1>
+          <h1 className="font-brand text-[20px] font-[510] text-porcelain tracking-[-0.22px]">Pod</h1>
           <p className="text-[13px] text-storm-cloud mt-1 tracking-[-0.12px]">Enter your password to continue</p>
         </div>
 

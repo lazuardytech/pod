@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export function Spinner({ size = "md", className }) {
   const sizes = {
@@ -11,9 +12,7 @@ export function Spinner({ size = "md", className }) {
   };
 
   return (
-    <span className={cn("material-symbols-outlined animate-spin text-storm-cloud", sizes[size], className)}>
-      progress_activity
-    </span>
+    <LucideIcon name="progress_activity" className={cn("animate-spin text-storm-cloud", sizes[size], className)} />
   );
 }
 

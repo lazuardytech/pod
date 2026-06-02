@@ -3,6 +3,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
 import { getModelsByProviderId } from "@/shared/constants/models";
+import LucideIcon from "@/shared/components/LucideIcon";
 import {
   AI_PROVIDERS,
   APIKEY_PROVIDERS,
@@ -412,9 +413,10 @@ export default function ModelSelectModal({
       {/* Search - compact */}
       <div className="mb-3">
         <div className="relative">
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[16px]">
-            search
-          </span>
+          <LucideIcon
+            name="search"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[16px]"
+          />
           <input
             aria-label="Search models"
             type="text"
@@ -433,7 +435,7 @@ export default function ModelSelectModal({
         {filteredCombos.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 mb-1.5 sticky top-0 bg-surface py-0.5">
-              <span className="material-symbols-outlined text-primary text-[14px]">layers</span>
+              <LucideIcon name="layers" className="text-primary text-[14px]" />
               <span className="text-xs font-medium text-primary">Combos</span>
               <span className="text-[10px] text-text-muted">({filteredCombos.length})</span>
             </div>
@@ -456,7 +458,7 @@ export default function ModelSelectModal({
                     `}
                   >
                     {addedModelValues.includes(combo.name) && (
-                      <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                      <LucideIcon name="check_circle" className="text-[12px]" />
                     )}
                     {combo.name}
                   </button>
@@ -500,11 +502,11 @@ export default function ModelSelectModal({
                   >
                     <span className="flex items-center gap-1">
                       {addedModelValues.includes(model.value) && !isPlaceholder && (
-                        <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                        <LucideIcon name="check_circle" className="text-[12px]" />
                       )}
                       {isPlaceholder ? (
                         <>
-                          <span className="material-symbols-outlined text-[11px]">edit</span>
+                          <LucideIcon name="edit" className="text-[11px]" />
                           {model.name}
                         </>
                       ) : model.isCustom ? (
@@ -525,7 +527,7 @@ export default function ModelSelectModal({
 
         {Object.keys(filteredGroups).length === 0 && filteredCombos.length === 0 && (
           <div className="text-center py-4 text-text-muted">
-            <span className="material-symbols-outlined text-2xl mb-1 block">search_off</span>
+            <LucideIcon name="search_off" className="text-2xl mb-1 block" />
             <p className="text-xs">No models found</p>
           </div>
         )}

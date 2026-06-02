@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { Drawer } from "vaul";
 import { cn } from "@/shared/utils/cn";
+import LucideIcon from "@/shared/components/LucideIcon";
 
 export function LogDrawer({ open, onClose, children }) {
   return (
@@ -29,7 +30,7 @@ export function LogDrawerHeader({ title, onClose, children }) {
   return (
     <div className="flex items-center justify-between h-14 px-4 border-b border-charcoal-grey shrink-0">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-[16px] text-fog-grey">receipt_long</span>
+        <LucideIcon name="receipt_long" className="text-[16px] text-fog-grey" />
         <h2 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">{title}</h2>
       </div>
       <div className="flex items-center gap-1">
@@ -38,7 +39,7 @@ export function LogDrawerHeader({ title, onClose, children }) {
           onClick={onClose}
           className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
         >
-          <span className="material-symbols-outlined text-[15px]">close</span>
+          <LucideIcon name="close" className="text-[15px]" />
         </button>
       </div>
     </div>
@@ -53,7 +54,7 @@ export function DetailSection({ title, icon, children }) {
   return (
     <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-charcoal-grey bg-pitch-black/40">
-        {icon && <span className="material-symbols-outlined text-[13px] text-fog-grey">{icon}</span>}
+        {icon && <LucideIcon name={icon} className="text-[13px] text-fog-grey" />}
         <span className="text-[10px] font-[590] uppercase tracking-[0.06em] text-fog-grey">{title}</span>
       </div>
       <div className="p-3">{children}</div>
