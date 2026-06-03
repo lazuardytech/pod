@@ -1,4 +1,4 @@
-import { checkRateLimitByKey } from "@/app/api/v1/_utils/apiKeyRateLimit.js";
+import { checkRateLimitByKey } from "@/lib/rateLimit";
 import { getSettings, validateApiKey } from "@/lib/localDb";
 import { PROVIDER_MODELS } from "@/shared/constants/models";
 import { extractApiKey } from "@/sse/services/auth.js";
