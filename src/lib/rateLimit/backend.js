@@ -1,0 +1,44 @@
+// Backend abstraction for rate limiting — picks Redis or in-memory based on REDIS_URL
+// Zero npm dependency: uses Bun.RedisClient native when Redis is available
+
+let _backend = null;
+let _initialized = false;
+
+/**
+ * Initialize rate limit backend.
+ * Called once at startup from initializeApp.js.
+ * Connects to Redis if REDIS_URL is set; falls back to in-memory.
+ */
+export async function initRateLimit() {
+  if (_initialized) return _backend;
+  _initialized = true;
+
+  const redisUrl = process.env.REDIS_URL;
+  if (redisUrl) {
+    try {
+      const { RedisBackend } = await import("./redis.js");
+      _backend = new RedisBackend(redisUrl);
+      await _backend.connect();
+      console.log("[RateLimit] Redis backend active");
+      return _backend;
+    } catch (err) {
+      console.warn("[RateLimit] Redis connect failed, falling back to in-memory:", err?.message || err);
+    }
+  }
+
+  const { MemoryBackend } = await import("./memory.js");
+  _backend = new MemoryBackend();
+  console.log("[RateLimit] In-memory backend active");
+  return _backend;
+}
+
+/**
+ * Get the initialized backend instance.
+ * Returns in-memory backend if initRateLimit was not called yet (lazy init).
+ */
+export async function getBackend() {
+  if (!_initialized) {
+    return await initRateLimit();
+  }
+  return _backend;
+}
