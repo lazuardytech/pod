@@ -52,22 +52,22 @@ export class RedisBackend {
     const key = RPM_KEY_PREFIX + keyId;
 
     try {
-      // Bun.RedisClient supports MULTI via pipeline
-      // No MULTI command exposed directly, so use sequential calls
-      // but wrap in a send pipeline
+      // Remove expired entries, then check count BEFORE adding
       await this.client.zremrangebyscore(key, 0, windowStart);
-      await this.client.zadd(key, now, String(now));
       const count = await this.client.zcard(key);
       // TTL for cleanup
       await this.client.expire(key, CLEANUP_TTL);
 
-      if (count > maxRpm) {
-        // Get the oldest entry window start for retry-after calculation
+      if (count >= maxRpm) {
+        // Get the oldest entry for retry-after calculation
         const oldest = await this.client.zrange(key, 0, 0);
         const oldestTs = oldest && oldest.length > 0 ? Number(oldest[0]) : now;
         const retryAfterSeconds = Math.max(1, Math.ceil((oldestTs + WINDOW_MS - now) / 1000));
         return { ok: false, retryAfterSeconds, type: "rpm" };
       }
+
+      // Only add entry when within limit
+      await this.client.zadd(key, now, String(now));
       return { ok: true };
     } catch (err) {
       console.warn("[RateLimit] Redis RPM error:", err?.message || err);

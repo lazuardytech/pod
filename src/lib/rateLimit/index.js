@@ -119,7 +119,8 @@ export async function checkRateLimitByKey(apiKey) {
 
   const backend = await getBackend();
 
-  if (backend.constructor.name === "RedisBackend") {
+  // Duck-type: RedisBackend has acquireRpm, MemoryBackend doesn't
+  if (backend.acquireRpm) {
     const config = getLimitConfigFromRecord(apiKeyRecord);
     if (!config) return { ok: true, release: null, response: undefined };
 
@@ -174,7 +175,8 @@ export async function withApiKeyRateLimit(request, handler) {
 
   const backend = await getBackend();
 
-  if (backend.constructor.name === "RedisBackend") {
+  // Duck-type: RedisBackend has acquireRpm, MemoryBackend doesn't
+  if (backend.acquireRpm) {
     const config = getLimitConfigFromRecord(apiKeyRecord);
     if (!config) return await handler();
 
