@@ -1,5 +1,7 @@
 import os from "node:os";
 import { cleanupProviderConnections, getSettings } from "@/lib/localDb";
+import { initRateLimit } from "@/lib/rateLimit";
+
 import { ensureCloudflared, isCloudflaredRunning, killCloudflared } from "@/lib/tunnel/cloudflared";
 import { checkInternet, probeUrlAlive } from "@/lib/tunnel/networkProbe";
 import { loadState } from "@/lib/tunnel/state";
@@ -25,9 +27,7 @@ const g = (global.__appSingleton ??= {
 });
 
 // Warn about default secrets
-if (process.env.JWT_SECRET === "pod-default-secret-change-me" || !process.env.JWT_SECRET) {
-  console.warn("[SECURITY] WARNING: JWT_SECRET is set to default value. Set a strong random secret in production.");
-}
+
 if ((process.env.API_KEY_SECRET || "endpoint-proxy-api-key-secret") === "endpoint-proxy-api-key-secret") {
   console.warn("[SECURITY] WARNING: API_KEY_SECRET is set to default value. Set a strong random secret in production.");
 }
@@ -39,6 +39,17 @@ if (!process.env.INITIAL_PASSWORD && !process.env.JWT_SECRET) {
 
 export async function initializeApp() {
   try {
+    // POD-001: Fail startup if JWT_SECRET is still the default — prevents session forgery
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "pod-default-secret-change-me") {
+      throw new Error(
+        '[SECURITY] JWT_SECRET is set to default value ("pod-default-secret-change-me"). ' +
+          "Set a strong random JWT_SECRET environment variable in production.",
+      );
+    }
+
+    // Init rate limit backend (Redis if REDIS_URL set, else in-memory)
+    await initRateLimit().catch((err) => console.warn("[InitApp] Rate limit init failed:", err?.message || err));
+
     await cleanupProviderConnections();
     const settings = await getSettings();
 

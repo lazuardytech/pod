@@ -1118,24 +1118,6 @@ export default function ProviderDetailPage() {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">Connections</h2>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              {/* Thinking Effort */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-text-muted font-medium">Thinking Effort</span>
-                <select
-                  aria-label="Thinking effort"
-                  value={effortMode}
-                  onChange={(e) => handleEffortModeChange(e.target.value)}
-                  className="text-xs px-2 py-1 border border-border rounded-md bg-background focus:outline-none focus:border-primary"
-                  name="thinking-effort"
-                >
-                  <option value="default">Default</option>
-                  <option value="none">None</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="extra-high">Extra High</option>
-                </select>
-              </div>
               {/* Round Robin toggle */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-text-muted font-medium">Round Robin</span>
@@ -1156,16 +1138,23 @@ export default function ProviderDetailPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-
-          {connections.length === 0 ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary shrink-0">
-                  <LucideIcon name={isOAuth ? "lock" : "key"} className="text-[18px]" />
-                </div>
-                <p className="text-sm text-text-muted">No connections yet</p>
+              {/* Thinking Effort */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-muted font-medium">Thinking Effort</span>
+                <select
+                  aria-label="Thinking effort"
+                  value={effortMode}
+                  onChange={(e) => handleEffortModeChange(e.target.value)}
+                  className="text-xs px-2 py-1 border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                  name="thinking-effort"
+                >
+                  <option value="default">Default</option>
+                  <option value="none">None</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="extra-high">Extra High</option>
+                </select>
               </div>
               <div className="flex gap-2">
                 {!isCompatible && providerId === "iflow" && (
@@ -1187,6 +1176,17 @@ export default function ProviderDetailPage() {
                 >
                   {isCompatible ? "Add API Key" : providerId === "iflow" ? "OAuth" : "Add Connection"}
                 </Button>
+              </div>
+            </div>
+          </div>
+
+          {connections.length === 0 ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary shrink-0">
+                  <LucideIcon name={isOAuth ? "lock" : "key"} className="text-[18px]" />
+                </div>
+                <p className="text-sm text-text-muted">No connections yet</p>
               </div>
             </div>
           ) : (

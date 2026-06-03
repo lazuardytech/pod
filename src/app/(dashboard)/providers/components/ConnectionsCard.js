@@ -609,52 +609,43 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
                 />
               </div>
             )}
+            <Button size="sm" icon="add" onClick={() => setShowAddModal(true)}>
+              Add
+            </Button>
           </div>
         </div>
 
         {connections.length === 0 ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-text-muted">No connections yet</p>
-            <Button size="sm" icon="add" onClick={() => setShowAddModal(true)}>
-              Add Connection
-            </Button>
-          </div>
+          <p className="text-sm text-text-muted">No connections yet</p>
         ) : (
-          <>
-            <div className="flex flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-              {connections.map((conn, idx) => (
-                <ConnectionRow
-                  key={conn.id}
-                  connection={conn}
-                  proxyPools={proxyPools}
-                  isOAuth={isOAuth}
-                  isFirst={idx === 0}
-                  isLast={idx === connections.length - 1}
-                  onMoveUp={() => handleSwapPriority(idx, idx - 1)}
-                  onMoveDown={() => handleSwapPriority(idx, idx + 1)}
-                  onToggleActive={(isActive) => handleToggleActive(conn.id, isActive)}
-                  onUpdateProxy={(poolId) => handleUpdateProxy(conn.id, poolId)}
-                  onEdit={() => {
-                    setSelectedConnection(conn);
-                    setShowEditModal(true);
-                  }}
-                  onDelete={() =>
-                    openConfirm(
-                      "Delete Connection",
-                      "Are you sure you want to delete this connection?",
-                      () => handleDelete(conn.id),
-                      "danger",
-                    )
-                  }
-                />
-              ))}
-            </div>
-            <div className="mt-4 flex justify-stretch sm:justify-start">
-              <Button size="sm" icon="add" onClick={() => setShowAddModal(true)}>
-                Add
-              </Button>
-            </div>
-          </>
+          <div className="flex flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
+            {connections.map((conn, idx) => (
+              <ConnectionRow
+                key={conn.id}
+                connection={conn}
+                proxyPools={proxyPools}
+                isOAuth={isOAuth}
+                isFirst={idx === 0}
+                isLast={idx === connections.length - 1}
+                onMoveUp={() => handleSwapPriority(idx, idx - 1)}
+                onMoveDown={() => handleSwapPriority(idx, idx + 1)}
+                onToggleActive={(isActive) => handleToggleActive(conn.id, isActive)}
+                onUpdateProxy={(poolId) => handleUpdateProxy(conn.id, poolId)}
+                onEdit={() => {
+                  setSelectedConnection(conn);
+                  setShowEditModal(true);
+                }}
+                onDelete={() =>
+                  openConfirm(
+                    "Delete Connection",
+                    "Are you sure you want to delete this connection?",
+                    () => handleDelete(conn.id),
+                    "danger",
+                  )
+                }
+              />
+            ))}
+          </div>
         )}
       </Card>
 

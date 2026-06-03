@@ -752,7 +752,8 @@ export default function ProfilePage() {
                 value={settings.modelCostSyncIntervalHours ?? 1}
                 onChange={(e) => updateModelCostSyncInterval(e.target.value)}
                 disabled={loading}
-                className="w-20 text-center shrink-0"
+                inputClassName="h-8 w-[84px] text-center shrink-0 px-2 text-[12px]"
+                className="shrink-0"
               />
             </SettingRow>
             <SettingRow label="Sync Now" description="Immediately sync model pricing from models.dev.">

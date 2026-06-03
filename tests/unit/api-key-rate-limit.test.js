@@ -63,7 +63,7 @@ describe("api key limit config + enforcement", () => {
 
   it("enforces requests-per-minute for limited key", async () => {
     const { createApiKey } = await import("@/lib/localDb.js");
-    const { withApiKeyRateLimit } = await import("@/app/api/v1/_utils/apiKeyRateLimit.js");
+    const { withApiKeyRateLimit } = await import("@/lib/rateLimit");
 
     const key = await createApiKey("RPM Key", "machine-3", {
       limitType: "limited",
@@ -91,7 +91,7 @@ describe("api key limit config + enforcement", () => {
 
   it("enforces concurrent requests while streaming response is still active", async () => {
     const { createApiKey } = await import("@/lib/localDb.js");
-    const { withApiKeyRateLimit } = await import("@/app/api/v1/_utils/apiKeyRateLimit.js");
+    const { withApiKeyRateLimit } = await import("@/lib/rateLimit");
 
     const key = await createApiKey("Concurrent Key", "machine-4", {
       limitType: "limited",

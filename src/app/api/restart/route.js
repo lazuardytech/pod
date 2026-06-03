@@ -2,6 +2,10 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ success: false, message: "Not allowed in production" }, { status: 403 });
+  }
+
   const secret = process.env.SHUTDOWN_SECRET;
   const authorization = headers().get("authorization");
 

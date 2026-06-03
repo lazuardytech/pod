@@ -57,7 +57,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
       >
         <LucideIcon
           name="perm_media"
-          className={cn("text-[14px]", isMediaActive ? "text-porcelain" : "text-fog-grey")}
+          className={cn("text-[12px]", isMediaActive ? "text-porcelain" : "text-fog-grey")}
         />
       </div>
 
@@ -69,9 +69,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
           style={{ top: pos.top, left: 56 }}
           className="fixed z-[200] rounded-[6px] border border-charcoal-grey bg-graphite shadow-[var(--shadow-xl)] py-1 min-w-[180px]"
         >
-          <p className="px-3 py-1.5 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
-            Media Providers
-          </p>
+          <p className="px-3 py-1.5 text-[9px] font-[590] text-fog-grey uppercase tracking-[0.06em]">Media Providers</p>
           {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
             <Link
               key={kind.id}
@@ -88,7 +86,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
                   : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
               )}
             >
-              <LucideIcon name={kind.icon} className="text-[12px]" />
+              <LucideIcon name={kind.icon} className="text-[10.5px]" />
               <span className="text-[12px] tracking-[-0.1px]">{kind.label}</span>
             </Link>
           ))}
@@ -106,7 +104,7 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
                 : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
             )}
           >
-            <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[12px]" />
+            <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[10.5px]" />
             <span className="text-[12px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
           </Link>
         </div>
@@ -147,7 +145,7 @@ function NavSection({ label, children, collapsed }) {
   if (collapsed) return <div className="space-y-0.5">{children}</div>;
   return (
     <div className="pt-4 first:pt-0">
-      <p className="px-3 mb-1 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">{label}</p>
+      <p className="px-3 mb-1 text-[9px] font-[590] text-fog-grey uppercase tracking-[0.06em]">{label}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -170,11 +168,11 @@ function NavItem({ href, label, icon, active, onClick, collapsed }) {
         name={icon}
         className={cn(
           "shrink-0",
-          collapsed ? "text-[14px]" : "text-[12px]",
+          collapsed ? "text-[12px]" : "text-[10.5px]",
           active ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
         )}
       />
-      {!collapsed && <span className="text-[13px] font-[400] tracking-[-0.12px] truncate">{label}</span>}
+      {!collapsed && <span className="text-[12px] font-[400] tracking-[-0.12px] truncate">{label}</span>}
     </Link>
   );
 }
@@ -290,16 +288,16 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                   <LucideIcon
                     name="perm_media"
                     className={cn(
-                      "text-[12px] shrink-0",
+                      "text-[10.5px] shrink-0",
                       isMediaActive ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
                     )}
                   />
-                  <span className="text-[13px] font-[400] tracking-[-0.12px] flex-1 text-left truncate">
+                  <span className="text-[12px] font-[400] tracking-[-0.12px] flex-1 text-left truncate">
                     Media Providers
                   </span>
                   <LucideIcon
                     name="expand_more"
-                    className="text-[13px] text-fog-grey transition-transform duration-150"
+                    className="text-[12px] text-fog-grey transition-transform duration-150"
                     style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
                 </button>
@@ -319,7 +317,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                             : "text-fog-grey hover:bg-deep-slate hover:text-storm-cloud",
                         )}
                       >
-                        <LucideIcon name={kind.icon} className="text-[11px]" />
+                        <LucideIcon name={kind.icon} className="text-[9px]" />
                         <span className="text-[12px] tracking-[-0.1px]">{kind.label}</span>
                       </Link>
                     ))}
@@ -334,7 +332,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                           : "text-fog-grey hover:bg-deep-slate hover:text-storm-cloud",
                       )}
                     >
-                      <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[11px]" />
+                      <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[9px]" />
                       <span className="text-[12px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
                     </Link>
                   </div>
@@ -433,10 +431,10 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               <LucideIcon name="power_off" className="text-[24px]" />
             </div>
             <h2 className="text-[15px] font-[510] text-porcelain mb-1.5 tracking-[-0.13px]">Server Disconnected</h2>
-            <p className="text-[13px] text-storm-cloud mb-5">The proxy server has been stopped.</p>
+            <p className="text-[12px] text-storm-cloud mb-5">The proxy server has been stopped.</p>
             <button
               onClick={() => globalThis.location.reload()}
-              className="h-8 px-4 rounded-[6px] bg-gunmetal border border-charcoal-grey text-[13px] text-porcelain hover:bg-deep-slate transition-colors duration-100"
+              className="h-8 px-4 rounded-[6px] bg-gunmetal border border-charcoal-grey text-[12px] text-porcelain hover:bg-deep-slate transition-colors duration-100"
             >
               Reload Page
             </button>
