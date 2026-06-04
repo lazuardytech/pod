@@ -28,6 +28,11 @@ Compact project knowledge for contributors and coding agents.
 Historical reports are under `.agents/reports/`.
 - [Security Hardening — Phase 1-4 Audit (v0.0.79)](reports/security-hardening-v0.0.79.md)
 
+## Plans
+
+Feature plans and architecture proposals are under `.agents/plan/`.
+- [Optimizing Pod for Multiple Instance](plan/optimizing-pod-for-multiple-instance.md) — LiteFS, Redis, load balancing
+
 ## Key Libraries
 
 | Library | Path | Purpose |
