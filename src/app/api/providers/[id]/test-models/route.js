@@ -3,6 +3,7 @@ import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/provide
 import { getApiKeys, getProviderConnectionById } from "@/lib/localDb";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 /**
  * Get an active API key to pass through auth when requireApiKey is enabled.
  */
@@ -41,7 +42,7 @@ async function pingModel(modelId, baseUrl, apiKey) {
     }
     return { ok, latencyMs, error };
   } catch (err) {
-    return { ok: false, latencyMs: Date.now() - start, error: err.message };
+    return { ok: false, latencyMs: Date.now() - start, error: sanitizeError(err) };
   }
 }
 

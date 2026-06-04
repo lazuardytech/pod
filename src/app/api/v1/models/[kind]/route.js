@@ -3,6 +3,7 @@ import { getSettings, validateApiKey } from "@/lib/localDb";
 import { extractApiKey } from "@/sse/services/auth.js";
 import { buildModelsList } from "../route.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 // URL slug → service kind(s). `web` covers both webSearch and webFetch.
 const KIND_SLUG_MAP = {
   image: ["image"],
@@ -77,6 +78,6 @@ export async function GET(request, { params }) {
     );
   } catch (error) {
     console.log("Error fetching models by kind:", error);
-    return Response.json({ error: { message: error.message, type: "server_error" } }, { status: 500 });
+    return Response.json({ error: { message: sanitizeError(error), type: "server_error" } }, { status: 500 });
   }
 }

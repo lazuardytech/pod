@@ -257,9 +257,9 @@ export async function getProviderConnectionById(id) {
   return r ? rowToConnection(r) : null;
 }
 
-async function insertConnectionRow(conn) {
+function insertConnectionRowInTx(database, conn) {
   const extras = splitExtras(conn, CONN_COLS);
-  db()
+  database
     .prepare(`
     INSERT INTO provider_connections
     (id, provider, auth_type, name, priority, is_active, data, created_at, updated_at)
@@ -307,113 +307,123 @@ function updateConnectionRow(id, patch) {
 export async function createProviderConnection(data) {
   if (isCloud) return createProviderConnectionCloud(data);
 
-  const now = nowIso();
-  // Upsert: oauth → (provider, email); apikey → (provider, name)
-  let existing = null;
-  if (data.authType === "oauth" && data.email) {
-    existing = db()
-      .prepare(`
+  // Wrap SELECT + INSERT/UPDATE in transaction to prevent duplicate rows
+  // from concurrent upsert calls. Reorder runs after tx commits.
+  let connection;
+  let isNew = false;
+  tx((db) => {
+    const now = nowIso();
+    let existing = null;
+    if (data.authType === "oauth" && data.email) {
+      existing = db
+        .prepare(`
       SELECT * FROM provider_connections
       WHERE provider = ? AND auth_type = 'oauth'
         AND json_extract(data, '$.email') = ?
     `)
-      .get(data.provider, data.email);
-  } else if (data.authType === "apikey" && data.name) {
-    existing = db()
-      .prepare(`
+        .get(data.provider, data.email);
+    } else if (data.authType === "apikey" && data.name) {
+      existing = db
+        .prepare(`
       SELECT * FROM provider_connections
       WHERE provider = ? AND auth_type = 'apikey' AND name = ?
     `)
-      .get(data.provider, data.name);
-  }
+        .get(data.provider, data.name);
+    }
 
-  if (existing) {
-    const current = rowToConnection(existing);
-    const merged = { ...current, ...data, updatedAt: now };
-    const extras = splitExtras(merged, CONN_COLS);
-    db()
-      .prepare(`
+    if (existing) {
+      const current = rowToConnection(existing);
+      connection = { ...current, ...data, updatedAt: now };
+      const extras = splitExtras(connection, CONN_COLS);
+      db.prepare(`
       UPDATE provider_connections
       SET provider = ?, auth_type = ?, name = ?, priority = ?, is_active = ?,
           data = ?, updated_at = ?
       WHERE id = ?
-    `)
-      .run(
-        merged.provider,
-        merged.authType || null,
-        merged.name ?? null,
-        merged.priority ?? null,
-        merged.isActive === false ? 0 : 1,
+    `).run(
+        connection.provider,
+        connection.authType || null,
+        connection.name ?? null,
+        connection.priority ?? null,
+        connection.isActive === false ? 0 : 1,
         JSON.stringify(extras),
         now,
         current.id,
       );
-    return merged;
-  }
-
-  // New connection: derive default name + next priority
-  let connectionName = data.name || null;
-  if (!connectionName && data.authType === "oauth") {
-    if (data.email) {
-      connectionName = data.email;
-    } else {
-      const row = db().prepare("SELECT COUNT(*) as c FROM provider_connections WHERE provider = ?").get(data.provider);
-      connectionName = `Account ${(row?.c || 0) + 1}`;
+      return;
     }
-  }
 
-  let priority = data.priority;
-  if (!priority) {
-    const row = db()
-      .prepare("SELECT COALESCE(MAX(priority), 0) as m FROM provider_connections WHERE provider = ?")
-      .get(data.provider);
-    priority = (row?.m || 0) + 1;
-  }
+    // New connection: derive default name + next priority
+    let connectionName = data.name || null;
+    if (!connectionName && data.authType === "oauth") {
+      if (data.email) {
+        connectionName = data.email;
+      } else {
+        const row = db.prepare("SELECT COUNT(*) as c FROM provider_connections WHERE provider = ?").get(data.provider);
+        connectionName = `Account ${(row?.c || 0) + 1}`;
+      }
+    }
 
-  const connection = {
-    id: uuidv4(),
-    provider: data.provider,
-    authType: data.authType || "oauth",
-    name: connectionName,
-    priority,
-    isActive: data.isActive !== undefined ? data.isActive : true,
-    createdAt: now,
-    updatedAt: now,
-  };
+    let priority = data.priority;
+    if (!priority) {
+      const row = db
+        .prepare("SELECT COALESCE(MAX(priority), 0) as m FROM provider_connections WHERE provider = ?")
+        .get(data.provider);
+      priority = (row?.m || 0) + 1;
+    }
 
-  const optionalFields = [
-    "displayName",
-    "email",
-    "globalPriority",
-    "defaultModel",
-    "accessToken",
-    "refreshToken",
-    "expiresAt",
-    "tokenType",
-    "scope",
-    "idToken",
-    "projectId",
-    "apiKey",
-    "testStatus",
-    "lastTested",
-    "lastError",
-    "lastErrorAt",
-    "rateLimitedUntil",
-    "expiresIn",
-    "errorCode",
-    "consecutiveUseCount",
-  ];
-  for (const f of optionalFields) {
-    if (data[f] !== undefined && data[f] !== null) connection[f] = data[f];
-  }
-  if (data.providerSpecificData && Object.keys(data.providerSpecificData).length) {
-    connection.providerSpecificData = data.providerSpecificData;
-  }
+    connection = {
+      id: uuidv4(),
+      provider: data.provider,
+      authType: data.authType || "oauth",
+      name: connectionName,
+      priority,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+      createdAt: now,
+      updatedAt: now,
+    };
 
-  await insertConnectionRow(connection);
-  await reorderProviderConnections(data.provider);
+    const optionalFields = [
+      "displayName",
+      "email",
+      "globalPriority",
+      "defaultModel",
+      "accessToken",
+      "refreshToken",
+      "expiresAt",
+      "tokenType",
+      "scope",
+      "idToken",
+      "projectId",
+      "apiKey",
+      "testStatus",
+      "lastTested",
+      "lastError",
+      "lastErrorAt",
+      "rateLimitedUntil",
+      "expiresIn",
+      "errorCode",
+      "consecutiveUseCount",
+    ];
+    for (const f of optionalFields) {
+      if (data[f] !== undefined && data[f] !== null) connection[f] = data[f];
+    }
+    if (data.providerSpecificData && Object.keys(data.providerSpecificData).length) {
+      connection.providerSpecificData = data.providerSpecificData;
+    }
+
+    // Insert inside the transaction
+    insertConnectionRowInTx(db, connection);
+    isNew = true;
+  });
+
+  if (isNew) {
+    await reorderProviderConnections(data.provider);
+  }
   return connection;
 }
+
+// Cloud copy of createProviderConnection — kept isolated so the SQLite
 
 // Cloud copy of createProviderConnection — kept isolated so the SQLite
 // path stays readable.

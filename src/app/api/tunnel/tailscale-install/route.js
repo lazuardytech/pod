@@ -5,6 +5,7 @@ import os from "node:os";
 import { generateShortId, loadState } from "@/lib/tunnel/state.js";
 import { installTailscale } from "@/lib/tunnel/tailscale";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 // Removed initDbHooks call
 
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
@@ -51,9 +52,9 @@ export async function POST(request) {
       } catch (error) {
         console.error("Tailscale install error:", error);
         const msg =
-          error.message?.includes("incorrect password") || error.message?.includes("Sorry")
+          sanitizeError(error)?.includes("incorrect password") || sanitizeError(error)?.includes("Sorry")
             ? "Wrong sudo password"
-            : error.message;
+            : sanitizeError(error);
         send("error", { error: msg });
       } finally {
         controller.close();

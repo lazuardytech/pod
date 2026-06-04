@@ -82,7 +82,7 @@ export default function CombosPage() {
         setShowCreateModal(false);
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create combo");
+        toast.error(err.error || "Failed to create combo");
       }
     } catch (error) {
       console.error("Error creating combo:", error);
@@ -101,7 +101,7 @@ export default function CombosPage() {
         setEditingCombo(null);
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to update combo");
+        toast.error(err.error || "Failed to update combo");
       }
     } catch (error) {
       console.error("Error updating combo:", error);

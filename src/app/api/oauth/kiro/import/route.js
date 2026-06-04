@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { createProviderConnection } from "@/models";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 /**
  * POST /api/oauth/kiro/import
  * Import and validate refresh token from Kiro IDE
  */
 export async function POST(request) {
   try {
-    const { refreshToken } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { refreshToken } = body;
 
     if (!refreshToken || typeof refreshToken !== "string") {
       return NextResponse.json({ error: "Refresh token is required" }, { status: 400 });
@@ -48,6 +52,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.log("Kiro import token error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

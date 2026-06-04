@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 import { getSettings } from "@/lib/localDb";
 import {
   clearCache,
@@ -7,10 +8,6 @@ import {
   invalidateBySignature,
   invalidateStale,
 } from "@/lib/semanticCache.js";
-
-function errorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
-}
 
 export async function GET(request) {
   try {
@@ -24,7 +21,7 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -63,6 +60,6 @@ export async function DELETE(request) {
     const cleared = clearCache();
     return NextResponse.json({ ok: true, scope: "all", cleared });
   } catch (error) {
-    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

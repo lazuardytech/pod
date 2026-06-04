@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createApiKey, getApiKeys } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 export const dynamic = "force-dynamic";
 
 // GET /api/keys - List API keys
@@ -18,7 +20,8 @@ export async function GET() {
 // POST /api/keys - Create new API key
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { name, limitType, requestsPerMinute, concurrentRequests } = body || {};
 
     if (!name) {
@@ -63,7 +66,7 @@ export async function POST(request) {
   } catch (error) {
     console.log("Error creating key:", error);
     if (String(error?.message || "").includes("positive integer")) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to create key" }, { status: 500 });
   }

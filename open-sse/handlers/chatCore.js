@@ -777,8 +777,18 @@ export async function handleChatCore({
   // returned as HTTP 200 with error in body. Convert to proper error response so
   // downstream proxies (e.g. omniroute) can fallback correctly.
   if (stream && providerResponse.body) {
-    const reader = providerResponse.body.getReader();
-    const { value: firstChunk, done } = await reader.read();
+    let reader;
+    try {
+      reader = providerResponse.body.getReader();
+    } catch (e) {
+      log?.error?.("CHAT_CORE", `Failed to get reader from provider stream: ${e.message}`);
+      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to read provider stream");
+    }
+    const peekResult = await reader.read().catch((e) => {
+      log?.error?.("CHAT_CORE", `Failed to peek first chunk from ${provider}/${model}: ${e.message}`);
+      return { value: null, done: true };
+    });
+    const { value: firstChunk, done } = peekResult;
     if (!done && firstChunk) {
       const text = new TextDecoder().decode(firstChunk);
       const dataLine = text.split("\n").find((l) => l.startsWith("data:"));

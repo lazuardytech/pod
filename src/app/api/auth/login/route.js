@@ -3,6 +3,8 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
 
@@ -15,7 +17,9 @@ function isTunnelRequest(request, settings) {
 
 export async function POST(request) {
   try {
-    const { password } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { password } = body;
     const settings = await getSettings();
 
     // Block login via tunnel/tailscale if dashboard access is disabled
@@ -61,6 +65,6 @@ export async function POST(request) {
 
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

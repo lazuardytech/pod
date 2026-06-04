@@ -146,7 +146,7 @@ export function getCachedResponse(signature) {
     const db = getDatabase();
     const row = db
       .prepare(
-        "SELECT response, tokens_saved FROM semantic_cache WHERE signature = ? AND expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
+        "SELECT response, tokens_saved, model, expires_at FROM semantic_cache WHERE signature = ? AND expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
       )
       .get(signature);
 
@@ -163,7 +163,14 @@ export function getCachedResponse(signature) {
 
     const parsed = JSON.parse(record.response);
     const tokensSaved = toNumber(record.tokens_saved, 0);
-    getMemoryCache().set(signature, { response: parsed, tokensSaved });
+    // Compute remaining TTL from expires_at
+    let memoryTtl = undefined;
+    if (typeof record.expires_at === "string") {
+      const remaining = new Date(record.expires_at).getTime() - Date.now();
+      if (remaining > 0) memoryTtl = remaining;
+    }
+    const modelName = typeof record.model === "string" ? record.model : "";
+    getMemoryCache().set(signature, { response: parsed, tokensSaved, model: modelName }, memoryTtl);
     db.prepare("UPDATE semantic_cache SET hit_count = hit_count + 1 WHERE signature = ?").run(signature);
 
     incrementMetric("hits");
@@ -177,7 +184,7 @@ export function getCachedResponse(signature) {
 
 export function setCachedResponse(signature, model, response, tokensSaved = 0, ttlMs = 3600000) {
   const ttl = parseInt(process.env.SEMANTIC_CACHE_TTL_MS || String(ttlMs), 10);
-  getMemoryCache().set(signature, { response, tokensSaved }, ttl);
+  getMemoryCache().set(signature, { response, tokensSaved, model }, ttl);
 
   try {
     const db = getDatabase();
@@ -211,7 +218,21 @@ export function clearCache() {
 }
 
 export function invalidateByModel(model) {
-  getMemoryCache().clear();
+  // Targeted eviction: only remove entries matching this model from memory cache
+  const cache = getMemoryCache();
+  const toEvict = [];
+  cache.forEach((key, value) => {
+    if (value && typeof value === "object" && value.model === model) {
+      toEvict.push(key);
+    }
+  });
+  for (const key of toEvict) {
+    cache.delete(key);
+  }
+
+  // In-flight dedup entries are per-request-signature, not per-model,
+  // so they cannot be evicted by model — no cleanup needed here.
+
   try {
     const db = getDatabase();
     const result = db.prepare("DELETE FROM semantic_cache WHERE model = ?").run(model);
@@ -233,11 +254,14 @@ export function invalidateBySignature(signature) {
 }
 
 export function invalidateStale(maxAgeMs) {
+  // invalidation criterion (age) is based on DB created_at, not memory cache
+  // entry timestamp — we can't do targeted eviction from memory without storing
+  // the DB timestamp alongside each memory entry, so clear the memory cache.
   getMemoryCache().clear();
   try {
     const db = getDatabase();
-    const cutoff = new Date(Date.now() - maxAgeMs).toISOString();
-    const result = db.prepare("DELETE FROM semantic_cache WHERE created_at < ?").run(cutoff);
+    const cutoffIso = new Date(Date.now() - maxAgeMs).toISOString();
+    const result = db.prepare("DELETE FROM semantic_cache WHERE created_at < ?").run(cutoffIso);
     return result.changes || 0;
   } catch {
     return 0;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { generatePKCE } from "@/lib/oauth/utils/pkce";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 /**
  * GET /api/oauth/kiro/social-authorize
  * Generate Google/GitHub social login URL for manual callback flow
@@ -31,6 +32,6 @@ export async function GET(request) {
     });
   } catch (error) {
     console.log("Kiro social authorize error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 const KILO_MODELS_URL = "https://api.kilo.ai/api/gateway/models";
 
 // In-memory cache with TTL
@@ -44,9 +45,12 @@ export async function GET() {
   } catch (error) {
     // Return cached data if available, even if expired
     if (cachedModels) {
-      return NextResponse.json({ models: cachedModels, cached: true, warning: error.message });
+      return NextResponse.json({ models: cachedModels, cached: true, warning: sanitizeError(error) });
     }
 
-    return NextResponse.json({ models: [], error: `Failed to fetch Kilo models: ${error.message}` }, { status: 502 });
+    return NextResponse.json(
+      { models: [], error: `Failed to fetch Kilo models: ${sanitizeError(error)}` },
+      { status: 502 },
+    );
   }
 }

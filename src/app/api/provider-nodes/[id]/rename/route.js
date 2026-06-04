@@ -10,6 +10,8 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { invalidateConnectionsCache } from "@/sse/services/auth";
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +34,8 @@ function isCustomNode(node) {
 export async function PATCH(request, { params }) {
   try {
     const { id: oldId } = await params;
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const newId = typeof body?.newId === "string" ? body.newId.trim() : "";
 
     if (!newId) {
@@ -85,7 +88,7 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({ node: updated });
   } catch (error) {
-    const message = typeof error?.message === "string" ? error.message : "Failed to rename provider node";
+    const message = typeof error?.message === "string" ? sanitizeError(error) : "Failed to rename provider node";
     console.log("Error renaming provider node:", message);
     const status = /not found/i.test(message)
       ? 404

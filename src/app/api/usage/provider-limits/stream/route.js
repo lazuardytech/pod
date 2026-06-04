@@ -3,6 +3,7 @@ import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/cons
 import { parseQuotaData } from "@/app/(dashboard)/usage/components/ProviderLimits/utils";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/usage/provider-limits/stream";
@@ -62,7 +63,7 @@ async function buildProviderLimitsSnapshot(request) {
           raw: data,
         };
       } catch (error) {
-        errors[conn.id] = error.message || "Failed to fetch quota";
+        errors[conn.id] = sanitizeError(error) || "Failed to fetch quota";
       }
     }),
   );
@@ -118,7 +119,7 @@ export async function GET(request) {
             send(payload);
           }
         } catch (error) {
-          send({ error: error.message || "Failed to load provider limits snapshot" });
+          send({ error: sanitizeError(error) || "Failed to load provider limits snapshot" });
         }
       };
 

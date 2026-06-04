@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createCombo, getComboByName, getCombos, reorderCombos } from "@/lib/localDb";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,8 @@ export async function GET() {
 // PATCH /api/combos - Reorder combos
 export async function PATCH(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { order } = body;
 
     if (!Array.isArray(order) || order.some((id) => typeof id !== "string")) {
@@ -38,7 +40,8 @@ export async function PATCH(request) {
 // POST /api/combos - Create new combo
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { name, models, kind, systemPrompt, modelId, contentFilterMessage } = body;
 
     if (!name) {

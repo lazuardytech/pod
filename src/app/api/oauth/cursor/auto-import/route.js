@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 const execFileAsync = promisify(execFile);
 
 const ACCESS_TOKEN_KEYS = ["cursorAuth/accessToken", "cursorAuth/token"];
@@ -236,6 +237,6 @@ export async function GET() {
     return NextResponse.json({ found: false, windowsManual: true, dbPath });
   } catch (error) {
     console.log("Cursor auto-import error:", error);
-    return NextResponse.json({ found: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ found: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

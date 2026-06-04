@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 // Map locale code → country name
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
@@ -100,6 +101,6 @@ export async function GET(request) {
 
     return NextResponse.json({ voices, languages, byLang });
   } catch (err) {
-    return NextResponse.json({ error: err.message || "Failed to fetch voices" }, { status: 502 });
+    return NextResponse.json({ error: sanitizeError(err) || "Failed to fetch voices" }, { status: 502 });
   }
 }

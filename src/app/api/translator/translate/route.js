@@ -6,9 +6,13 @@ import { FORMATS } from "open-sse/translator/formats.js";
 import { translateRequest } from "open-sse/translator/index.js";
 import { getProviderConnections } from "@/lib/localDb.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 export async function POST(request) {
   try {
-    const { step, body } = await request.json();
+    const [json, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { step, body } = json;
 
     if (!step || !body) {
       return NextResponse.json({ success: false, error: "Step and body required" }, { status: 400 });
@@ -88,6 +92,6 @@ export async function POST(request) {
     }
   } catch (error) {
     console.error("Error in translator:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

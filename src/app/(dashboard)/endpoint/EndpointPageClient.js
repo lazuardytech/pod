@@ -84,6 +84,14 @@ export default function APIPageClient({ machineId }) {
   const tsLogRef = useRef(null);
   const tunnelStatusSigRef = useRef("");
   const offlineNoticeShownRef = useRef(false);
+  const unmountRef = useRef(false);
+
+  // Cleanup on unmount — stops all polling loops
+  useEffect(() => {
+    return () => {
+      unmountRef.current = true;
+    };
+  }, []);
 
   // API key visibility toggle state
   const [visibleKeys, setVisibleKeys] = useState(new Set());
@@ -389,6 +397,7 @@ export default function APIPageClient({ machineId }) {
     const start = Date.now();
     const check = async () => {
       while (Date.now() - start < TUNNEL_PING_MAX_MS) {
+        if (unmountRef.current) return;
         await new Promise((r) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
         try {
           const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
@@ -434,6 +443,7 @@ export default function APIPageClient({ machineId }) {
     const start = Date.now();
     const OVERALL_TIMEOUT_MS = 180000; // 3 min
     while (Date.now() - start < OVERALL_TIMEOUT_MS) {
+      if (unmountRef.current) return;
       await new Promise((r) => setTimeout(r, 1000));
       try {
         const r = await fetch("/api/tunnel/status");
@@ -588,6 +598,7 @@ export default function APIPageClient({ machineId }) {
     const healthUrl = `${url}/api/health`;
     const start = Date.now();
     while (Date.now() - start < TUNNEL_PING_MAX_MS) {
+      if (unmountRef.current) return false;
       await new Promise((r) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
       try {
         const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
@@ -689,6 +700,7 @@ export default function APIPageClient({ machineId }) {
     else window.open(enableUrl, "tailscale_auth", "width=600,height=700");
     setTsProgress("Enable Funnel in browser, waiting...");
     for (let i = 0; i < 40; i++) {
+      if (unmountRef.current) return;
       await new Promise((r) => setTimeout(r, 3000));
       try {
         const res = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });

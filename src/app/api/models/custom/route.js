@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addCustomModel, deleteCustomModel, getCustomModels } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ export async function GET() {
 // POST /api/models/custom - Add custom model
 export async function POST(request) {
   try {
-    const { providerAlias, id, type, name } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { providerAlias, id, type, name } = body;
     if (!providerAlias || !id) {
       return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
     }

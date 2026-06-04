@@ -1,6 +1,7 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
 import { handleChat } from "@/sse/handlers/chat.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 let initialized = false;
 
@@ -28,7 +29,8 @@ export async function OPTIONS() {
 export async function POST(request) {
   return await withApiKeyRateLimit(request, async () => {
     await ensureInitialized();
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     body._compact = true;
     const newRequest = new Request(request.url, {
       method: "POST",

@@ -4,7 +4,18 @@
 const minuteCounters = new Map();
 const concurrentCounters = new Map();
 const COUNTER_TTL_MS = 120000;
-const MAX_TRACKED_KEYS = 10000;
+let lastConcurrentTrim = Date.now();
+const CONCURRENT_TRIM_INTERVAL_MS = 60000;
+
+function trimConcurrentCounters(nowMs) {
+  if (nowMs - lastConcurrentTrim < CONCURRENT_TRIM_INTERVAL_MS) return;
+  lastConcurrentTrim = nowMs;
+  for (const [keyId, entry] of concurrentCounters.entries()) {
+    if (nowMs - entry.lastAccess > COUNTER_TTL_MS) {
+      concurrentCounters.delete(keyId);
+    }
+  }
+}
 
 function toPositiveInt(value) {
   const num = Number(value);
@@ -33,9 +44,15 @@ export class MemoryBackend {
   }
 
   maybeTrimCounterMaps(nowMs) {
-    if (minuteCounters.size <= MAX_TRACKED_KEYS) return;
+    // Periodic time-based trim for all entries beyond TTL (not just when >10k)
+    const expired = [];
     for (const [keyId, entry] of minuteCounters.entries()) {
-      if (nowMs - entry.updatedAt > COUNTER_TTL_MS) minuteCounters.delete(keyId);
+      if (nowMs - entry.updatedAt > COUNTER_TTL_MS) {
+        expired.push(keyId);
+      }
+    }
+    for (const keyId of expired) {
+      minuteCounters.delete(keyId);
     }
   }
 
@@ -46,6 +63,7 @@ export class MemoryBackend {
     const keyId = apiKeyRecord.id;
     const nowMs = Date.now();
     this.maybeTrimCounterMaps(nowMs);
+    trimConcurrentCounters(nowMs);
 
     const bucket = minuteCounters.get(keyId) || {
       windowStart: nowMs,
@@ -63,15 +81,19 @@ export class MemoryBackend {
       return { ok: false, reason: "rpm", retryAfterSeconds };
     }
 
-    const currentConcurrent = concurrentCounters.get(keyId) || 0;
-    if (currentConcurrent >= config.concurrentRequests) {
+    const concEntry = concurrentCounters.get(keyId) || { count: 0, lastAccess: nowMs };
+    if (concEntry.count >= config.concurrentRequests) {
+      concEntry.lastAccess = nowMs;
+      concurrentCounters.set(keyId, concEntry);
       return { ok: false, reason: "concurrent", retryAfterSeconds: 1 };
     }
 
     bucket.count += 1;
     bucket.updatedAt = nowMs;
     minuteCounters.set(keyId, bucket);
-    concurrentCounters.set(keyId, currentConcurrent + 1);
+    concEntry.count += 1;
+    concEntry.lastAccess = nowMs;
+    concurrentCounters.set(keyId, concEntry);
 
     let released = false;
     return {
@@ -79,9 +101,13 @@ export class MemoryBackend {
       release: () => {
         if (released) return;
         released = true;
-        const current = concurrentCounters.get(keyId) || 0;
-        if (current <= 1) concurrentCounters.delete(keyId);
-        else concurrentCounters.set(keyId, current - 1);
+        const current = concurrentCounters.get(keyId);
+        if (current) {
+          current.count -= 1;
+          current.lastAccess = nowMs;
+          if (current.count <= 0) concurrentCounters.delete(keyId);
+          else concurrentCounters.set(keyId, current);
+        }
       },
     };
   }

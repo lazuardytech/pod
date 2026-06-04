@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getModelAliases, setModelAlias, validateApiKey } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 // PUT /api/cloud/models/alias - Set model alias (for cloud/CLI)
 export async function PUT(request) {
@@ -16,7 +17,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { model, alias } = body;
 
     if (!model || !alias) {

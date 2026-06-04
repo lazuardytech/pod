@@ -3,6 +3,8 @@ import { getSettings, validateApiKey } from "@/lib/localDb";
 import { handleChat } from "@/sse/handlers/chat.js";
 import { extractApiKey } from "@/sse/services/auth.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 let initialized = false;
 
 /**
@@ -82,7 +84,8 @@ export async function POST(request, { params }) {
       model = modelAction.replace(":streamGenerateContent", "").replace(":generateContent", "");
     }
 
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
 
     // Streaming is determined by URL action suffix:
     //   :streamGenerateContent => stream: true  (SSE)
@@ -112,7 +115,7 @@ export async function POST(request, { params }) {
     }
   } catch (error) {
     console.log("Error handling Gemini request:", error);
-    return Response.json({ error: { message: error.message, code: 500 } }, { status: 500 });
+    return Response.json({ error: { message: sanitizeError(error), code: 500 } }, { status: 500 });
   }
 }
 

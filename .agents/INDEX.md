@@ -5,9 +5,9 @@ Compact project knowledge for contributors and coding agents.
 ## Current Baseline
 
 - Project: `pod`
-- Version: `v0.0.78`
+- Version: `v0.0.79`
 - Runtime: bun + Next.js 16 + local `open-sse`
-- Focus areas: routing reliability, provider compatibility, security hardening, PWA/offline-first
+- Focus areas: routing reliability, provider compatibility, security hardening, PWA/offline-first, Redis rate limiting
 
 ## Core Knowledge
 
@@ -25,4 +25,15 @@ Compact project knowledge for contributors and coding agents.
 
 ## Reports
 
-Historical reports are under `.agents/reports/` and now use concise executive format.
+Historical reports are under `.agents/reports/`.
+- [Security Hardening — Phase 1-4 Audit (v0.0.79)](reports/security-hardening-v0.0.79.md)
+
+## Key Libraries
+
+| Library | Path | Purpose |
+|---------|------|---------|
+| `sanitizeError` | `src/lib/sanitizeError.js` | Production-safe error messages |
+| `parseJsonBody` | `src/lib/parseJsonBody.js` | Safe JSON body parsing |
+| `rateLimit` | `src/lib/rateLimit/` | Redis/in-memory rate limiter |
+| `localDb` | `src/lib/localDb.js` | SQLite query facade |
+| `shutdown` | `src/lib/shutdown.js` | Graceful shutdown orchestrator |

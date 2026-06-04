@@ -1,9 +1,13 @@
 import { getExecutor, refreshTokenByProvider } from "open-sse/index.js";
 import { getProviderConnections } from "@/lib/localDb.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 export async function POST(request) {
   try {
-    const { provider, model, body } = await request.json();
+    const [json, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { provider, model, body } = json;
 
     if (!provider || !model || !body) {
       return Response.json({ success: false, error: "provider, model, and body required" }, { status: 400 });
@@ -59,6 +63,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("[Translator] Send error:", error);
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    return Response.json({ success: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { LRUCache } from "../cacheLayer.js";
-import { getDatabase } from "../sqlite/connection.js";
+import { getDatabase, tx } from "../sqlite/connection.js";
 import { MEMORY_TYPES, MemoryType } from "./types.js";
 
 const MEMORY_CACHE_TTL = 300_000;
@@ -52,7 +52,6 @@ function findExistingMemory(db, apiKeyId, key) {
 }
 
 export async function createMemory(memory) {
-  const db = getDatabase();
   const now = new Date().toISOString();
   const type = MEMORY_TYPES.has(memory?.type) ? memory.type : MemoryType.FACTUAL;
   const key = typeof memory?.key === "string" ? memory.key.trim() : "";
@@ -60,67 +59,71 @@ export async function createMemory(memory) {
   if (!apiKeyId) throw new Error("apiKeyId is required");
   if (!memory?.content || typeof memory.content !== "string") throw new Error("content is required");
 
-  const existing = key ? findExistingMemory(db, apiKeyId, key) : undefined;
-  if (existing) {
-    const mergedMetadata = { ...parseJSON(existing.metadata), ...(memory.metadata || {}) };
+  // Run the SELECT-then-INSERT/UPDATE inside a transaction to prevent
+  // duplicate memory entries from concurrent calls with the same key.
+  return tx((db) => {
+    const existing = key ? findExistingMemory(db, apiKeyId, key) : undefined;
+    if (existing) {
+      const mergedMetadata = { ...parseJSON(existing.metadata), ...(memory.metadata || {}) };
+      db.prepare(
+        "UPDATE memories SET content = ?, metadata = ?, updated_at = ?, session_id = ?, type = ?, expires_at = ? WHERE id = ?",
+      ).run(
+        memory.content,
+        JSON.stringify(mergedMetadata),
+        now,
+        memory.sessionId || null,
+        type,
+        memory.expiresAt ? new Date(memory.expiresAt).toISOString() : null,
+        existing.id,
+      );
+      memoryCache.delete(`id:${existing.id}`);
+      return {
+        id: String(existing.id),
+        apiKeyId,
+        sessionId: memory.sessionId || "",
+        type,
+        key,
+        content: memory.content,
+        metadata: mergedMetadata,
+        createdAt: new Date(String(existing.created_at)),
+        updatedAt: new Date(now),
+        expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : null,
+      };
+    }
+
+    const id = crypto.randomUUID();
     db.prepare(
-      "UPDATE memories SET content = ?, metadata = ?, updated_at = ?, session_id = ?, type = ?, expires_at = ? WHERE id = ?",
+      `INSERT INTO memories
+      (id, api_key_id, session_id, type, key, content, metadata, created_at, updated_at, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
-      memory.content,
-      JSON.stringify(mergedMetadata),
-      now,
+      id,
+      apiKeyId,
       memory.sessionId || null,
       type,
+      key || null,
+      memory.content,
+      JSON.stringify(memory.metadata || {}),
+      now,
+      now,
       memory.expiresAt ? new Date(memory.expiresAt).toISOString() : null,
-      existing.id,
     );
-    memoryCache.delete(`id:${existing.id}`);
-    return {
-      id: String(existing.id),
+
+    const created = {
+      id,
       apiKeyId,
       sessionId: memory.sessionId || "",
       type,
       key,
       content: memory.content,
-      metadata: mergedMetadata,
-      createdAt: new Date(String(existing.created_at)),
+      metadata: memory.metadata || {},
+      createdAt: new Date(now),
       updatedAt: new Date(now),
       expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : null,
     };
-  }
-
-  const id = crypto.randomUUID();
-  db.prepare(
-    `INSERT INTO memories
-    (id, api_key_id, session_id, type, key, content, metadata, created_at, updated_at, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    id,
-    apiKeyId,
-    memory.sessionId || null,
-    type,
-    key || null,
-    memory.content,
-    JSON.stringify(memory.metadata || {}),
-    now,
-    now,
-    memory.expiresAt ? new Date(memory.expiresAt).toISOString() : null,
-  );
-
-  const created = {
-    id,
-    apiKeyId,
-    sessionId: memory.sessionId || "",
-    type,
-    key,
-    content: memory.content,
-    metadata: memory.metadata || {},
-    createdAt: new Date(now),
-    updatedAt: new Date(now),
-    expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : null,
-  };
-  setCache(`id:${id}`, created);
-  return created;
+    setCache(`id:${id}`, created);
+    return created;
+  });
 }
 
 export async function getMemory(id) {

@@ -2,9 +2,13 @@ import fs from "fs";
 import { NextResponse } from "next/server";
 import path from "node:path";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 export async function POST(request) {
   try {
-    const { file, content } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { file, content } = body;
 
     if (!file || content === undefined) {
       return NextResponse.json({ success: false, error: "File and content required" }, { status: 400 });
@@ -39,6 +43,6 @@ export async function POST(request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error saving file:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

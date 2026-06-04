@@ -15,6 +15,7 @@ import {
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
 import { extractApiKey } from "@/sse/services/auth.js";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 const parseOpenAIStyleModels = (data) => {
   if (Array.isArray(data)) return data;
@@ -412,6 +413,6 @@ export async function GET(request) {
     );
   } catch (error) {
     console.log("Error fetching models:", error);
-    return Response.json({ error: { message: error.message, type: "server_error" } }, { status: 500 });
+    return Response.json({ error: { message: sanitizeError(error), type: "server_error" } }, { status: 500 });
   }
 }

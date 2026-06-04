@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 /**
  * GET /api/oauth/kiro/auto-import
  * Auto-detect and extract Kiro refresh token from AWS SSO cache
@@ -74,6 +75,6 @@ export async function GET() {
     });
   } catch (error) {
     console.log("Kiro auto-import error:", error);
-    return NextResponse.json({ found: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ found: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

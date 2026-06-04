@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { clearMemories, createMemory, listMemories } from "@/lib/memory/store.js";
 import { MemoryType } from "@/lib/memory/types.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 function parsePositiveInt(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;
@@ -36,13 +38,14 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const content = typeof body.content === "string" ? body.content.trim() : "";
     const key = typeof body.key === "string" ? body.key.trim() : "";
     const apiKeyId = typeof body.apiKeyId === "string" ? body.apiKeyId.trim() : "";
@@ -65,7 +68,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: memory });
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 400 });
   }
 }
 
@@ -82,6 +85,6 @@ export async function DELETE(request) {
       apiKeyId: apiKeyId || null,
     });
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
   }
 }

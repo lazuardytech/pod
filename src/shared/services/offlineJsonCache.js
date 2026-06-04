@@ -59,6 +59,7 @@ async function getDb() {
     };
 
     req.onblocked = () => {
+      openDbPromise = null;
       resolve(null);
     };
   });

@@ -61,7 +61,11 @@ async function getDb() {
       resolve(null);
     };
 
-    req.onblocked = () => resolve(null);
+    req.onblocked = () => {
+      // Another tab holds a higher DB version — not our problem, that tab\n      // will eventually close. Fail this open so next call retries.
+      openDbPromise = null;
+      resolve(null);
+    };
   });
 
   return openDbPromise;
@@ -82,6 +86,25 @@ function normalizeHeaders(headers = {}) {
 function buildBackoffMs(attempts) {
   const exp = Math.max(0, attempts - 1);
   return Math.min(MAX_RETRY_DELAY_MS, 1000 * 2 ** exp);
+}
+
+function safeSerializeBody(body) {
+  if (body == null) return null;
+  if (typeof body === "string") return body;
+  if (
+    typeof body === "object" &&
+    !Array.isArray(body) &&
+    !(body instanceof FormData) &&
+    !(body instanceof Blob) &&
+    !(body instanceof ArrayBuffer)
+  ) {
+    try {
+      return JSON.stringify(body);
+    } catch {
+      return null;
+    }
+  }
+  return null; // unsupported type — caller gets { ok: false, reason: "unsupported_body_type" }
 }
 
 function canReplayNow(item, nowMs = Date.now()) {
@@ -190,7 +213,7 @@ export async function enqueueOfflineMutation({ url, method = "POST", headers = {
     url,
     method: normalizedMethod,
     headers: normalizedHeaders,
-    body: body == null ? null : String(body),
+    body: safeSerializeBody(body),
     createdAt: now,
     attempts: 0,
     nextAttemptAt: now,
@@ -218,7 +241,7 @@ async function replayMutation(item) {
   };
 
   if (method !== "GET" && method !== "HEAD" && item?.body != null) {
-    init.body = String(item.body);
+    init.body = typeof item.body === "string" ? item.body : String(item.body);
   }
 
   try {

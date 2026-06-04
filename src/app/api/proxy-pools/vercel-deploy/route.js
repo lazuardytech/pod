@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProxyPool } from "@/models";
 import { validateFetchUrl } from "@/lib/validateUrl";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 const VERCEL_API = "https://api.vercel.com";
 
@@ -79,7 +81,8 @@ async function pollDeployment(deploymentId, token, maxMs = 120000) {
 // POST /api/proxy-pools/vercel-deploy
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const vercelToken = body.vercelToken;
     const projectName = body.projectName?.trim() || `relay-${Date.now().toString(36)}`;
 
@@ -120,11 +123,7 @@ export async function POST(request) {
     });
 
     if (!deployRes.ok) {
-      const err = await deployRes.json().catch(() => ({}));
-      return NextResponse.json(
-        { error: err.error?.message || "Failed to create Vercel deployment" },
-        { status: deployRes.status },
-      );
+      return NextResponse.json({ error: "Failed to create Vercel deployment" }, { status: deployRes.status });
     }
 
     const deployment = await deployRes.json();
@@ -166,6 +165,6 @@ export async function POST(request) {
     return NextResponse.json({ proxyPool, deployUrl }, { status: 201 });
   } catch (error) {
     console.log("Error deploying Vercel relay:", error);
-    return NextResponse.json({ error: error.message || "Deploy failed" }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || "Deploy failed" }, { status: 500 });
   }
 }

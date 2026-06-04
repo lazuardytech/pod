@@ -8,6 +8,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { DATA_DIR, getDatabase } from "@/lib/sqlite/connection.js";
 import { migrateFromJson } from "@/lib/sqlite/migrate-from-json.js";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 const CONFIG_FILE = "db.json";
 const LOG_FILES = ["usage.json", "request-details.json"];
@@ -21,7 +22,7 @@ export async function GET() {
       hasLegacyData: configPresent,
     });
   } catch (error) {
-    return NextResponse.json({ error: error?.message || "Failed to inspect data dir" }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || "Failed to inspect data dir" }, { status: 500 });
   }
 }
 
@@ -65,6 +66,6 @@ export async function POST() {
     return NextResponse.json({ success: true, ...summary });
   } catch (error) {
     console.error("[migrate-sqlite] failed:", error);
-    return NextResponse.json({ error: error?.message || "Migration failed" }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || "Migration failed" }, { status: 500 });
   }
 }

@@ -3,16 +3,32 @@
  * Supports both formats:
  * - New: sk-{machineId}-{keyId}-{crc8}
  * - Old: sk-{random8}
+ *
+ * Call initApiKeySecret(secret) from the Worker entry point to inject the
+ * secret from the env binding. Falls back to hardcoded default if not set.
+ *
+ * In production, set via Cloudflare Worker secret binding:
+ *   wrangler secret put API_KEY_SECRET
  */
 
-const API_KEY_SECRET = "endpoint-proxy-api-key-secret";
+let _apiKeySecret = "endpoint-proxy-api-key-secret";
+
+export function initApiKeySecret(secret) {
+  if (secret && typeof secret === "string" && secret.length > 0) {
+    _apiKeySecret = secret;
+  }
+}
+
+function getApiKeySecret() {
+  return _apiKeySecret;
+}
 
 /**
  * Generate CRC (8-char HMAC) using Web Crypto API
  */
 async function generateCrc(machineId, keyId) {
   const encoder = new TextEncoder();
-  const keyData = encoder.encode(API_KEY_SECRET);
+  const keyData = encoder.encode(getApiKeySecret());
   const data = encoder.encode(machineId + keyId);
   
   const key = await crypto.subtle.importKey(

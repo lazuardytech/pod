@@ -111,6 +111,19 @@ export class LRUCache {
     return true;
   }
 
+  /**
+   * Iterate over all entries including expired ones. Callback receives (key, value, createdAt).
+   * Use this with caution — expired entries are included and must be checked.
+   */
+  forEach(fn) {
+    let count = 0;
+    for (const [key, entry] of this.#cache.entries()) {
+      fn(key, entry.value, entry.createdAt, entry.ttl);
+      count++;
+    }
+    return count;
+  }
+
   clear() {
     this.#cache.clear();
     this.#currentSize = 0;

@@ -4,7 +4,9 @@ import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
 import { normalizeProviderId } from "@/lib/providerNormalization";
 import { getProviderNodeById } from "@/models";
 import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 import { validateFetchUrl } from "@/lib/validateUrl";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
@@ -119,7 +121,8 @@ async function probeMediaProvider(provider, apiKey) {
 // POST /api/providers/validate - Validate API key with provider
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const provider = normalizeProviderId(body.provider);
     const { apiKey, providerSpecificData } = body;
 
@@ -671,7 +674,7 @@ export async function POST(request) {
           return NextResponse.json({ error: "Provider validation not supported" }, { status: 400 });
       }
     } catch (err) {
-      error = err.message;
+      error = sanitizeError(err);
       isValid = false;
     }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 import { getProviderConnections } from "@/models";
 import {
   ANTHROPIC_COMPATIBLE_PREFIX,
@@ -8,6 +9,7 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { testSingleConnection } from "../[id]/test/testUtils.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 function getAuthGroup(providerId, connection = null) {
   // Prioritize authType from connection if available
@@ -42,7 +44,8 @@ function isCompatibleProvider(providerId) {
 // POST /api/providers/test-batch - Test multiple connections by group
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { mode, providerId } = body;
 
     if (!mode) {
@@ -105,8 +108,8 @@ export async function POST(request) {
           authType: conn.authType || getAuthGroup(conn.provider, conn),
           valid: false,
           latencyMs: 0,
-          error: error.message,
-          diagnosis: { type: "network_error", source: "local", code: null, message: error.message },
+          error: sanitizeError(error),
+          diagnosis: { type: "network_error", source: "local", code: null, message: sanitizeError(error) },
           statusCode: null,
           testedAt: new Date().toISOString(),
         });

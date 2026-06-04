@@ -198,241 +198,259 @@ export function createSSEStream(options = {}) {
     },
 
     transform(chunk, controller) {
-      // Reset stall timer on each received chunk
-      stallController?._resetStall?.();
+      try {
+        // Reset stall timer on each received chunk
+        stallController?._resetStall?.();
 
-      if (!ttftAt) {
-        ttftAt = Date.now();
-      }
-      const text = decoder.decode(chunk, { stream: true });
-      buffer += text;
-      reqLogger?.appendProviderChunk?.(text);
+        if (!ttftAt) {
+          ttftAt = Date.now();
+        }
+        const text = decoder.decode(chunk, { stream: true });
+        buffer += text;
+        reqLogger?.appendProviderChunk?.(text);
 
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
-      for (let i = 0; i < lines.length; i++) {
-        lines[i] = decloakSSELine(lines[i], toolNameMap, allowSuffixFallback);
-      }
+        for (let i = 0; i < lines.length; i++) {
+          lines[i] = decloakSSELine(lines[i], toolNameMap, allowSuffixFallback);
+        }
 
-      for (const line of lines) {
-        const trimmed = line.trim();
+        for (const line of lines) {
+          const trimmed = line.trim();
 
-        // Passthrough mode: normalize and forward
-        if (mode === STREAM_MODE.PASSTHROUGH) {
-          let output;
-          let injectedUsage = false;
+          // Passthrough mode: normalize and forward
+          if (mode === STREAM_MODE.PASSTHROUGH) {
+            let output;
+            let injectedUsage = false;
 
-          if (trimmed.startsWith("data:") && trimmed.slice(5).trim() !== "[DONE]") {
-            try {
-              const parsed = JSON.parse(trimmed.slice(5).trim());
+            if (trimmed.startsWith("data:") && trimmed.slice(5).trim() !== "[DONE]") {
+              try {
+                const parsed = JSON.parse(trimmed.slice(5).trim());
 
-              const idFixed = fixInvalidId(parsed);
+                const idFixed = fixInvalidId(parsed);
 
-              // Reasoning summary forwarding: mirror top-level reasoning_summary envelope to
-              // an OpenAI-style delta.reasoning_content chunk for clients that don't consume
-              // the summary envelope directly.
-              const summaryText = extractReasoningSummaryText(parsed.reasoning_summary);
-              const firstChoice = Array.isArray(parsed.choices) ? parsed.choices[0] || {} : {};
-              const firstDelta = (firstChoice && firstChoice.delta) || {};
-              const hasTextDelta = typeof firstDelta.content === "string" && firstDelta.content.length > 0;
-              const hasReasoningDelta =
-                typeof firstDelta.reasoning_content === "string" && firstDelta.reasoning_content.length > 0;
-              const hasToolDelta = Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
-              const hasFinishReason =
-                typeof firstChoice.finish_reason === "string" && firstChoice.finish_reason.length > 0;
+                // Reasoning summary forwarding: mirror top-level reasoning_summary envelope to
+                // an OpenAI-style delta.reasoning_content chunk for clients that don't consume
+                // the summary envelope directly.
+                const summaryText = extractReasoningSummaryText(parsed.reasoning_summary);
+                const firstChoice = Array.isArray(parsed.choices) ? parsed.choices[0] || {} : {};
+                const firstDelta = (firstChoice && firstChoice.delta) || {};
+                const hasTextDelta = typeof firstDelta.content === "string" && firstDelta.content.length > 0;
+                const hasReasoningDelta =
+                  typeof firstDelta.reasoning_content === "string" && firstDelta.reasoning_content.length > 0;
+                const hasToolDelta = Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
+                const hasFinishReason =
+                  typeof firstChoice.finish_reason === "string" && firstChoice.finish_reason.length > 0;
 
-              if (summaryText && !hasTextDelta && !hasReasoningDelta && !hasToolDelta && !hasFinishReason) {
-                const compatChunk = buildReasoningSummaryCompatChunk(parsed, summaryText);
-                const compatOutput = `data: ${JSON.stringify(compatChunk)}\n`;
-                accumulatedThinking += summaryText;
-                totalContentLength += summaryText.length;
-                reqLogger?.appendConvertedChunk?.(compatOutput);
-                controller.enqueue(sharedEncoder.encode(compatOutput));
-              }
-
-              // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
-              let fieldsInjected = false;
-              if (parsed.choices !== undefined) {
-                if (!parsed.object) {
-                  parsed.object = "chat.completion.chunk";
-                  fieldsInjected = true;
+                if (summaryText && !hasTextDelta && !hasReasoningDelta && !hasToolDelta && !hasFinishReason) {
+                  const compatChunk = buildReasoningSummaryCompatChunk(parsed, summaryText);
+                  const compatOutput = `data: ${JSON.stringify(compatChunk)}\n`;
+                  accumulatedThinking += summaryText;
+                  totalContentLength += summaryText.length;
+                  reqLogger?.appendConvertedChunk?.(compatOutput);
+                  controller.enqueue(sharedEncoder.encode(compatOutput));
                 }
-                if (!parsed.created) {
-                  parsed.created = Math.floor(Date.now() / 1000);
-                  fieldsInjected = true;
-                }
-              }
 
-              // Strip Azure-specific non-standard fields from streaming chunks
-              if (parsed.prompt_filter_results !== undefined) {
-                delete parsed.prompt_filter_results;
-                fieldsInjected = true;
-              }
-              if (parsed?.choices) {
-                for (const choice of parsed.choices) {
-                  if (choice.content_filter_results !== undefined) {
-                    delete choice.content_filter_results;
+                // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
+                let fieldsInjected = false;
+                if (parsed.choices !== undefined) {
+                  if (!parsed.object) {
+                    parsed.object = "chat.completion.chunk";
+                    fieldsInjected = true;
+                  }
+                  if (!parsed.created) {
+                    parsed.created = Math.floor(Date.now() / 1000);
                     fieldsInjected = true;
                   }
                 }
-              }
 
-              // Error payload mid-stream: if we already sent content, skip it
-              // to avoid corrupting the stream. If no content yet, forward as-is
-              // so downstream can detect and handle it.
-              if (parsed.error && !parsed.choices) {
-                if (totalContentLength > 0) {
-                  // Already sent content — silently drop error and close stream
+                // Strip Azure-specific non-standard fields from streaming chunks
+                if (parsed.prompt_filter_results !== undefined) {
+                  delete parsed.prompt_filter_results;
+                  fieldsInjected = true;
+                }
+                if (parsed?.choices) {
+                  for (const choice of parsed.choices) {
+                    if (choice.content_filter_results !== undefined) {
+                      delete choice.content_filter_results;
+                      fieldsInjected = true;
+                    }
+                  }
+                }
+
+                // Error payload mid-stream: if we already sent content, skip it
+                // to avoid corrupting the stream. If no content yet, forward as-is
+                // so downstream can detect and handle it.
+                if (parsed.error && !parsed.choices) {
+                  if (totalContentLength > 0) {
+                    // Already sent content — silently drop error and close stream
+                    continue;
+                  }
+                  output = `data: ${JSON.stringify(parsed)}\n`;
+                  emit(output, controller);
                   continue;
                 }
-                output = `data: ${JSON.stringify(parsed)}\n`;
-                emit(output, controller);
-                continue;
-              }
 
-              if (!hasValuableContent(parsed, FORMATS.OPENAI)) {
-                continue;
-              }
+                if (!hasValuableContent(parsed, FORMATS.OPENAI)) {
+                  continue;
+                }
 
-              const delta = parsed.choices?.[0]?.delta;
-              const content = delta?.content;
-              const reasoning = delta?.reasoning_content;
-              if (content && typeof content === "string") {
-                totalContentLength += content.length;
-                accumulatedContent += content;
-              }
-              if (reasoning && typeof reasoning === "string") {
-                totalContentLength += reasoning.length;
-                accumulatedThinking += reasoning;
-              }
+                const delta = parsed.choices?.[0]?.delta;
+                const content = delta?.content;
+                const reasoning = delta?.reasoning_content;
+                if (content && typeof content === "string") {
+                  totalContentLength += content.length;
+                  accumulatedContent += content;
+                }
+                if (reasoning && typeof reasoning === "string") {
+                  totalContentLength += reasoning.length;
+                  accumulatedThinking += reasoning;
+                }
 
-              const extracted = extractUsage(parsed);
-              if (extracted) {
-                usage = extracted;
-              }
+                const extracted = extractUsage(parsed);
+                if (extracted) {
+                  usage = extracted;
+                }
 
-              const isFinishChunk = parsed.choices?.[0]?.finish_reason;
-              if (isFinishChunk && !hasValidUsage(parsed.usage)) {
-                const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
-                parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
-                output = `data: ${JSON.stringify(parsed)}\n`;
-                usage = estimated;
-                injectedUsage = true;
-              } else if (isFinishChunk && usage) {
-                const buffered = addBufferToUsage(usage);
-                parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
-                output = `data: ${JSON.stringify(parsed)}\n`;
-                injectedUsage = true;
-              } else if (idFixed || fieldsInjected) {
-                output = `data: ${JSON.stringify(parsed)}\n`;
-                injectedUsage = true;
-              }
-            } catch {}
-          }
-
-          if (!injectedUsage) {
-            if (trimmed === "data: [DONE]" || trimmed === "data:[DONE]") {
-              sawDone = true;
+                const isFinishChunk = parsed.choices?.[0]?.finish_reason;
+                if (isFinishChunk && !hasValidUsage(parsed.usage)) {
+                  const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
+                  parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
+                  output = `data: ${JSON.stringify(parsed)}\n`;
+                  usage = estimated;
+                  injectedUsage = true;
+                } else if (isFinishChunk && usage) {
+                  const buffered = addBufferToUsage(usage);
+                  parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
+                  output = `data: ${JSON.stringify(parsed)}\n`;
+                  injectedUsage = true;
+                } else if (idFixed || fieldsInjected) {
+                  output = `data: ${JSON.stringify(parsed)}\n`;
+                  injectedUsage = true;
+                }
+              } catch {}
             }
-            if (line.startsWith("data:") && !line.startsWith("data: ")) {
-              output = "data: " + line.slice(5) + "\n";
-            } else {
-              output = line + "\n";
-            }
-          }
 
-          emit(output, controller);
-          continue;
-        }
-
-        // Translate mode
-        if (!trimmed) continue;
-
-        const parsed = parseSSELine(trimmed, targetFormat);
-        if (!parsed) continue;
-
-        // For Ollama: done=true is the final chunk with finish_reason/usage, must translate
-        // For other formats: done=true is the [DONE] sentinel, skip
-        if (parsed && parsed.done && targetFormat !== FORMATS.OLLAMA) {
-          emit("data: [DONE]\n\n", controller);
-          continue;
-        }
-
-        // Claude format - content
-        if (parsed.delta?.text) {
-          totalContentLength += parsed.delta.text.length;
-          accumulatedContent += parsed.delta.text;
-        }
-        // Claude format - thinking
-        if (parsed.delta?.thinking) {
-          totalContentLength += parsed.delta.thinking.length;
-          accumulatedThinking += parsed.delta.thinking;
-        }
-
-        // OpenAI format - content
-        if (parsed.choices?.[0]?.delta?.content) {
-          totalContentLength += parsed.choices[0].delta.content.length;
-          accumulatedContent += parsed.choices[0].delta.content;
-        }
-        // OpenAI format - reasoning
-        if (parsed.choices?.[0]?.delta?.reasoning_content) {
-          totalContentLength += parsed.choices[0].delta.reasoning_content.length;
-          accumulatedThinking += parsed.choices[0].delta.reasoning_content;
-        }
-
-        // Gemini format
-        if (parsed.candidates?.[0]?.content?.parts) {
-          for (const part of parsed.candidates[0].content.parts) {
-            if (part.text && typeof part.text === "string") {
-              totalContentLength += part.text.length;
-              // Check if this is thinking content
-              if (part.thought === true) {
-                accumulatedThinking += part.text;
+            if (!injectedUsage) {
+              if (trimmed === "data: [DONE]" || trimmed === "data:[DONE]") {
+                sawDone = true;
+              }
+              if (line.startsWith("data:") && !line.startsWith("data: ")) {
+                output = "data: " + line.slice(5) + "\n";
               } else {
-                accumulatedContent += part.text;
+                output = line + "\n";
+              }
+            }
+
+            emit(output, controller);
+            continue;
+          }
+
+          // Translate mode
+          if (!trimmed) continue;
+
+          const parsed = parseSSELine(trimmed, targetFormat);
+          if (!parsed) continue;
+
+          // For Ollama: done=true is the final chunk with finish_reason/usage, must translate
+          // For other formats: done=true is the [DONE] sentinel, skip
+          if (parsed && parsed.done && targetFormat !== FORMATS.OLLAMA) {
+            emit("data: [DONE]\n\n", controller);
+            continue;
+          }
+
+          // Claude format - content
+          if (parsed.delta?.text) {
+            totalContentLength += parsed.delta.text.length;
+            accumulatedContent += parsed.delta.text;
+          }
+          // Claude format - thinking
+          if (parsed.delta?.thinking) {
+            totalContentLength += parsed.delta.thinking.length;
+            accumulatedThinking += parsed.delta.thinking;
+          }
+
+          // OpenAI format - content
+          if (parsed.choices?.[0]?.delta?.content) {
+            totalContentLength += parsed.choices[0].delta.content.length;
+            accumulatedContent += parsed.choices[0].delta.content;
+          }
+          // OpenAI format - reasoning
+          if (parsed.choices?.[0]?.delta?.reasoning_content) {
+            totalContentLength += parsed.choices[0].delta.reasoning_content.length;
+            accumulatedThinking += parsed.choices[0].delta.reasoning_content;
+          }
+
+          // Gemini format
+          if (parsed.candidates?.[0]?.content?.parts) {
+            for (const part of parsed.candidates[0].content.parts) {
+              if (part.text && typeof part.text === "string") {
+                totalContentLength += part.text.length;
+                // Check if this is thinking content
+                if (part.thought === true) {
+                  accumulatedThinking += part.text;
+                } else {
+                  accumulatedContent += part.text;
+                }
               }
             }
           }
-        }
 
-        // Extract usage
-        const extracted = extractUsage(parsed);
-        if (extracted) state.usage = extracted; // Keep original usage for logging
+          // Extract usage
+          const extracted = extractUsage(parsed);
+          if (extracted) state.usage = extracted; // Keep original usage for logging
 
-        // Translate: targetFormat -> openai -> sourceFormat
-        const translated = translateResponse(targetFormat, sourceFormat, parsed, state);
+          // Translate: targetFormat -> openai -> sourceFormat
+          const translated = translateResponse(targetFormat, sourceFormat, parsed, state);
 
-        // Log OpenAI intermediate chunks (if available)
-        if (translated?._openaiIntermediate) {
-          for (const item of translated._openaiIntermediate) {
-            const openaiOutput = formatSSE(item, FORMATS.OPENAI);
-            reqLogger?.appendOpenAIChunk?.(openaiOutput);
+          // Log OpenAI intermediate chunks (if available)
+          if (translated?._openaiIntermediate) {
+            for (const item of translated._openaiIntermediate) {
+              const openaiOutput = formatSSE(item, FORMATS.OPENAI);
+              reqLogger?.appendOpenAIChunk?.(openaiOutput);
+            }
+          }
+
+          if (translated?.length > 0) {
+            for (const item of translated) {
+              // Filter empty chunks
+              if (!hasValuableContent(item, sourceFormat)) {
+                continue; // Skip this empty chunk
+              }
+
+              // Inject estimated usage if finish chunk has no valid usage
+              const isFinishChunk = item.type === "message_delta" || item.choices?.[0]?.finish_reason;
+              if (state.finishReason && isFinishChunk && !hasValidUsage(item.usage) && totalContentLength > 0) {
+                const estimated = estimateUsage(body, totalContentLength, sourceFormat);
+                item.usage = filterUsageForFormat(estimated, sourceFormat); // Filter + already has buffer
+                state.usage = estimated;
+              } else if (state.finishReason && isFinishChunk && state.usage) {
+                // Add buffer and filter usage for client (but keep original in state.usage for logging)
+                const buffered = addBufferToUsage(state.usage);
+                item.usage = filterUsageForFormat(buffered, sourceFormat);
+              }
+
+              emit(formatSSE(item, sourceFormat), controller);
+            }
           }
         }
-
-        if (translated?.length > 0) {
-          for (const item of translated) {
-            // Filter empty chunks
-            if (!hasValuableContent(item, sourceFormat)) {
-              continue; // Skip this empty chunk
-            }
-
-            // Inject estimated usage if finish chunk has no valid usage
-            const isFinishChunk = item.type === "message_delta" || item.choices?.[0]?.finish_reason;
-            if (state.finishReason && isFinishChunk && !hasValidUsage(item.usage) && totalContentLength > 0) {
-              const estimated = estimateUsage(body, totalContentLength, sourceFormat);
-              item.usage = filterUsageForFormat(estimated, sourceFormat); // Filter + already has buffer
-              state.usage = estimated;
-            } else if (state.finishReason && isFinishChunk && state.usage) {
-              // Add buffer and filter usage for client (but keep original in state.usage for logging)
-              const buffered = addBufferToUsage(state.usage);
-              item.usage = filterUsageForFormat(buffered, sourceFormat);
-            }
-
-            emit(formatSSE(item, sourceFormat), controller);
-          }
-        }
+      } catch (transformError) {
+        console.error("[STREAM_TRANSFORM]", "Transform error; attempting graceful termination", {
+          error: transformError?.message || String(transformError),
+          provider,
+          model,
+        });
+        try {
+          controller.enqueue(
+            sharedEncoder.encode(
+              `data: ${JSON.stringify({ error: { message: "Stream processing error", type: "server_error" } })}\n\ndata: [DONE]\n\n`,
+            ),
+          );
+        } catch {}
+        try {
+          controller.terminate();
+        } catch {}
       }
     },
 

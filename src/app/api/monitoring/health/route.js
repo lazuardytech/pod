@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkMonitoringAuth } from "./_auth.js";
 import { buildHealthPayload } from "./_health.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 export const dynamic = "force-dynamic";
 
 // GET /api/monitoring/health — full snapshot
@@ -17,6 +18,6 @@ export async function GET(request) {
     const payload = await buildHealthPayload();
     return NextResponse.json(payload);
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(err) }, { status: 500 });
   }
 }

@@ -1,8 +1,23 @@
 import * as log from "../utils/logger.js";
 
 // Request-scoped cache for getMachineData (avoids multiple D1 queries per request)
+// Capped at 500 entries to prevent unbounded growth across long-lived isolates
 const requestCache = new Map();
 const CACHE_TTL_MS = 5000;
+const MAX_CACHE_ENTRIES = 500;
+
+function evictOldestIfNeeded() {
+  if (requestCache.size <= MAX_CACHE_ENTRIES) return;
+  let oldestKey = null;
+  let oldestTime = Infinity;
+  for (const [key, entry] of requestCache.entries()) {
+    if (entry.timestamp < oldestTime) {
+      oldestTime = entry.timestamp;
+      oldestKey = key;
+    }
+  }
+  if (oldestKey) requestCache.delete(oldestKey);
+}
 
 /**
  * Get machine data from D1 (with request-scope caching)
@@ -26,6 +41,7 @@ export async function getMachineData(machineId, env) {
   }
   
   const data = JSON.parse(row.data);
+  evictOldestIfNeeded();
   requestCache.set(machineId, { data, timestamp: Date.now() });
   log.debug("STORAGE", `Retrieved: ${machineId}`);
   return data;
@@ -51,6 +67,7 @@ export async function saveMachineData(machineId, data, env) {
     .run();
   
   // Update cache after save
+  evictOldestIfNeeded();
   requestCache.set(machineId, { data, timestamp: Date.now() });
   log.debug("STORAGE", `Saved: ${machineId}`);
 }

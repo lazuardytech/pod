@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 /**
  * iFlow Cookie-Based Authentication
  * POST /api/oauth/iflow/cookie
@@ -8,7 +10,9 @@ import { createProviderConnection } from "@/models";
  */
 export async function POST(request) {
   try {
-    const { cookie } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { cookie } = body;
 
     if (!cookie || typeof cookie !== "string") {
       return NextResponse.json({ error: "Cookie is required" }, { status: 400 });
@@ -43,8 +47,10 @@ export async function POST(request) {
     });
 
     if (!getResponse.ok) {
-      const errorText = await getResponse.text();
-      return NextResponse.json({ error: `Failed to fetch API key info: ${errorText}` }, { status: getResponse.status });
+      return NextResponse.json(
+        { error: `Failed to fetch API key info (HTTP ${getResponse.status})` },
+        { status: getResponse.status },
+      );
     }
 
     const getResult = await getResponse.json();
@@ -82,7 +88,7 @@ export async function POST(request) {
 
     const postResult = await postResponse.json();
     if (!postResult.success) {
-      return NextResponse.json({ error: `API key refresh failed: ${postResult.message}` }, { status: 400 });
+      return NextResponse.json({ error: "API key refresh failed" }, { status: 400 });
     }
 
     const refreshedKey = postResult.data;
@@ -122,6 +128,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("iFlow cookie auth error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

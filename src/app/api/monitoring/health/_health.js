@@ -9,6 +9,7 @@ import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync.js";
 import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler.js";
 import { APP_CONFIG } from "@/shared/constants/config.js";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
@@ -98,7 +99,7 @@ function getDbInfo() {
       journalMode: walMode?.journal_mode ?? "unknown",
     };
   } catch (err) {
-    return { ok: false, error: err.message };
+    return { ok: false, error: sanitizeError(err) };
   }
 }
 

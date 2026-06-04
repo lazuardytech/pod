@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 /**
@@ -20,8 +21,7 @@ export async function GET(request) {
       headers: { Authorization: `Basic ${apiKey}` },
     });
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return NextResponse.json({ error: `Inworld API ${res.status}: ${text || "Failed"}` }, { status: 502 });
+      return NextResponse.json({ error: `Inworld API returned status ${res.status}` }, { status: 502 });
     }
     const data = await res.json();
     const voices = data.voices || [];
@@ -62,6 +62,6 @@ export async function GET(request) {
     }
     return NextResponse.json({ languages, byLang });
   } catch (err) {
-    return NextResponse.json({ error: err.message || "Failed to fetch voices" }, { status: 502 });
+    return NextResponse.json({ error: sanitizeError(err) || "Failed to fetch voices" }, { status: 502 });
   }
 }

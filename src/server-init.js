@@ -1,4 +1,5 @@
 import initializeApp from "./shared/services/initializeApp.js";
+import { setupSignalHandlers, registerShutdownHook } from "./lib/shutdown.js";
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("[FATAL] Unhandled Rejection at:", promise, "reason:", reason);
@@ -10,6 +11,20 @@ process.on("uncaughtException", (error) => {
 
 async function startServer() {
   console.log("Starting server...");
+
+  // Register tunnel cleanup hook before signal handlers
+  registerShutdownHook(async () => {
+    try {
+      const { killCloudflared } = await import("./lib/tunnel/cloudflared.js");
+      killCloudflared();
+    } catch {}
+    try {
+      // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
+      if (typeof removeAllDNSEntriesSync === "function") removeAllDNSEntriesSync();
+    } catch {}
+  });
+
+  setupSignalHandlers();
 
   try {
     await initializeApp();

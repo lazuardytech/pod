@@ -6,6 +6,7 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { generateId } from "@/shared/utils";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,8 @@ export async function GET() {
 // POST /api/provider-nodes - Create provider node
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { name, prefix, apiType, baseUrl, type, identifier } = body;
 
     if (!name?.trim()) {

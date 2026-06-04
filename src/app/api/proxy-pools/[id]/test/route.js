@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { testProxyUrl } from "@/lib/network/proxyTest";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
 async function testVercelRelay(relayUrl, timeoutMs = 10000) {
@@ -28,7 +29,7 @@ async function testVercelRelay(relayUrl, timeoutMs = 10000) {
     return {
       ok: false,
       status: 500,
-      error: err?.name === "AbortError" ? "Relay test timed out" : err?.message || String(err),
+      error: err?.name === "AbortError" ? "Relay test timed out" : sanitizeError(err),
     };
   } finally {
     clearTimeout(timer);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { disableModels, enableModels, getDisabledModels } from "@/lib/disabledModelsDb";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,9 @@ export async function GET(request) {
 // POST /api/models/disabled  body: { providerAlias, ids: [...] }
 export async function POST(request) {
   try {
-    const { providerAlias, ids } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { providerAlias, ids } = body;
     if (!providerAlias || !Array.isArray(ids)) {
       return NextResponse.json({ error: "providerAlias and ids[] required" }, { status: 400 });
     }

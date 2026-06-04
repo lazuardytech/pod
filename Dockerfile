@@ -56,12 +56,31 @@ RUN mkdir -p /app/data && chown -R bun:bun /app && \
   ln -sf /app/data-home /root/.pod 2>/dev/null || true
 
 # Fix permissions at runtime (handles mounted volumes)
-RUN printf '#!/bin/sh\nchown -R bun:bun /app/data /app/data-home 2>/dev/null\n# Start tailscaled in userspace mode (background)\nmkdir -p /app/data/tailscale\ntailscaled --tun=userspace-networking --socket=/app/data/tailscale/tailscaled.sock --state=/app/data/tailscale/state &\nexec su-exec bun "$@"\n' > /entrypoint.sh && \
-  chmod +x /entrypoint.sh
+RUN printf '#!/bin/sh\n\
+chown -R bun:bun /app/data /app/data-home 2>/dev/null\n\
+# Start tailscaled in userspace mode (background)\n\
+mkdir -p /app/data/tailscale\n\
+tailscaled --tun=userspace-networking --socket=/app/data/tailscale/tailscaled.sock --state=/app/data/tailscale/state &\n\
+TAILSCALE_PID=$!\n\
+# Graceful shutdown: forward SIGTERM/SIGINT to all child processes\n\
+cleanup() {\n\
+  echo "Shutting down...";\n\
+  kill $TAILSCALE_PID 2>/dev/null;\n\
+  wait $TAILSCALE_PID 2>/dev/null;\n\
+  exit 0;\n\
+}\n\
+trap cleanup TERM INT\n\
+su-exec bun "$@" &\n\
+BUN_PID=$!\n\
+wait $BUN_PID\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 WORKDIR /app
 
 EXPOSE 20128
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:20128/api/health || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bun", "/app/server.js"]

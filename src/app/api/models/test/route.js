@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getApiKeys } from "@/lib/localDb";
 import { validateFetchUrl } from "@/lib/validateUrl";
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 // POST /api/models/test - Ping a single model via internal completions or embeddings
 export async function POST(request) {
   try {
-    const { model, kind } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { model, kind } = body;
     if (!model) return NextResponse.json({ error: "Model required" }, { status: 400 });
 
     const envBase = process.env.BASE_URL;
@@ -141,6 +145,6 @@ export async function POST(request) {
 
     return NextResponse.json({ ok: true, latencyMs, error: null, status: res.status });
   } catch (err) {
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: sanitizeError(err) }, { status: 500 });
   }
 }

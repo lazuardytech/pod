@@ -9,7 +9,7 @@
     "build": "NODE_ENV=production bun --bun next build --turbopack",
     "start": "NODE_ENV=production bun ./.next/standalone/server.js",
     "format": "biome format --write .",
-    "check": "biome format --write . && biome lint . && bun x eslint . || true",
+    "check": "biome format --write . && biome lint . && bun x eslint .",
     "test:run": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage --reporter=verbose"
   },

@@ -6,6 +6,7 @@ import { getProviderConnectionById } from "@/models";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 import { refreshGoogleToken, refreshKiroToken, updateProviderCredentials } from "@/sse/services/tokenRefresh";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
 const parseOpenAIStyleModels = (data) => {
@@ -303,7 +304,7 @@ export async function GET(request, { params }) {
               models,
             });
           } catch (error) {
-            if (error.message.includes("AccessDeniedException") && refreshToken) {
+            if (sanitizeError(error).includes("AccessDeniedException") && refreshToken) {
               console.log("Kiro token invalid/expired. Attempting refresh...");
               const refreshed = await refreshKiroToken(refreshToken, connection.providerSpecificData);
 
@@ -326,8 +327,8 @@ export async function GET(request, { params }) {
           }
         }
       } catch (error) {
-        warning = `Failed to fetch Kiro models: ${error.message}`;
-        console.log("Failed to fetch Kiro models dynamically, falling back to static:", error.message);
+        warning = `Failed to fetch Kiro models: ${sanitizeError(error)}`;
+        console.log("Failed to fetch Kiro models dynamically, falling back to static:", sanitizeError(error));
       }
 
       // Return empty dynamic list so UI falls back to static provider models.
@@ -391,13 +392,14 @@ export async function GET(request, { params }) {
             });
           }
         } else {
-          const errorText = await response.text();
-          warning = `Failed to fetch Gemini CLI models: ${response.status} ${errorText}`;
-          console.log("Failed to fetch Gemini CLI models dynamically, falling back to static:", errorText);
+          warning = `Failed to fetch Gemini CLI models (HTTP ${response.status})`;
+          console.log(
+            "Failed to fetch Gemini CLI models dynamically, falling back to static (HTTP " + response.status + ")",
+          );
         }
       } catch (error) {
-        warning = `Failed to fetch Gemini CLI models: ${error.message}`;
-        console.log("Failed to fetch Gemini CLI models dynamically, falling back to static:", error.message);
+        warning = `Failed to fetch Gemini CLI models: ${sanitizeError(error)}`;
+        console.log("Failed to fetch Gemini CLI models dynamically, falling back to static:", sanitizeError(error));
       }
 
       // Return empty dynamic list so UI falls back to static provider models.

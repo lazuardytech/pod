@@ -2,6 +2,7 @@ import { getDownloadStatus } from "@/lib/tunnel/cloudflared";
 import { getTailscaleStatus, getTunnelStatus } from "@/lib/tunnel/tunnelManager";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/tunnel/status/stream";
@@ -58,7 +59,7 @@ export async function GET(request) {
             send(payload);
           }
         } catch (error) {
-          send({ error: error.message || "Failed to read tunnel status" });
+          send({ error: sanitizeError(error) || "Failed to read tunnel status" });
         }
       };
 

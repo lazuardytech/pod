@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getProviderConnections, getSettings, updateProviderConnection } from "@/lib/localDb";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { getModelAvailabilityPayload, MODEL_LOCK_PREFIX } from "./_availability";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export async function GET() {
   try {
@@ -15,7 +16,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { action, provider, model } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { action, provider, model } = body;
 
     if (!provider || !model) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });

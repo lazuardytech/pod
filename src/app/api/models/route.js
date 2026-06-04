@@ -3,6 +3,7 @@ import { getDisabledModels } from "@/lib/disabledModelsDb";
 import { getModelAliases, setModelAlias } from "@/models";
 import { AI_MODELS } from "@/shared/constants/config";
 import { getProviderAlias } from "@/shared/constants/providers";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 // GET /api/models - Get models with aliases
 export async function GET() {
@@ -33,7 +34,8 @@ export async function GET() {
 // PUT /api/models - Update model alias
 export async function PUT(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { model, alias } = body;
 
     if (!model || !alias) {

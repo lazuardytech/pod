@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { exportDb, getSettings, importDb } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 export async function GET() {
   try {
     const payload = await exportDb();
@@ -14,7 +16,8 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const payload = await request.json();
+    const [payload, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     await importDb(payload);
 
     // Ensure proxy settings take effect immediately after a DB import.
@@ -28,6 +31,6 @@ export async function POST(request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.log("Error importing database:", error);
-    return NextResponse.json({ error: error?.message || "Failed to import database" }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error) || "Failed to import database" }, { status: 400 });
   }
 }

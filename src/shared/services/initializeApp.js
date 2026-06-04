@@ -2,7 +2,7 @@ import os from "node:os";
 import { cleanupProviderConnections, getSettings } from "@/lib/localDb";
 import { initRateLimit } from "@/lib/rateLimit";
 
-import { ensureCloudflared, isCloudflaredRunning, killCloudflared } from "@/lib/tunnel/cloudflared";
+import { ensureCloudflared, isCloudflaredRunning } from "@/lib/tunnel/cloudflared";
 import { checkInternet, probeUrlAlive } from "@/lib/tunnel/networkProbe";
 import { loadState } from "@/lib/tunnel/state";
 import { isTailscaleRunning } from "@/lib/tunnel/tailscale";
@@ -71,22 +71,8 @@ export async function initializeApp() {
     }
 
     if (!g.signalHandlersRegistered) {
-      const cleanup = () => {
-        try {
-          // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
-          removeAllDNSEntriesSync();
-        } catch {
-          /* best effort */
-        }
-        killCloudflared();
-        // Don't call process.exit() here — later handlers (usageDb, requestDetailsDb)
-        // registered on module import need time to flush their queues.
-        // Process exits naturally when event loop drains.
-        // Safety net: force exit after 5s in case something hangs.
-        setTimeout(() => process.exit(1), 5000).unref();
-      };
-      process.on("SIGINT", cleanup);
-      process.on("SIGTERM", cleanup);
+      // Signal handlers now managed by src/lib/shutdown.js (called from server-init.js).
+      // Keep the exit handler for DNS cleanup as a safety net.
       process.on("exit", () => {
         try {
           // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global

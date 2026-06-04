@@ -1,6 +1,8 @@
 // Redis-backed rate limiter using Bun.RedisClient native.
 // Sliding window RPM via Sorted Set, concurrent via INCR/DECR.
 
+import crypto from "node:crypto";
+
 const RPM_KEY_PREFIX = "ratelimit:rpm:";
 const CONC_KEY_PREFIX = "ratelimit:conc:";
 const WINDOW_MS = 60000;
@@ -29,6 +31,10 @@ export class RedisBackend {
       this.connected = true;
     } catch (err) {
       this.connected = false;
+      // Explicitly disconnect to release the TCP socket
+      try {
+        await this.client.close();
+      } catch {}
       throw err;
     }
   }
@@ -66,12 +72,33 @@ export class RedisBackend {
         return { ok: false, retryAfterSeconds, type: "rpm" };
       }
 
-      // Only add entry when within limit
-      await this.client.zadd(key, now, String(now));
-      return { ok: true };
+      // Only add entry when within limit — use unique member ID to avoid
+      // collision when two requests arrive in the same millisecond
+      const member = `${String(now)}:${crypto.randomUUID().slice(0, 8)}`;
+      await this.client.zadd(key, now, member);
+      return { ok: true, member };
     } catch (err) {
       console.warn("[RateLimit] Redis RPM error:", err?.message || err);
       return { ok: false, retryAfterSeconds: 1, type: "error" };
+    }
+  }
+
+  /**
+   * Release an RPM slot (called when concurrent check fails after RPM passes).
+   * Removes the most-recently-added entry using the unique requestId.
+   */
+  async releaseRpm(keyId, requestId) {
+    if (!this.connected) return;
+    const key = RPM_KEY_PREFIX + keyId;
+    try {
+      if (requestId) {
+        await this.client.zrem(key, requestId);
+      } else {
+        // Fallback: remove newest entry
+        await this.client.zpopmax(key, 1);
+      }
+    } catch {
+      // Best effort
     }
   }
 

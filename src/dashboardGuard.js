@@ -30,6 +30,11 @@ const PROTECTED_API_PATHS = [
   "/api/providers/client",
   "/api/provider-nodes/validate",
   "/api/memory",
+  "/api/cache",
+  "/api/provider-nodes",
+  "/api/models",
+  "/api/translator",
+  "/api/tunnel",
 ];
 
 async function hasValidToken(request) {

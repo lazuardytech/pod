@@ -112,11 +112,27 @@ export default function HealthPage() {
 
   // SSE connection
   useEffect(() => {
+    let closed = false;
+    let reconnectTimer = null;
+    let es = null;
+
+    const cleanup = () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      if (es) {
+        es.close();
+        es = null;
+      }
+    };
+
     const connect = () => {
-      const es = new EventSource("/api/monitoring/health/stream");
+      if (closed) return;
+      cleanup();
+      es = new EventSource("/api/monitoring/health/stream");
       esRef.current = es;
 
       es.onmessage = (e) => {
+        if (closed) return;
         try {
           const payload = JSON.parse(e.data);
           if (payload.error) {
@@ -131,12 +147,15 @@ export default function HealthPage() {
 
       es.onerror = () => {
         es.close();
-        // Reconnect after 3s
-        setTimeout(connect, 3000);
+        if (!closed) reconnectTimer = setTimeout(connect, 3000);
       };
     };
 
     connect();
+    return () => {
+      closed = true;
+      cleanup();
+    };
 
     return () => {
       esRef.current?.close();

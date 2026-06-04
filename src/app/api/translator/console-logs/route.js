@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clearConsoleLogs, getConsoleLogs, initConsoleLogCapture } from "@/lib/consoleLogBuffer";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 initConsoleLogCapture();
 
 export async function GET() {
@@ -9,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ success: true, logs });
   } catch (error) {
     console.error("Error getting console logs:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -19,6 +20,6 @@ export async function DELETE() {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error clearing console logs:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

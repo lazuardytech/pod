@@ -135,6 +135,10 @@ export async function checkRateLimitByKey(apiKey) {
 
     const concResult = await backend.acquireConc(apiKeyRecord.id, config.concurrentRequests);
     if (!concResult.ok) {
+      // Release RPM slot — consumed but we can't proceed due to concurrent limit
+      try {
+        await backend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
+      } catch {}
       return { ok: false, release: null, response: rateLimitResponse(concResult.type || "concurrent", 1) };
     }
 
@@ -187,6 +191,10 @@ export async function withApiKeyRateLimit(request, handler) {
 
     const concResult = await backend.acquireConc(apiKeyRecord.id, config.concurrentRequests);
     if (!concResult.ok) {
+      // Release RPM slot — consumed but we can't proceed due to concurrent limit
+      try {
+        await backend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
+      } catch {}
       return rateLimitResponse(concResult.type || "concurrent", 1);
     }
 

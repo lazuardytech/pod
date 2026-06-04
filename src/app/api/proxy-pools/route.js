@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 function toBoolean(value) {
   if (value === "true") return true;
@@ -77,7 +78,8 @@ export async function GET(request) {
 // POST /api/proxy-pools - Create proxy pool
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const normalized = normalizeProxyPoolInput(body);
 
     if (normalized.error) {

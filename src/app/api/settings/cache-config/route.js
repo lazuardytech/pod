@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 const DEFAULTS = {
   semanticCacheEnabled: true,
   semanticCacheMaxSize: 100,
@@ -21,13 +23,14 @@ export async function GET() {
     for (const key of ALLOWED_KEYS) config[key] = settings[key] ?? DEFAULTS[key];
     return NextResponse.json(config);
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
   }
 }
 
 export async function PUT(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const updates = {};
 
     if (body.semanticCacheEnabled !== undefined) {
@@ -60,6 +63,6 @@ export async function PUT(request) {
     await updateSettings(updates);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
   }
 }

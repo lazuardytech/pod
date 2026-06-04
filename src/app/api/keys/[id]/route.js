@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 // GET /api/keys/[id] - Get single key
 export async function GET(request, { params }) {
   try {
@@ -20,7 +22,8 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { isActive, name, limitType, requestsPerMinute, concurrentRequests } = body || {};
 
     const existing = await getApiKeyById(id);
@@ -61,7 +64,7 @@ export async function PUT(request, { params }) {
   } catch (error) {
     console.log("Error updating key:", error);
     if (String(error?.message || "").includes("positive integer")) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to update key" }, { status: 500 });
   }

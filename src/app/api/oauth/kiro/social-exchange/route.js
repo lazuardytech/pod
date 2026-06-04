@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { createProviderConnection } from "@/models";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 /**
  * POST /api/oauth/kiro/social-exchange
  * Exchange authorization code for tokens (Google/GitHub social login)
@@ -9,7 +11,9 @@ import { createProviderConnection } from "@/models";
  */
 export async function POST(request) {
   try {
-    const { code, codeVerifier, provider } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { code, codeVerifier, provider } = body;
 
     if (!code || !codeVerifier) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -53,6 +57,6 @@ export async function POST(request) {
     });
   } catch (error) {
     console.log("Kiro social exchange error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

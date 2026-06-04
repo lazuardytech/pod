@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { CursorService } from "@/lib/oauth/services/cursor";
 import { createProviderConnection } from "@/models";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 /**
  * POST /api/oauth/cursor/import
  * Import and validate access token from Cursor IDE's local SQLite database
@@ -12,7 +14,9 @@ import { createProviderConnection } from "@/models";
  */
 export async function POST(request) {
   try {
-    const { accessToken, machineId } = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const { accessToken, machineId } = body;
 
     if (!accessToken || typeof accessToken !== "string") {
       return NextResponse.json({ error: "Access token is required" }, { status: 400 });
@@ -57,7 +61,7 @@ export async function POST(request) {
     });
   } catch (error) {
     console.log("Cursor import token error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 

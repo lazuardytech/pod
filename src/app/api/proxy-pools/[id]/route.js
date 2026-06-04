@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteProxyPool, getProviderConnections, getProxyPoolById, updateProxyPool } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 function normalizeProxyPoolUpdate(body = {}) {
   const updates = {};
@@ -71,7 +72,8 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Proxy pool not found" }, { status: 404 });
     }
 
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const normalized = normalizeProxyPoolUpdate(body);
 
     if (normalized.error) {

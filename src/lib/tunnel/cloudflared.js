@@ -191,6 +191,23 @@ async function _ensureCloudflared() {
 
 let cloudflaredProcess = null;
 let unexpectedExitHandler = null;
+let spawnLock = null;
+
+function killExistingProcess() {
+  if (cloudflaredProcess) {
+    try {
+      cloudflaredProcess.kill("SIGTERM");
+      const old = cloudflaredProcess;
+      // Wait up to 5s for graceful exit, then SIGKILL
+      setTimeout(() => {
+        try {
+          old.kill("SIGKILL");
+        } catch {}
+      }, 5000).unref();
+    } catch {}
+    cloudflaredProcess = null;
+  }
+}
 
 /** Register a callback to be called when cloudflared exits unexpectedly after connecting */
 export function setUnexpectedExitHandler(handler) {
@@ -198,83 +215,100 @@ export function setUnexpectedExitHandler(handler) {
 }
 
 export async function spawnCloudflared(tunnelToken) {
-  const binaryPath = await ensureCloudflared();
-
-  const child = spawn(binaryPath, ["tunnel", "run", "--dns-resolver-addrs", "1.1.1.1:53", "--token", tunnelToken], {
-    detached: false,
-    windowsHide: true,
-    stdio: ["ignore", "pipe", "pipe"],
+  // Serialize spawns to prevent orphaned processes on concurrent calls
+  while (spawnLock) await spawnLock;
+  let unlock;
+  spawnLock = new Promise((r) => {
+    unlock = r;
   });
 
-  cloudflaredProcess = child;
-  savePid(child.pid);
+  try {
+    killExistingProcess();
+    const binaryPath = await ensureCloudflared();
 
-  return new Promise((resolve, reject) => {
-    let connectionCount = 0;
-    let resolved = false;
-    const timeout = setTimeout(() => {
-      resolved = true;
-      resolve(child);
-    }, 90000);
+    const child = spawn(binaryPath, ["tunnel", "run", "--dns-resolver-addrs", "1.1.1.1:53", "--token", tunnelToken], {
+      detached: false,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
-    const handleLog = (data) => {
-      const msg = data.toString();
-      // Count exact occurrences in this chunk (each chunk may contain multiple lines)
-      const matches = msg.match(/Registered tunnel connection/g);
-      if (matches) {
-        connectionCount += matches.length;
-        if (connectionCount >= 4 && !resolved) {
+    cloudflaredProcess = child;
+    savePid(child.pid);
+
+    return new Promise((resolve, reject) => {
+      let connectionCount = 0;
+      let resolved = false;
+      const timeout = setTimeout(() => {
+        resolved = true;
+        resolve(child);
+      }, 90000);
+
+      const handleLog = (data) => {
+        const msg = data.toString();
+        // Count exact occurrences in this chunk (each chunk may contain multiple lines)
+        const matches = msg.match(/Registered tunnel connection/g);
+        if (matches) {
+          connectionCount += matches.length;
+          if (connectionCount >= 4 && !resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            resolve(child);
+          }
+        }
+      };
+
+      child.stdout.on("data", handleLog);
+      child.stderr.on("data", handleLog);
+
+      child.on("error", (err) => {
+        if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
-          resolve(child);
+          reject(err);
         }
-      }
-    };
+      });
 
-    child.stdout.on("data", handleLog);
-    child.stderr.on("data", handleLog);
-
-    child.on("error", (err) => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        reject(err);
-      }
+      child.on("exit", (code, signal) => {
+        cloudflaredProcess = null;
+        clearPid();
+        const wasConnected = resolved; // true = already connected successfully
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          // Collect stderr output for better error diagnosis
+          let stderrOutput = "";
+          if (child.stderr && !child.stderr.destroyed) {
+            // Try to read any buffered stderr (may not have all output but helps with common errors)
+            stderrOutput = " Check cloudflared logs for details.";
+          }
+          if (code === 1) {
+            // Common exit code 1 issues: invalid token, auth failure, network issues
+            reject(
+              new Error(
+                `cloudflared exited with code ${code}${stderrOutput} Ensure your tunnel token is valid and network is reachable.`,
+              ),
+            );
+          } else if (code === 2) {
+            reject(
+              new Error(`cloudflared exited with code ${code}${stderrOutput} Check if required arguments are correct.`),
+            );
+          } else {
+            reject(new Error(`cloudflared exited with code ${code}${stderrOutput}`));
+          }
+          return;
+        }
+        // Watchdog (initializeApp) handles recovery — no auto-reconnect here
+        if (wasConnected && unexpectedExitHandler) unexpectedExitHandler();
+      });
+    }).finally(() => {
+      spawnLock = null;
+      unlock?.();
     });
-
-    child.on("exit", (code, signal) => {
-      cloudflaredProcess = null;
-      clearPid();
-      const wasConnected = resolved; // true = already connected successfully
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        // Collect stderr output for better error diagnosis
-        let stderrOutput = "";
-        if (child.stderr && !child.stderr.destroyed) {
-          // Try to read any buffered stderr (may not have all output but helps with common errors)
-          stderrOutput = " Check cloudflared logs for details.";
-        }
-        if (code === 1) {
-          // Common exit code 1 issues: invalid token, auth failure, network issues
-          reject(
-            new Error(
-              `cloudflared exited with code ${code}${stderrOutput} Ensure your tunnel token is valid and network is reachable.`,
-            ),
-          );
-        } else if (code === 2) {
-          reject(
-            new Error(`cloudflared exited with code ${code}${stderrOutput} Check if required arguments are correct.`),
-          );
-        } else {
-          reject(new Error(`cloudflared exited with code ${code}${stderrOutput}`));
-        }
-        return;
-      }
-      // Watchdog (initializeApp) handles recovery — no auto-reconnect here
-      if (wasConnected && unexpectedExitHandler) unexpectedExitHandler();
-    });
-  });
+  } catch (e) {
+    spawnLock = null;
+    unlock?.();
+    throw e;
+  }
 }
 
 /**

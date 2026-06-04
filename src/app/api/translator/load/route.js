@@ -2,6 +2,7 @@ import fs from "fs";
 import { NextResponse } from "next/server";
 import path from "node:path";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -40,6 +41,6 @@ export async function GET(request) {
     return NextResponse.json({ success: true, content });
   } catch (error) {
     console.error("Error loading file:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

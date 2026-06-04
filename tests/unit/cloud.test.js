@@ -81,7 +81,7 @@ function makeEnv() {
       run: vi.fn().mockResolvedValue({ meta: { changes: 0 } }),
     })),
   }));
-  return { DB: { prepare } };
+  return { DB: { prepare }, CLOUD_SYNC_SECRET: "test-secret" };
 }
 
 function makeMachineData(overrides = {}) {
@@ -106,14 +106,19 @@ function makeMachineData(overrides = {}) {
   };
 }
 
-function makeRequest(method, path, body = null, authHeader = `Bearer ${VALID_KEY}`) {
-  const headers = { "Content-Type": "application/json" };
+function makeRequest(method, path, body = null, authHeader = `Bearer ${VALID_KEY}`, extraHeaders = {}) {
+  const headers = { "Content-Type": "application/json", ...extraHeaders };
   if (authHeader) headers["Authorization"] = authHeader;
   return new Request(`https://worker.example.com${path}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
+}
+
+// Helper for sync requests (requires x-pod-cloud-secret)
+function makeSyncRequest(method, path, body = null) {
+  return makeRequest(method, path, body, null, { "x-pod-cloud-secret": "test-secret" });
 }
 
 // ─── 1. testClaude stub ───────────────────────────────────────────────────────
@@ -288,7 +293,7 @@ describe("handleSync — GET", () => {
     const data = makeMachineData();
     vi.mocked(getMachineData).mockResolvedValue(data);
 
-    const req = makeRequest("GET", `/sync/${MACHINE_ID}`);
+    const req = makeSyncRequest("GET", `/sync/${MACHINE_ID}`);
     const res = await handleSync(req, makeEnv(), {});
 
     expect(res.status).toBe(200);
@@ -300,7 +305,7 @@ describe("handleSync — GET", () => {
   it("returns 404 when machine not found", async () => {
     vi.mocked(getMachineData).mockResolvedValue(null);
 
-    const req = makeRequest("GET", "/sync/unknown");
+    const req = makeSyncRequest("GET", "/sync/unknown");
     const res = await handleSync(req, makeEnv(), {});
 
     expect(res.status).toBe(404);
@@ -315,7 +320,7 @@ describe("handleSync — DELETE", () => {
   it("deletes machine data and returns success", async () => {
     vi.mocked(deleteMachineData).mockResolvedValue(undefined);
 
-    const req = makeRequest("DELETE", `/sync/${MACHINE_ID}`);
+    const req = makeSyncRequest("DELETE", `/sync/${MACHINE_ID}`);
     const res = await handleSync(req, makeEnv(), {});
 
     expect(res.status).toBe(200);
@@ -349,7 +354,7 @@ describe("handleSync — POST merge", () => {
     );
     vi.mocked(saveMachineData).mockResolvedValue(undefined);
 
-    const req = makeRequest("POST", `/sync/${MACHINE_ID}`, {
+    const req = makeSyncRequest("POST", `/sync/${MACHINE_ID}`, {
       providers: [
         {
           id: "conn-001",
@@ -393,7 +398,7 @@ describe("handleSync — POST merge", () => {
     );
     vi.mocked(saveMachineData).mockResolvedValue(undefined);
 
-    const req = makeRequest("POST", `/sync/${MACHINE_ID}`, {
+    const req = makeSyncRequest("POST", `/sync/${MACHINE_ID}`, {
       providers: [
         {
           id: "conn-001",
@@ -418,7 +423,7 @@ describe("handleSync — POST merge", () => {
   it("returns 400 when providers field is missing", async () => {
     vi.mocked(getMachineData).mockResolvedValue(makeMachineData());
 
-    const req = makeRequest("POST", `/sync/${MACHINE_ID}`, { modelAliases: {} });
+    const req = makeSyncRequest("POST", `/sync/${MACHINE_ID}`, { modelAliases: {} });
     const res = await handleSync(req, makeEnv(), {});
 
     expect(res.status).toBe(400);
@@ -431,7 +436,7 @@ describe("handleSync — POST merge", () => {
 
     const req = new Request(`https://worker.example.com/sync/${MACHINE_ID}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-pod-cloud-secret": "test-secret" },
       body: "{ bad json",
     });
     const res = await handleSync(req, makeEnv(), {});

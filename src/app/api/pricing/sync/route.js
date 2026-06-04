@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSyncStatus, syncModelsDev, startPeriodicSync, stopPeriodicSync } from "@/lib/modelsDevSync.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 // GET — return current sync status
 export async function GET() {
   try {
     const status = getSyncStatus();
     return NextResponse.json({ success: true, ...status });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(err) }, { status: 500 });
   }
 }
 
@@ -17,7 +19,9 @@ export async function POST(request) {
   try {
     let body = {};
     try {
-      body = await request.json();
+      const [parsed, _parseErr] = await parseJsonBody(request);
+      if (_parseErr) return _parseErr;
+      body = parsed;
     } catch {
       // no body is fine
     }
@@ -39,6 +43,6 @@ export async function POST(request) {
     const result = await syncModelsDev();
     return NextResponse.json({ success: result.success, action: "sync", ...result, ...getSyncStatus() });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: sanitizeError(err) }, { status: 500 });
   }
 }

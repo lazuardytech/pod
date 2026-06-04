@@ -2,6 +2,7 @@ import { checkMonitoringAuth } from "../_auth.js";
 import { buildHealthPayload } from "../_health.js";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../_sseConnectionCap.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/monitoring/health/stream";
@@ -45,7 +46,7 @@ export async function GET(request) {
       try {
         send(await buildHealthPayload());
       } catch (err) {
-        send({ error: err.message });
+        send({ error: sanitizeError(err) });
       }
 
       // Poll every 10s

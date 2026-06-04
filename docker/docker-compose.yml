@@ -6,12 +6,22 @@ services:
     env_file: ../.env
     environment:
       SEARXNG_BASE_URL: http://searxng:8080/search
+      REDIS_URL: redis://redis:6379
     ports:
       - '20128:20128'
     depends_on:
       - searxng
+      - redis
     volumes:
       - pod-data:/app/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: pod-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
 
   searxng:
     image: searxng/searxng:latest
@@ -28,4 +38,5 @@ services:
 
 volumes:
   pod-data:
+  redis-data:
   searxng-config:

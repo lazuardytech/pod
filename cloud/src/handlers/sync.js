@@ -6,8 +6,15 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*"
 };
 
-// Removed: WORKER_FIELDS and WORKER_SPECIFIC_FIELDS
-// Now syncing entire provider based on updatedAt (simpler logic)
+// Shared secret between dashboard (server) and worker — set via env secret binding.
+// The dashboard sends this as x-pod-cloud-secret header on every sync request.
+const HEADER = "x-pod-cloud-secret";
+
+function requireCloudSecret(request, env) {
+  const secret = request.headers.get(HEADER);
+  if (!secret || !env.CLOUD_SYNC_SECRET) return false;
+  return secret === env.CLOUD_SYNC_SECRET;
+}
 
 export async function handleSync(request, env, ctx) {
   const url = new URL(request.url);
@@ -27,6 +34,12 @@ export async function handleSync(request, env, ctx) {
   if (!machineId) {
     log.warn("SYNC", "Missing machineId in path");
     return jsonResponse({ error: "Missing machineId" }, 400);
+  }
+
+  // Auth gate: require shared cloud sync secret
+  if (!requireCloudSecret(request, env)) {
+    log.warn("SYNC", "Unauthorized sync attempt", { machineId });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   // Route by method

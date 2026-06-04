@@ -3,6 +3,7 @@ import { getSettings, validateApiKey } from "@/lib/localDb";
 import { PROVIDER_MODELS } from "@/shared/constants/models";
 import { extractApiKey } from "@/sse/services/auth.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 /**
  * Handle CORS preflight
  */
@@ -65,6 +66,6 @@ export async function GET(request) {
     return Response.json({ models });
   } catch (error) {
     console.log("Error fetching models:", error);
-    return Response.json({ error: { message: error.message } }, { status: 500 });
+    return Response.json({ error: { message: sanitizeError(error) } }, { status: 500 });
   }
 }

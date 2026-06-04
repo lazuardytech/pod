@@ -101,7 +101,29 @@ async function handleSingleModelChat(body, modelStr, machineId, env) {
   let lastError = null;
   let lastStatus = null;
 
+  // Loop guard: cap iterations + CPU deadline (25s, 5s before free-tier 30s limit)
+  const loopStartTime = Date.now();
+  const CPU_DEADLINE_MS = 25000;
+  let iterations = 0;
+  const maxIterations = 20;
+
   while (true) {
+    iterations++;
+    if (iterations > maxIterations) {
+      log.warn("CHAT", `${provider.toUpperCase()} | fallback loop exceeded max iterations (${maxIterations})`);
+      return new Response(
+        JSON.stringify({ error: { message: "All accounts unavailable after max retries" } }),
+        { status: HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+      );
+    }
+    if (Date.now() - loopStartTime > CPU_DEADLINE_MS) {
+      log.warn("CHAT", `${provider.toUpperCase()} | fallback loop exceeded CPU deadline`);
+      return new Response(
+        JSON.stringify({ error: { message: "Request timeout — all accounts exhausted" } }),
+        { status: HTTP_STATUS.GATEWAY_TIMEOUT, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+      );
+    }
+
     const credentials = await getProviderCredentials(machineId, provider, env, excludeConnectionId);
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
@@ -112,7 +134,7 @@ async function handleSingleModelChat(body, modelStr, machineId, env) {
         log.warn("CHAT", `${provider.toUpperCase()} | ${msg}`);
         return new Response(
           JSON.stringify({ error: { message: msg } }),
-          { status, headers: { "Content-Type": "application/json", "Retry-After": String(Math.max(retryAfterSec, 1)) } }
+          { status, headers: { "Content-Type": "application/json", "Retry-After": String(Math.max(retryAfterSec, 1)), "Access-Control-Allow-Origin": "*" } }
         );
       }
       if (!excludeConnectionId) {
@@ -121,7 +143,7 @@ async function handleSingleModelChat(body, modelStr, machineId, env) {
       log.warn("CHAT", `${provider.toUpperCase()} | no more accounts`);
       return new Response(
         JSON.stringify({ error: lastError || "All accounts unavailable" }),
-        { status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json" } }
+        { status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
     }
 

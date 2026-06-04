@@ -1,6 +1,7 @@
 import { getModelAvailabilityPayload } from "../_availability";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/models/availability/stream";
@@ -51,7 +52,7 @@ export async function GET(request) {
             send(payload);
           }
         } catch (error) {
-          send({ error: error.message || "Failed to load model availability" });
+          send({ error: sanitizeError(error) || "Failed to load model availability" });
         }
       };
 

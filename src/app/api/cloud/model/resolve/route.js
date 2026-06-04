@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getModelAliases, validateApiKey } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 // Resolve model alias to provider/model
 export async function POST(request) {
@@ -11,7 +12,8 @@ export async function POST(request) {
 
     const apiKey = authHeader.slice(7);
 
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { alias } = body;
 
     if (!alias) {

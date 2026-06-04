@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteModelAlias, getModelAliases, setModelAlias } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ export async function GET() {
 // PUT /api/models/alias - Set model alias
 export async function PUT(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { model, alias } = body;
 
     if (!model || !alias) {

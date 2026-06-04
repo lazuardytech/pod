@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resetComboRotation } from "open-sse/services/combo.js";
 import { deleteCombo, getComboById, getComboByName, updateCombo } from "@/lib/localDb";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
@@ -26,7 +27,8 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
 
     // Validate name format if provided
     if (body.name) {

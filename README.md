@@ -75,6 +75,20 @@ bun run dev        # starts on http://localhost:20128
 | `PROMPT_CACHE_MAX_BYTES` | `2097152` | Prompt cache max size in bytes |
 | `PROMPT_CACHE_MAX_SIZE` | `50` | Prompt cache max entries |
 | `PROMPT_CACHE_TTL_MS` | `300000` | Prompt cache TTL (ms) |
+| `REDIS_URL` | _(none)_ | Redis connection URL for distributed rate limiting. When set, rate limits are shared across all Pod instances. When unset, falls back to in-memory rate limiting (single-instance only). Example: `redis://localhost:6379` |
+
+### Redis (optional)
+
+Pod supports Redis-backed distributed rate limiting. When `REDIS_URL` is set, API key rate limits (`requests_per_minute`, `concurrent_requests`) are enforced globally across all Pod instances sharing the same Redis — preventing limit bypass in multi-instance deployments.
+
+With docker compose:
+
+```yaml
+environment:
+  REDIS_URL: redis://redis:6379
+```
+
+Without Redis, rate limiting uses an in-memory backend (single-instance safe, but not shared across replicas). Redis is recommended for production multi-instance deployments.
 
 <br/>
 

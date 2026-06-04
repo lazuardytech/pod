@@ -1,6 +1,7 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { ollamaModels } from "open-sse/config/ollamaModels.js";
 import { transformToOllama } from "open-sse/utils/ollamaTransform.js";
+import { initApiKeySecret } from "./utils/apiKey.js";
 import * as log from "./utils/logger.js";
 
 // Static imports for handlers (avoid dynamic import CPU cost)
@@ -38,6 +39,11 @@ const worker = {
   },
 
   async fetch(request, env, ctx) {
+    // Inject API key secret from env binding
+    if (env.API_KEY_SECRET) {
+      initApiKeySecret(env.API_KEY_SECRET);
+    }
+
     const startTime = Date.now();
     const url = new URL(request.url);
     let path = url.pathname;
@@ -127,7 +133,7 @@ const worker = {
       if (path === "/v1/responses" && request.method === "POST") {
         const response = await handleChat(request, env, ctx, null);
         log.response(response.status, Date.now() - startTime);
-        return response;
+        return addCorsHeaders(response);
       }
 
       // New format: /v1/verify
@@ -154,7 +160,7 @@ const worker = {
         const machineId = path.split("/")[1];
         const response = await handleChat(request, env, ctx, machineId);
         log.response(response.status, Date.now() - startTime);
-        return response;
+        return addCorsHeaders(response);
       }
 
       // Machine ID based embeddings endpoint
@@ -170,7 +176,7 @@ const worker = {
         const machineId = path.split("/")[1];
         const response = await handleChat(request, env, ctx, machineId);
         log.response(response.status, Date.now() - startTime);
-        return response;
+        return addCorsHeaders(response);
       }
 
       // Machine ID based api/chat endpoint (Ollama format)
@@ -189,7 +195,7 @@ const worker = {
         const machineId = path.split("/")[1];
         const response = await handleVerify(request, env, machineId);
         log.response(response.status, Date.now() - startTime);
-        return response;
+        return addCorsHeaders(response);
       }
 
       // Test Claude - forward to Anthropic API
@@ -203,27 +209,27 @@ const worker = {
       if (path === "/forward" && request.method === "POST") {
         const response = await handleForward(request);
         log.response(response.status, Date.now() - startTime);
-        return response;
+        return addCorsHeaders(response);
       }
 
       // Forward request via raw TCP socket (bypasses CF auto headers)
       if (path === "/forward-raw" && request.method === "POST") {
         const response = await handleForwardRaw(request);
         log.response(response.status, Date.now() - startTime);
-        return response;
+        return addCorsHeaders(response);
       }
 
       log.warn("ROUTER", "Not found", { path });
       return new Response(JSON.stringify({ error: "Not Found" }), {
         status: 404,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
 
     } catch (error) {
       log.error("ROUTER", error.message, { stack: error.stack });
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
     }
   }

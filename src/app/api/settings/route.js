@@ -4,6 +4,8 @@ import { resetComboRotation } from "open-sse/services/combo.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -41,13 +43,14 @@ export async function GET() {
     );
   } catch (error) {
     console.log("Error getting settings:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
 export async function PATCH(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
 
     // If updating password, hash it
     if (body.newPassword) {
@@ -101,6 +104,6 @@ export async function PATCH(request) {
     return NextResponse.json(safeSettings, { headers: SETTINGS_RESPONSE_HEADERS });
   } catch (error) {
     console.log("Error updating settings:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

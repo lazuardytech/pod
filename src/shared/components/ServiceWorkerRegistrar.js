@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@/shared/components/Button";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 const UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 30;
 
+const SESSION_KEY = "sw:controllerchange:reloaded";
+
 export default function ServiceWorkerRegistrar() {
   const [waitingWorker, setWaitingWorker] = useState(null);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
   const [activatingUpdate, setActivatingUpdate] = useState(false);
-  const reloadedAfterUpdateRef = useRef(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -52,11 +53,24 @@ export default function ServiceWorkerRegistrar() {
           watchInstallingWorker(reg.installing);
         });
 
+        let updateFailures = 0;
+
         updateInterval = setInterval(() => {
-          reg.update().catch(() => {});
+          reg.update().catch(() => {
+            updateFailures++;
+            if (updateFailures >= 3) {
+              console.warn("[Pod] SW update check failed 3 times, stopping interval");
+              clearInterval(updateInterval);
+            }
+          });
         }, UPDATE_CHECK_INTERVAL_MS);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("[Pod] Service Worker registration failed:", err?.message || err);
+        try {
+          localStorage.setItem("pod:sw:registration-failed", "1");
+        } catch {}
+      });
 
     const onVisible = () => {
       if (document.hidden) return;
@@ -64,8 +78,10 @@ export default function ServiceWorkerRegistrar() {
     };
 
     const onControllerChange = () => {
-      if (reloadedAfterUpdateRef.current) return;
-      reloadedAfterUpdateRef.current = true;
+      if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(SESSION_KEY)) return;
+      try {
+        sessionStorage.setItem(SESSION_KEY, "1");
+      } catch {}
       window.location.reload();
     };
 

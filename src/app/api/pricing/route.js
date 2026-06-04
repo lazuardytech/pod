@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPricing, resetAllPricing, resetPricing, updatePricing } from "@/lib/localDb.js";
 import { getDefaultPricing } from "@/shared/constants/pricing.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 /**
  * GET /api/pricing
@@ -23,7 +24,8 @@ export async function GET() {
  */
 export async function PATCH(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
 
     // Validate body structure
     if (typeof body !== "object" || body === null) {

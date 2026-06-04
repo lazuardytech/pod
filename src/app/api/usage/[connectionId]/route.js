@@ -7,6 +7,7 @@ import { getProviderConnectionById, updateProviderConnection } from "@/lib/local
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 // Detect auth-expired messages returned by usage providers instead of throwing
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
 function isAuthExpiredMessage(usage) {
@@ -165,7 +166,7 @@ export async function GET(request, { params }) {
     return Response.json(usage);
   } catch (error) {
     const provider = connection?.provider ?? "unknown";
-    console.warn(`[Usage] ${provider}: ${error.message}`);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.warn(`[Usage] ${provider}: ${sanitizeError(error)}`);
+    return Response.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

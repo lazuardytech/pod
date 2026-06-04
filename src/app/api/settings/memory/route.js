@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { normalizeMemorySettings, toMemorySettingsUpdates } from "@/lib/memory/settings.js";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 function toBooleanOrNull(value) {
   if (typeof value === "boolean") return value;
   return null;
@@ -20,13 +22,14 @@ export async function GET() {
     const settings = await getSettings();
     return NextResponse.json(normalizeMemorySettings(settings));
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
   }
 }
 
 export async function PUT(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const patch = {};
 
     if (body.enabled !== undefined) {
@@ -61,6 +64,6 @@ export async function PUT(request) {
     const settings = await updateSettings(updates);
     return NextResponse.json(normalizeMemorySettings(settings));
   } catch (error) {
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
   }
 }

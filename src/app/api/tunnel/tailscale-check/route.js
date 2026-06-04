@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import os from "node:os";
 import { isTailscaleInstalled, isTailscaleLoggedIn, TAILSCALE_SOCKET } from "@/lib/tunnel/tailscale";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
 
 function hasBrew() {
@@ -44,6 +45,6 @@ export async function GET() {
     const loggedIn = daemonRunning ? isTailscaleLoggedIn() : false;
     return NextResponse.json({ installed, loggedIn, platform, brewAvailable, daemonRunning });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

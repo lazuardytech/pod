@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections, updateProviderConnection, validateApiKey } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 // Update provider credentials (for cloud token refresh)
 export async function PUT(request) {
@@ -10,7 +11,8 @@ export async function PUT(request) {
     }
 
     const apiKey = authHeader.slice(7);
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { provider, credentials } = body;
 
     if (!provider || !credentials) {

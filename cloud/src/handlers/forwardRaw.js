@@ -1,14 +1,68 @@
 import { connect } from "cloudflare:sockets";
 
-// Forward request via raw TCP socket (bypasses CF auto headers)
+// Blocklist: private/internal IP ranges and metadata endpoints
+const BLOCKED_HOST_PATTERNS = [
+  /^0\.0\.0\.0$/,
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
+  /^localhost$/i,
+  /^\[::1\]$/,
+];
+
+function isUrlAllowed(targetUrl) {
+  try {
+    const url = new URL(targetUrl);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+    for (const pattern of BLOCKED_HOST_PATTERNS) {
+      if (pattern.test(url.hostname)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const FORWARD_RAW_TIMEOUT_MS = 15000;
+
+// Forward request via raw TCP socket (bypasses CF auto headers) - authenticated
 export async function handleForwardRaw(request) {
   try {
+    const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.js");
+
+    // Auth: require valid API key
+    const apiKey = extractBearerToken(request);
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "Missing API key" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+    const parsed = await parseApiKey(apiKey);
+    if (!parsed || !parsed.machineId) {
+      return new Response(JSON.stringify({ error: "Invalid API key" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
     const { targetUrl, headers = {}, body } = await request.json();
-    
+
     if (!targetUrl) {
       return new Response(JSON.stringify({ error: "targetUrl is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // URL validation: block internal/private endpoints
+    if (!isUrlAllowed(targetUrl)) {
+      return new Response(JSON.stringify({ error: "targetUrl is not allowed" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
       });
     }
 
@@ -23,35 +77,24 @@ export async function handleForwardRaw(request) {
     // Connect to target server
     let secureSocket;
     if (isHttps) {
-      // For HTTPS, connect directly with TLS enabled
-      console.log("[FORWARD_RAW] Creating TLS socket...");
-      secureSocket = connect({ 
-        hostname: host, 
+      secureSocket = connect({
+        hostname: host,
         port: parseInt(port),
         secureTransport: "on"
       });
-      console.log("[FORWARD_RAW] TLS socket created");
     } else {
       secureSocket = connect({ hostname: host, port: parseInt(port) });
     }
 
-    console.log("[FORWARD_RAW] Socket object:", secureSocket);
-    console.log("[FORWARD_RAW] Socket opened:", secureSocket.opened);
-    
-    // Wait for socket to be ready
     try {
-      console.log("[FORWARD_RAW] Waiting for socket to open...");
       await secureSocket.opened;
-      console.log("[FORWARD_RAW] Socket opened successfully");
     } catch (openError) {
       console.error("[FORWARD_RAW] Socket open error:", openError.message);
       throw openError;
     }
 
-    console.log("[FORWARD_RAW] Getting writer and reader...");
     const writer = secureSocket.writable.getWriter();
     const reader = secureSocket.readable.getReader();
-    console.log("[FORWARD_RAW] Writer and reader obtained");
 
     // Build raw HTTP request
     const bodyStr = JSON.stringify(body);
@@ -63,52 +106,48 @@ export async function handleForwardRaw(request) {
       ...headers
     };
 
-    // Build HTTP request string
     let httpRequest = `POST ${path} HTTP/1.1\r\n`;
     for (const [key, value] of Object.entries(requestHeaders)) {
       httpRequest += `${key}: ${value}\r\n`;
     }
     httpRequest += `\r\n${bodyStr}`;
 
-    console.log("[FORWARD_RAW] Sending request:", httpRequest.substring(0, 300));
-    console.log("[FORWARD_RAW] Full request length:", httpRequest.length);
+    console.log("[FORWARD_RAW] Request length:", httpRequest.length);
 
-    // Send request
     try {
-      console.log("[FORWARD_RAW] Writing to socket...");
       await writer.write(new TextEncoder().encode(httpRequest));
-      console.log("[FORWARD_RAW] Write complete, closing writer...");
       await writer.close();
-      console.log("[FORWARD_RAW] Writer closed");
     } catch (writeError) {
       console.error("[FORWARD_RAW] Write error:", writeError.message);
       throw writeError;
     }
 
     // Read response with timeout
-    console.log("[FORWARD_RAW] Starting to read response...");
     let responseData = new Uint8Array(0);
     let attempts = 0;
-    const maxAttempts = 100; // 10 seconds max
-    
+    const maxAttempts = 100;
+    const readStartTime = Date.now();
+
     while (attempts < maxAttempts) {
-      console.log("[FORWARD_RAW] Reading attempt:", attempts);
+      // Timeout guard: abort after FORWARD_RAW_TIMEOUT_MS
+      if (Date.now() - readStartTime > FORWARD_RAW_TIMEOUT_MS) {
+        console.warn("[FORWARD_RAW] Read timeout after", FORWARD_RAW_TIMEOUT_MS, "ms");
+        break;
+      }
+
       const { done, value } = await reader.read();
-      console.log("[FORWARD_RAW] Read result - done:", done, "value length:", value?.length);
       if (done) break;
       if (value) {
         const newData = new Uint8Array(responseData.length + value.length);
         newData.set(responseData);
         newData.set(value, responseData.length);
         responseData = newData;
-        
-        // Check if we have complete response (has headers end marker)
+
         const text = new TextDecoder().decode(responseData);
         if (text.includes("\r\n\r\n")) {
-          // Check if we have Content-Length and received all body
           const headerEnd = text.indexOf("\r\n\r\n");
-          const headers = text.substring(0, headerEnd).toLowerCase();
-          const contentLengthMatch = headers.match(/content-length:\s*(\d+)/);
+          const headersPart = text.substring(0, headerEnd).toLowerCase();
+          const contentLengthMatch = headersPart.match(/content-length:\s*(\d+)/);
           if (contentLengthMatch) {
             const expectedLength = parseInt(contentLengthMatch[1]);
             const bodyReceived = text.length - headerEnd - 4;
@@ -121,28 +160,23 @@ export async function handleForwardRaw(request) {
       }
       attempts++;
     }
-    
-    console.log("[FORWARD_RAW] Read loop finished, total bytes:", responseData.length);
+
+    console.log("[FORWARD_RAW] Total bytes:", responseData.length);
 
     const responseText = new TextDecoder().decode(responseData);
-    console.log("[FORWARD_RAW] Response received:", responseText.substring(0, 500));
 
-    // Parse HTTP response
     const headerEndIndex = responseText.indexOf("\r\n\r\n");
     if (headerEndIndex === -1) {
-      console.log("[FORWARD_RAW] Full response data:", responseText);
       throw new Error("Invalid HTTP response - no header end found");
     }
 
     const headerPart = responseText.substring(0, headerEndIndex);
     const bodyPart = responseText.substring(headerEndIndex + 4);
 
-    // Parse status line
     const statusLine = headerPart.split("\r\n")[0];
     const statusMatch = statusLine.match(/HTTP\/[\d.]+ (\d+)/);
     const status = statusMatch ? parseInt(statusMatch[1]) : 200;
 
-    // Parse headers
     const responseHeaders = {};
     const headerLines = headerPart.split("\r\n").slice(1);
     for (const line of headerLines) {
@@ -164,9 +198,9 @@ export async function handleForwardRaw(request) {
 
   } catch (error) {
     console.error("[FORWARD_RAW] Error:", error.message, error.stack);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 }

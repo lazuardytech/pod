@@ -91,7 +91,21 @@ export async function handleEmbeddings(request, env, ctx, machineIdOverride = nu
   let lastError = null;
   let lastStatus = null;
 
+  const loopStartTime = Date.now();
+  const CPU_DEADLINE_MS = 25000;
+  let iterations = 0;
+  const maxIterations = 20;
+
   while (true) {
+    iterations++;
+    if (iterations > maxIterations || Date.now() - loopStartTime > CPU_DEADLINE_MS) {
+      log.warn("EMBEDDINGS", `${provider.toUpperCase()} | fallback loop exhausted`);
+      return new Response(
+        JSON.stringify({ error: lastError || "All accounts unavailable" }),
+        { status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+      );
+    }
+
     const credentials = await getProviderCredentials(machineId, provider, env, excludeConnectionId);
 
     if (!credentials || credentials.allRateLimited) {
@@ -109,7 +123,8 @@ export async function handleEmbeddings(request, env, ctx, machineIdOverride = nu
             status,
             headers: {
               "Content-Type": "application/json",
-              "Retry-After": String(Math.max(retryAfterSec, 1))
+              "Retry-After": String(Math.max(retryAfterSec, 1)),
+              "Access-Control-Allow-Origin": "*"
             }
           }
         );

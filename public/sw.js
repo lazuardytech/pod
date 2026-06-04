@@ -6,7 +6,7 @@ const IMAGE_CACHE_NAME = `pod-image-cache-${SW_VERSION}`;
 
 const OFFLINE_FALLBACK_URL = "/offline";
 const IMAGE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 31;
-const NAVIGATION_NETWORK_TIMEOUT_MS = 5000;
+const NAVIGATION_NETWORK_TIMEOUT_MS = 15000;
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico"];
 const SENSITIVE_SEARCH_PARAMS = new Set(["code", "token", "access_token", "id_token", "refresh_token", "session"]);
 
@@ -104,15 +104,18 @@ async function precacheShell() {
   const shellCache = await caches.open(SHELL_CACHE_NAME);
   const staticCache = await caches.open(STATIC_CACHE_NAME);
 
+  let cachedCount = 0;
+
   await Promise.all(
     SHELL_ROUTES.map(async (route) => {
       try {
         const response = await fetch(new Request(route, { cache: "reload" }));
         if (isCacheableResponse(response) && responseAllowsStorage(response)) {
           await shellCache.put(route, response);
+          cachedCount++;
         }
       } catch {
-        // Ignore: offline on first install can still continue with partial cache.
+        // Ignore individual failures
       }
     }),
   );
@@ -129,6 +132,10 @@ async function precacheShell() {
       }
     }),
   );
+
+  if (cachedCount === 0) {
+    console.warn("[Pod SW] No shell routes cached — offline fallback will be empty");
+  }
 }
 
 async function handleNavigationRequest(request) {

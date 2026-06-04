@@ -223,101 +223,121 @@ async function handleSingleModelChat(
   let lastError = null;
   let lastStatus = null;
 
+  // Guard: max iterations to prevent infinite loop
+  const MAX_FALLBACK_ITERATIONS = 50;
+
   while (true) {
-    const credentials = await getProviderCredentials(provider, excludeConnectionIds, model);
-
-    // All accounts unavailable
-    if (!credentials || credentials.allRateLimited) {
-      if (credentials?.allRateLimited) {
-        const errorMsg = lastError || credentials.lastError || "Unavailable";
-        const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
-        log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
-        return unavailableResponse(
-          status,
-          `[${provider}/${model}] ${errorMsg}`,
-          credentials.retryAfter,
-          credentials.retryAfterHuman,
-        );
-      }
-      if (excludeConnectionIds.size === 0) {
-        log.warn("AUTH", `No active credentials for provider: ${provider}`);
-        return errorResponse(HTTP_STATUS.NOT_FOUND, `No active credentials for provider: ${provider}`);
-      }
-      log.warn("CHAT", "No more accounts available", { provider });
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+    if (excludeConnectionIds.size >= MAX_FALLBACK_ITERATIONS) {
+      log.error("CHAT", `Exceeded max fallback iterations (${MAX_FALLBACK_ITERATIONS}) for ${provider}/${model}`);
+      return errorResponse(
+        HTTP_STATUS.SERVICE_UNAVAILABLE,
+        `All accounts exhausted after ${MAX_FALLBACK_ITERATIONS} attempts`,
+      );
     }
 
-    // Log account selection
-    log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
+    let credentials;
+    try {
+      credentials = await getProviderCredentials(provider, excludeConnectionIds, model);
 
-    const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
-
-    // Ensure real project ID is available for providers that need it (P0 fix: cold miss)
-    if ((provider === "antigravity" || provider === "gemini-cli") && !refreshedCredentials.projectId) {
-      const pid = await getProjectIdForConnection(credentials.connectionId, refreshedCredentials.accessToken);
-      if (pid) {
-        refreshedCredentials.projectId = pid;
-        // Persist to DB in background so subsequent requests have it immediately
-        updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch(() => {});
+      // All accounts unavailable
+      if (!credentials || credentials.allRateLimited) {
+        if (credentials?.allRateLimited) {
+          const errorMsg = lastError || credentials.lastError || "Unavailable";
+          const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+          log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
+          return unavailableResponse(
+            status,
+            `[${provider}/${model}] ${errorMsg}`,
+            credentials.retryAfter,
+            credentials.retryAfterHuman,
+          );
+        }
+        if (excludeConnectionIds.size === 0) {
+          log.warn("AUTH", `No active credentials for provider: ${provider}`);
+          return errorResponse(HTTP_STATUS.NOT_FOUND, `No active credentials for provider: ${provider}`);
+        }
+        log.warn("CHAT", "No more accounts available", { provider });
+        return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
       }
-    }
 
-    // Use shared chatCore
-    const chatSettings = await getSettings();
-    const providerThinking = (chatSettings.providerThinking || {})[provider] || null;
-    const result = await handleChatCore({
-      body: { ...body, model: `${provider}/${model}` },
-      modelInfo: { provider, model },
-      credentials: refreshedCredentials,
-      log,
-      clientRawRequest,
-      connectionId: credentials.connectionId,
-      userAgent,
-      apiKey,
-      ccFilterNaming: !!chatSettings.ccFilterNaming,
-      rtkEnabled: !!chatSettings.rtkEnabled,
-      cavemanEnabled: !!chatSettings.cavemanEnabled,
-      cavemanLevel: chatSettings.cavemanLevel || "full",
-      providerThinking,
-      contentFilterMessage,
-      chatSettings,
-      memoryOwnerId: apiKeyId,
-      comboName,
-      // Detect source format by endpoint + body
-      sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
-      onCredentialsRefreshed: async (newCreds) => {
-        await updateProviderCredentials(credentials.connectionId, {
-          accessToken: newCreds.accessToken,
-          refreshToken: newCreds.refreshToken,
-          providerSpecificData: newCreds.providerSpecificData,
-          testStatus: "active",
-        });
-      },
-      onRequestSuccess: async () => {
-        await clearAccountError(credentials.connectionId, credentials, model);
-      },
-    });
+      // Log account selection
+      log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
 
-    if (result.success) return result.response;
+      const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
 
-    // Mark account unavailable (auto-calculates cooldown with exponential backoff, or precise resetsAtMs)
-    const { shouldFallback } = await markAccountUnavailable(
-      credentials.connectionId,
-      result.status,
-      result.error,
-      provider,
-      model,
-      result.resetsAtMs,
-    );
+      // Ensure real project ID is available for providers that need it (P0 fix: cold miss)
+      if ((provider === "antigravity" || provider === "gemini-cli") && !refreshedCredentials.projectId) {
+        const pid = await getProjectIdForConnection(credentials.connectionId, refreshedCredentials.accessToken);
+        if (pid) {
+          refreshedCredentials.projectId = pid;
+          // Persist to DB in background so subsequent requests have it immediately
+          updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch(() => {});
+        }
+      }
 
-    if (shouldFallback) {
-      log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
-      excludeConnectionIds.add(credentials.connectionId);
-      lastError = result.error;
-      lastStatus = result.status;
+      // Use shared chatCore
+      const chatSettings = await getSettings();
+      const providerThinking = (chatSettings.providerThinking || {})[provider] || null;
+      const result = await handleChatCore({
+        body: { ...body, model: `${provider}/${model}` },
+        modelInfo: { provider, model },
+        credentials: refreshedCredentials,
+        log,
+        clientRawRequest,
+        connectionId: credentials.connectionId,
+        userAgent,
+        apiKey,
+        ccFilterNaming: !!chatSettings.ccFilterNaming,
+        rtkEnabled: !!chatSettings.rtkEnabled,
+        cavemanEnabled: !!chatSettings.cavemanEnabled,
+        cavemanLevel: chatSettings.cavemanLevel || "full",
+        providerThinking,
+        contentFilterMessage,
+        chatSettings,
+        memoryOwnerId: apiKeyId,
+        comboName,
+        // Detect source format by endpoint + body
+        sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
+        onCredentialsRefreshed: async (newCreds) => {
+          await updateProviderCredentials(credentials.connectionId, {
+            accessToken: newCreds.accessToken,
+            refreshToken: newCreds.refreshToken,
+            providerSpecificData: newCreds.providerSpecificData,
+            testStatus: "active",
+          });
+        },
+        onRequestSuccess: async () => {
+          await clearAccountError(credentials.connectionId, credentials, model);
+        },
+      });
+
+      if (result.success) return result.response;
+
+      // Mark account unavailable (auto-calculates cooldown with exponential backoff, or precise resetsAtMs)
+      const { shouldFallback } = await markAccountUnavailable(
+        credentials.connectionId,
+        result.status,
+        result.error,
+        provider,
+        model,
+        result.resetsAtMs,
+      );
+
+      if (shouldFallback) {
+        log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
+        excludeConnectionIds.add(credentials.connectionId);
+        lastError = result.error;
+        lastStatus = result.status;
+        continue;
+      }
+
+      return result.response;
+    } catch (err) {
+      log.error("CHAT", `Unexpected error in fallback loop for ${provider}/${model}:`, err?.message || err);
+      excludeConnectionIds.add(credentials?.connectionId || "unknown");
+      lastError = err?.message || "Unexpected error";
+      lastStatus = HTTP_STATUS.INTERNAL_SERVER_ERROR;
       continue;
     }
-
-    return result.response;
   }
 }

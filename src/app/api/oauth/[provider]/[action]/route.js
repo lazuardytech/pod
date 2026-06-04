@@ -8,6 +8,8 @@ import {
   stopCodexProxy,
 } from "@/lib/oauth/utils/server";
 import { createProviderConnection } from "@/models";
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
 /**
  * Dynamic OAuth API Route
@@ -117,7 +119,7 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     console.log("OAuth GET error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -128,7 +130,9 @@ export async function POST(request, { params }) {
     const { provider, action } = await params;
     let body;
     try {
-      body = await request.json();
+      const [parsed, _parseErr] = await parseJsonBody(request);
+      if (_parseErr) return _parseErr;
+      body = parsed;
     } catch {
       return NextResponse.json({ error: "Invalid or empty request body" }, { status: 400 });
     }
@@ -223,6 +227,6 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     console.log("OAuth POST error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

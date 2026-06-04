@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
+import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
 // Fetch with timeout wrapper
 const fetchWithTimeout = (url, options, timeout = 10000) => {
   return Promise.race([
@@ -24,7 +26,7 @@ const getErrorMessage = (error) => {
   if (error.cause?.code === "ECONNREFUSED") return "Connection refused - provider node offline or unreachable";
   if (error.cause?.code === "ENOTFOUND") return "DNS lookup failed - invalid domain or network issue";
   if (error.cause?.code === "ETIMEDOUT") return "Connection timeout - provider node too slow";
-  if (error.message.includes("timeout")) return "Request timeout (>10s) - provider node not responding";
+  if (sanitizeError(error).includes("timeout")) return "Request timeout (>10s) - provider node not responding";
   if (error.cause?.code === "CERT_HAS_EXPIRED") return "SSL certificate expired";
   if (error.cause?.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE") return "SSL certificate verification failed";
   if (error.cause?.code) return `Network error: ${error.cause.code}`;
@@ -51,7 +53,8 @@ const getChatErrorMessage = (status) => {
 // POST /api/provider-nodes/validate - Validate API key against base URL
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const [body, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
     const { baseUrl, apiKey, type, modelId } = body;
 
     if (!baseUrl || !apiKey) {
@@ -195,7 +198,7 @@ export async function POST(request) {
   } catch (error) {
     const errorMessage = getErrorMessage(error);
     console.error("Error validating provider node:", {
-      message: error.message,
+      message: sanitizeError(error),
       cause: error.cause,
       code: error.cause?.code,
       userMessage: errorMessage,
