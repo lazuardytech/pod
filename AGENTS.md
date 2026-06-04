@@ -82,7 +82,7 @@ Operational rules for AI agents working on **Pod** (`~/projects/lt/pod`).
 ## PWA and Offline-First Rules
 
 41. Keep `src/app/manifest.webmanifest` as the PWA manifest source.
-42. Keep service worker lifecycle managed by `ServiceWorkerRegistrar` and `public/sw.js`.
+42. Keep service worker lifecycle managed by `ServiceWorkerRegistrar` and `public/sw.js`. The registrar is registration-only with no auto-update detection — Pod does not self-update.
 43. Offline read path uses `src/shared/services/offlineJsonCache.js` (stale-while-revalidate behavior).
 44. Offline write path uses mutation queue:
    - `src/shared/services/offlineMutationQueue.js`

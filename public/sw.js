@@ -243,10 +243,8 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+self.addEventListener("message", (_event) => {
+  // Reserved for future use. No auto-update message handling.
 });
 
 self.addEventListener("fetch", (event) => {
