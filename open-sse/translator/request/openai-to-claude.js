@@ -189,6 +189,7 @@ Respond ONLY with the JSON object, no other text.`);
       medium: 8192,
       high: 16384,
       xhigh: 32768,
+      max: 65536,
     };
     const budget = effortToBudget[body.reasoning_effort.toLowerCase()];
     if (budget === 0) {

@@ -282,6 +282,10 @@ describe("api route contracts", () => {
       const json = await readJson(res);
       expect(json).toHaveProperty("connections");
       expect(Array.isArray(json.connections)).toBe(true);
+      expect(json.connections[0]).toMatchObject({
+        name: "OpenAI",
+        providerName: "OpenAI",
+      });
     });
   });
 

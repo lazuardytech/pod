@@ -20,13 +20,14 @@ async function setupTestContext(nodeData) {
     },
   }));
 
-  const { POST } = await import("@/app/api/providers/route.js");
+  const { GET, POST } = await import("@/app/api/providers/route.js");
   const { createProviderNode, getProviderConnections } = await import("@/models/index.js");
 
   const node = await createProviderNode(nodeData);
 
   return {
     node,
+    GET,
     POST,
     getProviderConnections,
     cleanup() {
@@ -162,5 +163,33 @@ describe("compatible provider connections API", () => {
     expect(secondResponse.status).toBe(201);
     expect(storedConnections).toHaveLength(2);
     storedConnections.forEach((conn) => expectCompatibleConnection(conn, ctx.node, { apiType: "chat" }));
+  });
+
+  it("preserves compatible connection name in GET list while exposing providerName separately", async () => {
+    const ctx = await setupTestContext({
+      id: "openai-compatible-list-test",
+      type: "openai-compatible",
+      name: "Pod",
+      prefix: "pod",
+      apiType: "chat",
+      baseUrl: "https://pod.lazuardy.tech/v1",
+    });
+    cleanup = ctx.cleanup;
+
+    const createResponse = await ctx.POST(makeRequest(ctx.node.id, { name: "Production Key" }));
+    expect(createResponse.status).toBe(201);
+
+    const listResponse = await ctx.GET();
+    const body = await listResponse.json();
+    expect(listResponse.status).toBe(200);
+    expect(body.connections).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          provider: ctx.node.id,
+          name: "Production Key",
+          providerName: "Pod",
+        }),
+      ]),
+    );
   });
 });

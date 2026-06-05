@@ -27,6 +27,7 @@ export { default as OAuthModal } from "./OAuthModal";
 export { default as ProviderInfoCard } from "./ProviderInfoCard";
 export { default as RequestLogger } from "./RequestLogger";
 export { default as SegmentedControl } from "./SegmentedControl";
+export { default as ShadcnSelect } from "./ShadcnSelect";
 export { default as Select } from "./Select";
 export { default as Sidebar } from "./Sidebar";
 export { ThemeProvider } from "./ThemeProvider";

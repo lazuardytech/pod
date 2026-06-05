@@ -68,13 +68,20 @@ export async function GET() {
       }
     } catch {}
 
-    // Hide sensitive fields, enrich name for compatible providers
+    // Hide sensitive fields. Compatible providers expose both the connection
+    // name and a separate provider label so UI can distinguish account names
+    // from provider-node names.
     const safeConnections = connections.map((c) => {
-      const isCompatible = isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider);
-      const name = isCompatible ? nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider : c.name;
+      const isCompatible =
+        isOpenAICompatibleProvider(c.provider) ||
+        isAnthropicCompatibleProvider(c.provider) ||
+        isCustomEmbeddingProvider(c.provider);
+      const providerName = isCompatible
+        ? nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider
+        : AI_PROVIDERS[c.provider]?.name || c.provider;
       return {
         ...c,
-        name,
+        providerName,
         apiKey: undefined,
         accessToken: undefined,
         refreshToken: undefined,

@@ -24,9 +24,9 @@ const sizes = {
 };
 
 const iconSizes = {
-  sm: 14,
-  md: 15,
-  lg: 16,
+  sm: 12,
+  md: 13,
+  lg: 14,
 };
 
 export default function Button({

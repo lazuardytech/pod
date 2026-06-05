@@ -255,7 +255,8 @@ export default function RequestLogger({
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <LucideIcon
               name="search"
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[14px] text-fog-grey"
+              size={16}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
             />
             <input
               aria-label="Search request logs"
@@ -263,7 +264,7 @@ export default function RequestLogger({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search request logs..."
-              className="w-full h-7 pl-9 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
+              className="w-full h-7 pl-8 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
               name="search"
             />
           </div>
@@ -271,10 +272,10 @@ export default function RequestLogger({
           {/* Status pills */}
           <div className="flex items-center gap-1">
             {[
-              { key: "all", label: "All" },
-              { key: "ok", label: "Success" },
-              { key: "failed", label: "Failed" },
-              { key: "pending", label: "Pending" },
+              { key: "all", label: "All", activeClass: "bg-porcelain/10 text-porcelain border border-porcelain/20" },
+              { key: "ok", label: "Success", activeClass: "border-emerald/30 bg-emerald/8 text-emerald" },
+              { key: "failed", label: "Failed", activeClass: "border-warning-red/30 bg-warning-red/8 text-warning-red" },
+              { key: "pending", label: "Pending", activeClass: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400" },
             ].map((f) => (
               <button
                 key={f.key}
@@ -282,7 +283,7 @@ export default function RequestLogger({
                 className={cn(
                   "h-6 px-2.5 rounded-[4px] text-[11px] font-[510] transition-colors duration-100",
                   filterStatus === f.key
-                    ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
+                    ? f.activeClass
                     : "text-fog-grey hover:text-storm-cloud hover:bg-deep-slate border border-transparent",
                 )}
               >

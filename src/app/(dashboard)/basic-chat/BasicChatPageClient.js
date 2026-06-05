@@ -113,7 +113,7 @@ function cloneSession(session) {
 }
 
 function getProviderLabel(connection) {
-  return connection?.name || humanize(connection?.provider || connection?.id || "provider");
+  return connection?.providerName || connection?.name || humanize(connection?.provider || connection?.id || "provider");
 }
 
 function normalizeStaticModel(model, connection) {

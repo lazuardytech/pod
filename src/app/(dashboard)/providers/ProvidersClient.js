@@ -354,7 +354,7 @@ export default function ProvidersPage() {
           </div>
         </div>
         {loading ? (
-          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <CardSkeleton key={i} />
             ))}
@@ -365,7 +365,7 @@ export default function ProvidersPage() {
             <span>No custom providers available</span>
           </div>
         ) : (
-          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {[...compatibleProviders, ...anthropicCompatibleProviders].map((info) => (
               <ApiKeyProviderCard
                 key={info.id}
@@ -406,7 +406,7 @@ export default function ProvidersPage() {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {oauthEntries.map(([key, info]) => (
               <ProviderCard
                 key={key}
@@ -446,7 +446,7 @@ export default function ProvidersPage() {
               {testingMode === "free" ? "Testing..." : "Test All"}
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {freeEntries.map(([key, info]) => (
               <ProviderCard
                 key={key}
@@ -496,7 +496,7 @@ export default function ProvidersPage() {
               {testingMode === "apikey" ? "Testing..." : "Test All"}
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {apikeyEntries.map(([key, info]) => (
               <ApiKeyProviderCard
                 key={key}
@@ -522,7 +522,7 @@ export default function ProvidersPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">Web Cookie Providers</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {visibleWebCookieProviders.map(([key, info]) => (
                 <ApiKeyProviderCard
                   key={key}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 
 /**
  * Hook for copy to clipboard with feedback
@@ -23,20 +24,28 @@ export function useCopyToClipboard(resetDelay = 2000) {
           textarea.style.opacity = "0";
           document.body.appendChild(textarea);
           textarea.select();
-          document.execCommand("copy");
+          const copied = document.execCommand("copy");
           document.body.removeChild(textarea);
+          if (!copied) {
+            throw new Error("Copy command failed");
+          }
         }
       };
-      write();
-      setCopied(id);
+      write()
+        .then(() => {
+          setCopied(id);
 
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
 
-      timeoutRef.current = setTimeout(() => {
-        setCopied(null);
-      }, resetDelay);
+          timeoutRef.current = setTimeout(() => {
+            setCopied(null);
+          }, resetDelay);
+        })
+        .catch(() => {
+          toast.error("Failed to copy");
+        });
     },
     [resetDelay],
   );

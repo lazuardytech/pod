@@ -4,7 +4,7 @@ import { getSettings, updateSettings } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
 const DEFAULTS = {
-  semanticCacheEnabled: true,
+  semanticCacheEnabled: false,
   semanticCacheMaxSize: 100,
   semanticCacheTTL: 1800000,
 };

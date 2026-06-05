@@ -26,7 +26,7 @@ export default function CacheClient() {
   });
 
   const [config, setConfig] = useState({
-    semanticCacheEnabled: true,
+    semanticCacheEnabled: false,
     semanticCacheMaxSize: "100",
     semanticCacheTTLMinutes: "30",
   });
@@ -61,7 +61,7 @@ export default function CacheClient() {
       });
 
       setConfig({
-        semanticCacheEnabled: cacheConfig.semanticCacheEnabled !== false,
+        semanticCacheEnabled: cacheConfig.semanticCacheEnabled ?? false,
         semanticCacheMaxSize: String(cacheConfig.semanticCacheMaxSize ?? 100),
         semanticCacheTTLMinutes: String(Math.max(1, Math.round((cacheConfig.semanticCacheTTL ?? 1800000) / 60000))),
       });

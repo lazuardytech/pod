@@ -18,7 +18,7 @@
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@monaco-editor/react": "^4.7.0",
-    "@xyflow/react": "^12.10.2",
+    "@xyflow/react": "^12.11.0",
     "bcryptjs": "^3.0.3",
     "confbox": "^0.2.4",
     "date-fns": "4.3.0",
@@ -28,9 +28,9 @@
     "jose": "^6.2.3",
     "lowdb": "^7.0.1",
     "lucide-react": "^1.17.0",
-    "marked": "^18.0.4",
+    "marked": "^18.0.5",
     "monaco-editor": "^0.55.1",
-    "next": "^16.2.6",
+    "next": "^16.2.7",
     "node-forge": "^1.4.0",
     "node-machine-id": "^1.1.12",
     "open": "^11.0.0",
@@ -40,7 +40,7 @@
     "react": "19.2.6",
     "react-day-picker": "10.0.1",
     "react-dom": "19.2.6",
-    "react-is": "^19.2.6",
+    "react-is": "^19.2.7",
     "recharts": "^3.8.1",
     "selfsigned": "^5.5.0",
     "socks-proxy-agent": "^10.0.0",
@@ -54,14 +54,14 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@tailwindcss/postcss": "^4.3.0",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.8",
     "better-sqlite3": "^12.10.0",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.6",
+    "eslint-config-next": "^16.2.7",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "trustedDependencies": [
     "better-sqlite3"

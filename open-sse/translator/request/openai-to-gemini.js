@@ -239,7 +239,7 @@ export function openaiToGeminiCLIRequest(model, body, stream) {
 
   // Add thinking config for CLI
   if (body.reasoning_effort) {
-    const budgetMap = { low: 1024, medium: 8192, high: 32768 };
+    const budgetMap = { low: 1024, medium: 8192, high: 32768, xhigh: 32768, max: 65536 };
     const budget = budgetMap[body.reasoning_effort] || 8192;
     gemini.generationConfig.thinkingConfig = {
       thinkingBudget: budget,
