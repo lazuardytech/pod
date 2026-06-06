@@ -169,6 +169,7 @@ export default function APIPageClient({ machineId }) {
         url: "/api/tunnel/status",
         cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
+        cacheTags: ["tunnel-status"],
         fetchOptions: { cache: "no-store" },
         onCacheData: (data) => {
           applyTunnelStatus(data);
@@ -245,6 +246,7 @@ export default function APIPageClient({ machineId }) {
           url: "/api/settings",
           cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
+          cacheTags: ["settings"],
           onCacheData: (data) => {
             applySettingsData(data);
           },
@@ -256,6 +258,7 @@ export default function APIPageClient({ machineId }) {
           url: "/api/tunnel/status",
           cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
+          cacheTags: ["tunnel-status"],
           fetchOptions: { cache: "no-store" },
           onCacheData: (data) => {
             applyTunnelStatus(data);
@@ -341,6 +344,7 @@ export default function APIPageClient({ machineId }) {
         method: "PATCH",
         body: patch,
         queueMeta: { feature, patch },
+        invalidateCacheTags: ["settings"],
       });
       return result;
     } catch (error) {
@@ -372,6 +376,7 @@ export default function APIPageClient({ machineId }) {
         url: "/api/keys",
         cacheKey: OFFLINE_KEYS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
+        cacheTags: ["api-keys"],
         onCacheData: (data) => {
           setKeys(data?.keys || []);
         },
@@ -981,11 +986,7 @@ export default function APIPageClient({ machineId }) {
                   <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
                   <span>Checking...</span>
                 </div>
-                <button
-                  onClick={() => setTunnelChecking(false)}
-                  className={ENDPOINT_DANGER_BUTTON_CLASS}
-                  title="Stop"
-                >
+                <button onClick={() => setTunnelChecking(false)} className={ENDPOINT_DANGER_BUTTON_CLASS} title="Stop">
                   <LucideIcon name="power_settings_new" size={16} />
                 </button>
               </div>
@@ -1010,7 +1011,11 @@ export default function APIPageClient({ machineId }) {
             {tsEnabled && !tsLoading ? (
               <div className="flex items-center gap-2">
                 <Input value={`${tsUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
-                <button onClick={() => copy(`${tsUrl}/v1`, "ts_url")} className={ENDPOINT_ICON_BUTTON_CLASS} title="Copy Tailscale URL">
+                <button
+                  onClick={() => copy(`${tsUrl}/v1`, "ts_url")}
+                  className={ENDPOINT_ICON_BUTTON_CLASS}
+                  title="Copy Tailscale URL"
+                >
                   <LucideIcon name={copied === "ts_url" ? "check" : "content_copy"} size={16} />
                 </button>
                 <button

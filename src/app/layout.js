@@ -1,4 +1,5 @@
 import { DM_Sans, Inter, IBM_Plex_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import OfflineMutationProcessor from "@/shared/components/OfflineMutationProcessor";
 import OfflineSyncStatus from "@/shared/components/OfflineSyncStatus";
@@ -46,10 +47,33 @@ export const viewport = {
   ],
 };
 
+const themeInitScript = `
+  (() => {
+    const root = document.documentElement;
+
+    try {
+      const storedTheme = localStorage.getItem("theme");
+      const parsedTheme = storedTheme ? JSON.parse(storedTheme) : null;
+      const selectedTheme = parsedTheme?.state?.theme ?? "dark";
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      const effectiveTheme = selectedTheme === "system" ? systemTheme : selectedTheme;
+
+      root.classList.toggle("dark", effectiveTheme === "dark");
+      root.classList.toggle("light", effectiveTheme !== "dark");
+    } catch {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    }
+  })();
+`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} ${dmSans.variable} dark`}>
       <head>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/icon0.svg" type="image/svg+xml" />

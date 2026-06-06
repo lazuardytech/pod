@@ -1,4 +1,4 @@
-import { getDownloadStatus } from "@/lib/tunnel/cloudflared";
+import { getDownloadStatus } from "@/lib/tunnel/downloadState.js";
 import { getTailscaleStatus, getTunnelStatus } from "@/lib/tunnel/tunnelManager";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap.js";
 

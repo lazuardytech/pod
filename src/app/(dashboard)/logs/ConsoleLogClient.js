@@ -199,11 +199,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         {/* Left: Search + filter pills */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <LucideIcon
-              name="search"
-              size={16}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
-            />
+            <LucideIcon name="search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey" />
             <input
               aria-label="Search console logs"
               type="text"

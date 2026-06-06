@@ -11,15 +11,19 @@ Unified proxy for LLM inference. Pod sits in front of your AI providers and expo
 
 ## Features
 
-- **Multi-provider routing** — OpenAI, Anthropic, Gemini, Codex, Ollama, Blackbox, MiniMax, and more
+- **Multi-provider routing** — OpenAI, Anthropic, Gemini, Codex, Ollama, 50+ providers
 - **Compatibility APIs** — OpenAI, Anthropic, Gemini, and Ollama-compatible endpoints under `/v1/*`
 - **Semantic cache** — deduplicates identical requests; streaming responses are cached too
 - **Conversational memory** — automatic injection and extraction across sessions
 - **API key auth** — per-key rate limiting (req/min + concurrent cap)
+- **Rate limiting** — Redis-backed distributed rate limiter with in-memory fallback
 - **Combos** — model groups with fallback and round-robin strategies
 - **Proxy pools** — per-provider proxy config with optional Vercel relay
 - **Tunnel support** — Tailscale and Cloudflare tunnel integration
 - **Dashboard** — full web UI for providers, usage analytics, quota tracking, logs, and health
+- **Account lockout** — exponential cooldown on auth failures, visible on /health
+- **PWA & offline-first** — installable dashboard with service worker shell caching, offline read cache, and offline mutation queue
+- **Robust cache invalidation** — versioned service worker, network-first non-hashed assets, and tag-based offline JSON cache invalidation after safe mutations
 
 <br/>
 
@@ -36,6 +40,15 @@ docker run -d \
 ```
 
 Then open `http://localhost:20128`.
+
+### Docker Compose (with Redis + SearXNG)
+
+```bash
+cd docker
+docker compose up -d
+```
+
+This starts Pod, Redis (rate limiting), and SearXNG (private web search) together. Works out of the box.
 
 With an env file:
 

@@ -154,6 +154,7 @@ export default function ProvidersPage() {
             url: "/api/providers",
             cacheKey: OFFLINE_PROVIDERS_CACHE_KEY,
             maxStaleMs: OFFLINE_MAX_STALE_MS,
+            cacheTags: ["providers"],
             onCacheData: (data) => {
               setConnections(data?.connections || []);
             },
@@ -165,6 +166,7 @@ export default function ProvidersPage() {
             url: "/api/provider-nodes",
             cacheKey: OFFLINE_PROVIDER_NODES_CACHE_KEY,
             maxStaleMs: OFFLINE_MAX_STALE_MS,
+            cacheTags: ["provider-nodes"],
             onCacheData: (data) => {
               setProviderNodes(data?.nodes || []);
             },
@@ -237,6 +239,7 @@ export default function ProvidersPage() {
           method: "PUT",
           body: { isActive: newActive },
           queueMeta: { feature: "providers-toggle", providerId, authType, connectionId: c.id },
+          invalidateCacheTags: ["providers"],
         }),
       ),
     );

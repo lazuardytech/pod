@@ -220,16 +220,18 @@ Padding: 8px (compact), 12px (default).
 
 ---
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 1 — Foundation
-Token migration in `globals.css`: replace existing palette with Linear tokens under `@theme {}`. Update semantic aliases. Set Inter Variable + Berkeley Mono as font stack. Remove light mode entirely.
+All four phases are complete as of v0.0.79. The entire UI — tokens, components, layouts, pages, landing — uses the Midnight Command Center design system.
 
-### Phase 2 — Core Components
-Rewrite `Button`, `Card`, `Input`, `Badge`, `Modal`, `Select`, `Toggle`, `Tooltip`, `Loading`, `Pagination` to use new tokens and Linear component specs.
+### Phase 1 — Foundation ✅
+Token migration in `globals.css`: Linear tokens under `@theme {}`, semantic aliases, Inter Variable + Berkeley Mono font stack.
 
-### Phase 3 — Layout & Navigation
-Rewrite `Sidebar`, `Header`, `DashboardLayout`, `AuthLayout` with Linear sidebar patterns. Compact nav items, Neon Lime active states, layered surface hierarchy.
+### Phase 2 — Core Components ✅
+`Button` (5 variants), `Card` (3 variants), `Input`, `Badge`, `Modal`, `ConfirmModal`, `Select`, `Toggle`, `SegmentedControl`, `Tooltip`, `Loading`, `Pagination` — all using Linear tokens and specs.
 
-### Phase 4 — Pages & Landing
-Apply design system to all dashboard pages and landing page components. Update charts (Recharts), tables, forms, and the landing page to match the Linear aesthetic.
+### Phase 3 — Layout & Navigation ✅
+`Sidebar`, `Header`, `DashboardLayout`, `AuthLayout` with Linear sidebar patterns: compact nav items, Neon Lime active states, layered surface hierarchy.
+
+### Phase 4 — Pages & Landing ✅
+All dashboard pages, landing page, charts (Recharts), tables, forms match the Linear aesthetic.

@@ -1,16 +1,27 @@
-import tsconfigPaths from "vite-tsconfig-paths";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    alias: [
+      { find: /^@\//, replacement: `${resolve(__dirname, "./src")}/` },
+      { find: /^open-sse\/(.*)$/, replacement: `${resolve(__dirname, "./open-sse")}/$1` },
+      { find: /^open-sse$/, replacement: resolve(__dirname, "./open-sse") },
+    ],
+  },
   test: {
     include: ["tests/**/*.test.{js,mjs}"],
     environment: "node",
     testTimeout: 20000,
+    hookTimeout: 30000,
     // Migration test mutates process.env.DATA_DIR and opens a real SQLite
     // file; isolate it from other tests by running suites sequentially.
     pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
+    fileParallelism: false,
+    maxWorkers: 1,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json-summary"],

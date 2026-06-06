@@ -253,11 +253,7 @@ export default function RequestLogger({
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <LucideIcon
-              name="search"
-              size={16}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
-            />
+            <LucideIcon name="search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey" />
             <input
               aria-label="Search request logs"
               type="text"
@@ -274,7 +270,11 @@ export default function RequestLogger({
             {[
               { key: "all", label: "All", activeClass: "bg-porcelain/10 text-porcelain border border-porcelain/20" },
               { key: "ok", label: "Success", activeClass: "border-emerald/30 bg-emerald/8 text-emerald" },
-              { key: "failed", label: "Failed", activeClass: "border-warning-red/30 bg-warning-red/8 text-warning-red" },
+              {
+                key: "failed",
+                label: "Failed",
+                activeClass: "border-warning-red/30 bg-warning-red/8 text-warning-red",
+              },
               { key: "pending", label: "Pending", activeClass: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400" },
             ].map((f) => (
               <button

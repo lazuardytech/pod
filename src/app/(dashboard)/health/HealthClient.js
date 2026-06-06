@@ -86,6 +86,7 @@ export default function HealthPage() {
         url: "/api/monitoring/health",
         cacheKey: OFFLINE_HEALTH_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
+        cacheTags: ["health"],
         fetchOptions: { cache: "no-store" },
         onCacheData: (snapshot, meta) => {
           setData(snapshot);
