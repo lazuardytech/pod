@@ -48,6 +48,10 @@ Feature plans and architecture proposals are under `.agents/plan/`.
 
 - [Product Requirements Document](PRD.md) — goals, personas, features, non-functional requirements
 
+## Reference Docs
+
+- [Internal API Reference](../docs/API_INTERNAL.md) — dashboard and internal endpoint reference
+
 ## Key Libraries
 
 | Library | Path | Purpose |
