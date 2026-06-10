@@ -1,19 +1,9 @@
 # Report: Health Endpoint Enrichment v0.0.63
 
-## Scope
+## Summary
 
-Expanded `/api/monitoring/health` payload for operational observability.
+The operational health surface was expanded so one endpoint can summarize key runtime signals.
 
-## Main Outcome
+## Lasting Rule
 
-- Health snapshot gained richer runtime, cache, queue, provider, and sync diagnostics.
-- Monitoring consumers can use one endpoint for broad system-state signals.
-
-## Important Rule
-
-- `/api/monitoring/health` follows API-key requirements when `requireApiKey=true`.
-- `/api/health` remains public heartbeat only.
-
-## Action Status
-
-- Active reference for observability expectations.
+`/api/monitoring/health` is the detailed operational surface; `/api/health` remains the public heartbeat.

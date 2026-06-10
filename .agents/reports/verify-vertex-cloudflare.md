@@ -1,15 +1,9 @@
 # Report: Vertex and Cloudflare Verification
 
-## Scope
+## Summary
 
-Validation of Vertex AI (service account and related paths) and Cloudflare AI integration behavior.
+This report covered auth and endpoint behavior for Vertex and Cloudflare-related integrations.
 
-## Main Outcome
+## Lasting Rule
 
-- Auth-shape and endpoint behavior were validated across targeted matrices.
-- Bugs found during verification were documented and fixed in-cycle.
-
-## Lasting Guidance
-
-- Keep JWT claim and endpoint-shape tests close to provider adapters.
-- Re-run this matrix after any auth or translator refactor.
+Re-run focused verification after auth, endpoint, or translator changes in these integrations.

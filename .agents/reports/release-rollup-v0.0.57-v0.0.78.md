@@ -1,16 +1,9 @@
-# Release Rollup: v0.0.57-v0.0.78
+# Release Rollup: v0.0.57 to v0.0.78
 
 ## Summary
 
-This period focused on UI polish, provider/routing correctness, and deeper runtime/security hardening.
+This period emphasized UI polish, provider correctness, and deeper security/runtime hardening.
 
-## Highlights
+## Current Use
 
-- Codex and provider-path robustness improvements
-- Stronger race-condition and shutdown handling
-- Expanded protections in auth, rate-limit, and SSRF surfaces
-- PWA and offline-first user experience improvements
-
-## Use This For
-
-- Fast baseline understanding for current maintenance work.
+Useful historical backdrop for the current `v0.0.79` baseline.

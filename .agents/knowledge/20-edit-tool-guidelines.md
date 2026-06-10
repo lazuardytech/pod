@@ -1,26 +1,15 @@
-# Edit Tool Guidelines
+# Edit Guidelines
 
-## 1) "Text Found Multiple Times"
+## Safe Editing Rules
 
-Cause: the match is not unique.
+1. Read the current file before editing.
+2. Patch small, unique sections when possible.
+3. Re-read after non-trivial edits.
+4. Validate after meaningful changes.
 
-Fix:
-- Include 2-5 surrounding lines.
-- Anchor with nearby unique code.
+## Common Failure Modes
 
-## 2) "Text Not Found"
-
-Cause: `oldText` does not match exact current file content.
-
-Fix:
-- Re-read file right before edit.
-- Copy exact whitespace and line breaks.
-- Avoid guessed snippets.
-
-## Practical Rules
-
-1. Read first, edit second.
-2. Use small, unique patch scopes.
-3. Re-read after each successful edit before the next patch.
-4. Prefer deterministic edits for repeated structures.
-5. After non-trivial edits, run lint/build validation.
+- Non-unique patch target
+- Outdated context
+- Whitespace mismatch
+- Editing generated or stale assumptions instead of live code

@@ -1,15 +1,9 @@
 # Report: Response Parsing Verification
 
-## Scope
+## Summary
 
-Validation of response parsing paths across representative provider output shapes.
+This report verified parsing behavior across representative upstream output shapes.
 
-## Main Outcome
+## Lasting Rule
 
-- Parsing behavior and error boundaries were validated.
-- Known untestable/limited areas were explicitly documented.
-
-## Lasting Guidance
-
-- Keep parser tests near translator/executor changes.
-- Favor strict parsing fallbacks over silent failures.
+Keep parser tests close to translator and executor changes.

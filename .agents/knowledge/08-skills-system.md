@@ -1,17 +1,16 @@
 # Skills System
 
-Pod has **no runtime skills feature**.
+This repo includes `.agents/*` documentation to help contributors and coding agents work from a shared project map.
 
-## Clarification
+## Purpose
 
-- `.agents/` is documentation for contributors/agents.
-- It is not consumed by dashboard runtime or API routes.
+- Reduce re-discovery time
+- Record active invariants
+- Separate working knowledge from historical audits
 
-## If Introduced Later
+## Usage
 
-Define these first:
-
-1. Data model and source of truth
-2. API surface and auth model
-3. UI scope and route placement
-4. Deployment and update strategy
+1. Read `INDEX.md` first.
+2. Use `knowledge/*` for current working context.
+3. Use `architecture/*` for deeper implementation context.
+4. Use `issues/*` and `reports/*` as historical evidence, not as live truth by default.
