@@ -118,8 +118,8 @@ function parseResetTime(resetValue) {
     }
 
     return null;
-  } catch (error) {
-    console.warn(`Failed to parse reset time: ${resetValue}`, error);
+  } catch (_error) {
+    console.warn("Failed to parse reset time");
     return null;
   }
 }
@@ -436,7 +436,7 @@ async function getAntigravityUsage(accessToken, providerSpecificData, proxyOptio
       subscriptionInfo,
     };
   } catch (error) {
-    console.error("[Antigravity Usage] Error:", error.message, error.cause);
+    console.error("[Antigravity Usage] Error occurred");
     return { message: `Antigravity error: ${error.message}` };
   }
 }
@@ -478,8 +478,8 @@ async function getAntigravitySubscriptionInfo(accessToken, proxyOptions = null) 
 
     if (!response.ok) return null;
     return await response.json();
-  } catch (error) {
-    console.error("[Antigravity Subscription] Error:", error.message);
+  } catch (_error) {
+    console.error("[Antigravity Subscription] Error occurred");
     return null;
   } finally {
     clearTimeout(timeoutId);
@@ -549,7 +549,7 @@ async function getClaudeUsage(accessToken, proxyOptions = null) {
     }
 
     // Fallback: legacy settings + org usage endpoint
-    console.warn(`[Claude Usage] OAuth endpoint returned ${oauthResponse.status}, falling back to legacy`);
+    console.warn("[Claude Usage] OAuth endpoint unavailable, falling back to legacy");
     return await getClaudeUsageLegacy(accessToken, proxyOptions);
   } catch (error) {
     return { message: `Claude connected. Unable to fetch usage: ${error.message}` };

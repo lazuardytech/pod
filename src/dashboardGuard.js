@@ -23,19 +23,30 @@ async function hasValidCliToken(request) {
 // Always require JWT token regardless of requireLogin setting
 const ALWAYS_PROTECTED = ["/api/shutdown", "/api/restart", "/api/settings/database", "/api/settings/migrate-sqlite"];
 
-// Require auth, but allow through if requireLogin is disabled
-const PROTECTED_API_PATHS = [
-  "/api/settings",
-  "/api/keys",
-  "/api/providers/client",
-  "/api/provider-nodes/validate",
-  "/api/memory",
-  "/api/cache",
+// Require explicit dashboard auth even when requireLogin=false.
+const STRICT_PROTECTED_API_PATHS = [
+  "/api/cloud/auth",
+  "/api/cloud/credentials/update",
+  "/api/oauth",
+  "/api/oauth/cursor/auto-import",
+  "/api/oauth/cursor/import",
+  "/api/oauth/kiro/auto-import",
+  "/api/oauth/kiro/import",
+  "/api/oauth/kiro/social-authorize",
+  "/api/oauth/kiro/social-exchange",
+  "/api/providers",
   "/api/provider-nodes",
-  "/api/models",
-  "/api/translator",
+  "/api/memory",
+  "/api/usage/request-details",
+  "/api/usage/request-logs",
+  "/api/pricing",
+  "/api/proxy-pools",
+  "/api/combos",
   "/api/tunnel",
 ];
+
+// Require auth, but allow through if requireLogin is disabled.
+const PROTECTED_API_PATHS = ["/api/settings", "/api/keys", "/api/cache", "/api/models", "/api/translator"];
 
 async function hasValidToken(request) {
   const token = request.cookies.get("auth_token")?.value;
@@ -69,6 +80,12 @@ export async function proxy(request) {
 
   // Always protected - require valid JWT or local CLI token (machineId-based)
   if (ALWAYS_PROTECTED.some((p) => pathname.startsWith(p))) {
+    if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return NextResponse.next();
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Sensitive admin APIs stay protected even when the dashboard itself is public.
+  if (STRICT_PROTECTED_API_PATHS.some((p) => pathname.startsWith(p))) {
     if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -180,5 +197,38 @@ export const config = {
     "/media-providers",
     "/api/memory",
     "/api/memory/:path*",
+    "/api/cloud/auth",
+    "/api/cloud/credentials/update",
+    "/api/oauth",
+    "/api/oauth/:path*",
+    "/api/oauth/cursor/auto-import",
+    "/api/oauth/cursor/import",
+    "/api/oauth/kiro/auto-import",
+    "/api/oauth/kiro/import",
+    "/api/oauth/kiro/social-authorize",
+    "/api/oauth/kiro/social-exchange",
+    "/api/providers",
+    "/api/providers/:path*",
+    "/api/provider-nodes",
+    "/api/provider-nodes/:path*",
+    "/api/usage",
+    "/api/usage/:path*",
+    "/api/pricing",
+    "/api/pricing/:path*",
+    "/api/proxy-pools",
+    "/api/proxy-pools/:path*",
+    "/api/combos",
+    "/api/combos/:path*",
+    "/api/cache",
+    "/api/cache/:path*",
+    "/api/models",
+    "/api/models/:path*",
+    "/api/translator",
+    "/api/translator/:path*",
+    "/api/tunnel",
+    "/api/tunnel/:path*",
+    "/api/settings/:path*",
+    "/api/keys",
+    "/api/keys/:path*",
   ],
 };

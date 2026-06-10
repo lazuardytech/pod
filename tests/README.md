@@ -1,26 +1,17 @@
-# 9Router Embeddings Tests
+# Pod Embeddings Tests
 
 Unit tests for the `/v1/embeddings` endpoint implementation.
-
-## Setup
-
-Vitest must be installed globally or in `/tmp/node_modules`:
-
-```bash
-cd /tmp && pnpm add vitest
-```
 
 ## Running Tests
 
 ```bash
-cd tests/
-NODE_PATH=/tmp/node_modules /tmp/node_modules/.bin/vitest run --reporter=verbose --config ./vitest.config.js
+bunx vitest run --reporter=verbose tests/unit/embeddingsCore.test.js tests/unit/embeddings.cloud.test.js
 ```
 
-Or using the package script (from the `tests/` directory):
+Or run the full repository test suite from the repo root:
 
 ```bash
-pnpm test
+bun run test:run
 ```
 
 ## Test Files

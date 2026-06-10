@@ -17,6 +17,7 @@ import {
   isOpenAICompatibleProvider,
   WEB_COOKIE_PROVIDERS,
 } from "@/shared/constants/providers";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 export const dynamic = "force-dynamic";
 
@@ -91,8 +92,8 @@ export async function GET() {
 
     return NextResponse.json({ connections: safeConnections });
   } catch (error) {
-    console.log("Error fetching providers:", error);
-    return NextResponse.json({ error: "Failed to fetch providers" }, { status: 500 });
+    console.log("Error fetching providers");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -203,7 +204,7 @@ export async function POST(request) {
 
     return NextResponse.json({ connection: result }, { status: 201 });
   } catch (error) {
-    console.log("Error creating provider:", error);
-    return NextResponse.json({ error: "Failed to create provider" }, { status: 500 });
+    console.log("Error creating provider");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

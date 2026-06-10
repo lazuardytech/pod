@@ -1,28 +1,20 @@
 import { NextResponse } from "next/server";
-import { getProviderConnections, updateProviderConnection, validateApiKey } from "@/models";
+import { getProviderConnections, updateProviderConnection } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 // Update provider credentials (for cloud token refresh)
 export async function PUT(request) {
   try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing API key" }, { status: 401 });
-    }
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
 
-    const apiKey = authHeader.slice(7);
     const [body, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const { provider, credentials } = body;
 
     if (!provider || !credentials) {
       return NextResponse.json({ error: "Provider and credentials required" }, { status: 400 });
-    }
-
-    // Validate API key
-    const isValid = await validateApiKey(apiKey);
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
     }
 
     // Find active connection for provider

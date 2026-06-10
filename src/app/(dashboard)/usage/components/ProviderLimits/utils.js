@@ -177,8 +177,8 @@ export function parseQuotaData(provider, data) {
           });
         }
     }
-  } catch (error) {
-    console.error(`Error parsing quota data for ${provider}:`, error);
+  } catch {
+    console.error("Error parsing quota data");
     return [];
   }
 

@@ -9,8 +9,8 @@ export default defineConfig({
     environment: "node",
     globals: true,
     include: ["**/*.test.js"],
-    // Suppress noisy console output from handlers under test
-    silent: false,
+    // Keep routine console output out of passing test runs.
+    silent: true,
   },
   resolve: {
     alias: {

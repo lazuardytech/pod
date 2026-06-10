@@ -191,9 +191,9 @@ export async function handleNonStreamingResponse({
         choices: [{ index: 0, message: { role: "assistant", content: textContent }, finish_reason: "stop" }],
         usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: inTokens + outTokens },
       };
-    } catch (err) {
+    } catch {
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
-      console.error(`[ChatCore] Failed to parse Codex SSE from ${provider}:`, err.message);
+      console.error("[ChatCore] Failed to parse Codex SSE response");
       return createErrorResult(HTTP_STATUS.BAD_GATEWAY, `Failed to parse Codex response from ${provider}`);
     }
   } else if (isSSE) {
@@ -207,9 +207,9 @@ export async function handleNonStreamingResponse({
   } else {
     try {
       responseBody = await providerResponse.json();
-    } catch (err) {
+    } catch {
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
-      console.error(`[ChatCore] Failed to parse JSON from ${provider}:`, err.message);
+      console.error("[ChatCore] Failed to parse JSON response");
       return createErrorResult(HTTP_STATUS.BAD_GATEWAY, `Invalid JSON response from ${provider}`);
     }
   }

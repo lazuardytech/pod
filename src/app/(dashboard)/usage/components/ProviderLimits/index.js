@@ -152,13 +152,13 @@ export default function ProviderLimits() {
         // Handle different error types gracefully
         if (response.status === 404) {
           // Connection not found - skip silently
-          console.warn(`[ProviderLimits] Connection not found for ${provider}, skipping`);
+          console.warn("[ProviderLimits] Connection not found, skipping");
           return;
         }
 
         if (response.status === 401) {
           // Auth error - show message instead of throwing
-          console.warn(`[ProviderLimits] Auth error for ${provider}:`, errorMsg);
+          console.warn("[ProviderLimits] Auth error while fetching quota");
           setQuotaData((prev) => ({
             ...prev,
             [connectionId]: {
@@ -186,7 +186,7 @@ export default function ProviderLimits() {
         },
       }));
     } catch (error) {
-      console.error(`[ProviderLimits] Error fetching quota for ${provider} (${connectionId}):`, error);
+      console.error("[ProviderLimits] Error fetching quota");
       setErrors((prev) => ({
         ...prev,
         [connectionId]: error.message || "Failed to fetch quota",

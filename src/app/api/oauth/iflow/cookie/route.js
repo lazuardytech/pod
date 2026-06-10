@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
@@ -10,6 +11,9 @@ import { parseJsonBody } from "@/lib/parseJsonBody.js";
  */
 export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const [body, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const { cookie } = body;
@@ -55,7 +59,7 @@ export async function POST(request) {
 
     const getResult = await getResponse.json();
     if (!getResult.success) {
-      return NextResponse.json({ error: `API key fetch failed: ${getResult.message}` }, { status: 400 });
+      return NextResponse.json({ error: "API key fetch failed" }, { status: 400 });
     }
 
     const keyData = getResult.data;
@@ -82,8 +86,10 @@ export async function POST(request) {
     });
 
     if (!postResponse.ok) {
-      const errorText = await postResponse.text();
-      return NextResponse.json({ error: `Failed to refresh API key: ${errorText}` }, { status: postResponse.status });
+      return NextResponse.json(
+        { error: `Failed to refresh API key (HTTP ${postResponse.status})` },
+        { status: postResponse.status },
+      );
     }
 
     const postResult = await postResponse.json();

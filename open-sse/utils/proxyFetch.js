@@ -118,6 +118,10 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       "x-relay-target": `${parsed.protocol}//${parsed.host}`,
       "x-relay-path": `${parsed.pathname}${parsed.search}`,
     };
+    const relayAuthToken = normalizeString(proxyOptions?.relayAuthToken);
+    if (relayAuthToken) {
+      relayHeaders["x-relay-auth"] = relayAuthToken;
+    }
 
     // Forward configured upstream timeout so relay can enforce its own AbortController.
     // Subtract 5s from pod's timeout so relay times out first — deterministic race outcome.
@@ -142,7 +146,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       if (proxyOptions?.strictProxy === true) {
         throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
       }
-      console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
+      console.warn("[ProxyFetch] Proxy failed, falling back to direct");
       return originalFetch(url, options);
     }
   }

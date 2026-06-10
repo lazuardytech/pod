@@ -10,7 +10,7 @@ export async function GET(_request, { params }) {
     if (!memory) return NextResponse.json({ error: "Memory not found" }, { status: 404 });
     return NextResponse.json(memory);
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -34,7 +34,7 @@ export async function PATCH(request, { params }) {
     const memory = await getMemory(id);
     return NextResponse.json({ success: true, data: memory });
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
   }
 }
 
@@ -45,6 +45,6 @@ export async function DELETE(_request, { params }) {
     if (!deleted) return NextResponse.json({ error: "Memory not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

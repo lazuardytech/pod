@@ -1658,10 +1658,18 @@ export default function APIPageClient({ machineId }) {
                 <Button
                   onClick={() => {
                     const tab = window.open("", "tailscale_auth", "width=600,height=700");
-                    if (tab)
-                      tab.document.write(
-                        "<p style='font-family:sans-serif;text-align:center;margin-top:40px'>Connecting to Tailscale...</p>",
-                      );
+                    if (tab) {
+                      const doc = tab.document;
+                      const body = doc.body || doc.createElement("body");
+                      if (!doc.body) {
+                        doc.documentElement?.appendChild(body);
+                      }
+                      body.replaceChildren();
+                      const message = doc.createElement("p");
+                      message.style.cssText = "font-family:sans-serif;text-align:center;margin-top:40px";
+                      message.textContent = "Connecting to Tailscale...";
+                      body.appendChild(message);
+                    }
                     handleConnectTailscale(tab);
                   }}
                   fullWidth

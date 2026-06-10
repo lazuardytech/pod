@@ -6,6 +6,7 @@ import {
   getProxyPoolById,
   updateProviderConnection,
 } from "@/models";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 function normalizeProxyConfig(body = {}) {
   const hasAnyProxyField =
@@ -79,8 +80,8 @@ export async function GET(request, { params }) {
 
     return NextResponse.json({ connection: result });
   } catch (error) {
-    console.log("Error fetching connection:", error);
-    return NextResponse.json({ error: "Failed to fetch connection" }, { status: 500 });
+    console.log("Error fetching connection");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -168,8 +169,8 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ connection: result });
   } catch (error) {
-    console.log("Error updating connection:", error);
-    return NextResponse.json({ error: "Failed to update connection" }, { status: 500 });
+    console.log("Error updating connection");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -185,7 +186,7 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({ message: "Connection deleted successfully" });
   } catch (error) {
-    console.log("Error deleting connection:", error);
-    return NextResponse.json({ error: "Failed to delete connection" }, { status: 500 });
+    console.log("Error deleting connection");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

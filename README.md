@@ -77,8 +77,20 @@ bun run dev        # starts on http://localhost:20128
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `20128` | HTTP port |
-| `DATA_DIR` | `/app/data` | SQLite data directory |
+| `DATA_DIR` | `~/.pod` locally, `/app/data` in Docker | SQLite data directory override |
 | `INITIAL_PASSWORD` | `123456` | Initial dashboard login password. Change after first login. |
+| `JWT_SECRET` | _(required)_ | Required server secret for dashboard auth sessions |
+| `API_KEY_SECRET` | _(required)_ | Required HMAC secret used for generated Pod API keys |
+| `SHUTDOWN_SECRET` | _(none)_ | Shared secret required by `/api/restart` and `/api/shutdown` |
+| `MACHINE_ID_SALT` | `endpoint-proxy-salt` | Salt used for machine-bound identifiers |
+| `ENABLE_REQUEST_LOGS` | `false` | Enable request log capture at runtime |
+| `OBSERVABILITY_ENABLED` | `true` | Enable request-details observability storage |
+| `OBSERVABILITY_MAX_RECORDS` | `200` | Max request-detail rows retained |
+| `OBSERVABILITY_BATCH_SIZE` | `20` | Buffered write batch size for request details |
+| `OBSERVABILITY_FLUSH_INTERVAL_MS` | `5000` | Max delay before flushing buffered request details |
+| `OBSERVABILITY_MAX_JSON_SIZE` | `5` | Max stored JSON payload size in KiB per request-detail blob |
+| `AUTH_COOKIE_SECURE` | `false` | Force secure auth cookies even outside HTTPS autodetection |
+| `REQUIRE_API_KEY` | `false` | Require Pod API keys on `/v1/*` routes and protected health/model-list endpoints |
 | `BASE_URL` | `http://localhost:20128` | Internal base URL used for self-referencing API calls (e.g. model availability checks). Set this when running behind a reverse proxy. |
 | `CLOUD_URL` | _(none)_ | URL of your self-hosted Cloudflare Worker (cloud deployment). Overrides the value stored in settings. |
 | `NEXT_TELEMETRY_DISABLED` | `1` | Disable Next.js telemetry |
@@ -89,6 +101,9 @@ bun run dev        # starts on http://localhost:20128
 | `PROMPT_CACHE_MAX_SIZE` | `50` | Prompt cache max entries |
 | `PROMPT_CACHE_TTL_MS` | `300000` | Prompt cache TTL (ms) |
 | `REDIS_URL` | _(none)_ | Redis connection URL for distributed rate limiting. When set, rate limits are shared across all Pod instances. When unset, falls back to in-memory rate limiting (single-instance only). Example: `redis://localhost:6379` |
+| `IFLOW_OAUTH_CLIENT_SECRET` | _(optional)_ | Required only if you use iFlow OAuth flows or token refresh |
+| `QODER_OAUTH_CLIENT_ID` | _(optional)_ | Optional Qoder OAuth client id override |
+| `QODER_OAUTH_CLIENT_SECRET` | _(optional)_ | Required only if you use Qoder OAuth flows needing a client secret |
 
 ### Redis (optional)
 
@@ -126,6 +141,19 @@ All endpoints accept `Authorization: Bearer <key>` or `x-api-key: <key>` when AP
 
 <br/>
 
+## Supported Providers
+
+Canonical built-in provider definitions live in `src/shared/constants/providers.js`.
+
+- Free access: Kiro AI, Qwen Code, Gemini CLI, iFlow AI, OpenCode Free
+- Free tier or account/API-key based access: OpenRouter, NVIDIA NIM, Ollama Cloud, Vertex AI, Gemini, Cloudflare, BytePlus ModelArk
+- OAuth and tool-account providers: Claude Code, Antigravity, OpenAI Codex, GitHub Copilot, Cursor IDE, Kilo Code, Cline
+- API key and self-hosted providers: GLM Coding, GLM (China), Kimi, Minimax Coding, Minimax (China), Alibaba, Alibaba Intl, Xiaomi MiMo, Volcengine Ark, OpenAI, Anthropic, OpenCode Go, Azure OpenAI, DeepSeek, Groq, xAI (Grok), Mistral, Together AI, Fireworks AI, Cerebras, Cohere, Nebius AI, SiliconFlow, Hyperbolic, Blackbox AI, Chutes AI, Ollama Local, Vertex Partner
+- Speech, embeddings, image, and search providers: Deepgram, AssemblyAI, NanoBanana API, ElevenLabs, Cartesia, PlayHT, Local Device, Google TTS, Edge TTS, Coqui TTS, Tortoise TTS, Inworld TTS, Voyage AI, SD WebUI, ComfyUI, HuggingFace, Tavily, Brave Search, Serper, Exa, SearXNG, Google PSE, Linkup, SearchAPI, You.com Search, Firecrawl, Fal.ai, Stability AI, Black Forest Labs, Recraft, Topaz, Runway ML, AWS Polly, Jina AI, Jina Reader
+- Custom nodes: OpenAI-compatible, Anthropic-compatible, and custom embedding nodes can be added from the dashboard
+
+<br/>
+
 ## Development
 
 ```bash
@@ -139,6 +167,7 @@ bun run test:run     # run vitest
 > Always run `bun run check` and `bun run test:run` before pushing.
 
 See [AGENTS.md](AGENTS.md) for project rules (applies to both humans and AI agents). Additional agent context lives in `.agents/`.
+See [docs/API_INTERNAL.md](docs/API_INTERNAL.md) for the dashboard/internal API reference.
 
 <br/>
 

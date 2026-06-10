@@ -158,15 +158,14 @@ export async function GET(request, { params }) {
         const retryResult = await refreshAndUpdateCredentials(connection, true, proxyOptions);
         connection = retryResult.connection;
         usage = await getUsageForProvider(connection, proxyOptions);
-      } catch (retryError) {
-        console.warn(`[Usage] ${connection.provider}: force refresh failed: ${retryError.message}`);
+      } catch {
+        console.warn("[Usage] Force refresh failed");
       }
     }
 
     return Response.json(usage);
   } catch (error) {
-    const provider = connection?.provider ?? "unknown";
-    console.warn(`[Usage] ${provider}: ${sanitizeError(error)}`);
+    console.warn("[Usage] Failed to load usage data");
     return Response.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

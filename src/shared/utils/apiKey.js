@@ -1,6 +1,18 @@
 import crypto from "node:crypto";
+import { DEFAULT_API_KEY_SECRET, resolveApiKeySecret } from "@/lib/security/runtimeSecrets.mjs";
 
-const API_KEY_SECRET = process.env.API_KEY_SECRET || "endpoint-proxy-api-key-secret";
+function getApiKeySecret() {
+  const secret = resolveApiKeySecret();
+  if (secret) return secret;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      `[SECURITY] API_KEY_SECRET is missing. Set a strong random value instead of relying on the old default "${DEFAULT_API_KEY_SECRET}".`,
+    );
+  }
+
+  return DEFAULT_API_KEY_SECRET;
+}
 
 /**
  * Generate 6-char random keyId using cryptographically secure randomness.
@@ -29,7 +41,7 @@ function generateKeyId() {
  */
 function generateCrc(machineId, keyId) {
   return crypto
-    .createHmac("sha256", API_KEY_SECRET) // lgtm[js/insufficient-password-hash]
+    .createHmac("sha256", getApiKeySecret()) // lgtm[js/insufficient-password-hash]
     .update(machineId + keyId)
     .digest("hex")
     .slice(0, 8);

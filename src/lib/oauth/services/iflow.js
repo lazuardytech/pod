@@ -33,6 +33,10 @@ export class IFlowService {
    * Exchange authorization code for tokens
    */
   async exchangeCode(code, redirectUri) {
+    if (!this.config.clientSecret) {
+      throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
+    }
+
     // Create Basic Auth header
     const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
 

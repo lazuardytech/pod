@@ -128,6 +128,24 @@ describe("proxyAwareFetch — relay timeout margin (Fix 1)", () => {
     expect(relayHeaders["x-relay-target"]).toBe("https://api.openai.com");
     expect(relayHeaders["x-relay-path"]).toBe("/v1/chat/completions?model=gpt-5");
   });
+
+  it("includes x-relay-auth when relayAuthToken is configured", async () => {
+    await proxyAwareFetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      },
+      {
+        vercelRelayUrl: "https://relay.vercel.app",
+        relayAuthToken: "relay-secret",
+      },
+    );
+
+    const relayHeaders = fetchSpy.mock.calls[0][1].headers;
+    expect(relayHeaders["x-relay-auth"]).toBe("relay-secret");
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -142,6 +160,7 @@ describe("testVercelRelay — healthcheck endpoint (Fix 3)", () => {
     // Verify correct target (JS object keys are unquoted, values are quoted)
     expect(source).toContain('"x-relay-target": "https://www.google.com"');
     expect(source).toContain('"x-relay-path": "/generate_204"');
+    expect(source).toContain('"x-relay-auth"');
     expect(source).toContain('Accept: "*/*"');
     expect(source).toContain('"User-Agent": "pod-relay-healthcheck/1.0"');
   });
@@ -203,7 +222,7 @@ describe("chatCore — one-shot retry on 502/504 (Fix 4)", () => {
     const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js");
     const source = fs.readFileSync(chatCorePath, "utf8");
     expect(source).toContain("[VERCEL-RELAY-RETRY]");
-    expect(source).toContain("attempt 2/2 after");
+    expect(source).toContain("Retrying upstream request after relay 502/504");
     expect(source).toContain("providerResponse.status === 502 || providerResponse.status === 504");
   });
 
@@ -328,5 +347,14 @@ describe("RELAY_FUNCTION_CODE — timeout cleanup", () => {
     expect(source).toContain("maxMs = 120000");
     expect(source).toContain("Date.now() - start < maxMs");
     expect(source).toContain("setTimeout(r, 3000)");
+  });
+
+  it("requires a relay auth token and strips it before forwarding", () => {
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.js");
+    const source = fs.readFileSync(routePath, "utf8");
+    expect(source).toContain("const RELAY_AUTH_TOKEN =");
+    expect(source).toContain('req.headers.get("x-relay-auth")');
+    expect(source).toContain('headers.delete("x-relay-auth")');
+    expect(source).toContain('randomBytes(24).toString("hex")');
   });
 });

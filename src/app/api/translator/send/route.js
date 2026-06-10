@@ -3,6 +3,38 @@ import { getProviderConnections } from "@/lib/localDb.js";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
+
+function buildForwardHeaders(response, stream) {
+  const headers = new Headers();
+  const contentType = response.headers.get("content-type");
+  const cacheControl = response.headers.get("cache-control");
+  const accelBuffering = response.headers.get("x-accel-buffering");
+
+  if (contentType) {
+    headers.set("Content-Type", contentType);
+  } else if (stream) {
+    headers.set("Content-Type", "text/event-stream");
+  } else {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (cacheControl) {
+    headers.set("Cache-Control", cacheControl);
+  } else if (stream) {
+    headers.set("Cache-Control", "no-cache");
+  }
+
+  if (stream) {
+    headers.set("Connection", "keep-alive");
+  }
+
+  if (accelBuffering) {
+    headers.set("X-Accel-Buffering", accelBuffering);
+  }
+
+  return headers;
+}
+
 export async function POST(request) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);
@@ -32,7 +64,7 @@ export async function POST(request) {
     };
 
     const executor = getExecutor(provider);
-    const stream = body.stream !== false;
+    const stream = body.stream === true;
 
     let { response } = await executor.execute({ model, body, stream, credentials });
 
@@ -49,17 +81,18 @@ export async function POST(request) {
       const errorText = await response.text();
       console.error(`[Translator] Provider error ${response.status}:`, errorText.slice(0, 500));
       return Response.json(
-        { success: false, error: `Provider error: ${response.status}`, details: errorText },
+        { success: false, error: `Provider error: ${response.status}` },
         { status: response.status },
       );
     }
 
+    if (!response.body) {
+      return Response.json({ success: false, error: "Provider returned empty response body" }, { status: 502 });
+    }
+
     return new Response(response.body, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
+      status: response.status,
+      headers: buildForwardHeaders(response, stream),
     });
   } catch (error) {
     console.error("[Translator] Send error:", error);

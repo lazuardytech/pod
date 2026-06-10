@@ -32,6 +32,10 @@ export class QoderService {
    * Exchange authorization code for tokens
    */
   async exchangeCode(code, redirectUri) {
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new Error("Missing QODER OAuth client credentials");
+    }
+
     const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
 
     const response = await fetch(this.config.tokenUrl, {
@@ -62,6 +66,10 @@ export class QoderService {
    * Refresh access token using refresh token
    */
   async refreshToken(refreshToken) {
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new Error("Missing QODER OAuth client credentials");
+    }
+
     const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
 
     const response = await fetch(this.config.tokenUrl, {

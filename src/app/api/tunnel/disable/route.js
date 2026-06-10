@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { disableTunnel } from "@/lib/tunnel/tunnelManager";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
-export async function POST() {
+export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const result = await disableTunnel();
     return NextResponse.json(result);
   } catch (error) {

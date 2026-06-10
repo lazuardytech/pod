@@ -15,7 +15,8 @@ import {
 } from "@/lib/oauth/constants/oauth";
 import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
-import { buildClineHeaders } from "@/shared/utils/clineAuth";
+import { buildClineHeaders } from "@/shared/utils/clineAuth.mjs";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 // OAuth provider test endpoints
 const OAUTH_TEST_CONFIG = {
@@ -237,8 +238,7 @@ async function refreshOAuthToken(connection) {
     }
 
     return null;
-  } catch (err) {
-    console.log(`Error refreshing ${provider} token:`, err.message);
+  } catch {
     return null;
   }
 }
@@ -339,7 +339,7 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
     if (res.status === 403) return { valid: false, error: "Access denied", refreshed };
     return { valid: false, error: `API returned ${res.status}`, refreshed };
   } catch (err) {
-    return { valid: false, error: err.message, refreshed };
+    return { valid: false, error: sanitizeError(err), refreshed };
   }
 }
 
@@ -378,7 +378,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
       );
       return { valid: res.ok, error: res.ok ? null : "Invalid API key or base URL" };
     } catch (err) {
-      return { valid: false, error: err.message };
+      return { valid: false, error: sanitizeError(err) };
     }
   }
 
@@ -401,7 +401,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
       );
       return { valid: res.ok, error: res.ok ? null : "Invalid API key or base URL" };
     } catch (err) {
-      return { valid: false, error: err.message };
+      return { valid: false, error: sanitizeError(err) };
     }
   }
 
@@ -810,7 +810,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         return { valid: false, error: "Provider test not supported" };
     }
   } catch (err) {
-    return { valid: false, error: err.message };
+    return { valid: false, error: sanitizeError(err) };
   }
 }
 

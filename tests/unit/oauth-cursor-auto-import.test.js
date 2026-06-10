@@ -24,6 +24,10 @@ vi.mock("fs/promises", () => ({
   constants: { R_OK: 4 },
 }));
 
+vi.mock("@/lib/routeAuth.js", () => ({
+  checkStrictDashboardAuth: vi.fn(async () => null),
+}));
+
 // Shared mock db instance
 const mockDbInstance = {
   prepare: vi.fn(),
@@ -57,27 +61,36 @@ vi.mock("bun:sqlite", () => {
 
 // Mock child_process for Strategy 2 fallback
 let cliMockResults = {};
+const execFileMock = vi.fn((file, args, opts, cb) => {
+  const sql = args.find((arg) => typeof arg === "string" && arg.includes("SELECT value FROM itemTable")) || "";
+  const parameterArg = args.find((arg) => typeof arg === "string" && arg.includes(".parameter set @key")) || "";
+  let stdout = "";
+
+  for (const [key, value] of Object.entries(cliMockResults)) {
+    if (parameterArg.includes(JSON.stringify(key)) && sql.includes("WHERE key=@key LIMIT 1")) {
+      stdout = value;
+      break;
+    }
+  }
+
+  if (typeof cb === "function") {
+    cb(null, { stdout });
+  }
+  return { stdout };
+});
 vi.mock("child_process", () => ({
-  execFile: vi.fn((file, args, opts, cb) => {
-    const sql = args[1] || "";
-    let stdout = "";
-
-    for (const [key, value] of Object.entries(cliMockResults)) {
-      if (sql.includes(`'${key}'`)) {
-        stdout = value;
-        break;
-      }
-    }
-
-    if (typeof cb === "function") {
-      cb(null, { stdout });
-    }
-    return { stdout };
-  }),
+  execFile: execFileMock,
 }));
 
 // We need to dynamically import after mocks are registered
 let GET;
+
+function createRequest() {
+  return {
+    headers: { get: vi.fn(() => null) },
+    cookies: { get: vi.fn(() => undefined) },
+  };
+}
 
 describe("GET /api/oauth/cursor/auto-import", () => {
   const originalPlatform = process.platform;
@@ -102,7 +115,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
   it("returns not-found when no macOS cursor db paths are accessible", async () => {
     vi.mocked(fsPromises.access).mockRejectedValue(new Error("ENOENT"));
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(false);
     expect(response.body.error).toContain("Checked locations:");
@@ -114,10 +127,29 @@ describe("GET /api/oauth/cursor/auto-import", () => {
     // Ensure CLI also "fails" or returns nothing
     cliMockResults = {};
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(false);
     expect(response.body.windowsManual).toBe(true);
+  });
+
+  it("falls back to sqlite3 CLI with parameter binding instead of raw key interpolation", async () => {
+    vi.mocked(fsPromises.access).mockResolvedValue();
+    mockDbInstance.__throwOnConstruct = true;
+    cliMockResults = {
+      "cursorAuth/accessToken": "cli-token",
+      "storage.serviceMachineId": "cli-machine-id",
+    };
+
+    const response = await GET(createRequest());
+
+    expect(response.body.found).toBe(true);
+    expect(response.body.accessToken).toBe("cli-token");
+    expect(response.body.machineId).toBe("cli-machine-id");
+    expect(execFileMock).toHaveBeenCalled();
+    const flattenedArgs = execFileMock.mock.calls.flatMap(([, args]) => args);
+    expect(flattenedArgs).toContain("SELECT value FROM itemTable WHERE key=@key LIMIT 1");
+    expect(flattenedArgs.join(" ")).not.toContain("WHERE key='cursorAuth/accessToken'");
   });
 
   // ── Token extraction ──────────────────────────────────────────────────
@@ -138,7 +170,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
       "storage.serviceMachineId": "test-machine-id",
     };
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(true);
     expect(response.body.accessToken).toBe("test-token");
@@ -161,7 +193,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
       "storage.serviceMachineId": '"json-machine-id"',
     };
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(true);
     expect(response.body.accessToken).toBe("json-token");
@@ -186,7 +218,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
       "storage.machineId": "fallback-machine",
     };
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(true);
     expect(response.body.accessToken).toBe("fallback-token");
@@ -200,7 +232,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
     });
     cliMockResults = {};
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(false);
     expect(response.body.windowsManual).toBe(true);
@@ -213,7 +245,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
     vi.mocked(fsPromises.access).mockRejectedValue(new Error("ENOENT"));
     mockDbInstance.__throwOnConstruct = true;
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.body.found).toBe(false);
     expect(response.body.error).toContain("Checked locations:");
@@ -224,7 +256,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
   it("unsupported platform returns generic not-found (200)", async () => {
     Object.defineProperty(process, "platform", { value: "freebsd", writable: true });
 
-    const response = await GET();
+    const response = await GET(createRequest());
 
     expect(response.status).toBe(200);
     expect(response.body.found).toBe(false);

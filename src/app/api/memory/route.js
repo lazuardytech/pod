@@ -38,7 +38,7 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -68,7 +68,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: memory });
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
   }
 }
 
@@ -85,6 +85,6 @@ export async function DELETE(request) {
       apiKeyId: apiKeyId || null,
     });
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

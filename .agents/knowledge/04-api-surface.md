@@ -19,6 +19,25 @@
 - Proxy Pools: CRUD, test, streams, Vercel deploy
 - Tunnels: Cloudflare enable/disable/status, Tailscale install/login/enable/disable
 
+## Internal API Reference
+
+- Detailed route reference: `docs/API_INTERNAL.md`
+- Key routes:
+  - `GET` / `DELETE` `/api/cache`
+  - `POST` `/api/models/test`
+  - `GET` / `POST` `/api/models/availability`
+  - `GET` `/api/models/availability/stream`
+  - `POST` `/api/providers/test-batch`
+  - `POST` `/api/providers/[id]/test`
+  - `GET` `/api/providers/[id]/models`
+  - `POST` `/api/providers/[id]/test-models`
+  - `POST` `/api/translator/translate`
+  - `POST` `/api/translator/send`
+  - `GET` `/api/translator/load`
+  - `POST` `/api/translator/save`
+  - `GET` / `DELETE` `/api/translator/console-logs`
+  - `GET` `/api/translator/console-logs/stream`
+
 ## Monitoring
 
 - `/api/health`: Public heartbeat (used by Docker HEALTHCHECK)

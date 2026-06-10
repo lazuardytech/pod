@@ -22,7 +22,7 @@ export async function GET() {
     const settings = await getSettings();
     return NextResponse.json(normalizeMemorySettings(settings));
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -64,6 +64,6 @@ export async function PUT(request) {
     const settings = await updateSettings(updates);
     return NextResponse.json(normalizeMemorySettings(settings));
   } catch (error) {
-    return NextResponse.json({ error: sanitizeError(error) || String(error) }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

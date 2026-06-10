@@ -17,6 +17,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 20000,
     hookTimeout: 30000,
+    silent: true,
     // Migration test mutates process.env.DATA_DIR and opens a real SQLite
     // file; isolate it from other tests by running suites sequentially.
     pool: "forks",

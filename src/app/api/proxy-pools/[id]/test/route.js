@@ -3,20 +3,30 @@ import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
-async function testVercelRelay(relayUrl, timeoutMs = 10000) {
+function buildRelayHeaders(proxyPool) {
+  const headers = {
+    "x-relay-target": "https://www.google.com",
+    "x-relay-path": "/generate_204",
+    Accept: "*/*",
+    "User-Agent": "pod-relay-healthcheck/1.0",
+  };
+
+  if (proxyPool?.relayAuthToken) {
+    headers["x-relay-auth"] = proxyPool.relayAuthToken;
+  }
+
+  return headers;
+}
+
+async function testVercelRelay(proxyPool, timeoutMs = 10000) {
   const controller = new AbortController();
   const startedAt = Date.now();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const { fetch: undiciFetch } = await import("undici");
-    const res = await undiciFetch(relayUrl, {
+    const res = await undiciFetch(proxyPool.proxyUrl, {
       method: "GET",
-      headers: {
-        "x-relay-target": "https://www.google.com",
-        "x-relay-path": "/generate_204",
-        Accept: "*/*",
-        "User-Agent": "pod-relay-healthcheck/1.0",
-      },
+      headers: buildRelayHeaders(proxyPool),
       signal: controller.signal,
     });
     return {
@@ -48,7 +58,7 @@ export async function POST(request, { params }) {
 
     const result =
       proxyPool.type === "vercel"
-        ? await testVercelRelay(proxyPool.proxyUrl)
+        ? await testVercelRelay(proxyPool)
         : await testProxyUrl({ proxyUrl: proxyPool.proxyUrl });
     const now = new Date().toISOString();
 

@@ -7,6 +7,7 @@ const nextConfig = {
   },
   env: {},
   outputFileTracingExcludes: {
+    "/*": ["./next.config.mjs"],
     "/api/tunnel/**": ["./.agents/**/*", "./cloud/**/*", "./coverage/**/*", "./tests/**/*", "./*.md", "./Dockerfile"],
   },
   turbopack: {

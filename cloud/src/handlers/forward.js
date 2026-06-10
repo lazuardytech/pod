@@ -5,6 +5,17 @@ const CF_HEADERS = [
   "x-real-ip", "x-forwarded-for", "x-forwarded-proto", "x-forwarded-host"
 ];
 
+const BLOCKED_HOST_SUFFIXES = [
+  ".localhost",
+  ".local",
+  ".internal",
+  ".home.arpa",
+  ".localtest.me",
+  ".lvh.me",
+  ".nip.io",
+  ".sslip.io",
+];
+
 // Blocklist: private/internal IP ranges and metadata endpoints
 const BLOCKED_HOST_PATTERNS = [
   /^0\.0\.0\.0$/,
@@ -24,8 +35,12 @@ function isUrlAllowed(targetUrl) {
   try {
     const url = new URL(targetUrl);
     if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+    const hostname = url.hostname.toLowerCase().replace(/\.+$/, "");
     for (const pattern of BLOCKED_HOST_PATTERNS) {
-      if (pattern.test(url.hostname)) return false;
+      if (pattern.test(hostname)) return false;
+    }
+    if (BLOCKED_HOST_SUFFIXES.some((suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix))) {
+      return false;
     }
     return true;
   } catch {
@@ -37,7 +52,6 @@ function isUrlAllowed(targetUrl) {
 export async function handleForward(request) {
   try {
     const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.js");
-    const { getMachineData } = await import("../services/storage.js");
 
     // Auth: require valid API key
     const apiKey = extractBearerToken(request);
@@ -88,8 +102,7 @@ export async function handleForward(request) {
     cleanHeaders["X-Forwarded-Host"] = url.host;
     cleanHeaders["X-From-Worker"] = "1";
 
-    console.log("[FORWARD] Target:", targetUrl);
-    console.log("[FORWARD] Headers:", JSON.stringify(cleanHeaders));
+    console.log("[FORWARD] Request forwarded");
 
     // Create Request object to have more control over headers
     const outgoingRequest = new Request(targetUrl, {
@@ -103,6 +116,7 @@ export async function handleForward(request) {
 
     // Use fetch with cf options to minimize auto-added headers
     const response = await fetch(outgoingRequest, {
+      redirect: "manual",
       cf: {
         // Disable automatic features that add headers
         scrapeShield: false,
@@ -111,6 +125,13 @@ export async function handleForward(request) {
         polish: "off"
       }
     });
+
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      return new Response(JSON.stringify({ error: "Redirect responses are not allowed" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
 
     // Stream response back to client
     return new Response(response.body, {
@@ -121,7 +142,7 @@ export async function handleForward(request) {
       }
     });
   } catch (error) {
-    console.error("[FORWARD] Error:", error.message);
+    console.error("[FORWARD] Error occurred");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }

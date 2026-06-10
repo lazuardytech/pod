@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 import { getProviderConnections } from "@/lib/localDb";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
@@ -13,6 +14,9 @@ const GITLAB_DEFAULT_BASE = "https://gitlab.com";
  */
 export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     let body;
     try {
       const [parsed, _parseErr] = await parseJsonBody(request);

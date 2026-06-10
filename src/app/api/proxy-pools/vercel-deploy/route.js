@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { createProxyPool } from "@/models";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
@@ -6,11 +7,26 @@ import { sanitizeError } from "@/lib/sanitizeError.js";
 
 const VERCEL_API = "https://api.vercel.com";
 
-// Relay function source code deployed to Vercel
-// Forwards requests to target URL specified in x-relay-target header
-// Supports configurable timeout via x-relay-timeout header (no hardcoding)
-const RELAY_FUNCTION_CODE = `
+function sanitizeProxyPool(pool) {
+  if (!pool) return pool;
+  const sanitized = { ...pool };
+  delete sanitized.relayAuthToken;
+  return sanitized;
+}
+
+function createRelayFunctionCode(relayAuthToken) {
+  return `
+const RELAY_AUTH_TOKEN = ${JSON.stringify(relayAuthToken)};
+
 export default async function handler(req) {
+  const relayAuth = req.headers.get("x-relay-auth");
+  if (relayAuth !== RELAY_AUTH_TOKEN) {
+    return new Response(JSON.stringify({ error: "Unauthorized relay request" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   const target = req.headers.get("x-relay-target");
   const relayPath = req.headers.get("x-relay-path") || "/";
   if (!target) {
@@ -31,6 +47,7 @@ export default async function handler(req) {
   }
 
   const headers = new Headers(req.headers);
+  headers.delete("x-relay-auth");
   headers.delete("x-relay-target");
   headers.delete("x-relay-path");
   headers.delete("x-relay-timeout");
@@ -61,6 +78,7 @@ export default async function handler(req) {
   }
 }
 `;
+}
 
 async function pollDeployment(deploymentId, token, maxMs = 120000) {
   const start = Date.now();
@@ -90,6 +108,8 @@ export async function POST(request) {
       return NextResponse.json({ error: "Vercel API token is required" }, { status: 400 });
     }
 
+    const relayAuthToken = randomBytes(24).toString("hex");
+
     // Deploy relay function to Vercel
     const deployRes = await fetch(`${VERCEL_API}/v13/deployments`, {
       method: "POST",
@@ -102,7 +122,7 @@ export async function POST(request) {
         files: [
           {
             file: "api/relay.js",
-            data: RELAY_FUNCTION_CODE,
+            data: createRelayFunctionCode(relayAuthToken),
           },
           {
             file: "package.json",
@@ -160,9 +180,10 @@ export async function POST(request) {
       noProxy: "",
       isActive: true,
       strictProxy: false,
+      relayAuthToken,
     });
 
-    return NextResponse.json({ proxyPool, deployUrl }, { status: 201 });
+    return NextResponse.json({ proxyPool: sanitizeProxyPool(proxyPool), deployUrl }, { status: 201 });
   } catch (error) {
     console.log("Error deploying Vercel relay:", error);
     return NextResponse.json({ error: sanitizeError(error) || "Deploy failed" }, { status: 500 });

@@ -388,6 +388,10 @@ const PROVIDERS = {
     config: IFLOW_CONFIG,
     flowType: "authorization_code",
     buildAuthUrl: (config, redirectUri, state) => {
+      if (!config.clientSecret) {
+        throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
+      }
+
       const params = new URLSearchParams({
         loginMethod: config.extraParams.loginMethod,
         type: config.extraParams.type,
@@ -398,6 +402,10 @@ const PROVIDERS = {
       return `${config.authorizeUrl}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
+      if (!config.clientSecret) {
+        throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
+      }
+
       // Create Basic Auth header
       const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
 
@@ -474,6 +482,10 @@ const PROVIDERS = {
     config: QODER_CONFIG,
     flowType: "authorization_code",
     buildAuthUrl: (config, redirectUri, state) => {
+      if (!config.clientId || !config.clientSecret) {
+        throw new Error("Missing QODER OAuth client credentials");
+      }
+
       const params = new URLSearchParams({
         client_id: config.clientId,
         response_type: "code",
@@ -483,6 +495,10 @@ const PROVIDERS = {
       return `${config.authorizeUrl}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
+      if (!config.clientId || !config.clientSecret) {
+        throw new Error("Missing QODER OAuth client credentials");
+      }
+
       const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
 
       const response = await fetch(config.tokenUrl, {
