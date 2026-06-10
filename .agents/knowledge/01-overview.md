@@ -1,40 +1,25 @@
 # Overview
 
-Pod is a self-hosted AI gateway and dashboard that unifies many providers behind OpenAI/Anthropic/Gemini-compatible APIs.
+Pod is a self-hosted AI gateway with a dark operational dashboard.
 
-## What Pod Provides
+## What It Does
 
-- Multi-provider routing with account fallback and combo chains
-- Streaming and non-streaming inference via local `open-sse` engine
-- Semantic cache, prompt cache, conversational memory
-- Usage analytics, request logs, health monitoring, account lockout tracking
-- OAuth/API key/cookie-based provider integrations (15+ providers)
-- Tunnel support (Cloudflare and Tailscale)
-- PWA installability and offline-first dashboard behavior
-- Redis-backed rate limiting with in-memory fallback
+- Unifies many providers behind a stable client-facing API
+- Manages credentials, refresh flows, retries, combos, and lockouts
+- Tracks usage, health, logs, cache, and memory
+- Supports tunnels, proxy pools, and offline-friendly dashboard behavior
 
-## Current Focus (v0.0.79)
+## Current Repo Shape
 
-- Security hardening: error sanitization, JSON body parsing, SSE crash guards
-- Redis rate limiting with duck-type backend dispatch
-- Connection-level lockout with exponential cooldown
-- Zeabur Docker deployment
-- Multi-instance architecture planning (LiteFS + Redis)
+- Frontend and API app: `src/`
+- Inference engine: `open-sse/`
+- Worker companion: `cloud/`
+- Project docs: `.agents/`, `AGENTS.md`, `DESIGN.md`, `README.md`
 
-## Technical Stack
+## Fast Truth Sources
 
-- Next.js 16 + React 19
-- JavaScript (ESM), no TypeScript
-- bun runtime and package manager
-- SQLite storage via `bun:sqlite`
-- Cloudflare Worker for cloud proxy
-- Tailwind v4 with Linear-inspired "Midnight Command Center" design system
-
-## Important Baseline Facts
-
-- Runtime command: `bun /app/server.js`
-- Data file: `~/.pod/pod.sqlite`
-- Docker image: `lazuardytech/pod`
-- Docker compose: pod + redis + searxng
-- Tests: 1305 across 67 files
-- open-sse: local only, never from npm (resolved via `jsconfig.json`)
+- `README.md`
+- `AGENTS.md`
+- `.agents/INDEX.md`
+- `.env.example`
+- live code in `src/`, `open-sse/`, and `cloud/`

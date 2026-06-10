@@ -1,15 +1,9 @@
-# Report: Rate-Limit and Retry Verification
+# Report: Rate Limit and Retry Verification
 
-## Scope
+## Summary
 
-Validate 429/5xx handling, retry behavior, and lockout semantics.
+This pass verified retry behavior, cooldown handling, and related lock semantics.
 
-## Main Outcome
+## Lasting Rule
 
-- Critical invariants around retry and lock state were verified.
-- No blocker regressions remained after fixes in that cycle.
-
-## Lasting Guidance
-
-- Keep `clearInFlight` behavior consistent.
-- Preserve `modelLockCount_${model}` semantics.
+Preserve explicit retry and `modelLockCount_${model}` behavior.

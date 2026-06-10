@@ -1,15 +1,9 @@
-# Report: Region-Aware Provider Verification
+# Report: Region Provider Verification
 
-## Scope
+## Summary
 
-Validation of provider behavior where region selection/endpoints affect routing correctness.
+This report reviewed providers whose routing or correctness depends on region-specific behavior.
 
-## Main Outcome
+## Lasting Rule
 
-- Region capability differences were mapped.
-- Critical and minor gaps were separated for prioritization.
-
-## Lasting Guidance
-
-- Keep region-aware tests for providers with region-specific endpoints.
-- Treat region handling as compatibility-critical, not UI-only.
+Treat region handling as compatibility-critical and keep targeted verification.

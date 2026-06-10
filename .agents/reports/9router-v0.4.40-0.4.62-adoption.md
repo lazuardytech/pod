@@ -1,21 +1,9 @@
-# Report: 9router v0.4.40-v0.4.62 Adoption
+# Report: 9router Adoption Scan
 
-## Scope
+## Summary
 
-Release scan to classify upstream changes into: adopt now, adopt with caveats, skip, or diverge.
+This report classified upstream changes into adopt, adapt, or skip.
 
-## Main Outcome
+## Lasting Rule
 
-- High-value reliability/security/provider fixes were candidates for adoption.
-- Several items were intentionally skipped due to product-direction mismatch.
-
-## Adoption Principles
-
-- Prefer low-risk compatibility and stability wins.
-- Do not import features that violate Pod invariants.
-- Re-test routing, auth, and streaming behavior after each adoption.
-
-## Action Status
-
-- Historical planning artifact.
-- Many items have since been integrated or superseded.
+Keep Pod-specific invariants first. Import only low-risk, well-understood improvements.

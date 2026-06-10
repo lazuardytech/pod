@@ -1,19 +1,9 @@
 # Report: Provider Smoketest v0.0.46
 
-## Scope
+## Summary
 
-Broad provider smoke validation across routing and capability metadata.
+This report documented a broad provider verification sweep and the fixes that followed.
 
-## Main Outcome
+## Lasting Rule
 
-- Large provider matrix was validated.
-- Multiple correctness and metadata mismatches were identified and resolved.
-
-## Lasting Lessons
-
-- Maintain provider smoke coverage for new providers and route logic changes.
-- Distinguish intentional provider quirks from real regressions.
-
-## Action Status
-
-- Historical verification milestone.
+Provider additions and adapter changes should keep smoke-style verification coverage.

@@ -1,15 +1,9 @@
-# Report: Cookie/Web Provider Verification
+# Report: Cookie and Web Provider Verification
 
-## Scope
+## Summary
 
-Canary-style verification for cookie/web providers (notably grok-web and perplexity-web paths).
+This verification pass focused on web and cookie-backed providers, which are high-drift integrations.
 
-## Main Outcome
+## Lasting Rule
 
-- Parsing and stream behavior were validated across representative cases.
-- Fragility points were documented for ongoing monitoring.
-
-## Operational Notes
-
-- Web/cookie integrations are high-drift; re-verify after upstream behavior changes.
-- Keep parser guardrails and fallback behavior explicit.
+Re-verify these providers after upstream behavior or parser changes.

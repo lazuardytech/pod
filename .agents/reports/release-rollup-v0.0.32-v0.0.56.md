@@ -1,16 +1,9 @@
-# Release Rollup: v0.0.32-v0.0.56
+# Release Rollup: v0.0.32 to v0.0.56
 
 ## Summary
 
-This period focused on hardening, provider verification, security cleanup, and relay reliability.
+This period focused on verification, security cleanup, and runtime hardening.
 
-## Highlights
+## Current Use
 
-- Stronger runtime safety and stream reliability
-- Expanded test coverage and provider verification
-- Security-focused cleanup cycle
-- Early relay robustness improvements
-
-## Use This For
-
-- Historical context on why key guardrails were introduced.
+Historical context for why several guardrails exist today.
