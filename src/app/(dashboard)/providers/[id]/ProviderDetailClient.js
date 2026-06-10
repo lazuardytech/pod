@@ -26,6 +26,7 @@ import {
   NoAuthProxyCard,
   OAuthModal,
   Select,
+  ShadcnSelect,
   Toggle,
 } from "@/shared/components";
 import { ConfirmModal } from "@/shared/components/Modal";
@@ -86,6 +87,15 @@ export default function ProviderDetailPage() {
   const [kiloFreeModels, setKiloFreeModels] = useState([]);
   const [disabledModelIds, setDisabledModelIds] = useState([]);
   const { copied, copy } = useCopyToClipboard();
+  const thinkingEffortOptions = [
+    { value: "default", label: "Default" },
+    { value: "none", label: "None" },
+    { value: "low", label: "Low" },
+    { value: "medium", label: "Medium" },
+    { value: "high", label: "High" },
+    { value: "xhigh", label: "xHigh" },
+    { value: "max", label: "Max" },
+  ];
 
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
@@ -241,7 +251,9 @@ export default function ProviderDetailPage() {
       // Load per-provider thinking config
       const thinkingCfg = (settingsData.providerThinking || {})[providerId] || {};
       setThinkingMode(thinkingCfg.mode || "auto");
-      setEffortMode(thinkingCfg.effortMode || "default");
+      const normalizedEffort =
+        thinkingCfg.effortMode === "extra-high" ? "xhigh" : (thinkingCfg.effortMode ?? "default");
+      setEffortMode(normalizedEffort);
       if (nodesRes.ok) {
         let node = (nodesData.nodes || []).find((entry) => entry.id === providerId) || null;
 
@@ -1060,18 +1072,6 @@ export default function ProviderDetailPage() {
             <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
               <Button
                 size="sm"
-                icon="add"
-                onClick={() => {
-                  setAddConnectionError("");
-                  setShowAddApiKeyModal(true);
-                }}
-                disabled={connections.length > 0}
-                className="w-full sm:w-auto"
-              >
-                Add API Key
-              </Button>
-              <Button
-                size="sm"
                 variant="secondary"
                 icon="edit"
                 onClick={() => setShowEditNodeModal(true)}
@@ -1141,20 +1141,15 @@ export default function ProviderDetailPage() {
               {/* Thinking Effort */}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-muted font-medium">Thinking Effort</span>
-                <select
-                  aria-label="Thinking effort"
-                  value={effortMode}
-                  onChange={(e) => handleEffortModeChange(e.target.value)}
-                  className="text-xs px-2 py-1 border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                <ShadcnSelect
+                  ariaLabel="Thinking effort"
                   name="thinking-effort"
-                >
-                  <option value="default">Default</option>
-                  <option value="none">None</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="extra-high">Extra High</option>
-                </select>
+                  value={effortMode}
+                  onValueChange={handleEffortModeChange}
+                  options={thinkingEffortOptions}
+                  triggerClassName="h-8 min-w-[112px] px-2.5 text-xs"
+                  contentClassName="min-w-[140px]"
+                />
               </div>
               <div className="flex gap-2">
                 {!isCompatible && providerId === "iflow" && (

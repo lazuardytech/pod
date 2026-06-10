@@ -1,5 +1,6 @@
 // biome-ignore lint/style/useNodejsImportProtocol: node: protocol not supported by webpack bundler
 import { arch, platform } from "os";
+import { getOAuthClientSecret } from "../../src/lib/security/runtimeSecrets.mjs";
 
 // === OS/Arch helpers ===
 function mapStainlessOs() {
@@ -38,6 +39,8 @@ const CLAUDE_API_HEADERS = {
 
 // Shared baseUrls
 const KIMI_CODING_BASE_URL = "https://api.kimi.com/coding/v1/messages";
+const IFLOW_CLIENT_SECRET = getOAuthClientSecret("IFLOW_OAUTH_CLIENT_SECRET");
+const QODER_CLIENT_SECRET = getOAuthClientSecret("QODER_OAUTH_CLIENT_SECRET");
 
 export const PROVIDERS = {
   claude: {
@@ -97,7 +100,7 @@ export const PROVIDERS = {
     format: "openai",
     headers: { "User-Agent": "iFlow-Cli" },
     clientId: "10009311001",
-    clientSecret: "4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW",
+    clientSecret: IFLOW_CLIENT_SECRET,
     tokenUrl: "https://iflow.cn/oauth/token",
     authUrl: "https://iflow.cn/oauth",
   },
@@ -106,7 +109,7 @@ export const PROVIDERS = {
     format: "openai",
     headers: { "User-Agent": "Qoder-Cli" },
     clientId: process.env.QODER_OAUTH_CLIENT_ID || "10009311001",
-    clientSecret: process.env.QODER_OAUTH_CLIENT_SECRET || "4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW",
+    clientSecret: QODER_CLIENT_SECRET,
     tokenUrl: "https://api.qoder.com/oauth/token",
     authUrl: "https://qoder.com/oauth/authorize",
   },

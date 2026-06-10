@@ -282,6 +282,10 @@ describe("api route contracts", () => {
       const json = await readJson(res);
       expect(json).toHaveProperty("connections");
       expect(Array.isArray(json.connections)).toBe(true);
+      expect(json.connections[0]).toMatchObject({
+        name: "OpenAI",
+        providerName: "OpenAI",
+      });
     });
   });
 
@@ -347,11 +351,7 @@ describe("api route contracts", () => {
     beforeEach(() => {
       vi.doMock("node:child_process", () => ({
         execSync: vi.fn().mockReturnValue(""),
-      }));
-      vi.doMock("@/lib/tunnel/tailscale.js", () => ({
-        isTailscaleInstalled: vi.fn().mockReturnValue(false),
-        isTailscaleLoggedIn: vi.fn().mockReturnValue(false),
-        TAILSCALE_SOCKET: "/tmp/tailscale.sock",
+        spawnSync: vi.fn().mockReturnValue({ status: 1, stdout: "", error: null }),
       }));
     });
 

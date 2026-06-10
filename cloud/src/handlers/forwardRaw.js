@@ -11,15 +11,34 @@ const BLOCKED_HOST_PATTERNS = [
   /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
   /^localhost$/i,
   /^\[::1\]$/,
+  /^::1$/i,
+  /metadata\.google\.internal/i,
+  /169\.254\.169\.254/,
+];
+
+const BLOCKED_HOST_SUFFIXES = [
+  ".localhost",
+  ".local",
+  ".internal",
+  ".home.arpa",
+  ".localtest.me",
+  ".lvh.me",
+  ".nip.io",
+  ".sslip.io",
 ];
 
 function isUrlAllowed(targetUrl) {
   try {
     const url = new URL(targetUrl);
     if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+    const hostname = url.hostname.toLowerCase().replace(/\.+$/, "");
     for (const pattern of BLOCKED_HOST_PATTERNS) {
-      if (pattern.test(url.hostname)) return false;
+      if (pattern.test(hostname)) return false;
     }
+    if (BLOCKED_HOST_SUFFIXES.some((suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix))) {
+      return false;
+    }
+    if (url.username || url.password) return false;
     return true;
   } catch {
     return false;
@@ -72,24 +91,24 @@ export async function handleForwardRaw(request) {
     const path = url.pathname + url.search;
     const isHttps = url.protocol === "https:";
 
-    console.log("[FORWARD_RAW] Connecting to:", host, port, isHttps ? "(TLS)" : "");
+    console.log("[FORWARD_RAW] Opening outbound connection");
 
     // Connect to target server
     let secureSocket;
     if (isHttps) {
       secureSocket = connect({
         hostname: host,
-        port: parseInt(port),
+        port: Number.parseInt(port, 10),
         secureTransport: "on"
       });
     } else {
-      secureSocket = connect({ hostname: host, port: parseInt(port) });
+      secureSocket = connect({ hostname: host, port: Number.parseInt(port, 10) });
     }
 
     try {
       await secureSocket.opened;
     } catch (openError) {
-      console.error("[FORWARD_RAW] Socket open error:", openError.message);
+      console.error("[FORWARD_RAW] Socket open error");
       throw openError;
     }
 
@@ -112,13 +131,13 @@ export async function handleForwardRaw(request) {
     }
     httpRequest += `\r\n${bodyStr}`;
 
-    console.log("[FORWARD_RAW] Request length:", httpRequest.length);
+    console.log("[FORWARD_RAW] Request prepared");
 
     try {
       await writer.write(new TextEncoder().encode(httpRequest));
       await writer.close();
     } catch (writeError) {
-      console.error("[FORWARD_RAW] Write error:", writeError.message);
+      console.error("[FORWARD_RAW] Write error");
       throw writeError;
     }
 
@@ -131,7 +150,7 @@ export async function handleForwardRaw(request) {
     while (attempts < maxAttempts) {
       // Timeout guard: abort after FORWARD_RAW_TIMEOUT_MS
       if (Date.now() - readStartTime > FORWARD_RAW_TIMEOUT_MS) {
-        console.warn("[FORWARD_RAW] Read timeout after", FORWARD_RAW_TIMEOUT_MS, "ms");
+        console.warn("[FORWARD_RAW] Read timeout");
         break;
       }
 
@@ -161,7 +180,7 @@ export async function handleForwardRaw(request) {
       attempts++;
     }
 
-    console.log("[FORWARD_RAW] Total bytes:", responseData.length);
+    console.log("[FORWARD_RAW] Response received");
 
     const responseText = new TextDecoder().decode(responseData);
 
@@ -197,11 +216,10 @@ export async function handleForwardRaw(request) {
     });
 
   } catch (error) {
-    console.error("[FORWARD_RAW] Error:", error.message, error.stack);
+    console.error("[FORWARD_RAW] Error occurred");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
 }
-

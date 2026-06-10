@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
+import { error as logError } from "@/sse/utils/logger.js";
 const execFileAsync = promisify(execFile);
 
 const ACCESS_TOKEN_KEYS = ["cursorAuth/accessToken", "cursorAuth/token"];
@@ -117,10 +119,21 @@ async function extractTokensViaCLI(dbPath) {
     }
   };
 
-  const query = async (sql) => {
-    const { stdout } = await execFileAsync("sqlite3", [dbPath, sql], {
-      timeout: 10000,
-    });
+  const query = async (key) => {
+    const { stdout } = await execFileAsync(
+      "sqlite3",
+      [
+        dbPath,
+        "-cmd",
+        ".parameter init",
+        "-cmd",
+        `.parameter set @key ${JSON.stringify(key)}`,
+        "SELECT value FROM itemTable WHERE key=@key LIMIT 1",
+      ],
+      {
+        timeout: 10000,
+      },
+    );
     return stdout.trim();
   };
 
@@ -128,7 +141,7 @@ async function extractTokensViaCLI(dbPath) {
   let accessToken = null;
   for (const key of ACCESS_TOKEN_KEYS) {
     try {
-      const raw = await query(`SELECT value FROM itemTable WHERE key='${key}' LIMIT 1`);
+      const raw = await query(key);
       if (raw) {
         accessToken = normalize(raw);
         break;
@@ -141,7 +154,7 @@ async function extractTokensViaCLI(dbPath) {
   let machineId = null;
   for (const key of MACHINE_ID_KEYS) {
     try {
-      const raw = await query(`SELECT value FROM itemTable WHERE key='${key}' LIMIT 1`);
+      const raw = await query(key);
       if (raw) {
         machineId = normalize(raw);
         break;
@@ -159,8 +172,11 @@ async function extractTokensViaCLI(dbPath) {
  * Auto-detect and extract Cursor tokens from local SQLite database.
  * Strategy: better-sqlite3 → sqlite3 CLI → manual fallback
  */
-export async function GET() {
+export async function GET(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const platform = process.platform;
     const candidates = getCandidatePaths(platform);
 
@@ -236,7 +252,7 @@ export async function GET() {
     // Strategy 3: ask user to paste manually
     return NextResponse.json({ found: false, windowsManual: true, dbPath });
   } catch (error) {
-    console.log("Cursor auto-import error:", error);
+    logError("CursorAutoImport", "Cursor auto-import failed", { error: error?.message || error });
     return NextResponse.json({ found: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

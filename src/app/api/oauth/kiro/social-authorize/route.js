@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { generatePKCE } from "@/lib/oauth/utils/pkce";
 
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 /**
  * GET /api/oauth/kiro/social-authorize
@@ -10,6 +11,9 @@ import { sanitizeError } from "@/lib/sanitizeError.js";
  */
 export async function GET(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get("provider"); // "google" or "github"
 

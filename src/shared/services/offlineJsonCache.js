@@ -1,6 +1,7 @@
 const DB_NAME = "pod-offline-json-cache";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "responses";
+const TAG_INDEX_NAME = "cacheTags";
 
 const DEFAULT_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
@@ -43,7 +44,14 @@ async function getDb() {
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "cacheKey" });
+        const store = db.createObjectStore(STORE_NAME, { keyPath: "cacheKey" });
+        store.createIndex(TAG_INDEX_NAME, "cacheTags", { unique: false, multiEntry: true });
+        return;
+      }
+
+      const store = req.transaction?.objectStore(STORE_NAME);
+      if (store && !store.indexNames.contains(TAG_INDEX_NAME)) {
+        store.createIndex(TAG_INDEX_NAME, "cacheTags", { unique: false, multiEntry: true });
       }
     };
 
@@ -72,6 +80,34 @@ function normalizeMaxStale(maxStaleMs) {
   return maxStaleMs;
 }
 
+function normalizeCacheTags(cacheTags = []) {
+  if (!Array.isArray(cacheTags)) return [];
+  return [...new Set(cacheTags.map((tag) => String(tag || "").trim()).filter(Boolean))];
+}
+
+function normalizeCacheKeys(cacheKeys = []) {
+  if (!Array.isArray(cacheKeys)) return [];
+  return [...new Set(cacheKeys.map((cacheKey) => String(cacheKey || "").trim()).filter(Boolean))];
+}
+
+function buildConditionalHeaders(existingHeaders, record) {
+  const headers = new Headers(existingHeaders || {});
+
+  if (record?.etag && !headers.has("If-None-Match")) {
+    headers.set("If-None-Match", record.etag);
+  }
+  if (record?.lastModified && !headers.has("If-Modified-Since")) {
+    headers.set("If-Modified-Since", record.lastModified);
+  }
+
+  return headers;
+}
+
+function dispatchOfflineCacheEvent(type, detail = {}) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(type, { detail }));
+}
+
 async function getCacheRecord(cacheKey) {
   if (!cacheKey) return null;
   const db = await getDb();
@@ -88,7 +124,11 @@ async function getCacheRecord(cacheKey) {
   }
 }
 
-export async function writeOfflineJsonCache(cacheKey, data, { url = "" } = {}) {
+export async function writeOfflineJsonCache(
+  cacheKey,
+  data,
+  { url = "", cacheTags = [], etag = "", lastModified = "" } = {},
+) {
   if (!cacheKey || data === undefined) return false;
   const db = await getDb();
   if (!db) return false;
@@ -101,6 +141,39 @@ export async function writeOfflineJsonCache(cacheKey, data, { url = "" } = {}) {
       url,
       data,
       updatedAt: Date.now(),
+      invalidatedAt: 0,
+      cacheTags: normalizeCacheTags(cacheTags),
+      etag: etag || "",
+      lastModified: lastModified || "",
+    });
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function touchOfflineJsonCache(cacheKey, metadata = {}) {
+  if (!cacheKey) return false;
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const existing = await requestToPromise(store.get(cacheKey));
+    if (!existing) {
+      await transactionDone(tx);
+      return false;
+    }
+
+    store.put({
+      ...existing,
+      updatedAt: Date.now(),
+      invalidatedAt: 0,
+      etag: metadata.etag || existing.etag || "",
+      lastModified: metadata.lastModified || existing.lastModified || "",
+      cacheTags: normalizeCacheTags(existing.cacheTags),
     });
     await transactionDone(tx);
     return true;
@@ -119,17 +192,97 @@ export async function readOfflineJsonCache(cacheKey, { maxStaleMs = DEFAULT_MAX_
   const ageMs = Date.now() - updatedAt;
   const normalizedMaxStaleMs = normalizeMaxStale(maxStaleMs);
   const expired = ageMs > normalizedMaxStaleMs;
+  const invalidatedAt = Number(record.invalidatedAt || 0);
+  const invalidated = Number.isFinite(invalidatedAt) && invalidatedAt > updatedAt;
 
   return {
     data: record.data,
     updatedAt,
     ageMs,
     expired,
+    invalidated,
+    invalidatedAt: invalidated ? invalidatedAt : 0,
+    cacheTags: normalizeCacheTags(record.cacheTags),
   };
 }
 
-export async function fetchJsonAndCache(url, { cacheKey = url, fetchOptions } = {}) {
-  const response = await fetch(url, fetchOptions);
+export async function invalidateOfflineJsonCache({ cacheKeys = [], cacheTags = [] } = {}) {
+  const normalizedKeys = normalizeCacheKeys(cacheKeys);
+  const normalizedTags = normalizeCacheTags(cacheTags);
+  if (normalizedKeys.length === 0 && normalizedTags.length === 0) return { invalidated: 0 };
+
+  const db = await getDb();
+  if (!db) return { invalidated: 0 };
+
+  const now = Date.now();
+  let invalidated = 0;
+
+  try {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const matchByKey = new Set(normalizedKeys);
+    const matchByTag = new Set(normalizedTags);
+
+    await new Promise((resolve) => {
+      const req = store.openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+
+        const value = cursor.value;
+        const tags = normalizeCacheTags(value?.cacheTags);
+        const shouldInvalidate =
+          matchByKey.has(String(value?.cacheKey || "")) || tags.some((tag) => matchByTag.has(tag));
+
+        if (shouldInvalidate) {
+          cursor.update({
+            ...value,
+            invalidatedAt: now,
+            cacheTags: tags,
+          });
+          invalidated += 1;
+        }
+
+        cursor.continue();
+      };
+      req.onerror = () => resolve();
+    });
+
+    await transactionDone(tx);
+
+    if (invalidated > 0) {
+      dispatchOfflineCacheEvent("pod:offline-json-cache-invalidated", {
+        cacheKeys: normalizedKeys,
+        cacheTags: normalizedTags,
+        invalidated,
+      });
+    }
+
+    return { invalidated };
+  } catch {
+    return { invalidated: 0 };
+  }
+}
+
+export async function fetchJsonAndCache(url, { cacheKey = url, fetchOptions, cacheTags = [] } = {}) {
+  const existingRecord = await getCacheRecord(cacheKey);
+  const headers = buildConditionalHeaders(fetchOptions?.headers, existingRecord);
+  const response = await fetch(url, {
+    ...(fetchOptions || {}),
+    headers,
+  });
+
+  if (response.status === 304 && existingRecord) {
+    await touchOfflineJsonCache(cacheKey, {
+      etag: response.headers.get("ETag") || existingRecord.etag || "",
+      lastModified: response.headers.get("Last-Modified") || existingRecord.lastModified || "",
+    });
+    return existingRecord.data;
+  }
+
   if (!response.ok) {
     const message = `Request failed with status ${response.status}`;
     const error = new Error(message);
@@ -138,7 +291,12 @@ export async function fetchJsonAndCache(url, { cacheKey = url, fetchOptions } = 
   }
 
   const data = await response.json();
-  await writeOfflineJsonCache(cacheKey, data, { url });
+  await writeOfflineJsonCache(cacheKey, data, {
+    url,
+    cacheTags,
+    etag: response.headers.get("ETag") || "",
+    lastModified: response.headers.get("Last-Modified") || "",
+  });
   return data;
 }
 
@@ -147,6 +305,7 @@ export async function loadJsonStaleWhileRevalidate({
   cacheKey = url,
   maxStaleMs = DEFAULT_MAX_STALE_MS,
   fetchOptions,
+  cacheTags = [],
   onCacheData,
   onFreshData,
 } = {}) {
@@ -160,14 +319,14 @@ export async function loadJsonStaleWhileRevalidate({
   }
 
   try {
-    const fresh = await fetchJsonAndCache(url, { cacheKey, fetchOptions });
+    const fresh = await fetchJsonAndCache(url, { cacheKey, fetchOptions, cacheTags });
     if (typeof onFreshData === "function") {
       onFreshData(fresh, { stale: false, ageMs: 0, updatedAt: Date.now() });
     }
     return { data: fresh, source: "network", stale: false };
   } catch (error) {
     if (hasUsableCache) {
-      return { data: cached.data, source: "cache", stale: true, error };
+      return { data: cached.data, source: "cache", stale: true, invalidated: cached.invalidated, error };
     }
     throw error;
   }

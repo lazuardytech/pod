@@ -9,6 +9,10 @@
 
 import { CLOUD_CODE_API, LOAD_CODE_ASSIST_HEADERS, LOAD_CODE_ASSIST_METADATA } from "../config/appConstants.js";
 
+function redactConnectionId(connectionId) {
+  return connectionId ? `${String(connectionId).slice(0, 4)}...` : "unknown";
+}
+
 // ─── Cache ────────────────────────────────────────────────────────────────────
 // connectionId -> { projectId: string, fetchedAt: number }
 const projectIdCache = new Map();
@@ -61,8 +65,8 @@ export function startCacheCleanup() {
   _cleanupTimer = setInterval(() => {
     try {
       cleanupNow();
-    } catch (e) {
-      console.warn("[ProjectId] cleanup sweep error:", e?.message ?? e);
+    } catch (_e) {
+      console.warn("[ProjectId] cleanup sweep error");
     }
   }, CLEANUP_INTERVAL_MS);
   // Unref so the timer doesn't prevent Node from exiting when it is otherwise idle
@@ -113,10 +117,10 @@ export async function getProjectIdForConnection(connectionId, accessToken) {
         projectIdCache.set(connectionId, { projectId, fetchedAt: Date.now() });
         return projectId;
       }
-      console.warn("[ProjectId] could not fetch projectId for connection", connectionId.slice(0, 8));
+      console.warn("[ProjectId] could not fetch projectId for connection", redactConnectionId(connectionId));
       return null;
-    } catch (error) {
-      console.warn(`[ProjectId] Error fetching project ID: ${error.message}`);
+    } catch (_error) {
+      console.warn("[ProjectId] Error fetching project ID");
       return null;
     } finally {
       pendingFetches.delete(connectionId);
@@ -207,7 +211,7 @@ async function fetchProjectId(accessToken, signal) {
  * @returns {Promise<string|null>}
  */
 async function onboardUser(accessToken, tierID, externalSignal) {
-  console.log(`[ProjectId] Onboarding user with tier: ${tierID}`);
+  console.log("[ProjectId] Onboarding user");
 
   const reqBody = { tierId: tierID, metadata: LOAD_CODE_ASSIST_METADATA };
   const MAX_ATTEMPTS = 5;
@@ -242,28 +246,28 @@ async function onboardUser(accessToken, tierID, externalSignal) {
       if (data.done === true) {
         const projectId = extractProjectIdFromOnboard(data);
         if (projectId) {
-          console.log(`[ProjectId] Successfully onboarded, project ID: ${projectId}`);
+          console.log("[ProjectId] Successfully onboarded");
           return projectId;
         }
         throw new Error("onboardUser done but no project_id in response");
       }
 
       // Server not done yet – wait and retry
-      console.log(`[ProjectId] Onboard attempt ${attempt}/${MAX_ATTEMPTS}: not done yet, waiting...`);
+      console.log(`[ProjectId] Onboard attempt ${attempt}/${MAX_ATTEMPTS}: waiting`);
       await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
       clearTimeout(timeoutId);
       if (error.name === "AbortError") {
-        console.warn(`[ProjectId] onboardUser attempt ${attempt} aborted (timeout or connection removed)`);
+        console.warn(`[ProjectId] onboardUser attempt ${attempt} aborted`);
         if (externalSignal?.aborted) return null; // connection gone – stop retrying
         continue;
       }
       if (attempt === MAX_ATTEMPTS) {
-        console.warn(`[ProjectId] onboardUser failed after ${MAX_ATTEMPTS} attempts: ${error.message}`);
+        console.warn(`[ProjectId] onboardUser failed after ${MAX_ATTEMPTS} attempts`);
         return null;
       }
       // Continue to next attempt instead of throwing (which would skip remaining retries)
-      console.warn(`[ProjectId] onboardUser attempt ${attempt} failed: ${error.message}, retrying...`);
+      console.warn(`[ProjectId] onboardUser attempt ${attempt} failed, retrying...`);
       await new Promise((resolve) => setTimeout(resolve, 2000));
     } finally {
       clearTimeout(timeoutId);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { CursorService } from "@/lib/oauth/services/cursor";
 import { createProviderConnection } from "@/models";
 
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
 /**
@@ -14,6 +15,9 @@ import { parseJsonBody } from "@/lib/parseJsonBody.js";
  */
 export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const [body, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const { accessToken, machineId } = body;
@@ -69,7 +73,10 @@ export async function POST(request) {
  * GET /api/oauth/cursor/import
  * Get instructions for importing Cursor token
  */
-export async function GET() {
+export async function GET(request) {
+  const authResponse = await checkStrictDashboardAuth(request);
+  if (authResponse) return authResponse;
+
   const cursorService = new CursorService();
   const instructions = cursorService.getTokenStorageInstructions();
 

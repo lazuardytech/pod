@@ -230,8 +230,7 @@ export async function GET(request, { params }) {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`Error fetching models from ${connection.provider}:`, errorText);
+        await response.text().catch(() => "");
         return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
       }
 
@@ -271,8 +270,7 @@ export async function GET(request, { params }) {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`Error fetching models from ${connection.provider}:`, errorText);
+        await response.text().catch(() => "");
         return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
       }
 
@@ -305,7 +303,6 @@ export async function GET(request, { params }) {
             });
           } catch (error) {
             if (sanitizeError(error).includes("AccessDeniedException") && refreshToken) {
-              console.log("Kiro token invalid/expired. Attempting refresh...");
               const refreshed = await refreshKiroToken(refreshToken, connection.providerSpecificData);
 
               if (refreshed?.accessToken) {
@@ -328,7 +325,6 @@ export async function GET(request, { params }) {
         }
       } catch (error) {
         warning = `Failed to fetch Kiro models: ${sanitizeError(error)}`;
-        console.log("Failed to fetch Kiro models dynamically, falling back to static:", sanitizeError(error));
       }
 
       // Return empty dynamic list so UI falls back to static provider models.
@@ -393,13 +389,9 @@ export async function GET(request, { params }) {
           }
         } else {
           warning = `Failed to fetch Gemini CLI models (HTTP ${response.status})`;
-          console.log(
-            "Failed to fetch Gemini CLI models dynamically, falling back to static (HTTP " + response.status + ")",
-          );
         }
       } catch (error) {
         warning = `Failed to fetch Gemini CLI models: ${sanitizeError(error)}`;
-        console.log("Failed to fetch Gemini CLI models dynamically, falling back to static:", sanitizeError(error));
       }
 
       // Return empty dynamic list so UI falls back to static provider models.
@@ -418,8 +410,7 @@ export async function GET(request, { params }) {
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`Error fetching models from ollama-local:`, errorText);
+        await response.text().catch(() => "");
         return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
       }
       const data = await response.json();
@@ -473,8 +464,7 @@ export async function GET(request, { params }) {
     const response = await fetch(url, fetchOptions);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.log(`Error fetching models from ${connection.provider}:`, errorText);
+      await response.text().catch(() => "");
       return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
     }
 
@@ -486,8 +476,8 @@ export async function GET(request, { params }) {
       connectionId: connection.id,
       models,
     });
-  } catch (error) {
-    console.log("Error fetching provider models:", error);
+  } catch (_error) {
+    console.log("Error fetching provider models");
     return NextResponse.json({ error: "Failed to fetch models" }, { status: 500 });
   }
 }

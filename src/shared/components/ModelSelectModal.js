@@ -2,8 +2,8 @@
 
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
-import { getModelsByProviderId } from "@/shared/constants/models";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { getModelsByProviderId } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,
   APIKEY_PROVIDERS,
@@ -55,6 +55,7 @@ export default function ModelSelectModal({
   const [providerNodes, setProviderNodes] = useState([]);
   const [customModels, setCustomModels] = useState([]);
   const [disabledModels, setDisabledModels] = useState({});
+  const [kiloFreeModels, setKiloFreeModels] = useState([]);
 
   const fetchCombos = async () => {
     try {
@@ -103,6 +104,28 @@ export default function ModelSelectModal({
   useEffect(() => {
     if (isOpen) fetchCustomModels();
   }, [isOpen]);
+
+  const fetchKiloFreeModels = async () => {
+    try {
+      const res = await fetch("/api/providers/kilo/free-models");
+      if (!res.ok) throw new Error(`Failed to fetch Kilo free models: ${res.status}`);
+      const data = await res.json();
+      setKiloFreeModels(data.models || []);
+    } catch (error) {
+      console.error("Error fetching Kilo free models:", error);
+      setKiloFreeModels([]);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const hasKilocode = filteredActiveProviders.some((p) => p.provider === "kilocode");
+    if (!hasKilocode || kindFilter) {
+      setKiloFreeModels([]);
+      return;
+    }
+    fetchKiloFreeModels();
+  }, [isOpen, filteredActiveProviders, kindFilter]);
 
   const fetchDisabledModels = async () => {
     try {
@@ -286,6 +309,14 @@ export default function ModelSelectModal({
           ...customAliasModels,
           ...customRegisteredModels,
         ];
+
+        if (providerId === "kilocode") {
+          const kiloDynamicModels = kiloFreeModels
+            .filter((m) => !hardcodedIds.has(m.id))
+            .map((m) => ({ id: m.id, name: m.name || m.id, value: `${alias}/${m.id}` }));
+          merged.push(...kiloDynamicModels);
+        }
+
         // Dedupe by value (alias may equal hardcoded id, causing React key collision)
         const seen = new Set();
         let allModels = filterByKind(
@@ -332,6 +363,7 @@ export default function ModelSelectModal({
     allProviders,
     providerNodes,
     customModels,
+    kiloFreeModels,
     disabledModels,
     kindFilter,
     activeProviders,

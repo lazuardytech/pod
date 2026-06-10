@@ -301,7 +301,7 @@ export async function markAccountUnavailable(
       `${connName} connection locked for ${Math.round(cooldownMs / 60000)}m (count=${newCount}, until=${until}) [${status}]`,
     );
     if (provider && status && errorText) {
-      console.error(`\u274C ${provider} [${status}] connection lock #${newCount}: ${String(errorText).slice(0, 120)}`);
+      console.error("\u274C Connection lock triggered after authentication failure");
     }
     return { shouldFallback: true, cooldownMs };
   }
@@ -365,7 +365,7 @@ export async function markAccountUnavailable(
   log.warn("AUTH", `${connName} locked ${lockKey} for ${Math.round(cooldownMs / 1000)}s [${status}]`);
 
   if (provider && status && reason) {
-    console.error(`❌ ${provider} [${status}]: ${reason}`);
+    console.error("❌ Provider request triggered a model lock");
   }
 
   return { shouldFallback: true, cooldownMs };

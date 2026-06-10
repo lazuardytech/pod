@@ -1,11 +1,15 @@
 "use server";
 
 import { NextResponse } from "next/server";
-import { startDaemonWithPassword } from "@/lib/tunnel/tailscale";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
-export async function POST() {
+export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
+    const { startDaemonWithPassword } = await import("@/lib/tunnel/tailscale");
     await startDaemonWithPassword("");
     return NextResponse.json({ success: true });
   } catch (error) {

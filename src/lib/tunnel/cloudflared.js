@@ -4,6 +4,7 @@ import https from "node:https";
 import os from "node:os";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/dataDir.js";
+import { resetDownloadState, setDownloadState } from "./downloadState.js";
 import { clearPid, loadPid, savePid } from "./state.js";
 
 const BIN_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "bin");
@@ -51,13 +52,6 @@ function getDownloadUrl() {
   return `${GITHUB_BASE_URL}/${binaryName}`;
 }
 
-// Download state — shared so status API can read it
-const dlState = { downloading: false, progress: 0 };
-
-export function getDownloadStatus() {
-  return { downloading: dlState.downloading, progress: dlState.progress };
-}
-
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(/*turbopackIgnore: true*/ dest);
@@ -80,33 +74,31 @@ function downloadFile(url, dest) {
 
         const totalBytes = parseInt(response.headers["content-length"], 10) || 0;
         let receivedBytes = 0;
-        dlState.downloading = true;
-        dlState.progress = 0;
+        setDownloadState({ downloading: true, progress: 0 });
 
         response.on("data", (chunk) => {
           receivedBytes += chunk.length;
-          if (totalBytes > 0) dlState.progress = Math.round((receivedBytes / totalBytes) * 100);
+          if (totalBytes > 0) {
+            setDownloadState({ progress: Math.round((receivedBytes / totalBytes) * 100) });
+          }
         });
 
         response.pipe(file);
 
         file.on("finish", () => {
-          dlState.downloading = false;
-          dlState.progress = 100;
+          setDownloadState({ downloading: false, progress: 100 });
           file.close(() => resolve(dest));
         });
 
         file.on("error", (err) => {
-          dlState.downloading = false;
-          dlState.progress = 0;
+          resetDownloadState();
           file.close();
           fs.unlinkSync(/*turbopackIgnore: true*/ dest);
           reject(err);
         });
       })
       .on("error", (err) => {
-        dlState.downloading = false;
-        dlState.progress = 0;
+        resetDownloadState();
         file.close();
         if (fs.existsSync(/*turbopackIgnore: true*/ dest)) fs.unlinkSync(/*turbopackIgnore: true*/ dest);
         reject(err);
@@ -145,6 +137,8 @@ export async function ensureCloudflared() {
 }
 
 async function _ensureCloudflared() {
+  resetDownloadState();
+
   if (!fs.existsSync(/*turbopackIgnore: true*/ BIN_DIR)) {
     fs.mkdirSync(/*turbopackIgnore: true*/ BIN_DIR, { recursive: true });
   }

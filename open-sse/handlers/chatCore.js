@@ -8,8 +8,6 @@ import { FORMATS } from "../translator/formats.js";
 import { translateRequest } from "../translator/index.js";
 import { handleBypassRequest } from "../utils/bypassHandler.js";
 import { createErrorResult, formatProviderError, parseUpstreamError } from "../utils/error.js";
-import { createRequestLogger } from "../utils/requestLogger.js";
-import { COLORS } from "../utils/stream.js";
 import { createStreamController } from "../utils/streamHandler.js";
 import { buildRequestDetail, extractRequestConfig } from "./chatCore/requestDetail.js";
 import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.js";
@@ -78,6 +76,11 @@ import {
   setInFlight,
 } from "@/lib/semanticCache.js";
 import { injectCaveman } from "../rtk/caveman.js";
+
+async function createRequestLogger(sourceFormat, targetFormat, model) {
+  const { createRequestLogger: createLogger } = await import("../utils/requestLogger.js");
+  return createLogger(sourceFormat, targetFormat, model);
+}
 import { compressMessages, formatRtkLog } from "../rtk/index.js";
 import { detectClientTool, isNativePassthrough } from "../utils/clientDetector.js";
 import { reserveReasoningTokenBudget } from "../utils/tokenBudget.js";
@@ -551,7 +554,7 @@ export async function handleChatCore({
     // Vercel free-tier often returns 502/504 on first request after deploy or idle.
     // Retrying once with a brief delay resolves most cold starts transparently.
     if (proxyOptions.vercelRelayUrl && (providerResponse.status === 502 || providerResponse.status === 504)) {
-      console.error(`[VERCEL-RELAY-RETRY] ${provider}/${model} | attempt 2/2 after ${providerResponse.status}`);
+      console.error("[VERCEL-RELAY-RETRY] Retrying upstream request after relay 502/504");
       await new Promise((r) => setTimeout(r, 2000));
       const retryResult = await executeUpstream();
       providerResponse = retryResult.response;
@@ -564,12 +567,10 @@ export async function handleChatCore({
     trackPendingRequest(model, provider, connectionId, false, true);
     const abortStatus = buildAbortStatus(error);
     const isTimeout = isUpstreamTimeoutError(error);
-    // Log with upstream URL for easier debugging
-    const upstreamUrl = providerUrl || "(url not resolved)";
     if (isTimeout) {
-      console.error(`[TIMEOUT] ${provider}/${model} → ${upstreamUrl} | timed out after ${upstreamTimeoutMs}ms`);
+      console.error(`[TIMEOUT] Upstream request timed out after ${upstreamTimeoutMs}ms`);
     } else {
-      console.error(`[UPSTREAM ERROR] ${provider}/${model} → ${upstreamUrl} | ${error.message || String(error)}`);
+      console.error("[UPSTREAM ERROR] Upstream request failed");
     }
     appendRequestLog({
       model,
@@ -603,7 +604,6 @@ export async function handleChatCore({
       );
     }
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
-    console.log(`${COLORS.red}[ERROR] ${errMsg}${COLORS.reset}`);
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
   }
 
@@ -613,10 +613,7 @@ export async function handleChatCore({
   // Surface this as a clear relay-timeout error rather than treating it as an
   // upstream provider failure.
   if (providerResponse && providerResponse.status === 504 && proxyOptions.vercelRelayUrl) {
-    const relayUrl = proxyOptions.vercelRelayUrl;
-    console.error(
-      `[VERCEL-RELAY-TIMEOUT] ${provider}/${model} → ${relayUrl} | platform 504 (function exceeded 10s limit)`,
-    );
+    console.error("[VERCEL-RELAY-TIMEOUT] Relay request exceeded platform limit");
     return createErrorResult(HTTP_STATUS.GATEWAY_TIMEOUT, "Vercel relay timeout — function exceeded platform limit");
   }
 
@@ -658,7 +655,7 @@ export async function handleChatCore({
   if (!providerResponse.ok) {
     trackPendingRequest(model, provider, connectionId, false, true);
     const { statusCode, message, resetsAtMs } = await parseUpstreamError(providerResponse, executor);
-    console.error(`[UPSTREAM ${statusCode}] ${provider}/${model} → ${providerUrl} | ${message}`);
+    console.error(`[UPSTREAM ${statusCode}] Upstream provider returned an error`);
     appendRequestLog({ model, provider, connectionId, status: `FAILED ${statusCode}` }).catch(() => {});
     saveRequestDetail(
       buildRequestDetail({
@@ -675,7 +672,6 @@ export async function handleChatCore({
     ).catch(() => {});
 
     const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
-    console.log(`${COLORS.red}[ERROR] ${errMsg}${COLORS.reset}`);
     reqLogger.logError(new Error(message), finalBody || translatedBody);
     return createErrorResult(statusCode, errMsg, resetsAtMs);
   }

@@ -180,13 +180,13 @@ export default function Header({ onMenuClick, showMenuButton = true, sidebarColl
               {crumb.href ? (
                 <Link
                   href={crumb.href}
-                  className="flex items-center gap-1 text-[13px] text-storm-cloud hover:text-porcelain transition-colors duration-100 tracking-[-0.12px]"
+                  className="flex items-center gap-2 text-[13px] text-storm-cloud hover:text-porcelain transition-colors duration-100 tracking-[-0.12px]"
                 >
                   {crumb.icon && <LucideIcon name={crumb.icon} className="text-[15px]" />}
-                  <span className="mt-0.5 ms-0.5">{crumb.label}</span>
+                  <span className="mt-0.5">{crumb.label}</span>
                 </Link>
               ) : (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {crumb.image && (
                     <div className="flex items-center justify-center size-[18px] rounded-[3px] bg-white shrink-0">
                       <ProviderIcon
@@ -198,7 +198,7 @@ export default function Header({ onMenuClick, showMenuButton = true, sidebarColl
                       />
                     </div>
                   )}
-                  <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] truncate mt-0.5 ms-0.5">
+                  <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] truncate mt-0.5">
                     {crumb.label}
                   </span>
                 </div>
@@ -206,7 +206,7 @@ export default function Header({ onMenuClick, showMenuButton = true, sidebarColl
             </div>
           ))
         ) : title ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {icon && <LucideIcon name={icon} className="text-storm-cloud text-[16px]" />}
             <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] truncate mt-0.5">{title}</span>
           </div>
@@ -237,7 +237,7 @@ function HeaderAction() {
           : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain"
       }`}
     >
-      {action.icon && <LucideIcon name={action.icon} className="text-[13px]" />}
+      {action.icon && <LucideIcon name={action.icon} size={12} className="shrink-0" />}
       <span className="hidden sm:inline">{action.label}</span>
     </button>
   );

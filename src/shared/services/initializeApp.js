@@ -1,6 +1,8 @@
 import os from "node:os";
 import { cleanupProviderConnections, getSettings } from "@/lib/localDb";
 import { initRateLimit } from "@/lib/rateLimit";
+import { validateStartupSecrets } from "@/lib/security/runtimeSecrets.mjs";
+import { error as logError, info as logInfo } from "@/sse/utils/logger.js";
 
 import { ensureCloudflared, isCloudflaredRunning } from "@/lib/tunnel/cloudflared";
 import { checkInternet, probeUrlAlive } from "@/lib/tunnel/networkProbe";
@@ -26,29 +28,12 @@ const g = (global.__appSingleton ??= {
   lastWatchdogTick: Date.now(),
 });
 
-// Warn about default secrets
-
-if ((process.env.API_KEY_SECRET || "endpoint-proxy-api-key-secret") === "endpoint-proxy-api-key-secret") {
-  console.warn("[SECURITY] WARNING: API_KEY_SECRET is set to default value. Set a strong random secret in production.");
-}
-if (!process.env.INITIAL_PASSWORD && !process.env.JWT_SECRET) {
-  console.warn(
-    "[SECURITY] WARNING: No INITIAL_PASSWORD and no JWT_SECRET set. Default login password is '123456'. Set INITIAL_PASSWORD in production.",
-  );
-}
-
 export async function initializeApp() {
   try {
-    // POD-001: Fail startup if JWT_SECRET is still the default — prevents session forgery
-    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "pod-default-secret-change-me") {
-      throw new Error(
-        '[SECURITY] JWT_SECRET is set to default value ("pod-default-secret-change-me"). ' +
-          "Set a strong random JWT_SECRET environment variable in production.",
-      );
-    }
+    validateStartupSecrets();
 
     // Init rate limit backend (Redis if REDIS_URL set, else in-memory)
-    await initRateLimit().catch((err) => console.warn("[InitApp] Rate limit init failed:", err?.message || err));
+    await initRateLimit().catch((err) => logError("InitApp", "Rate limit init failed", { error: err?.message || err }));
 
     await cleanupProviderConnections();
     const settings = await getSettings();
@@ -60,14 +45,18 @@ export async function initializeApp() {
 
     // Auto-resume tunnel
     if (settings.tunnelEnabled) {
-      console.log("[InitApp] Tunnel was enabled, auto-resuming...");
-      safeRestartTunnel("startup").catch((e) => console.log("[InitApp] Tunnel resume failed:", e.message));
+      logInfo("InitApp", "Tunnel was enabled, auto-resuming");
+      safeRestartTunnel("startup").catch((e) =>
+        logError("InitApp", "Tunnel resume failed", { error: e?.message || e }),
+      );
     }
 
     // Auto-resume tailscale
     if (settings.tailscaleEnabled) {
-      console.log("[InitApp] Tailscale was enabled, auto-resuming...");
-      safeRestartTailscale("startup").catch((e) => console.log("[InitApp] Tailscale resume failed:", e.message));
+      logInfo("InitApp", "Tailscale was enabled, auto-resuming");
+      safeRestartTailscale("startup").catch((e) =>
+        logError("InitApp", "Tailscale resume failed", { error: e?.message || e }),
+      );
     }
 
     if (!g.signalHandlersRegistered) {
@@ -90,7 +79,8 @@ export async function initializeApp() {
     startNetworkMonitor();
     // autoStartMitm();
   } catch (error) {
-    console.error("[InitApp] Error:", error);
+    logError("InitApp", "Initialization failed", { error: error?.message || error });
+    throw error;
   }
 }
 
@@ -114,13 +104,13 @@ async function safeRestartTunnel(reason) {
 
   if (!(await checkInternet())) return;
 
-  console.log(`[Tunnel] safeRestart (${reason})`);
+  logInfo("Tunnel", `safeRestart (${reason})`);
   try {
     await enableTunnel();
     svc.lastRestartAt = Date.now();
-    console.log("[Tunnel] restart success");
+    logInfo("Tunnel", "restart success");
   } catch (err) {
-    console.log("[Tunnel] restart failed:", err.message);
+    logError("Tunnel", "restart failed", { error: err?.message || err });
   }
 }
 
@@ -138,13 +128,13 @@ async function safeRestartTailscale(reason) {
 
   if (!(await checkInternet())) return;
 
-  console.log(`[Tailscale] safeRestart (${reason})`);
+  logInfo("Tailscale", `safeRestart (${reason})`);
   try {
     await enableTailscale();
     svc.lastRestartAt = Date.now();
-    console.log("[Tailscale] restart success");
+    logInfo("Tailscale", "restart success");
   } catch (err) {
-    console.log("[Tailscale] restart failed:", err.message);
+    logError("Tailscale", "restart failed", { error: err?.message || err });
   }
 }
 
@@ -201,7 +191,7 @@ function startNetworkMonitor() {
       safeRestartTunnel(reason).catch(() => {});
       safeRestartTailscale(reason).catch(() => {});
     } catch (err) {
-      console.log("[NetworkMonitor] error:", err.message);
+      logError("NetworkMonitor", "error", { error: err?.message || err });
     }
   }, NETWORK_CHECK_INTERVAL_MS);
 

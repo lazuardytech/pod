@@ -120,6 +120,7 @@ export default function ProfilePage() {
         method: "PATCH",
         body: patch,
         queueMeta: { feature, patch },
+        invalidateCacheTags: ["settings"],
       });
 
       if (result.queued) {
@@ -143,6 +144,7 @@ export default function ProfilePage() {
       url: "/api/settings/migrate-sqlite",
       cacheKey: OFFLINE_LEGACY_INFO_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
+      cacheTags: ["settings-migration"],
       onCacheData: (data) => {
         if (!mounted) return;
         if (data && !data.error) setLegacyInfo(data);
@@ -170,6 +172,7 @@ export default function ProfilePage() {
       url: "/api/settings",
       cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
+      cacheTags: ["settings"],
       onCacheData: (data) => {
         if (!mounted) return;
         applySettingsData(data);

@@ -4,14 +4,6 @@ import { getSettings, updateSettings } from "@/lib/localDb";
 import { isCloudflaredRunning, killCloudflared, setUnexpectedExitHandler, spawnQuickTunnel } from "./cloudflared.js";
 import { probeUrlAlive } from "./networkProbe.js";
 import { generateShortId, loadState, saveState } from "./state.js";
-import {
-  isTailscaleLoggedIn,
-  isTailscaleRunning,
-  startDaemonWithPassword,
-  startFunnel,
-  startLogin,
-  stopFunnel,
-} from "./tailscale.js";
 
 // Removed initDbHooks call
 
@@ -70,6 +62,10 @@ function getMachineId() {
 
 function throwIfCancelled(token, label) {
   if (token.cancelled) throw new Error(`${label} cancelled`);
+}
+
+async function getTailscaleModule() {
+  return import("./tailscale.js");
 }
 
 export async function enableTunnel(localPort = 20128) {
@@ -155,6 +151,8 @@ export async function enableTailscale(localPort = 20128) {
   const token = tailscaleSvc.cancelToken;
 
   try {
+    const { isTailscaleLoggedIn, isTailscaleRunning, startDaemonWithPassword, startFunnel, startLogin, stopFunnel } =
+      await getTailscaleModule();
     const sudoPass = "";
     await startDaemonWithPassword(sudoPass);
     throwIfCancelled(token, "tailscale");
@@ -193,6 +191,7 @@ export async function enableTailscale(localPort = 20128) {
 }
 
 export async function disableTailscale() {
+  const { stopFunnel } = await getTailscaleModule();
   tailscaleSvc.cancelToken.cancelled = true;
   stopFunnel();
   await updateSettings({ tailscaleEnabled: false, tailscaleUrl: "" });
@@ -200,6 +199,7 @@ export async function disableTailscale() {
 }
 
 export async function getTailscaleStatus() {
+  const { isTailscaleRunning } = await getTailscaleModule();
   const settings = await getSettings();
   const running = isTailscaleRunning();
   return {

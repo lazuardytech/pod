@@ -417,6 +417,11 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
  */
 export async function refreshIflowToken(refreshToken, log) {
   try {
+    if (!PROVIDERS.iflow.clientSecret) {
+      log?.error?.("TOKEN_REFRESH", "Missing IFLOW_OAUTH_CLIENT_SECRET; skipping iFlow token refresh");
+      return null;
+    }
+
     const basicAuth = btoa(`${PROVIDERS.iflow.clientId}:${PROVIDERS.iflow.clientSecret}`);
 
     const response = await fetch(OAUTH_ENDPOINTS.iflow.token, {

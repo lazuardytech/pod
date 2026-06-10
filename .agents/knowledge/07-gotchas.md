@@ -51,3 +51,7 @@
 35. Cloudflared process overwritten on concurrent spawn — serialized via `spawnLock` with `killExistingProcess()`.
 36. Docker entrypoint ignored tailscaled on SIGTERM — trap forwards signal to all children.
 37. `concurrentCounters` map grew unbounded — periodic trim via `lastAccess` tracking.
+
+## Production-Build Anti-Patterns (v0.0.79 — fixed, must not regress)
+
+38. Using `constructor.name` or `instanceof` for backend dispatch — breaks in minified production builds. Use duck-type checks (`backend.releaseRpm?.(...)`).

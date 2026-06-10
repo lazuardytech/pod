@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { createProviderConnection } from "@/models";
 
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
 /**
@@ -10,6 +11,9 @@ import { parseJsonBody } from "@/lib/parseJsonBody.js";
  */
 export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const [body, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const { refreshToken } = body;

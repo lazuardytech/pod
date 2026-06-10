@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { deleteProxyPool, getProviderConnections, getProxyPoolById, updateProxyPool } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
 
+function sanitizeProxyPool(pool) {
+  if (!pool) return pool;
+  const sanitized = { ...pool };
+  delete sanitized.relayAuthToken;
+  return sanitized;
+}
+
 function normalizeProxyPoolUpdate(body = {}) {
   const updates = {};
 
@@ -55,7 +62,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Proxy pool not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ proxyPool });
+    return NextResponse.json({ proxyPool: sanitizeProxyPool(proxyPool) });
   } catch (error) {
     console.log("Error fetching proxy pool:", error);
     return NextResponse.json({ error: "Failed to fetch proxy pool" }, { status: 500 });
@@ -81,7 +88,7 @@ export async function PUT(request, { params }) {
     }
 
     const updated = await updateProxyPool(id, normalized.updates);
-    return NextResponse.json({ proxyPool: updated });
+    return NextResponse.json({ proxyPool: sanitizeProxyPool(updated) });
   } catch (error) {
     console.log("Error updating proxy pool:", error);
     return NextResponse.json({ error: "Failed to update proxy pool" }, { status: 500 });

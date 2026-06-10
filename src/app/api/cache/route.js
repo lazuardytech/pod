@@ -15,7 +15,7 @@ export async function GET(request) {
     return NextResponse.json({
       semanticCache: getCacheStats(),
       config: {
-        semanticCacheEnabled: settings.semanticCacheEnabled !== false,
+        semanticCacheEnabled: settings.semanticCacheEnabled ?? false,
         semanticCacheMaxSize: settings.semanticCacheMaxSize ?? 100,
         semanticCacheTTL: settings.semanticCacheTTL ?? 1800000,
       },

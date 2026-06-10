@@ -1,3 +1,5 @@
+import { invalidateOfflineJsonCache } from "@/shared/services/offlineJsonCache";
+
 const DB_NAME = "pod-offline-mutation-queue";
 const DB_VERSION = 1;
 const STORE_NAME = "mutations";
@@ -281,6 +283,10 @@ export async function drainOfflineMutationQueue({ limit = 25 } = {}) {
       const outcome = await replayMutation(item);
 
       if (outcome.status === "success") {
+        await invalidateOfflineJsonCache({
+          cacheKeys: item?.meta?.invalidateCacheKeys,
+          cacheTags: item?.meta?.invalidateCacheTags,
+        });
         await deleteQueueItem(item.id);
         succeeded += 1;
         continue;

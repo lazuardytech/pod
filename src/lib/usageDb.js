@@ -6,7 +6,7 @@
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import { DATA_DIR } from "@/lib/dataDir.js";
-import { error as logError } from "@/sse/utils/logger.js";
+import { error as logError, info as logInfo } from "@/sse/utils/logger.js";
 import { LRUCache } from "./cacheLayer.js";
 import { closeDatabase, getDatabase } from "./sqlite/connection.js";
 
@@ -112,6 +112,7 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
       }
       statsEmitter.emit("pending");
     }, PENDING_TIMEOUT_MS);
+    if (handle.unref) handle.unref();
     pendingTimers[timerKey].push(handle);
   } else {
     // Pop one outstanding timer for this key (paired with its start).
@@ -128,15 +129,7 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
   }
 
   if (process.env.PENDING_LOG === "true") {
-    const t = new Date().toLocaleTimeString("en-US", {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    console.log(
-      `[${t}] [PENDING] ${started ? "START" : "END"}${error ? " (ERROR)" : ""} | provider=${provider} | model=${model}`,
-    );
+    logInfo("PENDING", `${started ? "START" : "END"}${error ? " (ERROR)" : ""}`, { provider, model });
   }
   statsEmitter.emit("pending");
 }
@@ -154,6 +147,7 @@ const SUMMARY_FLUSH_INTERVAL_MS = 500;
 function scheduleSummaryFlush() {
   if (summaryFlushTimer) return;
   summaryFlushTimer = setTimeout(flushSummaryQueue, SUMMARY_FLUSH_INTERVAL_MS);
+  if (summaryFlushTimer.unref) summaryFlushTimer.unref();
 }
 
 async function calculateCost(provider, model, tokens) {
@@ -312,7 +306,7 @@ export async function saveRequestUsage(entry) {
     // Periodic trim to keep usage_history bounded
     trimUsageHistoryIfNeeded(db);
   } catch (err) {
-    console.error("Failed to save usage stats:", err);
+    logError("usageDb", "Failed to save usage stats", { error: err?.message || err });
   }
 }
 
@@ -358,6 +352,15 @@ let logTrimCounter = 0;
 function scheduleLogFlush() {
   if (logFlushTimer) return;
   logFlushTimer = setTimeout(flushLogs, LOG_FLUSH_INTERVAL_MS);
+  if (logFlushTimer.unref) logFlushTimer.unref();
+}
+
+function clearPendingRequestTimers() {
+  for (const timerKey of Object.keys(pendingTimers)) {
+    const handles = pendingTimers[timerKey] || [];
+    for (const handle of handles) clearTimeout(handle);
+    delete pendingTimers[timerKey];
+  }
 }
 
 function flushLogs() {
@@ -436,7 +439,7 @@ function flushLogs() {
       ).run(LOG_MAX_ROWS);
     }
   } catch (err) {
-    console.error("Failed to flush request_log:", err?.message || err);
+    logError("usageDb", "Failed to flush request_log", { error: err?.message || err });
   }
 }
 
@@ -444,6 +447,7 @@ function flushLogs() {
 if (!isCloud && !global._flushHooksRegistered) {
   global._flushHooksRegistered = true;
   const flushAll = () => {
+    clearPendingRequestTimers();
     flushSummaryQueue();
     flushLogs();
     try {
@@ -478,7 +482,7 @@ export async function appendRequestLog({ model, provider, connectionId, tokens, 
     if (logQueue.length >= LOG_BATCH_SIZE) flushLogs();
     else scheduleLogFlush();
   } catch (err) {
-    console.error("Failed to enqueue request log:", err?.message || err);
+    logError("usageDb", "Failed to enqueue request log", { error: err?.message || err });
   }
 }
 

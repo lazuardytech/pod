@@ -310,10 +310,14 @@ const _shutdownHandler = async () => {
 
 function ensureShutdownHandler() {
   if (isCloud) return;
-  process.off("beforeExit", _shutdownHandler);
-  process.off("SIGINT", _shutdownHandler);
-  process.off("SIGTERM", _shutdownHandler);
-  process.off("exit", _shutdownHandler);
+  const previous = globalThis.__podRequestDetailsShutdownHandler;
+  if (previous) {
+    process.off("beforeExit", previous);
+    process.off("SIGINT", previous);
+    process.off("SIGTERM", previous);
+    process.off("exit", previous);
+  }
+  globalThis.__podRequestDetailsShutdownHandler = _shutdownHandler;
   process.on("beforeExit", _shutdownHandler);
   process.on("SIGINT", _shutdownHandler);
   process.on("SIGTERM", _shutdownHandler);

@@ -1,4 +1,5 @@
 import { enqueueOfflineMutation } from "@/shared/services/offlineMutationQueue";
+import { invalidateOfflineJsonCache } from "@/shared/services/offlineJsonCache";
 
 function isLikelyNetworkError(error) {
   if (!error) return false;
@@ -43,10 +44,18 @@ export async function mutateJsonWithOfflineQueue({
   body = undefined,
   headers = {},
   queueMeta = {},
+  invalidateCacheKeys = [],
+  invalidateCacheTags = [],
 } = {}) {
   if (!url) throw new Error("Missing request URL");
 
   const init = buildInit(method, headers, body);
+  const invalidateLinkedCaches = async () => {
+    await invalidateOfflineJsonCache({
+      cacheKeys: invalidateCacheKeys,
+      cacheTags: invalidateCacheTags,
+    });
+  };
 
   const tryQueue = async () => {
     const queued = await enqueueOfflineMutation({
@@ -54,8 +63,15 @@ export async function mutateJsonWithOfflineQueue({
       method: init.method,
       headers: init.headers,
       body: init.body,
-      meta: queueMeta,
+      meta: {
+        ...(queueMeta && typeof queueMeta === "object" ? queueMeta : {}),
+        invalidateCacheKeys,
+        invalidateCacheTags,
+      },
     });
+    if (queued.ok) {
+      await invalidateLinkedCaches();
+    }
     return { queued: queued.ok === true, queue: queued, response: null, data: null };
   };
 
@@ -72,6 +88,7 @@ export async function mutateJsonWithOfflineQueue({
       error.data = data;
       throw error;
     }
+    await invalidateLinkedCaches();
     return { queued: false, response, data };
   } catch (error) {
     if (isLikelyNetworkError(error)) {

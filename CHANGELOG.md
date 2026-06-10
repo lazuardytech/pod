@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.0.79 (2026-06-05)
+- Security hardening phase 1: error sanitization across 18+ API routes (`sanitizeError`)
+- Security hardening phase 2: safe JSON body parsing across 45+ routes (`parseJsonBody`)
+- Security hardening phase 3: upstream API body leak patches (13 additional routes)
+- Security hardening phase 4: SSE/streaming crash hardening (3 containment points)
+- Redis rate limiting with automatic backend selection
+- Duck-type backend dispatch (replace constructor.name/instanceof — breaks in minified builds)
+- RPM slot release when concurrent check fails after RPM passes
+- Variable shadowing fixes in 3 OAuth routes
+
+## v0.0.78 (2026-06-04)
+- Fix Codex tool call response cut-off + reasoning effort normalization
+
+## v0.0.77 (2026-06-03)
+- Security hardening + upstream adoption + race fixes
+
+## v0.0.76 (2026-06-02)
+- Fix CHANGELOG, node:fs imports, .env.example branding
+
 ## v0.0.75 (2026-05-29)
 - Fix Codex reasoning token budget + audit findings
 - feat: Account Lockout Status section on /health page

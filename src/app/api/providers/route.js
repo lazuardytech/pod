@@ -17,6 +17,7 @@ import {
   isOpenAICompatibleProvider,
   WEB_COOKIE_PROVIDERS,
 } from "@/shared/constants/providers";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 export const dynamic = "force-dynamic";
 
@@ -68,13 +69,20 @@ export async function GET() {
       }
     } catch {}
 
-    // Hide sensitive fields, enrich name for compatible providers
+    // Hide sensitive fields. Compatible providers expose both the connection
+    // name and a separate provider label so UI can distinguish account names
+    // from provider-node names.
     const safeConnections = connections.map((c) => {
-      const isCompatible = isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider);
-      const name = isCompatible ? nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider : c.name;
+      const isCompatible =
+        isOpenAICompatibleProvider(c.provider) ||
+        isAnthropicCompatibleProvider(c.provider) ||
+        isCustomEmbeddingProvider(c.provider);
+      const providerName = isCompatible
+        ? nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider
+        : AI_PROVIDERS[c.provider]?.name || c.provider;
       return {
         ...c,
-        name,
+        providerName,
         apiKey: undefined,
         accessToken: undefined,
         refreshToken: undefined,
@@ -84,8 +92,8 @@ export async function GET() {
 
     return NextResponse.json({ connections: safeConnections });
   } catch (error) {
-    console.log("Error fetching providers:", error);
-    return NextResponse.json({ error: "Failed to fetch providers" }, { status: 500 });
+    console.log("Error fetching providers");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }
 
@@ -196,7 +204,7 @@ export async function POST(request) {
 
     return NextResponse.json({ connection: result }, { status: 201 });
   } catch (error) {
-    console.log("Error creating provider:", error);
-    return NextResponse.json({ error: "Failed to create provider" }, { status: 500 });
+    console.log("Error creating provider");
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

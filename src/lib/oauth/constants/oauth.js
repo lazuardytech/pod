@@ -2,6 +2,11 @@
  * OAuth Configuration Constants
  */
 import { arch, platform } from "node:os";
+import { getOAuthClientSecret } from "@/lib/security/runtimeSecrets.mjs";
+
+const IFLOW_CLIENT_SECRET = getOAuthClientSecret("IFLOW_OAUTH_CLIENT_SECRET");
+const QODER_CLIENT_ID = process.env.QODER_OAUTH_CLIENT_ID?.trim() || null;
+const QODER_CLIENT_SECRET = getOAuthClientSecret("QODER_OAUTH_CLIENT_SECRET");
 
 /**
  * Get the platform enum value based on the current OS.
@@ -65,6 +70,10 @@ export const QWEN_CONFIG = {
 
 // Qoder OAuth Configuration (Device Token Flow)
 export const QODER_CONFIG = {
+  clientId: QODER_CLIENT_ID,
+  clientSecret: QODER_CLIENT_SECRET,
+  authorizeUrl: "https://qoder.com/oauth/authorize",
+  tokenUrl: "https://api.qoder.com/oauth/token",
   apiBaseUrl: "https://api2.qoder.sh",
   deviceTokenUrl: "https://api2.qoder.sh/api/v1/deviceToken/poll",
   deviceRefreshUrl: "https://api2.qoder.sh/api/v1/deviceToken/refresh",
@@ -77,7 +86,7 @@ export const QODER_CONFIG = {
 // iFlow OAuth Configuration (Authorization Code)
 export const IFLOW_CONFIG = {
   clientId: "10009311001",
-  clientSecret: "4Z3YjXycVsQvyGF1etiNlIBB4RsqSDtW",
+  clientSecret: IFLOW_CLIENT_SECRET,
   authorizeUrl: "https://iflow.cn/oauth",
   tokenUrl: "https://iflow.cn/oauth/token",
   userInfoUrl: "https://iflow.cn/api/oauth/getUserInfo",

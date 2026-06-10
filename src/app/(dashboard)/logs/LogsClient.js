@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import RequestLogger from "@/shared/components/RequestLogger";
 import SegmentedControl from "@/shared/components/SegmentedControl";
+import ShadcnSelect from "@/shared/components/ShadcnSelect";
 import { cn } from "@/shared/utils/cn";
 import ConsoleLogClient from "./ConsoleLogClient";
 import ProxyLogsTab from "./ProxyLogsTab";
@@ -11,8 +12,20 @@ import LucideIcon from "@/shared/components/LucideIcon";
 
 const TABS = [
   { key: "request-logs", label: "Request Logs", icon: "receipt_long" },
-  { key: "proxy-logs", label: "Proxy Logs", icon: "lan" },
   { key: "console", label: "Console Logs", icon: "terminal" },
+  { key: "proxy-logs", label: "Proxy Logs", icon: "lan" },
+];
+
+const REQUEST_SORT_OPTIONS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "tokens_desc", label: "Most tokens" },
+  { value: "tokens_asc", label: "Fewest tokens" },
+];
+
+const PROXY_SORT_OPTIONS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
 ];
 
 function RequestLogsToolbar({
@@ -29,40 +42,32 @@ function RequestLogsToolbar({
   return (
     <div className="flex items-center gap-2">
       {providerOptions.length > 0 && (
-        <select
-          aria-label="Filter by provider"
+        <ShadcnSelect
+          ariaLabel="Filter by provider"
           value={filterProvider}
-          onChange={(e) => setFilterProvider(e.target.value)}
-          className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[130px]"
+          onValueChange={setFilterProvider}
+          options={[{ value: "all", label: "All Providers" }, ...providerOptions.map((p) => ({ value: p, label: p }))]}
+          triggerClassName="h-7 w-[130px] rounded-[6px] bg-deep-slate px-2 text-[12px] shadow-none"
+          contentClassName="min-w-[130px]"
           name="filter-provider"
-        >
-          <option value="all">All Providers</option>
-          {providerOptions.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+        />
       )}
-      <select
-        aria-label="Sort logs"
+      <ShadcnSelect
+        ariaLabel="Sort logs"
         value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-        className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[120px]"
+        onValueChange={setSortBy}
+        options={REQUEST_SORT_OPTIONS}
+        triggerClassName="h-7 w-[120px] rounded-[6px] bg-deep-slate px-2 text-[12px] shadow-none"
+        contentClassName="min-w-[120px]"
         name="sort-by"
-      >
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-        <option value="tokens_desc">Most tokens</option>
-        <option value="tokens_asc">Fewest tokens</option>
-      </select>
+      />
       <button
         onClick={onRefresh}
         disabled={refreshing}
         className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
       >
-        <LucideIcon name="refresh" className={cn("text-[15px]", refreshing && "animate-spin")} />
+        <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
         onClick={() => setRecording((v) => !v)}
@@ -86,23 +91,22 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
     <div className="flex items-center gap-2">
       <span className="text-[11px] text-fog-grey">{count} configured</span>
       <div className="w-px h-4 bg-charcoal-grey" />
-      <select
-        aria-label="Sort proxy logs"
+      <ShadcnSelect
+        ariaLabel="Sort proxy logs"
         value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-        className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain focus:outline-none focus:border-porcelain/30 transition-colors duration-100 w-[120px]"
+        onValueChange={setSortBy}
+        options={PROXY_SORT_OPTIONS}
+        triggerClassName="h-7 w-[120px] rounded-[6px] bg-deep-slate px-2 text-[12px] shadow-none"
+        contentClassName="min-w-[120px]"
         name="sort-by"
-      >
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-      </select>
+      />
       <button
         onClick={onRefresh}
         disabled={refreshing}
         className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
       >
-        <LucideIcon name="refresh" className={cn("text-[15px]", refreshing && "animate-spin")} />
+        <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
         onClick={() => setLive((v) => !v)}
@@ -130,7 +134,7 @@ function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refresh
         className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
       >
-        <LucideIcon name="refresh" className={cn("text-[15px]", refreshing && "animate-spin")} />
+        <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
         onClick={() => setLive((v) => !v)}
@@ -256,6 +260,7 @@ function LogsInner() {
           value={activeTab}
           onChange={setTab}
           size="sm"
+          iconSize={20}
           className="w-full sm:w-auto"
         />
 

@@ -11,14 +11,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const originalFetch = global.fetch;
+const originalIflowSecret = process.env.IFLOW_OAUTH_CLIENT_SECRET;
 
 describe("iFlow OAuth Token Refresh", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
+    process.env.IFLOW_OAUTH_CLIENT_SECRET = "test-iflow-secret";
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
+    if (originalIflowSecret === undefined) {
+      delete process.env.IFLOW_OAUTH_CLIENT_SECRET;
+    } else {
+      process.env.IFLOW_OAUTH_CLIENT_SECRET = originalIflowSecret;
+    }
   });
 
   describe("refreshIflowToken", () => {
@@ -102,6 +110,18 @@ describe("iFlow OAuth Token Refresh", () => {
       const body = new URLSearchParams(opts.body);
       expect(body.get("grant_type")).toBe("refresh_token");
       expect(body.get("refresh_token")).toBe("rt-789");
+    });
+
+    it("returns null and skips fetch when IFLOW_OAUTH_CLIENT_SECRET is missing", async () => {
+      delete process.env.IFLOW_OAUTH_CLIENT_SECRET;
+      const fetchMock = vi.fn();
+      global.fetch = fetchMock;
+
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const result = await refreshIflowToken("rt-missing", null);
+
+      expect(result).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 

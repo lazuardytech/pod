@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { generateShortId, loadState } from "@/lib/tunnel/state.js";
-import { startLogin } from "@/lib/tunnel/tailscale";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 import { sanitizeError } from "@/lib/sanitizeError.js";
-export async function POST() {
+export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
+    const { startLogin } = await import("@/lib/tunnel/tailscale");
     const shortId = loadState()?.shortId || generateShortId();
     const result = await startLogin(shortId);
     return NextResponse.json(result);

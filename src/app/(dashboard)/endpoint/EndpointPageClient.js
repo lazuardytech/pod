@@ -23,6 +23,10 @@ const OFFLINE_SETTINGS_CACHE_KEY = "endpoint:settings";
 const OFFLINE_TUNNEL_STATUS_CACHE_KEY = "endpoint:tunnel-status";
 const OFFLINE_KEYS_CACHE_KEY = "endpoint:keys";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
+const ENDPOINT_ICON_BUTTON_CLASS =
+  "flex size-9 items-center justify-center rounded-[6px] text-storm-cloud transition-colors hover:bg-deep-slate hover:text-porcelain shrink-0";
+const ENDPOINT_DANGER_BUTTON_CLASS =
+  "flex size-9 items-center justify-center rounded-[6px] text-warning-red transition-colors hover:bg-warning-red/10 shrink-0";
 
 const CAVEMAN_LEVELS = [
   { id: "lite", label: "Lite", desc: "Drop filler, keep grammar" },
@@ -47,7 +51,7 @@ export default function APIPageClient({ machineId }) {
   const [requireLogin, setRequireLogin] = useState(true);
   const [hasPassword, setHasPassword] = useState(true);
   const [tunnelDashboardAccess, setTunnelDashboardAccess] = useState(false);
-  const [rtkEnabled, setRtkEnabledState] = useState(true);
+  const [rtkEnabled, setRtkEnabledState] = useState(false);
   const [cavemanEnabled, setCavemanEnabled] = useState(false);
   const [cavemanLevel, setCavemanLevel] = useState("full");
 
@@ -143,7 +147,7 @@ export default function APIPageClient({ machineId }) {
     setRequireLogin(data.requireLogin !== false);
     setHasPassword(data.hasPassword || false);
     setTunnelDashboardAccess(data.tunnelDashboardAccess || false);
-    setRtkEnabledState(data.rtkEnabled !== false);
+    setRtkEnabledState(!!data.rtkEnabled);
     setCavemanEnabled(!!data.cavemanEnabled);
     setCavemanLevel(data.cavemanLevel || "full");
   }, []);
@@ -165,6 +169,7 @@ export default function APIPageClient({ machineId }) {
         url: "/api/tunnel/status",
         cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
+        cacheTags: ["tunnel-status"],
         fetchOptions: { cache: "no-store" },
         onCacheData: (data) => {
           applyTunnelStatus(data);
@@ -241,6 +246,7 @@ export default function APIPageClient({ machineId }) {
           url: "/api/settings",
           cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
+          cacheTags: ["settings"],
           onCacheData: (data) => {
             applySettingsData(data);
           },
@@ -252,6 +258,7 @@ export default function APIPageClient({ machineId }) {
           url: "/api/tunnel/status",
           cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
+          cacheTags: ["tunnel-status"],
           fetchOptions: { cache: "no-store" },
           onCacheData: (data) => {
             applyTunnelStatus(data);
@@ -337,6 +344,7 @@ export default function APIPageClient({ machineId }) {
         method: "PATCH",
         body: patch,
         queueMeta: { feature, patch },
+        invalidateCacheTags: ["settings"],
       });
       return result;
     } catch (error) {
@@ -368,6 +376,7 @@ export default function APIPageClient({ machineId }) {
         url: "/api/keys",
         cacheKey: OFFLINE_KEYS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
+        cacheTags: ["api-keys"],
         onCacheData: (data) => {
           setKeys(data?.keys || []);
         },
@@ -883,88 +892,34 @@ export default function APIPageClient({ machineId }) {
 
   const currentEndpoint = baseUrl;
   const anthropicEndpoint = baseUrl.endsWith("/v1") ? baseUrl.slice(0, -3) : baseUrl;
+  const showTunnelEnableAction = !tunnelEnabled && !tunnelLoading && !tunnelChecking;
+  const showTsEnableAction = !tsEnabled && !tsLoading && !tsConnecting;
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Endpoint Card */}
-      <Card>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <LucideIcon name="api" className="text-primary" />
-          API Endpoint
-        </h2>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <EndpointValueCard
+          title="OpenAI"
+          icon="api"
+          url={currentEndpoint}
+          copyId="openai_url"
+          copied={copied}
+          onCopy={copy}
+        />
+        <EndpointValueCard
+          title="Anthropic"
+          icon="api"
+          url={anthropicEndpoint}
+          copyId="anthropic_url"
+          copied={copied}
+          onCopy={copy}
+        />
 
-        {/* Endpoint rows */}
-        <div className="flex flex-col gap-2">
-          <EndpointRow label="OpenAI" url={currentEndpoint} copyId="openai_url" copied={copied} onCopy={copy} />
-          <EndpointRow label="Anthropic" url={anthropicEndpoint} copyId="anthropic_url" copied={copied} onCopy={copy} />
-          {/* Cloudflare Tunnel */}
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-sm font-mono py-0.5 shrink-0 min-w-[90px] text-start ${
-                tunnelEnabled ? "bg-primary/10 text-primary" : ""
-              }`}
-            >
-              Tunnel
-            </span>
-            {tunnelEnabled && !tunnelLoading ? (
-              <>
-                <Input value={`${tunnelUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
-                <button
-                  onClick={() => copy(`${tunnelUrl}/v1`, "tunnel_url")}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
-                >
-                  <LucideIcon name={copied === "tunnel_url" ? "check" : "content_copy"} className="text-[18px]" />
-                </button>
-                <button
-                  onClick={() => setShowDisableTunnelModal(true)}
-                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Disable Tunnel"
-                >
-                  <LucideIcon name="power_settings_new" className="text-[18px]" />
-                </button>
-              </>
-            ) : tunnelLoading ? (
-              <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                  <LucideIcon name="progress_activity" className="animate-spin text-sm" />
-                  {tunnelProgress || "Creating tunnel..."}
-                </div>
-                <button
-                  onClick={() => {
-                    setTunnelLoading(false);
-                    setTunnelProgress("");
-                  }}
-                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Stop"
-                >
-                  <LucideIcon name="power_settings_new" className="text-[18px]" />
-                </button>
-              </>
-            ) : tunnelStatus?.type === "error" ? (
-              <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
-                  <LucideIcon name="error" className="text-sm" />
-                  {tunnelStatus.message}
-                </div>
-                <Button size="sm" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>
-                  Enable
-                </Button>
-              </>
-            ) : tunnelChecking ? (
-              <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                  <LucideIcon name="progress_activity" className="animate-spin text-sm" />
-                  Checking...
-                </div>
-                <button
-                  onClick={() => setTunnelChecking(false)}
-                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Stop"
-                >
-                  <LucideIcon name="power_settings_new" className="text-[18px]" />
-                </button>
-              </>
-            ) : (
+        <Card
+          title="Tunnel"
+          icon="cloud_upload"
+          action={
+            showTunnelEnableAction ? (
               <Button
                 size="sm"
                 icon="cloud_upload"
@@ -981,39 +936,101 @@ export default function APIPageClient({ machineId }) {
               >
                 Enable
               </Button>
+            ) : null
+          }
+        >
+          <div className="flex flex-col gap-3">
+            {tunnelEnabled && !tunnelLoading ? (
+              <div className="flex items-center gap-2">
+                <Input value={`${tunnelUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
+                <button
+                  onClick={() => copy(`${tunnelUrl}/v1`, "tunnel_url")}
+                  className={ENDPOINT_ICON_BUTTON_CLASS}
+                  title="Copy tunnel URL"
+                >
+                  <LucideIcon name={copied === "tunnel_url" ? "check" : "content_copy"} size={16} />
+                </button>
+                <button
+                  onClick={() => setShowDisableTunnelModal(true)}
+                  className={ENDPOINT_DANGER_BUTTON_CLASS}
+                  title="Disable Tunnel"
+                >
+                  <LucideIcon name="power_settings_new" size={16} />
+                </button>
+              </div>
+            ) : tunnelLoading ? (
+              <div className="flex items-start gap-2">
+                <div className="flex flex-1 items-center gap-2 rounded-[6px] border border-charcoal-grey bg-pitch-black px-3 py-2 text-sm text-storm-cloud">
+                  <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
+                  <span>{tunnelProgress || "Creating tunnel..."}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setTunnelLoading(false);
+                    setTunnelProgress("");
+                  }}
+                  className={ENDPOINT_DANGER_BUTTON_CLASS}
+                  title="Stop"
+                >
+                  <LucideIcon name="power_settings_new" size={16} />
+                </button>
+              </div>
+            ) : tunnelStatus?.type === "error" ? (
+              <div className="flex items-start gap-2 rounded-[6px] border border-warning-red/25 bg-warning-red/8 px-3 py-2 text-sm text-warning-red">
+                <LucideIcon name="error" size={14} className="mt-0.5 shrink-0" />
+                <span>{tunnelStatus.message}</span>
+              </div>
+            ) : tunnelChecking ? (
+              <div className="flex items-start gap-2">
+                <div className="flex flex-1 items-center gap-2 rounded-[6px] border border-charcoal-grey bg-pitch-black px-3 py-2 text-sm text-storm-cloud">
+                  <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
+                  <span>Checking...</span>
+                </div>
+                <button onClick={() => setTunnelChecking(false)} className={ENDPOINT_DANGER_BUTTON_CLASS} title="Stop">
+                  <LucideIcon name="power_settings_new" size={16} />
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-storm-cloud">Expose your local Pod API with a secure public endpoint.</p>
             )}
           </div>
-          {/* Tailscale */}
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-sm font-mono py-0.5 shrink-0 min-w-[90px] text-start ${
-                tsEnabled ? "bg-porcelain/10 text-porcelain" : ""
-              }`}
-            >
-              Tailscale
-            </span>
+        </Card>
+
+        <Card
+          title="Tailscale"
+          icon="vpn_lock"
+          action={
+            showTsEnableAction ? (
+              <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>
+                Enable
+              </Button>
+            ) : null
+          }
+        >
+          <div className="flex flex-col gap-3">
             {tsEnabled && !tsLoading ? (
-              <>
+              <div className="flex items-center gap-2">
                 <Input value={`${tsUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
                 <button
                   onClick={() => copy(`${tsUrl}/v1`, "ts_url")}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
+                  className={ENDPOINT_ICON_BUTTON_CLASS}
+                  title="Copy Tailscale URL"
                 >
-                  <LucideIcon name={copied === "ts_url" ? "check" : "content_copy"} className="text-[18px]" />
+                  <LucideIcon name={copied === "ts_url" ? "check" : "content_copy"} size={16} />
                 </button>
                 <button
                   onClick={() => setShowDisableTsModal(true)}
-                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
+                  className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Disable Tailscale"
                 >
-                  <LucideIcon name="power_settings_new" className="text-[18px]" />
+                  <LucideIcon name="power_settings_new" size={16} />
                 </button>
-              </>
+              </div>
             ) : tsLoading || tsConnecting ? (
-              <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                  <LucideIcon name="progress_activity" className="animate-spin text-sm" />
-                  {tsProgress || "Connecting..."}
+              <div className="flex items-start gap-2">
+                <div className="flex flex-1 items-center gap-2 rounded-[6px] border border-charcoal-grey bg-pitch-black px-3 py-2 text-sm text-storm-cloud">
+                  <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
+                  <span>{tsProgress || "Connecting..."}</span>
                 </div>
                 <button
                   onClick={() => {
@@ -1021,69 +1038,62 @@ export default function APIPageClient({ machineId }) {
                     setTsConnecting(false);
                     setTsProgress("");
                   }}
-                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
+                  className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Stop"
                 >
-                  <LucideIcon name="power_settings_new" className="text-[18px]" />
+                  <LucideIcon name="power_settings_new" size={16} />
                 </button>
-              </>
+              </div>
             ) : tsStatus?.type === "error" ? (
-              <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
-                  <LucideIcon name="error" className="text-sm" />
-                  {tsStatus.message}
-                </div>
-                <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>
-                  Enable
-                </Button>
-              </>
+              <div className="flex items-start gap-2 rounded-[6px] border border-warning-red/25 bg-warning-red/8 px-3 py-2 text-sm text-warning-red">
+                <LucideIcon name="error" size={14} className="mt-0.5 shrink-0" />
+                <span>{tsStatus.message}</span>
+              </div>
             ) : (
-              <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>
-                Enable
-              </Button>
+              <p className="text-sm text-storm-cloud">Make Pod reachable on your private Tailscale network.</p>
             )}
           </div>
-        </div>
+        </Card>
+      </div>
 
-        {/* Security warnings when tunnel or tailscale is active */}
-        {(tunnelEnabled || tsEnabled) && (
-          <div className="mt-4 flex flex-col gap-2">
-            {!requireApiKey && (
-              <SecurityWarning
-                message="Require API key is disabled — your endpoint is publicly accessible without authentication."
-                action={{ label: "Enable", href: "#require-api-key" }}
-              />
-            )}
-            {(!requireLogin || !hasPassword) && (
-              <SecurityWarning
-                message={
-                  !requireLogin
-                    ? "Require login is disabled — anyone can access your dashboard via tunnel."
-                    : "Dashboard uses the default password — change it in Profile settings."
-                }
-                action={{
-                  label: !requireLogin ? "Enable" : "Change password",
-                  href: "/settings",
-                }}
-              />
-            )}
-          </div>
-        )}
+      {(tunnelEnabled || tsEnabled) && (
+        <Card title="Remote Access" icon="public">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              {!requireApiKey && (
+                <SecurityWarning
+                  message="Require API key is disabled — your endpoint is publicly accessible without authentication."
+                  action={{ label: "Enable", href: "#require-api-key" }}
+                />
+              )}
+              {(!requireLogin || !hasPassword) && (
+                <SecurityWarning
+                  message={
+                    !requireLogin
+                      ? "Require login is disabled — anyone can access your dashboard via tunnel."
+                      : "Dashboard uses the default password — change it in Profile settings."
+                  }
+                  action={{
+                    label: !requireLogin ? "Enable" : "Change password",
+                    href: "/settings",
+                  }}
+                />
+              )}
+            </div>
 
-        {/* Tunnel dashboard access option */}
-        {(tunnelEnabled || tsEnabled) && (
-          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3">
-            <Toggle
-              checked={tunnelDashboardAccess}
-              onChange={() => handleTunnelDashboardAccess(!tunnelDashboardAccess)}
-            />
-            <div className="flex items-center gap-1.5">
-              <p className="font-medium text-sm">Allow dashboard access via tunnel</p>
-              <Tooltip text="When enabled, the dashboard can be accessed through your tunnel or Tailscale URL (login still required). When disabled, dashboard access via tunnel/Tailscale is completely blocked." />
+            <div className="flex items-center gap-3 border-t border-border pt-4">
+              <Toggle
+                checked={tunnelDashboardAccess}
+                onChange={() => handleTunnelDashboardAccess(!tunnelDashboardAccess)}
+              />
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm">Allow dashboard access via tunnel</p>
+                <Tooltip text="When enabled, the dashboard can be accessed through your tunnel or Tailscale URL (login still required). When disabled, dashboard access via tunnel/Tailscale is completely blocked." />
+              </div>
             </div>
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
 
       {/* Token Saver (RTK + Caveman) */}
       <Card id="rtk">
@@ -1648,10 +1658,18 @@ export default function APIPageClient({ machineId }) {
                 <Button
                   onClick={() => {
                     const tab = window.open("", "tailscale_auth", "width=600,height=700");
-                    if (tab)
-                      tab.document.write(
-                        "<p style='font-family:sans-serif;text-align:center;margin-top:40px'>Connecting to Tailscale...</p>",
-                      );
+                    if (tab) {
+                      const doc = tab.document;
+                      const body = doc.body || doc.createElement("body");
+                      if (!doc.body) {
+                        doc.documentElement?.appendChild(body);
+                      }
+                      body.replaceChildren();
+                      const message = doc.createElement("p");
+                      message.style.cssText = "font-family:sans-serif;text-align:center;margin-top:40px";
+                      message.textContent = "Connecting to Tailscale...";
+                      body.appendChild(message);
+                    }
                     handleConnectTailscale(tab);
                   }}
                   fullWidth
@@ -1693,26 +1711,17 @@ export default function APIPageClient({ machineId }) {
   );
 }
 
-/** Reusable endpoint row component */
-function EndpointRow({ label, url, copyId, copied, onCopy, badge, actions }) {
+/** Endpoint card for static provider URLs */
+function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }) {
   return (
-    <div className="flex items-center gap-2">
-      <span
-        className={`text-sm font-mono py-0.5 shrink-0 min-w-[90px] text-start ${
-          badge === "CF" || badge === "TS" ? "bg-primary/10 text-primary" : ""
-        }`}
-      >
-        {label}
-      </span>
-      <Input value={url} readOnly className="flex-1 font-mono text-sm" />
-      <button
-        onClick={() => onCopy(url, copyId)}
-        className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
-      >
-        <LucideIcon name={copied === copyId ? "check" : "content_copy"} className="text-[18px]" />
-      </button>
-      {actions}
-    </div>
+    <Card title={title} icon={icon} className="h-full">
+      <div className="flex items-center gap-2">
+        <Input value={url} readOnly className="flex-1 font-mono text-sm" />
+        <button onClick={() => onCopy(url, copyId)} className={ENDPOINT_ICON_BUTTON_CLASS} title={`Copy ${title} URL`}>
+          <LucideIcon name={copied === copyId ? "check" : "content_copy"} size={16} />
+        </button>
+      </div>
+    </Card>
   );
 }
 

@@ -1,21 +1,12 @@
 import { NextResponse } from "next/server";
-import { getModelAliases, getProviderConnections, validateApiKey } from "@/models";
+import { getModelAliases, getProviderConnections } from "@/models";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 // Verify API key and return provider credentials
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing API key" }, { status: 401 });
-    }
-
-    const apiKey = authHeader.slice(7);
-
-    // Validate API key
-    const isValid = await validateApiKey(apiKey);
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
-    }
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
 
     // Get active provider connections
     const connections = await getProviderConnections({ isActive: true });

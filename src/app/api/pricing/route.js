@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPricing, resetAllPricing, resetPricing, updatePricing } from "@/lib/localDb.js";
 import { getDefaultPricing } from "@/shared/constants/pricing.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError.js";
 
 /**
  * GET /api/pricing
@@ -12,7 +13,7 @@ export async function GET() {
     const pricing = await getPricing();
     return NextResponse.json(pricing);
   } catch (error) {
-    console.error("Error fetching pricing:", error);
+    console.error("Error fetching pricing:", sanitizeError(error));
     return NextResponse.json({ error: "Failed to fetch pricing" }, { status: 500 });
   }
 }
@@ -65,7 +66,7 @@ export async function PATCH(request) {
     const updatedPricing = await updatePricing(body);
     return NextResponse.json(updatedPricing);
   } catch (error) {
-    console.error("Error updating pricing:", error);
+    console.error("Error updating pricing:", sanitizeError(error));
     return NextResponse.json({ error: "Failed to update pricing" }, { status: 500 });
   }
 }
@@ -95,7 +96,7 @@ export async function DELETE(request) {
     const pricing = await getPricing();
     return NextResponse.json(pricing);
   } catch (error) {
-    console.error("Error resetting pricing:", error);
+    console.error("Error resetting pricing:", sanitizeError(error));
     return NextResponse.json({ error: "Failed to reset pricing" }, { status: 500 });
   }
 }
@@ -109,7 +110,7 @@ export async function GET_DEFAULTS() {
     const defaultPricing = getDefaultPricing();
     return NextResponse.json(defaultPricing);
   } catch (error) {
-    console.error("Error fetching default pricing:", error);
+    console.error("Error fetching default pricing:", sanitizeError(error));
     return NextResponse.json({ error: "Failed to fetch default pricing" }, { status: 500 });
   }
 }

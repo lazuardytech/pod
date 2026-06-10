@@ -2,10 +2,11 @@
 
 import { execSync } from "node:child_process";
 import os from "node:os";
-import { generateShortId, loadState } from "@/lib/tunnel/state.js";
-import { installTailscale } from "@/lib/tunnel/tailscale";
 
+import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { sanitizeError } from "@/lib/sanitizeError.js";
+import { error as logError } from "@/sse/utils/logger.js";
 // Removed initDbHooks call
 
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
@@ -20,13 +21,22 @@ function hasBrew() {
 }
 
 export async function POST(request) {
-  const body = await request.json().catch(() => ({}));
+  const authResponse = await checkStrictDashboardAuth(request);
+  if (authResponse) return authResponse;
+
+  const [json, parseErr] = await parseJsonBody(request);
+  if (parseErr) return parseErr;
+
+  const [{ generateShortId, loadState }, { installTailscale }] = await Promise.all([
+    import("@/lib/tunnel/state.js"),
+    import("@/lib/tunnel/tailscale.js"),
+  ]);
   const platform = os.platform();
   const isWindows = platform === "win32";
   const isBrew = platform === "darwin" && hasBrew();
   const needsPassword = !isWindows && !isBrew;
 
-  const sudoPassword = body.sudoPassword || "";
+  const sudoPassword = json?.sudoPassword || "";
 
   if (needsPassword && !sudoPassword.trim()) {
     return new Response(JSON.stringify({ error: "Sudo password is required" }), {
@@ -50,7 +60,7 @@ export async function POST(request) {
         });
         send("done", { success: true, authUrl: result?.authUrl || null });
       } catch (error) {
-        console.error("Tailscale install error:", error);
+        logError("TailscaleInstall", "Tailscale install error", { error: error?.message || error });
         const msg =
           sanitizeError(error)?.includes("incorrect password") || sanitizeError(error)?.includes("Sorry")
             ? "Wrong sudo password"

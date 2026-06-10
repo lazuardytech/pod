@@ -18,7 +18,7 @@ function getTimeString() {
  * @param {string} options.provider - Provider name
  * @param {string} options.model - Model name
  */
-export function createStreamController({ onDisconnect, onError, log, provider, model } = {}) {
+export function createStreamController({ onDisconnect, onError, log, provider: _provider, model: _model } = {}) {
   const abortController = new AbortController();
   const startTime = Date.now();
   let disconnected = false;
@@ -26,8 +26,7 @@ export function createStreamController({ onDisconnect, onError, log, provider, m
 
   const logStream = (status) => {
     const duration = Date.now() - startTime;
-    const p = provider?.toUpperCase() || "UNKNOWN";
-    console.log(`[${getTimeString()}] 🌊 [STREAM] ${p} | ${model || "unknown"} | ${duration}ms | ${status}`);
+    console.log(`[${getTimeString()}] 🌊 [STREAM] ${duration}ms | ${status}`);
   };
 
   return {

@@ -59,37 +59,41 @@ Operational rules for AI agents working on **Pod** (`~/projects/lt/pod`).
 28. Rate limiting uses `src/lib/rateLimit/` with automatic backend selection: Redis via `Bun.RedisClient` when `REDIS_URL` is set, in-memory `MemoryBackend` otherwise. Never bypass the backend abstraction.
 29. Redis RPM uses sorted set with unique member IDs (`${timestamp}:${uuid8}`) to avoid same-millisecond collisions. Concurrent limiter uses `INCR/DECR` with safety TTL.
 30. When a Redis concurrent check fails after RPM passes, the RPM slot must be released via `backend.releaseRpm(keyId, member)`. This is built into `withApiKeyRateLimit` and `checkRateLimitByKey` — do not remove.
+31. Backend dispatch must use duck-type checks (`backend.releaseRpm?.(...)`) — never `constructor.name` or `instanceof`. Constructor-name checks break in minified production builds.
 
 ## Provider-Specific Invariants
 
-31. Provider-node rename is custom-node-only (`openai-compatible-*`, `anthropic-compatible-*`, `custom-embedding-*`).
-32. Vertex AI request body must never include `stream`.
-33. Vercel relay rules are mandatory:
+32. Provider-node rename is custom-node-only (`openai-compatible-*`, `anthropic-compatible-*`, `custom-embedding-*`).
+33. Vertex AI request body must never include `stream`.
+34. Vercel relay rules are mandatory:
    - Relay timeout = pod timeout minus 5s (`x-relay-timeout`)
    - Retry once on relay `502/504`
    - Relay health test endpoint is `https://www.google.com/generate_204`
-34. Kiro transient retry is body-gated (`MODEL_TEMPORARILY_UNAVAILABLE` class), not generic 500 retry.
-35. Codex overloaded-stream peek must remain single-reader; keep reasoning-effort normalization (`extra-high`/`very-high` => `xhigh`).
-36. Cloud worker must keep `cloud/src/handlers/testClaude.js` stub (410 response).
+35. Kiro transient retry is body-gated (`MODEL_TEMPORARILY_UNAVAILABLE` class), not generic 500 retry.
+36. Codex overloaded-stream peek must remain single-reader; keep reasoning-effort normalization (`extra-high`/`very-high` => `xhigh`).
+37. Cloud worker must keep `cloud/src/handlers/testClaude.js` stub (410 response).
 
 ## Reliability and Security
 
-37. Keep global handlers in `server-init.js`: `unhandledRejection` and `uncaughtException`.
-38. SIGINT handling must allow queue flush; do not force immediate `process.exit()`.
-39. Tunnel enable flow must treat `fetchData()` as non-fatal and sanitize raw browser network errors.
-40. SSRF guardrails must keep blocking `0.0.0.0` and DNS-rebinding host patterns.
+38. Keep global handlers in `server-init.js`: `unhandledRejection` and `uncaughtException`.
+39. SIGINT handling must allow queue flush; do not force immediate `process.exit()`.
+40. Tunnel enable flow must treat `fetchData()` as non-fatal and sanitize raw browser network errors.
+41. SSRF guardrails must keep blocking `0.0.0.0` and DNS-rebinding host patterns.
+42. Connection-level lockout uses exponential cooldown (1h, 2h, 3h...) on 401/403 from suspicious-activity or credentials-expired errors. Never bypass `markAccountUnavailable` in `src/sse/services/auth.js`.
+43. Cloudflared tunnel spawn is serialized via `spawnLock` with `killExistingProcess()` — concurrent spawns must not overwrite the active process.
+44. Docker entrypoint must trap SIGTERM and forward to all children (cloudflared, tailscale daemon).
 
 ## PWA and Offline-First Rules
 
-41. Keep `src/app/manifest.webmanifest` as the PWA manifest source.
-42. Keep service worker lifecycle managed by `ServiceWorkerRegistrar` and `public/sw.js`. The registrar is registration-only with no auto-update detection — Pod does not self-update.
-43. Offline read path uses `src/shared/services/offlineJsonCache.js` (stale-while-revalidate behavior).
-44. Offline write path uses mutation queue:
+45. Keep `src/app/manifest.webmanifest` as the PWA manifest source.
+46. Keep service worker lifecycle managed by `ServiceWorkerRegistrar` and `public/sw.js`. The registrar is registration-only with no auto-update detection — Pod does not self-update.
+47. Offline read path uses `src/shared/services/offlineJsonCache.js` (stale-while-revalidate behavior).
+48. Offline write path uses mutation queue:
    - `src/shared/services/offlineMutationQueue.js`
    - `src/shared/services/offlineMutationRequest.js`
    - `src/shared/components/OfflineMutationProcessor.js`
-45. Keep user visibility for pending offline sync via `src/shared/components/OfflineSyncStatus.js`.
-46. Queue only safe idempotent dashboard settings/actions. Do not queue sensitive flows (password changes, provider auth handshakes, destructive admin operations) without explicit design.
+49. Keep user visibility for pending offline sync via `src/shared/components/OfflineSyncStatus.js`.
+50. Queue only safe idempotent dashboard settings/actions. Do not queue sensitive flows (password changes, provider auth handshakes, destructive admin operations) without explicit design.
 
 ## Verification Before Push
 

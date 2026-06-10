@@ -252,8 +252,8 @@ export async function handleForcedSSEToJson({
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         }),
       };
-    } catch (err) {
-      console.error("[ChatCore] Responses API SSE→JSON failed:", err);
+    } catch {
+      console.error("[ChatCore] Responses API SSE→JSON failed");
       return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to convert streaming response to JSON");
     }
   }
@@ -305,8 +305,8 @@ export async function handleForcedSSEToJson({
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       }),
     };
-  } catch (err) {
-    console.error("[ChatCore] Chat Completions SSE→JSON failed:", err);
+  } catch {
+    console.error("[ChatCore] Chat Completions SSE→JSON failed");
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to convert streaming response to JSON");
   }
 }

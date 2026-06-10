@@ -57,7 +57,8 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
       >
         <LucideIcon
           name="perm_media"
-          className={cn("text-[12px]", isMediaActive ? "text-porcelain" : "text-fog-grey")}
+          size={SIDEBAR_ICON_SIZES.expanded}
+          className={cn(isMediaActive ? "text-porcelain" : "text-fog-grey")}
         />
       </div>
 
@@ -69,7 +70,9 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
           style={{ top: pos.top, left: 56 }}
           className="fixed z-[200] rounded-[6px] border border-charcoal-grey bg-graphite shadow-[var(--shadow-xl)] py-1 min-w-[180px]"
         >
-          <p className="px-3 py-1.5 text-[9px] font-[590] text-fog-grey uppercase tracking-[0.06em]">Media Providers</p>
+          <p className="px-3 py-1.5 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
+            Media Providers
+          </p>
           {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
             <Link
               key={kind.id}
@@ -86,8 +89,8 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
                   : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
               )}
             >
-              <LucideIcon name={kind.icon} className="text-[10.5px]" />
-              <span className="text-[12px] tracking-[-0.1px]">{kind.label}</span>
+              <LucideIcon name={kind.icon} size={SIDEBAR_ICON_SIZES.nested} />
+              <span className="text-[13px] tracking-[-0.1px]">{kind.label}</span>
             </Link>
           ))}
           <Link
@@ -104,8 +107,8 @@ function MediaFlyout({ isMediaActive, pathname, onClose }) {
                 : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
             )}
           >
-            <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[10.5px]" />
-            <span className="text-[12px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
+            <LucideIcon name={COMBINED_WEB_ITEM.icon} size={SIDEBAR_ICON_SIZES.nested} />
+            <span className="text-[13px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
           </Link>
         </div>
       )}
@@ -119,6 +122,13 @@ const COMBINED_WEB_ITEM = {
   label: "Web Fetch & Search",
   icon: "travel_explore",
   href: "/media-providers/web",
+};
+
+const SIDEBAR_ICON_SIZES = {
+  collapsed: 18,
+  expanded: 16,
+  nested: 14,
+  footerExpanded: 13,
 };
 
 const apiItems = [
@@ -145,7 +155,7 @@ function NavSection({ label, children, collapsed }) {
   if (collapsed) return <div className="space-y-0.5">{children}</div>;
   return (
     <div className="pt-4 first:pt-0">
-      <p className="px-3 mb-1 text-[9px] font-[590] text-fog-grey uppercase tracking-[0.06em]">{label}</p>
+      <p className="px-3 mb-1 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">{label}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -166,13 +176,10 @@ function NavItem({ href, label, icon, active, onClick, collapsed }) {
     >
       <LucideIcon
         name={icon}
-        className={cn(
-          "shrink-0",
-          collapsed ? "text-[12px]" : "text-[10.5px]",
-          active ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
-        )}
+        size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.expanded}
+        className={cn("shrink-0", active ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud")}
       />
-      {!collapsed && <span className="text-[12px] font-[400] tracking-[-0.12px] truncate">{label}</span>}
+      {!collapsed && <span className="text-[13px] font-[400] tracking-[-0.12px] truncate">{label}</span>}
     </Link>
   );
 }
@@ -184,6 +191,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
+  const collapsedFooterButtonClass = "size-8 rounded-[6px] text-fog-grey hover:bg-deep-slate hover:text-porcelain";
 
   const isActive = (href) => {
     if (href === "/endpoint") {
@@ -287,17 +295,19 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 >
                   <LucideIcon
                     name="perm_media"
+                    size={SIDEBAR_ICON_SIZES.expanded}
                     className={cn(
-                      "text-[10.5px] shrink-0",
+                      "shrink-0",
                       isMediaActive ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
                     )}
                   />
-                  <span className="text-[12px] font-[400] tracking-[-0.12px] flex-1 text-left truncate">
+                  <span className="text-[13px] font-[400] tracking-[-0.12px] flex-1 text-left truncate">
                     Media Providers
                   </span>
                   <LucideIcon
                     name="expand_more"
-                    className="text-[12px] text-fog-grey transition-transform duration-150"
+                    size={SIDEBAR_ICON_SIZES.expanded}
+                    className="text-fog-grey transition-transform duration-150"
                     style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
                 </button>
@@ -317,8 +327,8 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                             : "text-fog-grey hover:bg-deep-slate hover:text-storm-cloud",
                         )}
                       >
-                        <LucideIcon name={kind.icon} className="text-[9px]" />
-                        <span className="text-[12px] tracking-[-0.1px]">{kind.label}</span>
+                        <LucideIcon name={kind.icon} size={SIDEBAR_ICON_SIZES.nested} />
+                        <span className="text-[13px] tracking-[-0.1px]">{kind.label}</span>
                       </Link>
                     ))}
                     <Link
@@ -332,8 +342,8 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                           : "text-fog-grey hover:bg-deep-slate hover:text-storm-cloud",
                       )}
                     >
-                      <LucideIcon name={COMBINED_WEB_ITEM.icon} className="text-[9px]" />
-                      <span className="text-[12px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
+                      <LucideIcon name={COMBINED_WEB_ITEM.icon} size={SIDEBAR_ICON_SIZES.nested} />
+                      <span className="text-[13px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
                     </Link>
                   </div>
                 )}
@@ -376,9 +386,12 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
                 type="button"
                 onClick={onToggleCollapse}
                 title="Expand sidebar"
-                className="hidden lg:flex items-center justify-center size-8 rounded-[6px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
+                className={cn(
+                  "hidden lg:flex items-center justify-center transition-colors duration-100",
+                  collapsedFooterButtonClass,
+                )}
               >
-                <LucideIcon name="left_panel_open" className="text-[14px]" />
+                <LucideIcon name="left_panel_open" size={SIDEBAR_ICON_SIZES.collapsed} />
               </button>
             )}
             <button
@@ -386,14 +399,23 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               disabled={isRestarting}
               title="Restart"
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-[6px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100 text-[12px]",
-                collapsed ? "size-8" : "flex-1 h-7",
+                "flex items-center justify-center gap-1.5 rounded-[6px] disabled:opacity-40 transition-colors duration-100 text-[12px]",
+                collapsed
+                  ? collapsedFooterButtonClass
+                  : "flex-1 h-7 border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
               )}
             >
               {isRestarting ? (
-                <LucideIcon name="progress_activity" className="text-[14px] animate-spin" />
+                <LucideIcon
+                  name="progress_activity"
+                  size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded}
+                  className="animate-spin"
+                />
               ) : (
-                <LucideIcon name="restart_alt" className="text-[14px]" />
+                <LucideIcon
+                  name="restart_alt"
+                  size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded}
+                />
               )}
               {!collapsed && "Restart"}
             </button>
@@ -401,11 +423,16 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
               onClick={() => setShowShutdownModal(true)}
               title="Shutdown"
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-[6px] border border-charcoal-grey text-storm-cloud hover:bg-warning-red/10 hover:border-warning-red/30 hover:text-warning-red transition-colors duration-100 text-[12px]",
-                collapsed ? "size-8" : "flex-1 h-7",
+                "flex items-center justify-center gap-1.5 rounded-[6px] transition-colors duration-100 text-[12px]",
+                collapsed
+                  ? collapsedFooterButtonClass
+                  : "flex-1 h-7 border border-charcoal-grey text-storm-cloud hover:bg-warning-red/10 hover:border-warning-red/30 hover:text-warning-red",
               )}
             >
-              <LucideIcon name="power_settings_new" className="text-[14px]" />
+              <LucideIcon
+                name="power_settings_new"
+                size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded}
+              />
               {!collapsed && "Shutdown"}
             </button>
           </div>

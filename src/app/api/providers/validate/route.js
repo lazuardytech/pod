@@ -7,6 +7,7 @@ import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
@@ -118,9 +119,35 @@ async function probeMediaProvider(provider, apiKey) {
   return res.status !== 401 && res.status !== 403;
 }
 
+function validateOllamaLocalBaseUrl(providerSpecificData) {
+  const baseUrl = resolveOllamaLocalHost({ providerSpecificData });
+
+  let parsed;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    return { ok: false, error: "Invalid Ollama base URL format" };
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return { ok: false, error: "Only http and https URLs are allowed for Ollama Local" };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const allowedHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+  if (!allowedHosts.has(hostname)) {
+    return { ok: false, error: "Ollama Local base URL must stay on localhost" };
+  }
+
+  return { ok: true, baseUrl };
+}
+
 // POST /api/providers/validate - Validate API key with provider
 export async function POST(request) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const [body, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const provider = normalizeProviderId(body.provider);
@@ -430,6 +457,13 @@ export async function POST(request) {
         case "chutes":
         case "xiaomi-mimo":
         case "nvidia": {
+          if (provider === "ollama-local") {
+            const ollamaUrlCheck = validateOllamaLocalBaseUrl(providerSpecificData);
+            if (!ollamaUrlCheck.ok) {
+              return NextResponse.json({ valid: false, error: ollamaUrlCheck.error });
+            }
+          }
+
           const endpoints = {
             deepseek: "https://api.deepseek.com/models",
             groq: "https://api.groq.com/openai/v1/models",

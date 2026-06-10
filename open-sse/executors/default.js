@@ -1,4 +1,4 @@
-import { buildClineHeaders } from "../../src/shared/utils/clineAuth.js";
+import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mjs";
 import { buildKimiHeaders, OAUTH_ENDPOINTS } from "../config/appConstants.js";
 import { PROVIDERS } from "../config/providers.js";
 import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.js";
@@ -319,6 +319,8 @@ Respond ONLY with the JSON object, no other text.`;
   }
 
   async refreshIflow(refreshToken, proxyOptions = null) {
+    if (!PROVIDERS.iflow.clientSecret) return null;
+
     const basicAuth = btoa(`${PROVIDERS.iflow.clientId}:${PROVIDERS.iflow.clientSecret}`);
     const response = await proxyAwareFetch(
       OAUTH_ENDPOINTS.iflow.token,
@@ -391,7 +393,6 @@ Respond ONLY with the JSON object, no other text.`;
   }
 
   async refreshCline(refreshToken, proxyOptions = null) {
-    console.log("[DEBUG] Refreshing Cline token, refreshToken length:", refreshToken?.length);
     const response = await proxyAwareFetch(
       "https://api.cline.bot/api/v1/auth/refresh",
       {
@@ -401,20 +402,16 @@ Respond ONLY with the JSON object, no other text.`;
       },
       proxyOptions,
     );
-    console.log("[DEBUG] Cline refresh response status:", response.status);
     if (!response.ok) {
-      const errorText = await response.text();
-      console.log("[DEBUG] Cline refresh error:", errorText);
+      await response.text().catch(() => "");
       return null;
     }
     const payload = await response.json();
-    console.log("[DEBUG] Cline refresh payload:", JSON.stringify(payload).substring(0, 200));
     const data = payload?.data || payload;
     const expiresAtIso = data?.expiresAt;
     const expiresIn = expiresAtIso
       ? Math.max(1, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000))
       : undefined;
-    console.log("[DEBUG] Cline refresh success, expiresIn:", expiresIn);
     return { accessToken: data?.accessToken, refreshToken: data?.refreshToken || refreshToken, expiresIn };
   }
 

@@ -21,12 +21,18 @@ const PRIVATE_HOSTNAMES = new Set([
   "localhost",
   "metadata.google.internal",
   "metadata.internal", // GCP metadata alternative
-  "1.0.0.127.nip.io", // DNS rebinding
-  "127.0.0.1.nip.io", // DNS rebinding
-  "localtest.me", // DNS rebinding (resolves to 127.0.0.1)
-  "lvh.me", // DNS rebinding (resolves to 127.0.0.1)
-  "127.0.0.1.sslip.io", // DNS rebinding
 ]);
+
+const PRIVATE_HOST_SUFFIXES = [
+  ".localhost",
+  ".local",
+  ".internal",
+  ".home.arpa",
+  ".localtest.me",
+  ".lvh.me",
+  ".nip.io",
+  ".sslip.io",
+];
 
 /**
  * Check if a hostname resolves to a private/internal address.
@@ -37,8 +43,9 @@ const PRIVATE_HOSTNAMES = new Set([
  */
 function isPrivateHostname(hostname) {
   if (!hostname) return true;
-  const h = hostname.toLowerCase();
+  const h = hostname.toLowerCase().replace(/\.+$/, "");
   if (PRIVATE_HOSTNAMES.has(h)) return true;
+  if (PRIVATE_HOST_SUFFIXES.some((suffix) => h === suffix.slice(1) || h.endsWith(suffix))) return true;
   // Bare numeric IPv4
   if (PRIVATE_IP_PATTERNS.some((re) => re.test(h))) return true;
   // Bracketed IPv6 e.g. [::1]

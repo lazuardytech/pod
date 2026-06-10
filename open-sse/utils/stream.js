@@ -435,12 +435,8 @@ export function createSSEStream(options = {}) {
             }
           }
         }
-      } catch (transformError) {
-        console.error("[STREAM_TRANSFORM]", "Transform error; attempting graceful termination", {
-          error: transformError?.message || String(transformError),
-          provider,
-          model,
-        });
+      } catch (_transformError) {
+        console.error("[STREAM_TRANSFORM] Transform error; attempting graceful termination");
         try {
           controller.enqueue(
             sharedEncoder.encode(
@@ -558,8 +554,8 @@ export function createSSEStream(options = {}) {
             ttftAt,
           );
         }
-      } catch (error) {
-        console.log("Error in flush:", error);
+      } catch (_error) {
+        console.log("Error in flush");
       }
     },
   });

@@ -1,4 +1,4 @@
-const SW_VERSION = "v3";
+const SW_VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
 
 const SHELL_CACHE_NAME = `pod-shell-cache-${SW_VERSION}`;
 const STATIC_CACHE_NAME = `pod-static-cache-${SW_VERSION}`;
@@ -58,6 +58,10 @@ function isStaticAssetRequest(request, url) {
     request.destination === "font" ||
     request.destination === "worker"
   );
+}
+
+function isFingerprintedAsset(url) {
+  return url.pathname.startsWith("/_next/static/");
 }
 
 function isCacheableResponse(response) {
@@ -162,9 +166,22 @@ async function handleNavigationRequest(request) {
   }
 }
 
-async function handleStaticAssetRequest(request) {
+async function handleStaticAssetRequest(request, url) {
   const staticCache = await caches.open(STATIC_CACHE_NAME);
   const cached = await staticCache.match(request);
+
+  if (!isFingerprintedAsset(url)) {
+    try {
+      const response = await fetch(request);
+      if (isCacheableResponse(response) && responseAllowsStorage(response)) {
+        await staticCache.put(request, response.clone());
+      }
+      return response;
+    } catch {
+      if (cached) return cached;
+      return Response.error();
+    }
+  }
 
   const networkFetch = fetch(request)
     .then(async (response) => {
@@ -260,7 +277,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (isStaticAssetRequest(request, url)) {
-    event.respondWith(handleStaticAssetRequest(request));
+    event.respondWith(handleStaticAssetRequest(request, url));
     return;
   }
 

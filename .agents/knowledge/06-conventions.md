@@ -38,6 +38,7 @@
 - Use `src/lib/rateLimit/` for all rate limiting. Backend auto-selects Redis when `REDIS_URL` is set, in-memory otherwise.
 - Redis RPM uses sorted set with unique member IDs to prevent same-millisecond collisions.
 - When Redis concurrent check fails after RPM passes, release the RPM slot via `backend.releaseRpm(keyId, member)`.
+- Backend dispatch must use duck-type checks (`backend.releaseRpm?.(...)`) — never `constructor.name` or `instanceof`. Constructor-name checks break in minified production builds.
 
 ## PWA / Offline Rules
 

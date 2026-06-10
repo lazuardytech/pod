@@ -7,6 +7,7 @@ import {
   startCodexProxy,
   stopCodexProxy,
 } from "@/lib/oauth/utils/server";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { createProviderConnection } from "@/models";
 import { sanitizeError } from "@/lib/sanitizeError.js";
 import { parseJsonBody } from "@/lib/parseJsonBody.js";
@@ -20,6 +21,9 @@ import { parseJsonBody } from "@/lib/parseJsonBody.js";
 // GET /api/oauth/[provider]/device-code - Request device code (for device_code flow)
 export async function GET(request, { params }) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const { provider, action } = await params;
     const { searchParams } = new URL(request.url);
 
@@ -127,6 +131,9 @@ export async function GET(request, { params }) {
 // POST /api/oauth/[provider]/poll - Poll for token (device_code flow)
 export async function POST(request, { params }) {
   try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
     const { provider, action } = await params;
     let body;
     try {
@@ -219,7 +226,6 @@ export async function POST(request, { params }) {
       return NextResponse.json({
         success: false,
         error: result.error,
-        errorDescription: result.errorDescription,
         pending: isPending,
       });
     }
