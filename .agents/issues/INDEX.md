@@ -1,26 +1,24 @@
 # Issues Index
 
-This folder keeps audit history and backlog snapshots. Use live code as the source of truth.
+**Note:** These are historical audit and security analysis files. They document
+past findings but may not reflect the current codebase state. Always verify
+against live code before taking action based on these files.
 
-## Current Active Themes
+## Files
 
-1. Provider drift and verification coverage
-2. Dashboard/API protection matcher drift
-3. Relay and cold-start robustness
-4. Offline cache and mutation queue correctness
-5. Multi-instance readiness planning
+| File | Date | Topic |
+|------|------|-------|
+| DOCS_PRD_AUDIT_2026-06-06.md | 2026-06-06 | Docs and PRD gaps |
+| STABILITY_AUDIT_2026-06-06.md | 2026-06-06 | Runtime & provider stability |
+| SECURITY_AUDIT_LOG_ERR_2026-06-06.md | 2026-06-06 | Log/error exposure |
+| FIX_TODO_2026-06-07.md | 2026-06-07 | Short-term implementation backlog |
+| NEW_SECURITY_ISSUES_2026-06-07.md | 2026-06-07 | Post-hardening security findings |
+| REMAINING_ISSUES_2026-06-07.md | 2026-06-07 | Partially resolved items |
+| CODEX_SECURITY_FIX_TODO_2026-06-08.md | 2026-06-08 | Codex security follow-up |
+| REPO_STABILITY_ANALYSIS_2026-06-08.md | 2026-06-08 | Broader stability review |
 
-## Historical Audit Files
+## Active Watchlist
 
-- `DOCS_PRD_AUDIT_2026-06-06.md`
-- `STABILITY_AUDIT_2026-06-06.md`
-- `SECURITY_AUDIT_LOG_ERR_2026-06-06.md`
-- `FIX_TODO_2026-06-07.md`
-- `NEW_SECURITY_ISSUES_2026-06-07.md`
-- `REMAINING_ISSUES_2026-06-07.md`
-- `CODEX_SECURITY_FIX_TODO_2026-06-08.md`
-- `REPO_STABILITY_ANALYSIS_2026-06-08.md`
-
-## Working Rule
-
-Treat every file here as historical context until re-verified against the current repo.
+For current open issues and ongoing watchlist items, see:
+- `knowledge/05-open-issues.md` — active concerns
+- `knowledge/04-gotchas.md` — common traps to avoid

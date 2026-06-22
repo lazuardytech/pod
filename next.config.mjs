@@ -51,6 +51,11 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      // ponytail: alias perplexity-web icon to perplexity.png
+      {
+        source: "/providers/perplexity-web.png",
+        destination: "/providers/perplexity.png",
+      },
       {
         source: "/v1/v1/:path*",
         destination: "/api/v1/:path*",

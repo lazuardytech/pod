@@ -1,25 +1,15 @@
 # Overview
 
-Pod is a self-hosted AI gateway with a dark operational dashboard.
-
-## What It Does
-
-- Unifies many providers behind a stable client-facing API
-- Manages credentials, refresh flows, retries, combos, and lockouts
-- Tracks usage, health, logs, cache, and memory
-- Supports tunnels, proxy pools, and offline-friendly dashboard behavior
-
-## Current Repo Shape
-
-- Frontend and API app: `src/`
-- Inference engine: `open-sse/`
-- Worker companion: `cloud/`
-- Project docs: `.agents/`, `AGENTS.md`, `DESIGN.md`, `README.md`
-
-## Fast Truth Sources
-
-- `README.md`
-- `AGENTS.md`
-- `.agents/INDEX.md`
-- `.env.example`
-- live code in `src/`, `open-sse/`, and `cloud/`
+- **Pod:** self-hosted AI gateway unifying 50+ LLM providers behind a single OpenAI-compatible endpoint
+- **Stack:** Bun + Next.js 16 (JS, no TS) + open-sse (local engine fork) + SQLite
+- **Deployed at:** pod.lazuardy.tech (Zeabur, Cloudflare DNS)
+- **Three layers:**
+  - **App:** Next.js pages/routes/middleware/PWA
+  - **Engine:** open-sse routing/translation/streaming
+  - **Data & Ops:** SQLite, cache, rate limiting, tunnels
+- **Repo structure:** `src/`, `open-sse/`, `cloud/` (Cloudflare Workers), `tests/`, `docs/`, `.agents/`
+- **Key files:**
+  - `AGENTS.md` — operational rules
+  - `README.md` — quick start
+  - `DESIGN.md` — UI system
+  - `.agents/INDEX.md` — doc entry point

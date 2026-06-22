@@ -1,27 +1,47 @@
 # Provider Architecture
 
-Pod supports a wide provider matrix through configuration, credential storage, refresh flows, and executor dispatch.
+## Provider Flow
 
-## Provider Layers
+```
+config definitions → auth resolution → credential refresh → executor dispatch → format translation → response normalization
+```
 
-1. `open-sse/config/providers.js` defines provider metadata and auth shape.
-2. `src/sse/services/auth.js` resolves usable connections.
-3. `open-sse/services/tokenRefresh.js` handles refresh for OAuth-like providers.
-4. Executors call upstream APIs.
-5. Translators normalize provider differences for clients.
+Each provider passes through this pipeline for every request. The pipeline fails early (e.g., missing credentials or expired token) before reaching the upstream API.
 
-## Auth Shapes
+## Auth Types
 
-- OAuth
-- API key
-- Cookie/session
-- No-auth local service
-- Service-account style flows
+| Auth Type | Providers |
+|---|---|
+| OAuth | Claude, GitHub |
+| API key | OpenAI, Groq, Perplexity, OpenRouter |
+| Cookie / session | Web-based providers |
+| Local | Ollama |
+| Service account | Vertex AI (GCP) |
+
+Credentials are managed through `open-sse/services/` and refreshed as needed before executor dispatch.
+
+## Executor Routing
+
+- **DefaultExecutor**: Handles most OpenAI-compatible providers.
+- **Specialized executors**: Claude (thinking blocks), Gemini (stream format), Vertex AI (GCP auth + no `stream` field in body), Kiro (transient overload body-gating).
+
+Executors live in `open-sse/executors/`. Each implements the same interface so the handler can dispatch generically.
+
+## Format Translation
+
+`open-sse/translator/` handles all format pairs:
+
+- OpenAI → Claude
+- Claude → OpenAI
+- Gemini → OpenAI
+- OpenAI → Gemini
+
+The translator is a TransformStream pipeline that runs on every streaming response.
 
 ## Current Rules
 
-1. Preserve connection lockout and cooldown behavior.
-2. Preserve provider-specific retry logic where upstreams are special.
-3. Keep model listing and routing rules aligned.
-4. Keep compatible-node behavior separate from built-in providers.
-5. Treat provider drift as expected; verify against live behavior when changing integrations.
+- **Lockout/cooldown preservation**: When a provider returns rate-limit or overload errors, the system records a cooldown period and avoids dispatching to that provider until it expires.
+- **Provider-specific retry**: Retry relay once on `502` or `504` (Vercel relay). Kiro retry is body-gated on transient overload markers.
+- **Aligned model listing**: `/v1/models` reports models from all configured providers, unified under a common schema.
+- **Compatible-node isolation**: Provider-node rename applies only to compatible/custom nodes.
+- **Expect provider drift**: Provider APIs change. Executors and translators are designed to isolate provider-specific quirks so a change in one provider doesn't ripple across the system.
