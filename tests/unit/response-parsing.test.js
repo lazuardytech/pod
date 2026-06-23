@@ -612,12 +612,12 @@ describe("Reasoning / thinking content", () => {
 
     claudeToOpenAIResponse({ type: "message_start", message: { id: "msg_think_1", model: "claude-sonnet-4" } }, state);
 
-    // thinking block start → emits <think> tag
+    // thinking block start → no content delta (thinking flows via reasoning_content)
     const t1 = claudeToOpenAIResponse(
       { type: "content_block_start", index: 0, content_block: { type: "thinking" } },
       state,
     );
-    expect(t1[0].choices[0].delta.content).toBe("<think>");
+    expect(t1).toBeNull();
 
     // thinking delta
     const t2 = claudeToOpenAIResponse(
@@ -630,9 +630,9 @@ describe("Reasoning / thinking content", () => {
     );
     expect(t2[0].choices[0].delta.reasoning_content).toBe("Let me reason step by step.");
 
-    // thinking block stop → emits </think>
+    // thinking block stop → no content delta
     const t3 = claudeToOpenAIResponse({ type: "content_block_stop", index: 0 }, state);
-    expect(t3[0].choices[0].delta.content).toBe("</think>");
+    expect(t3).toBeNull();
   });
 
   it("Gemini stream: thought:true parts map to reasoning_content, not content", () => {
