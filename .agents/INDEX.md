@@ -1,69 +1,43 @@
 # Pod — Documentation Index
 
-**Version:** v0.0.79
-**Stack:** Bun + Next.js 16 + open-sse + SQLite
-**Deployment:** Zeabur → pod.lazuardy.tech (Docker, multi-stage Bun + Tailscale)
-**Engine:** open-sse/ (local fork, not npm)
+**Version:** v0.0.79 | **Stack:** Bun + Next.js 16 + open-sse + SQLite | **Port:** 20128
 
-## Read First
+## Reading Order (New Contributors)
 
-For new contributors, read in this order:
+1. [PRD.md](PRD.md) — what Pod is, goals, constraints
+2. [knowledge/01-overview.md](knowledge/01-overview.md) — quick facts, repo layout
+3. [knowledge/02-conventions.md](knowledge/02-conventions.md) — coding and naming rules
+4. [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) — commands, verification
+5. [knowledge/04-gotchas.md](knowledge/04-gotchas.md) — common traps
+6. [knowledge/05-open-issues.md](knowledge/05-open-issues.md) — active watchlist
 
-1. **PRD.md** — product overview and goals
-2. **knowledge/01-overview.md** — what Pod is, quick facts
-3. **knowledge/02-conventions.md** — coding and naming conventions
-4. **knowledge/03-dev-workflow.md** — dev commands and workflow
-5. **knowledge/04-gotchas.md** — common traps
-6. **knowledge/05-open-issues.md** — active watchlist
+## Architecture Deep Dives
 
-## Documentation Map
+| File | Covers |
+|------|--------|
+| [architecture/00-engine.md](architecture/00-engine.md) | open-sse engine: routing, translation, streaming, caching |
+| [architecture/01-app.md](architecture/01-app.md) | Next.js pages, API routes, middleware, PWA, stores |
+| [architecture/02-providers.md](architecture/02-providers.md) | Provider config, auth types, executors, translators, retry |
+| [architecture/03-data.md](architecture/03-data.md) | SQLite, Redis, offline cache, mutation queue |
+| [architecture/04-infra.md](architecture/04-infra.md) | Docker, Zeabur, Cloudflare, networking |
+| [architecture/05-flow.md](architecture/05-flow.md) | End-to-end request flow: streaming, non-streaming, failure |
 
-### Root Level
+## Reference Docs
+
 | File | Purpose |
 |------|---------|
-| AGENTS.md | Operational rules for AI agents |
-| README.md | Project overview, quick start, env reference |
-| DESIGN.md | UI design system (dark-only, Linear-inspired) |
-| CHANGELOG.md | Release history |
-| CONTRIBUTING.md | Contribution guidelines |
-| SECURITY.md | Security policy |
-| docs/API_INTERNAL.md | Internal Dashboard API reference |
+| [../AGENTS.md](../AGENTS.md) | Operational rules for AI agents |
+| [../README.md](../README.md) | Project overview, quick start, env reference |
+| [../DESIGN.md](../DESIGN.md) | UI design system (dark-only, Linear-inspired) |
+| [../CHANGELOG.md](../CHANGELOG.md) | Release history |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution guidelines |
+| [../SECURITY.md](../SECURITY.md) | Vulnerability disclosure policy |
+| [../docs/API_INTERNAL.md](../docs/API_INTERNAL.md) | Internal Dashboard API reference |
 
-### .agents/ (this directory)
+## Other Directories
 
 | Path | Purpose |
 |------|---------|
-| INDEX.md | This file — entry point |
-| PRD.md | Product requirements document |
-
-### architecture/
-| File | Purpose |
-|------|---------|
-| 00-engine.md | open-sse engine design |
-| 01-app.md | App layer (Next.js pages, routes, middleware) |
-| 02-providers.md | Provider config, auth, executors, translators |
-| 03-data.md | Storage (SQLite, Redis, offline cache) |
-| 04-infra.md | Infrastructure (Docker, Zeabur, Cloudflare) |
-| 05-flow.md | End-to-end request flow |
-
-### knowledge/
-| File | Purpose |
-|------|---------|
-| 01-overview.md | Project overview and key facts |
-| 02-conventions.md | Coding and naming conventions |
-| 03-dev-workflow.md | Development commands and workflow |
-| 04-gotchas.md | Common traps and pitfalls |
-| 05-open-issues.md | Active watchlist and known issues |
-
-### issues/
-Historical audit and security analysis files. See issues/INDEX.md.
-These are historical context — verify against live code before acting.
-
-### reports/
-Release rollups and verification reports organized by version.
-Historical context for understanding past decisions.
-
-### plan/
-| File | Purpose |
-|------|---------|
-| optimizing-pod-for-multiple-instance.md | Multi-instance plan (draft) |
+| issues/ | Historical audit and security analysis — verify against live code |
+| reports/ | Release rollups and verification reports by version |
+| plan/ | Draft plans (e.g. multi-instance optimization) |

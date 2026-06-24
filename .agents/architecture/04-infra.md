@@ -3,8 +3,9 @@
 ## Runtime Stack
 
 | Component | Choice |
-|---|---|
-| Runtime | Bun + Next.js 16 (standalone mode) |
+|-----------|--------|
+| Runtime | Bun + Next.js 16 (standalone mode, Turbopack) |
+| Language | JavaScript only (no TypeScript) |
 | Primary DB | SQLite at `~/.pod/pod.sqlite` |
 | Cache DB | Optional Redis (when `REDIS_URL` is set) |
 | Tunnel | Optional Cloudflared |
@@ -12,35 +13,66 @@
 
 ## Deployment
 
-### Docker
+### Docker (Recommended)
 
-Multi-stage build using `oven/bun:1.3.14-alpine`. Entrypoint forwards SIGTERM to child processes for graceful shutdown.
+Multi-stage build using `oven/bun:1.3.14-alpine`.
 
-### Zeabur
+```bash
+docker run -d --name pod -p 20128:20128 -v pod-data:/app/data lazuardytech/pod:latest
+```
 
-Production deployment on Zeabur at **pod.lazuardy.tech**.
+- Entrypoint forwards SIGTERM to child processes for graceful shutdown
+- Data volume at `/app/data`
 
 ### Docker Compose
 
-Local development stack includes Redis and SearXNG for search functionality.
+Includes Redis (rate limiting) and SearXNG (private web search).
+
+```bash
+cd docker && docker compose up -d
+```
+
+### Zeabur
+
+Production deployment at **pod.lazuardy.tech**.
+
+### Local Development
+
+```bash
+bun install && bun run dev  # http://localhost:20128
+```
 
 ## Networking
 
 | Record | Target |
-|---|---|
-| pod.lazuardy.tech | Cloudflare proxied (A record to `43.157.213.211`) |
+|--------|--------|
+| pod.lazuardy.tech | Cloudflare proxied (A record) |
 
-Cloudflare handles TLS termination, DDoS protection, and caching at the edge.
+Cloudflare handles TLS termination, DDoS protection, and edge caching.
+
+## Key Files
+
+| File | Role |
+|------|------|
+| `src/server-init.js` | Global process handlers, shutdown hooks, app initialization |
+| `src/lib/shutdown.js` | Graceful shutdown: signal handlers, queue flush, tunnel cleanup |
+| `src/lib/tunnel/` | Cloudflared tunnel management |
+| `src/lib/network/` | Network utilities |
+| `docker/` | Dockerfile and docker-compose.yml |
+| `cloud/` | Cloudflare Worker backend |
 
 ## Rules
 
-- **SIGTERM forwarding**: Docker entrypoint must forward SIGTERM to child processes so cleanup handlers run.
-- **Serialized tunnel spawn**: Cloudflared tunnel startup must be serialized (one at a time, not concurrent).
-- **Simple health semantics**: `GET /api/health` is public and returns a simple status. Monitoring endpoints (`/api/monitoring/health`) require API key auth.
+| Rule | Why |
+|------|-----|
+| SIGTERM forwarding | Docker entrypoint must forward SIGTERM so cleanup handlers run |
+| Serialized tunnel spawn | Cloudflared tunnels must start one at a time |
+| Non-fatal fetchData | Tunnel startup treats fetchData() failures as non-fatal |
+| Simple health semantics | `GET /api/health` is public; `/api/monitoring/health` requires API key |
 
 ## Watchlist
 
-- **Multi-instance readiness**: Current SQLite+memory design is single-instance. Multi-instance will need Redis for coordination and shared state.
-- **Tunnel lifecycle**: Cloudflared tunnels can drop unexpectedly; the system should detect and restart them without user intervention.
-- **Cold-start relay**: Vercel relay has a cold start delay. First request after idle may be slow.
-- **Config drift**: Provider configs in `open-sse/config/` can drift from upstream API changes. Monitor periodically.
+- **Multi-instance readiness**: SQLite + in-memory design is single-instance. Redis needed for coordination.
+- **Tunnel lifecycle**: Cloudflared tunnels can drop; detect and restart automatically.
+- **Cold-start relay**: Vercel relay has cold start delay; first request after idle may be slow.
+- **Config drift**: Provider configs in `open-sse/config/` can drift from upstream API changes.
