@@ -94,3 +94,11 @@ bun run build
 - DESIGN.md -- UI system reference
 - CHANGELOG.md -- release history
 - docs/API_INTERNAL.md -- internal API reference
+
+## Cursor Cloud specific instructions
+
+- Cloud agents work from the `canary` branch (base for this environment), not `main`.
+- Bun is preinstalled in the VM snapshot at ~/.bun/bin; the startup update script runs `bun install` to refresh deps. Standard commands live in package.json/README (`bun run dev|build|check|test:run`).
+- `bun run dev` / `bun run start` require strong non-default `JWT_SECRET` and `API_KEY_SECRET`; the runtime secret policy rejects missing/default secrets outside the build phase (`bun run build` works without them). Tests inject a deterministic fallback, so `bun run test:run` needs no env. Generate secrets with `bun -e "import { randomBytes } from 'node:crypto'; console.log(randomBytes(32).toString('hex'))"`.
+- Dev server listens on port 20128. GET /api/health is public; dashboard login uses INITIAL_PASSWORD (default 123456). SQLite data is created at ~/.pod/pod.sqlite on first run.
+- cloud/ (Cloudflare Worker) and tests/ have their own package.json/lockfiles and are not installed by the root `bun install`; install them separately only when working on those subprojects (root `bun run test:run` already runs the tests/ suite via the root vitest config).
