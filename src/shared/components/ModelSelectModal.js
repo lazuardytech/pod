@@ -244,7 +244,9 @@ export default function ModelSelectModal({
         // Find connection object to get prefix synchronously without waiting for providerNodes fetch
         const connection = activeProviders.find((p) => p.provider === providerId);
         const matchedNode = providerNodes.find((node) => node.id === providerId);
-        const displayName = connection?.name || matchedNode?.name || providerInfo.name;
+        // Header always shows the provider name (not the connection/API-key name) so users
+        // see the provider identity, not their per-key label like "Production".
+        const displayName = providerInfo.name;
         const nodePrefix = connection?.providerSpecificData?.prefix || matchedNode?.prefix || providerId;
 
         // Aliases are stored using the raw providerId as key (e.g. "openai-compatible-chat-<uuid>/glm-4.7"),
