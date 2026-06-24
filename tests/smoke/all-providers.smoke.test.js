@@ -229,6 +229,7 @@ describe("provider smoke — embedding adapters", () => {
 describe("provider smoke — provider icons exist", () => {
   // Providers that legitimately use a different icon name pattern
   const ICON_ALIASES = {
+    "perplexity-web": "perplexity",
     "vertex-partner": "vertex",
     "minimax-cn": "minimax",
     "glm-cn": "glm",

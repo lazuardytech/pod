@@ -891,7 +891,6 @@ export default function APIPageClient({ machineId }) {
   }, []);
 
   const currentEndpoint = baseUrl;
-  const anthropicEndpoint = baseUrl.endsWith("/v1") ? baseUrl.slice(0, -3) : baseUrl;
   const showTunnelEnableAction = !tunnelEnabled && !tunnelLoading && !tunnelChecking;
   const showTsEnableAction = !tsEnabled && !tsLoading && !tsConnecting;
 
@@ -909,7 +908,7 @@ export default function APIPageClient({ machineId }) {
         <EndpointValueCard
           title="Anthropic"
           icon="api"
-          url={anthropicEndpoint}
+          url={currentEndpoint}
           copyId="anthropic_url"
           copied={copied}
           onCopy={copy}

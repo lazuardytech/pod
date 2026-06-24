@@ -1,26 +1,52 @@
-# App Architecture
+# App Architecture (src/)
 
-`src/` is the Next.js 16 application that wraps Pod's dashboard, API routes, and server-side orchestration.
+## Structure
 
-## Major Areas
+```
+src/
+  app/            Next.js App Router pages and API routes
+  lib/            Backend services
+  sse/            SSE chat orchestration layer
+  shared/         UI components, stores, constants, utils
+  proxy.js        Next.js middleware
+  dashboardGuard.js  Auth guard middleware
+  server-init.js  App initialization and signal handlers
+```
 
-- `src/app/`: App Router pages, route handlers, manifest, landing, login, offline page
-- `src/lib/`: SQLite, cache, rate limiting, memory, tunnel, auth, shutdown, networking
-- `src/sse/`: server-side request handlers that bridge app routes to `open-sse`
-- `src/shared/`: reusable UI, services, stores, constants, hooks, and utils
-- `src/proxy.js`: middleware matcher layer
-- `src/dashboardGuard.js`: dashboard and internal API protection
-- `src/server-init.js`: process startup and signal handling
+### src/app/
 
-## Core Patterns
+- **Pages**: dashboard (top-level, no `/dashboard` prefix), login, landing, offline
+- **API routes**: `/api/health` (public), `/api/monitoring/health` (requires API key), proxy endpoints for model inference
+- All API mutation routes use `parseJsonBody(request)` instead of `raw request.json()`
+- API catch blocks use `sanitizeError(error)` before returning client-facing JSON
 
-1. Dashboard and internal APIs are protected at both matcher and handler layers.
-2. Shared services own offline reads, offline writes, and app bootstrap.
-3. Route handlers should stay thin and delegate logic to `src/lib`, `src/sse`, or `open-sse`.
-4. PWA behavior is explicit; Pod does not auto-update itself silently.
+### src/lib/
 
-## Operational Notes
+- `localDb.js` — Primary database access layer (preferred entry point)
+- `sqlite/connection.js` — Low-level SQLite connection management
+- `sqlite/schema.js` — Schema definitions and migrations
+- `cache/` — Semantic cache, prompt cache, offline JSON cache
+- `rateLimit/` — Rate limiter (Redis backed when `REDIS_URL` exists, in-memory fallback)
+- `memory/` — Memory/persistence layer
+- `tunnel/` — Cloudflared tunnel management
+- `auth/` — Authentication and session handling
+- `shutdown/` — Graceful shutdown logic
 
-- Public heartbeat: `/api/health`
-- Protected operational health: `/api/monitoring/health`
-- Tunnel, proxy, provider, usage, cache, and memory surfaces all live in the dashboard app
+### src/sse/
+
+SSE chat handler — the orchestration layer that sits between the API route and `open-sse/`. Handles connection management, combo model logic, and streaming setup before delegating to the engine.
+
+### src/shared/
+
+- **Components**: UI component library (ConfirmModal, headers, etc.)
+- **Stores**: Zustand stores per domain (auth, chat, settings, etc.)
+- **Constants**: Config values, including version in `constants/config.js`
+- **Utils**: Shared helpers, validation, formatting
+
+### Patterns
+
+- **Thin API routes**: Routes call into `lib/` services; no business logic directly in route handlers.
+- **Shared services via lib/**: All backend logic lives in `src/lib/` or `src/sse/`.
+- **Zustand per domain**: Each domain (auth, chat, settings, providers) gets its own store for focused state management.
+- **PWA**: `src/app/manifest.webmanifest` as the source, service worker is registration-only (no auto-updates).
+- **Middlewares**: `src/proxy.js` (Next.js middleware) matches dashboard routes; `src/dashboardGuard.js` enforces auth.

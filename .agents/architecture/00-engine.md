@@ -1,34 +1,36 @@
-# Engine Architecture
+# Engine Architecture (open-sse/)
 
-`open-sse/` is Pod's local inference engine. It is part of the repo and must not be replaced with an npm dependency.
+## Purpose
 
-## Main Responsibilities
+Provider routing, format translation, request/response streaming, and caching. The engine lives in `open-sse/` and is the core that connects upstream LLM providers to the client.
 
-- Normalize incoming request shapes
-- Resolve provider, model, and credentials
-- Translate request and response formats
-- Apply cache, memory, fallback, and retry behavior
-- Stream results safely to clients
+## Key Areas
 
-## Main Areas
+| Area | Responsibility |
+|---|---|
+| `config/` | Provider definitions, model catalogs, runtime configuration |
+| `executors/` | Provider-specific HTTP clients (default, claude, gemini, openai, vertex, kiro, etc.) |
+| `handlers/` | Core chat handler with streaming and non-streaming paths |
+| `services/` | Model resolution, provider metadata, credential management |
+| `translator/` | Request/response format translation between OpenAI, Claude, Gemini, and others |
+| `utils/` | Stream processing, error handling, shared helpers |
 
-- `config/`: provider metadata, model catalogs, runtime defaults
-- `executors/`: upstream request executors
-- `handlers/`: orchestration entrypoints such as chat, embeddings, and responses
-- `services/`: provider resolution, token refresh, fallback, usage, combos
-- `translator/`: request and response shape conversion
-- `utils/`: streaming, proxy fetch, header handling, low-level helpers
+## Streaming Flow
 
-## Current Invariants
+```
+SSE from provider → TransformStream → translator pipeline → client
+```
 
-1. Keep streaming crash guards in place.
-2. Keep provider-specific retry rules explicit.
-3. Preserve combo fallback semantics.
-4. Preserve auth refresh and lockout behavior.
-5. Prefer safe degradation over hidden failure.
+Each response chunk passes through a TransformStream that applies format translation (e.g., Claude's streaming format to OpenAI-compatible chunks) before reaching the client.
 
-## Read Together With
+## Claude-to-OpenAI Thinking Fix
 
-- `01-app.md`
-- `02-providers.md`
-- `05-flow.md`
+Claude streaming uses `thinking_delta` events. The translator converts these to OpenAI-compatible `reasoning_content` deltas and strips `<think>`/`</think>` markers from the final content.
+
+## Invariants
+
+- **Crash guards**: `open-sse/utils/stream.js` and `open-sse/handlers/chatCore.js` each wrap their execution in try/catch to prevent a single provider failure from killing the process.
+- **Guarded peek-reader**: `open-sse/handlers/chatCore.js` uses a peek-reader pattern that safely inspects the first chunk without consuming the stream, protected by crash guard.
+- **SSE connection cap**: 100 concurrent SSE connections maximum.
+- **Idle timeout**: SSE connections idle for 5 minutes are terminated.
+- **Connection locking**: Model-level concurrency control via `modelLockCount_${model}` semantics, enforced with transactional writes.

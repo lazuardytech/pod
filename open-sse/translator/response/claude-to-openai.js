@@ -46,7 +46,7 @@ export function claudeToOpenAIResponse(chunk, state) {
       } else if (block?.type === "thinking") {
         state.inThinkingBlock = true;
         state.currentBlockIndex = chunk.index;
-        results.push(createChunk(state, { content: "<think>" }));
+        // No content delta emitted here — thinking text flows via reasoning_content below
       } else if (block?.type === "tool_use") {
         const toolCallIndex = state.toolCallIndex++;
         // Restore original tool name from mapping (Claude OAuth)
@@ -101,7 +101,7 @@ export function claudeToOpenAIResponse(chunk, state) {
         break;
       }
       if (state.inThinkingBlock && chunk.index === state.currentBlockIndex) {
-        results.push(createChunk(state, { content: "</think>" }));
+        // No content delta emitted — thinking end marker not needed in OpenAI format
         state.inThinkingBlock = false;
       }
       state.textBlockStarted = false;
