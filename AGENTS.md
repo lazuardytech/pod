@@ -74,6 +74,7 @@ Operational rules for AI agents working on the **Pod** project.
 6. Service worker lifecycle is registration-only; Pod does not auto-update itself.
 7. Offline reads use offlineJsonCache; offline writes use the mutation queue stack.
 8. Queue only safe, idempotent dashboard mutations.
+9. Git workflow: canary is the active development branch; main is the stable/release branch.
 
 ## Verification Before Push
 
