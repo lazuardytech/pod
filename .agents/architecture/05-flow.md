@@ -4,46 +4,63 @@
 
 ```
 Client POST /v1/chat/completions
-  → API route (rate limit, auth check)
-  → chat handler (model resolution, combo logic)
-  → open-sse engine (format translation, executor dispatch)
-  → upstream provider API
-  → streaming response via TransformStream
-  → client
+  -> API route (rate limit, auth, sanitizeError)
+  -> src/sse/ (model resolution, combo logic, connection cap)
+  -> open-sse engine (format translation -> executor dispatch -> upstream)
+  -> TransformStream (response translation)
+  -> client (OpenAI-compatible SSE chunks)
 ```
 
-1. **API route** (`/v1/chat/completions`): Applies rate limiting via `src/lib/rateLimit/` and auth via `requireApiKey`. Returns `sanitizeError` on failure.
+### Step by step
 
-2. **Chat handler** (`src/sse/handlers/chat.js`): Resolves the requested model against provider configuration, handles combo model logic (e.g., routing certain models to specific providers), and sets up the SSE connection with a 100-connection cap and 5-minute idle timeout.
+1. **API route**: Applies rate limiting via `src/lib/rateLimit/`, auth via `requireApiKey`. Returns `sanitizeError` on failure. Parses body via `parseJsonBody`.
 
-3. **Open-sse engine**: Applies format translation (request → provider-native format), dispatches to the correct executor, and pipes the streaming response through a TransformStream that translates the provider's native format back to the client's expected format.
+2. **SSE handler** (`src/sse/handlers/chat.js`): Resolves model against provider config. Handles combo logic (fallback chains, round-robin). Enforces 100-connection cap and 5-minute idle timeout. Manages `modelLockCount_${model}` concurrency.
+
+3. **open-sse engine**: Translates request to provider-native format. Dispatches to the correct executor. Pipes streaming response through TransformStream for format translation back to client format.
 
 4. **Client**: Receives OpenAI-compatible SSE chunks with `choices[].delta.content` and optionally `choices[].delta.reasoning_content`.
 
 ## Thinking Block Path
 
 ```
-Upstream provider (Claude)
-  → Claude thinking_delta events
-  → claude-to-openai translator
-  → reasoning_content delta
-  → client
+Claude upstream -> thinking_delta events -> claude-to-openai translator -> reasoning_content delta -> client
 ```
 
-When a provider (notably Claude) sends thinking blocks as streaming events, the translator converts `thinking_delta` into OpenAI-compatible `reasoning_content` fields in the delta, and strips `<think>`/`</think>` markers from the final content.
+The translator converts Claude's `thinking_delta` into OpenAI-compatible `reasoning_content` fields and strips `<thinking>`/`</thinking>` markers from content deltas.
 
 ## Non-Streaming
 
 ```
-Provider SSE → SSE-to-JSON converter → JSON response → client
+Client POST -> API route -> SSE handler -> engine -> provider SSE -> collect all chunks -> JSON response -> client
 ```
 
-Non-streaming requests internally use the streaming path (provider SSE), collect all chunks, and convert to a single JSON response.
+Non-streaming requests internally use the streaming path, collect all chunks, and return a single JSON response.
+
+## Combo Fallback
+
+```
+Primary model/provider -> failure -> check combo config -> fallback model/provider -> retry
+```
+
+Combos define model groups with fallback and round-robin strategies. When a provider fails, the handler follows the fallback chain within the same request.
 
 ## Failure Handling
 
-- **Early JSON error**: If the upstream returns an error before streaming begins, return a structured JSON error immediately.
-- **Sanitized error**: Raw upstream error bodies are never returned to the client. `sanitizeError()` strips internal details.
-- **Provider cooldown/lockout**: Rate limit or overload errors trigger a provider cooldown to prevent immediate retries.
-- **Safe stream degradation**: If streaming fails mid-response, the connection degrades gracefully rather than crashing.
-- **Route-specific retry**: Vercel relay retries once on `502`/`504`. Kiro retries are body-gated on transient overload markers. Other providers follow their own retry policies defined in executor config.
+| Failure type | Response |
+|-------------|----------|
+| Upstream error before streaming | Structured JSON error via `sanitizeError` |
+| Mid-stream failure | Graceful degradation (connection closes cleanly) |
+| Rate limit / overload | Provider cooldown with exponential backoff |
+| Auth failure | Early rejection before reaching provider |
+| Vercel relay 502/504 | Retry once (timeout = pod timeout - 5s) |
+| Kiro transient overload | Body-gated retry on overload markers |
+| Raw upstream error body | Never returned to client (leak prevention) |
+
+## Observability
+
+Request details are captured per-request and stored in SQLite:
+- Timestamps, latency, status codes
+- Provider, model, token counts
+- Configurable via `OBSERVABILITY_*` env vars
+- Batched writes for performance
