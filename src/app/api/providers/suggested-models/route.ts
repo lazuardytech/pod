@@ -23,7 +23,7 @@ export async function GET(request) {
     return NextResponse.json({ error: "Missing url or type" }, { status: 400 });
   }
 
-  const filter = FILTERS[type];
+  const filter = FILTERS[type as keyof typeof FILTERS];
   if (!filter) {
     return NextResponse.json({ error: "Unknown filter type" }, { status: 400 });
   }

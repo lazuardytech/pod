@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
       const redirectUri = searchParams.get("redirect_uri") || "http://localhost:8080/callback";
       // Collect provider-specific meta params (e.g. gitlab passes baseUrl, clientId, clientSecret)
       const reservedParams = new Set(["redirect_uri"]);
-      const meta = {};
+      const meta: Record<string, string> = {};
       searchParams.forEach((value, key) => {
         if (!reservedParams.has(key)) meta[key] = value;
       });

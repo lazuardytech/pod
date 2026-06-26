@@ -63,7 +63,7 @@ export async function PATCH(request, { params }) {
 
     // Preserve the type prefix so downstream `isOpenAICompatibleProvider()`
     // etc. continue to classify the node correctly.
-    const requiredPrefix = PREFIX_BY_TYPE[current.type];
+    const requiredPrefix = PREFIX_BY_TYPE[current.type as keyof typeof PREFIX_BY_TYPE];
     if (requiredPrefix && !newId.startsWith(requiredPrefix)) {
       return NextResponse.json({ error: `Identifier must start with "${requiredPrefix}"` }, { status: 400 });
     }

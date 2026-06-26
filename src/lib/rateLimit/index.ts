@@ -252,7 +252,9 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
       return rateLimitResponse(concResult.type || "concurrent", 1);
     }
 
-    let release: (() => void | Promise<void>) | null = concResult.release ? () => void (concResult.release as () => void)() : null;
+    let release: (() => void | Promise<void>) | null = concResult.release
+      ? () => void (concResult.release as () => void)()
+      : null;
     try {
       const response = await handler();
       const finalResponse = finalizeResponse(response, release);

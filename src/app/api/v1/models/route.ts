@@ -40,7 +40,7 @@ const MODEL_TYPE_TO_KIND = {
 
 function modelKind(model) {
   if (!model?.type) return LLM_KIND;
-  return MODEL_TYPE_TO_KIND[model.type] || LLM_KIND;
+  return MODEL_TYPE_TO_KIND[model.type as keyof typeof MODEL_TYPE_TO_KIND] || LLM_KIND;
 }
 
 // For dynamic/unknown model IDs (compatible providers, alias map, custom models)
@@ -226,7 +226,7 @@ export async function buildModelsList(kindFilter) {
 
       const staticAlias = PROVIDER_ID_TO_ALIAS[providerId] || providerId;
       const outputAlias = (conn?.providerSpecificData?.prefix || getProviderAlias(providerId) || staticAlias).trim();
-      const providerModels = PROVIDER_MODELS[staticAlias] || [];
+      const providerModels = PROVIDER_MODELS[staticAlias as keyof typeof PROVIDER_MODELS] || [];
       const enabledModels = conn?.providerSpecificData?.enabledModels;
       const hasExplicitEnabledModels = Array.isArray(enabledModels) && enabledModels.length > 0;
       const isCompatibleProvider = isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);

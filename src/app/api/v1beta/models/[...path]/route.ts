@@ -232,7 +232,7 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse, model) {
         };
 
         if (choice.finish_reason) {
-          candidate.finishReason = FINISH_REASON_MAP[choice.finish_reason] || "STOP";
+          candidate.finishReason = FINISH_REASON_MAP[choice.finish_reason as keyof typeof FINISH_REASON_MAP] || "STOP";
         }
 
         const geminiChunk: Record<string, unknown> = { candidates: [candidate] };
@@ -308,7 +308,7 @@ async function convertOpenAIResponseToGemini(response, model) {
   }
   parts.push({ text: message.content || "" });
 
-  const finishReason = FINISH_REASON_MAP[finish_reason] || "STOP";
+  const finishReason = FINISH_REASON_MAP[finish_reason as keyof typeof FINISH_REASON_MAP] || "STOP";
 
   const geminiResponse: Record<string, unknown> = {
     candidates: [

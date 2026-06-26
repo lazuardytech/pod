@@ -20,7 +20,7 @@ export async function GET() {
   try {
     const settings = await getSettings();
     const config: Record<string, unknown> = {};
-    for (const key of ALLOWED_KEYS) config[key] = settings[key] ?? DEFAULTS[key];
+    for (const key of ALLOWED_KEYS) config[key] = settings[key as keyof typeof DEFAULTS] ?? DEFAULTS[key as keyof typeof DEFAULTS];
     return NextResponse.json(config);
   } catch (error) {
     return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });

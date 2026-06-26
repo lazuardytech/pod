@@ -55,7 +55,7 @@ export async function GET(request, { params }) {
     }
 
     const { kind } = await params;
-    const kindFilter = KIND_SLUG_MAP[kind];
+    const kindFilter = KIND_SLUG_MAP[kind as keyof typeof KIND_SLUG_MAP];
 
     if (!kindFilter) {
       return Response.json(

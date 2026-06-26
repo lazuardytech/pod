@@ -26,7 +26,7 @@ export async function GET(request) {
     const voices = await fetchElevenLabsVoices(asString(apiKey));
 
     // Group by all supported languages (verified_languages + labels.language)
-    const byLang = {};
+    const byLang: Record<string, { code: string; name: string; voices: { id: string; name: string; gender: string; lang: string; free_users_allowed?: boolean }[] }> = {};
     const addToLang = (code, voice) => {
       if (!byLang[code]) {
         byLang[code] = {

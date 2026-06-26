@@ -252,7 +252,7 @@ function isTokenExpired(connection) {
 }
 
 async function testOAuthConnection(connection, effectiveProxy: any = null) {
-  const config = OAUTH_TEST_CONFIG[connection.provider];
+  const config = OAUTH_TEST_CONFIG[connection.provider as keyof typeof OAUTH_TEST_CONFIG];
   if (!config) return { valid: false, error: "Provider test not supported", refreshed: false };
   if (!connection.accessToken) return { valid: false, error: "No access token", refreshed: false };
 
@@ -537,7 +537,7 @@ async function testApiKeyConnection(connection, effectiveProxy: any = null) {
           "minimax-cn": "https://api.minimaxi.com/anthropic/v1/messages",
         };
         const res = await fetchWithConnectionProxy(
-          endpoints[connection.provider],
+          endpoints[connection.provider as keyof typeof endpoints],
           {
             method: "POST",
             headers: {

@@ -17,8 +17,8 @@ const isUsageEligible = (conn) =>
 
 async function buildProviderLimitsSnapshot(request) {
   const connections = await getProviderConnections();
-  const quotaData = {};
-  const errors = {};
+  const quotaData: Record<string, { quotas: unknown[]; plan?: unknown; message?: string; raw?: unknown }> = {};
+  const errors: Record<string, string> = {};
   const usageUrlBase = new URL(request.url);
   const cookie = request.headers.get("cookie");
   const auth = request.headers.get("authorization");

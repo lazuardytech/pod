@@ -172,7 +172,7 @@ export async function buildHealthPayload() {
 
   // — Provider breakdown by status —
   const now = Date.now();
-  const byStatus = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
+    const byStatus: Record<string, number> = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
   const byProvider: Record<string, { total: number; active: number; error: number; rateLimited: number }> = {};
 
   for (const c of conns) {
@@ -188,7 +188,7 @@ export async function buildHealthPayload() {
     else if (c.testStatus === "active") status = "active";
     else status = "untested";
 
-    byStatus[status] = (byStatus[status] || 0) + 1;
+    byStatus[status] = (byStatus[status] ?? 0) + 1;
 
     const pKey = c.provider;
     if (!byProvider[pKey]) byProvider[pKey] = { total: 0, active: 0, error: 0, rateLimited: 0 };
@@ -378,7 +378,7 @@ export async function buildHealthPayload() {
     }
   }
 
-  const rateLimitByProvider = {};
+  const rateLimitByProvider: Record<string, { provider: string; providerName: string; rateLimitedCount: number; connections: { connectionId: string; connectionName: string; rateLimitedUntil: string; retryAfterMs: number }[] }> = {};
   for (const c of conns) {
     const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     if (!isRateLimited) continue;
