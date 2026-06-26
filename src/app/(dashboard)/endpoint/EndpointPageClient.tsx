@@ -192,7 +192,9 @@ export default function APIPageClient({ machineId }) {
     tunnelEnabled || tsEnabled || tunnelLoading || tsLoading || tunnelChecking || tsConnecting;
 
   useEffect(() => {
-    if (!shouldPollTunnelStatus) return;
+    if (!shouldPollTunnelStatus) {
+      return undefined;
+    }
 
     let closed = false;
     let reconnectTimer = null;

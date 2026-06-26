@@ -17,6 +17,19 @@ export default function ShadcnSelect({
   contentClassName,
   itemClassName,
   name,
+}: {
+  value?: any;
+  onValueChange?: any;
+  options?: any[];
+  placeholder?: any;
+  ariaLabel?: any;
+  disabled?: boolean;
+  className?: any;
+  triggerClassName?: any;
+  contentClassName?: any;
+  itemClassName?: any;
+  name?: any;
+  [key: string]: any;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -24,7 +37,9 @@ export default function ShadcnSelect({
   const selectedOption = useMemo(() => options.find((option) => option.value === value) || null, [options, value]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return undefined;
+    }
 
     const handlePointerDown = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {

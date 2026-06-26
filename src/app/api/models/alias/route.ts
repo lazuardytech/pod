@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteModelAlias, getModelAliases, setModelAlias } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { asString } from "@/app/api/_types";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Model and alias required" }, { status: 400 });
     }
 
-    await setModelAlias(alias, model);
+    await setModelAlias(asString(alias), asString(model));
 
     return NextResponse.json({ success: true, model, alias });
   } catch (error) {

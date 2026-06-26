@@ -30,11 +30,11 @@ export async function POST(request) {
     }
 
     // Default password is '123456' if not set
-    const storedHash = settings.password;
+    const storedHash = settings.password as string | undefined;
 
     let isValid = false;
     if (storedHash) {
-      isValid = await bcrypt.compare(password, storedHash);
+      isValid = await bcrypt.compare(password, storedHash as string);
     } else {
       const initialPassword = process.env.INITIAL_PASSWORD;
       if (!initialPassword) {

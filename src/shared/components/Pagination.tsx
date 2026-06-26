@@ -3,7 +3,15 @@ import React from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function Pagination({ currentPage, pageSize, totalItems, onPageChange, onPageSizeChange, className }) {
+export default function Pagination({ currentPage, pageSize, totalItems, onPageChange, onPageSizeChange, className, ...rest }: {
+  currentPage?: any;
+  pageSize?: any;
+  totalItems?: any;
+  onPageChange?: any;
+  onPageSizeChange?: any;
+  className?: any;
+  [key: string]: any;
+}) {
   const totalPages = Math.ceil(totalItems / pageSize);
   const startItem = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endItem = Math.min(currentPage * pageSize, totalItems);
@@ -21,7 +29,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3", className)}>
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3", className)} {...rest}>
       {/* Info */}
       {totalItems > 0 && (
         <p className="text-[12px] text-fog-grey tracking-[-0.1px]">

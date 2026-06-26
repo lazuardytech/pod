@@ -8,7 +8,14 @@ import Input from "@/shared/components/Input";
 import Modal from "@/shared/components/Modal";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 
-export default function EditConnectionModal({ isOpen, connection, proxyPools, onSave, onClose }) {
+export default function EditConnectionModal({ isOpen, connection, proxyPools, onSave, onClose }: {
+  isOpen?: any;
+  connection?: any;
+  proxyPools?: any;
+  onSave?: any;
+  onClose?: any;
+  [key: string]: any;
+}) {
   const [formData, setFormData] = useState({
     name: "",
     priority: 1,
@@ -101,7 +108,7 @@ export default function EditConnectionModal({ isOpen, connection, proxyPools, on
     if (!connection) return;
     setSaving(true);
     try {
-      const updates = {
+      const updates: Record<string, any> = {
         name: formData.name,
         priority: formData.priority,
       };

@@ -3,7 +3,7 @@ import React from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export function Spinner({ size = "md", className }) {
+export function Spinner({ size = "md", className, ...rest }: { size?: string; className?: any; [key: string]: any }) {
   const sizes = {
     sm: "text-[16px]",
     md: "text-[20px]",
@@ -16,7 +16,7 @@ export function Spinner({ size = "md", className }) {
   );
 }
 
-export function PageLoading({ message = "Loading..." }) {
+export function PageLoading({ message = "Loading..." }: { message?: any; [key: string]: any }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-pitch-black">
       <Spinner size="xl" />
@@ -25,7 +25,7 @@ export function PageLoading({ message = "Loading..." }) {
   );
 }
 
-export function Skeleton({ className, ...props }) {
+export function Skeleton({ className, ...props }: { className?: any; [key: string]: any }) {
   return <div className={cn("animate-pulse rounded-[6px] bg-deep-slate", className)} {...props} />;
 }
 
@@ -42,7 +42,7 @@ export function CardSkeleton() {
   );
 }
 
-export default function Loading({ type = "spinner", ...props }) {
+export default function Loading({ type = "spinner", ...props }: { type?: string; [key: string]: any }) {
   switch (type) {
     case "page":
       return <PageLoading {...props} />;

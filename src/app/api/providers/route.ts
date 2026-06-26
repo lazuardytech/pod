@@ -78,8 +78,9 @@ export async function GET() {
         isOpenAICompatibleProvider(c.provider) ||
         isAnthropicCompatibleProvider(c.provider) ||
         isCustomEmbeddingProvider(c.provider);
+      const psd = (c.providerSpecificData ?? {}) as Record<string, unknown>;
       const providerName = isCompatible
-        ? nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider
+        ? nodeNameMap[c.provider] || psd.nodeName || c.provider
         : AI_PROVIDERS[c.provider]?.name || c.provider;
       return {
         ...c,

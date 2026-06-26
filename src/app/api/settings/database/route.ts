@@ -18,7 +18,7 @@ export async function POST(request) {
   try {
     const [payload, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    await importDb(payload);
+    await importDb(payload as Record<string, unknown>);
 
     // Ensure proxy settings take effect immediately after a DB import.
     try {

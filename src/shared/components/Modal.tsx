@@ -15,6 +15,17 @@ export default function Modal({
   closeOnOverlay = true,
   showCloseButton = true,
   className,
+}: {
+  isOpen?: any;
+  onClose?: any;
+  title?: any;
+  children?: any;
+  footer?: any;
+  size?: string;
+  closeOnOverlay?: boolean;
+  showCloseButton?: boolean;
+  className?: any;
+  [key: string]: any;
 }) {
   const sizes = {
     sm: "max-w-sm",
@@ -103,6 +114,17 @@ export function ConfirmModal({
   cancelText = "Cancel",
   variant = "danger",
   loading = false,
+}: {
+  isOpen?: any;
+  onClose?: any;
+  onConfirm?: any;
+  title?: any;
+  message?: any;
+  confirmText?: any;
+  cancelText?: any;
+  variant?: string;
+  loading?: boolean;
+  [key: string]: any;
 }) {
   return (
     <Modal

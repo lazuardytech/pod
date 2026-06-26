@@ -397,7 +397,9 @@ export default function ProviderLimits() {
 
   // Live updates via SSE stream (replaces polling interval)
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh) {
+      return undefined;
+    }
 
     let closed = false;
     let reconnectTimer = null;
@@ -441,7 +443,7 @@ export default function ProviderLimits() {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
       }
-      return;
+      return undefined;
     }
 
     countdownRef.current = setInterval(() => {

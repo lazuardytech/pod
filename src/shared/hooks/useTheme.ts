@@ -28,7 +28,7 @@ export function useTheme(): {
   toggleTheme: () => void;
   isDark: boolean;
 } {
-  const { theme, setTheme, toggleTheme, initTheme } = useThemeStore();
+  const { theme, setTheme: storeSetTheme, toggleTheme, initTheme } = useThemeStore();
 
   // Use useSyncExternalStore to safely subscribe to system theme
   const systemPrefersDark = useSyncExternalStore(subscribeToSystemTheme, getSystemThemeSnapshot, getServerSnapshot);
@@ -39,7 +39,9 @@ export function useTheme(): {
 
   // Listen for system theme changes when theme is "system"
   useEffect(() => {
-    if (theme !== "system") return;
+    if (theme !== "system") {
+      return undefined;
+    }
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => initTheme();
@@ -50,6 +52,8 @@ export function useTheme(): {
 
   // Compute isDark from current state (no effect needed)
   const isDark = theme === "dark" || (theme === "system" && systemPrefersDark);
+
+  const setTheme = (t: string) => storeSetTheme(t as "dark" | "light" | "system");
 
   return {
     theme,

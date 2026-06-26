@@ -3,7 +3,15 @@ import React from "react";
 import PropTypes from "prop-types";
 import { useState } from "react";
 
-export default function ProviderIcon({ src, alt, size = 32, className = "", fallbackText = "?", fallbackColor }) {
+export default function ProviderIcon({ src, alt, size = 32, className = "", fallbackText = "?", fallbackColor, ...rest }: {
+  src?: any;
+  alt?: any;
+  size?: number;
+  className?: any;
+  fallbackText?: any;
+  fallbackColor?: any;
+  [key: string]: any;
+}) {
   const [errored, setErrored] = useState(false);
 
   if (!src || errored) {

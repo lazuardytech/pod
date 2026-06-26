@@ -29,10 +29,19 @@ const dotColors = {
   violet: "bg-amethyst",
 };
 
-export default function Badge({ children, variant = "default", size = "md", dot = false, icon, className }) {
+export default function Badge({ children, variant = "default", size = "md", dot = false, icon, className, ...rest }: {
+  children?: any;
+  variant?: string;
+  size?: string;
+  dot?: boolean;
+  icon?: any;
+  className?: any;
+  [key: string]: any;
+}) {
   return (
     <span
       className={cn("inline-flex items-center font-[400] rounded-[4px]", variants[variant], sizes[size], className)}
+      {...rest}
     >
       {dot && <span className={cn("size-1.5 rounded-full shrink-0", dotColors[variant])} />}
       {icon && <LucideIcon name={icon} className="text-[12px]" />}

@@ -11,7 +11,16 @@ import LucideIcon from "@/shared/components/LucideIcon";
  * - Localhost: Auto callback via popup message
  * - Remote: Manual paste callback URL
  */
-export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, onClose, oauthMeta, idcConfig }) {
+export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, onClose, oauthMeta, idcConfig }: {
+  isOpen?: any;
+  provider?: any;
+  providerInfo?: any;
+  onSuccess?: any;
+  onClose?: any;
+  oauthMeta?: any;
+  idcConfig?: any;
+  [key: string]: any;
+}) {
   const [step, setStep] = useState("waiting"); // waiting | input | success | error
   const [authData, setAuthData] = useState(null);
   const [callbackUrl, setCallbackUrl] = useState("");
@@ -190,7 +199,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
       authorizeUrl.searchParams.set("redirect_uri", redirectUri);
       if (oauthMeta) {
         Object.entries(oauthMeta).forEach(([k, v]) => {
-          if (v) authorizeUrl.searchParams.set(k, v);
+          if (v) authorizeUrl.searchParams.set(k, String(v));
         });
       }
       const res = await fetch(authorizeUrl.toString());
@@ -265,8 +274,9 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
 
   // Codex server-side mode: poll status (proxy auto-exchanges + saves DB)
   useEffect(() => {
-    if (!authData?.codexServerSide || !authData?.state) return;
-    if (callbackProcessedRef.current) return;
+    if (!authData?.codexServerSide || !authData?.state || callbackProcessedRef.current) {
+      return undefined;
+    }
     let cancelled = false;
     const POLL_INTERVAL_MS = 1500;
     const MAX_ATTEMPTS = 200; // ~5 minutes
@@ -310,7 +320,9 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
 
   // Listen for OAuth callback via multiple methods
   useEffect(() => {
-    if (!authData) return;
+    if (!authData) {
+      return undefined;
+    }
     callbackProcessedRef.current = false; // Reset when authData changes
 
     // Handler for callback data - only process once

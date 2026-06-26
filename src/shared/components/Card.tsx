@@ -15,6 +15,18 @@ export default function Card({
   nested = false,
   className,
   ...props
+}: {
+  children?: any;
+  title?: any;
+  subtitle?: any;
+  icon?: any;
+  action?: any;
+  padding?: string;
+  hover?: boolean;
+  elev?: boolean;
+  nested?: boolean;
+  className?: any;
+  [key: string]: any;
 }) {
   const paddings = {
     none: "",
@@ -64,7 +76,7 @@ export default function Card({
   );
 }
 
-Card.Section = function CardSection({ children, className, ...props }) {
+Card.Section = function CardSection({ children, className, ...props }: { children?: any; className?: any; [key: string]: any }) {
   return (
     <div className={cn("p-3 rounded-[6px] bg-pitch-black border border-charcoal-grey", className)} {...props}>
       {children}
@@ -72,7 +84,7 @@ Card.Section = function CardSection({ children, className, ...props }) {
   );
 };
 
-Card.Row = function CardRow({ children, className, ...props }) {
+Card.Row = function CardRow({ children, className, ...props }: { children?: any; className?: any; [key: string]: any }) {
   return (
     <div
       className={cn(
@@ -88,7 +100,7 @@ Card.Row = function CardRow({ children, className, ...props }) {
   );
 };
 
-Card.ListItem = function CardListItem({ children, actions, className, ...props }) {
+Card.ListItem = function CardListItem({ children, actions, className, ...props }: { children?: any; actions?: any; className?: any; [key: string]: any }) {
   return (
     <div
       className={cn(

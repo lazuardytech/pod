@@ -18,7 +18,7 @@ const fmtTokens = (n) => {
 
 // ─── Badges ───────────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }) {
+function StatusBadge({ status }: { status?: any; [key: string]: any }) {
   if (!status) return null;
   const isPending = status.includes("PENDING");
   const isFailed = status.includes("FAILED");
@@ -38,7 +38,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function ProviderBadge({ provider }) {
+function ProviderBadge({ provider }: { provider?: any; [key: string]: any }) {
   if (!provider || provider === "-") return <span className="text-fog-grey">—</span>;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-deep-slate border border-charcoal-grey text-[10px] font-[590] text-storm-cloud uppercase">
@@ -47,7 +47,7 @@ function ProviderBadge({ provider }) {
   );
 }
 
-function ComboBadge({ combo }) {
+function ComboBadge({ combo }: { combo?: any; [key: string]: any }) {
   if (!combo) return <span className="text-fog-grey/40">—</span>;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-amethyst/10 border border-amethyst/20 text-[10px] text-amethyst">
@@ -67,6 +67,16 @@ export default function RequestLogger({
   filterProvider,
   setFilterProvider,
   onProvidersChange,
+}: {
+  sortBy?: any;
+  setSortBy?: any;
+  recording?: any;
+  setRecording?: any;
+  refreshRef?: any;
+  filterProvider?: any;
+  setFilterProvider?: any;
+  onProvidersChange?: any;
+  [key: string]: any;
 }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);

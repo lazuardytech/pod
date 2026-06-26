@@ -80,10 +80,10 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
       injectComboSystemPrompt(body, comboInfo.systemPrompt);
       log.info("CHAT", `Combo "${modelStr}" injecting system prompt (${comboInfo.systemPrompt.length} chars)`);
     }
-    const comboStrategies = settings.comboStrategies || {};
-    const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy;
-    const comboStrategy = comboSpecificStrategy || settings.comboStrategy || "fallback";
-    const comboStickyLimit = settings.comboStickyRoundRobinLimit;
+    const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+    const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy as string | undefined;
+    const comboStrategy = comboSpecificStrategy || (settings.comboStrategy as string) || "fallback";
+    const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "CHAT",
       `Combo "${modelStr}" with ${comboInfo.models.length} models (strategy: ${comboStrategy}, sticky: ${comboStickyLimit})`,
@@ -132,10 +132,10 @@ async function handleSingleModelChat(
         injectComboSystemPrompt(body, comboInfo.systemPrompt);
         log.info("CHAT", `Combo "${modelStr}" injecting system prompt (${comboInfo.systemPrompt.length} chars)`);
       }
-      const comboStrategies = chatSettings.comboStrategies || {};
-      const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy;
-      const comboStrategy = comboSpecificStrategy || chatSettings.comboStrategy || "fallback";
-      const comboStickyLimit = chatSettings.comboStickyRoundRobinLimit;
+      const comboStrategies = (chatSettings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+      const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy as string | undefined;
+      const comboStrategy = comboSpecificStrategy || (chatSettings.comboStrategy as string) || "fallback";
+      const comboStickyLimit = chatSettings.comboStickyRoundRobinLimit as number | undefined;
       log.info(
         "CHAT",
         `Combo "${modelStr}" with ${comboInfo.models.length} models (strategy: ${comboStrategy}, sticky: ${comboStickyLimit})`,

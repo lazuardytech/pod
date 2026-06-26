@@ -40,6 +40,17 @@ export default function Button({
   fullWidth = false,
   className,
   ...props
+}: {
+  children?: any;
+  variant?: string;
+  size?: string;
+  icon?: any;
+  iconRight?: any;
+  disabled?: boolean;
+  loading?: boolean;
+  fullWidth?: boolean;
+  className?: any;
+  [key: string]: any;
 }) {
   const iconSize = iconSizes[size] ?? iconSizes.md;
 

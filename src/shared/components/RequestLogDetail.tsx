@@ -6,7 +6,7 @@ import Badge from "./Badge";
 import { DetailRow, DetailSection, JsonBlock, LogDrawer, LogDrawerBody, LogDrawerHeader } from "./LogDrawer";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function PayloadSection({ title, icon, data }) {
+function PayloadSection({ title, icon, data }: { title?: any; icon?: any; data?: any; [key: string]: any }) {
   if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
   return (
     <DetailSection title={title} icon={icon}>
@@ -15,7 +15,7 @@ function PayloadSection({ title, icon, data }) {
   );
 }
 
-function TokenPill({ label, value, color }) {
+function TokenPill({ label, value, color }: { label?: any; value?: any; color?: any; [key: string]: any }) {
   if (value == null) return null;
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[10px] font-[590]", color)}>
@@ -33,7 +33,13 @@ function TokenPill({ label, value, color }) {
  *   loading — boolean, true while fetching detail
  *   onClose — callback
  */
-export default function RequestLogDetail({ log, detail, loading, onClose }) {
+export default function RequestLogDetail({ log, detail, loading, onClose }: {
+  log?: any;
+  detail?: any;
+  loading?: any;
+  onClose?: any;
+  [key: string]: any;
+}) {
   // Close on Escape
   useEffect(() => {
     const handler = (e) => {

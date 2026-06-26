@@ -209,25 +209,26 @@ async function calculateCost(
     const pricing = await getPricingForModel(provider, model);
     if (!pricing) return 0;
 
+    const price = pricing as Record<string, number>;
     let cost = 0;
     const inputTokens = tokens.prompt_tokens || tokens.input_tokens || 0;
     const cachedTokens = tokens.cached_tokens || tokens.cache_read_input_tokens || 0;
     const nonCachedInput = Math.max(0, inputTokens - cachedTokens);
-    cost += nonCachedInput * (pricing.input / 1000000);
+    cost += nonCachedInput * ((price.input ?? 0) / 1000000);
     if (cachedTokens > 0) {
-      const rate = pricing.cached || pricing.input;
+      const rate = price.cached ?? price.input ?? 0;
       cost += cachedTokens * (rate / 1000000);
     }
     const outputTokens = tokens.completion_tokens || tokens.output_tokens || 0;
-    cost += outputTokens * (pricing.output / 1000000);
+    cost += outputTokens * ((price.output ?? 0) / 1000000);
     const reasoningTokens = tokens.reasoning_tokens || 0;
     if (reasoningTokens > 0) {
-      const rate = pricing.reasoning || pricing.output;
+      const rate = price.reasoning ?? price.output ?? 0;
       cost += reasoningTokens * (rate / 1000000);
     }
     const cacheCreationTokens = tokens.cache_creation_input_tokens || 0;
     if (cacheCreationTokens > 0) {
-      const rate = pricing.cache_creation || pricing.input;
+      const rate = price.cache_creation ?? price.input ?? 0;
       cost += cacheCreationTokens * (rate / 1000000);
     }
     return cost;
@@ -385,9 +386,9 @@ async function getConnectionName(connectionId: string | undefined): Promise<stri
     const { getProviderConnections } = await import("@/lib/localDb");
     const list = await getProviderConnections();
     for (const c of list) {
-      connectionNameCache.set(c.id, c.name || c.email || c.id?.slice(0, 8));
+      connectionNameCache.set(c.id, (c.name as string) || (c.email as string) || String(c.id).slice(0, 8));
     }
-    return connectionNameCache.get(connectionId) || connectionId.slice(0, 8);
+    return connectionNameCache.get(connectionId) || String(connectionId).slice(0, 8);
   } catch {
     return connectionId.slice(0, 8);
   }
@@ -756,7 +757,7 @@ export async function getActiveRequests(): Promise<ActiveRequestsResult> {
   try {
     const { getProviderConnections } = await import("@/lib/localDb");
     for (const c of await getProviderConnections()) {
-      connectionMap[c.id] = c.name || c.email || c.id;
+      connectionMap[c.id] = (c.name as string) || (c.email as string) || String(c.id);
     }
   } catch {}
 

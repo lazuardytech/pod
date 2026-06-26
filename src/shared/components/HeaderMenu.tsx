@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/shared/hooks/useTheme";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function MenuItem({ icon, label, onClick, danger }) {
+function MenuItem({ icon, label, onClick, danger }: { icon?: any; label?: any; onClick?: any; danger?: any; [key: string]: any }) {
   return (
     <button
       onClick={onClick}
@@ -26,7 +26,7 @@ MenuItem.propTypes = {
   danger: PropTypes.bool,
 };
 
-export default function HeaderMenu({ onLogout }) {
+export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const { isDark, toggleTheme } = useTheme();
@@ -41,6 +41,7 @@ export default function HeaderMenu({ onLogout }) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
+    return undefined;
   }, [isOpen]);
 
   const close = () => setIsOpen(false);

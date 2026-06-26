@@ -7,7 +7,7 @@ import { cn } from "@/shared/utils/cn";
 import Header from "../Header";
 import Sidebar from "../Sidebar";
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children }: { children?: any; [key: string]: any }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();

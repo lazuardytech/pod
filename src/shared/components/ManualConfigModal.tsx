@@ -6,7 +6,13 @@ import Button from "./Button";
 import Modal from "./Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function ManualConfigModal({ isOpen, onClose, title = "Manual Configuration", configs = [] }) {
+export default function ManualConfigModal({ isOpen, onClose, title = "Manual Configuration", configs = [] }: {
+  isOpen?: any;
+  onClose?: any;
+  title?: any;
+  configs?: any[];
+  [key: string]: any;
+}) {
   const { copy } = useCopyToClipboard();
   const [copiedIndex, setCopiedIndex] = useState(null);
 

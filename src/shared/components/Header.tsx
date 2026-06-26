@@ -136,7 +136,7 @@ const getPageInfo = (pathname) => {
   return { title: "", description: "", breadcrumbs: [] };
 };
 
-export default function Header({ onMenuClick, showMenuButton = true, sidebarCollapsed, onToggleSidebar }) {
+export default function Header({ onMenuClick, showMenuButton = true, sidebarCollapsed, onToggleSidebar }: { onMenuClick?: any; showMenuButton?: boolean; sidebarCollapsed?: any; onToggleSidebar?: any; [key: string]: any }) {
   const pathname = usePathname();
   const router = useRouter();
   const pageInfo = useMemo(() => getPageInfo(pathname), [pathname]);

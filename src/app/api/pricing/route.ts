@@ -64,7 +64,7 @@ export async function PATCH(request) {
       }
     }
 
-    const updatedPricing = await updatePricing(body);
+    const updatedPricing = await updatePricing(body as Record<string, Record<string, unknown>>);
     return NextResponse.json(updatedPricing);
   } catch (error) {
     console.error("Error updating pricing:", sanitizeError(error));

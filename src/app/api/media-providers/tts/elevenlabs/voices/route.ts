@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchElevenLabsVoices } from "open-sse/handlers/ttsCore.js";
 import { getProviderConnections } from "@/lib/localDb";
+import { asString } from "@/app/api/_types";
 
 import { sanitizeError } from "@/lib/sanitizeError";
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
@@ -22,7 +23,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "No ElevenLabs connection found" }, { status: 400 });
     }
 
-    const voices = await fetchElevenLabsVoices(apiKey);
+    const voices = await fetchElevenLabsVoices(asString(apiKey));
 
     // Group by all supported languages (verified_languages + labels.language)
     const byLang = {};

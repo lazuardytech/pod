@@ -115,7 +115,9 @@ function ConnectionRow({
   }, [modelLockUntil]);
 
   useEffect(() => {
-    if (!showProxyDropdown) return;
+    if (!showProxyDropdown) {
+      return undefined;
+    }
     const handler = (e) => {
       if (proxyDropdownRef.current && !proxyDropdownRef.current.contains(e.target)) setShowProxyDropdown(false);
     };

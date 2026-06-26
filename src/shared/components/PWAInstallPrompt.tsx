@@ -9,7 +9,7 @@ const DISMISS_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
 
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  return window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
 }
 
 function isIOS() {
@@ -43,8 +43,9 @@ export default function PWAInstallPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") return;
-    if (isStandaloneMode() || wasDismissedRecently()) return;
+    if (process.env.NODE_ENV !== "production" || isStandaloneMode() || wasDismissedRecently()) {
+      return undefined;
+    }
 
     const iOSHintEligible = isIOS();
     if (iOSHintEligible) {

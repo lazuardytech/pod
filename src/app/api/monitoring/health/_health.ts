@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
-import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings } from "@/lib/localDb";
+import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings, type Settings } from "@/lib/localDb";
 import { getPromptCache } from "@/lib/cacheLayer";
 import { getMemoryStoreStats } from "@/lib/memory/store";
 import { getCacheStats, getInFlightStats } from "@/lib/semanticCache";
@@ -148,7 +148,7 @@ export async function buildHealthPayload() {
   const conns = connections.status === "fulfilled" ? connections.value : [];
   const comboList = combos.status === "fulfilled" ? combos.value : [];
   const keys = apiKeys.status === "fulfilled" ? apiKeys.value : [];
-  const cfg = settings.status === "fulfilled" ? settings.value : {};
+  const cfg: Settings = settings.status === "fulfilled" ? settings.value : ({} as Settings);
   const nodeMap = new Map<string, Record<string, unknown>>(
     (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [n.id, n as Record<string, unknown>]),
   );
@@ -166,9 +166,9 @@ export async function buildHealthPayload() {
   const byProvider: Record<string, { total: number; active: number; error: number; rateLimited: number }> = {};
 
   for (const c of conns) {
-    const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
+    const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     const hasModelLocks = Object.keys(c).some(
-      (k) => k.startsWith("modelLock_") && c[k] && new Date(c[k]).getTime() > now,
+      (k) => k.startsWith("modelLock_") && c[k] && new Date(String(c[k])).getTime() > now,
     );
 
     let status;
@@ -328,8 +328,8 @@ export async function buildHealthPayload() {
   // — Provider health (existing circuit-breaker section) —
   const providerHealthMap: Record<string, Record<string, unknown>> = {};
   for (const c of conns) {
-    const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
-    const retryAfterMs = isRateLimited ? new Date(c.rateLimitedUntil).getTime() - now : 0;
+    const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
+    const retryAfterMs = isRateLimited ? new Date(String(c.rateLimitedUntil)).getTime() - now : 0;
     let state = "CLOSED";
     if (isRateLimited) state = "OPEN";
     else if (c.testStatus === "error") state = "HALF_OPEN";
@@ -361,16 +361,16 @@ export async function buildHealthPayload() {
     };
     entry.connectionCount += 1;
     const stateRank: Record<string, number> = { OPEN: 2, HALF_OPEN: 1, CLOSED: 0 };
-    if (stateRank[state] > stateRank[entry.state as string]) {
+    if (stateRank[state] > (stateRank[entry.state] ?? 0)) {
       entry.state = state;
       entry.retryAfterMs = retryAfterMs;
-      entry.rateLimitedUntil = c.rateLimitedUntil || null;
+      entry.rateLimitedUntil = (c.rateLimitedUntil as string) || null;
     }
   }
 
   const rateLimitByProvider = {};
   for (const c of conns) {
-    const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
+    const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     if (!isRateLimited) continue;
     const key = c.provider;
     if (!rateLimitByProvider[key]) {
@@ -387,7 +387,7 @@ export async function buildHealthPayload() {
       connectionId: c.id,
       connectionName: c.name || c.provider,
       rateLimitedUntil: c.rateLimitedUntil,
-      retryAfterMs: new Date(c.rateLimitedUntil).getTime() - now,
+      retryAfterMs: new Date(String(c.rateLimitedUntil)).getTime() - now,
     });
   }
 
@@ -399,7 +399,7 @@ export async function buildHealthPayload() {
   // — Connection-level lockout status —
   const lockedAccounts = [];
   for (const c of conns) {
-    const lockUntil = c[CONN_LOCK_UNTIL_KEY];
+    const lockUntil = c[CONN_LOCK_UNTIL_KEY] as string | null;
     if (!lockUntil) continue;
     const expiry = new Date(lockUntil).getTime();
     if (expiry <= now) continue;

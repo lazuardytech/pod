@@ -40,9 +40,9 @@ export async function handleImageGeneration(request: Request): Promise<Response>
   if (!body.prompt) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: prompt");
   const comboModels = await getComboModels(modelStr);
   if (comboModels) {
-    const comboStrategies = settings.comboStrategies || {};
-    const comboStrategy = comboStrategies[modelStr]?.fallbackStrategy || settings.comboStrategy || "fallback";
-    const comboStickyLimit = settings.comboStickyRoundRobinLimit;
+    const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+    const comboStrategy = (comboStrategies[modelStr]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
+    const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "IMAGE",
       `Combo "${modelStr}" with ${comboModels.length} models (strategy: ${comboStrategy}, sticky: ${comboStickyLimit})`,

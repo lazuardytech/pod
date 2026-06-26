@@ -2,7 +2,14 @@
 import React from "react";
 import { cn } from "@/shared/utils/cn";
 
-export default function Avatar({ src, alt = "Avatar", name, size = "md", className }) {
+export default function Avatar({ src, alt = "Avatar", name, size = "md", className, ...rest }: {
+  src?: any;
+  alt?: any;
+  name?: any;
+  size?: string;
+  className?: any;
+  [key: string]: any;
+}) {
   const sizes = {
     xs: "size-6 text-xs",
     sm: "size-8 text-sm",
@@ -59,6 +66,7 @@ export default function Avatar({ src, alt = "Avatar", name, size = "md", classNa
         style={{ backgroundImage: `url(${src})` }}
         role="img"
         aria-label={alt}
+        {...rest}
       />
     );
   }
@@ -74,6 +82,7 @@ export default function Avatar({ src, alt = "Avatar", name, size = "md", classNa
       )}
       role="img"
       aria-label={alt}
+      {...rest}
     >
       {getInitials(name)}
     </div>

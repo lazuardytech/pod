@@ -9,7 +9,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 
 const NONE_PROXY_POOL_VALUE = "__none__";
 
-export default function NoAuthProxyCard({ providerId }) {
+export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key: string]: any }) {
   const [proxyPools, setProxyPools] = useState([]);
   const [proxyPoolId, setProxyPoolId] = useState(NONE_PROXY_POOL_VALUE);
   const [saving, setSaving] = useState(false);
@@ -26,7 +26,7 @@ export default function NoAuthProxyCard({ providerId }) {
       .then(([poolData, settingsData]) => {
         if (cancelled) return;
         setProxyPools(poolData.proxyPools || []);
-        const override = (settingsData.providerStrategies || {})[providerId] || {};
+        const override = ((settingsData as any).providerStrategies || {})[providerId] || {};
         setProxyPoolId(override.proxyPoolId || NONE_PROXY_POOL_VALUE);
       })
       .catch(() => {});

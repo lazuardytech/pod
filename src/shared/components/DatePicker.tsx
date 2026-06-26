@@ -16,13 +16,22 @@ import LucideIcon from "@/shared/components/LucideIcon";
  *   disabled: boolean
  *   className: string
  */
-export default function DatePicker({ value, onChange, placeholder = "Pick a date", disabled = false, className }) {
+export default function DatePicker({ value, onChange, placeholder = "Pick a date", disabled = false, className, ...rest }: {
+  value?: any;
+  onChange?: any;
+  placeholder?: any;
+  disabled?: boolean;
+  className?: any;
+  [key: string]: any;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
   // Close on outside click
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return undefined;
+    }
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setOpen(false);
@@ -35,7 +44,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
   const displayValue = value ? format(value, "MMM d, yyyy") : null;
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
+    <div ref={containerRef} className={cn("relative", className)} {...rest}>
       {/* Trigger button */}
       <button
         type="button"
@@ -82,55 +91,57 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
             "left-0 top-full",
           )}
         >
-          <DayPicker
-            mode="single"
-            selected={value || undefined}
-            onSelect={(date) => {
-              onChange(date || null);
-              setOpen(false);
-            }}
-            initialFocus
-            classNames={{
-              months: "flex flex-col",
-              month: "space-y-3",
-              month_caption: "relative flex items-center justify-center px-8 py-1",
-              caption_label: "text-sm font-medium text-text-main",
-              nav: "absolute inset-x-0 top-1",
-              button_previous: cn(
-                "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
-                "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
-              ),
-              button_next: cn(
-                "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
-                "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
-              ),
-              chevron: "size-4 text-text-muted",
-              month_grid: "w-full border-collapse",
-              weekdays: "flex w-full",
-              weekday: "w-9 text-center text-[11px] font-medium text-text-muted",
-              weeks: "mt-1 flex flex-col gap-1",
-              week: "flex w-full",
-              day: cn("h-9 w-9 p-0 text-center text-sm", "focus-within:relative focus-within:z-20"),
-              day_button: cn(
-                "size-9 rounded-md text-sm font-normal",
-                "text-text-main hover:bg-surface-2 transition-colors cursor-pointer",
-                "focus:outline-none focus:ring-2 focus:ring-primary/20",
-              ),
-              selected: "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
-              today: "border border-primary/40 text-primary font-medium",
-              outside: "text-text-muted opacity-40",
-              disabled: "text-text-muted opacity-30",
-              hidden: "invisible",
-            }}
-            components={{
-              Chevron: ({ orientation, className }) => (
-                <LucideIcon
-                  name={orientation === "left" ? "chevron_left" : "chevron_right"}
-                  className={cn("text-[16px]", className)}
-                />
-              ),
-            }}
-          />
+      <DayPicker
+        {...({
+          mode: "single",
+          selected: value || undefined,
+          onSelect: (date: Date | undefined) => {
+            onChange(date || null);
+            setOpen(false);
+          },
+          initialFocus: true,
+          classNames: {
+            months: "flex flex-col",
+            month: "space-y-3",
+            month_caption: "relative flex items-center justify-center px-8 py-1",
+            caption_label: "text-sm font-medium text-text-main",
+            nav: "absolute inset-x-0 top-1",
+            button_previous: cn(
+              "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
+              "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
+            ),
+            button_next: cn(
+              "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
+              "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
+            ),
+            chevron: "size-4 text-text-muted",
+            month_grid: "w-full border-collapse",
+            weekdays: "flex w-full",
+            weekday: "w-9 text-center text-[11px] font-medium text-text-muted",
+            weeks: "mt-1 flex flex-col gap-1",
+            week: "flex w-full",
+            day: cn("h-9 w-9 p-0 text-center text-sm", "focus-within:relative focus-within:z-20"),
+            day_button: cn(
+              "size-9 rounded-md text-sm font-normal",
+              "text-text-main hover:bg-surface-2 transition-colors cursor-pointer",
+              "focus:outline-none focus:ring-2 focus:ring-primary/20",
+            ),
+            selected: "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
+            today: "border border-primary/40 text-primary font-medium",
+            outside: "text-text-muted opacity-40",
+            disabled: "text-text-muted opacity-30",
+            hidden: "invisible",
+          },
+          components: {
+            Chevron: ({ orientation, className }: { orientation?: string; className?: string }) => (
+              <LucideIcon
+                name={orientation === "left" ? "chevron_left" : "chevron_right"}
+                className={cn("text-[16px]", className)}
+              />
+            ),
+          },
+        } as any)}
+      />
         </div>
       )}
     </div>

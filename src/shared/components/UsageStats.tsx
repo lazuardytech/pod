@@ -21,8 +21,8 @@ import Badge from "./Badge";
 import Card from "./Card";
 import SegmentedControl from "./SegmentedControl";
 
-function timeAgo(timestamp) {
-  const diff = Math.floor((Date.now() - new Date(timestamp)) / 1000);
+function timeAgo(timestamp: any) {
+  const diff = Math.floor((Date.now() - (new Date(timestamp) as any).getTime()) / 1000);
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
@@ -30,7 +30,7 @@ function timeAgo(timestamp) {
 }
 
 // Auto-update time display every second without re-rendering parent
-function TimeAgo({ timestamp }) {
+function TimeAgo({ timestamp }: { timestamp?: any; [key: string]: any }) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ function TimeAgo({ timestamp }) {
   return <>{timeAgo(timestamp)}</>;
 }
 
-function RecentRequests({ requests = [] }) {
+function RecentRequests({ requests = [] }: { requests?: any[]; [key: string]: any }) {
   return (
     <Card className="flex min-w-0 flex-col overflow-hidden" padding="sm" style={{ height: 480 }}>
       {/* Header */}
@@ -91,9 +91,9 @@ function RecentRequests({ requests = [] }) {
   );
 }
 
-function sortData(dataMap, pendingMap = {}, sortBy, sortOrder) {
+function sortData(dataMap: any, pendingMap: any = {}, sortBy: any, sortOrder: any) {
   return Object.entries(dataMap || {})
-    .map(([key, data]) => {
+    .map(([key, data]: [string, any]) => {
       const totalTokens = (data.promptTokens || 0) + (data.completionTokens || 0);
       const totalCost = data.cost || 0;
       const inputCost = totalTokens > 0 ? (data.promptTokens || 0) * (totalCost / totalTokens) : 0;
@@ -111,7 +111,7 @@ function sortData(dataMap, pendingMap = {}, sortBy, sortOrder) {
     });
 }
 
-function getGroupKey(item, keyField) {
+function getGroupKey(item: any, keyField: any) {
   switch (keyField) {
     case "rawModel":
       return item.rawModel || "Unknown Model";
@@ -126,7 +126,7 @@ function getGroupKey(item, keyField) {
   }
 }
 
-function groupDataByKey(data, keyField) {
+function groupDataByKey(data: any, keyField: any) {
   if (!Array.isArray(data)) return [];
   const groups = {};
   data.forEach((item) => {
@@ -214,7 +214,12 @@ const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:connected";
 const OFFLINE_USAGE_STATS_CACHE_KEY = "usage:stats";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
-export default function UsageStats({ period: periodProp, setPeriod: setPeriodProp, hidePeriodSelector = false } = {}) {
+export default function UsageStats({ period: periodProp, setPeriod: setPeriodProp, hidePeriodSelector = false }: {
+  period?: any;
+  setPeriod?: any;
+  hidePeriodSelector?: boolean;
+  [key: string]: any;
+} = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -304,11 +309,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       maxStaleMs: OFFLINE_MAX_STALE_MS,
       onCacheData: (data) => {
         if (cancelled || !data) return;
-        setStats((prev) => ({ ...(prev || {}), ...data }));
-      },
-      onFreshData: (data) => {
-        if (cancelled || !data) return;
-        setStats((prev) => ({ ...(prev || {}), ...data }));
+        setStats((prev: any) => ({ ...(prev || {}), ...(data as any) }));
       },
     })
       .then((result) => {
@@ -337,7 +338,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       try {
         const data = JSON.parse(e.data);
         // Always merge only real-time fields, never overwrite full stats from REST
-        setStats((prev) => ({
+        setStats((prev: any) => ({
           ...(prev || {}),
           activeRequests: data.activeRequests,
           recentRequests: data.recentRequests,
@@ -408,7 +409,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       case "account": {
         const pendingMap = {};
         if (stats?.pending?.byAccount) {
-          Object.entries(stats.byAccount || {}).forEach(([accountKey, data]) => {
+          Object.entries(stats.byAccount || {}).forEach(([accountKey, data]: [string, any]) => {
             const connPending = stats.pending.byAccount[data.connectionId];
             if (connPending) {
               const modelKey = data.provider ? `${data.rawModel} (${data.provider})` : data.rawModel;

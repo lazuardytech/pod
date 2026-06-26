@@ -3,7 +3,15 @@ import React from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function SegmentedControl({ options = [], value, onChange, size = "md", iconSize = 14, className }) {
+export default function SegmentedControl({ options = [], value, onChange, size = "md", iconSize = 14, className, ...rest }: {
+  options?: any[];
+  value?: any;
+  onChange?: any;
+  size?: string;
+  iconSize?: number;
+  className?: any;
+  [key: string]: any;
+}) {
   const sizes = {
     sm: "h-7 text-[12px]",
     md: "h-9 text-sm",
@@ -16,6 +24,7 @@ export default function SegmentedControl({ options = [], value, onChange, size =
         "inline-flex items-center p-1 rounded-[10px] overflow-x-auto bg-surface-2 border border-charcoal-grey",
         className,
       )}
+      {...rest}
     >
       {options.map((option) => (
         <button

@@ -7,6 +7,7 @@ import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/sha
 import { refreshGoogleToken, refreshKiroToken, updateProviderCredentials } from "@/sse/services/tokenRefresh";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+import { asString } from "@/app/api/_types";
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
 const parseOpenAIStyleModels = (data) => {
@@ -219,7 +220,8 @@ export async function GET(request, { params }) {
     }
 
     if (isOpenAICompatibleProvider(connection.provider)) {
-      const baseUrl = connection.providerSpecificData?.baseUrl;
+      const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
+      const baseUrl = asString(psd.baseUrl);
       if (!baseUrl) {
         return NextResponse.json({ error: "No base URL configured for OpenAI compatible provider" }, { status: 400 });
       }
@@ -248,7 +250,8 @@ export async function GET(request, { params }) {
     }
 
     if (isAnthropicCompatibleProvider(connection.provider)) {
-      let baseUrl = connection.providerSpecificData?.baseUrl;
+      const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
+      let baseUrl = asString(psd.baseUrl);
       if (!baseUrl) {
         return NextResponse.json(
           { error: "No base URL configured for Anthropic compatible provider" },
@@ -266,9 +269,9 @@ export async function GET(request, { params }) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": connection.apiKey,
+          "x-api-key": asString(connection.apiKey),
           "anthropic-version": "2023-06-01",
-          Authorization: `Bearer ${connection.apiKey}`,
+          Authorization: `Bearer ${asString(connection.apiKey)}`,
         },
       });
 
@@ -289,16 +292,17 @@ export async function GET(request, { params }) {
 
     // Kiro: Try dynamic model fetching first
     if (connection.provider === "kiro") {
+      const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
       let warning;
       try {
         const kiroService = new KiroService();
-        const profileArn = connection.providerSpecificData?.profileArn;
+        const profileArn = psd.profileArn;
         const accessToken = connection.accessToken;
         const refreshToken = connection.refreshToken;
 
         if (accessToken && profileArn) {
           try {
-            const models = await kiroService.listAvailableModels(accessToken, profileArn);
+            const models = await kiroService.listAvailableModels(asString(accessToken), asString(profileArn));
             return NextResponse.json({
               provider: connection.provider,
               connectionId: connection.id,
@@ -306,7 +310,7 @@ export async function GET(request, { params }) {
             });
           } catch (error) {
             if (sanitizeError(error).includes("AccessDeniedException") && refreshToken) {
-              const refreshed = await refreshKiroToken(refreshToken, connection.providerSpecificData);
+              const refreshed = await refreshKiroToken(asString(refreshToken), connection.providerSpecificData);
 
               if (refreshed?.accessToken) {
                 await updateProviderCredentials(connection.id, {
@@ -315,7 +319,7 @@ export async function GET(request, { params }) {
                   expiresIn: refreshed.expiresIn,
                 });
 
-                const models = await kiroService.listAvailableModels(refreshed.accessToken, profileArn);
+                const models = await kiroService.listAvailableModels(asString(refreshed.accessToken), asString(profileArn));
                 return NextResponse.json({
                   provider: connection.provider,
                   connectionId: connection.id,
@@ -345,7 +349,8 @@ export async function GET(request, { params }) {
         return NextResponse.json({ error: "No valid token found" }, { status: 401 });
       }
 
-      const projectId = connection.projectId || connection.providerSpecificData?.projectId;
+      const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
+      const projectId = connection.projectId || psd.projectId;
       const body = projectId ? { project: projectId } : {};
 
       const fetchModels = async (token) => {
@@ -369,7 +374,7 @@ export async function GET(request, { params }) {
 
         // Attempt refresh on 401/403 when refresh token exists
         if (!response.ok && (response.status === 401 || response.status === 403) && refreshToken) {
-          const refreshed = await refreshGoogleToken(refreshToken, GEMINI_CONFIG.clientId, GEMINI_CONFIG.clientSecret);
+          const refreshed = await refreshGoogleToken(asString(refreshToken), GEMINI_CONFIG.clientId, GEMINI_CONFIG.clientSecret);
           if (refreshed?.accessToken) {
             await updateProviderCredentials(connection.id, {
               accessToken: refreshed.accessToken,
@@ -434,7 +439,8 @@ export async function GET(request, { params }) {
     }
 
     // Get auth token
-    const token = connection.providerSpecificData?.copilotToken || connection.accessToken || connection.apiKey;
+    const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
+    const token = psd.copilotToken || connection.accessToken || connection.apiKey;
     if (!token) {
       return NextResponse.json({ error: "No valid token found" }, { status: 401 });
     }

@@ -75,7 +75,7 @@ export async function POST(request) {
     }
 
     // Check if name already exists
-    const existing = await getComboByName(name);
+    const existing = await getComboByName(asString(name));
     if (existing) {
       return NextResponse.json({ error: "Combo name already exists" }, { status: 400 });
     }

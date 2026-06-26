@@ -4,7 +4,7 @@ import { useTheme } from "@/shared/hooks/useTheme";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function ThemeToggle({ className, variant = "default" }) {
+export default function ThemeToggle({ className, variant = "default" }: { className?: any; variant?: string; [key: string]: any }) {
   const { isDark, toggleTheme } = useTheme();
 
   const variants = {

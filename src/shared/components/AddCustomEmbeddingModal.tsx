@@ -8,7 +8,14 @@ import { Badge, Button, Input, Modal } from "@/shared/components";
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 
 // Dual-mode modal: edit when `node` provided, add otherwise
-export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, onSaved, node }) {
+export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, onSaved, node }: {
+  isOpen?: any;
+  onClose?: any;
+  onCreated?: any;
+  onSaved?: any;
+  node?: any;
+  [key: string]: any;
+}) {
   const isEdit = !!node;
   const [formData, setFormData] = useState({
     name: "",
@@ -43,12 +50,12 @@ export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, on
     try {
       const url = isEdit ? `/api/provider-nodes/${node.id}` : "/api/provider-nodes";
       const method = isEdit ? "PUT" : "POST";
-      const payload = {
+      const payload: Record<string, any> = {
         name: formData.name,
         prefix: formData.prefix,
         baseUrl: formData.baseUrl,
       };
-      if (!isEdit) payload.type = "custom-embedding";
+      if (!isEdit) (payload as any).type = "custom-embedding";
 
       const res = await fetch(url, {
         method,

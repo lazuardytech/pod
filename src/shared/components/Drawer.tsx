@@ -4,7 +4,15 @@ import { useEffect } from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function Drawer({ isOpen, onClose, title, children, width = "md", className }) {
+export default function Drawer({ isOpen, onClose, title, children, width = "md", className, ...rest }: {
+  isOpen?: any;
+  onClose?: any;
+  title?: any;
+  children?: any;
+  width?: string;
+  className?: any;
+  [key: string]: any;
+}) {
   const widths = {
     sm: "w-[400px]",
     md: "w-[500px]",

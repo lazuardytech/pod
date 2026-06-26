@@ -288,6 +288,13 @@ export default function LucideIcon({
   strokeWidth = 2,
   absoluteStrokeWidth = false,
   ...props
+}: {
+  name?: any;
+  className?: any;
+  size?: any;
+  strokeWidth?: number;
+  absoluteStrokeWidth?: boolean;
+  [key: string]: any;
 }) {
   const Icon = ICON_MAP[name] || CircleHelp;
 

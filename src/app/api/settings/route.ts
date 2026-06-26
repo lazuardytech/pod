@@ -57,14 +57,14 @@ export async function PATCH(request) {
     // If updating password, hash it
     if (body.newPassword) {
       const settings = await getSettings();
-      const currentHash = settings.password;
+      const currentHash = settings.password as string | undefined;
 
       // Verify current password if it exists
       if (currentHash) {
         if (!body.currentPassword) {
           return NextResponse.json({ error: "Current password required" }, { status: 400 });
         }
-        const isValid = await bcrypt.compare(asString(body.currentPassword), currentHash);
+        const isValid = await bcrypt.compare(asString(body.currentPassword), currentHash as string);
         if (!isValid) {
           return NextResponse.json({ error: "Invalid current password" }, { status: 401 });
         }

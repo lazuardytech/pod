@@ -2016,7 +2016,9 @@ export default function MediaProviderDetailPage() {
 
   // Fetch custom node info from API for custom embedding nodes
   useEffect(() => {
-    if (!isCustom) return;
+    if (!isCustom) {
+      return undefined;
+    }
     let cancelled = false;
     fetch("/api/provider-nodes", { cache: "no-store" })
       .then((r) => r.json())

@@ -79,7 +79,9 @@ export async function PUT(request, { params }) {
       connections.map((connection) =>
         updateProviderConnection(connection.id, {
           providerSpecificData: {
-            ...(connection.providerSpecificData || {}),
+            ...(typeof connection.providerSpecificData === "object" && connection.providerSpecificData !== null
+              ? (connection.providerSpecificData as Record<string, unknown>)
+              : {}),
             prefix: prefix.trim(),
             apiType: node.type === "openai-compatible" ? apiType : undefined,
             baseUrl: sanitizedBaseUrl,

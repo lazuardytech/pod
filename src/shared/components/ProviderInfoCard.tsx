@@ -21,17 +21,22 @@ const FIELD_SCHEMA = {
   maxCharacters: { label: "Max chars", format: (v) => v.toLocaleString() },
 };
 
-export default function ProviderInfoCard({ config, provider, title = "Provider Info" }) {
+export default function ProviderInfoCard({ config, provider, title = "Provider Info" }: {
+  config?: any;
+  provider?: any;
+  title?: any;
+  [key: string]: any;
+}) {
   if (!config) return null;
 
-  const rows = Object.entries(FIELD_SCHEMA)
+  const rows: any[] = Object.entries(FIELD_SCHEMA)
     .filter(([key]) => config[key] !== undefined && config[key] !== null && config[key] !== "")
     .map(([key, schema]) => ({
       key,
       label: schema.label,
       value: schema.format(config[key]),
-      isLink: schema.isLink,
-      mono: schema.mono,
+      isLink: (schema as any).isLink,
+      mono: (schema as any).mono,
       raw: config[key],
     }));
 

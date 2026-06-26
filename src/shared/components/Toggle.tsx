@@ -10,6 +10,16 @@ export default function Toggle({
   disabled = false,
   size = "md",
   className,
+  ...rest
+}: {
+  checked?: boolean;
+  onChange?: any;
+  label?: any;
+  description?: any;
+  disabled?: boolean;
+  size?: string;
+  className?: any;
+  [key: string]: any;
 }) {
   const sizes = {
     sm: { track: "w-7 h-4", thumb: "size-3", translate: "translate-x-3" },
@@ -22,7 +32,7 @@ export default function Toggle({
   };
 
   return (
-    <div className={cn("flex items-center gap-2.5", disabled && "opacity-40 cursor-not-allowed", className)}>
+    <div className={cn("flex items-center gap-2.5", disabled && "opacity-40 cursor-not-allowed", className)} {...rest}>
       <button
         type="button"
         role="switch"

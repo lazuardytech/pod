@@ -264,7 +264,9 @@ export default function ProviderTopology({
   }, [rawActiveSet]);
 
   useEffect(() => {
-    if (rawActiveSet.size === 0) return;
+    if (rawActiveSet.size === 0) {
+      return undefined;
+    }
     const id = setInterval(() => setTick((t) => t + 1), FE_ACTIVE_TICK_MS);
     return () => clearInterval(id);
   }, [rawActiveSet]);
@@ -317,7 +319,9 @@ export default function ProviderTopology({
   // Re-fit on container resize — only when no saved viewport
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el) {
+      return undefined;
+    }
     const ro = new ResizeObserver(() => {
       if (rfInstance.current && !savedViewport.current) rfInstance.current.fitView(fitOpts);
     });
@@ -331,6 +335,7 @@ export default function ProviderTopology({
       const id = setTimeout(() => rfInstance.current.fitView(fitOpts), 50);
       return () => clearTimeout(id);
     }
+    return undefined;
   }, [nodes.length]);
 
   return (

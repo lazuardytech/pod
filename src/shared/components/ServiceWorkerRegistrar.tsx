@@ -9,7 +9,9 @@ import { APP_CONFIG } from "@/shared/constants/config";
  */
 export default function ServiceWorkerRegistrar() {
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
+    if (!("serviceWorker" in navigator)) {
+      return undefined;
+    }
 
     navigator.serviceWorker
       .register(`/sw.js?v=${encodeURIComponent(APP_CONFIG.displayVersion)}`, { scope: "/" })

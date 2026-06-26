@@ -33,18 +33,20 @@ export async function getModelInfo(modelStr: string): Promise<ModelInfo> {
 export async function getComboModels(modelStr: string): Promise<string[] | null> {
   if (modelStr.includes("/")) return null;
   const combo = await getComboByName(modelStr);
-  if (combo && combo.models && combo.models.length > 0) return combo.models;
+  const models = combo?.models as string[] | undefined;
+  if (combo && models && models.length > 0) return models;
   return null;
 }
 export async function getComboInfo(modelStr: string): Promise<ComboInfo> {
   if (modelStr.includes("/")) return null;
   const combo = await getComboByName(modelStr);
-  if (combo && combo.models && combo.models.length > 0) {
+  const models = combo?.models as string[] | undefined;
+  if (combo && models && models.length > 0) {
     return {
-      models: combo.models,
-      systemPrompt: combo.systemPrompt || null,
-      modelId: combo.modelId || null,
-      contentFilterMessage: combo.contentFilterMessage || null,
+      models,
+      systemPrompt: (combo.systemPrompt as string) || null,
+      modelId: (combo.modelId as string) || null,
+      contentFilterMessage: (combo.contentFilterMessage as string) || null,
     };
   }
   return null;

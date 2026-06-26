@@ -214,7 +214,7 @@ export async function getOfflineMutationQueueLength(): Promise<number> {
 
   try {
     const tx = db.transaction(STORE_NAME, "readonly");
-    const count = await requestToPromise(tx.objectStore(STORE_NAME).count());
+    const count = await requestToPromise<number>(tx.objectStore(STORE_NAME).count() as unknown as IdbRequest);
     await transactionDone(tx);
     return Number(count || 0);
   } catch {
@@ -259,7 +259,7 @@ export async function enqueueOfflineMutation(
 
   try {
     const tx = db.transaction(STORE_NAME, "readwrite");
-    const id = await requestToPromise<number>(tx.objectStore(STORE_NAME).add(record));
+    const id = await requestToPromise<number>(tx.objectStore(STORE_NAME).add(record) as unknown as IdbRequest);
     await transactionDone(tx);
     const queueLength = await getOfflineMutationQueueLength();
     await dispatchQueueEvent("pod:offline-mutation-enqueued", { id, queueLength, method: normalizedMethod, url });

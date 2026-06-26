@@ -33,6 +33,22 @@ export default function Input({
   id,
   name,
   ...props
+}: {
+  label?: any;
+  type?: string;
+  placeholder?: any;
+  value?: any;
+  onChange?: any;
+  error?: any;
+  hint?: any;
+  icon?: any;
+  disabled?: boolean;
+  required?: boolean;
+  className?: any;
+  inputClassName?: any;
+  id?: any;
+  name?: any;
+  [key: string]: any;
 }) {
   // Stable, deterministic per-instance ID for label association and browser autofill.
   const reactId = useId();

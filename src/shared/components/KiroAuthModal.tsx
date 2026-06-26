@@ -9,7 +9,12 @@ import LucideIcon from "@/shared/components/LucideIcon";
  * Kiro Auth Method Selection Modal
  * Auto-detects token from AWS SSO cache or allows manual import
  */
-export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
+export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }: {
+  isOpen?: any;
+  onMethodSelect?: any;
+  onClose?: any;
+  [key: string]: any;
+}) {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [idcStartUrl, setIdcStartUrl] = useState("");
   const [idcRegion, setIdcRegion] = useState("us-east-1");

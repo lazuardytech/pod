@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getProviderConnections, getSettings, updateProviderConnection } from "@/lib/localDb";
+import { getProviderConnections, getSettings, updateProviderConnection, type Settings } from "@/lib/localDb";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { getModelAvailabilityPayload, MODEL_LOCK_PREFIX } from "./_availability";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { asString } from "@/app/api/_types";
 
 export async function GET() {
   try {
@@ -20,15 +21,17 @@ export async function POST(request) {
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
     const { action, provider, model } = body;
+    const providerStr = asString(provider);
+    const modelStr = asString(model);
 
-    if (!provider || !model) {
+    if (!providerStr || !modelStr) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
     // Simple unconditional clear (legacy)
     if (action === "clearCooldown") {
-      const connections = await getProviderConnections({ provider });
-      const lockKey = `${MODEL_LOCK_PREFIX}${model}`;
+      const connections = await getProviderConnections({ provider: providerStr });
+      const lockKey = `${MODEL_LOCK_PREFIX}${modelStr}`;
       await Promise.all(
         connections
           .filter((connection) => connection[lockKey])
@@ -77,13 +80,13 @@ export async function POST(request) {
       // lgtm[js/request-forgery]
       let testOk = false;
       try {
-        const testModel = model === "__all" ? null : model;
+        const testModel = modelStr === "__all" ? null : modelStr;
         if (testModel) {
           const res = await fetch(`${baseUrl}/api/models/test`, {
             // lgtm[js/request-forgery]
             method: "POST",
             headers,
-            body: JSON.stringify({ model: `${provider}/${testModel}` }),
+            body: JSON.stringify({ model: `${providerStr}/${testModel}` }),
             signal: AbortSignal.timeout(15000),
           });
           const data = await res.json().catch(() => ({}));
@@ -91,9 +94,9 @@ export async function POST(request) {
         }
       } catch {}
 
-      const connections = await getProviderConnections({ provider });
-      const lockKey = `${MODEL_LOCK_PREFIX}${model}`;
-      const settings = await getSettings().catch(() => ({}));
+      const connections = await getProviderConnections({ provider: providerStr });
+      const lockKey = `${MODEL_LOCK_PREFIX}${modelStr}`;
+      const settings = await getSettings().catch(() => ({} as Settings));
       const minimumLockoutMinutes = Number(settings.minimumLockoutMinutes) || 0;
 
       if (testOk) {
@@ -121,7 +124,7 @@ export async function POST(request) {
           connections
             .filter((c) => c[lockKey])
             .map((c) => {
-              const backoffMultiplier = Math.max(1, c.backoffLevel || 1);
+              const backoffMultiplier = Math.max(1, Number(c.backoffLevel) || 1);
               const effectiveMs = minimumLockoutMs * backoffMultiplier;
               const lockUntil = new Date(Date.now() + effectiveMs).toISOString();
               return updateProviderConnection(c.id, { [lockKey]: lockUntil });

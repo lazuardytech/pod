@@ -5,7 +5,7 @@ import { Drawer } from "vaul";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export function LogDrawer({ open, onClose, children }) {
+export function LogDrawer({ open, onClose, children }: { open?: any; onClose?: any; children?: any; [key: string]: any }) {
   return (
     <Drawer.Root open={open} onOpenChange={(v) => !v && onClose()} direction="right">
       <Drawer.Portal>
@@ -26,7 +26,7 @@ export function LogDrawer({ open, onClose, children }) {
   );
 }
 
-export function LogDrawerHeader({ title, onClose, children }) {
+export function LogDrawerHeader({ title, onClose, children }: { title?: any; onClose?: any; children?: any; [key: string]: any }) {
   return (
     <div className="flex items-center justify-between h-14 px-4 border-b border-charcoal-grey shrink-0">
       <div className="flex items-center gap-2">
@@ -46,11 +46,11 @@ export function LogDrawerHeader({ title, onClose, children }) {
   );
 }
 
-export function LogDrawerBody({ children }) {
+export function LogDrawerBody({ children }: { children?: any; [key: string]: any }) {
   return <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">{children}</div>;
 }
 
-export function DetailSection({ title, icon, children }) {
+export function DetailSection({ title, icon, children }: { title?: any; icon?: any; children?: any; [key: string]: any }) {
   return (
     <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-charcoal-grey bg-pitch-black/40">
@@ -62,7 +62,7 @@ export function DetailSection({ title, icon, children }) {
   );
 }
 
-export function DetailRow({ label, value, mono = false, accent }) {
+export function DetailRow({ label, value, mono = false, accent }: { label?: any; value?: any; mono?: boolean; accent?: any; [key: string]: any }) {
   if (value == null || value === "" || value === "-") return null;
   return (
     <div className="flex items-start justify-between gap-3 py-1 border-b border-charcoal-grey/50 last:border-0">
@@ -80,7 +80,7 @@ export function DetailRow({ label, value, mono = false, accent }) {
   );
 }
 
-export function JsonBlock({ data }) {
+export function JsonBlock({ data }: { data?: any; [key: string]: any }) {
   const ref = useRef(null);
   if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
   const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);

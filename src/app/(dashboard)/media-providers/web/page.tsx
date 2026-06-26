@@ -11,7 +11,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 
 function getEffectiveStatus(conn) {
   const isCooldown = Object.entries(conn).some(
-    ([k, v]) => k.startsWith("modelLock_") && v && new Date(v).getTime() > Date.now(),
+    ([k, v]) => k.startsWith("modelLock_") && v && (new Date(String(v)) as Date).getTime() > Date.now(),
   );
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
@@ -201,7 +201,7 @@ export default function WebProvidersPage() {
     return window.localStorage.getItem("web-providers:connectedOnly") === "true";
   });
 
-  const toggleConnectedOnly = (v) => {
+  const toggleConnectedOnly = (v?: boolean) => {
     const next = typeof v === "boolean" ? v : !showConnectedOnly;
     setShowConnectedOnly(next);
     window.localStorage.setItem("web-providers:connectedOnly", String(next));

@@ -28,6 +28,21 @@ export default function Select({
   id,
   name,
   ...props
+}: {
+  label?: any;
+  options?: any[];
+  value?: any;
+  onChange?: any;
+  placeholder?: any;
+  error?: any;
+  hint?: any;
+  disabled?: boolean;
+  required?: boolean;
+  className?: any;
+  selectClassName?: any;
+  id?: any;
+  name?: any;
+  [key: string]: any;
 }) {
   const reactId = useId();
   const selectId = id || `select-${reactId}`;
