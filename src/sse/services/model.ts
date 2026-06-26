@@ -1,0 +1,51 @@
+import { getModelInfoCore, parseModel, resolveModelAliasFromMap } from "open-sse/services/model.js";
+import { getComboByName, getModelAliases, getProviderNodes } from "@/lib/localDb.js";
+export { parseModel };
+export type ModelInfo = { provider: string | null; model: string };
+export type ComboInfo = {
+  models: string[];
+  systemPrompt: string | null;
+  modelId: string | null;
+  contentFilterMessage: string | null;
+} | null;
+export async function resolveModelAlias(alias: string): Promise<{ provider: string; model: string } | null> {
+  const aliases = await getModelAliases();
+  return resolveModelAliasFromMap(alias, aliases);
+}
+export async function getModelInfo(modelStr: string): Promise<ModelInfo> {
+  const parsed = parseModel(modelStr);
+  if (!parsed.isAlias) {
+    const openaiNodes = await getProviderNodes({ type: "openai-compatible" });
+    const m1 = openaiNodes.find((n) => n.prefix === parsed.providerAlias);
+    if (m1) return { provider: m1.id, model: parsed.model };
+    const anthropicNodes = await getProviderNodes({ type: "anthropic-compatible" });
+    const m2 = anthropicNodes.find((n) => n.prefix === parsed.providerAlias);
+    if (m2) return { provider: m2.id, model: parsed.model };
+    const embNodes = await getProviderNodes({ type: "custom-embedding" });
+    const m3 = embNodes.find((n) => n.prefix === parsed.providerAlias);
+    if (m3) return { provider: m3.id, model: parsed.model };
+    return { provider: parsed.provider, model: parsed.model };
+  }
+  const combo = await getComboByName(parsed.model);
+  if (combo) return { provider: null, model: parsed.model };
+  return getModelInfoCore(modelStr, getModelAliases);
+}
+export async function getComboModels(modelStr: string): Promise<string[] | null> {
+  if (modelStr.includes("/")) return null;
+  const combo = await getComboByName(modelStr);
+  if (combo && combo.models && combo.models.length > 0) return combo.models;
+  return null;
+}
+export async function getComboInfo(modelStr: string): Promise<ComboInfo> {
+  if (modelStr.includes("/")) return null;
+  const combo = await getComboByName(modelStr);
+  if (combo && combo.models && combo.models.length > 0) {
+    return {
+      models: combo.models,
+      systemPrompt: combo.systemPrompt || null,
+      modelId: combo.modelId || null,
+      contentFilterMessage: combo.contentFilterMessage || null,
+    };
+  }
+  return null;
+}

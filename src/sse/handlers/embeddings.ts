@@ -13,35 +13,20 @@ import { getModelInfo } from "../services/model.js";
 import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh.js";
 import * as log from "../utils/logger.js";
 
-/**
- * Handle embeddings request for the SSE/Next.js server.
- * Follows the same auth + fallback pattern as handleChat.
- *
- * @param {Request} request
- */
-export async function handleEmbeddings(request) {
-  let body;
+export async function handleEmbeddings(request: Request): Promise<Response> {
+  let body: Record<string, any>;
   try {
     body = await request.json();
   } catch {
     log.warn("EMBEDDINGS", "Invalid JSON body");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
   }
-
   const url = new URL(request.url);
-  const modelStr = body.model;
-
+  const modelStr = body.model as string | undefined;
   log.request("POST", `${url.pathname} | ${modelStr}`);
-
-  // Log API key (masked)
   const apiKey = extractApiKey(request);
-  if (apiKey) {
-    log.debug("AUTH", `API Key: ${log.maskKey(apiKey)}`);
-  } else {
-    log.debug("AUTH", "No API key provided (local mode)");
-  }
-
-  // Enforce API key if enabled in settings
+  if (apiKey) log.debug("AUTH", `API Key: ${log.maskKey(apiKey)}`);
+  else log.debug("AUTH", "No API key provided (local mode)");
   const settings = await getSettings();
   if (settings.requireApiKey) {
     if (!apiKey) {
@@ -54,40 +39,27 @@ export async function handleEmbeddings(request) {
       return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");
     }
   }
-
   if (!modelStr) {
     log.warn("EMBEDDINGS", "Missing model");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing model");
   }
-
   if (!body.input) {
     log.warn("EMBEDDINGS", "Missing input");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: input");
   }
-
   const modelInfo = await getModelInfo(modelStr);
   if (!modelInfo.provider) {
     log.warn("EMBEDDINGS", "Invalid model format", { model: modelStr });
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
   }
-
   const { provider, model } = modelInfo;
-
-  if (modelStr !== `${provider}/${model}`) {
-    log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
-  } else {
-    log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
-  }
-
-  // Credential + fallback loop (mirrors handleChat)
-  const excludeConnectionIds = new Set();
-  let lastError = null;
-  let lastStatus = null;
-
+  if (modelStr !== `${provider}/${model}`) log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
+  else log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
+  const excludeConnectionIds = new Set<string>();
+  let lastError: string | null = null;
+  let lastStatus: number | null = null;
   while (true) {
     const credentials = await getProviderCredentials(provider, excludeConnectionIds, model);
-
-    // All accounts unavailable
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
         const errorMsg = lastError || credentials.lastError || "Unavailable";
@@ -107,11 +79,8 @@ export async function handleEmbeddings(request) {
       log.warn("EMBEDDINGS", "No more accounts available", { provider });
       return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
     }
-
     log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
-
     const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
-
     const result = await handleEmbeddingsCore({
       body: { ...body, model: `${provider}/${model}` },
       modelInfo: { provider, model },
@@ -119,9 +88,9 @@ export async function handleEmbeddings(request) {
       log,
       onCredentialsRefreshed: async (newCreds) => {
         await updateProviderCredentials(credentials.connectionId, {
-          accessToken: newCreds.accessToken,
-          refreshToken: newCreds.refreshToken,
-          providerSpecificData: newCreds.providerSpecificData,
+          accessToken: newCreds.accessToken as string | undefined,
+          refreshToken: newCreds.refreshToken as string | undefined,
+          providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
           testStatus: "active",
         });
       },
@@ -129,9 +98,7 @@ export async function handleEmbeddings(request) {
         await clearAccountError(credentials.connectionId, credentials, model);
       },
     });
-
-    if (result.success) return result.response;
-
+    if (result.success === true) return result.response;
     const { shouldFallback } = await markAccountUnavailable(
       credentials.connectionId,
       result.status,
@@ -139,7 +106,6 @@ export async function handleEmbeddings(request) {
       provider,
       model,
     );
-
     if (shouldFallback) {
       log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
       excludeConnectionIds.add(credentials.connectionId);
@@ -147,7 +113,6 @@ export async function handleEmbeddings(request) {
       lastStatus = result.status;
       continue;
     }
-
     return result.response;
   }
 }
