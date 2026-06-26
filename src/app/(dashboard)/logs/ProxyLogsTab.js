@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
@@ -149,12 +150,12 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
         <LucideIcon name="info" className="text-[14px] text-fog-grey shrink-0" />
         <p className="text-[11px] text-fog-grey leading-[1.5]">
           Live proxy request logging is not available. Showing configured proxy pools. Manage pools in{" "}
-          <a
+          <Link
             href="/proxy-pools"
             className="text-storm-cloud hover:text-porcelain underline underline-offset-2 transition-colors duration-100"
           >
             Proxy Pools
-          </a>
+          </Link>
           .
         </p>
       </div>
@@ -181,12 +182,12 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <LucideIcon name="lan" className="text-[28px] text-fog-grey" />
             <p className="text-[12px] text-fog-grey">No proxy pools configured.</p>
-            <a
+            <Link
               href="/proxy-pools"
               className="mt-1 h-7 px-3 inline-flex items-center rounded-[6px] border border-charcoal-grey text-[12px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
             >
               Configure proxy pools
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">

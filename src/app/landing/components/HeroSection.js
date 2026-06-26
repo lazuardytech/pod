@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function HeroSection() {
@@ -32,13 +33,13 @@ export default function HeroSection() {
 
         {/* CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-          <a
+          <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 h-9 px-5 rounded-[6px] bg-[#E5E5E6] hover:bg-white text-pitch-black text-[13px] font-[590] transition-colors duration-100 shadow-[var(--shadow-sm)]"
           >
             <LucideIcon name="rocket_launch" className="text-[16px]" />
             Get Started
-          </a>
+          </Link>
           <a
             href="https://github.com/lazuardytech/pod"
             target="_blank"
