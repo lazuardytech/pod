@@ -6,19 +6,19 @@ import { getModelsByProviderId } from "@/shared/constants/models";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const STORAGE_KEYS = {
+const STORAGE_KEYS: any = {
   sessions: "basic-chat.sessions",
   activeSessionId: "basic-chat.activeSessionId",
   activeProviderId: "basic-chat.activeProviderId",
   draft: "basic-chat.draft",
 };
 
-function createId() {
+function createId(): any {
   // crypto.randomUUID() is available in all modern browsers and Node 14.17+
   return globalThis.crypto.randomUUID();
 }
 
-function safeParse(value, fallback) {
+function safeParse(value, fallback): any {
   try {
     return JSON.parse(value);
   } catch {
@@ -26,7 +26,7 @@ function safeParse(value, fallback) {
   }
 }
 
-function textValue(value) {
+function textValue(value): any {
   if (typeof value === "string") return value;
   if (value == null) return "";
   if (Array.isArray(value)) return value.map(textValue).filter(Boolean).join(" ");
@@ -42,16 +42,16 @@ function textValue(value) {
   return String(value);
 }
 
-function humanize(value = "") {
+function humanize(value = ""): any {
   return (
     String(value)
       .replace(/[-_]/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase())
+      .replace(/\b\w/g, (char): any => char.toUpperCase())
       .trim() || "Unknown"
   );
 }
 
-function formatRelativeTime(value) {
+function formatRelativeTime(value): any {
   if (!value) return "Now";
   const time = new Date(value).getTime();
   if (Number.isNaN(time)) return "Now";
@@ -62,13 +62,13 @@ function formatRelativeTime(value) {
   return `${Math.round(diffHours / 24)}d`;
 }
 
-function makeSessionTitle(text = "") {
+function makeSessionTitle(text = ""): any {
   const normalized = textValue(text).replace(/\s+/g, " ").trim();
   if (!normalized) return "New chat";
   return normalized.length > 52 ? `${normalized.slice(0, 52).trimEnd()}…` : normalized;
 }
 
-function buildUserContent(message) {
+function buildUserContent(message): any {
   const text = textValue(message.content).trim();
   const attachments = Array.isArray(message.attachments) ? message.attachments : [];
 
@@ -86,7 +86,7 @@ function buildUserContent(message) {
   return content.length > 0 ? content : text;
 }
 
-function readAssistantText(chunk) {
+function readAssistantText(chunk): any {
   if (!chunk || typeof chunk !== "object") return "";
   const choice = chunk.choices?.[0];
   const delta = choice?.delta || {};
@@ -96,27 +96,27 @@ function readAssistantText(chunk) {
   return pieces[0] || "";
 }
 
-async function fileToDataUrl(file) {
-  return await new Promise((resolve, reject) => {
+async function fileToDataUrl(file): Promise<any> {
+  return await new Promise((resolve, reject): any => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+    reader.onload = (): any => resolve(String(reader.result || ""));
+    reader.onerror = (): any => reject(reader.error || new Error("Failed to read file"));
     reader.readAsDataURL(file);
   });
 }
 
-function cloneSession(session) {
+function cloneSession(session): any {
   return {
     ...session,
-    messages: Array.isArray(session.messages) ? session.messages.map((message) => ({ ...message })) : [],
+    messages: Array.isArray(session.messages) ? session.messages.map((message): any => ({ ...message })) : [],
   };
 }
 
-function getProviderLabel(connection) {
+function getProviderLabel(connection): any {
   return connection?.providerName || connection?.name || humanize(connection?.provider || connection?.id || "provider");
 }
 
-function normalizeStaticModel(model, connection) {
+function normalizeStaticModel(model, connection): any {
   if (!model?.id) return null;
   return {
     id: `${connection.provider}/${model.id}`,
@@ -128,7 +128,7 @@ function normalizeStaticModel(model, connection) {
   };
 }
 
-function normalizeLiveModel(model, connection) {
+function normalizeLiveModel(model, connection): any {
   const rawId = typeof model === "string" ? model : model?.id || model?.name || model?.model || "";
   if (!rawId) return null;
 
@@ -151,7 +151,7 @@ function normalizeLiveModel(model, connection) {
   };
 }
 
-function parseProviderModelsPayload(data) {
+function parseProviderModelsPayload(data): any {
   if (Array.isArray(data?.models)) return data.models;
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data?.results)) return data.results;
@@ -159,7 +159,7 @@ function parseProviderModelsPayload(data) {
   return [];
 }
 
-function dedupeModels(models) {
+function dedupeModels(models): any {
   const map = new Map();
   for (const model of models) {
     if (!model?.id) continue;
@@ -168,16 +168,16 @@ function dedupeModels(models) {
   return Array.from(map.values());
 }
 
-export default function BasicChatPageClient() {
+export default function BasicChatPageClient(): Promise<any> {
   const [providerGroups, setProviderGroups] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [sessions, setSessions] = useState(() => {
+  const [sessions, setSessions] = useState((): any => {
     if (typeof window === "undefined") return [];
     try {
       const saved = safeParse(globalThis.localStorage.getItem(STORAGE_KEYS.sessions), []);
       return Array.isArray(saved)
-        ? saved.map((session) => ({
+        ? saved.map((session): any => ({
             ...session,
             messages: Array.isArray(session.messages) ? session.messages : [],
           }))
@@ -186,16 +186,16 @@ export default function BasicChatPageClient() {
       return [];
     }
   });
-  const [activeSessionId, setActiveSessionId] = useState(() => {
+  const [activeSessionId, setActiveSessionId] = useState((): any => {
     if (typeof window === "undefined") return "";
     return globalThis.localStorage.getItem(STORAGE_KEYS.activeSessionId) || "";
   });
-  const [activeProviderId, setActiveProviderId] = useState(() => {
+  const [activeProviderId, setActiveProviderId] = useState((): any => {
     if (typeof window === "undefined") return "";
     return globalThis.localStorage.getItem(STORAGE_KEYS.activeProviderId) || "";
   });
   const [activeModelId, setActiveModelId] = useState("");
-  const [draft, setDraft] = useState(() => {
+  const [draft, setDraft] = useState((): any => {
     if (typeof window === "undefined") return "";
     return globalThis.localStorage.getItem(STORAGE_KEYS.draft) || "";
   });
@@ -212,22 +212,22 @@ export default function BasicChatPageClient() {
   const modelMenuRef = useRef(null);
   const historyMenuRef = useRef(null);
 
-  useEffect(() => {
+  useEffect((): any => {
     setIsHydrated(true);
   }, []);
 
-  useEffect(() => {
+  useEffect((): Promise<any> => {
     let cancelled = false;
 
-    async function loadData() {
+    async function loadData(): Promise<any> {
       setLoadingData(true);
       setLoadError("");
 
       try {
         const providersRes = await fetch("/api/providers", { cache: "no-store" });
-        const providersData = await providersRes.json().catch(() => ({}));
+        const providersData = await providersRes.json().catch((): any => ({}));
         const connections = Array.isArray(providersData.connections)
-          ? providersData.connections.filter((connection) => connection?.isActive !== false)
+          ? providersData.connections.filter((connection): any => connection?.isActive !== false)
           : [];
 
         if (connections.length === 0) {
@@ -265,19 +265,19 @@ export default function BasicChatPageClient() {
           group.connections.push(connection);
 
           const staticModels = getModelsByProviderId(providerId)
-            .map((model) => normalizeStaticModel(model, connection))
+            .map((model): any => normalizeStaticModel(model, connection))
             .filter(Boolean);
           group.models.push(...staticModels);
         }
 
         const liveResults = await Promise.all(
-          connections.map(async (connection) => {
+          connections.map(async (connection): Promise<any> => {
             try {
               const response = await fetch(`/api/providers/${connection.id}/models`, { cache: "no-store" });
-              const data = await response.json().catch(() => ({}));
+              const data = await response.json().catch((): any => ({}));
               if (!response.ok) return { connection, models: [] };
               const models = parseProviderModelsPayload(data)
-                .map((model) => normalizeLiveModel(model, connection))
+                .map((model): any => normalizeLiveModel(model, connection))
                 .filter(Boolean);
               return { connection, models };
             } catch {
@@ -294,12 +294,12 @@ export default function BasicChatPageClient() {
         }
 
         const normalized = Array.from(providerMap.values())
-          .map((group) => ({
+          .map((group): any => ({
             ...group,
-            models: dedupeModels(group.models).sort((a, b) => a.name.localeCompare(b.name)),
+            models: dedupeModels(group.models).sort((a, b): any => a.name.localeCompare(b.name)),
           }))
-          .filter((group) => group.models.length > 0)
-          .sort((a, b) => a.providerName.localeCompare(b.providerName));
+          .filter((group): any => group.models.length > 0)
+          .sort((a, b): any => a.providerName.localeCompare(b.providerName));
 
         if (!cancelled) {
           setProviderGroups(normalized);
@@ -318,13 +318,13 @@ export default function BasicChatPageClient() {
     }
 
     loadData();
-    return () => {
+    return (): any => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
+  useEffect((): any => {
+    const handleClickOutside = (event): any => {
       if (modelMenuRef.current && !modelMenuRef.current.contains(event.target)) {
         setModelMenuOpen(false);
       }
@@ -334,10 +334,10 @@ export default function BasicChatPageClient() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return (): any => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const modelIndex = useMemo(() => {
+  const modelIndex = useMemo((): any => {
     const map = new Map();
     for (const group of providerGroups) {
       for (const model of group.models) {
@@ -351,31 +351,31 @@ export default function BasicChatPageClient() {
     return map;
   }, [providerGroups]);
 
-  const activeProviderGroup = useMemo(() => {
-    return providerGroups.find((group) => group.providerId === activeProviderId) || providerGroups[0] || null;
+  const activeProviderGroup = useMemo((): any => {
+    return providerGroups.find((group): any => group.providerId === activeProviderId) || providerGroups[0] || null;
   }, [providerGroups, activeProviderId]);
 
-  const activeModel = useMemo(() => {
+  const activeModel = useMemo((): any => {
     if (activeModelId && modelIndex.has(activeModelId)) return modelIndex.get(activeModelId);
     if (activeSessionId) {
-      const session = sessions.find((item) => item.id === activeSessionId);
+      const session = sessions.find((item): any => item.id === activeSessionId);
       if (session?.modelId && modelIndex.has(session.modelId)) return modelIndex.get(session.modelId);
     }
     return activeProviderGroup?.models?.[0] || null;
   }, [activeModelId, modelIndex, activeProviderGroup, sessions, activeSessionId]);
 
   const currentSession = useMemo(
-    () => sessions.find((session) => session.id === activeSessionId) || null,
+    (): any => sessions.find((session): any => session.id === activeSessionId) || null,
     [sessions, activeSessionId],
   );
   const currentMessages = currentSession?.messages || [];
   const sessionItems = useMemo(
-    () => [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+    (): any => [...sessions].sort((a, b): any => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
     [sessions],
   );
   const canSend = !isSending && !!activeModel && (draft.trim().length > 0 || attachments.length > 0);
 
-  useEffect(() => {
+  useEffect((): any => {
     if (!isHydrated) return;
     try {
       globalThis.localStorage.setItem(STORAGE_KEYS.sessions, JSON.stringify(sessions));
@@ -387,16 +387,17 @@ export default function BasicChatPageClient() {
     }
   }, [isHydrated, sessions, activeSessionId, activeProviderId, draft]);
 
-  useEffect(() => {
+  useEffect((): any => {
     if (!isHydrated || loadingData || initializedRef.current) return;
     if (providerGroups.length === 0) return;
 
-    const savedProvider = providerGroups.find((group) => group.providerId === activeProviderId) || providerGroups[0];
+    const savedProvider =
+      providerGroups.find((group): any => group.providerId === activeProviderId) || providerGroups[0];
     const savedModel =
       activeModelId && modelIndex.has(activeModelId) ? modelIndex.get(activeModelId) : savedProvider.models[0];
 
     if (sessions.length > 0) {
-      const session = sessions.find((item) => item.id === activeSessionId) || sessions[0];
+      const session = sessions.find((item): any => item.id === activeSessionId) || sessions[0];
       const sessionModel =
         session?.modelId && modelIndex.has(session.modelId) ? modelIndex.get(session.modelId) : savedModel;
       initializedRef.current = true;
@@ -406,7 +407,7 @@ export default function BasicChatPageClient() {
       return;
     }
 
-    const session = {
+    const session: any = {
       id: createId(),
       title: "New chat",
       providerId: savedProvider.providerId,
@@ -425,11 +426,13 @@ export default function BasicChatPageClient() {
     setActiveModelId(savedModel.id);
   }, [isHydrated, loadingData, providerGroups, modelIndex, sessions, activeSessionId, activeProviderId, activeModelId]);
 
-  const updateSession = (sessionId, updater) => {
-    setSessions((prev) => prev.map((session) => (session.id === sessionId ? updater(cloneSession(session)) : session)));
+  const updateSession = (sessionId, updater): any => {
+    setSessions((prev): any =>
+      prev.map((session): any => (session.id === sessionId ? updater(cloneSession(session)) : session)),
+    );
   };
 
-  const ensureSessionForModel = (model) => {
+  const ensureSessionForModel = (model): any => {
     if (!model) return null;
     return {
       id: createId(),
@@ -444,11 +447,11 @@ export default function BasicChatPageClient() {
     };
   };
 
-  const _handleNewChat = () => {
+  const _handleNewChat = (): any => {
     if (!activeModel) return;
     const session = ensureSessionForModel(activeModel);
     if (!session) return;
-    setSessions((prev) => [session, ...prev]);
+    setSessions((prev): any => [session, ...prev]);
     setActiveSessionId(session.id);
     setActiveProviderId(session.providerId);
     setActiveModelId(session.modelId);
@@ -458,8 +461,8 @@ export default function BasicChatPageClient() {
     setStreamingText("");
   };
 
-  const handleSelectSession = (sessionId) => {
-    const session = sessions.find((item) => item.id === sessionId);
+  const handleSelectSession = (sessionId): any => {
+    const session = sessions.find((item): any => item.id === sessionId);
     if (!session) return;
     setActiveSessionId(sessionId);
     setActiveProviderId(session.providerId || activeProviderId);
@@ -467,9 +470,9 @@ export default function BasicChatPageClient() {
     setHistoryOpen(false);
   };
 
-  const handleDeleteCurrentChat = () => {
+  const handleDeleteCurrentChat = (): any => {
     if (!activeSessionId) return;
-    const nextSessions = sessions.filter((session) => session.id !== activeSessionId);
+    const nextSessions = sessions.filter((session): any => session.id !== activeSessionId);
     const fallback = nextSessions[0] || null;
     setSessions(nextSessions);
     if (fallback) {
@@ -483,20 +486,20 @@ export default function BasicChatPageClient() {
     }
   };
 
-  const _handleSelectProvider = (providerId) => {
-    const group = providerGroups.find((item) => item.providerId === providerId);
+  const _handleSelectProvider = (providerId): any => {
+    const group = providerGroups.find((item): any => item.providerId === providerId);
     if (!group || group.models.length === 0) return;
     const nextModel = group.models[0];
 
-    const current = sessions.find((session) => session.id === activeSessionId);
+    const current = sessions.find((session): any => session.id === activeSessionId);
     if (current && current.messages.length > 0) {
       const session = ensureSessionForModel(nextModel);
       if (!session) return;
-      setSessions((prev) => [session, ...prev]);
+      setSessions((prev): any => [session, ...prev]);
       setActiveSessionId(session.id);
     } else if (current) {
-      setSessions((prev) =>
-        prev.map((item) =>
+      setSessions((prev): any =>
+        prev.map((item): any =>
           item.id === current.id
             ? {
                 ...item,
@@ -516,19 +519,19 @@ export default function BasicChatPageClient() {
     setModelMenuOpen(false);
   };
 
-  const handleSelectModel = (modelId) => {
+  const handleSelectModel = (modelId): any => {
     const model = modelIndex.get(modelId);
     if (!model) return;
 
-    const current = sessions.find((session) => session.id === activeSessionId);
+    const current = sessions.find((session): any => session.id === activeSessionId);
     if (current && current.messages.length > 0) {
       const session = ensureSessionForModel(model);
       if (!session) return;
-      setSessions((prev) => [session, ...prev]);
+      setSessions((prev): any => [session, ...prev]);
       setActiveSessionId(session.id);
     } else if (current) {
-      setSessions((prev) =>
-        prev.map((item) =>
+      setSessions((prev): any =>
+        prev.map((item): any =>
           item.id === current.id
             ? {
                 ...item,
@@ -544,7 +547,7 @@ export default function BasicChatPageClient() {
     } else {
       const session = ensureSessionForModel(model);
       if (!session) return;
-      setSessions((prev) => [session, ...prev]);
+      setSessions((prev): any => [session, ...prev]);
       setActiveSessionId(session.id);
     }
 
@@ -553,48 +556,50 @@ export default function BasicChatPageClient() {
     setModelMenuOpen(false);
   };
 
-  const handleAttachFiles = async (event) => {
+  const handleAttachFiles = async (event): Promise<any> => {
     const files = Array.from((event.target as HTMLInputElement).files ?? []) as File[];
     if (files.length === 0) return;
 
-    const images = files.filter((file) => file.type.startsWith("image/"));
+    const images = files.filter((file): any => file.type.startsWith("image/"));
     if (images.length === 0) {
       event.target.value = "";
       return;
     }
 
     const converted = await Promise.all(
-      images.map(async (file) => ({
-        id: createId(),
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        dataUrl: await fileToDataUrl(file),
-      })),
+      images.map(
+        async (file): Promise<any> => ({
+          id: createId(),
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          dataUrl: await fileToDataUrl(file),
+        }),
+      ),
     );
 
-    setAttachments((prev) => [...prev, ...converted]);
+    setAttachments((prev): any => [...prev, ...converted]);
     event.target.value = "";
   };
 
-  const removeAttachment = (attachmentId) => {
-    setAttachments((prev) => prev.filter((attachment) => attachment.id !== attachmentId));
+  const removeAttachment = (attachmentId): any => {
+    setAttachments((prev): any => prev.filter((attachment): any => attachment.id !== attachmentId));
   };
 
-  const handleStop = () => {
+  const handleStop = (): any => {
     abortRef.current?.abort();
   };
 
-  const finalizeSessionTitle = (sessionId, titleSeed) => {
+  const finalizeSessionTitle = (sessionId, titleSeed): any => {
     const title = makeSessionTitle(titleSeed);
-    updateSession(sessionId, (session) => ({
+    updateSession(sessionId, (session): any => ({
       ...session,
       title: session.title === "New chat" ? title : session.title,
       updatedAt: new Date().toISOString(),
     }));
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (): Promise<any> => {
     const model = activeModel || activeProviderGroup?.models?.[0] || null;
     if (!model) return;
 
@@ -602,20 +607,20 @@ export default function BasicChatPageClient() {
     if (!userText && attachments.length === 0) return;
 
     let sessionId = activeSessionId;
-    let session = sessions.find((item) => item.id === sessionId);
+    let session = sessions.find((item): any => item.id === sessionId);
     if (!session) {
       session = ensureSessionForModel(model);
       if (!session) return;
       sessionId = session.id;
-      setSessions((prev) => [session, ...prev]);
+      setSessions((prev): any => [session, ...prev]);
       setActiveSessionId(sessionId);
     }
 
-    const userMessage = {
+    const userMessage: any = {
       id: createId(),
       role: "user",
       content: userText,
-      attachments: attachments.map((attachment) => ({
+      attachments: attachments.map((attachment): any => ({
         id: attachment.id,
         name: attachment.name,
         type: attachment.type,
@@ -625,7 +630,7 @@ export default function BasicChatPageClient() {
     };
 
     const assistantMessageId = createId();
-    const assistantMessage = {
+    const assistantMessage: any = {
       id: assistantMessageId,
       role: "assistant",
       content: "",
@@ -634,8 +639,8 @@ export default function BasicChatPageClient() {
     };
 
     const nextMessages = [...(session.messages || []), userMessage, assistantMessage];
-    setSessions((prev) =>
-      prev.map((item) =>
+    setSessions((prev): any =>
+      prev.map((item): any =>
         item.id === sessionId
           ? {
               ...item,
@@ -659,8 +664,8 @@ export default function BasicChatPageClient() {
     abortRef.current = new AbortController();
 
     const requestMessages = nextMessages
-      .filter((message) => !(message.role === "assistant" && message.id === assistantMessageId))
-      .map((message) => ({
+      .filter((message): any => !(message.role === "assistant" && message.id === assistantMessageId))
+      .map((message): any => ({
         role: message.role,
         content: message.role === "user" ? buildUserContent(message) : message.content,
       }));
@@ -681,19 +686,19 @@ export default function BasicChatPageClient() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json().catch((): any => ({}));
         throw new Error(textValue(errorData.error || errorData.message || `Request failed (${response.status})`));
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        const data = await response.json().catch(() => ({}));
+        const data = await response.json().catch((): any => ({}));
         const fallbackText = textValue(
           data?.choices?.[0]?.message?.content || data?.output_text || data?.error || data?.message || "",
         );
-        updateSession(sessionId, (currentSession) => ({
+        updateSession(sessionId, (currentSession): any => ({
           ...currentSession,
-          messages: currentSession.messages.map((message) =>
+          messages: currentSession.messages.map((message): any =>
             message.id === assistantMessageId ? { ...message, content: fallbackText, status: "done" } : message,
           ),
           updatedAt: new Date().toISOString(),
@@ -727,9 +732,9 @@ export default function BasicChatPageClient() {
 
             assistantText += text;
             setStreamingText(assistantText);
-            updateSession(sessionId, (currentSession) => ({
+            updateSession(sessionId, (currentSession): any => ({
               ...currentSession,
-              messages: currentSession.messages.map((message) =>
+              messages: currentSession.messages.map((message): any =>
                 message.id === assistantMessageId
                   ? { ...message, content: assistantText, status: "streaming" }
                   : message,
@@ -742,9 +747,9 @@ export default function BasicChatPageClient() {
         }
       }
 
-      updateSession(sessionId, (currentSession) => ({
+      updateSession(sessionId, (currentSession): any => ({
         ...currentSession,
-        messages: currentSession.messages.map((message) =>
+        messages: currentSession.messages.map((message): any =>
           message.id === assistantMessageId
             ? { ...message, content: assistantText || message.content, status: "done" }
             : message,
@@ -755,9 +760,9 @@ export default function BasicChatPageClient() {
     } catch (error) {
       if (error.name !== "AbortError") {
         const errorText = textValue(error?.message || error);
-        updateSession(sessionId, (currentSession) => ({
+        updateSession(sessionId, (currentSession): any => ({
           ...currentSession,
-          messages: currentSession.messages.map((message) =>
+          messages: currentSession.messages.map((message): any =>
             message.id === assistantMessageId
               ? { ...message, content: message.content || `Error: ${errorText}`, status: "error" }
               : message,
@@ -774,7 +779,7 @@ export default function BasicChatPageClient() {
     }
   };
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event): any => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (canSend) sendMessage();
@@ -791,7 +796,7 @@ export default function BasicChatPageClient() {
           <div ref={modelMenuRef} className="relative">
             <button
               type="button"
-              onClick={() => setModelMenuOpen((value) => !value)}
+              onClick={(): any => setModelMenuOpen((value): any => !value)}
               className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/8"
             >
               <div className="min-w-0">
@@ -810,7 +815,7 @@ export default function BasicChatPageClient() {
                   <p className="text-sm text-white/75">Chỉ lấy từ provider đã connect</p>
                 </div>
                 <div className="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
-                  {providerGroups.map((group) => (
+                  {providerGroups.map((group): any => (
                     <div key={group.providerId} className="mb-2 rounded-[16px] border border-white/10 bg-black/20 p-2">
                       <div className="flex items-center justify-between px-2 py-2">
                         <p className="text-sm font-semibold text-white">{group.providerName}</p>
@@ -819,13 +824,13 @@ export default function BasicChatPageClient() {
                         </Badge>
                       </div>
                       <div className="grid gap-2 sm:grid-cols-2">
-                        {group.models.map((model) => {
+                        {group.models.map((model): any => {
                           const isActive = model.id === activeModelId;
                           return (
                             <button
                               key={model.id}
                               type="button"
-                              onClick={() => handleSelectModel(model.id)}
+                              onClick={(): any => handleSelectModel(model.id)}
                               className={`rounded-[14px] border px-3 py-3 text-left transition ${isActive ? "border-blue-400/40 bg-blue-500/15" : "border-white/10 bg-white/5 hover:bg-white/8"}`}
                             >
                               <div className="flex items-start justify-between gap-3">
@@ -851,7 +856,7 @@ export default function BasicChatPageClient() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setHistoryOpen((value) => !value)}
+              onClick={(): any => setHistoryOpen((value): any => !value)}
               className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:bg-white/8"
             >
               History
@@ -882,16 +887,16 @@ export default function BasicChatPageClient() {
                   Chưa có cuộc trò chuyện nào.
                 </div>
               ) : (
-                sessionItems.map((session) => {
+                sessionItems.map((session): any => {
                   const isActive = session.id === activeSessionId;
                   const latestMessage =
-                    [...(session.messages || [])].reverse().find((message) => message.role === "user") ||
+                    [...(session.messages || [])].reverse().find((message): any => message.role === "user") ||
                     session.messages?.[0];
                   return (
                     <button
                       key={session.id}
                       type="button"
-                      onClick={() => handleSelectSession(session.id)}
+                      onClick={(): any => handleSelectSession(session.id)}
                       className={`w-full rounded-[16px] border px-3 py-3 text-left transition ${isActive ? "border-blue-400/40 bg-blue-500/15" : "border-white/10 bg-white/5 hover:bg-white/8"}`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -942,7 +947,7 @@ export default function BasicChatPageClient() {
             ) : null}
 
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4">
-              {currentMessages.map((message) => {
+              {currentMessages.map((message): any => {
                 const isUser = message.role === "user";
                 const isAssistant = message.role === "assistant";
                 const isStreaming = isAssistant && message.id === streamingMessageId && message.status === "streaming";
@@ -961,7 +966,7 @@ export default function BasicChatPageClient() {
 
                       {message.attachments?.length ? (
                         <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 mt-2">
-                          {message.attachments.map((attachment) => (
+                          {message.attachments.map((attachment): any => (
                             <a
                               key={attachment.id}
                               href={attachment.dataUrl}
@@ -995,7 +1000,7 @@ export default function BasicChatPageClient() {
           <div className="shrink-0 pt-2">
             {attachments.length > 0 ? (
               <div className="mx-auto mb-3 flex w-full max-w-3xl flex-wrap gap-2 px-4">
-                {attachments.map((attachment) => (
+                {attachments.map((attachment): any => (
                   <div
                     key={attachment.id}
                     className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2"
@@ -1003,7 +1008,7 @@ export default function BasicChatPageClient() {
                     <span className="text-xs text-white/80 max-w-[12rem] truncate">{attachment.name}</span>
                     <button
                       type="button"
-                      onClick={() => removeAttachment(attachment.id)}
+                      onClick={(): any => removeAttachment(attachment.id)}
                       className="text-white/55 hover:text-white"
                     >
                       <LucideIcon name="close" className="text-[18px]" />
@@ -1018,7 +1023,7 @@ export default function BasicChatPageClient() {
                 <textarea
                   aria-label="Message"
                   value={draft}
-                  onChange={(event: any) => setDraft(event.target.value)}
+                  onChange={(event: any): any => setDraft(event.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Message AI"
                   rows={1}
@@ -1030,7 +1035,7 @@ export default function BasicChatPageClient() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={(): any => fileInputRef.current?.click()}
                       disabled={!activeModel || loadingData}
                       className="p-2 text-white/50 hover:text-white transition rounded-full hover:bg-white/5"
                     >
