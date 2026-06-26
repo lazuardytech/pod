@@ -16,7 +16,7 @@ export async function OPTIONS() {
 /**
  * POST /v1/messages/count_tokens - Mock token count response
  */
-export async function POST(request) {
+export async function POST(request: any) {
   return await withApiKeyRateLimit(request, async () => {
     let body;
     try {

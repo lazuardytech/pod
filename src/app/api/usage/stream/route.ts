@@ -2,7 +2,7 @@ import { getActiveRequests, getUsageStats, statsEmitter } from "@/lib/usageDb";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET(request: any) {
   const encoder = new TextEncoder();
   const state: {
     closed: boolean;
@@ -64,8 +64,9 @@ export async function GET(request) {
         // Push lightweight update immediately from cache
         if (state.cachedStats) {
           getActiveRequests()
-            .then(({ activeRequests, recentRequests, errorProvider }) => {
+            .then((result: any) => {
               if (state.closed) return;
+              const { activeRequests, recentRequests, errorProvider } = result || {};
               const quickStats = { ...state.cachedStats, activeRequests, recentRequests, errorProvider };
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(quickStats)}\n\n`));
             })

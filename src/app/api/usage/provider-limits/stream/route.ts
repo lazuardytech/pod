@@ -11,11 +11,11 @@ const POLL_MS = 60000;
 const HEARTBEAT_MS = 25000;
 const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 
-const isUsageEligible = (conn) =>
+const isUsageEligible = (conn: any) =>
   USAGE_SUPPORTED_PROVIDERS.includes(conn.provider) &&
   (conn.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(conn.provider));
 
-async function buildProviderLimitsSnapshot(request) {
+async function buildProviderLimitsSnapshot(request: any) {
   const connections = await getProviderConnections();
   const quotaData: Record<string, { quotas: unknown[]; plan?: unknown; message?: string; raw?: unknown }> = {};
   const errors: Record<string, string> = {};
@@ -80,7 +80,7 @@ async function buildProviderLimitsSnapshot(request) {
  * GET /api/usage/provider-limits/stream
  * SSE stream for provider quota snapshot updates.
  */
-export async function GET(request) {
+export async function GET(request: any) {
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;
 
@@ -102,7 +102,7 @@ export async function GET(request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (payload) => {
+      const send = (payload: any) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));

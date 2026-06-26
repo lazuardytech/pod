@@ -38,7 +38,7 @@ function normalizeProxyConfig(body: Record<string, unknown> = {}) {
   };
 }
 
-async function normalizeProxyPoolId(proxyPoolId) {
+async function normalizeProxyPoolId(proxyPoolId: any) {
   if (proxyPoolId === undefined || proxyPoolId === null || proxyPoolId === "" || proxyPoolId === "__none__") {
     return { proxyPoolId: null };
   }
@@ -100,7 +100,7 @@ export async function GET() {
 }
 
 // POST /api/providers - Create new connection (API Key only, OAuth via separate flow)
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

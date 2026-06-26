@@ -9,7 +9,7 @@ import { sanitizeError } from "@/lib/sanitizeError";
  * GET /api/oauth/kiro/auto-import
  * Auto-detect and extract Kiro refresh token from AWS SSO cache
  */
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

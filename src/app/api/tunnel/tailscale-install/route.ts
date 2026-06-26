@@ -21,7 +21,7 @@ function hasBrew() {
   }
 }
 
-export async function POST(request) {
+export async function POST(request: any) {
   const authResponse = await checkStrictDashboardAuth(request);
   if (authResponse) return authResponse;
 
@@ -52,7 +52,7 @@ export async function POST(request) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (event, data) => {
+      const send = (event: any, data: any) => {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       };
 
@@ -62,7 +62,7 @@ export async function POST(request) {
         });
         send("done", { success: true, authUrl: result?.authUrl || null });
       } catch (error) {
-        logError("TailscaleInstall", "Tailscale install error", { error: error?.message || error });
+        logError("TailscaleInstall", "Tailscale install error", { error: (error as any)?.message || error });
         const msg =
           sanitizeError(error)?.includes("incorrect password") || sanitizeError(error)?.includes("Sorry")
             ? "Wrong sudo password"

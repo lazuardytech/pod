@@ -10,7 +10,7 @@ import { getDatabase } from "@/lib/sqlite/connection";
  * 2. Fuzzy match by model + timestamp within ±5min window
  * 3. Fuzzy match by timestamp only within ±5min window (no model filter)
  */
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const db = getDatabase();

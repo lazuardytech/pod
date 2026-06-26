@@ -10,15 +10,15 @@ import { sanitizeError } from "@/lib/sanitizeError";
 import { asString } from "@/app/api/_types";
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
-const parseOpenAIStyleModels = (data) => {
+const parseOpenAIStyleModels = (data: any) => {
   if (Array.isArray(data)) return data;
   return data?.data || data?.models || data?.results || [];
 };
 
-const parseGeminiCliModels = (data) => {
+const parseGeminiCliModels = (data: any) => {
   if (Array.isArray(data?.models)) {
     return data.models
-      .map((item) => {
+      .map((item: any) => {
         const id = item?.id || item?.model || item?.name;
         if (!id) return null;
         return { id, name: item?.displayName || item?.name || id };
@@ -41,8 +41,8 @@ const parseGeminiCliModels = (data) => {
   return [];
 };
 
-const appendCodexReviewModels = (models) =>
-  models.flatMap((model) => {
+const appendCodexReviewModels = (models: any) =>
+  models.flatMap((model: any) => {
     const id = model?.id || model?.slug || model?.model || model?.name;
     if (!id) return [];
     const name = model?.display_name || model?.displayName || model?.name || id;
@@ -61,9 +61,9 @@ const appendCodexReviewModels = (models) =>
     ];
   });
 
-const parseCodexModels = (data) => appendCodexReviewModels(parseOpenAIStyleModels(data));
+const parseCodexModels = (data: any) => appendCodexReviewModels(parseOpenAIStyleModels(data));
 
-const createOpenAIModelsConfig = (url) => ({
+const createOpenAIModelsConfig = (url: any) => ({
   url,
   method: "GET",
   headers: { "Content-Type": "application/json" },
@@ -72,7 +72,7 @@ const createOpenAIModelsConfig = (url) => ({
   parseResponse: parseOpenAIStyleModels,
 });
 
-const resolveQwenModelsUrl = (connection) => {
+const resolveQwenModelsUrl = (connection: any) => {
   const fallback = "https://portal.qwen.ai/v1/models";
   const raw = connection?.providerSpecificData?.resourceUrl;
   if (!raw || typeof raw !== "string") return fallback;
@@ -94,14 +94,14 @@ const PROVIDER_MODELS_CONFIG = {
       "Content-Type": "application/json",
     },
     authHeader: "x-api-key",
-    parseResponse: (data) => data.data || [],
+    parseResponse: (data: any) => data.data || [],
   },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/models",
     method: "GET",
     headers: { "Content-Type": "application/json" },
     authQuery: "key", // Use query param for API key
-    parseResponse: (data) => data.models || [],
+    parseResponse: (data: any) => data.models || [],
   },
   qwen: {
     url: "https://portal.qwen.ai/v1/models",
@@ -109,7 +109,7 @@ const PROVIDER_MODELS_CONFIG = {
     headers: { "Content-Type": "application/json" },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data) => data.data || [],
+    parseResponse: (data: any) => data.data || [],
   },
   codex: {
     url: "https://chatgpt.com/backend-api/codex/models?client_version=1.0.0",
@@ -126,7 +126,7 @@ const PROVIDER_MODELS_CONFIG = {
     authHeader: "Authorization",
     authPrefix: "Bearer ",
     body: {},
-    parseResponse: (data) => data.models || [],
+    parseResponse: (data: any) => data.models || [],
   },
   github: {
     url: "https://api.githubcopilot.com/models",
@@ -140,13 +140,13 @@ const PROVIDER_MODELS_CONFIG = {
     },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data) => {
+    parseResponse: (data: any) => {
       if (!data?.data) return [];
       // Filter out embeddings, non-chat models, and disabled models
       return data.data
-        .filter((m) => m.capabilities?.type === "chat")
-        .filter((m) => m.policy?.state !== "disabled") // Only return explicitly enabled models
-        .map((m) => ({
+        .filter((m: any) => m.capabilities?.type === "chat")
+        .filter((m: any) => m.policy?.state !== "disabled") // Only return explicitly enabled models
+        .map((m: any) => ({
           id: m.id,
           name: m.name || m.id,
           version: m.version,
@@ -165,7 +165,7 @@ const PROVIDER_MODELS_CONFIG = {
       "Content-Type": "application/json",
     },
     authHeader: "x-api-key",
-    parseResponse: (data) => data.data || [],
+    parseResponse: (data: any) => data.data || [],
   },
 
   alicode: {
@@ -174,7 +174,7 @@ const PROVIDER_MODELS_CONFIG = {
     headers: { "Content-Type": "application/json" },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data) => data.data || [],
+    parseResponse: (data: any) => data.data || [],
   },
   "alicode-intl": {
     url: "https://coding-intl.dashscope.aliyuncs.com/v1/models",
@@ -182,7 +182,7 @@ const PROVIDER_MODELS_CONFIG = {
     headers: { "Content-Type": "application/json" },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data) => data.data || [],
+    parseResponse: (data: any) => data.data || [],
   },
   "volcengine-ark": createOpenAIModelsConfig("https://ark.cn-beijing.volces.com/api/coding/v3/models"),
   byteplus: createOpenAIModelsConfig("https://ark.ap-southeast.bytepluses.com/api/coding/v3/models"),
@@ -210,7 +210,7 @@ const PROVIDER_MODELS_CONFIG = {
 /**
  * GET /api/providers/[id]/models - Get models list from provider
  */
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -359,7 +359,7 @@ export async function GET(request, { params }) {
       const projectId = connection.projectId || psd.projectId;
       const body = projectId ? { project: projectId } : {};
 
-      const fetchModels = async (token) => {
+      const fetchModels = async (token: any) => {
         const response = await fetch(GEMINI_CLI_MODELS_URL, {
           method: "POST",
           headers: {
@@ -456,28 +456,28 @@ export async function GET(request, { params }) {
     }
 
     // Build request URL
-    let url = config.url;
+    let url = (config as any).url;
     if (connection.provider === "qwen") {
       url = resolveQwenModelsUrl(connection);
     }
-    if (config.authQuery) {
-      url += `?${config.authQuery}=${token}`;
+    if ((config as any).authQuery) {
+      url += `?${(config as any).authQuery}=${token}`;
     }
 
     // Build headers
-    const headers: Record<string, string> = { ...config.headers };
-    if (config.authHeader && !config.authQuery) {
-      headers[config.authHeader] = (config.authPrefix || "") + token;
+    const headers: Record<string, string> = { ...(config as any).headers };
+    if ((config as any).authHeader && !(config as any).authQuery) {
+      headers[(config as any).authHeader] = ((config as any).authPrefix || "") + token;
     }
 
     // Make request
     const fetchOptions: Record<string, unknown> & { method?: string; headers?: Record<string, string> } = {
-      method: config.method,
+      method: (config as any).method,
       headers,
     };
 
-    if (config.body && config.method === "POST") {
-      fetchOptions.body = JSON.stringify(config.body);
+    if ((config as any).body && (config as any).method === "POST") {
+      fetchOptions.body = JSON.stringify((config as any).body);
     }
 
     const response = await fetch(url, fetchOptions);
@@ -488,7 +488,7 @@ export async function GET(request, { params }) {
     }
 
     const data = await response.json();
-    const models = config.parseResponse(data);
+    const models = (config as any).parseResponse(data);
 
     return NextResponse.json({
       provider: connection.provider,

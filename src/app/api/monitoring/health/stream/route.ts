@@ -13,7 +13,7 @@ const ROUTE_PATH = "/api/monitoring/health/stream";
  * Auth (see ../_auth.js): API key (Bearer / x-api-key) OR dashboard JWT cookie.
  * Max concurrent connections: 100 (enforced by _sseConnectionCap.js).
  */
-export async function GET(request) {
+export async function GET(request: any) {
   const unauthorized = await checkMonitoringAuth(request);
   if (unauthorized) return unauthorized;
 
@@ -35,7 +35,7 @@ export async function GET(request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data) => {
+      const send = (data: any) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -70,11 +70,10 @@ export async function GET(request) {
         } catch {}
       }, HEARTBEAT_MS);
 
-      let idleTimeout;
+      let idleTimeout: ReturnType<typeof setTimeout> | null = null;
 
       const cleanup = () => {
-        clearTimeout(idleTimeout);
-        releaseSlot();
+        clearTimeout(idleTimeout ?? undefined);
         clearInterval(heartbeat);
       };
 

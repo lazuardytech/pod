@@ -9,14 +9,14 @@ import { sanitizeError } from "@/lib/sanitizeError";
  */
 async function getInternalApiKey() {
   const keys = await getApiKeys();
-  return keys.find((k) => k.isActive !== false)?.key || null;
+  return keys.find((k: any) => k.isActive !== false)?.key || null;
 }
 
 /**
  * Ping a single model via internal completions endpoint (OpenAI format).
  * open-sse handles all provider translation automatically.
  */
-async function pingModel(modelId, baseUrl, apiKey) {
+async function pingModel(modelId: any, baseUrl: any, apiKey: any) {
   const start = Date.now();
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -51,7 +51,7 @@ async function pingModel(modelId, baseUrl, apiKey) {
  * id = connectionId — used only to resolve provider + model list.
  * Actual requests go through /api/v1/chat/completions (open-sse handles everything).
  */
-export async function POST(request, { params }) {
+export async function POST(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -71,7 +71,7 @@ export async function POST(request, { params }) {
         const modelsRes = await fetch(`${getBaseUrl(request)}/api/providers/${id}/models`);
         if (modelsRes.ok) {
           const data = await modelsRes.json();
-          models = (data.models || []).map((m) => ({ id: m.id || m.name, name: m.name || m.id }));
+          models = (data.models || []).map((m: any) => ({ id: m.id || (m as any).name, name: m.name || m.id }));
         }
       } catch {
         /* fallback to empty */
@@ -93,7 +93,7 @@ export async function POST(request, { params }) {
 
     if (rest.length > 0) {
       const restResults = await Promise.all(
-        rest.map(async (model) => {
+        rest.map(async (model: any) => {
           const result = await pingModel(`${alias}/${model.id}`, baseUrl, apiKey);
           return { modelId: model.id, name: model.name || model.id, ...result };
         }),
@@ -108,7 +108,7 @@ export async function POST(request, { params }) {
   }
 }
 
-function getBaseUrl(request) {
+function getBaseUrl(request: any) {
   const url = new URL(request.url);
   return `${url.protocol}//${url.host}`;
 }

@@ -1,4 +1,4 @@
-// Ensure proxyFetch is loaded to patch globalThis.fetch
+// Ensure proxyFetch is loaded to patch (globalThis as Record<string, any>).fetch
 import "open-sse/index.js";
 
 import { getExecutor } from "open-sse/executors/index.js";
@@ -10,7 +10,7 @@ import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
 import { sanitizeError } from "@/lib/sanitizeError";
 // Detect auth-expired messages returned by usage providers instead of throwing
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
-function isAuthExpiredMessage(usage) {
+function isAuthExpiredMessage(usage: any) {
   if (!usage?.message) return false;
   const msg = usage.message.toLowerCase();
   return AUTH_EXPIRED_PATTERNS.some((p) => msg.includes(p));
@@ -21,7 +21,7 @@ function isAuthExpiredMessage(usage) {
  * @param {boolean} force - Skip needsRefresh check and always attempt refresh
  * @returns Promise<{ connection, refreshed: boolean }>
  */
-async function refreshAndUpdateCredentials(connection, force = false, proxyOptions = null) {
+async function refreshAndUpdateCredentials(connection: any, force = false, proxyOptions = null) {
   const executor = getExecutor(connection.provider);
 
   // Build credentials object from connection
@@ -71,7 +71,7 @@ async function refreshAndUpdateCredentials(connection, force = false, proxyOptio
 
   // Update token expiry
   if (refreshResult.expiresIn) {
-    updateData.expiresAt = new Date(Date.now() + refreshResult.expiresIn * 1000).toISOString();
+    updateData.expiresAt = new Date(Date.now() + Number((refreshResult as any).expiresIn) * 1000).toISOString();
   } else if (refreshResult.expiresAt) {
     updateData.expiresAt = refreshResult.expiresAt;
   }
@@ -103,7 +103,7 @@ async function refreshAndUpdateCredentials(connection, force = false, proxyOptio
 /**
  * GET /api/usage/[connectionId] - Get usage data for a specific connection
  */
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   let connection;
   try {
     const { connectionId } = await params;
@@ -123,7 +123,7 @@ export async function GET(request, { params }) {
     }
 
     // Resolve connection proxy config; force strictProxy=false so quota/refresh fall back to direct on failure
-    const proxyConfig = await resolveConnectionProxyConfig(connection.providerSpecificData);
+    const proxyConfig = await resolveConnectionProxyConfig((connection as any).providerSpecificData);
     const proxyOptions = {
       connectionProxyEnabled: proxyConfig.connectionProxyEnabled === true,
       connectionProxyUrl: proxyConfig.connectionProxyUrl || "",
@@ -137,11 +137,11 @@ export async function GET(request, { params }) {
       try {
         const result = await refreshAndUpdateCredentials(connection, false, proxyOptions as any);
         connection = result.connection;
-      } catch (refreshError) {
+      } catch (refreshError: unknown) {
         console.error("[Usage API] Credential refresh failed:", refreshError);
         return Response.json(
           {
-            error: `Credential refresh failed: ${refreshError.message}`,
+            error: `Credential refresh failed: ${(refreshError as any).message}`,
           },
           { status: 401 },
         );

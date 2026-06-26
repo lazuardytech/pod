@@ -5,12 +5,12 @@ import { normalizeMemorySettings, toMemorySettingsUpdates } from "@/lib/memory/s
 
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
-function toBooleanOrNull(value) {
+function toBooleanOrNull(value: any) {
   if (typeof value === "boolean") return value;
   return null;
 }
 
-function toBoundedIntOrNull(value, min, max) {
+function toBoundedIntOrNull(value: any, min: any, max: any) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return null;
   const rounded = Math.round(parsed);
@@ -27,7 +27,7 @@ export async function GET() {
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

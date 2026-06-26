@@ -5,16 +5,16 @@ import { validateFetchUrl } from "@/lib/validateUrl";
 export const dynamic = "force-dynamic";
 
 const FILTERS = {
-  "openrouter-free": (models) =>
+  "openrouter-free": (models: any) =>
     models
-      .filter((m) => m.pricing?.prompt === "0" && m.pricing?.completion === "0" && m.context_length >= 200000)
-      .map((m) => ({ id: m.id, name: m.name, contextLength: m.context_length }))
-      .sort((a, b) => b.contextLength - a.contextLength),
+      .filter((m: any) => m.pricing?.prompt === "0" && m.pricing?.completion === "0" && m.context_length >= 200000)
+      .map((m: any) => ({ id: m.id, name: (m as any).name, contextLength: m.context_length }))
+      .sort((a: any, b: any) => b.contextLength - a.contextLength),
 
-  "opencode-free": (models) => models.filter((m) => m.id?.endsWith("-free")).map((m) => ({ id: m.id, name: m.id })),
+  "opencode-free": (models: any) => models.filter((m: any) => m.id?.endsWith("-free")).map((m: any) => ({ id: m.id, name: m.id })),
 };
 
-export async function GET(request) {
+export async function GET(request: any) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
   const type = searchParams.get("type");

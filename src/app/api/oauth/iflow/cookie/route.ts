@@ -9,7 +9,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
  * POST /api/oauth/iflow/cookie
  * Body: { cookie: "BXAuth=xxx; ..." }
  */
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

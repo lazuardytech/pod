@@ -11,7 +11,7 @@ const langNames = new Intl.DisplayNames(["en"], { type: "language" });
  * Returns { languages, byLang } grouped by language - same format as edge-tts
  * Uses direct DB read (no mutex) to avoid blocking on concurrent TTS requests
  */
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const langFilter = searchParams.get("lang");
@@ -27,7 +27,7 @@ export async function GET(request) {
 
     // Group by all supported languages (verified_languages + labels.language)
     const byLang: Record<string, { code: string; name: string; voices: { id: string; name: string; gender: string; lang: string; free_users_allowed?: boolean }[] }> = {};
-    const addToLang = (code, voice) => {
+    const addToLang = (code: any, voice: any) => {
       if (!byLang[code]) {
         byLang[code] = {
           code,
@@ -42,10 +42,10 @@ export async function GET(request) {
         };
       }
       // Avoid duplicate voice in same lang
-      if (!byLang[code].voices.find((v) => v.id === voice.voice_id)) {
+      if (!byLang[code].voices.find((v: any) => v.id === voice.voice_id)) {
         byLang[code].voices.push({
           id: voice.voice_id,
-          name: voice.name,
+          name: (voice as any).name,
           gender: voice.labels?.gender || "",
           lang: code,
           // premade voices are free; professional library voices added to account may require paid plan
@@ -72,7 +72,7 @@ export async function GET(request) {
 
     // If lang filter requested, return only that group's voices
     if (langFilter) {
-      return NextResponse.json({ voices: byLang[langFilter]?.voices || [] });
+      return NextResponse.json({ voices: (byLang as Record<string, any>)[langFilter]?.voices || [] });
     }
 
     return NextResponse.json({ languages, byLang });

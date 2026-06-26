@@ -9,7 +9,7 @@ import { getProviderConnections } from "@/lib/localDb";
 
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

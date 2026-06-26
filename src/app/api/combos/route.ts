@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 // PATCH /api/combos - Reorder combos
-export async function PATCH(request) {
+export async function PATCH(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -40,7 +40,7 @@ export async function PATCH(request) {
 }
 
 // POST /api/combos - Create new combo
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

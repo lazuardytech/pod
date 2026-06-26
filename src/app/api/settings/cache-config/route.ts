@@ -11,7 +11,7 @@ const DEFAULTS = {
 
 const ALLOWED_KEYS = new Set(Object.keys(DEFAULTS));
 
-function toPositiveInt(value) {
+function toPositiveInt(value: any) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
 }
@@ -27,7 +27,7 @@ export async function GET() {
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

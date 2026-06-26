@@ -33,7 +33,7 @@ export async function GET() {
 }
 
 // PUT /api/models - Update model alias
-export async function PUT(request) {
+export async function PUT(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

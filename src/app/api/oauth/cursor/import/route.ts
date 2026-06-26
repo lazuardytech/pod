@@ -13,7 +13,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
  * - accessToken: string - Access token from cursorAuth/accessToken
  * - machineId: string - Machine ID from storage.serviceMachineId
  */
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -74,7 +74,7 @@ export async function POST(request) {
  * GET /api/oauth/cursor/import
  * Get instructions for importing Cursor token
  */
-export async function GET(request) {
+export async function GET(request: any) {
   const authResponse = await checkStrictDashboardAuth(request);
   if (authResponse) return authResponse;
 

@@ -14,9 +14,9 @@ function getDataDir() {
 const DATA_DIR = getDataDir();
 
 function runCommandSync(
-  spawnSync,
-  command,
-  args,
+  spawnSync: any,
+  command: any,
+  args: any,
   { timeout = 5000, env }: { timeout?: number; env?: NodeJS.ProcessEnv } = {},
 ) {
   const result = spawnSync(command, args, {
@@ -29,7 +29,7 @@ function runCommandSync(
   return typeof result.stdout === "string" ? result.stdout : "";
 }
 
-function getTailscaleBin(spawnSync) {
+function getTailscaleBin(spawnSync: any) {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
   const systemPath = runCommandSync(spawnSync, lookupCommand, ["tailscale"], {
     timeout: 3000,
@@ -38,11 +38,11 @@ function getTailscaleBin(spawnSync) {
   return systemPath || null;
 }
 
-function isTailscaleInstalled(spawnSync) {
+function isTailscaleInstalled(spawnSync: any) {
   return getTailscaleBin(spawnSync) !== null;
 }
 
-function runTailscaleJson(spawnSync, args, { timeout = 5000 } = {}) {
+function runTailscaleJson(spawnSync: any, args: any, { timeout = 5000 }: { timeout?: number } = {}) {
   const bin = getTailscaleBin(spawnSync);
   if (!bin) return null;
   const out = runCommandSync(
@@ -66,12 +66,12 @@ function runTailscaleJson(spawnSync, args, { timeout = 5000 } = {}) {
   }
 }
 
-function isTailscaleLoggedIn(spawnSync) {
+function isTailscaleLoggedIn(spawnSync: any) {
   const json = runTailscaleJson(spawnSync, ["status", "--json"], { timeout: 5000 });
   return json?.BackendState === "Running";
 }
 
-function hasBrew(execSync) {
+function hasBrew(execSync: any) {
   try {
     execSync("which brew", { stdio: "ignore", windowsHide: true, env: { ...process.env, PATH: EXTENDED_PATH } });
     return true;
@@ -80,7 +80,7 @@ function hasBrew(execSync) {
   }
 }
 
-function isDaemonRunning(spawnSync, execSync) {
+function isDaemonRunning(spawnSync: any, execSync: any) {
   const bin = getTailscaleBin(spawnSync);
   if (!bin) return false;
   try {

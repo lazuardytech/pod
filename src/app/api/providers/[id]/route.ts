@@ -36,7 +36,7 @@ function normalizeProxyConfig(body: Record<string, unknown> = {}) {
   };
 }
 
-async function normalizeProxyPoolUpdate(proxyPoolIdInput) {
+async function normalizeProxyPoolUpdate(proxyPoolIdInput: any) {
   if (proxyPoolIdInput === undefined) {
     return { hasProxyPoolField: false, proxyPoolId: null };
   }
@@ -58,12 +58,12 @@ async function normalizeProxyPoolUpdate(proxyPoolIdInput) {
   return { hasProxyPoolField: true, proxyPoolId };
 }
 
-function shouldMergeProviderSpecificData(existing, incoming, hasLegacyProxy, hasProxyPoolField) {
+function shouldMergeProviderSpecificData(existing: any, incoming: any, hasLegacyProxy: any, hasProxyPoolField: any) {
   return existing !== undefined || incoming !== undefined || hasLegacyProxy || hasProxyPoolField;
 }
 
 // GET /api/providers/[id] - Get single connection
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -87,7 +87,7 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/providers/[id] - Update connection
-export async function PUT(request, { params }) {
+export async function PUT(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -179,7 +179,7 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE /api/providers/[id] - Delete connection
-export async function DELETE(request, { params }) {
+export async function DELETE(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
 

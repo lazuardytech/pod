@@ -5,7 +5,7 @@ import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 // GET /api/keys/[id] - Get single key
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const key = await getApiKeyById(id);
@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/keys/[id] - Update key
-export async function PUT(request, { params }) {
+export async function PUT(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -67,7 +67,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ key: updated });
   } catch (error) {
     console.log("Error updating key:", error);
-    if (String(error?.message || "").includes("positive integer")) {
+    if (String((error as any)?.message || "").includes("positive integer")) {
       return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to update key" }, { status: 500 });
@@ -75,7 +75,7 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE /api/keys/[id] - Delete API key
-export async function DELETE(request, { params }) {
+export async function DELETE(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
 

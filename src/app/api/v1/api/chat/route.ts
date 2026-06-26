@@ -22,7 +22,7 @@ export async function OPTIONS() {
   });
 }
 
-export async function POST(request) {
+export async function POST(request: any) {
   return await withApiKeyRateLimit(request, async () => {
     await ensureInitialized();
 

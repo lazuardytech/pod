@@ -8,7 +8,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
 // GET /api/combos/[id] - Get combo by ID
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const combo = await getComboById(id);
@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/combos/[id] - Update combo
-export async function PUT(request, { params }) {
+export async function PUT(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -96,7 +96,7 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE /api/combos/[id] - Delete combo
-export async function DELETE(request, { params }) {
+export async function DELETE(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const prev = await getComboById(id);

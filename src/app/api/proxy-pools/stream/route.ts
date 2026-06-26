@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
  * GET /api/proxy-pools/stream
  * SSE stream that pushes proxy pool updates every 3s.
  */
-export async function GET(request) {
+export async function GET(request: any) {
   let closed = false;
   let lastSig = "";
 
@@ -14,7 +14,7 @@ export async function GET(request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data) => {
+      const send = (data: any) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -24,7 +24,7 @@ export async function GET(request) {
       // Initial snapshot
       try {
         const pools = await getProxyPools();
-        lastSig = JSON.stringify(pools.map((p) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
+        lastSig = JSON.stringify(pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
         send({ type: "init", pools });
       } catch {
         send({ type: "init", pools: [] });
@@ -38,7 +38,7 @@ export async function GET(request) {
         }
         try {
           const pools = await getProxyPools();
-          const sig = JSON.stringify(pools.map((p) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
+          const sig = JSON.stringify(pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
           if (sig !== lastSig) {
             lastSig = sig;
             send({ type: "update", pools });
@@ -57,11 +57,11 @@ export async function GET(request) {
         } catch {}
       }, 30000);
 
-      let idleTimeout;
+      let idleTimeout: ReturnType<typeof setTimeout> | null = null;
 
       const cleanup = () => {
         closed = true;
-        clearTimeout(idleTimeout);
+        clearTimeout(idleTimeout ?? undefined);
         clearInterval(interval);
         clearInterval(heartbeat);
       };

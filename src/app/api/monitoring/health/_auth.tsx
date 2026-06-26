@@ -21,7 +21,7 @@ const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-s
  * @param {Request} request
  * @returns {Promise<NextResponse | null>}
  */
-export async function checkMonitoringAuth(request) {
+export async function checkMonitoringAuth(request: any) {
   let settings;
   try {
     settings = await getSettings();
@@ -29,7 +29,7 @@ export async function checkMonitoringAuth(request) {
     settings = {};
   }
 
-  const requireApiKey = settings.requireApiKey === true;
+  const requireApiKey = (settings as Record<string, any>).requireApiKey === true;
   const requireLogin = settings.requireLogin !== false;
 
   // No auth required at all — public access.

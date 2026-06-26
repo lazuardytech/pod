@@ -11,7 +11,7 @@ import {
 import { testSingleConnection } from "../[id]/test/testUtils";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
-function getAuthGroup(providerId, connection = null as any) {
+function getAuthGroup(providerId: any, connection = null as any) {
   // Prioritize authType from connection if available
   if (connection?.authType) {
     if (connection.authType === "oauth") {
@@ -34,7 +34,7 @@ function getAuthGroup(providerId, connection = null as any) {
   return "apikey";
 }
 
-function isCompatibleProvider(providerId) {
+function isCompatibleProvider(providerId: any) {
   return (
     typeof providerId === "string" &&
     (providerId.startsWith(OPENAI_COMPATIBLE_PREFIX) || providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX))
@@ -42,7 +42,7 @@ function isCompatibleProvider(providerId) {
 }
 
 // POST /api/providers/test-batch - Test multiple connections by group
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -57,15 +57,15 @@ export async function POST(request) {
 
     let connectionsToTest: any[] = [];
     if (mode === "provider" && providerId) {
-      connectionsToTest = allConnections.filter((c) => c.provider === providerId);
+      connectionsToTest = allConnections.filter((c: any) => c.provider === providerId);
     } else if (mode === "oauth") {
-      connectionsToTest = allConnections.filter((c) => getAuthGroup(c.provider, c) === "oauth");
+      connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "oauth");
     } else if (mode === "free") {
-      connectionsToTest = allConnections.filter((c) => getAuthGroup(c.provider, c) === "free");
+      connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "free");
     } else if (mode === "apikey") {
-      connectionsToTest = allConnections.filter((c) => getAuthGroup(c.provider, c) === "apikey");
+      connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "apikey");
     } else if (mode === "compatible") {
-      connectionsToTest = allConnections.filter((c) => isCompatibleProvider(c.provider));
+      connectionsToTest = allConnections.filter((c: any) => isCompatibleProvider(c.provider));
     } else if (mode === "all") {
       connectionsToTest = allConnections;
     } else {
@@ -124,8 +124,8 @@ export async function POST(request) {
       testedAt: new Date().toISOString(),
       summary: {
         total: results.length,
-        passed: results.filter((r) => r.valid).length,
-        failed: results.filter((r) => !r.valid).length,
+        passed: results.filter((r: any) => r.valid).length,
+        failed: results.filter((r: any) => !r.valid).length,
       },
     });
   } catch (error) {

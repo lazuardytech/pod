@@ -3,7 +3,7 @@ import { deleteMemory, getMemory, updateMemory } from "@/lib/memory/store";
 
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
-export async function GET(_request, { params }) {
+export async function GET(_request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const memory = await getMemory(id);
@@ -14,7 +14,7 @@ export async function GET(_request, { params }) {
   }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -39,7 +39,7 @@ export async function PATCH(request, { params }) {
   }
 }
 
-export async function DELETE(_request, { params }) {
+export async function DELETE(_request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const deleted = await deleteMemory(id);

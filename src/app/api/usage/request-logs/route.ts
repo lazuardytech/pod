@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRecentLogsStructured } from "@/lib/usageDb";
 
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "300"), 10000);

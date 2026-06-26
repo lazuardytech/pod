@@ -7,14 +7,14 @@ import { sanitizeError } from "@/lib/sanitizeError";
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
 
-function countryName(code) {
+function countryName(code: any) {
   try {
     return LOCALE_NAMES.of(code);
   } catch {
     return code;
   }
 }
-function langName(code) {
+function langName(code: any) {
   try {
     return LANG_NAMES.of(code);
   } catch {
@@ -29,7 +29,7 @@ function langName(code) {
  *   ?lang=en     (optional filter by lang code)
  *   ?apiKey=xxx  (required for elevenlabs)
  */
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get("provider") || "edge-tts";
@@ -47,11 +47,11 @@ export async function GET(request) {
     let voices;
 
     if (provider === "local-device") {
-      voices = raw.map((item) => {
+      voices = raw.map((item: any) => {
         const v = item as Record<string, unknown>;
         return {
           id: v.id,
-          name: v.name,
+          name: (v as any).name,
           locale: asString(v.locale).replace("_", "-"),
           lang: v.lang,
           country: v.country,
@@ -61,13 +61,13 @@ export async function GET(request) {
         };
       });
     } else if (useElevenShape) {
-      voices = raw.map((item) => {
+      voices = raw.map((item: any) => {
         const v = item as Record<string, unknown>;
         const labels = asApiRecord(v.labels);
         const language = asString(labels.language) || "en";
         return {
           id: v.voice_id,
-          name: v.name,
+          name: (v as any).name,
           locale: language,
           lang: language.split("-")[0],
           country: "",
@@ -79,7 +79,7 @@ export async function GET(request) {
       });
     } else {
       // edge-tts (default)
-      voices = raw.map((item) => {
+      voices = raw.map((item: any) => {
         const v = item as Record<string, unknown>;
         const locale = asString(v.Locale);
         const [lang, country] = locale.split("-");
@@ -99,14 +99,14 @@ export async function GET(request) {
     }
 
     // Apply filter
-    if (langFilter) voices = voices.filter((v) => v.lang === langFilter);
+    if (langFilter) voices = voices.filter((v: any) => v.lang === langFilter);
 
     // Group by language
     const byLang = {};
     for (const v of voices) {
-      const key = v.lang;
-      if (!byLang[key]) byLang[key] = { code: key, name: v.langName, voices: [] };
-      byLang[key].voices.push(v);
+      const key = v.lang as string;
+      if (!(byLang as Record<string, any>)[key]) (byLang as Record<string, any>)[key] = { code: key, name: v.langName, voices: [] };
+      (byLang as Record<string, any>)[key].voices.push(v);
     }
 
     // Sorted language list

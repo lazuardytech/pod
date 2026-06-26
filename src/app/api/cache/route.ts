@@ -9,7 +9,7 @@ import {
   invalidateStale,
 } from "@/lib/semanticCache";
 
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const settings = await getSettings();
     return NextResponse.json({
@@ -25,7 +25,7 @@ export async function GET(request) {
   }
 }
 
-export async function DELETE(request) {
+export async function DELETE(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const model = searchParams.get("model");

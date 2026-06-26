@@ -3,7 +3,7 @@ import { getModelAliases, getProviderConnections } from "@/models";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 
 // Verify API key and return provider credentials
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

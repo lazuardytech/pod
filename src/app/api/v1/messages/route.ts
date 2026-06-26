@@ -30,7 +30,7 @@ export async function OPTIONS() {
 /**
  * POST /v1/messages - Claude format (auto convert via handleChat)
  */
-export async function POST(request) {
+export async function POST(request: any) {
   return await withApiKeyRateLimit(request, async () => {
     await ensureInitialized();
     return await handleChat(request);

@@ -3,14 +3,14 @@ import { NextResponse } from "next/server";
 import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
-function sanitizeProxyPool(pool) {
+function sanitizeProxyPool(pool: any) {
   if (!pool) return pool;
   const sanitized = { ...pool };
   delete sanitized.relayAuthToken;
   return sanitized;
 }
 
-function toBoolean(value) {
+function toBoolean(value: any) {
   if (value === "true") return true;
   if (value === "false") return false;
   return undefined;
@@ -51,7 +51,7 @@ function buildUsageMap(connections: any[] = []) {
 }
 
 // GET /api/proxy-pools - List proxy pools
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const isActive = toBoolean(searchParams.get("isActive"));
@@ -84,7 +84,7 @@ export async function GET(request) {
 }
 
 // POST /api/proxy-pools - Create proxy pool
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

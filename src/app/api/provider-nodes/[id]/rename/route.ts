@@ -23,7 +23,7 @@ const PREFIX_BY_TYPE = {
 
 const ID_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
-function isCustomNode(node) {
+function isCustomNode(node: any) {
   if (!node) return false;
   return (
     isOpenAICompatibleProvider(node.id) || isAnthropicCompatibleProvider(node.id) || isCustomEmbeddingProvider(node.id)
@@ -31,7 +31,7 @@ function isCustomNode(node) {
 }
 
 // PATCH /api/provider-nodes/[id]/rename - Rename a custom provider node's identifier
-export async function PATCH(request, { params }) {
+export async function PATCH(request: any, { params }: { params: any }) {
   try {
     const { id: oldId } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -89,7 +89,7 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({ node: updated });
   } catch (error) {
-    const message = typeof error?.message === "string" ? sanitizeError(error) : "Failed to rename provider node";
+    const message = typeof (error as any)?.message === "string" ? sanitizeError(error) : "Failed to rename provider node";
     console.log("Error renaming provider node:", message);
     const status = /not found/i.test(message)
       ? 404

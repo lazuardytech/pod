@@ -9,7 +9,7 @@ const langNames = new Intl.DisplayNames(["en"], { type: "language" });
  * Returns { languages, byLang } grouped by language code (same shape as edge-tts/elevenlabs/inworld)
  * Each Deepgram voice = one model (canonical_name like "aura-2-thalia-en")
  */
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const langFilter = searchParams.get("lang");
@@ -46,12 +46,12 @@ export async function GET(request) {
             voices: [],
           };
         }
-        const voiceId = m.canonical_name || m.name;
-        if (!byLang[code].voices.find((x) => x.id === voiceId)) {
+        const voiceId = m.canonical_name || (m as any).name;
+        if (!byLang[code].voices.find((x: any) => x.id === voiceId)) {
           byLang[code].voices.push({
             id: voiceId,
             name: m.name || voiceId,
-            gender: m.metadata?.tags?.find((t) => t === "masculine" || t === "feminine") || "",
+            gender: m.metadata?.tags?.find((t: any) => t === "masculine" || t === "feminine") || "",
             lang: code,
           });
         }
@@ -63,7 +63,7 @@ export async function GET(request) {
     );
 
     if (langFilter) {
-      return NextResponse.json({ voices: byLang[langFilter]?.voices || [] });
+      return NextResponse.json({ voices: (byLang as Record<string, any>)[langFilter]?.voices || [] });
     }
     return NextResponse.json({ languages, byLang });
   } catch (err) {

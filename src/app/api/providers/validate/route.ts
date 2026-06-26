@@ -18,7 +18,7 @@ import {
 
 // Probe a webSearch/webFetch provider using its searchConfig/fetchConfig.
 // Returns true if API key is accepted (status !== 401 && !== 403).
-async function probeWebProvider(provider, apiKey) {
+async function probeWebProvider(provider: any, apiKey: any) {
   const p = AI_PROVIDERS[provider];
   if (!p) return null;
   // Skip if provider has dual-purpose (LLM + search), let LLM validate handle it
@@ -63,7 +63,7 @@ async function probeWebProvider(provider, apiKey) {
 
 // Probe a media provider (tts/embedding/stt/image/video) using *Config.
 // Returns true if API key is accepted; null to skip (let default handler decide).
-async function probeMediaProvider(provider, apiKey) {
+async function probeMediaProvider(provider: any, apiKey: any) {
   const p = AI_PROVIDERS[provider];
   if (!p) return null;
   const MEDIA_KINDS = new Set(["tts", "embedding", "stt", "image", "video", "music", "imageToText"]);
@@ -133,7 +133,7 @@ async function probeMediaProvider(provider, apiKey) {
   return res.status !== 401 && res.status !== 403;
 }
 
-function validateOllamaLocalBaseUrl(providerSpecificData) {
+function validateOllamaLocalBaseUrl(providerSpecificData: any) {
   const baseUrl = resolveOllamaLocalHost({ providerSpecificData });
 
   let parsed;
@@ -157,7 +157,7 @@ function validateOllamaLocalBaseUrl(providerSpecificData) {
 }
 
 // POST /api/providers/validate - Validate API key with provider
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -446,7 +446,7 @@ export async function POST(request) {
         }
         case "volcengine-ark":
         case "byteplus": {
-          const res = await fetch(PROVIDER_ENDPOINTS[provider], {
+          const res = await fetch(PROVIDER_ENDPOINTS[provider] as string, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${apiKey}`,
@@ -609,7 +609,7 @@ export async function POST(request) {
         case "grok-web": {
           const token = apiKey.startsWith("sso=") ? apiKey.slice(4) : apiKey;
           // Cloudflare-bypass: send POST with same browser fingerprint headers as GrokWebExecutor
-          const randomHex = (n) => {
+          const randomHex = (n: any) => {
             const a = new Uint8Array(n);
             crypto.getRandomValues(a);
             return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");

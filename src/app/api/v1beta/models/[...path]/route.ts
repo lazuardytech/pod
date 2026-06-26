@@ -42,12 +42,12 @@ export async function OPTIONS() {
  * The upstream handleChat returns OpenAI SSE format; we transform it to
  * Gemini SSE format on the fly via transformOpenAISSEToGeminiSSE().
  */
-export async function POST(request, { params }) {
+export async function POST(request: any, { params }: { params: any }) {
   await ensureInitialized();
 
   try {
     const settings = await getSettings();
-    if (settings.requireApiKey) {
+    if ((settings as Record<string, any>).requireApiKey) {
       const apiKey = extractApiKey(request);
       if (!apiKey) {
         return Response.json(
@@ -127,12 +127,12 @@ export async function POST(request, { params }) {
  * @param {string} model       - resolved model string (e.g. "gemini-pro-high")
  * @param {boolean} stream     - whether to stream (from URL action)
  */
-function convertGeminiToInternal(geminiBody, model, stream) {
+function convertGeminiToInternal(geminiBody: any, model: any, stream: any) {
   const messages: any[] = [];
 
   // Convert system instruction
   if (geminiBody.systemInstruction) {
-    const systemText = geminiBody.systemInstruction.parts?.map((p) => p.text).join("\n") || "";
+    const systemText = geminiBody.systemInstruction.parts?.map((p: any) => p.text).join("\n") || "";
     if (systemText) {
       messages.push({ role: "system", content: systemText });
     }
@@ -142,7 +142,7 @@ function convertGeminiToInternal(geminiBody, model, stream) {
   if (geminiBody.contents) {
     for (const content of geminiBody.contents) {
       const role = content.role === "model" ? "assistant" : "user";
-      const text = content.parts?.map((p) => p.text).join("\n") || "";
+      const text = content.parts?.map((p: any) => p.text).join("\n") || "";
       messages.push({ role, content: text });
     }
   }
@@ -178,7 +178,7 @@ const FINISH_REASON_MAP = {
  *   data: {"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP","index":0}],"usageMetadata":{...}}
  *   (stream closes — no [DONE])
  */
-function transformOpenAISSEToGeminiSSE(upstreamResponse, model) {
+function transformOpenAISSEToGeminiSSE(upstreamResponse: any, model: any) {
   if (!upstreamResponse.ok || !upstreamResponse.body) {
     return upstreamResponse;
   }
@@ -272,7 +272,7 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse, model) {
  * Convert an OpenAI chat.completion JSON response into a Gemini
  * GenerateContentResponse so that Gemini CLI can parse it.
  */
-async function convertOpenAIResponseToGemini(response, model) {
+async function convertOpenAIResponseToGemini(response: any, model: any) {
   if (!response.ok) return response;
 
   let body;

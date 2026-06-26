@@ -6,7 +6,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 export const dynamic = "force-dynamic";
 
 // GET /api/models/disabled?providerAlias=xxx
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const providerAlias = searchParams.get("providerAlias");
@@ -20,7 +20,7 @@ export async function GET(request) {
 }
 
 // POST /api/models/disabled  body: { providerAlias, ids: [...] }
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -38,7 +38,7 @@ export async function POST(request) {
 }
 
 // DELETE /api/models/disabled?providerAlias=xxx[&id=yyy]
-export async function DELETE(request) {
+export async function DELETE(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const providerAlias = searchParams.get("providerAlias");

@@ -11,7 +11,7 @@ import {
 } from "@/models";
 
 // PUT /api/provider-nodes/[id] - Update provider node
-export async function PUT(request, { params }) {
+export async function PUT(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -99,7 +99,7 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE /api/provider-nodes/[id] - Delete provider node and its connections
-export async function DELETE(request, { params }) {
+export async function DELETE(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const node = await getProviderNodeById(id);

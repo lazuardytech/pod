@@ -13,7 +13,7 @@ const fetchWithTimeout = (url: string, options: RequestInit, timeout = 10000): P
 };
 
 // Validate URL format
-const isValidUrl = (url) => {
+const isValidUrl = (url: any) => {
   try {
     new URL(url);
     return true;
@@ -23,7 +23,7 @@ const isValidUrl = (url) => {
 };
 
 // Parse error details for user-friendly messages
-const getErrorMessage = (error) => {
+const getErrorMessage = (error: any) => {
   if (error.cause?.code === "ECONNREFUSED") return "Connection refused - provider node offline or unreachable";
   if (error.cause?.code === "ENOTFOUND") return "DNS lookup failed - invalid domain or network issue";
   if (error.cause?.code === "ETIMEDOUT") return "Connection timeout - provider node too slow";
@@ -35,7 +35,7 @@ const getErrorMessage = (error) => {
 };
 
 // Get status-specific error message for /models endpoint
-const getModelsErrorMessage = (status) => {
+const getModelsErrorMessage = (status: any) => {
   if (status === 401 || status === 403) return "API key unauthorized";
   if (status === 404) return "/models endpoint not found - try chat validation with model ID";
   if (status >= 500) return "Server error - try again later";
@@ -43,7 +43,7 @@ const getModelsErrorMessage = (status) => {
 };
 
 // Get status-specific error message for /chat/completions endpoint
-const getChatErrorMessage = (status) => {
+const getChatErrorMessage = (status: any) => {
   if (status === 401 || status === 403) return "API key unauthorized";
   if (status === 400) return "Invalid model or bad request";
   if (status === 404) return "Chat endpoint not found";
@@ -52,7 +52,7 @@ const getChatErrorMessage = (status) => {
 };
 
 // POST /api/provider-nodes/validate - Validate API key against base URL
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -204,8 +204,8 @@ export async function POST(request) {
     const errorMessage = getErrorMessage(error);
     console.error("Error validating provider node:", {
       message: sanitizeError(error),
-      cause: error.cause,
-      code: error.cause?.code,
+      cause: (error as any).cause,
+      code: (error as any).cause?.code,
       userMessage: errorMessage,
     });
     return NextResponse.json(

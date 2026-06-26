@@ -14,7 +14,7 @@ const ACCESS_TOKEN_KEYS = ["cursorAuth/accessToken", "cursorAuth/token"];
 const MACHINE_ID_KEYS = ["storage.serviceMachineId", "storage.machineId", "telemetry.machineId"];
 
 /** Get candidate db paths by platform */
-function getCandidatePaths(platform) {
+function getCandidatePaths(platform: any) {
   const home = homedir();
 
   if (platform === "darwin") {
@@ -41,7 +41,7 @@ function getCandidatePaths(platform) {
   ];
 }
 
-const _normalize = (value) => {
+const _normalize = (value: any) => {
   if (typeof value !== "string") return value;
   try {
     const parsed = JSON.parse(value);
@@ -55,7 +55,7 @@ const _normalize = (value) => {
  * Extract tokens via better-sqlite3 (bundled dependency).
  * This is the preferred strategy — no external CLI required.
  */
-function extractTokensViaBetterSqlite(dbPath) {
+function extractTokensViaBetterSqlite(dbPath: any) {
   // Dynamic require so the route stays importable even if native bindings fail.
   // `bun:sqlite` is marked as a server external package in next.config.mjs,
   // so require() resolves it at runtime under Bun.
@@ -67,12 +67,12 @@ function extractTokensViaBetterSqlite(dbPath) {
     ? new Database(dbPath, { readonly: true, create: false })
     : new Database(dbPath, { readonly: true, fileMustExist: true });
 
-  const query = (key) => {
+  const query = (key: any) => {
     const row = db.prepare("SELECT value FROM itemTable WHERE key=? LIMIT 1").get(key);
     return row?.value || null;
   };
 
-  const normalize = (value) => {
+  const normalize = (value: any) => {
     if (typeof value !== "string") return value;
     try {
       const parsed = JSON.parse(value);
@@ -108,8 +108,8 @@ function extractTokensViaBetterSqlite(dbPath) {
  * Extract tokens via sqlite3 CLI.
  * Fallback when better-sqlite3 native bindings are unavailable.
  */
-async function extractTokensViaCLI(dbPath) {
-  const normalize = (raw) => {
+async function extractTokensViaCLI(dbPath: any) {
+  const normalize = (raw: any) => {
     const value = raw.trim();
     try {
       const parsed = JSON.parse(value);
@@ -119,7 +119,7 @@ async function extractTokensViaCLI(dbPath) {
     }
   };
 
-  const query = async (key) => {
+  const query = async (key: any) => {
     const { stdout } = await execFileAsync(
       "sqlite3",
       [
@@ -172,7 +172,7 @@ async function extractTokensViaCLI(dbPath) {
  * Auto-detect and extract Cursor tokens from local SQLite database.
  * Strategy: better-sqlite3 → sqlite3 CLI → manual fallback
  */
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -252,7 +252,7 @@ export async function GET(request) {
     // Strategy 3: ask user to paste manually
     return NextResponse.json({ found: false, windowsManual: true, dbPath });
   } catch (error) {
-    logError("CursorAutoImport", "Cursor auto-import failed", { error: error?.message || error });
+    logError("CursorAutoImport", "Cursor auto-import failed", { error: (error as any)?.message || error });
     return NextResponse.json({ found: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

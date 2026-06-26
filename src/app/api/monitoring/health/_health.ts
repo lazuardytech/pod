@@ -25,15 +25,15 @@ import {
 } from "@/shared/constants/providers";
 
 // biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
-const START_TIME = globalThis.__pod_start_time ?? (globalThis.__pod_start_time = Date.now());
+const START_TIME = (globalThis as Record<string, any>).__pod_start_time ?? ((globalThis as Record<string, any>).__pod_start_time = Date.now());
 
 // Cache integrity_check result — it's an O(n-pages) full scan, too expensive
 // to run on every SSE poll. Re-run at most once every 5 minutes.
 const INTEGRITY_CACHE_TTL_MS = 5 * 60 * 1000;
-let _integrityCache = null;
+let _integrityCache: any = null;
 let _integrityCacheAt = 0;
 
-function getCachedIntegrity(db) {
+function getCachedIntegrity(db: any) {
   const now = Date.now();
   if (_integrityCache && now - _integrityCacheAt < INTEGRITY_CACHE_TTL_MS) {
     return _integrityCache;
@@ -44,7 +44,7 @@ function getCachedIntegrity(db) {
   return _integrityCache;
 }
 
-function humanizeBytes(bytes) {
+function humanizeBytes(bytes: any) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -157,7 +157,7 @@ export async function buildHealthPayload() {
   const keys = apiKeys.status === "fulfilled" ? apiKeys.value : [];
   const cfg: Settings = settings.status === "fulfilled" ? settings.value : ({} as Settings);
   const nodeMap = new Map<string, Record<string, unknown>>(
-    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [
+    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n: any) => [
       n.id,
       n as Record<string, unknown>,
     ]),
@@ -165,7 +165,7 @@ export async function buildHealthPayload() {
 
   const providers: Record<string, unknown> = {
     total: conns.length,
-    enabled: conns.filter((c) => c.enabled !== false).length,
+    enabled: conns.filter((c: any) => c.enabled !== false).length,
     combos: comboList.length,
     apiKeys: keys.length,
   };
@@ -371,7 +371,7 @@ export async function buildHealthPayload() {
     };
     entry.connectionCount += 1;
     const stateRank: Record<string, number> = { OPEN: 2, HALF_OPEN: 1, CLOSED: 0 };
-    if (stateRank[state] > (stateRank[entry.state] ?? 0)) {
+    if ((stateRank[state] ?? -1) > (stateRank[entry.state] ?? 0)) {
       entry.state = state;
       entry.retryAfterMs = retryAfterMs;
       entry.rateLimitedUntil = (c.rateLimitedUntil as string) || null;
@@ -396,7 +396,7 @@ export async function buildHealthPayload() {
     rateLimitByProvider[key].connections.push({
       connectionId: c.id,
       connectionName: c.name || c.provider,
-      rateLimitedUntil: c.rateLimitedUntil,
+      rateLimitedUntil: c.rateLimitedUntil as string,
       retryAfterMs: new Date(String(c.rateLimitedUntil)).getTime() - now,
     });
   }

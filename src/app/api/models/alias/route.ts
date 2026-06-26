@@ -17,7 +17,7 @@ export async function GET() {
 }
 
 // PUT /api/models/alias - Set model alias
-export async function PUT(request) {
+export async function PUT(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -38,7 +38,7 @@ export async function PUT(request) {
 }
 
 // DELETE /api/models/alias?alias=xxx - Delete alias
-export async function DELETE(request) {
+export async function DELETE(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const alias = searchParams.get("alias");

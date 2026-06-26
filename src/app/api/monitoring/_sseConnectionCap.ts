@@ -15,7 +15,7 @@ const DEFAULT_MAX_CONCURRENT = 100;
  * Returns { allowed: boolean, response: Response | undefined }.
  * If not allowed, response is a 503 Response.
  */
-export function tryAcquireSSESlot(routePath) {
+export function tryAcquireSSESlot(routePath: any) {
   const current = counters.get(routePath) || 0;
   if (current >= DEFAULT_MAX_CONCURRENT) {
     return {
@@ -36,7 +36,7 @@ export function tryAcquireSSESlot(routePath) {
 /**
  * Release an SSE connection slot for the given route path.
  */
-export function releaseSSESlot(routePath) {
+export function releaseSSESlot(routePath: any) {
   const current = counters.get(routePath) || 0;
   if (current <= 1) counters.delete(routePath);
   else counters.set(routePath, current - 1);

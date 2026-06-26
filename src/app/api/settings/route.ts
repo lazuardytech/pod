@@ -48,7 +48,7 @@ export async function GET() {
   }
 }
 
-export async function PATCH(request) {
+export async function PATCH(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

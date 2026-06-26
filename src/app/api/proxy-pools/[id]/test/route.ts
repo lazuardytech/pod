@@ -4,7 +4,7 @@ import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
-function buildRelayHeaders(proxyPool) {
+function buildRelayHeaders(proxyPool: any) {
   const headers: Record<string, string> = {
     "x-relay-target": "https://www.google.com",
     "x-relay-path": "/generate_204",
@@ -19,7 +19,7 @@ function buildRelayHeaders(proxyPool) {
   return headers;
 }
 
-async function testVercelRelay(proxyPool, timeoutMs = 10000) {
+async function testVercelRelay(proxyPool: any, timeoutMs: number = 10000) {
   const controller = new AbortController();
   const startedAt = Date.now();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -40,7 +40,7 @@ async function testVercelRelay(proxyPool, timeoutMs = 10000) {
     return {
       ok: false,
       status: 500,
-      error: err?.name === "AbortError" ? "Relay test timed out" : sanitizeError(err),
+      error: (err as any)?.name === "AbortError" ? "Relay test timed out" : sanitizeError(err),
     };
   } finally {
     clearTimeout(timer);
@@ -48,7 +48,7 @@ async function testVercelRelay(proxyPool, timeoutMs = 10000) {
 }
 
 // POST /api/proxy-pools/[id]/test - Test proxy pool entry
-export async function POST(request, { params }) {
+export async function POST(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const proxyPool = await getProxyPoolById(id);

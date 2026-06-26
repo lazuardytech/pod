@@ -19,7 +19,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 
 // GET /api/oauth/[provider]/authorize - Generate auth URL
 // GET /api/oauth/[provider]/device-code - Request device code (for device_code flow)
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -129,7 +129,7 @@ export async function GET(request, { params }) {
 
 // POST /api/oauth/[provider]/exchange - Exchange code for tokens and save
 // POST /api/oauth/[provider]/poll - Poll for token (device_code flow)
-export async function POST(request, { params }) {
+export async function POST(request: any, { params }: { params: any }) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -206,7 +206,7 @@ export async function POST(request, { params }) {
           authType: "oauth",
           ...result.tokens,
           expiresAt: result.tokens.expiresIn
-            ? new Date(Date.now() + result.tokens.expiresIn * 1000).toISOString()
+            ? new Date(Date.now() + Number(result.tokens.expiresIn) * 1000).toISOString()
             : null,
           testStatus: "active",
         });

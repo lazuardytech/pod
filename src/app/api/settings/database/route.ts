@@ -14,7 +14,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [payload, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

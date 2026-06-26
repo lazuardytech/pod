@@ -8,14 +8,14 @@ import { sanitizeError } from "@/lib/sanitizeError";
 
 const VERCEL_API = "https://api.vercel.com";
 
-function sanitizeProxyPool(pool) {
+function sanitizeProxyPool(pool: any) {
   if (!pool) return pool;
   const sanitized = { ...pool };
   delete sanitized.relayAuthToken;
   return sanitized;
 }
 
-function createRelayFunctionCode(relayAuthToken) {
+function createRelayFunctionCode(relayAuthToken: any) {
   return `
 const RELAY_AUTH_TOKEN = ${JSON.stringify(relayAuthToken)};
 
@@ -71,7 +71,7 @@ export default async function handler(req) {
     if (timeoutId) clearTimeout(timeoutId);
     const isTimeout = controller && controller.signal.aborted;
     return new Response(JSON.stringify({
-      error: isTimeout ? "Upstream relay request timed out" : (err.message || "Relay error")
+      error: isTimeout ? "Upstream relay request timed out" : ((err as any).message || "Relay error")
     }), {
       status: 504,
       headers: { "content-type": "application/json" },
@@ -81,7 +81,7 @@ export default async function handler(req) {
 `;
 }
 
-async function pollDeployment(deploymentId, token, maxMs = 120000) {
+async function pollDeployment(deploymentId: any, token: any, maxMs: number = 120000) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     const res = await fetch(`${VERCEL_API}/v13/deployments/${deploymentId}`, {
@@ -98,7 +98,7 @@ async function pollDeployment(deploymentId, token, maxMs = 120000) {
 }
 
 // POST /api/proxy-pools/vercel-deploy
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

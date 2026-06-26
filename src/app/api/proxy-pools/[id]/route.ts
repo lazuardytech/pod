@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { deleteProxyPool, getProviderConnections, getProxyPoolById, updateProxyPool } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
-function sanitizeProxyPool(pool) {
+function sanitizeProxyPool(pool: any) {
   if (!pool) return pool;
   const sanitized = { ...pool };
   delete sanitized.relayAuthToken;
@@ -49,12 +49,12 @@ function normalizeProxyPoolUpdate(body: Record<string, unknown> = {}) {
   return { updates };
 }
 
-function countBoundConnections(connections: any[] = [], proxyPoolId) {
-  return connections.filter((connection) => connection?.providerSpecificData?.proxyPoolId === proxyPoolId).length;
+function countBoundConnections(connections: any[] = [], proxyPoolId: any) {
+  return connections.filter((connection: any) => connection?.providerSpecificData?.proxyPoolId === proxyPoolId).length;
 }
 
 // GET /api/proxy-pools/[id] - Get proxy pool
-export async function GET(request, { params }) {
+export async function GET(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const proxyPool = await getProxyPoolById(id);
@@ -71,7 +71,7 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/proxy-pools/[id] - Update proxy pool
-export async function PUT(request, { params }) {
+export async function PUT(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const existing = await getProxyPoolById(id);
@@ -98,7 +98,7 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE /api/proxy-pools/[id] - Delete proxy pool
-export async function DELETE(request, { params }) {
+export async function DELETE(request: any, { params }: { params: any }) {
   try {
     const { id } = await params;
     const existing = await getProxyPoolById(id);

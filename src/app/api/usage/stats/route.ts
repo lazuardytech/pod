@@ -5,7 +5,7 @@ const VALID_PERIODS = new Set(["24h", "7d", "30d", "60d", "90d", "all"]);
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "7d";

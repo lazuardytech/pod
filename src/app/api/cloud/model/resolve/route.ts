@@ -4,7 +4,7 @@ import { getModelAliases, validateApiKey } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
 // Resolve model alias to provider/model
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {

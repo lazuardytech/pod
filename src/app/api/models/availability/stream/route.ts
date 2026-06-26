@@ -13,7 +13,7 @@ const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
  * GET /api/models/availability/stream
  * SSE stream for model lock/unavailable status.
  */
-export async function GET(request) {
+export async function GET(request: any) {
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;
 
@@ -35,7 +35,7 @@ export async function GET(request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (payload) => {
+      const send = (payload: any) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));

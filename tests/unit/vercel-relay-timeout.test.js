@@ -175,7 +175,7 @@ describe("testVercelRelay — healthcheck endpoint (Fix 3)", () => {
   it("keeps 10s timeout and AbortController", () => {
     const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
-    expect(source).toContain("timeoutMs = 10000");
+    expect(source).toContain("timeoutMs: number = 10000");
     expect(source).toContain("new AbortController()");
     expect(source).toContain("clearTimeout(timer)");
   });
@@ -344,7 +344,7 @@ describe("RELAY_FUNCTION_CODE — timeout cleanup", () => {
   it("pollDeployment has bounded retries with 120s budget", () => {
     const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
-    expect(source).toContain("maxMs = 120000");
+    expect(source).toContain("maxMs: number = 120000");
     expect(source).toContain("Date.now() - start < maxMs");
     expect(source).toContain("setTimeout(r, 3000)");
   });

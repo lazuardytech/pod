@@ -9,7 +9,7 @@ import { sanitizeError } from "@/lib/sanitizeError";
  * Generate Google/GitHub social login URL for manual callback flow
  * Uses kiro:// custom protocol as required by AWS Cognito
  */
-export async function GET(request) {
+export async function GET(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

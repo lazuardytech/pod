@@ -23,7 +23,7 @@ export async function GET() {
  * Update pricing configuration
  * Body: { provider: { model: { input: number, output: number, cached: number, ... } } }
  */
-export async function PATCH(request) {
+export async function PATCH(request: any) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -77,7 +77,7 @@ export async function PATCH(request) {
  * Reset pricing to defaults
  * Query params: ?provider=xxx&model=yyy (optional)
  */
-export async function DELETE(request) {
+export async function DELETE(request: any) {
   try {
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get("provider");

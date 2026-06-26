@@ -61,7 +61,7 @@ const OAUTH_TEST_CONFIG = {
   },
   iflow: {
     // iFlow getUserInfo requires accessToken as query param, not header
-    buildUrl: (token) => `https://iflow.cn/api/oauth/getUserInfo?accessToken=${encodeURIComponent(token)}`,
+    buildUrl: (token: any) => `https://iflow.cn/api/oauth/getUserInfo?accessToken=${encodeURIComponent(token)}`,
     method: "GET",
     noAuth: true,
   },
@@ -86,7 +86,7 @@ const OAUTH_TEST_CONFIG = {
   codebuddy: { tokenExists: true },
 };
 
-async function probeClineAccessToken(accessToken) {
+async function probeClineAccessToken(accessToken: any) {
   const res = await fetch("https://api.cline.bot/api/v1/users/me", {
     method: "GET",
     headers: buildClineHeaders(accessToken, {
@@ -97,7 +97,7 @@ async function probeClineAccessToken(accessToken) {
   return res;
 }
 
-async function refreshOAuthToken(connection) {
+async function refreshOAuthToken(connection: any) {
   const provider = connection.provider;
   const refreshToken = connection.refreshToken;
   if (!refreshToken) return null;
@@ -244,20 +244,20 @@ async function refreshOAuthToken(connection) {
   }
 }
 
-function isTokenExpired(connection) {
+function isTokenExpired(connection: any) {
   if (!connection.expiresAt) return false;
   const expiresAt = new Date(connection.expiresAt).getTime();
   const buffer = 5 * 60 * 1000;
   return expiresAt <= Date.now() + buffer;
 }
 
-async function testOAuthConnection(connection, effectiveProxy: any = null) {
+async function testOAuthConnection(connection: any, effectiveProxy: any = null) {
   const config = OAUTH_TEST_CONFIG[connection.provider as keyof typeof OAUTH_TEST_CONFIG];
   if (!config) return { valid: false, error: "Provider test not supported", refreshed: false };
   if (!connection.accessToken) return { valid: false, error: "No access token", refreshed: false };
 
   // Cursor uses protobuf API - can only verify token exists, not test endpoint
-  if (config.tokenExists) {
+  if ((config as any).tokenExists) {
     return { valid: true, error: null, refreshed: false, newTokens: null };
   }
 
@@ -266,7 +266,7 @@ async function testOAuthConnection(connection, effectiveProxy: any = null) {
   let newTokens: Record<string, unknown> | null = null;
 
   const tokenExpired = isTokenExpired(connection);
-  if (config.refreshable && tokenExpired && connection.refreshToken) {
+  if ((config as any).refreshable && tokenExpired && connection.refreshToken) {
     const tokens = await refreshOAuthToken(connection);
     if (tokens) {
       accessToken = tokens.accessToken;
@@ -277,14 +277,14 @@ async function testOAuthConnection(connection, effectiveProxy: any = null) {
     }
   }
 
-  if (config.checkExpiry) {
+  if ((config as any).checkExpiry) {
     if (refreshed) return { valid: true, error: null, refreshed, newTokens };
     if (tokenExpired) return { valid: false, error: "Token expired", refreshed: false };
     return { valid: true, error: null, refreshed: false, newTokens: null };
   }
 
   if (connection.provider === "cline") {
-    const tryProbe = async (token) => {
+    const tryProbe = async (token: any) => {
       const res = await probeClineAccessToken(token);
       if (res.ok) return { valid: true, error: null, refreshed, newTokens };
       if (res.status === 401) return { valid: false, error: "Token invalid or revoked", refreshed };
@@ -309,34 +309,34 @@ async function testOAuthConnection(connection, effectiveProxy: any = null) {
   }
 
   try {
-    const testUrl = config.buildUrl ? config.buildUrl(accessToken) : config.url;
-    const headers = config.noAuth
-      ? { ...config.extraHeaders }
-      : { [config.authHeader]: `${config.authPrefix}${accessToken}`, ...config.extraHeaders };
+    const testUrl = (config as any).buildUrl ? (config as any).buildUrl(accessToken) : (config as any).url;
+    const headers = (config as any).noAuth
+      ? { ...(config as any).extraHeaders }
+      : { [(config as any).authHeader]: `${(config as any).authPrefix}${accessToken}`, ...(config as any).extraHeaders };
     const fetchOpts: { method: string; headers: Record<string, string>; body?: string } = {
-      method: config.method,
+      method: (config as any).method,
       headers,
     };
-    if (config.body) fetchOpts.body = config.body;
+    if ((config as any).body) fetchOpts.body = (config as any).body;
     const res = await fetchWithConnectionProxy(testUrl, fetchOpts, effectiveProxy);
 
-    const accepted = res.ok || (config.acceptStatuses && config.acceptStatuses.includes(res.status));
+    const accepted = res.ok || ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(res.status));
     if (accepted) return { valid: true, error: null, refreshed, newTokens };
 
-    if (res.status === 401 && config.refreshable && !refreshed && connection.refreshToken) {
+    if (res.status === 401 && (config as any).refreshable && !refreshed && connection.refreshToken) {
       const tokens = await refreshOAuthToken(connection);
       if (tokens) {
-        const retryUrl = config.buildUrl ? config.buildUrl(tokens.accessToken) : testUrl;
-        const retryHeaders = config.noAuth
-          ? { ...config.extraHeaders }
-          : { [config.authHeader]: `${config.authPrefix}${tokens.accessToken}`, ...config.extraHeaders };
+        const retryUrl = (config as any).buildUrl ? (config as any).buildUrl(tokens.accessToken) : testUrl;
+        const retryHeaders = (config as any).noAuth
+          ? { ...(config as any).extraHeaders }
+          : { [(config as any).authHeader]: `${(config as any).authPrefix}${tokens.accessToken}`, ...(config as any).extraHeaders };
         const retryOpts: { method: string; headers: Record<string, string>; body?: string } = {
-          method: config.method,
+          method: (config as any).method,
           headers: retryHeaders,
         };
-        if (config.body) retryOpts.body = config.body;
+        if ((config as any).body) retryOpts.body = (config as any).body;
         const retryRes = await fetchWithConnectionProxy(retryUrl, retryOpts, effectiveProxy);
-        const retryAccepted = retryRes.ok || (config.acceptStatuses && config.acceptStatuses.includes(retryRes.status));
+        const retryAccepted = retryRes.ok || ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(retryRes.status));
         if (retryAccepted) return { valid: true, error: null, refreshed: true, newTokens: tokens };
       }
       return { valid: false, error: "Token invalid or revoked", refreshed: false };
@@ -350,7 +350,7 @@ async function testOAuthConnection(connection, effectiveProxy: any = null) {
   }
 }
 
-async function fetchWithConnectionProxy(url, options: any = {}, effectiveProxy: any = null) {
+async function fetchWithConnectionProxy(url: any, options: any = {}, effectiveProxy: any = null) {
   // Vercel relay: forward via relay URL
   if (effectiveProxy?.vercelRelayUrl) {
     const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
@@ -371,7 +371,7 @@ async function fetchWithConnectionProxy(url, options: any = {}, effectiveProxy: 
   } as any);
 }
 
-async function testApiKeyConnection(connection, effectiveProxy: any = null) {
+async function testApiKeyConnection(connection: any, effectiveProxy: any = null) {
   if (isOpenAICompatibleProvider(connection.provider)) {
     const modelsBase = connection.providerSpecificData?.baseUrl;
     if (!modelsBase) return { valid: false, error: "Missing base URL" };
@@ -755,7 +755,7 @@ async function testApiKeyConnection(connection, effectiveProxy: any = null) {
       }
       case "grok-web": {
         const token = connection.apiKey.startsWith("sso=") ? connection.apiKey.slice(4) : connection.apiKey;
-        const randomHex = (n) =>
+        const randomHex = (n: any) =>
           Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, "0")).join("");
         const statsigId = Buffer.from("e:TypeError: Cannot read properties of null (reading 'children')").toString(
           "base64",
@@ -824,7 +824,7 @@ async function testApiKeyConnection(connection, effectiveProxy: any = null) {
 /**
  * Test a single connection by ID, update DB, and return result.
  */
-export async function testSingleConnection(id) {
+export async function testSingleConnection(id: any) {
   const connection = await getProviderConnectionById(id);
   if (!connection)
     return { valid: false, error: "Connection not found", latencyMs: 0, testedAt: new Date().toISOString() };
@@ -862,11 +862,11 @@ export async function testSingleConnection(id) {
     lastErrorAt: result.valid ? null : new Date().toISOString(),
   };
 
-  if (result.refreshed && result.newTokens) {
-    updateData.accessToken = result.newTokens.accessToken;
-    if (result.newTokens.refreshToken) updateData.refreshToken = result.newTokens.refreshToken;
-    if (result.newTokens.expiresIn) {
-      updateData.expiresAt = new Date(Date.now() + result.newTokens.expiresIn * 1000).toISOString();
+  if ((result as any).refreshed && (result as any).newTokens) {
+    updateData.accessToken = (result as any).newTokens.accessToken;
+    if ((result as any).newTokens.refreshToken) updateData.refreshToken = (result as any).newTokens.refreshToken;
+    if ((result as any).newTokens.expiresIn) {
+      updateData.expiresAt = new Date(Date.now() + (result as any).newTokens.expiresIn * 1000).toISOString();
     }
   }
 

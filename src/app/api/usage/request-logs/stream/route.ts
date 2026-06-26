@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
  * SSE stream that pushes request log updates as they arrive.
  * Detects: new entries (maxId change) AND status changes (PENDING → SUCCESS/FAILED).
  */
-export async function GET(request) {
+export async function GET(request: any) {
   let closed = false;
   let lastSig = "";
 
@@ -15,23 +15,23 @@ export async function GET(request) {
 
   // Signature includes maxId + all PENDING row IDs + status hash
   // so any status change (PENDING→SUCCESS/FAILED) triggers an update
-  function buildSig(logs) {
+  function buildSig(logs: any) {
     const maxId = logs.length > 0 ? logs[0].id : 0;
     const pendingIds = logs
-      .filter((l) => l.status?.includes("PENDING"))
-      .map((l) => l.id)
+      .filter((l: any) => l.status?.includes("PENDING"))
+      .map((l: any) => l.id)
       .join(",");
     // Hash recent statuses to catch any status change
     const statusHash = logs
       .slice(0, 50)
-      .map((l) => `${l.id}:${l.status}`)
+      .map((l: any) => `${l.id}:${l.status}`)
       .join("|");
     return `${maxId}|${pendingIds}|${statusHash}`;
   }
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data) => {
+      const send = (data: any) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -75,11 +75,11 @@ export async function GET(request) {
         } catch {}
       }, 30000);
 
-      let idleTimeout;
+      let idleTimeout: ReturnType<typeof setTimeout> | null = null;
 
       const cleanup = () => {
         closed = true;
-        clearTimeout(idleTimeout);
+        clearTimeout(idleTimeout ?? undefined);
         clearInterval(heartbeat);
       };
 

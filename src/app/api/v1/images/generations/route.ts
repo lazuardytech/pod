@@ -12,6 +12,6 @@ export async function OPTIONS() {
 }
 
 /** POST /v1/images/generations - OpenAI-compatible image generation endpoint */
-export async function POST(request) {
+export async function POST(request: any) {
   return await withApiKeyRateLimit(request, () => handleImageGeneration(request));
 }

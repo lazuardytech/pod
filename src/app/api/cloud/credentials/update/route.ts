@@ -5,7 +5,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 
 // Update provider credentials (for cloud token refresh)
-export async function PUT(request) {
+export async function PUT(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

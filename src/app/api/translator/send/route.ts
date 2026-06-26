@@ -5,7 +5,7 @@ import { getProviderConnections } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
-function buildForwardHeaders(response, stream) {
+function buildForwardHeaders(response: any, stream: any) {
   const headers = new Headers();
   const contentType = response.headers.get("content-type");
   const cacheControl = response.headers.get("cache-control");
@@ -36,7 +36,7 @@ function buildForwardHeaders(response, stream) {
   return headers;
 }
 
-export async function POST(request) {
+export async function POST(request: any) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
