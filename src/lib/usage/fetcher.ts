@@ -4,29 +4,42 @@
 
 import { GITHUB_CONFIG } from "@/lib/oauth/constants/oauth";
 
+type UsageResult = { message: string } | { plan: string; resetDate?: string; quotas: Record<string, GitHubQuota> };
+
+type GitHubQuota = {
+  used: number;
+  total: number;
+  remaining?: number;
+  unlimited: boolean;
+};
+
+type Connection = {
+  provider: string;
+  accessToken?: string;
+  providerSpecificData?: { copilotToken?: string; resourceUrl?: string };
+};
+
 /**
  * Get usage data for a provider connection
- * @param {Object} connection - Provider connection with accessToken
- * @returns {Object} Usage data with quotas
  */
-export async function getUsageForProvider(connection) {
+export async function getUsageForProvider(connection: Connection): Promise<UsageResult> {
   const { provider, accessToken, providerSpecificData } = connection;
 
   switch (provider) {
     case "github":
-      return await getGitHubUsage(accessToken, providerSpecificData);
+      return await getGitHubUsage(accessToken || "", providerSpecificData);
     case "gemini-cli":
-      return await getGeminiUsage(accessToken);
+      return await getGeminiUsage(accessToken || "");
     case "antigravity":
-      return await getAntigravityUsage(accessToken);
+      return await getAntigravityUsage(accessToken || "");
     case "claude":
-      return await getClaudeUsage(accessToken);
+      return await getClaudeUsage(accessToken || "");
     case "codex":
-      return await getCodexUsage(accessToken);
+      return await getCodexUsage(accessToken || "");
     case "qwen":
-      return await getQwenUsage(accessToken, providerSpecificData);
+      return await getQwenUsage(accessToken || "", providerSpecificData);
     case "iflow":
-      return await getIflowUsage(accessToken);
+      return await getIflowUsage(accessToken || "");
     default:
       return { message: `Usage API not implemented for ${provider}` };
   }
@@ -35,7 +48,10 @@ export async function getUsageForProvider(connection) {
 /**
  * GitHub Copilot Usage
  */
-async function getGitHubUsage(accessToken, providerSpecificData) {
+async function getGitHubUsage(
+  _accessToken: string,
+  providerSpecificData: Connection["providerSpecificData"],
+): Promise<UsageResult> {
   try {
     // Use copilotToken for copilot_internal API, not GitHub OAuth accessToken
     const copilotToken = providerSpecificData?.copilotToken;
@@ -57,14 +73,26 @@ async function getGitHubUsage(accessToken, providerSpecificData) {
       throw new Error(`GitHub API error: ${error}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      copilot_plan?: string;
+      quota_reset_date?: string;
+      quota_snapshots?: {
+        chat?: { entitlement: number; remaining: number; unlimited?: boolean };
+        completions?: { entitlement: number; remaining: number; unlimited?: boolean };
+        premium_interactions?: { entitlement: number; remaining: number; unlimited?: boolean };
+      };
+      monthly_quotas?: { chat?: number; completions?: number };
+      limited_user_quotas?: { chat?: number; completions?: number };
+      limited_user_reset_date?: string;
+      access_type_sku?: string;
+    };
 
     // Handle different response formats (paid vs free)
     if (data.quota_snapshots) {
       // Paid plan format
       const snapshots = data.quota_snapshots;
       return {
-        plan: data.copilot_plan,
+        plan: data.copilot_plan || "",
         resetDate: data.quota_reset_date,
         quotas: {
           chat: formatGitHubQuotaSnapshot(snapshots.chat),
@@ -78,7 +106,7 @@ async function getGitHubUsage(accessToken, providerSpecificData) {
       const usedQuotas = data.limited_user_quotas || {};
 
       return {
-        plan: data.copilot_plan || data.access_type_sku,
+        plan: data.copilot_plan || data.access_type_sku || "",
         resetDate: data.limited_user_reset_date,
         quotas: {
           chat: {
@@ -97,11 +125,11 @@ async function getGitHubUsage(accessToken, providerSpecificData) {
 
     return { message: "GitHub Copilot connected. Unable to parse quota data." };
   } catch (error) {
-    throw new Error(`Failed to fetch GitHub usage: ${error.message}`);
+    throw new Error(`Failed to fetch GitHub usage: ${(error as Error).message}`);
   }
 }
 
-function formatGitHubQuotaSnapshot(quota) {
+function formatGitHubQuotaSnapshot(quota: { entitlement: number; remaining: number; unlimited?: boolean } | undefined): GitHubQuota {
   if (!quota) return { used: 0, total: 0, unlimited: true };
 
   return {
@@ -115,7 +143,7 @@ function formatGitHubQuotaSnapshot(quota) {
 /**
  * Gemini CLI Usage (Google Cloud)
  */
-async function getGeminiUsage(accessToken) {
+async function getGeminiUsage(_accessToken: string): Promise<UsageResult> {
   try {
     // Gemini CLI uses Google Cloud quotas
     // Try to get quota info from Cloud Resource Manager
@@ -123,7 +151,7 @@ async function getGeminiUsage(accessToken) {
       "https://cloudresourcemanager.googleapis.com/v1/projects?filter=lifecycleState:ACTIVE",
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${_accessToken}`,
           Accept: "application/json",
         },
       },
@@ -135,7 +163,7 @@ async function getGeminiUsage(accessToken) {
     }
 
     return { message: "Gemini CLI connected. Usage tracked via Google Cloud Console." };
-  } catch (_error) {
+  } catch {
     return { message: "Unable to fetch Gemini usage. Check Google Cloud Console." };
   }
 }
@@ -143,11 +171,11 @@ async function getGeminiUsage(accessToken) {
 /**
  * Antigravity Usage
  */
-async function getAntigravityUsage(accessToken) {
+async function getAntigravityUsage(_accessToken: string): Promise<UsageResult> {
   try {
     // Similar to Gemini, uses Google Cloud
     return { message: "Antigravity connected. Usage tracked via Google Cloud Console." };
-  } catch (_error) {
+  } catch {
     return { message: "Unable to fetch Antigravity usage." };
   }
 }
@@ -155,12 +183,12 @@ async function getAntigravityUsage(accessToken) {
 /**
  * Claude Usage
  */
-async function getClaudeUsage(accessToken) {
+async function getClaudeUsage(_accessToken: string): Promise<UsageResult> {
   try {
     // Claude OAuth doesn't expose usage API directly
     // Could potentially check via inference endpoint
     return { message: "Claude connected. Usage tracked per request." };
-  } catch (_error) {
+  } catch {
     return { message: "Unable to fetch Claude usage." };
   }
 }
@@ -168,11 +196,11 @@ async function getClaudeUsage(accessToken) {
 /**
  * Codex (OpenAI) Usage
  */
-async function getCodexUsage(accessToken) {
+async function getCodexUsage(_accessToken: string): Promise<UsageResult> {
   try {
     // OpenAI usage requires organization API access
     return { message: "Codex connected. Check OpenAI dashboard for usage." };
-  } catch (_error) {
+  } catch {
     return { message: "Unable to fetch Codex usage." };
   }
 }
@@ -180,7 +208,10 @@ async function getCodexUsage(accessToken) {
 /**
  * Qwen Usage
  */
-async function getQwenUsage(accessToken, providerSpecificData) {
+async function getQwenUsage(
+  _accessToken: string,
+  providerSpecificData: Connection["providerSpecificData"],
+): Promise<UsageResult> {
   try {
     const resourceUrl = providerSpecificData?.resourceUrl;
     if (!resourceUrl) {
@@ -189,7 +220,7 @@ async function getQwenUsage(accessToken, providerSpecificData) {
 
     // Qwen may have usage endpoint at resource URL
     return { message: "Qwen connected. Usage tracked per request." };
-  } catch (_error) {
+  } catch {
     return { message: "Unable to fetch Qwen usage." };
   }
 }
@@ -197,11 +228,11 @@ async function getQwenUsage(accessToken, providerSpecificData) {
 /**
  * iFlow Usage
  */
-async function getIflowUsage(accessToken) {
+async function getIflowUsage(_accessToken: string): Promise<UsageResult> {
   try {
     // iFlow may have usage endpoint
     return { message: "iFlow connected. Usage tracked per request." };
-  } catch (_error) {
+  } catch {
     return { message: "Unable to fetch iFlow usage." };
   }
 }

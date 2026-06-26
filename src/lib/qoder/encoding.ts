@@ -15,7 +15,7 @@
 const QODER_STD_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const QODER_CUSTOM_ALPHABET = "_doRTgHZBKcGVjlvpC,@aFSx#DPuNJme&i*MzLOEn)sUrthbf%Y^w.(kIQyXqWA!";
 
-const QODER_S2C = (() => {
+const QODER_S2C: Int16Array = (() => {
   const table = new Int16Array(128).fill(-1);
   for (let i = 0; i < 64; i++) {
     table[QODER_STD_ALPHABET.charCodeAt(i)] = QODER_CUSTOM_ALPHABET.charCodeAt(i);
@@ -26,11 +26,9 @@ const QODER_S2C = (() => {
 
 /**
  * Encode plaintext bytes/string using Qoder's WAF-bypass scheme.
- * @param {Buffer|Uint8Array|string} plaintext
- * @returns {string} encoded string
  */
-export function qoderEncodeBody(plaintext) {
-  const buf = Buffer.isBuffer(plaintext)
+export function qoderEncodeBody(plaintext: Buffer | Uint8Array | string): string {
+  const buf: Buffer = Buffer.isBuffer(plaintext)
     ? plaintext
     : typeof plaintext === "string"
       ? Buffer.from(plaintext, "utf8")

@@ -37,7 +37,7 @@ export const QODER_MACHINE_TYPE = "5";
 
 // Canonical model identifiers. Identity map — keep as a map so callers can
 // cheaply test "is this a known qoder model?" before sending the request.
-export const QODER_MODEL_MAP = {
+export const QODER_MODEL_MAP: Record<string, string> = {
   // Tier models
   auto: "auto",
   ultimate: "ultimate",

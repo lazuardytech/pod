@@ -1,16 +1,6 @@
 /**
  * Qoder COSY (hybrid RSA+AES+MD5) signing, ported from CLIProxyAPIPlus
  * qoder-provider branch (internal/auth/qoder/cosy.go).
- *
- * Every signed request carries:
- *   - an AES-128-CBC payload of the user info, the AES key wrapped in RSA
- *   - an MD5 signature over `payload || cosyKey || timestamp || body || sigPath`
- *   - the body's MD5 hash + length so the server can validate integrity
- *   - 17 Cosy-* / X-* headers fingerprinting the client (machine id, IDE
- *     version, organization id, etc.)
- *
- * The on-the-wire header keys use the same casing as qodercli:
- *   Cosy-Machineid, not Cosy-MachineID.
  */
 
 import crypto from "node:crypto";
@@ -24,24 +14,24 @@ import {
   QODER_MACHINE_OS,
   QODER_MACHINE_TYPE,
   QODER_RSA_PUBLIC_KEY,
-} from "./constants.js";
+} from "./constants";
 
 // AES-128 wants a 16-byte key. Match qodercli/Veria: take the first 16 chars
 // of a fresh UUID's canonical string (hyphens included). The key is fresh
 // per request so even though the IV reuses the key bytes, each request still
 // has a unique IV.
-function generateAesKey() {
+function generateAesKey(): string {
   return uuidv4().slice(0, 16);
 }
 
-function pkcs7Pad(data, blockSize) {
+function pkcs7Pad(data: Buffer, blockSize: number): Buffer {
   const padding = blockSize - (data.length % blockSize);
   const padded = Buffer.alloc(data.length + padding, padding);
   data.copy(padded, 0);
   return padded;
 }
 
-function aesEncryptCbcBase64(plaintext, keyStr) {
+function aesEncryptCbcBase64(plaintext: string, keyStr: string): string {
   const keyBytes = Buffer.from(keyStr, "utf8");
   if (keyBytes.length !== 16) {
     throw new Error(`aes key must be 16 bytes, got ${keyBytes.length}`);
@@ -54,7 +44,7 @@ function aesEncryptCbcBase64(plaintext, keyStr) {
   return encrypted.toString("base64");
 }
 
-function rsaEncryptBase64(data) {
+function rsaEncryptBase64(data: string): string {
   const encrypted = crypto.publicEncrypt(
     { key: QODER_RSA_PUBLIC_KEY, padding: crypto.constants.RSA_PKCS1_PADDING },
     Buffer.from(data, "utf8"),
@@ -62,7 +52,7 @@ function rsaEncryptBase64(data) {
   return encrypted.toString("base64");
 }
 
-function encryptUserInfo(userInfo) {
+function encryptUserInfo(userInfo: Record<string, unknown>): { cosyKey: string; info: string } {
   const aesKey = generateAesKey();
   const plaintext = JSON.stringify(userInfo);
   const infoB64 = aesEncryptCbcBase64(plaintext, aesKey);
@@ -70,7 +60,7 @@ function encryptUserInfo(userInfo) {
   return { cosyKey: cosyKeyB64, info: infoB64 };
 }
 
-function md5Hex(input) {
+function md5Hex(input: Buffer | string): string {
   return crypto.createHash("md5").update(input).digest("hex");
 }
 
@@ -78,8 +68,8 @@ function md5Hex(input) {
  * Strip the leading "/algo" prefix from the request path. Matches qodercli
  * convention. Empty input returns "".
  */
-function computeSigPath(requestUrl) {
-  let pathname;
+function computeSigPath(requestUrl: string): string {
+  let pathname: string;
   try {
     pathname = new URL(requestUrl).pathname || "";
   } catch {
@@ -95,29 +85,30 @@ function computeSigPath(requestUrl) {
  * Generate a fresh machine UUID. Persisted on the connection record so
  * every request from the same auth carries the same machineId.
  */
-export function generateMachineId() {
+export function generateMachineId(): string {
   return uuidv4();
 }
 
+export type CosyCreds = {
+  userId: string;
+  authToken: string;
+  name?: string;
+  email?: string;
+  machineId?: string;
+};
+
 /**
  * Build the full Cosy-* header set for a single Qoder request.
- *
- * @param {Buffer|Uint8Array|string} body  The exact bytes that will be sent.
- *   For GET requests pass an empty Buffer / "".
- * @param {string} requestUrl              Full request URL (used for sigPath).
- * @param {object} creds
- * @param {string} creds.userId            Stable Qoder user id.
- * @param {string} creds.authToken         Device access token (`dt-...`).
- * @param {string} [creds.name]            Display name (optional).
- * @param {string} [creds.email]           Email (optional, can be empty).
- * @param {string} [creds.machineId]       Persisted machine UUID.
- * @returns {Record<string, string>} Header map ready to merge onto fetch().
  */
-export function buildCosyHeaders(body, requestUrl, creds) {
+export function buildCosyHeaders(
+  body: Buffer | Uint8Array | string | null | undefined,
+  requestUrl: string,
+  creds: CosyCreds,
+): Record<string, string> {
   if (!creds?.userId) throw new Error("cosy: user id is empty");
   if (!creds?.authToken) throw new Error("cosy: auth token is empty");
 
-  const bodyBuf = Buffer.isBuffer(body)
+  const bodyBuf: Buffer = Buffer.isBuffer(body)
     ? body
     : typeof body === "string"
       ? Buffer.from(body, "latin1")
