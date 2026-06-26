@@ -26,8 +26,7 @@ import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler";
 
 // HMR-safe singleton: initialize ONCE on first import, survive hot reloads
 function initStartTime(): number {
-  const g = globalThis as Record<string, number | undefined>;
-  if (g.__pod_start_time) return g.__pod_start_time;
+  const g = globalThis as unknown as Record<string, number | undefined>;
   g.__pod_start_time = Date.now();
   return g.__pod_start_time;
 }
