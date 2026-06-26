@@ -108,25 +108,28 @@ export default function ProviderDetailPage() {
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
-  const providerInfo = (providerNode
-    ? {
-        id: providerNode.id,
-        name:
-          providerNode.name ||
-          (providerNode.type === "anthropic-compatible" ? "Anthropic Compatible" : "OpenAI Compatible"),
-        color: providerNode.type === "anthropic-compatible" ? "#D97757" : "#10A37F",
-        textIcon: providerNode.type === "anthropic-compatible" ? "AC" : "OC",
-        apiType: providerNode.apiType,
-        baseUrl: providerNode.baseUrl,
-        type: providerNode.type,
-      }
-    : OAUTH_PROVIDERS[providerId] ||
-      APIKEY_PROVIDERS[providerId] ||
-      FREE_PROVIDERS[providerId] ||
-      FREE_TIER_PROVIDERS[providerId] ||
-      WEB_COOKIE_PROVIDERS[providerId]) as Record<string, any>;
+  const providerInfo = (
+    providerNode
+      ? {
+          id: providerNode.id,
+          name:
+            providerNode.name ||
+            (providerNode.type === "anthropic-compatible" ? "Anthropic Compatible" : "OpenAI Compatible"),
+          color: providerNode.type === "anthropic-compatible" ? "#D97757" : "#10A37F",
+          textIcon: providerNode.type === "anthropic-compatible" ? "AC" : "OC",
+          apiType: providerNode.apiType,
+          baseUrl: providerNode.baseUrl,
+          type: providerNode.type,
+        }
+      : OAUTH_PROVIDERS[providerId] ||
+        APIKEY_PROVIDERS[providerId] ||
+        FREE_PROVIDERS[providerId] ||
+        FREE_TIER_PROVIDERS[providerId] ||
+        WEB_COOKIE_PROVIDERS[providerId]
+  ) as Record<string, any>;
   const isOAuth = !!OAUTH_PROVIDERS[providerId] || !!FREE_PROVIDERS[providerId];
   const isFreeNoAuth = !!FREE_PROVIDERS[providerId]?.noAuth;
   const models = getModelsByProviderId(providerId);
@@ -591,7 +594,9 @@ export default function ProviderDetailPage() {
 
   const selectedProxySummary = (() => {
     if (selectedConnections.length === 0) return "";
-    const poolIds = new Set(selectedConnections.map((conn: any) => conn.providerSpecificData?.proxyPoolId || "__none__"));
+    const poolIds = new Set(
+      selectedConnections.map((conn: any) => conn.providerSpecificData?.proxyPoolId || "__none__"),
+    );
     if (poolIds.size === 1) {
       const onlyId = [...poolIds][0];
       if (onlyId === "__none__") return "All selected currently unbound";
@@ -652,7 +657,7 @@ export default function ProviderDetailPage() {
   };
 
   const handleDragEnd = async (event: any) => {
-    const { active, over  } = event ?? {} as any;
+    const { active, over } = event ?? ({} as any);
     if (!over || active.id === over.id) return;
 
     const oldIndex = connections.findIndex((c: any) => c.id === active.id);
@@ -819,9 +824,10 @@ export default function ProviderDetailPage() {
     }
     // Combine hardcoded models with Kilo free models (deduplicated)
     // Exclude non-llm models (embedding, tts, etc.) — they have dedicated pages under media-providers
-    const allModels = [...models, ...kiloFreeModels.filter((fm: any) => !models.some((m: any) => m.id === fm.id))].filter(
-      (m: any) => !m.type || m.type === "llm",
-    );
+    const allModels = [
+      ...models,
+      ...kiloFreeModels.filter((fm: any) => !models.some((m: any) => m.id === fm.id)),
+    ].filter((m: any) => !m.type || m.type === "llm");
     const disabledSet = new Set(disabledModelIds);
     const displayModels = allModels.filter((m: any) => !disabledSet.has(m.id));
     const disabledDisplayModels = allModels.filter((m: any) => disabledSet.has(m.id));
@@ -1233,7 +1239,10 @@ export default function ProviderDetailPage() {
           <h2 className="text-lg font-semibold">{"Available Models"}</h2>
           {!isCompatible &&
             (() => {
-              const allIds = [...models, ...kiloFreeModels.filter((fm: any) => !models.some((m: any) => m.id === fm.id))]
+              const allIds = [
+                ...models,
+                ...kiloFreeModels.filter((fm: any) => !models.some((m: any) => m.id === fm.id)),
+              ]
                 .filter((m: any) => !m.type || m.type === "llm")
                 .map((m: any) => m.id);
               const activeIds = allIds.filter((id: any) => !disabledModelIds.includes(id));

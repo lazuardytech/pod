@@ -55,12 +55,14 @@ function ConnectionRow({
   const proxyPoolMap = new Map((proxyPools || []).map((p: any) => [p.id, p]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
   const boundProxyPool = boundProxyPoolId
-    ? (proxyPoolMap.get(boundProxyPoolId) as {
-        name?: string;
-        proxyUrl?: string;
-        noProxy?: string;
-        isActive?: boolean;
-      } | undefined)
+    ? (proxyPoolMap.get(boundProxyPoolId) as
+        | {
+            name?: string;
+            proxyUrl?: string;
+            noProxy?: string;
+            isActive?: boolean;
+          }
+        | undefined)
     : null;
   const hasLegacyProxy =
     connection.providerSpecificData?.connectionProxyEnabled === true &&
@@ -387,7 +389,10 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
           label="Proxy Pool"
           value={formData.proxyPoolId}
           onChange={(e: any) => setFormData({ ...formData, proxyPoolId: e.target.value })}
-          options={[{ value: NONE, label: "None" }, ...(proxyPools || []).map((p: any) => ({ value: p.id, label: p.name }))]}
+          options={[
+            { value: NONE, label: "None" },
+            ...(proxyPools || []).map((p: any) => ({ value: p.id, label: p.name })),
+          ]}
         />
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={!formData.name || !formData.apiKey || saving}>
@@ -432,7 +437,8 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const fetch_ = useCallback(async () => {
     try {
@@ -463,7 +469,9 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
   const saveStrategy = async (strategy: any, stickyLimit: any) => {
     try {
       const res = await fetch("/api/settings", { cache: "no-store" });
-      const data = res.ok ? ((await res.json()) as { providerStrategies?: Record<string, Record<string, unknown>> }) : {};
+      const data = res.ok
+        ? ((await res.json()) as { providerStrategies?: Record<string, Record<string, unknown>> })
+        : {};
       const current = data.providerStrategies || {};
       const override: Record<string, unknown> = {};
       if (strategy) override.fallbackStrategy = strategy;

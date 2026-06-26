@@ -103,7 +103,7 @@ export default function HealthPage() {
       if (result.source === "cache") notifyOfflineCache();
       else clearOfflineCacheNotice();
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
     }
   }, [clearOfflineCacheNotice, notifyOfflineCache]);
 
@@ -199,7 +199,7 @@ export default function HealthPage() {
     );
   }
 
-  const { system, database, providers, tunnel, semanticCache  } = data ?? {} as any;
+  const { system, database, providers, tunnel, semanticCache } = data ?? ({} as any);
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
@@ -316,7 +316,9 @@ export default function HealthPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Providers */}
         <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
-          <SectionHeader icon="dns" title="Providers">{null}</SectionHeader>
+          <SectionHeader icon="dns" title="Providers">
+            {null}
+          </SectionHeader>
           <div className="space-y-2">
             {[
               { label: "Total connections", value: providers.total },
@@ -337,7 +339,9 @@ export default function HealthPage() {
 
         {/* Tunnel */}
         <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
-          <SectionHeader icon="vpn_lock" title="Tunnel">{null}</SectionHeader>
+          <SectionHeader icon="vpn_lock" title="Tunnel">
+            {null}
+          </SectionHeader>
           <div className="space-y-2">
             {[
               {

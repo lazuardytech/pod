@@ -92,7 +92,7 @@ export default function CursorAuthModal({
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
     } finally {
       setImporting(false);
     }

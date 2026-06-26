@@ -40,7 +40,8 @@ export default function CombosPage() {
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   useEffect(() => {
     fetchData();
@@ -120,7 +121,7 @@ export default function CombosPage() {
   };
 
   const handleDragEnd = async (event: any) => {
-    const { active, over  } = event ?? {} as any;
+    const { active, over } = event ?? ({} as any);
     if (!over || active.id === over.id) return;
 
     const oldIndex = combos.findIndex((c: any) => c.id === active.id);

@@ -51,7 +51,7 @@ export default function IFlowCookieModal({
         handleClose();
       }, 1500);
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
     } finally {
       setLoading(false);
     }

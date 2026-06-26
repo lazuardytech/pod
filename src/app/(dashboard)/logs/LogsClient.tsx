@@ -46,7 +46,10 @@ function RequestLogsToolbar({
           ariaLabel="Filter by provider"
           value={filterProvider}
           onValueChange={setFilterProvider}
-          options={[{ value: "all", label: "All Providers" }, ...providerOptions.map((p: any) => ({ value: p, label: p }))]}
+          options={[
+            { value: "all", label: "All Providers" },
+            ...providerOptions.map((p: any) => ({ value: p, label: p })),
+          ]}
           triggerClassName="h-7 w-[130px] rounded-[6px] bg-deep-slate px-2 text-[12px] shadow-none"
           contentClassName="min-w-[130px]"
           name="filter-provider"

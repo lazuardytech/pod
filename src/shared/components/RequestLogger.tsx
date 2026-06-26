@@ -184,7 +184,7 @@ export default function RequestLogger({
         setDetailData(data.detail ?? null);
       }
     } catch (e) {
-      if (e?.name === "AbortError") return; // cancelled — ignore
+      if ((e as any)?.name === "AbortError") return; // cancelled — ignore
     } finally {
       if (!controller.signal.aborted) setDetailLoading(false);
     }
@@ -196,7 +196,10 @@ export default function RequestLogger({
   }, []);
 
   // Derived data
-  const providers = useMemo(() => [...new Set(logs.map((l: any) => l.provider).filter((p: any) => p && p !== "-"))], [logs]);
+  const providers = useMemo(
+    () => [...new Set(logs.map((l: any) => l.provider).filter((p: any) => p && p !== "-"))],
+    [logs],
+  );
 
   useEffect(() => {
     onProvidersChange?.(providers);

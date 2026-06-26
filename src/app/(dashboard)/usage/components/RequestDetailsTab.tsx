@@ -212,7 +212,7 @@ export default function RequestDetailsTab() {
       clearOfflineCacheNotice();
     } catch (error) {
       console.error("Failed to fetch request details:", error);
-      setFetchError(error.message || "Failed to fetch request details");
+      setFetchError((error as any).message || "Failed to fetch request details");
     } finally {
       setLoading(false);
     }

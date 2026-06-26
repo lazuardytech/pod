@@ -136,7 +136,8 @@ export default function ProvidersPage() {
     return () => unregisterAction();
   }, [showConnectedOnly, registerAction, unregisterAction]);
 
-  const matchSearch = (name: any) => !searchQuery.trim() || name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+  const matchSearch = (name: any) =>
+    !searchQuery.trim() || name.toLowerCase().includes(searchQuery.trim().toLowerCase());
   const matchConnected = (providerId: any, authType: any) => {
     if (!showConnectedOnly) return true;
     // noAuth providers are always "connected" — they need no credentials
@@ -223,7 +224,8 @@ export default function ProvidersPage() {
     const allDisabled = total > 0 && providerConnections.every((c: any) => c.isActive === false);
 
     const latestError = errorConns.sort(
-      (a: any, b: any) => new Date(String(b.lastErrorAt || 0)).getTime() - new Date(String(a.lastErrorAt || 0)).getTime(),
+      (a: any, b: any) =>
+        new Date(String(b.lastErrorAt || 0)).getTime() - new Date(String(a.lastErrorAt || 0)).getTime(),
     )[0];
     const errorCode = latestError ? getConnectionErrorTag(latestError) : null;
     const errorTime = latestError?.lastErrorAt ? getRelativeTime(latestError.lastErrorAt) : null;
@@ -269,7 +271,7 @@ export default function ProvidersPage() {
       const data = await res.json();
       setTestResults(data);
       if (data.summary) {
-        const { passed, failed, total  } = data.summary ?? {} as any;
+        const { passed, failed, total } = data.summary ?? ({} as any);
         if (failed === 0) toast.success(`All ${total} tests passed`);
         else toast.warning(`${passed}/${total} passed, ${failed} failed`);
       }
@@ -598,7 +600,7 @@ export default function ProvidersPage() {
 }
 
 function ProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
-  const { connected, error, errorCode, errorTime, allDisabled  } = stats ?? {} as any;
+  const { connected, error, errorCode, errorTime, allDisabled } = stats ?? ({} as any);
   const isNoAuth = !!provider.noAuth;
 
   const _dotColors = {
@@ -699,7 +701,7 @@ ProviderCard.propTypes = {
 };
 
 function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
-  const { connected, error, errorCode, errorTime, allDisabled  } = stats ?? {} as any;
+  const { connected, error, errorCode, errorTime, allDisabled } = stats ?? ({} as any);
   const isCompatible = providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
   const isAnthropicCompatible = providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);
 
@@ -1052,16 +1054,18 @@ function ProviderTestResultsView({ results }: any) {
     );
   }
 
-  const { summary, mode  } = results ?? {} as any;
+  const { summary, mode } = results ?? ({} as any);
   const items = results.results || [];
   const modeLabel =
-    ({
-      oauth: "OAuth",
-      free: "Free",
-      apikey: "API Key",
-      provider: "Provider",
-      all: "All",
-    } as Record<string, any>)[mode] || mode;
+    (
+      {
+        oauth: "OAuth",
+        free: "Free",
+        apikey: "API Key",
+        provider: "Provider",
+        all: "All",
+      } as Record<string, any>
+    )[mode] || mode;
 
   return (
     <div className="flex min-w-0 flex-col gap-3">

@@ -116,7 +116,7 @@ function ComboList({ combos }: any) {
               {/* Provider icons preview */}
               <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
                 {combo.models.slice(0, 6).map((entry: any, i: any) => {
-                  const pid = typeof entry === "string" ? entry.split("/")[0] : "";
+                  const pid = typeof entry === "string" ? entry.split("/")[0] ?? "" : "";
                   const p = AI_PROVIDERS[pid];
                   return (
                     <div

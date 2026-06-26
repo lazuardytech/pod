@@ -271,7 +271,9 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
               </p>
             </div>
           ) : (
-            filtered.map((entry: any, i: any) => <LogLine key={i} entry={entry} idx={i} onCopy={handleCopy} copied={copied} />)
+            filtered.map((entry: any, i: any) => (
+              <LogLine key={i} entry={entry} idx={i} onCopy={handleCopy} copied={copied} />
+            ))
           )}
         </div>
       </div>

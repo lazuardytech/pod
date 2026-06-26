@@ -309,7 +309,7 @@ export default function BasicChatPageClient(): any {
         }
       } catch (error) {
         if (!cancelled) {
-          setLoadError(textValue(error?.message) || "Không thể tải danh sách provider/model.");
+          setLoadError(textValue((error as any)?.message) || "Không thể tải danh sách provider/model.");
           setProviderGroups([]);
         }
       } finally {
@@ -370,7 +370,8 @@ export default function BasicChatPageClient(): any {
   );
   const currentMessages = currentSession?.messages || [];
   const sessionItems = useMemo(
-    (): any => [...sessions].sort((a: any, b: any): any => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+    (): any =>
+      [...sessions].sort((a: any, b: any): any => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
     [sessions],
   );
   const canSend = !isSending && !!activeModel && (draft.trim().length > 0 || attachments.length > 0);
@@ -758,8 +759,8 @@ export default function BasicChatPageClient(): any {
       }));
       finalizeSessionTitle(sessionId, userText);
     } catch (error) {
-      if (error.name !== "AbortError") {
-        const errorText = textValue(error?.message || error);
+      if ((error as any).name !== "AbortError") {
+        const errorText = textValue((error as any)?.message || error);
         updateSession(sessionId, (currentSession: any): any => ({
           ...currentSession,
           messages: currentSession.messages.map((message: any): any =>

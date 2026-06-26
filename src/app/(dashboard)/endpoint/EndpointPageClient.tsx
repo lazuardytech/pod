@@ -530,7 +530,7 @@ export default function APIPageClient({ machineId }: any) {
         setTunnelStatus({ type: "error", message: data.error || "Failed to disable tunnel" });
       }
     } catch (error) {
-      setTunnelStatus({ type: "error", message: error.message });
+      setTunnelStatus({ type: "error", message: (error as any).message });
     } finally {
       setTunnelLoading(false);
     }
@@ -602,7 +602,7 @@ export default function APIPageClient({ machineId }: any) {
         }
       }
     } catch (e) {
-      setTsError(e.message);
+      setTsError((e as any).message);
     } finally {
       setTsInstalling(false);
     }
@@ -703,7 +703,7 @@ export default function APIPageClient({ machineId }: any) {
       setTsError(data.error || "Failed to connect");
     } catch (error) {
       if (tab) tab.close();
-      setTsError(error.message);
+      setTsError((error as any).message);
     } finally {
       setTsLoading(false);
       setTsConnecting(false);
@@ -761,7 +761,7 @@ export default function APIPageClient({ machineId }: any) {
         setTsError(data.error || "Failed to disable Tailscale");
       }
     } catch (e) {
-      setTsError(e.message);
+      setTsError((e as any).message);
     } finally {
       setTsLoading(false);
     }
@@ -1373,19 +1373,21 @@ export default function APIPageClient({ machineId }: any) {
                   >
                     <LucideIcon name="chevron_left" className="text-[14px]" />
                   </button>
-                  {Array.from({ length: Math.ceil(keys.length / KEYS_PAGE_SIZE) }, (_: any, i: any) => i + 1).map((p: any) => (
-                    <button
-                      key={p}
-                      onClick={() => setKeysPage(p)}
-                      className={`flex items-center justify-center size-6 rounded-[4px] text-[11px] font-[510] transition-colors duration-100 ${
-                        p === keysPage
-                          ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
-                          : "text-fog-grey hover:bg-deep-slate hover:text-porcelain border border-transparent"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
+                  {Array.from({ length: Math.ceil(keys.length / KEYS_PAGE_SIZE) }, (_: any, i: any) => i + 1).map(
+                    (p: any) => (
+                      <button
+                        key={p}
+                        onClick={() => setKeysPage(p)}
+                        className={`flex items-center justify-center size-6 rounded-[4px] text-[11px] font-[510] transition-colors duration-100 ${
+                          p === keysPage
+                            ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
+                            : "text-fog-grey hover:bg-deep-slate hover:text-porcelain border border-transparent"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
                   <button
                     onClick={() => setKeysPage((p: any) => Math.min(Math.ceil(keys.length / KEYS_PAGE_SIZE), p + 1))}
                     disabled={keysPage === Math.ceil(keys.length / KEYS_PAGE_SIZE)}

@@ -106,7 +106,7 @@ export default function GitLabAuthModal({
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
     } finally {
       setLoading(false);
     }

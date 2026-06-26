@@ -79,7 +79,8 @@ export default function ProfilePage() {
   });
   const _openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
   const [legacyInfo, setLegacyInfo] = useState({ hasLegacyData: false, legacyFilesFound: [] });
   const importFileRef = useRef<any>(null);
   const [proxyForm, setProxyForm] = useState({
@@ -416,7 +417,7 @@ export default function ProfilePage() {
       URL.revokeObjectURL(url);
       setDbStatus({ type: "success", message: "Database backup downloaded" });
     } catch (err) {
-      setDbStatus({ type: "error", message: err.message || "Failed to export database" });
+      setDbStatus({ type: "error", message: (err as any).message || "Failed to export database" });
     } finally {
       setDbLoading(false);
     }
@@ -440,7 +441,7 @@ export default function ProfilePage() {
       await reloadSettings();
       setDbStatus({ type: "success", message: "Database imported successfully" });
     } catch (err) {
-      setDbStatus({ type: "error", message: err.message || "Invalid backup file" });
+      setDbStatus({ type: "error", message: (err as any).message || "Invalid backup file" });
     } finally {
       if (importFileRef.current) importFileRef.current.value = "";
       setDbLoading(false);

@@ -52,7 +52,7 @@ export default function KiroSocialOAuthModal({
         // Auto-open browser
         window.open(data.authUrl, "_blank");
       } catch (err) {
-        setError(err.message);
+        setError((err as any).message);
         setStep("error");
       }
     };
@@ -102,7 +102,7 @@ export default function KiroSocialOAuthModal({
       setStep("success");
       onSuccess?.();
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
       setStep("error");
     }
   };

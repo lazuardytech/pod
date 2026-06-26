@@ -66,7 +66,7 @@ export default function CacheClient() {
         semanticCacheTTLMinutes: String(Math.max(1, Math.round((cacheConfig.semanticCacheTTL ?? 1800000) / 60000))),
       });
     } catch (error) {
-      toast.error(error?.message || "Failed to load cache data");
+      toast.error((error as any)?.message || "Failed to load cache data");
     } finally {
       if (isInitial) setLoading(false);
       else setRefreshing(false);
@@ -110,7 +110,7 @@ export default function CacheClient() {
       toast.success("Cache config updated");
       await loadData(false);
     } catch (error) {
-      toast.error(error?.message || "Failed to update cache config");
+      toast.error((error as any)?.message || "Failed to update cache config");
     } finally {
       setSaving(false);
     }
@@ -136,7 +136,7 @@ export default function CacheClient() {
       await loadData(false);
     } catch (error) {
       setConfig((prev: any) => ({ ...prev, semanticCacheEnabled: previous }));
-      toast.error(error?.message || "Failed to update cache state");
+      toast.error((error as any)?.message || "Failed to update cache state");
     } finally {
       setSaving(false);
     }
@@ -154,7 +154,7 @@ export default function CacheClient() {
       toast.success("Cache invalidated");
       await loadData(false);
     } catch (error) {
-      toast.error(error?.message || "Cache invalidation failed");
+      toast.error((error as any)?.message || "Cache invalidation failed");
     } finally {
       setInvalidating(false);
     }
@@ -197,7 +197,9 @@ export default function CacheClient() {
             type="number"
             min="1"
             value={config.semanticCacheTTLMinutes}
-            onChange={(event: any) => setConfig((prev: any) => ({ ...prev, semanticCacheTTLMinutes: event.target.value }))}
+            onChange={(event: any) =>
+              setConfig((prev: any) => ({ ...prev, semanticCacheTTLMinutes: event.target.value }))
+            }
           />
         </div>
       </Card>

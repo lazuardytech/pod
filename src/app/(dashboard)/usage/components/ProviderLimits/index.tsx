@@ -204,7 +204,7 @@ export default function ProviderLimits() {
       console.error("[ProviderLimits] Error fetching quota");
       setErrors((prev: any) => ({
         ...prev,
-        [connectionId]: error.message || "Failed to fetch quota",
+        [connectionId]: (error as any).message || "Failed to fetch quota",
       }));
     } finally {
       setLoading((prev: any) => ({ ...prev, [connectionId]: false }));
@@ -523,12 +523,16 @@ export default function ProviderLimits() {
   );
 
   const handleDisableDepleted: any = () => {
-    const ids: any = sortedConnections.filter((c: any) => (c.isActive ?? true) && isConnectionDepleted(c)).map((c: any) => c.id);
+    const ids: any = sortedConnections
+      .filter((c: any) => (c.isActive ?? true) && isConnectionDepleted(c))
+      .map((c: any) => c.id);
     bulkSetActive(ids, false);
   };
 
   const handleEnableAvailable: any = () => {
-    const ids: any = sortedConnections.filter((c: any) => !(c.isActive ?? true) && !isConnectionDepleted(c)).map((c: any) => c.id);
+    const ids: any = sortedConnections
+      .filter((c: any) => !(c.isActive ?? true) && !isConnectionDepleted(c))
+      .map((c: any) => c.id);
     bulkSetActive(ids, true);
   };
 
@@ -852,8 +856,14 @@ export default function ProviderLimits() {
                 : null;
 
               // Accumulated progress across all connections in this provider group
-              const providerTotalUsed: any = conns.reduce((s: any, c: any) => s + getAccumulatedProgress(c).totalUsed, 0);
-              const providerTotalLimit: any = conns.reduce((s: any, c: any) => s + getAccumulatedProgress(c).totalLimit, 0);
+              const providerTotalUsed: any = conns.reduce(
+                (s: any, c: any) => s + getAccumulatedProgress(c).totalUsed,
+                0,
+              );
+              const providerTotalLimit: any = conns.reduce(
+                (s: any, c: any) => s + getAccumulatedProgress(c).totalLimit,
+                0,
+              );
               const providerPct: any = calculatePercentage(providerTotalUsed, providerTotalLimit);
               const providerColor: any = getStatusColor(providerPct);
               const providerCc: any = colorClasses(providerColor);
@@ -1015,7 +1025,10 @@ export default function ProviderLimits() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center justify-end gap-0.5" onClick={(e: any) => e.stopPropagation()}>
+                            <div
+                              className="flex items-center justify-end gap-0.5"
+                              onClick={(e: any) => e.stopPropagation()}
+                            >
                               <button
                                 type="button"
                                 onClick={() => refreshProvider(conn.id, conn.provider)}

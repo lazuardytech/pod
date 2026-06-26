@@ -25,7 +25,7 @@ function generateKeyId(): string {
   crypto.getRandomValues(bytes);
   let result = "";
   for (let i = 0; i < 6; i++) {
-    result += chars[bytes[i] % chars.length];
+    result += chars[bytes[i]! % chars.length];
   }
   return result;
 }
@@ -79,15 +79,15 @@ export function parseApiKey(apiKey: string): ParsedApiKey | null {
     const [, machineId, keyId, crc] = parts;
 
     // Validate CRC
-    const expectedCrc = generateCrc(machineId, keyId);
+    const expectedCrc = generateCrc(machineId!, keyId!);
     if (crc !== expectedCrc) return null;
 
-    return { machineId, keyId, isNewFormat: true };
+    return { machineId: machineId!, keyId: keyId!, isNewFormat: true };
   }
 
   // Old format: sk-{random8} = 2 parts
   if (parts.length === 2) {
-    return { machineId: "", keyId: parts[1] ?? "", isNewFormat: false };
+    return { machineId: "", keyId: parts[1]!, isNewFormat: false };
   }
 
   return null;

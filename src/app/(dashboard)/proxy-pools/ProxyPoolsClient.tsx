@@ -20,13 +20,7 @@ function formatDateTime(value: any) {
 }
 
 function normalizeFormData(
-  data: {
-    name?: string;
-    proxyUrl?: string;
-    noProxy?: string;
-    isActive?: boolean;
-    strictProxy?: boolean;
-  } = {},
+  data: { name?: string; proxyUrl?: string; noProxy?: string; isActive?: boolean; strictProxy?: boolean } = {},
 ) {
   return {
     name: data.name || "",
@@ -261,7 +255,8 @@ export default function ProxyPoolsPage() {
   };
 
   const handleHealthCheck: any = async () => {
-    const targets: any = selectedIds.length > 0 ? proxyPools.filter((p: any) => selectedIds.includes(p.id)) : proxyPools;
+    const targets: any =
+      selectedIds.length > 0 ? proxyPools.filter((p: any) => selectedIds.includes(p.id)) : proxyPools;
     if (targets.length === 0) return;
     setHealthChecking(true);
     setHealthProgress({ current: 0, total: targets.length });
@@ -428,7 +423,7 @@ export default function ProxyPoolsPage() {
           });
         }
       } catch (error) {
-        invalidLines.push(`Line ${index + 1}: ${error.message}`);
+        invalidLines.push(`Line ${index + 1}: ${(error as any).message}`);
       }
     });
 

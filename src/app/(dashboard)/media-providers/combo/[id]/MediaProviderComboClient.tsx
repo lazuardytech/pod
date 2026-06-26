@@ -34,7 +34,12 @@ const EXAMPLE_PATHS: Record<string, any> = {
 };
 
 const EXAMPLE_BODIES: Record<string, any> = {
-  webSearch: (n: any): any => ({ model: n, query: "What is the latest news about AI?", search_type: "web", max_results: 5 }),
+  webSearch: (n: any): any => ({
+    model: n,
+    query: "What is the latest news about AI?",
+    search_type: "web",
+    max_results: 5,
+  }),
   webFetch: (n: any): any => ({ model: n, url: "https://example.com", format: "markdown" }),
   image: (n: any): any => ({ model: n, prompt: "A cute cat playing piano", n: 1, size: "1024x1024" }),
   tts: (n: any): any => ({ model: n, input: "Hello, this is a test.", voice: "alloy" }),
@@ -73,7 +78,8 @@ export default function ComboDetailPage(): any {
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = (): any =>
+    setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const fetchAll = async (): Promise<any> => {
     try {
@@ -245,7 +251,7 @@ export default function ComboDetailPage(): any {
       const imageUrl = first?.b64_json ? `data:image/png;base64,${first.b64_json}` : first?.url || "";
       setTestResult({ json: JSON.stringify(maskB64(data), null, 2), imageUrl, latencyMs });
     } catch (e) {
-      setTestError(e.message || "Network error");
+      setTestError((e as any).message || "Network error");
     }
     setTesting(false);
   };
@@ -264,7 +270,8 @@ export default function ComboDetailPage(): any {
   if (loading) return <div className="text-text-muted text-sm">Loading...</div>;
   if (!combo) return notFound();
 
-  const kindLabel = KIND_LABELS[combo.kind] || MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === combo.kind)?.label || "Combo";
+  const kindLabel =
+    KIND_LABELS[combo.kind] || MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === combo.kind)?.label || "Combo";
   const examplePath = EXAMPLE_PATHS[combo.kind];
   const exampleBody = combo.kind && EXAMPLE_BODIES[combo.kind] ? EXAMPLE_BODIES[combo.kind](combo.name) : null;
   const curlExample = examplePath

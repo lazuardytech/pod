@@ -16,7 +16,7 @@ export const generateId: () => string = uuidv4;
 export function getErrorCode(lastError: string | null | undefined): string | null {
   if (!lastError) return null;
   const match = lastError.match(/\b([45]\d{2})\b/);
-  return match ? match[1] : "ERR";
+  return match ? match[1]! : "ERR";
 }
 
 /**

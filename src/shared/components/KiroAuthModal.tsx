@@ -92,7 +92,7 @@ export default function KiroAuthModal({
       // Success - notify parent to refresh connections
       onMethodSelect("import");
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
     } finally {
       setImporting(false);
     }

@@ -78,7 +78,7 @@ export default function OAuthModal({
         setStep("success");
         onSuccess?.();
       } catch (err) {
-        setError(err.message);
+        setError((err as any).message);
         setStep("error");
       }
     },
@@ -132,7 +132,7 @@ export default function OAuthModal({
             interval = Math.min(interval + 5, 30);
           }
         } catch (err) {
-          setError(err.message);
+          setError((err as any).message);
           setStep("error");
           setPolling(false);
           return;
@@ -255,7 +255,7 @@ export default function OAuthModal({
         }
       }
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
       setStep("error");
     }
   }, [provider, isLocalhost, startPolling, oauthMeta, idcConfig]);
@@ -337,7 +337,7 @@ export default function OAuthModal({
     const handleCallback: any = async (data: any) => {
       if (callbackProcessedRef.current) return; // Already processed
 
-      const { code, state, error: callbackError, errorDescription  } = data ?? {} as any;
+      const { code, state, error: callbackError, errorDescription } = data ?? ({} as any);
 
       if (callbackError) {
         callbackProcessedRef.current = true;
@@ -428,7 +428,7 @@ export default function OAuthModal({
 
       await exchangeTokens(code, state);
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
       setStep("error");
     }
   };

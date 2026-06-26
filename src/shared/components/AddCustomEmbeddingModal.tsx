@@ -108,7 +108,7 @@ export default function AddCustomEmbeddingModal({
 
   const renderValidationResult = () => {
     if (!validationResult) return null;
-    const { valid, error, dimensions  } = validationResult ?? {} as any;
+    const { valid, error, dimensions } = validationResult ?? ({} as any);
     if (valid) {
       return (
         <>

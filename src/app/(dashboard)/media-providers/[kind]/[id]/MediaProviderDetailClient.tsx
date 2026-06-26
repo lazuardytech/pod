@@ -238,7 +238,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any): any {
       }
       setResult({ data, latencyMs });
     } catch (e) {
-      setError(e.message || "Network error");
+      setError((e as any).message || "Network error");
     } finally {
       setRunning(false);
     }
@@ -436,7 +436,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any): any {
 // ─── TTS Example Card ────────────────────────────────────────────────────────
 function TtsExampleCard({ providerId }: any): any {
   const providerAlias = getProviderAlias(providerId);
-  const config = TTS_PROVIDER_CONFIG[providerId] || TTS_PROVIDER_CONFIG["edge-tts"];
+  const config = TTS_PROVIDER_CONFIG[providerId] || TTS_PROVIDER_CONFIG["edge-tts"]!;
 
   // Voice state
   const [selectedVoice, setSelectedVoice] = useState("");
@@ -447,7 +447,7 @@ function TtsExampleCard({ providerId }: any): any {
   const [selectedLang, setSelectedLang] = useState("");
   const [selectedModel, setSelectedModel] = useState((): any => {
     const cfgModels = AI_PROVIDERS[providerId]?.ttsConfig?.models;
-    if (cfgModels?.length) return cfgModels[0].id;
+    if (cfgModels?.length) return cfgModels[0]!.id;
     if (config.hasModelSelector && config.modelKey) {
       const models = getModelsByProviderId(config.modelKey);
       return models?.[0]?.id || "";
@@ -569,7 +569,7 @@ function TtsExampleCard({ providerId }: any): any {
         setByLang(d.byLang || {});
       }
     } catch (e) {
-      setModalError(e.message);
+      setModalError((e as any).message);
     } finally {
       setModalLoading(false);
     }
@@ -652,7 +652,7 @@ function TtsExampleCard({ providerId }: any): any {
         setAudioUrl(URL.createObjectURL(blob));
       }
     } catch (e) {
-      setError(e.message || "Network error");
+      setError((e as any).message || "Network error");
     } finally {
       setRunning(false);
     }
@@ -1264,7 +1264,7 @@ function GenericExampleCard({ providerId, kind }: any): any {
         setResult({ data, latencyMs });
       }
     } catch (e) {
-      setError(e.message || "Network error");
+      setError((e as any).message || "Network error");
     } finally {
       setRunning(false);
     }
@@ -1770,7 +1770,7 @@ function SttExampleCard({ providerId }: any): any {
       }
       setResult(data);
     } catch (e) {
-      setError(e.message || "Network error");
+      setError((e as any).message || "Network error");
     } finally {
       setRunning(false);
     }
@@ -2138,7 +2138,7 @@ export default function MediaProviderDetailPage(): any {
       {!isCustom && (builtInProvider?.kindNotice as Record<string, any>)?.[kind] && (
         <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
           <LucideIcon name="warning" className="text-[20px] mt-0.5" />
-          <p className="text-sm">{(builtInProvider.kindNotice as Record<string, any>)[kind]}</p>
+          <p className="text-sm">{(builtInProvider!.kindNotice as Record<string, any>)[kind]}</p>
         </div>
       )}
 

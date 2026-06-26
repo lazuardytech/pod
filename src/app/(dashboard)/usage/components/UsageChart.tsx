@@ -92,7 +92,9 @@ export default function UsageChart({ period = "7d" }: any) {
                 borderRadius: "8px",
                 fontSize: "12px",
               }}
-              formatter={(value: any, name: any) => (name === "tokens" ? [fmtTokens(value), "Tokens"] : [fmtCost(value), "Cost"])}
+              formatter={(value: any, name: any) =>
+                name === "tokens" ? [fmtTokens(value), "Tokens"] : [fmtCost(value), "Cost"]
+              }
             />
             {viewMode === "tokens" ? (
               <Area

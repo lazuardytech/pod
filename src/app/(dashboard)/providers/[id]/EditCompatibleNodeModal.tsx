@@ -103,7 +103,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
     try {
       await onRename(trimmedId);
     } catch (err) {
-      setRenameError(err?.message || "Failed to rename");
+      setRenameError((err as any)?.message || "Failed to rename");
     } finally {
       setRenaming(false);
     }

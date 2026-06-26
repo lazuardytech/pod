@@ -211,36 +211,36 @@ export async function getProviderCredentials(
           return new Date(a.lastUsedAt).getTime() - new Date(b.lastUsedAt).getTime();
         });
         connection = sortedByOldest[0];
-        state = { lastConnectionId: connection.id, consecutiveCount: 1 };
+        state = { lastConnectionId: connection!.id, consecutiveCount: 1 };
       }
       rotationState.set(providerId, state!);
-      schedulePersist(connection.id, {
+      schedulePersist(connection!.id, {
         lastUsedAt: new Date().toISOString(),
         consecutiveUseCount: state!.consecutiveCount,
       });
     } else {
       connection = availableConnections[0];
     }
-    const resolvedProxy = await resolveConnectionProxyConfig(connection.providerSpecificData || {});
+    const resolvedProxy = await resolveConnectionProxyConfig(connection!.providerSpecificData || {});
     return {
-      apiKey: connection.apiKey,
-      accessToken: connection.accessToken,
-      refreshToken: connection.refreshToken,
-      projectId: connection.projectId,
-      connectionName: connection.displayName || connection.name || connection.email || connection.id,
-      copilotToken: connection.providerSpecificData?.copilotToken,
+      apiKey: connection!.apiKey,
+      accessToken: connection!.accessToken,
+      refreshToken: connection!.refreshToken,
+      projectId: connection!.projectId,
+      connectionName: connection!.displayName || connection!.name || connection!.email || connection!.id,
+      copilotToken: connection!.providerSpecificData?.copilotToken,
       providerSpecificData: {
-        ...(connection.providerSpecificData || {}),
+        ...(connection!.providerSpecificData || {}),
         connectionProxyEnabled: resolvedProxy.connectionProxyEnabled,
         connectionProxyUrl: resolvedProxy.connectionProxyUrl,
         connectionNoProxy: resolvedProxy.connectionNoProxy,
         connectionProxyPoolId: resolvedProxy.proxyPoolId || null,
         vercelRelayUrl: resolvedProxy.vercelRelayUrl || "",
       },
-      connectionId: connection.id,
-      testStatus: connection.testStatus,
-      lastError: connection.lastError,
-      _connection: connection,
+      connectionId: connection!.id,
+      testStatus: connection!.testStatus,
+      lastError: connection!.lastError,
+      _connection: connection!,
     };
   } catch (err) {
     log.error("AUTH", `getProviderCredentials failed: ${(err as { message?: string })?.message || err}`);
@@ -296,7 +296,7 @@ export async function markAccountUnavailable(
   }
   const reason = typeof errorText === "string" ? errorText.slice(0, 100) : "Provider error";
   const lockUpdate = buildModelLockUpdate(model, cooldownMs);
-  const lockKey = Object.keys(lockUpdate)[0];
+  const lockKey = Object.keys(lockUpdate)[0]!;
   const existingExpiry = conn?.[lockKey];
   const newExpiry = Date.now() + cooldownMs;
   if (existingExpiry && new Date(existingExpiry).getTime() >= newExpiry - 5000) {

@@ -11,7 +11,7 @@ const FE_ACTIVE_TIMEOUT_MS: any = 60000;
 const FE_ACTIVE_TICK_MS: any = 1000;
 
 function getProviderConfig(providerId: any) {
-  return AI_PROVIDERS[providerId] || { color: "#6b7280", name: providerId, textIcon: undefined } as any;
+  return AI_PROVIDERS[providerId] || ({ color: "#6b7280", name: providerId, textIcon: undefined } as any);
 }
 
 // Use local provider images from /public/providers/
@@ -21,7 +21,7 @@ function getProviderImageUrl(providerId: any) {
 
 // Custom provider node - rectangle with image + name
 function ProviderNode({ data }: any) {
-  const { label, color, imageUrl, textIcon, active, error  } = data ?? {} as any;
+  const { label, color, imageUrl, textIcon, active, error } = data ?? ({} as any);
   const [imgError, setImgError]: any = useState(false);
 
   const borderColor: any = error ? "#ef4444" : active ? "#22c55e" : "var(--color-border)";

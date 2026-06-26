@@ -66,7 +66,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
       setInternalPools(newPools);
       if (onCountChange) onCountChange(newPools.length);
     } catch (err) {
-      setError(err.message);
+      setError((err as any).message);
     }
   }, [onCountChange]);
 

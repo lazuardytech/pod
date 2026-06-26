@@ -17,7 +17,8 @@ const authMethodOptions = Object.values(AUTH_METHODS).map((m: any) => ({
   label: m.name,
 }));
 
-const CardSection = (Card as typeof Card & { Section: ComponentType<{ children?: ReactNode; className?: string }> }).Section;
+const CardSection = (Card as typeof Card & { Section: ComponentType<{ children?: ReactNode; className?: string }> })
+  .Section;
 
 export default function NewProviderPage() {
   const router = useRouter();

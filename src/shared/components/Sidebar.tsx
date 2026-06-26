@@ -318,8 +318,8 @@ export default function Sidebar({
         {/* Navigation */}
         <nav className={cn("flex-1 overflow-y-auto custom-scrollbar space-y-0", collapsed ? "px-1 py-3" : "px-2 py-3")}>
           <NavSection label="API" collapsed={collapsed}>
-            <NavItem {...apiItems[0]} active={isActive(apiItems[0].href)} onClick={onClose} collapsed={collapsed} />
-            <NavItem {...apiItems[1]} active={isActive(apiItems[1].href)} onClick={onClose} collapsed={collapsed} />
+            <NavItem {...apiItems[0]!} active={isActive(apiItems[0]!.href)} onClick={onClose} collapsed={collapsed} />
+            <NavItem {...apiItems[1]!} active={isActive(apiItems[1]!.href)} onClick={onClose} collapsed={collapsed} />
 
             {/* Media Providers — flyout on hover when collapsed, accordion when expanded */}
             {collapsed ? (

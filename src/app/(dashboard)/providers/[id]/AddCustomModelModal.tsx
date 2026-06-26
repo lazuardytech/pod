@@ -42,7 +42,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
       setTestError(data.error || "");
     } catch (err) {
       setTestStatus("error");
-      setTestError(err.message);
+      setTestError((err as any).message);
     }
   };
 

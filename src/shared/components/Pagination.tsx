@@ -81,7 +81,7 @@ export default function Pagination({
               <LucideIcon name="chevron_left" className="text-[14px]" />
             </button>
 
-            {pageNumbers[0] > 1 && (
+            {pageNumbers[0]! > 1 && (
               <>
                 <button
                   onClick={() => onPageChange(1)}
@@ -89,7 +89,7 @@ export default function Pagination({
                 >
                   1
                 </button>
-                {pageNumbers[0] > 2 && <span className="text-[12px] text-fog-grey px-0.5">…</span>}
+                {pageNumbers[0]! > 2 && <span className="text-[12px] text-fog-grey px-0.5">…</span>}
               </>
             )}
 
@@ -108,9 +108,9 @@ export default function Pagination({
               </button>
             ))}
 
-            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+            {pageNumbers[pageNumbers.length - 1]! < totalPages && (
               <>
-                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                {pageNumbers[pageNumbers.length - 1]! < totalPages - 1 && (
                   <span className="text-[12px] text-fog-grey px-0.5">…</span>
                 )}
                 <button

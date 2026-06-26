@@ -22,12 +22,14 @@ export default function ConnectionRow({
   const proxyPoolMap = new Map((proxyPools || []).map((pool: any) => [pool.id, pool]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
   const boundProxyPool = boundProxyPoolId
-    ? (proxyPoolMap.get(boundProxyPoolId) as {
-        name?: string;
-        proxyUrl?: string;
-        noProxy?: string;
-        isActive?: boolean;
-      } | undefined)
+    ? (proxyPoolMap.get(boundProxyPoolId) as
+        | {
+            name?: string;
+            proxyUrl?: string;
+            noProxy?: string;
+            isActive?: boolean;
+          }
+        | undefined)
     : null;
   const hasLegacyProxy =
     connection.providerSpecificData?.connectionProxyEnabled === true &&

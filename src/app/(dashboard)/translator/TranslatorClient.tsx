@@ -64,7 +64,7 @@ export default function TranslatorPage() {
         alert(data.error || "File not found");
       }
     } catch (e) {
-      alert(e.message);
+      alert((e as any).message);
     }
     setLoad(`load-${stepId}`, false);
   };
@@ -119,7 +119,7 @@ export default function TranslatorPage() {
       setContent(3, str);
       openNext(3);
     } catch (e) {
-      alert(e.message);
+      alert((e as any).message);
     }
     setLoad("toOpenAI", false);
   };
@@ -148,7 +148,7 @@ export default function TranslatorPage() {
       setContent(4, JSON.stringify(step4Content, null, 2));
       openNext(4);
     } catch (e) {
-      alert(e.message);
+      alert((e as any).message);
     }
     setLoad("toTarget", false);
   };
@@ -203,7 +203,7 @@ export default function TranslatorPage() {
         body: JSON.stringify({ file: "5_res_provider.txt", content: full }),
       });
     } catch (e) {
-      alert(e.message);
+      alert((e as any).message);
     } finally {
       setLoad("send", false);
     }

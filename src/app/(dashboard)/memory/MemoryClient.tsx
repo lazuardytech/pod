@@ -42,7 +42,8 @@ export default function MemoryClient() {
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const [settings, setSettings] = useState({
     enabled: true,
@@ -117,7 +118,7 @@ export default function MemoryClient() {
           setApiKeys(keysPayload.keys);
         }
       } catch (error) {
-        toast.error(error?.message || "Failed to load memory data");
+        toast.error((error as any)?.message || "Failed to load memory data");
       } finally {
         if (isInitial) setLoading(false);
         else setRefreshing(false);
@@ -164,7 +165,7 @@ export default function MemoryClient() {
       toast.success("Memory settings updated");
       await loadData(false);
     } catch (error) {
-      toast.error(error?.message || "Failed to save memory settings");
+      toast.error((error as any)?.message || "Failed to save memory settings");
     } finally {
       setSavingSettings(false);
     }
@@ -190,7 +191,7 @@ export default function MemoryClient() {
       await loadData(false);
     } catch (error) {
       setSettings((prev: any) => ({ ...prev, enabled: previous }));
-      toast.error(error?.message || "Failed to update memory state");
+      toast.error((error as any)?.message || "Failed to update memory state");
     } finally {
       setSavingSettings(false);
     }
@@ -209,7 +210,7 @@ export default function MemoryClient() {
       toast.success("Memory deleted");
       await loadData(false);
     } catch (error) {
-      toast.error(error?.message || "Failed to delete memory");
+      toast.error((error as any)?.message || "Failed to delete memory");
     } finally {
       setDeletingId(null);
     }
@@ -231,7 +232,7 @@ export default function MemoryClient() {
       setPage(1);
       await loadData(false);
     } catch (error) {
-      toast.error(error?.message || "Failed to clear memories");
+      toast.error((error as any)?.message || "Failed to clear memories");
     } finally {
       setClearingAll(false);
     }
