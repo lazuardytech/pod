@@ -122,9 +122,9 @@ export function trackPendingRequest(
       const idx = arr.indexOf(handle);
       if (idx >= 0) arr.splice(idx, 1);
       if (arr.length === 0) delete pendingTimers[timerKey];
-      if (pendingRequests.byModel[modelKey] > 0) pendingRequests.byModel[modelKey]--;
-      if (connectionId && pendingRequests.byAccount[connectionId]?.[modelKey] > 0) {
-        pendingRequests.byAccount[connectionId][modelKey]--;
+      if ((pendingRequests.byModel[modelKey] ?? 0) > 0) pendingRequests.byModel[modelKey]!--;
+      if (connectionId && (pendingRequests.byAccount[connectionId]?.[modelKey] ?? 0) > 0) {
+        pendingRequests.byAccount[connectionId]![modelKey]!--;
       }
       statsEmitter.emit("pending");
     }, PENDING_TIMEOUT_MS) as ReturnType<typeof setTimeout>;
@@ -768,8 +768,8 @@ export async function getActiveRequests(): Promise<ActiveRequestsResult> {
         const accountName = connectionMap[connectionId] || `Account ${connectionId.slice(0, 8)}...`;
         const match = modelKey.match(/^(.*) \((.*)\)$/);
         activeRequests.push({
-          model: match ? match[1] : modelKey,
-          provider: match ? match[2] : "unknown",
+          model: match ? match[1]! : modelKey,
+          provider: match ? match[2]! : "unknown",
           account: accountName,
           count,
         });
@@ -922,8 +922,8 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
         const accountName = connectionMap[connectionId] || `Account ${connectionId.slice(0, 8)}...`;
         const match = modelKey.match(/^(.*) \((.*)\)$/);
         stats.activeRequests.push({
-          model: match ? match[1] : modelKey,
-          provider: match ? match[2] : "unknown",
+          model: match ? match[1]! : modelKey,
+          provider: match ? match[2]! : "unknown",
           account: accountName,
           count,
         });
@@ -1020,14 +1020,14 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
       if (r.bucket === "byProvider") {
         if (!stats.byProvider[r.key])
           stats.byProvider[r.key] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
-        const t = stats.byProvider[r.key];
+        const t = stats.byProvider[r.key]!;
         t.requests += requests;
         t.promptTokens += prompt;
         t.completionTokens += completion;
         t.cost += cost;
       } else if (r.bucket === "byModel") {
-        const rawModel = meta.rawModel || r.key.split("|")[0];
-        const provider = meta.provider || r.key.split("|")[1] || "";
+        const rawModel = meta.rawModel || r.key.split("|")[0]!;
+        const provider = meta.provider || r.key.split("|")[1]! || "";
         const statsKey = provider ? `${rawModel} (${provider})` : rawModel;
         const providerDisplayName = providerNodeNameMap[provider] || provider;
         if (!stats.byModel[statsKey]) {
@@ -1095,7 +1095,7 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
             lastUsed: r.date_key,
           };
         }
-        const t = stats.byApiKey[r.key];
+        const t = stats.byApiKey[r.key]!;
         t.requests += requests;
         t.promptTokens += prompt;
         t.completionTokens += completion;
@@ -1118,7 +1118,7 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
             lastUsed: r.date_key,
           };
         }
-        const t = stats.byEndpoint[r.key];
+        const t = stats.byEndpoint[r.key]!;
         t.requests += requests;
         t.promptTokens += prompt;
         t.completionTokens += completion;
@@ -1185,7 +1185,7 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
     }
   } else {
     // 24h: scan usage_history
-    const cutoff = new Date(Date.now() - PERIOD_MS["24h"]).toISOString();
+    const cutoff = new Date(Date.now() - PERIOD_MS["24h"]!).toISOString();
     const rows = db
       .prepare(`
       SELECT * FROM usage_history WHERE timestamp >= ?
@@ -1205,7 +1205,7 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
       if (r.provider) {
         if (!stats.byProvider[r.provider])
           stats.byProvider[r.provider] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
-        const t = stats.byProvider[r.provider];
+        const t = stats.byProvider[r.provider]!;
         t.requests++;
         t.promptTokens += prompt;
         t.completionTokens += completion;
@@ -1376,11 +1376,11 @@ export async function getChartData(period: string = "7d"): Promise<ChartBucket[]
       const et = new Date(r.timestamp).getTime();
       if (et < startTime || et > now) continue;
       const idx = Math.min(Math.floor((et - startTime) / bucketMs), bucketCount - 1);
-      buckets[idx].promptTokens += r.prompt_tokens || 0;
-      buckets[idx].completionTokens += r.completion_tokens || 0;
-      buckets[idx].tokens += (r.prompt_tokens || 0) + (r.completion_tokens || 0);
-      buckets[idx].cost += r.cost || 0;
-      buckets[idx].requests += 1;
+      buckets[idx]!.promptTokens += r.prompt_tokens || 0;
+      buckets[idx]!.completionTokens += r.completion_tokens || 0;
+      buckets[idx]!.tokens += (r.prompt_tokens || 0) + (r.completion_tokens || 0);
+      buckets[idx]!.cost += r.cost || 0;
+      buckets[idx]!.requests += 1;
     }
     return buckets;
   }
@@ -1443,7 +1443,7 @@ export function getPendingStats(): { total: number; byProvider: Record<string, n
   for (const [modelKey, count] of Object.entries(pendingRequests.byModel)) {
     // modelKey format: "model (provider)" or bare "model"
     const match = modelKey.match(/\((.+)\)$/);
-    const provider = match ? match[1] : "unknown";
+    const provider = match ? match[1]! : "unknown";
     byProvider[provider] = (byProvider[provider] || 0) + count;
     total += count;
   }
