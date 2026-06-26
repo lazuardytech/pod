@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { asRecord, asString, fetchUrlError } from "@/app/api/_types";
 import { getDefaultModel } from "open-sse/config/providerModels.js";
 import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
 import { normalizeProviderId } from "@/lib/providerNormalization";
@@ -29,7 +30,7 @@ async function probeWebProvider(provider, apiKey) {
   if (cfg.authType === "none") return true; // no-auth (e.g. searxng)
 
   let url = cfg.baseUrl;
-  const headers = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   let body;
 
   // Apply auth based on authHeader
@@ -69,14 +70,14 @@ async function probeMediaProvider(provider, apiKey) {
   const kinds = p.serviceKinds || ["llm"];
   const isMediaOnly = kinds.every((k) => MEDIA_KINDS.has(k));
   if (!isMediaOnly) return null;
-  const cfg = p.ttsConfig || p.sttConfig || p.embeddingConfig || p.imageConfig || p.videoConfig || p.musicConfig;
+  const cfg = (p.ttsConfig || p.sttConfig || p.embeddingConfig || p.imageConfig || (p as Record<string, unknown>).videoConfig || (p as Record<string, unknown>).musicConfig) as Record<string, unknown> | undefined;
   // No probe config → best-effort accept (validate at usage time)
   if (!cfg) return true;
   if (p.noAuth || cfg.authType === "none") return true;
   // Skip auth schemes that need provider-specific data
   if (cfg.authHeader === "playht" || cfg.authHeader === "aws-sigv4") return true;
 
-  const headers = { "Content-Type": "application/json", ...(cfg.extraHeaders || {}) };
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...((cfg.extraHeaders as Record<string, string>) || {}) };
 
   switch (cfg.authHeader) {
     case "bearer":
@@ -104,16 +105,16 @@ async function probeMediaProvider(provider, apiKey) {
       return null;
   }
 
-  const method = cfg.method || "POST";
+  const method = (cfg.method as string) || "POST";
   // cfg.baseUrl is from AI_PROVIDERS constants, not user-supplied. lgtm[js/request-forgery]
-  const res = await fetch(cfg.baseUrl, {
+  const res = await fetch(cfg.baseUrl as string, {
     // lgtm[js/request-forgery]
     method,
     headers,
     body:
       method === "GET"
         ? undefined
-        : JSON.stringify({ input: "ping", text: "ping", prompt: "ping", model: cfg.models?.[0]?.id || "test" }),
+        : JSON.stringify({ input: "ping", text: "ping", prompt: "ping", model: ((cfg.models as { id?: string }[])?.[0]?.id) || "test" }),
     signal: AbortSignal.timeout(8000),
   });
   return res.status !== 401 && res.status !== 403;
@@ -148,10 +149,12 @@ export async function POST(request) {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const provider = normalizeProviderId(body.provider);
-    const { apiKey, providerSpecificData } = body;
+    const apiKey = asString(body.apiKey);
+    const providerSpecificData = asRecord(body.providerSpecificData);
 
     const isNoAuth = AI_PROVIDERS[provider]?.noAuth === true;
     if (!provider || (!apiKey && provider !== "ollama-local" && !isNoAuth)) {
@@ -171,7 +174,7 @@ export async function POST(request) {
         const nodeBaseUrl = node.baseUrl?.replace(/\/$/, "") || "";
         const nodeUrlCheck = validateFetchUrl(nodeBaseUrl);
         if (!nodeUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${nodeUrlCheck.error}` });
+          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${fetchUrlError(nodeUrlCheck)}` });
         }
         const modelsUrl = `${nodeBaseUrl}/models`;
         const res = await fetch(modelsUrl, {
@@ -193,7 +196,7 @@ export async function POST(request) {
         const baseUrl = node.baseUrl?.replace(/\/$/, "") || "";
         const embedUrlCheck = validateFetchUrl(baseUrl);
         if (!embedUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${embedUrlCheck.error}` });
+          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${fetchUrlError(embedUrlCheck)}` });
         }
         const modelsRes = await fetch(`${baseUrl}/models`, {
           headers: { Authorization: `Bearer ${apiKey}` },
@@ -231,7 +234,7 @@ export async function POST(request) {
         }
         const anthropicUrlCheck = validateFetchUrl(normalizedBase);
         if (!anthropicUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${anthropicUrlCheck.error}` });
+          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${fetchUrlError(anthropicUrlCheck)}` });
         }
 
         const modelsUrl = `${normalizedBase}/models`;
@@ -252,8 +255,7 @@ export async function POST(request) {
       }
 
       if (provider === "cloudflare-ai") {
-        const { providerSpecificData } = body;
-        const accountId = providerSpecificData?.accountId;
+        const accountId = asString(providerSpecificData.accountId);
         if (!accountId) {
           return NextResponse.json({ valid: false, error: "Missing Account ID" });
         }
@@ -275,20 +277,19 @@ export async function POST(request) {
       }
 
       if (provider === "azure") {
-        const { providerSpecificData } = body;
-        const endpoint = (providerSpecificData?.azureEndpoint || "").replace(/\/$/, "");
-        const deployment = providerSpecificData?.deployment || "gpt-4";
-        const apiVersion = providerSpecificData?.apiVersion || "2024-10-01-preview";
-        const organization = providerSpecificData?.organization;
+        const endpoint = asString(providerSpecificData.azureEndpoint).replace(/\/$/, "");
+        const deployment = asString(providerSpecificData.deployment) || "gpt-4";
+        const apiVersion = asString(providerSpecificData.apiVersion) || "2024-10-01-preview";
+        const organization = asString(providerSpecificData.organization);
 
         // Validate the user-supplied Azure endpoint before fetching (SSRF prevention)
         const azureUrlCheck = validateFetchUrl(endpoint);
         if (!azureUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid Azure endpoint: ${azureUrlCheck.error}` });
+          return NextResponse.json({ valid: false, error: `Invalid Azure endpoint: ${fetchUrlError(azureUrlCheck)}` });
         }
 
         const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
-        const headers = {
+        const headers: Record<string, string> = {
           "api-key": apiKey,
           "Content-Type": "application/json",
         };
@@ -460,7 +461,7 @@ export async function POST(request) {
           if (provider === "ollama-local") {
             const ollamaUrlCheck = validateOllamaLocalBaseUrl(providerSpecificData);
             if (!ollamaUrlCheck.ok) {
-              return NextResponse.json({ valid: false, error: ollamaUrlCheck.error });
+              return NextResponse.json({ valid: false, error: fetchUrlError(ollamaUrlCheck) });
             }
           }
 
@@ -484,7 +485,7 @@ export async function POST(request) {
             nvidia: "https://integrate.api.nvidia.com/v1/models",
             "xiaomi-mimo": "https://api.xiaomimimo.com/v1/models",
           };
-          const headers = {};
+          const headers: Record<string, string> = {};
           if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
           const res = await fetch(endpoints[provider], { headers });
           // xai returns 400 for bad key, 403 for valid-but-no-credit. Other providers use 401.

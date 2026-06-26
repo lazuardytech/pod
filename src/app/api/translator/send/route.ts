@@ -1,3 +1,4 @@
+import { asApiRecord, asString } from "@/app/api/_types";
 import { getExecutor, refreshTokenByProvider } from "open-sse/index.js";
 import { getProviderConnections } from "@/lib/localDb.js";
 
@@ -39,9 +40,13 @@ export async function POST(request) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { provider, model, body } = json;
+    const rawBody = json;
+    const body = rawBody as Record<string, unknown>;
+    const provider = asString(body.provider);
+    const model = asString(body.model);
+    const requestBody = body.body;
 
-    if (!provider || !model || !body) {
+    if (!provider || !model || !requestBody) {
       return Response.json({ success: false, error: "provider, model, and body required" }, { status: 400 });
     }
 
@@ -63,17 +68,20 @@ export async function POST(request) {
       providerSpecificData: connection.providerSpecificData,
     };
 
-    const executor = getExecutor(provider);
-    const stream = body.stream === true;
+    const executor = getExecutor(provider) as {
+      execute: (opts: Record<string, unknown>) => Promise<{ response: Response }>;
+    };
+    const reqBody = asApiRecord(requestBody);
+    const stream = reqBody.stream === true;
 
-    let { response } = await executor.execute({ model, body, stream, credentials });
+    let { response } = await executor.execute({ model, body: requestBody, stream, credentials });
 
     // Auto-refresh token on 401/403 and retry (same as chatCore.js)
     if (response.status === 401 || response.status === 403) {
-      const newCredentials = await refreshTokenByProvider(provider, credentials);
+      const newCredentials = (await refreshTokenByProvider(provider, credentials)) as Record<string, unknown> | null;
       if (newCredentials?.accessToken || newCredentials?.copilotToken) {
         Object.assign(credentials, newCredentials);
-        ({ response } = await executor.execute({ model, body, stream, credentials }));
+        ({ response } = await executor.execute({ model, body: requestBody, stream, credentials }));
       }
     }
 

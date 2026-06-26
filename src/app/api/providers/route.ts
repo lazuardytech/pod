@@ -1,3 +1,4 @@
+import { asApiRecord } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { normalizeProviderId, normalizeProviderSpecificData } from "@/lib/providerNormalization";
 import {
@@ -21,7 +22,7 @@ import { sanitizeError } from "@/lib/sanitizeError";
 
 export const dynamic = "force-dynamic";
 
-function normalizeProxyConfig(body = {}) {
+function normalizeProxyConfig(body: Record<string, unknown> = {}) {
   const enabled = body?.connectionProxyEnabled === true;
   const url = typeof body?.connectionProxyUrl === "string" ? body.connectionProxyUrl.trim() : "";
   const noProxy = typeof body?.connectionNoProxy === "string" ? body.connectionNoProxy.trim() : "";
@@ -61,7 +62,7 @@ export async function GET() {
     const connections = await getProviderConnections();
 
     // Build nodeNameMap for compatible providers (id → name)
-    const nodeNameMap = {};
+    const nodeNameMap: Record<string, string> = {};
     try {
       const nodes = await getProviderNodes();
       for (const node of nodes) {
@@ -100,8 +101,9 @@ export async function GET() {
 // POST /api/providers - Create new connection (API Key only, OAuth via separate flow)
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const provider = normalizeProviderId(body.provider);
     const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } = body;
     const proxyConfig = normalizeProxyConfig(body);
@@ -139,7 +141,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    let providerSpecificData = normalizeProviderSpecificData(provider, body, body.providerSpecificData);
+    let providerSpecificData = normalizeProviderSpecificData(provider, body, asApiRecord(body.providerSpecificData));
 
     if (isOpenAICompatibleProvider(provider)) {
       const node = await getProviderNodeById(provider);
@@ -174,7 +176,7 @@ export async function POST(request) {
       };
     }
 
-    const mergedProviderSpecificData = {
+    const mergedProviderSpecificData: Record<string, unknown> = {
       ...(providerSpecificData || {}),
       connectionProxyEnabled: proxyConfig.connectionProxyEnabled,
       connectionProxyUrl: proxyConfig.connectionProxyUrl,

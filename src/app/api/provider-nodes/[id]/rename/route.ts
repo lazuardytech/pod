@@ -34,8 +34,9 @@ function isCustomNode(node) {
 export async function PATCH(request, { params }) {
   try {
     const { id: oldId } = await params;
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const newId = typeof body?.newId === "string" ? body.newId.trim() : "";
 
     if (!newId) {

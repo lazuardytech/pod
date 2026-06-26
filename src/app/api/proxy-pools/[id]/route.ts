@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { deleteProxyPool, getProviderConnections, getProxyPoolById, updateProxyPool } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -9,8 +10,8 @@ function sanitizeProxyPool(pool) {
   return sanitized;
 }
 
-function normalizeProxyPoolUpdate(body = {}) {
-  const updates = {};
+function normalizeProxyPoolUpdate(body: Record<string, unknown> = {}) {
+  const updates: Record<string, unknown> = {};
 
   if (Object.hasOwn(body, "name")) {
     const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -42,7 +43,7 @@ function normalizeProxyPoolUpdate(body = {}) {
 
   if (Object.hasOwn(body, "type")) {
     const validTypes = ["http", "vercel"];
-    updates.type = validTypes.includes(body?.type) ? body.type : "http";
+    updates.type = validTypes.includes(asString(body?.type)) ? asString(body.type) : "http";
   }
 
   return { updates };
@@ -79,8 +80,9 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Proxy pool not found" }, { status: 404 });
     }
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const normalized = normalizeProxyPoolUpdate(body);
 
     if (normalized.error) {

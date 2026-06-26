@@ -19,7 +19,7 @@ async function getInternalApiKey() {
 async function pingModel(modelId, baseUrl, apiKey) {
   const start = Date.now();
   try {
-    const headers = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
     const res = await fetch(`${baseUrl}/api/v1/chat/completions`, {
       method: "POST",

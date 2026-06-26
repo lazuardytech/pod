@@ -161,7 +161,7 @@ export async function POST(request, { params }) {
         provider,
         authType: "oauth",
         ...tokenData,
-        expiresAt: tokenData.expiresIn ? new Date(Date.now() + tokenData.expiresIn * 1000).toISOString() : null,
+        expiresAt: tokenData.expiresIn ? new Date(Date.now() + Number(tokenData.expiresIn) * 1000).toISOString() : null,
         testStatus: "active",
       });
 
@@ -187,7 +187,7 @@ export async function POST(request, { params }) {
       const noPkceProviders = ["github", "kimi-coding", "kilocode", "codebuddy"];
       let result;
       if (noPkceProviders.includes(provider)) {
-        result = await pollForToken(provider, deviceCode);
+        result = await pollForToken(provider, deviceCode, undefined);
       } else if (provider === "kiro") {
         // Kiro needs extraData (clientId, clientSecret) from device code response
         result = await pollForToken(provider, deviceCode, null, extraData);

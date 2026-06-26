@@ -64,7 +64,7 @@ async function fetchCompatibleModelIds(connection) {
   if (!baseUrl) return [];
 
   let url = `${baseUrl}/models`;
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
@@ -174,7 +174,7 @@ export async function buildModelsList(kindFilter) {
   // Combos first (filtered by kind). Web combos expose `kind` so AI knows search vs fetch.
   for (const combo of combos) {
     if (!comboMatchesKinds(combo, kindFilter)) continue;
-    const entry = {
+    const entry: Record<string, unknown> = {
       id: combo.name,
       object: "model",
       created: timestamp,
@@ -278,16 +278,17 @@ export async function buildModelsList(kindFilter) {
           );
         })
         .map((fullModel) => {
-          if (fullModel.startsWith(`${outputAlias}/`)) {
-            return fullModel.slice(outputAlias.length + 1);
+          const model = fullModel as string;
+          if (model.startsWith(`${outputAlias}/`)) {
+            return model.slice(outputAlias.length + 1);
           }
-          if (fullModel.startsWith(`${staticAlias}/`)) {
-            return fullModel.slice(staticAlias.length + 1);
+          if (model.startsWith(`${staticAlias}/`)) {
+            return model.slice(staticAlias.length + 1);
           }
-          if (fullModel.startsWith(`${providerId}/`)) {
-            return fullModel.slice(providerId.length + 1);
+          if (model.startsWith(`${providerId}/`)) {
+            return model.slice(providerId.length + 1);
           }
-          return fullModel;
+          return model;
         })
         .filter((modelId) => typeof modelId === "string" && modelId.trim() !== "");
 

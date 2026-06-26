@@ -149,11 +149,11 @@ export async function buildHealthPayload() {
   const comboList = combos.status === "fulfilled" ? combos.value : [];
   const keys = apiKeys.status === "fulfilled" ? apiKeys.value : [];
   const cfg = settings.status === "fulfilled" ? settings.value : {};
-  const nodeMap = new Map(
-    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [n.id, n]),
+  const nodeMap = new Map<string, Record<string, unknown>>(
+    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [n.id, n as Record<string, unknown>]),
   );
 
-  const providers = {
+  const providers: Record<string, unknown> = {
     total: conns.length,
     enabled: conns.filter((c) => c.enabled !== false).length,
     combos: comboList.length,
@@ -163,7 +163,7 @@ export async function buildHealthPayload() {
   // — Provider breakdown by status —
   const now = Date.now();
   const byStatus = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
-  const byProvider = {};
+  const byProvider: Record<string, { total: number; active: number; error: number; rateLimited: number }> = {};
 
   for (const c of conns) {
     const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
@@ -205,7 +205,7 @@ export async function buildHealthPayload() {
   };
 
   // — Cache occupancy —
-  const caches = {};
+  const caches: Record<string, unknown> = {};
   try {
     const semStats = getCacheStats();
     const semMemoryStats =
@@ -326,7 +326,7 @@ export async function buildHealthPayload() {
   }
 
   // — Provider health (existing circuit-breaker section) —
-  const providerHealthMap = {};
+  const providerHealthMap: Record<string, Record<string, unknown>> = {};
   for (const c of conns) {
     const isRateLimited = c.rateLimitedUntil && new Date(c.rateLimitedUntil).getTime() > now;
     const retryAfterMs = isRateLimited ? new Date(c.rateLimitedUntil).getTime() - now : 0;
@@ -352,10 +352,16 @@ export async function buildHealthPayload() {
         connectionCount: 0,
       };
     }
-    const entry = providerHealthMap[key];
+    const entry = providerHealthMap[key] as {
+      connectionCount: number;
+      state: string;
+      retryAfterMs: number;
+      rateLimitedUntil: string | null;
+      [key: string]: unknown;
+    };
     entry.connectionCount += 1;
-    const stateRank = { OPEN: 2, HALF_OPEN: 1, CLOSED: 0 };
-    if (stateRank[state] > stateRank[entry.state]) {
+    const stateRank: Record<string, number> = { OPEN: 2, HALF_OPEN: 1, CLOSED: 0 };
+    if (stateRank[state] > stateRank[entry.state as string]) {
       entry.state = state;
       entry.retryAfterMs = retryAfterMs;
       entry.rateLimitedUntil = c.rateLimitedUntil || null;
@@ -410,12 +416,15 @@ export async function buildHealthPayload() {
     });
   }
 
-  const blockedByModel = {};
+  const blockedByModel: Record<
+    string,
+    { model: string; blockedCount: number; connections: Record<string, unknown>[]; earliestUnblockAt: string | null }
+  > = {};
   for (const c of conns) {
     const providerInfo = AI_PROVIDERS[c.provider];
     for (const [key, val] of Object.entries(c)) {
       if (!key.startsWith(MODEL_LOCK_PREFIX) || !val) continue;
-      const expiry = new Date(val).getTime();
+      const expiry = new Date(String(val)).getTime();
       if (expiry <= now) continue;
       const modelName = key.slice(MODEL_LOCK_PREFIX.length);
       if (!blockedByModel[modelName]) {
@@ -434,7 +443,7 @@ export async function buildHealthPayload() {
         !blockedByModel[modelName].earliestUnblockAt ||
         expiry < new Date(blockedByModel[modelName].earliestUnblockAt).getTime()
       ) {
-        blockedByModel[modelName].earliestUnblockAt = val;
+        blockedByModel[modelName].earliestUnblockAt = String(val);
       }
     }
   }

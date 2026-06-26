@@ -6,9 +6,10 @@ import {
   getProxyPoolById,
   updateProviderConnection,
 } from "@/models";
+import { asApiRecord } from "@/app/api/_types";
 import { sanitizeError } from "@/lib/sanitizeError";
 
-function normalizeProxyConfig(body = {}) {
+function normalizeProxyConfig(body: Record<string, unknown> = {}) {
   const hasAnyProxyField =
     Object.hasOwn(body, "connectionProxyEnabled") ||
     Object.hasOwn(body, "connectionProxyUrl") ||
@@ -89,8 +90,9 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const {
       name,
       priority,
@@ -119,7 +121,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: proxyPoolResult.error }, { status: 400 });
     }
 
-    const updateData = {};
+    const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (priority !== undefined) updateData.priority = priority;
     if (globalPriority !== undefined) updateData.globalPriority = globalPriority;
@@ -138,24 +140,26 @@ export async function PUT(request, { params }) {
         proxyPoolResult.hasProxyPoolField,
       )
     ) {
-      updateData.providerSpecificData = {
-        ...(existing.providerSpecificData || {}),
-        ...(providerSpecificData || {}),
+      const psd = {
+        ...asApiRecord(existing.providerSpecificData),
+        ...asApiRecord(providerSpecificData),
       };
 
       if (proxyConfig.hasAnyProxyField) {
-        updateData.providerSpecificData.connectionProxyEnabled = proxyConfig.connectionProxyEnabled;
-        updateData.providerSpecificData.connectionProxyUrl = proxyConfig.connectionProxyUrl;
-        updateData.providerSpecificData.connectionNoProxy = proxyConfig.connectionNoProxy;
+        psd.connectionProxyEnabled = proxyConfig.connectionProxyEnabled;
+        psd.connectionProxyUrl = proxyConfig.connectionProxyUrl;
+        psd.connectionNoProxy = proxyConfig.connectionNoProxy;
       }
 
       if (proxyPoolResult.hasProxyPoolField) {
         if (proxyPoolResult.proxyPoolId === null) {
-          delete updateData.providerSpecificData.proxyPoolId;
+          delete psd.proxyPoolId;
         } else {
-          updateData.providerSpecificData.proxyPoolId = proxyPoolResult.proxyPoolId;
+          psd.proxyPoolId = proxyPoolResult.proxyPoolId;
         }
       }
+
+      updateData.providerSpecificData = psd;
     }
 
     const updated = await updateProviderConnection(id, updateData);

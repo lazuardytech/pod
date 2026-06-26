@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { disableModels, enableModels, getDisabledModels } from "@/lib/disabledModelsDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -21,13 +22,14 @@ export async function GET(request) {
 // POST /api/models/disabled  body: { providerAlias, ids: [...] }
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { providerAlias, ids } = body;
     if (!providerAlias || !Array.isArray(ids)) {
       return NextResponse.json({ error: "providerAlias and ids[] required" }, { status: 400 });
     }
-    await disableModels(providerAlias, ids);
+    await disableModels(asString(providerAlias), ids as string[]);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.log("Error disabling models:", error);

@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { getModelAliases, setModelAlias, validateApiKey } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -17,9 +18,11 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
     }
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { model, alias } = body;
+    const body = rawBody as Record<string, unknown>;
+    const model = asString(body.model);
+    const alias = asString(body.alias);
 
     if (!model || !alias) {
       return NextResponse.json({ error: "Model and alias required" }, { status: 400 });

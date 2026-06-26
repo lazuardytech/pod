@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { createProviderConnection } from "@/models";
@@ -15,9 +16,12 @@ export async function POST(request) {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { code, codeVerifier, provider } = body;
+    const body = rawBody as Record<string, unknown>;
+    const code = asString(body.code);
+    const codeVerifier = asString(body.codeVerifier);
+    const provider = asString(body.provider);
 
     if (!code || !codeVerifier) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });

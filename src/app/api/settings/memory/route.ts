@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { normalizeMemorySettings, toMemorySettingsUpdates } from "@/lib/memory/settings";
@@ -28,9 +29,10 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const patch = {};
+    const body = rawBody as Record<string, unknown>;
+    const patch: Record<string, unknown> = {};
 
     if (body.enabled !== undefined) {
       const value = toBooleanOrNull(body.enabled);
@@ -50,7 +52,7 @@ export async function PUT(request) {
       patch.retentionDays = value;
     }
     if (body.strategy !== undefined) {
-      if (!["recent", "semantic", "hybrid"].includes(body.strategy)) {
+      if (!["recent", "semantic", "hybrid"].includes(asString(body.strategy))) {
         return NextResponse.json({ error: "strategy must be one of: recent, semantic, hybrid" }, { status: 400 });
       }
       patch.strategy = body.strategy;

@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { addCustomModel, deleteCustomModel, getCustomModels } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -18,13 +19,19 @@ export async function GET() {
 // POST /api/models/custom - Add custom model
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { providerAlias, id, type, name } = body;
     if (!providerAlias || !id) {
       return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
     }
-    const added = await addCustomModel({ providerAlias, id, type: type || "llm", name });
+    const added = await addCustomModel({
+      providerAlias: asString(providerAlias),
+      id: asString(id),
+      type: asString(type) || "llm",
+      name: asString(name),
+    });
     return NextResponse.json({ success: true, added });
   } catch (error) {
     console.log("Error adding custom model:", error);

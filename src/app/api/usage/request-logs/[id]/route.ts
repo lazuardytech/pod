@@ -88,7 +88,7 @@ export async function GET(request, { params }) {
       // detail stays null — not fatal
     }
 
-    let payload = {};
+    let payload: Record<string, unknown> = {};
     if (detail) {
       try {
         payload = JSON.parse(detail.data || "{}");

@@ -13,7 +13,7 @@ function getDataDir() {
 
 const DATA_DIR = getDataDir();
 
-function runCommandSync(spawnSync, command, args, { timeout = 5000, env } = {}) {
+function runCommandSync(spawnSync, command, args, { timeout = 5000, env }: { timeout?: number; env?: NodeJS.ProcessEnv } = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     windowsHide: true,
@@ -108,7 +108,7 @@ function isDaemonRunning(spawnSync, execSync) {
       env: { ...process.env, PATH: EXTENDED_PATH },
       timeout: 2000,
     });
-    if (process.platform !== "win32") {
+    if ((process.platform as string) !== "win32") {
       return true;
     }
     return false;

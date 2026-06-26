@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { createCombo, getComboByName, getCombos, reorderCombos } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -21,8 +22,9 @@ export async function GET() {
 // PATCH /api/combos - Reorder combos
 export async function PATCH(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { order } = body;
 
     if (!Array.isArray(order) || order.some((id) => typeof id !== "string")) {
@@ -40,8 +42,9 @@ export async function PATCH(request) {
 // POST /api/combos - Create new combo
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { name, models, kind, systemPrompt, modelId, contentFilterMessage } = body;
 
     if (!name) {
@@ -49,7 +52,7 @@ export async function POST(request) {
     }
 
     // Validate name format
-    if (!VALID_NAME_REGEX.test(name)) {
+    if (!VALID_NAME_REGEX.test(asString(name))) {
       return NextResponse.json({ error: "Name can only contain letters, numbers, -, _ and ." }, { status: 400 });
     }
 

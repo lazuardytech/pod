@@ -27,11 +27,14 @@ const parseGeminiCliModels = (data) => {
 
   if (data?.models && typeof data.models === "object") {
     return Object.entries(data.models)
-      .filter(([, info]) => !info?.isInternal)
-      .map(([id, info]) => ({
-        id,
-        name: info?.displayName || info?.name || id,
-      }));
+      .filter(([, info]) => !(info as Record<string, unknown>)?.isInternal)
+      .map(([id, info]) => {
+        const modelInfo = info as Record<string, unknown>;
+        return {
+          id,
+          name: (modelInfo?.displayName as string) || (modelInfo?.name as string) || id,
+        };
+      });
   }
 
   return [];
@@ -446,13 +449,13 @@ export async function GET(request, { params }) {
     }
 
     // Build headers
-    const headers = { ...config.headers };
+    const headers: Record<string, string> = { ...config.headers };
     if (config.authHeader && !config.authQuery) {
       headers[config.authHeader] = (config.authPrefix || "") + token;
     }
 
     // Make request
-    const fetchOptions = {
+    const fetchOptions: Record<string, unknown> & { method?: string; headers?: Record<string, string> } = {
       method: config.method,
       headers,
     };

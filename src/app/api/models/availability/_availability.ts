@@ -13,7 +13,7 @@ function getActiveModelLocks(connection) {
       key,
       model: key.slice(MODEL_LOCK_PREFIX.length) || "__all",
       until: value,
-      active: new Date(value).getTime() > now,
+      active: new Date(String(value)).getTime() > now,
     }))
     .filter((lock) => lock.active);
 }

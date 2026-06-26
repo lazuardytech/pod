@@ -17,9 +17,10 @@ export async function GET(_request, { params }) {
 export async function PATCH(request, { params }) {
   try {
     const { id } = await params;
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const updates = {};
+    const body = rawBody as Record<string, unknown>;
+    const updates: Record<string, unknown> = {};
 
     if (body.type !== undefined) updates.type = body.type;
     if (body.key !== undefined) updates.key = body.key;

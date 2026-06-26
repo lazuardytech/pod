@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
+import { asString, fetchUrlError } from "@/app/api/_types";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 // Fetch with timeout wrapper
-const fetchWithTimeout = (url, options, timeout = 10000) => {
+const fetchWithTimeout = (url: string, options: RequestInit, timeout = 10000): Promise<Response> => {
   return Promise.race([
     fetch(url, options),
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Request timeout")), timeout)),
+    new Promise<Response>((_, reject) => setTimeout(() => reject(new Error("Request timeout")), timeout)),
   ]);
 };
 
@@ -53,9 +54,13 @@ const getChatErrorMessage = (status) => {
 // POST /api/provider-nodes/validate - Validate API key against base URL
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { baseUrl, apiKey, type, modelId } = body;
+    const body = rawBody as Record<string, unknown>;
+    const baseUrl = asString(body.baseUrl);
+    const apiKey = asString(body.apiKey);
+    const type = asString(body.type);
+    const modelId = asString(body.modelId);
 
     if (!baseUrl || !apiKey) {
       return NextResponse.json({ error: "Base URL and API key required" }, { status: 400 });
@@ -69,7 +74,7 @@ export async function POST(request) {
     // Block non-http(s) protocols and private/internal addresses
     const urlCheck = validateFetchUrl(baseUrl);
     if (!urlCheck.ok) {
-      return NextResponse.json({ error: urlCheck.error }, { status: 400 });
+      return NextResponse.json({ error: fetchUrlError(urlCheck) }, { status: 400 });
     }
 
     // All fetches below use baseUrl validated above. lgtm[js/request-forgery]

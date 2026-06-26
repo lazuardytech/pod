@@ -7,8 +7,9 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 // POST /api/models/test - Ping a single model via internal completions or embeddings
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { model, kind } = body;
     if (!model) return NextResponse.json({ error: "Model required" }, { status: 400 });
 
@@ -33,7 +34,7 @@ export async function POST(request) {
       apiKey = keys.find((k) => k.isActive !== false)?.key || null;
     } catch {}
 
-    const headers = { "Content-Type": "application/json", "x-pod-no-cache": "true" };
+    const headers: Record<string, string> = { "Content-Type": "application/json", "x-pod-no-cache": "true" };
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
     const start = Date.now();

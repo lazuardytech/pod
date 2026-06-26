@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { resetComboRotation } from "open-sse/services/combo.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
@@ -49,8 +50,9 @@ export async function GET() {
 
 export async function PATCH(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
 
     // If updating password, hash it
     if (body.newPassword) {
@@ -62,7 +64,7 @@ export async function PATCH(request) {
         if (!body.currentPassword) {
           return NextResponse.json({ error: "Current password required" }, { status: 400 });
         }
-        const isValid = await bcrypt.compare(body.currentPassword, currentHash);
+        const isValid = await bcrypt.compare(asString(body.currentPassword), currentHash);
         if (!isValid) {
           return NextResponse.json({ error: "Invalid current password" }, { status: 401 });
         }
@@ -75,7 +77,7 @@ export async function PATCH(request) {
       }
 
       const salt = await bcrypt.genSalt(10);
-      body.password = await bcrypt.hash(body.newPassword, salt);
+      body.password = await bcrypt.hash(asString(body.newPassword), salt);
       delete body.newPassword;
       delete body.currentPassword;
     }

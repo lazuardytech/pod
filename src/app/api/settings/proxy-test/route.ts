@@ -1,3 +1,4 @@
+import { proxyTestError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError";
@@ -5,8 +6,9 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const result = await testProxyUrl({
       proxyUrl: body?.proxyUrl,
       testUrl: body?.testUrl,
@@ -18,7 +20,7 @@ export async function POST(request) {
     }
 
     const status = typeof result?.status === "number" ? result.status : 500;
-    return NextResponse.json({ ok: false, error: result?.error || "Proxy test failed" }, { status });
+    return NextResponse.json({ ok: false, error: proxyTestError(result) || "Proxy test failed" }, { status });
   } catch (err) {
     const message = err?.name === "AbortError" ? "Proxy test timed out" : sanitizeError(err);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });

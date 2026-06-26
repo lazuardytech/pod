@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { createApiKey, getApiKeys } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
@@ -20,15 +21,16 @@ export async function GET() {
 // POST /api/keys - Create new API key
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { name, limitType, requestsPerMinute, concurrentRequests } = body || {};
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    if (limitType && !["unlimited", "limited"].includes(limitType)) {
+    if (limitType && !["unlimited", "limited"].includes(asString(limitType))) {
       return NextResponse.json({ error: "limitType must be 'unlimited' or 'limited'" }, { status: 400 });
     }
 
@@ -45,7 +47,7 @@ export async function POST(request) {
 
     // Always get machineId from server
     const machineId = await getConsistentMachineId();
-    const apiKey = await createApiKey(name, machineId, {
+    const apiKey = await createApiKey(asString(name), machineId, {
       limitType: limitType || "unlimited",
       requestsPerMinute,
       concurrentRequests,

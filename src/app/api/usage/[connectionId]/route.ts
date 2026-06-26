@@ -55,7 +55,7 @@ async function refreshAndUpdateCredentials(connection, force = false, proxyOptio
 
   // Build update object
   const now = new Date().toISOString();
-  const updateData = {
+  const updateData: Record<string, unknown> = {
     updatedAt: now,
   };
 

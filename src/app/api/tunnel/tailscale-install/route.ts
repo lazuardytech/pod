@@ -3,6 +3,7 @@
 import { execSync } from "node:child_process";
 import os from "node:os";
 
+import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 import { sanitizeError } from "@/lib/sanitizeError";
@@ -36,7 +37,8 @@ export async function POST(request) {
   const isBrew = platform === "darwin" && hasBrew();
   const needsPassword = !isWindows && !isBrew;
 
-  const sudoPassword = json?.sudoPassword || "";
+  const body = json as Record<string, unknown>;
+  const sudoPassword = asString(body.sudoPassword);
 
   if (needsPassword && !sudoPassword.trim()) {
     return new Response(JSON.stringify({ error: "Sudo password is required" }), {

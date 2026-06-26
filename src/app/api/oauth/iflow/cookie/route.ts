@@ -14,8 +14,9 @@ export async function POST(request) {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { cookie } = body;
 
     if (!cookie || typeof cookie !== "string") {

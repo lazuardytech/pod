@@ -29,7 +29,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "PageSize must be between 1 and 100" }, { status: 400 });
     }
 
-    const filter = {
+    const filter: Record<string, unknown> = {
       page,
       pageSize,
     };

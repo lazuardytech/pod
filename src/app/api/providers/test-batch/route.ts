@@ -44,8 +44,9 @@ function isCompatibleProvider(providerId) {
 // POST /api/providers/test-batch - Test multiple connections by group
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { mode, providerId } = body;
 
     if (!mode) {
@@ -87,7 +88,7 @@ export async function POST(request) {
     const results = [];
     for (const conn of connectionsToTest) {
       try {
-        const data = await testSingleConnection(conn.id);
+        const data = (await testSingleConnection(conn.id)) as Record<string, unknown>;
         results.push({
           provider: conn.provider,
           connectionId: conn.id,

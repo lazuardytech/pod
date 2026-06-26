@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import fs from "fs";
 import { NextResponse } from "next/server";
 import path from "node:path";
@@ -6,9 +7,11 @@ import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { file, content } = body;
+    const body = rawBody as Record<string, unknown>;
+    const file = asString(body.file);
+    const content = body.content;
 
     if (!file || content === undefined) {
       return NextResponse.json({ success: false, error: "File and content required" }, { status: 400 });
@@ -38,7 +41,7 @@ export async function POST(request) {
     }
 
     const filePath = path.join(logsDir, file);
-    fs.writeFileSync(filePath, content, "utf-8");
+    fs.writeFileSync(filePath, typeof content === "string" ? content : JSON.stringify(content), "utf-8");
 
     return NextResponse.json({ success: true });
   } catch (error) {

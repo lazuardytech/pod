@@ -1,3 +1,4 @@
+import { asApiRecord, asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { clearMemories, createMemory, listMemories } from "@/lib/memory/store";
 import { MemoryType } from "@/lib/memory/types";
@@ -44,13 +45,16 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const content = typeof body.content === "string" ? body.content.trim() : "";
     const key = typeof body.key === "string" ? body.key.trim() : "";
     const apiKeyId = typeof body.apiKeyId === "string" ? body.apiKeyId.trim() : "";
     const sessionId = typeof body.sessionId === "string" ? body.sessionId : "";
-    const type = Object.values(MemoryType).includes(body.type) ? body.type : MemoryType.FACTUAL;
+    const type = Object.values(MemoryType).includes(body.type as (typeof MemoryType)[keyof typeof MemoryType])
+      ? (body.type as (typeof MemoryType)[keyof typeof MemoryType])
+      : MemoryType.FACTUAL;
 
     if (!apiKeyId) return NextResponse.json({ error: "apiKeyId is required" }, { status: 400 });
     if (!content) return NextResponse.json({ error: "content is required" }, { status: 400 });
@@ -62,8 +66,8 @@ export async function POST(request) {
       type,
       key,
       content,
-      metadata: body.metadata && typeof body.metadata === "object" ? body.metadata : {},
-      expiresAt: body.expiresAt || null,
+      metadata: asApiRecord(body.metadata),
+      expiresAt: (body.expiresAt as string | Date | null) ?? null,
     });
 
     return NextResponse.json({ success: true, data: memory });

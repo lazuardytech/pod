@@ -1,3 +1,4 @@
+import { proxyTestError } from "@/app/api/_types";
 import { getDefaultModel } from "open-sse/config/providerModels.js";
 import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
 import { getProviderConnectionById, updateProviderConnection } from "@/lib/localDb";
@@ -312,7 +313,7 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
     const headers = config.noAuth
       ? { ...config.extraHeaders }
       : { [config.authHeader]: `${config.authPrefix}${accessToken}`, ...config.extraHeaders };
-    const fetchOpts = { method: config.method, headers };
+    const fetchOpts: { method: string; headers: Record<string, string>; body?: string } = { method: config.method, headers };
     if (config.body) fetchOpts.body = config.body;
     const res = await fetchWithConnectionProxy(testUrl, fetchOpts, effectiveProxy);
 
@@ -326,7 +327,7 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
         const retryHeaders = config.noAuth
           ? { ...config.extraHeaders }
           : { [config.authHeader]: `${config.authPrefix}${tokens.accessToken}`, ...config.extraHeaders };
-        const retryOpts = { method: config.method, headers: retryHeaders };
+        const retryOpts: { method: string; headers: Record<string, string>; body?: string } = { method: config.method, headers: retryHeaders };
         if (config.body) retryOpts.body = config.body;
         const retryRes = await fetchWithConnectionProxy(retryUrl, retryOpts, effectiveProxy);
         const retryAccepted = retryRes.ok || (config.acceptStatuses && config.acceptStatuses.includes(retryRes.status));
@@ -434,7 +435,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         const deployment = psd.deployment || "gpt-4";
         const apiVersion = psd.apiVersion || "2024-10-01-preview";
         const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
-        const headers = { "api-key": connection.apiKey, "Content-Type": "application/json" };
+        const headers: Record<string, string> = { "api-key": connection.apiKey, "Content-Type": "application/json" };
         if (psd.organization) headers["OpenAI-Organization"] = psd.organization;
         const res = await fetchWithConnectionProxy(
           url,
@@ -827,7 +828,7 @@ export async function testSingleConnection(id) {
   if (effectiveProxy.connectionProxyEnabled && effectiveProxy.connectionProxyUrl && !effectiveProxy.vercelRelayUrl) {
     const proxyResult = await testProxyUrl({ proxyUrl: effectiveProxy.connectionProxyUrl });
     if (!proxyResult.ok) {
-      const proxyError = proxyResult.error || `Proxy test failed with status ${proxyResult.status}`;
+      const proxyError = proxyTestError(proxyResult) || `Proxy test failed with status ${(proxyResult as { status?: number }).status}`;
       await updateProviderConnection(id, {
         testStatus: "error",
         lastError: proxyError,
@@ -848,7 +849,7 @@ export async function testSingleConnection(id) {
 
   const latencyMs = Date.now() - start;
 
-  const updateData = {
+  const updateData: Record<string, unknown> = {
     testStatus: result.valid ? "active" : "error",
     lastError: result.valid ? null : result.error,
     lastErrorAt: result.valid ? null : new Date().toISOString(),

@@ -27,7 +27,7 @@ async function buildProviderLimitsSnapshot(request) {
   await Promise.all(
     connections.filter(isUsageEligible).map(async (conn) => {
       try {
-        const headers = { "x-pod-no-cache": "true" };
+        const headers: Record<string, string> = { "x-pod-no-cache": "true" };
         if (cookie) headers.cookie = cookie;
         if (auth) headers.authorization = auth;
         if (apiKey) headers["x-api-key"] = apiKey;

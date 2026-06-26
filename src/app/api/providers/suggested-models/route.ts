@@ -1,3 +1,4 @@
+import { fetchUrlError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
@@ -30,7 +31,7 @@ export async function GET(request) {
   // Validate the URL — must be http/https and not a private address
   const urlCheck = validateFetchUrl(url);
   if (!urlCheck.ok) {
-    return NextResponse.json({ error: urlCheck.error }, { status: 400 });
+    return NextResponse.json({ error: fetchUrlError(urlCheck) }, { status: 400 });
   }
 
   try {

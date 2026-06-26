@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -17,13 +18,13 @@ function toBoolean(value) {
 
 const VALID_PROXY_TYPES = ["http", "vercel"];
 
-function normalizeProxyPoolInput(body = {}) {
+function normalizeProxyPoolInput(body: Record<string, unknown> = {}) {
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const proxyUrl = typeof body?.proxyUrl === "string" ? body.proxyUrl.trim() : "";
   const noProxy = typeof body?.noProxy === "string" ? body.noProxy.trim() : "";
   const isActive = body?.isActive === undefined ? true : body.isActive === true;
   const strictProxy = body?.strictProxy === true;
-  const type = VALID_PROXY_TYPES.includes(body?.type) ? body.type : "http";
+  const type = VALID_PROXY_TYPES.includes(asString(body?.type)) ? asString(body.type) : "http";
 
   if (!name) {
     return { error: "Name is required" };
@@ -56,7 +57,7 @@ export async function GET(request) {
     const isActive = toBoolean(searchParams.get("isActive"));
     const includeUsage = searchParams.get("includeUsage") === "true";
 
-    const filter = {};
+    const filter: Record<string, unknown> = {};
     if (isActive !== undefined) {
       filter.isActive = isActive;
     }
@@ -85,8 +86,9 @@ export async function GET(request) {
 // POST /api/proxy-pools - Create proxy pool
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const normalized = normalizeProxyPoolInput(body);
 
     if (normalized.error) {

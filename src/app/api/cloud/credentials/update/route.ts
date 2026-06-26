@@ -1,3 +1,4 @@
+import { asRecord, asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { getProviderConnections, updateProviderConnection } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -9,9 +10,11 @@ export async function PUT(request) {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { provider, credentials } = body;
+    const body = rawBody as Record<string, unknown>;
+    const provider = asString(body.provider);
+    const credentials = asRecord(body.credentials);
 
     if (!provider || !credentials) {
       return NextResponse.json({ error: "Provider and credentials required" }, { status: 400 });
@@ -26,14 +29,14 @@ export async function PUT(request) {
     }
 
     // Update credentials
-    const updateData = {};
-    if (credentials.accessToken) {
+    const updateData: Record<string, unknown> = {};
+    if (typeof credentials.accessToken === "string") {
       updateData.accessToken = credentials.accessToken;
     }
-    if (credentials.refreshToken) {
+    if (typeof credentials.refreshToken === "string") {
       updateData.refreshToken = credentials.refreshToken;
     }
-    if (credentials.expiresIn) {
+    if (typeof credentials.expiresIn === "number") {
       updateData.expiresAt = new Date(Date.now() + credentials.expiresIn * 1000).toISOString();
     }
 

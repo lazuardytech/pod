@@ -29,8 +29,9 @@ export async function OPTIONS() {
 export async function POST(request) {
   return await withApiKeyRateLimit(request, async () => {
     await ensureInitialized();
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     body._compact = true;
     const newRequest = new Request(request.url, {
       method: "POST",

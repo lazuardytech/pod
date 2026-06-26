@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { resetComboRotation } from "open-sse/services/combo.js";
 import { deleteCombo, getComboById, getComboByName, updateCombo } from "@/lib/localDb";
@@ -27,17 +28,19 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
 
     // Validate name format if provided
     if (body.name) {
-      if (!VALID_NAME_REGEX.test(body.name)) {
+      const name = asString(body.name);
+      if (!VALID_NAME_REGEX.test(name)) {
         return NextResponse.json({ error: "Name can only contain letters, numbers, -, _ and ." }, { status: 400 });
       }
 
       // Check if name already exists (exclude current combo)
-      const existing = await getComboByName(body.name);
+      const existing = await getComboByName(name);
       if (existing && existing.id !== id) {
         return NextResponse.json({ error: "Combo name already exists" }, { status: 400 });
       }

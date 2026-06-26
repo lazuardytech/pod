@@ -52,19 +52,22 @@ export async function GET(request) {
         });
       }
     };
-    for (const v of voices) {
-      // Add to primary language
-      const primaryLang = v.labels?.language || "en";
+    const voiceList = voices as Record<string, unknown>[];
+    for (const v of voiceList) {
+      const labels = (v.labels as Record<string, unknown>) || {};
+      const primaryLang = (labels.language as string) || "en";
       addToLang(primaryLang, v);
       // Add to all verified languages
-      for (const vl of v.verified_languages || []) {
+      for (const vl of (v.verified_languages as Record<string, unknown>[]) || []) {
         if (vl.language && vl.language !== primaryLang) {
-          addToLang(vl.language, v);
+          addToLang(vl.language as string, v);
         }
       }
     }
 
-    const languages = Object.values(byLang).sort((a, b) => a.name.localeCompare(b.name));
+    const languages = Object.values(byLang).sort((a, b) =>
+      (a as { name: string }).name.localeCompare((b as { name: string }).name),
+    );
 
     // If lang filter requested, return only that group's voices
     if (langFilter) {

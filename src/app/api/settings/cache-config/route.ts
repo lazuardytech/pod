@@ -19,7 +19,7 @@ function toPositiveInt(value) {
 export async function GET() {
   try {
     const settings = await getSettings();
-    const config = {};
+    const config: Record<string, unknown> = {};
     for (const key of ALLOWED_KEYS) config[key] = settings[key] ?? DEFAULTS[key];
     return NextResponse.json(config);
   } catch (error) {
@@ -29,9 +29,10 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const updates = {};
+    const body = rawBody as Record<string, unknown>;
+    const updates: Record<string, unknown> = {};
 
     if (body.semanticCacheEnabled !== undefined) {
       if (typeof body.semanticCacheEnabled !== "boolean") {

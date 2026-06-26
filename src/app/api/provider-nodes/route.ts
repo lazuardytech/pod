@@ -5,6 +5,7 @@ import {
   CUSTOM_EMBEDDING_PREFIX,
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
+import { asString } from "@/app/api/_types";
 import { generateId } from "@/shared/utils";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
@@ -36,15 +37,21 @@ export async function GET() {
 // POST /api/provider-nodes - Create provider node
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { name, prefix, apiType, baseUrl, type, identifier } = body;
+    const body = rawBody as Record<string, unknown>;
+    const name = asString(body.name);
+    const prefix = asString(body.prefix);
+    const apiType = asString(body.apiType);
+    const baseUrl = asString(body.baseUrl);
+    const type = asString(body.type);
+    const identifier = asString(body.identifier);
 
-    if (!name?.trim()) {
+    if (!name.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    if (!prefix?.trim()) {
+    if (!prefix.trim()) {
       return NextResponse.json({ error: "Prefix is required" }, { status: 400 });
     }
 
@@ -55,7 +62,7 @@ export async function POST(request) {
       if (!apiType || !["chat", "responses"].includes(apiType)) {
         return NextResponse.json({ error: "Invalid OpenAI compatible API type" }, { status: 400 });
       }
-      const customId = identifier?.trim();
+      const customId = identifier.trim();
       if (customId && !customId.startsWith(OPENAI_COMPATIBLE_PREFIX)) {
         return NextResponse.json(
           { error: `Identifier must start with "${OPENAI_COMPATIBLE_PREFIX}"` },

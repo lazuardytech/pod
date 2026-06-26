@@ -55,7 +55,9 @@ export async function GET(request) {
       }
     }
 
-    const languages = Object.values(byLang).sort((a, b) => a.name.localeCompare(b.name));
+    const languages = Object.values(byLang).sort((a, b) =>
+      (a as { name: string }).name.localeCompare((b as { name: string }).name),
+    );
 
     if (langFilter) {
       return NextResponse.json({ voices: byLang[langFilter]?.voices || [] });

@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { getModelAliases, validateApiKey } from "@/models";
 import { parseJsonBody } from "@/lib/parseJsonBody";
@@ -12,9 +13,10 @@ export async function POST(request) {
 
     const apiKey = authHeader.slice(7);
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { alias } = body;
+    const body = rawBody as Record<string, unknown>;
+    const alias = asString(body.alias);
 
     if (!alias) {
       return NextResponse.json({ error: "Missing alias" }, { status: 400 });

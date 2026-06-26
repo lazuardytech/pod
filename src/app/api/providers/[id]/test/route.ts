@@ -5,7 +5,7 @@ import { testSingleConnection } from "./testUtils";
 export async function POST(request, { params }) {
   try {
     const { id } = await params;
-    const result = await testSingleConnection(id);
+    const result = (await testSingleConnection(id)) as Record<string, unknown>;
 
     if (result.error === "Connection not found") {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });

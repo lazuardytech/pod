@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { getSyncStatus, syncModelsDev, startPeriodicSync, stopPeriodicSync } from "@/lib/modelsDevSync";
 
@@ -17,19 +18,19 @@ export async function GET() {
 // Body (optional): { action: "start" | "stop" | "sync", intervalMs?: number }
 export async function POST(request) {
   try {
-    let body = {};
+    let body: Record<string, unknown> = {};
     try {
       const [parsed, _parseErr] = await parseJsonBody(request);
       if (_parseErr) return _parseErr;
-      body = parsed;
+      body = parsed as Record<string, unknown>;
     } catch {
       // no body is fine
     }
 
-    const action = body.action ?? "sync";
+    const action = asString(body.action) || "sync";
 
     if (action === "start") {
-      const intervalMs = body.intervalMs ?? 3600000;
+      const intervalMs = Number(body.intervalMs) || 3600000;
       startPeriodicSync(intervalMs);
       return NextResponse.json({ success: true, action: "start", ...getSyncStatus() });
     }

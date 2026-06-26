@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
 
@@ -22,8 +23,9 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const { isActive, name, limitType, requestsPerMinute, concurrentRequests } = body || {};
 
     const existing = await getApiKeyById(id);
@@ -31,11 +33,11 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Key not found" }, { status: 404 });
     }
 
-    const updateData = {};
+    const updateData: Record<string, unknown> = {};
     if (isActive !== undefined) updateData.isActive = isActive;
     if (name !== undefined) updateData.name = name;
     if (limitType !== undefined) {
-      if (!["unlimited", "limited"].includes(limitType)) {
+      if (!["unlimited", "limited"].includes(asString(limitType))) {
         return NextResponse.json({ error: "limitType must be 'unlimited' or 'limited'" }, { status: 400 });
       }
       updateData.limitType = limitType;

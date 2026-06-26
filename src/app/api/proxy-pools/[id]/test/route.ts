@@ -1,10 +1,11 @@
+import { proxyTestError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
 function buildRelayHeaders(proxyPool) {
-  const headers = {
+  const headers: Record<string, string> = {
     "x-relay-target": "https://www.google.com",
     "x-relay-path": "/generate_204",
     Accept: "*/*",
@@ -62,19 +63,27 @@ export async function POST(request, { params }) {
         : await testProxyUrl({ proxyUrl: proxyPool.proxyUrl });
     const now = new Date().toISOString();
 
+    const testResult = result as {
+      ok: boolean;
+      status?: number;
+      statusText?: string;
+      error?: string;
+      elapsedMs?: number;
+    };
+
     await updateProxyPool(id, {
-      testStatus: result.ok ? "active" : "error",
+      testStatus: testResult.ok ? "active" : "error",
       lastTestedAt: now,
-      lastError: result.ok ? null : result.error || `Proxy test failed with status ${result.status}`,
-      isActive: result.ok,
+      lastError: testResult.ok ? null : proxyTestError(testResult) || `Proxy test failed with status ${testResult.status}`,
+      isActive: testResult.ok,
     });
 
     return NextResponse.json({
-      ok: result.ok,
-      status: result.status,
-      statusText: result.statusText || null,
-      error: result.error || null,
-      elapsedMs: result.elapsedMs || 0,
+      ok: testResult.ok,
+      status: testResult.status,
+      statusText: testResult.statusText || null,
+      error: testResult.error || null,
+      elapsedMs: testResult.elapsedMs || 0,
       testedAt: now,
     });
   } catch (error) {

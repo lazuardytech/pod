@@ -1,3 +1,4 @@
+import { asString, fetchUrlError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { createProxyPool } from "@/models";
@@ -99,10 +100,11 @@ async function pollDeployment(deploymentId, token, maxMs = 120000) {
 // POST /api/proxy-pools/vercel-deploy
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
     const vercelToken = body.vercelToken;
-    const projectName = body.projectName?.trim() || `relay-${Date.now().toString(36)}`;
+    const projectName = asString(body.projectName).trim() || `relay-${Date.now().toString(36)}`;
 
     if (!vercelToken) {
       return NextResponse.json({ error: "Vercel API token is required" }, { status: 400 });
@@ -169,7 +171,7 @@ export async function POST(request) {
     // Validate the deploy URL returned by Vercel before storing
     const urlCheck = validateFetchUrl(deployUrl);
     if (!urlCheck.ok) {
-      throw new Error(`Invalid deployment URL from Vercel: ${urlCheck.error}`);
+      throw new Error(`Invalid deployment URL from Vercel: ${fetchUrlError(urlCheck)}`);
     }
 
     // Create proxy pool entry with type vercel

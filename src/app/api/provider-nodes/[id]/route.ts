@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import {
@@ -13,20 +14,24 @@ import {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { name, prefix, apiType, baseUrl } = body;
+    const body = rawBody as Record<string, unknown>;
+    const name = asString(body.name);
+    const prefix = asString(body.prefix);
+    const apiType = asString(body.apiType);
+    const baseUrl = asString(body.baseUrl);
     const node = await getProviderNodeById(id);
 
     if (!node) {
       return NextResponse.json({ error: "Provider node not found" }, { status: 404 });
     }
 
-    if (!name?.trim()) {
+    if (!name.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    if (!prefix?.trim()) {
+    if (!prefix.trim()) {
       return NextResponse.json({ error: "Prefix is required" }, { status: 400 });
     }
 
@@ -35,7 +40,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Invalid OpenAI compatible API type" }, { status: 400 });
     }
 
-    if (!baseUrl?.trim()) {
+    if (!baseUrl.trim()) {
       return NextResponse.json({ error: "Base URL is required" }, { status: 400 });
     }
 
@@ -57,7 +62,7 @@ export async function PUT(request, { params }) {
       }
     }
 
-    const updates = {
+    const updates: Record<string, unknown> = {
       name: name.trim(),
       prefix: prefix.trim(),
       baseUrl: sanitizedBaseUrl,

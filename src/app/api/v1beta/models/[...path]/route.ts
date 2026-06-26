@@ -84,8 +84,9 @@ export async function POST(request, { params }) {
       model = modelAction.replace(":streamGenerateContent", "").replace(":generateContent", "");
     }
 
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
 
     // Streaming is determined by URL action suffix:
     //   :streamGenerateContent => stream: true  (SSE)
@@ -222,7 +223,7 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse, model) {
         // Skip pure role-only deltas with no content and no finish signal
         if (parts.length === 0 && !choice.finish_reason) continue;
 
-        const candidate = {
+        const candidate: Record<string, unknown> = {
           content: {
             role: "model",
             parts: parts.length > 0 ? parts : [{ text: "" }],
@@ -234,19 +235,20 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse, model) {
           candidate.finishReason = FINISH_REASON_MAP[choice.finish_reason] || "STOP";
         }
 
-        const geminiChunk = { candidates: [candidate] };
+        const geminiChunk: Record<string, unknown> = { candidates: [candidate] };
 
         // Attach usage + modelVersion on the final chunk (when finish_reason is set)
         if (choice.finish_reason && parsed.usage) {
-          geminiChunk.usageMetadata = {
+          const usageMetadata: Record<string, unknown> = {
             promptTokenCount: parsed.usage.prompt_tokens || 0,
             candidatesTokenCount: parsed.usage.completion_tokens || 0,
             totalTokenCount: parsed.usage.total_tokens || 0,
           };
-          const reasoningTokens = parsed.usage.completion_tokens_details?.reasoning_tokens;
+          const reasoningTokens = (parsed.usage.completion_tokens_details as Record<string, unknown>)?.reasoning_tokens;
           if (reasoningTokens) {
-            geminiChunk.usageMetadata.thoughtsTokenCount = reasoningTokens;
+            usageMetadata.thoughtsTokenCount = reasoningTokens;
           }
+          geminiChunk.usageMetadata = usageMetadata;
           geminiChunk.modelVersion = parsed.model || model;
         }
 
@@ -308,7 +310,7 @@ async function convertOpenAIResponseToGemini(response, model) {
 
   const finishReason = FINISH_REASON_MAP[finish_reason] || "STOP";
 
-  const geminiResponse = {
+  const geminiResponse: Record<string, unknown> = {
     candidates: [
       {
         content: { role: "model", parts },
@@ -325,9 +327,9 @@ async function convertOpenAIResponseToGemini(response, model) {
       candidatesTokenCount: body.usage.completion_tokens || 0,
       totalTokenCount: body.usage.total_tokens || 0,
     };
-    const reasoningTokens = body.usage.completion_tokens_details?.reasoning_tokens;
+    const reasoningTokens = (body.usage.completion_tokens_details as Record<string, unknown>)?.reasoning_tokens;
     if (reasoningTokens) {
-      geminiResponse.usageMetadata.thoughtsTokenCount = reasoningTokens;
+      (geminiResponse.usageMetadata as Record<string, unknown>).thoughtsTokenCount = reasoningTokens;
     }
   }
 

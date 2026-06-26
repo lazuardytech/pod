@@ -1,3 +1,4 @@
+import { asString, fetchUrlError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 import { getProviderConnections } from "@/lib/localDb";
@@ -36,7 +37,7 @@ export async function POST(request) {
     // Validate the GitLab base URL — must be http/https and not a private address
     const urlCheck = validateFetchUrl(base);
     if (!urlCheck.ok) {
-      return NextResponse.json({ error: `Invalid GitLab base URL: ${urlCheck.error}` }, { status: 400 });
+      return NextResponse.json({ error: `Invalid GitLab base URL: ${fetchUrlError(urlCheck)}` }, { status: 400 });
     }
 
     // Hostname allowlist: gitlab.com + its subdomains, or an existing provider connection.

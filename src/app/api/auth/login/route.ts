@@ -1,3 +1,4 @@
+import { asString } from "@/app/api/_types";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
@@ -17,9 +18,10 @@ function isTunnelRequest(request, settings) {
 
 export async function POST(request) {
   try {
-    const [body, _parseErr] = await parseJsonBody(request);
+    const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
-    const { password } = body;
+    const body = rawBody as Record<string, unknown>;
+    const password = asString(body.password);
     const settings = await getSettings();
 
     // Block login via tunnel/tailscale if dashboard access is disabled
