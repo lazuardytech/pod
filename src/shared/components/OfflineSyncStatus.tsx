@@ -5,7 +5,7 @@ import Button from "@/shared/components/Button";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { drainOfflineMutationQueue, getOfflineMutationQueueLength } from "@/shared/services/offlineMutationQueue";
 
-function formatStatusText({ isOnline, pendingCount, syncing }) {
+function formatStatusText({ isOnline, pendingCount, syncing }: any) {
   if (syncing) return "Syncing queued changes...";
   if (!isOnline) {
     if (pendingCount > 0) return `Offline. ${pendingCount} pending ${pendingCount > 1 ? "changes" : "change"}.`;
@@ -55,7 +55,7 @@ export default function OfflineSyncStatus() {
       refreshPendingCount().catch(() => {});
     };
 
-    const onQueueChanged = (event) => {
+    const onQueueChanged = (event: any) => {
       const nextCount = Number(event?.detail?.queueLength ?? event?.detail?.remaining);
       if (Number.isFinite(nextCount)) {
         setPendingCount(nextCount);

@@ -20,7 +20,7 @@ const STRATEGY_OPTIONS = [
 
 const PAGE_LIMIT = 20;
 
-function toDateLabel(value) {
+function toDateLabel(value: any) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
@@ -40,9 +40,9 @@ export default function MemoryClient() {
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const [settings, setSettings] = useState({
     enabled: true,
@@ -81,7 +81,7 @@ export default function MemoryClient() {
   }, [filters, page]);
 
   const loadData = useCallback(
-    async (isInitial = false) => {
+    async (isInitial: any = false) => {
       if (isInitial) setLoading(true);
       else setRefreshing(true);
       try {
@@ -170,9 +170,9 @@ export default function MemoryClient() {
     }
   };
 
-  const handleToggleMemoryEnabled = async (enabled) => {
+  const handleToggleMemoryEnabled = async (enabled: any) => {
     const previous = settings.enabled;
-    setSettings((prev) => ({ ...prev, enabled }));
+    setSettings((prev: any) => ({ ...prev, enabled }));
     setSavingSettings(true);
     try {
       const res = await fetch("/api/settings/memory", {
@@ -189,14 +189,14 @@ export default function MemoryClient() {
       toast.success(`Memory ${enabled ? "enabled" : "disabled"}`);
       await loadData(false);
     } catch (error) {
-      setSettings((prev) => ({ ...prev, enabled: previous }));
+      setSettings((prev: any) => ({ ...prev, enabled: previous }));
       toast.error(error?.message || "Failed to update memory state");
     } finally {
       setSavingSettings(false);
     }
   };
 
-  const handleDeleteMemory = async (id) => {
+  const handleDeleteMemory = async (id: any) => {
     if (!id) return;
 
     setDeletingId(id);
@@ -280,7 +280,7 @@ export default function MemoryClient() {
             label="Strategy"
             value={settings.strategy}
             options={STRATEGY_OPTIONS}
-            onChange={(event: any) => setSettings((prev) => ({ ...prev, strategy: event.target.value }))}
+            onChange={(event: any) => setSettings((prev: any) => ({ ...prev, strategy: event.target.value }))}
           />
 
           <Input
@@ -289,7 +289,7 @@ export default function MemoryClient() {
             min="0"
             max="16000"
             value={settings.maxTokens}
-            onChange={(event: any) => setSettings((prev) => ({ ...prev, maxTokens: event.target.value }))}
+            onChange={(event: any) => setSettings((prev: any) => ({ ...prev, maxTokens: event.target.value }))}
           />
 
           <Input
@@ -298,7 +298,7 @@ export default function MemoryClient() {
             min="1"
             max="365"
             value={settings.retentionDays}
-            onChange={(event: any) => setSettings((prev) => ({ ...prev, retentionDays: event.target.value }))}
+            onChange={(event: any) => setSettings((prev: any) => ({ ...prev, retentionDays: event.target.value }))}
           />
         </div>
       </Card>
@@ -317,7 +317,7 @@ export default function MemoryClient() {
           <Input
             label="Search"
             value={draftFilters.q}
-            onChange={(event: any) => setDraftFilters((prev) => ({ ...prev, q: event.target.value }))}
+            onChange={(event: any) => setDraftFilters((prev: any) => ({ ...prev, q: event.target.value }))}
             placeholder="Search memory content..."
             icon="search"
           />
@@ -325,15 +325,15 @@ export default function MemoryClient() {
             label="API Key"
             placeholder="All API Keys"
             value={draftFilters.apiKeyId}
-            options={apiKeys.map((key) => ({ value: key.id, label: key.name || key.id }))}
-            onChange={(event: any) => setDraftFilters((prev) => ({ ...prev, apiKeyId: event.target.value }))}
+            options={apiKeys.map((key: any) => ({ value: key.id, label: key.name || key.id }))}
+            onChange={(event: any) => setDraftFilters((prev: any) => ({ ...prev, apiKeyId: event.target.value }))}
           />
           <Select
             label="Type"
             placeholder="All Types"
             value={draftFilters.type}
             options={MEMORY_TYPE_OPTIONS}
-            onChange={(event: any) => setDraftFilters((prev) => ({ ...prev, type: event.target.value }))}
+            onChange={(event: any) => setDraftFilters((prev: any) => ({ ...prev, type: event.target.value }))}
           />
           <div className="flex items-end">
             <Button icon="filter_alt" onClick={handleApplyFilters} className="w-full">
@@ -352,7 +352,7 @@ export default function MemoryClient() {
 
         {loading ? (
           <div className="flex flex-col gap-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map((i: any) => (
               <CardSkeleton key={i} />
             ))}
           </div>
@@ -374,7 +374,7 @@ export default function MemoryClient() {
                 </tr>
               </thead>
               <tbody>
-                {memoryData.data.map((entry) => (
+                {memoryData.data.map((entry: any) => (
                   <tr key={entry.id} className="border-t border-border-subtle align-top">
                     <td className="px-3 py-2">
                       <Badge variant="primary" size="sm">
@@ -415,14 +415,14 @@ export default function MemoryClient() {
             Page {page} of {memoryData.totalPages}
           </p>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>
+            <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage((prev: any) => prev - 1)}>
               Prev
             </Button>
             <Button
               size="sm"
               variant="secondary"
               disabled={page >= memoryData.totalPages}
-              onClick={() => setPage((prev) => prev + 1)}
+              onClick={() => setPage((prev: any) => prev + 1)}
             >
               Next
             </Button>

@@ -264,7 +264,7 @@ export default function AddApiKeyModal({
           onChange={(e: any) => setFormData({ ...formData, proxyPoolId: e.target.value })}
           options={[
             { value: NONE_PROXY_POOL_VALUE, label: "None" },
-            ...(proxyPools || []).map((pool) => ({ value: pool.id, label: pool.name })),
+            ...(proxyPools || []).map((pool: any) => ({ value: pool.id, label: pool.name })),
           ]}
           placeholder="None"
         />

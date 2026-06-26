@@ -6,7 +6,7 @@ import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 function TypeBadge({ type }: any) {
-  const styles = {
+  const styles: Record<string, any> = {
     http: "bg-aether-blue/10 text-aether-blue border-aether-blue/20",
     vercel: "bg-amethyst/10 text-amethyst border-amethyst/20",
   };
@@ -42,7 +42,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [testing, setTesting] = useState(null);
-  const [testResults, setTestResults] = useState({});
+  const [testResults, setTestResults] = useState<Record<string, any>>({});
   const [selectedPool, setSelectedPool] = useState(null);
   const [internalPools, setInternalPools] = useState([]);
   const [_connected, setConnected] = useState(false);
@@ -91,7 +91,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
         setError(null);
       };
 
-      es.onmessage = (e) => {
+      es.onmessage = (e: any) => {
         try {
           const msg = JSON.parse(e.data);
           if (msg.type === "init" || msg.type === "update") {
@@ -124,20 +124,20 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
     };
   }, []);
 
-  const handleTest = async (pool) => {
+  const handleTest = async (pool: any) => {
     setTesting(pool.id);
-    setTestResults((prev) => ({ ...prev, [pool.id]: null }));
+    setTestResults((prev: any) => ({ ...prev, [pool.id]: null }));
     try {
       const res = await fetch(`/api/proxy-pools/${pool.id}/test`, { method: "POST" });
       const data = await res.json();
-      setTestResults((prev) => ({
+      setTestResults((prev: any) => ({
         ...prev,
         [pool.id]: res.ok
           ? { ok: true, message: data.message ?? "Connection successful" }
           : { ok: false, message: data.error ?? "Test failed" },
       }));
     } catch {
-      setTestResults((prev) => ({ ...prev, [pool.id]: { ok: false, message: "Request failed" } }));
+      setTestResults((prev: any) => ({ ...prev, [pool.id]: { ok: false, message: "Request failed" } }));
     } finally {
       setTesting(null);
     }
@@ -215,7 +215,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                 </tr>
               </thead>
               <tbody>
-                {activePools.map((pool) => (
+                {activePools.map((pool: any) => (
                   <>
                     <tr
                       key={pool.id}

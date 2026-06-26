@@ -14,7 +14,7 @@ export default function ThemeToggle({
 }) {
   const { isDark, toggleTheme } = useTheme();
 
-  const variants = {
+  const variants: Record<string, string> = {
     default: cn(
       "flex items-center justify-center size-10 rounded-full",
       "text-text-muted hover:text-text-main",

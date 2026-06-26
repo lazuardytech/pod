@@ -3,7 +3,7 @@ import React from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const variants = {
+const variants: Record<string, any> = {
   primary:
     "bg-porcelain hover:bg-white text-pitch-black font-[590] shadow-[var(--shadow-sm)] disabled:opacity-40 disabled:cursor-not-allowed btn-cta",
   secondary:
@@ -17,13 +17,13 @@ const variants = {
     "bg-emerald hover:bg-[#1f8a38] text-porcelain shadow-[var(--shadow-sm)] disabled:opacity-40 disabled:cursor-not-allowed",
 };
 
-const sizes = {
+const sizes: Record<string, any> = {
   sm: "h-8 px-3 text-[12px] gap-1.5 rounded-[6px]",
   md: "h-9 px-3.5 text-[13px] gap-2 rounded-[6px]",
   lg: "h-10 px-4 text-[13px] gap-2 rounded-[6px]",
 };
 
-const iconSizes = {
+const iconSizes: Record<string, number> = {
   sm: 12,
   md: 13,
   lg: 14,

@@ -166,7 +166,7 @@ export default function CursorAuthModal({
               <textarea
                 aria-label="Access token"
                 value={accessToken}
-                onChange={(e) => setAccessToken(e.target.value)}
+                onChange={(e: any) => setAccessToken(e.target.value)}
                 placeholder="Access token will be auto-filled..."
                 rows={3}
                 className="w-full px-3 py-2 text-sm font-mono border border-border rounded-lg bg-background focus:outline-none focus:border-primary resize-none"
@@ -181,7 +181,7 @@ export default function CursorAuthModal({
               </label>
               <Input
                 value={machineId}
-                onChange={(e) => setMachineId(e.target.value)}
+                onChange={(e: any) => setMachineId(e.target.value)}
                 placeholder="Machine ID will be auto-filled..."
                 className="font-mono text-sm"
               />

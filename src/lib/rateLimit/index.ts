@@ -41,7 +41,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
   }
 
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-  const safeRelease = (() => {
+  const safeRelease = ((): any => {
     let done = false;
     return (): void => {
       if (done) return;
@@ -51,7 +51,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
   })();
 
   const wrappedBody = new ReadableStream<Uint8Array>({
-    start(controller) {
+    start(controller): any {
       reader = sourceBody.getReader();
       const pump = async (): Promise<void> => {
         try {
@@ -71,7 +71,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
       };
       void pump();
     },
-    async cancel(reason) {
+    async cancel(reason): Promise<any> {
       safeRelease();
       if (reader) {
         try {
@@ -121,7 +121,7 @@ type RateLimitCheckResult =
  */
 export async function checkRateLimitByKey(apiKey: string | null | undefined): Promise<RateLimitCheckResult> {
   if (!apiKey) return { ok: true, release: null, response: undefined };
-  const apiKeyRecord = await getApiKeyByKey(apiKey).catch(() => null);
+  const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): any => null);
   if (!apiKeyRecord) return { ok: true, release: null, response: undefined };
 
   const backend = await getBackend();
@@ -164,7 +164,7 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
       return { ok: false, release: null, response: rateLimitResponse(concResult.type || "concurrent", 1) };
     }
 
-    return { ok: true, release: concResult.release ? () => void concResult.release?.() : null, response: undefined };
+    return { ok: true, release: concResult.release ? (): any => void concResult.release?.() : null, response: undefined };
   }
 
   // MemoryBackend path
@@ -211,7 +211,7 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
   const apiKey = extractApiKey(request);
   if (!apiKey) return await handler();
 
-  const apiKeyRecord = await getApiKeyByKey(apiKey).catch(() => null);
+  const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): any => null);
   if (!apiKeyRecord) return await handler();
 
   const backend = await getBackend();
@@ -248,7 +248,7 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
       return rateLimitResponse(concResult.type || "concurrent", 1);
     }
 
-    let release: (() => void | Promise<void>) | null = concResult.release ? () => void concResult.release() : null;
+    let release: (() => void | Promise<void>) | null = concResult.release ? (): any => void concResult.release() : null;
     try {
       const response = await handler();
       const finalResponse = finalizeResponse(response, release);

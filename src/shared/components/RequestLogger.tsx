@@ -7,7 +7,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
-const fmtTokens = (n) => {
+const fmtTokens = (n: any) => {
   if (n == null || n === "-") return "—";
   const num = typeof n === "string" ? parseInt(n, 10) : n;
   if (Number.isNaN(num)) return "—";
@@ -99,7 +99,7 @@ export default function RequestLogger({
   }, [recording]);
 
   // Fetch logs via REST (for manual refresh)
-  const fetchLogs = useCallback(async (showLoading = false) => {
+  const fetchLogs = useCallback(async (showLoading: any = false) => {
     if (showLoading) setLoading(true);
     try {
       const res = await fetch("/api/usage/request-logs?limit=300");
@@ -133,7 +133,7 @@ export default function RequestLogger({
         setLoading(false);
       };
 
-      es.onmessage = (e) => {
+      es.onmessage = (e: any) => {
         if (!recordingRef.current) return;
         try {
           const msg = JSON.parse(e.data);
@@ -166,7 +166,7 @@ export default function RequestLogger({
   }, []);
 
   // Open detail drawer
-  const openDetail = useCallback(async (log) => {
+  const openDetail = useCallback(async (log: any) => {
     // Cancel any in-flight detail fetch
     if (detailAbortRef.current) {
       detailAbortRef.current.abort();
@@ -196,14 +196,14 @@ export default function RequestLogger({
   }, []);
 
   // Derived data
-  const providers = useMemo(() => [...new Set(logs.map((l) => l.provider).filter((p) => p && p !== "-"))], [logs]);
+  const providers = useMemo(() => [...new Set(logs.map((l: any) => l.provider).filter((p: any) => p && p !== "-"))], [logs]);
 
   useEffect(() => {
     onProvidersChange?.(providers);
   }, [providers, onProvidersChange]);
 
   const filtered = useMemo(() => {
-    let result = logs.filter((l) => {
+    let result = logs.filter((l: any) => {
       if (filterStatus === "ok" && !l.status?.includes("SUCCESS")) return false;
       if (filterStatus === "failed" && !l.status?.includes("FAILED")) return false;
       if (filterStatus === "pending" && !l.status?.includes("PENDING")) return false;
@@ -229,13 +229,13 @@ export default function RequestLogger({
         break;
       case "tokens_desc":
         result.sort(
-          (a, b) =>
+          (a: any, b: any) =>
             (b.promptTokens ?? 0) + (b.completionTokens ?? 0) - ((a.promptTokens ?? 0) + (a.completionTokens ?? 0)),
         );
         break;
       case "tokens_asc":
         result.sort(
-          (a, b) =>
+          (a: any, b: any) =>
             (a.promptTokens ?? 0) + (a.completionTokens ?? 0) - ((b.promptTokens ?? 0) + (b.completionTokens ?? 0)),
         );
         break;
@@ -247,10 +247,10 @@ export default function RequestLogger({
   const counts = useMemo(
     () => ({
       total: logs.length,
-      ok: logs.filter((l) => l.status?.includes("SUCCESS")).length,
-      failed: logs.filter((l) => l.status?.includes("FAILED")).length,
-      pending: logs.filter((l) => l.status?.includes("PENDING")).length,
-      combo: logs.filter((l) => l.combo).length,
+      ok: logs.filter((l: any) => l.status?.includes("SUCCESS")).length,
+      failed: logs.filter((l: any) => l.status?.includes("FAILED")).length,
+      pending: logs.filter((l: any) => l.status?.includes("PENDING")).length,
+      combo: logs.filter((l: any) => l.combo).length,
     }),
     [logs],
   );
@@ -268,7 +268,7 @@ export default function RequestLogger({
               aria-label="Search request logs"
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e: any) => setSearch(e.target.value)}
               placeholder="Search request logs..."
               className="w-full h-7 pl-8 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
               name="search"
@@ -286,7 +286,7 @@ export default function RequestLogger({
                 activeClass: "border-warning-red/30 bg-warning-red/8 text-warning-red",
               },
               { key: "pending", label: "Pending", activeClass: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400" },
-            ].map((f) => (
+            ].map((f: any) => (
               <button
                 key={f.key}
                 onClick={() => setFilterStatus(f.key)}
@@ -365,7 +365,7 @@ export default function RequestLogger({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((log) => {
+                {filtered.map((log: any) => {
                   const isSelected = selectedLog?.id === log.id;
                   const isFailed = log.status?.includes("FAILED");
                   const isPending = log.status?.includes("PENDING");

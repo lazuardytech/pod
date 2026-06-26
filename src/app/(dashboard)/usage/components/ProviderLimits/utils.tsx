@@ -44,7 +44,7 @@ export function formatResetTime(date: string | Date | null | undefined) {
  * @param {number} percentage - Remaining percentage (0-100)
  * @returns {string} Color name: "green" | "yellow" | "red"
  */
-export function getStatusColor(percentage) {
+export function getStatusColor(percentage: any) {
   if (percentage > 70) return "green";
   if (percentage >= 30) return "yellow";
   return "red"; // 0-29% including 0% (out of quota) - show red
@@ -55,7 +55,7 @@ export function getStatusColor(percentage) {
  * @param {number} percentage - Remaining percentage (0-100)
  * @returns {string} Emoji: "🟢" | "🟡" | "🔴"
  */
-export function getStatusEmoji(percentage) {
+export function getStatusEmoji(percentage: any) {
   if (percentage > 70) return "🟢";
   if (percentage >= 30) return "🟡";
   return "🔴"; // 0-29% including 0% (out of quota) - show red
@@ -67,7 +67,7 @@ export function getStatusEmoji(percentage) {
  * @param {number} total - Total amount
  * @returns {number} Remaining percentage (0-100)
  */
-export function calculatePercentage(used, total) {
+export function calculatePercentage(used: any, total: any) {
   if (!total || total === 0) return 0;
   if (!used || used < 0) return 100;
   if (used >= total) return 0;
@@ -81,7 +81,7 @@ export function calculatePercentage(used, total) {
  * @param {Object} data - Raw quota data from provider
  * @returns {Array<Object>} Normalized quota objects with { name, used, total, resetAt }
  */
-export function parseQuotaData(provider, data) {
+export function parseQuotaData(provider: any, data: any) {
   if (!data || typeof data !== "object") return [];
 
   const normalizedQuotas: Array<{
@@ -106,7 +106,7 @@ export function parseQuotaData(provider, data) {
     switch (provider.toLowerCase()) {
       case "github":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]: any) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -119,7 +119,7 @@ export function parseQuotaData(provider, data) {
 
       case "antigravity":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([modelKey, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([modelKey, quota]: any) => {
             normalizedQuotas.push({
               name: quota.displayName || modelKey,
               modelKey: modelKey, // Keep modelKey for sorting
@@ -134,7 +134,7 @@ export function parseQuotaData(provider, data) {
 
       case "codex":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]: any) => {
             normalizedQuotas.push({
               name: quotaType,
               used: quota.used || 0,
@@ -147,7 +147,7 @@ export function parseQuotaData(provider, data) {
 
       case "kiro":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]: any) => {
             normalizedQuotas.push({
               name: quotaType,
               used: quota.used || 0,
@@ -169,7 +169,7 @@ export function parseQuotaData(provider, data) {
             message: data.message,
           });
         } else if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]: any) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -183,7 +183,7 @@ export function parseQuotaData(provider, data) {
       default:
         // Generic fallback for unknown providers
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]: any) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -201,9 +201,9 @@ export function parseQuotaData(provider, data) {
   // Sort quotas according to PROVIDER_MODELS order
   const modelOrder = getModelsByProviderId(provider);
   if (modelOrder.length > 0) {
-    const orderMap = new Map<string, number>(modelOrder.map((m, i) => [m.id, i]));
+    const orderMap = new Map<string, number>(modelOrder.map((m: any, i: any) => [m.id, i]));
 
-    normalizedQuotas.sort((a, b) => {
+    normalizedQuotas.sort((a: any, b: any) => {
       // Use modelKey for antigravity, otherwise use name
       const keyA = a.modelKey || a.name;
       const keyB = b.modelKey || b.name;

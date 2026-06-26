@@ -6,13 +6,13 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import Card from "@/shared/components/Card";
 import SegmentedControl from "@/shared/components/SegmentedControl";
 
-const fmtTokens = (n) => {
+const fmtTokens = (n: any) => {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n || 0);
 };
 
-const fmtCost = (n) => `$${(n || 0).toFixed(2)}`;
+const fmtCost = (n: any) => `$${(n || 0).toFixed(2)}`;
 
 export default function UsageChart({ period = "7d" }: any) {
   const [data, setData] = useState([]);
@@ -38,7 +38,7 @@ export default function UsageChart({ period = "7d" }: any) {
     fetchData();
   }, [fetchData]);
 
-  const hasData = data.some((d) => d.tokens > 0 || d.cost > 0);
+  const hasData = data.some((d: any) => d.tokens > 0 || d.cost > 0);
 
   return (
     <Card className="flex min-w-0 flex-col gap-3 p-3 sm:p-4">
@@ -92,7 +92,7 @@ export default function UsageChart({ period = "7d" }: any) {
                 borderRadius: "8px",
                 fontSize: "12px",
               }}
-              formatter={(value, name) => (name === "tokens" ? [fmtTokens(value), "Tokens"] : [fmtCost(value), "Cost"])}
+              formatter={(value: any, name: any) => (name === "tokens" ? [fmtTokens(value), "Tokens"] : [fmtCost(value), "Cost"])}
             />
             {viewMode === "tokens" ? (
               <Area

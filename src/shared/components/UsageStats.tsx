@@ -8,7 +8,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 
 // Keep providers without serviceKinds (default LLM) or with "llm" in serviceKinds
-function isLLMProvider(id) {
+function isLLMProvider(id: any) {
   const p = AI_PROVIDERS[id];
   if (!p?.serviceKinds) return true;
   return p.serviceKinds.includes("llm");
@@ -34,7 +34,7 @@ function TimeAgo({ timestamp }: { timestamp?: any; [key: string]: any }) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    const timer = setInterval(() => setTick((t: any) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -63,7 +63,7 @@ function RecentRequests({ requests = [] }: { requests?: any[]; [key: string]: an
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {requests.map((r, i) => {
+              {requests.map((r: any, i: any) => {
                 const ok = !r.status || r.status === "ok" || r.status === "success";
                 return (
                   <tr key={i} className="hover:bg-bg-subtle transition-colors">
@@ -100,7 +100,7 @@ function sortData(dataMap: any, pendingMap: any = {}, sortBy: any, sortOrder: an
       const outputCost = totalTokens > 0 ? (data.completionTokens || 0) * (totalCost / totalTokens) : 0;
       return { ...data, key, totalTokens, totalCost, inputCost, outputCost, pending: pendingMap[key] || 0 };
     })
-    .sort((a, b) => {
+    .sort((a: any, b: any) => {
       let valA = a[sortBy];
       let valB = b[sortBy];
       if (typeof valA === "string") valA = valA.toLowerCase();
@@ -128,8 +128,8 @@ function getGroupKey(item: any, keyField: any) {
 
 function groupDataByKey(data: any, keyField: any) {
   if (!Array.isArray(data)) return [];
-  const groups = {};
-  data.forEach((item) => {
+  const groups: Record<string, any> = {};
+  data.forEach((item: any) => {
     const gk = getGroupKey(item, keyField);
     if (!groups[gk]) {
       groups[gk] = {
@@ -252,9 +252,9 @@ export default function UsageStats({
     offlineNoticeShownRef.current = false;
   }, []);
 
-  const applyConnectedProviders = useCallback((payload) => {
+  const applyConnectedProviders = useCallback((payload: any) => {
     const seen = new Set();
-    const unique = (payload?.connections || []).filter((c) => {
+    const unique = (payload?.connections || []).filter((c: any) => {
       if (c.isActive === false) return false;
       if (!isLLMProvider(c.provider)) return false;
       if (seen.has(c.provider)) return false;
@@ -263,8 +263,8 @@ export default function UsageStats({
     });
 
     const noAuthProviders = Object.values(FREE_PROVIDERS)
-      .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))
-      .map((p) => ({ provider: p.id, name: p.name }));
+      .filter((p: any) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))
+      .map((p: any) => ({ provider: p.id, name: p.name }));
 
     setProviders([...unique, ...noAuthProviders]);
   }, []);
@@ -278,16 +278,16 @@ export default function UsageStats({
       url: "/api/providers",
       cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
-      onCacheData: (payload) => {
+      onCacheData: (payload: any) => {
         if (cancelled) return;
         applyConnectedProviders(payload);
       },
-      onFreshData: (payload) => {
+      onFreshData: (payload: any) => {
         if (cancelled) return;
         applyConnectedProviders(payload);
       },
     })
-      .then((result) => {
+      .then((result: any) => {
         if (cancelled) return;
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
@@ -311,12 +311,12 @@ export default function UsageStats({
       url: `/api/usage/stats?period=${period}`,
       cacheKey: `${OFFLINE_USAGE_STATS_CACHE_KEY}:${period}`,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
-      onCacheData: (data) => {
+      onCacheData: (data: any) => {
         if (cancelled || !data) return;
         setStats((prev: any) => ({ ...(prev || {}), ...(data as any) }));
       },
     })
-      .then((result) => {
+      .then((result: any) => {
         if (cancelled) return;
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
@@ -338,7 +338,7 @@ export default function UsageStats({
   useEffect(() => {
     const es = new EventSource("/api/usage/stream");
 
-    es.onmessage = (e) => {
+    es.onmessage = (e: any) => {
       try {
         const data = JSON.parse(e.data);
         // Always merge only real-time fields, never overwrite full stats from REST
@@ -361,7 +361,7 @@ export default function UsageStats({
   }, []);
 
   const toggleSort = useCallback(
-    (tableType, field) => {
+    (tableType: any, field: any) => {
       const params = new URLSearchParams(searchParams.toString());
       if (params.get("sortBy") === field) {
         params.set("sortOrder", params.get("sortOrder") === "asc" ? "desc" : "asc");
@@ -385,7 +385,7 @@ export default function UsageStats({
           groupedData: groupDataByKey(sortData(stats.byModel, pendingMap, sortBy, sortOrder), "rawModel"),
           storageKey: "usage-stats:expanded-models",
           emptyMessage: "No usage recorded yet.",
-          renderSummaryCells: (group) => (
+          renderSummaryCells: (group: any) => (
             <>
               <td className="px-6 py-3 text-text-muted">—</td>
               <td className="px-6 py-3 text-right">{fmt(group.summary.requests)}</td>
@@ -394,7 +394,7 @@ export default function UsageStats({
               </td>
             </>
           ),
-          renderDetailCells: (item) => (
+          renderDetailCells: (item: any) => (
             <>
               <td className={`px-6 py-3 font-medium transition-colors ${item.pending > 0 ? "text-primary" : ""}`}>
                 {item.rawModel}
@@ -411,7 +411,7 @@ export default function UsageStats({
         };
       }
       case "account": {
-        const pendingMap = {};
+        const pendingMap: Record<string, any> = {};
         if (stats?.pending?.byAccount) {
           Object.entries(stats.byAccount || {}).forEach(([accountKey, data]: [string, any]) => {
             const connPending = stats.pending.byAccount[data.connectionId];
@@ -426,7 +426,7 @@ export default function UsageStats({
           groupedData: groupDataByKey(sortData(stats.byAccount, pendingMap, sortBy, sortOrder), "accountName"),
           storageKey: "usage-stats:expanded-accounts",
           emptyMessage: "No account-specific usage recorded yet.",
-          renderSummaryCells: (group) => (
+          renderSummaryCells: (group: any) => (
             <>
               <td className="px-6 py-3 text-text-muted">—</td>
               <td className="px-6 py-3 text-text-muted">—</td>
@@ -436,7 +436,7 @@ export default function UsageStats({
               </td>
             </>
           ),
-          renderDetailCells: (item) => (
+          renderDetailCells: (item: any) => (
             <>
               <td className={`px-6 py-3 font-medium transition-colors ${item.pending > 0 ? "text-primary" : ""}`}>
                 {item.accountName || `Account ${item.connectionId?.slice(0, 8)}...`}
@@ -461,7 +461,7 @@ export default function UsageStats({
           groupedData: groupDataByKey(sortData(stats.byApiKey, {}, sortBy, sortOrder), "keyName"),
           storageKey: "usage-stats:expanded-apikeys",
           emptyMessage: "No API key usage recorded yet.",
-          renderSummaryCells: (group) => (
+          renderSummaryCells: (group: any) => (
             <>
               <td className="px-6 py-3 text-text-muted">—</td>
               <td className="px-6 py-3 text-text-muted">—</td>
@@ -471,7 +471,7 @@ export default function UsageStats({
               </td>
             </>
           ),
-          renderDetailCells: (item) => (
+          renderDetailCells: (item: any) => (
             <>
               <td className="px-6 py-3 font-medium">{item.keyName}</td>
               <td className="px-6 py-3">{item.rawModel}</td>
@@ -492,7 +492,7 @@ export default function UsageStats({
           groupedData: groupDataByKey(sortData(stats.byEndpoint, {}, sortBy, sortOrder), "endpoint"),
           storageKey: "usage-stats:expanded-endpoints",
           emptyMessage: "No endpoint usage recorded yet.",
-          renderSummaryCells: (group) => (
+          renderSummaryCells: (group: any) => (
             <>
               <td className="px-6 py-3 text-text-muted">—</td>
               <td className="px-6 py-3 text-text-muted">—</td>
@@ -502,7 +502,7 @@ export default function UsageStats({
               </td>
             </>
           ),
-          renderDetailCells: (item) => (
+          renderDetailCells: (item: any) => (
             <>
               <td className="px-6 py-3 font-medium font-mono text-sm">{item.endpoint}</td>
               <td className="px-6 py-3">{item.rawModel}</td>
@@ -534,7 +534,7 @@ export default function UsageStats({
       {!hidePeriodSelector && (
         <div className="flex w-full items-center gap-2 sm:w-auto sm:self-end">
           <div className="grid flex-1 grid-cols-4 items-center gap-1 rounded-lg border border-border bg-bg-subtle p-1 sm:flex sm:flex-none">
-            {PERIODS.map((p) => (
+            {PERIODS.map((p: any) => (
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
@@ -575,12 +575,12 @@ export default function UsageStats({
           <select
             aria-label="Table view"
             value={tableView}
-            onChange={(e) => setTableView(e.target.value)}
+            onChange={(e: any) => setTableView(e.target.value)}
             className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 sm:w-auto"
             style={{ colorScheme: "auto" }}
             name="table-view"
           >
-            {TABLE_OPTIONS.map((opt) => (
+            {TABLE_OPTIONS.map((opt: any) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

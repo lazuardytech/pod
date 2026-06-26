@@ -82,7 +82,7 @@ function MediaFlyout({
           <p className="px-3 py-1.5 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
             Media Providers
           </p>
-          {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
+          {MEDIA_PROVIDER_KINDS.filter((k: any) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind: any) => (
             <Link
               key={kind.id}
               prefetch={false}
@@ -235,7 +235,7 @@ export default function Sidebar({
   const [isDisconnected, setIsDisconnected] = useState(false);
   const collapsedFooterButtonClass = "size-8 rounded-[6px] text-fog-grey hover:bg-deep-slate hover:text-porcelain";
 
-  const isActive = (href) => {
+  const isActive = (href: any) => {
     if (href === "/endpoint") {
       return pathname === "/" || pathname.startsWith("/endpoint");
     }
@@ -327,7 +327,7 @@ export default function Sidebar({
             ) : (
               <>
                 <button
-                  onClick={() => setMediaOpen((v) => !v)}
+                  onClick={() => setMediaOpen((v: any) => !v)}
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[2px] transition-colors duration-100 group",
                     isMediaActive
@@ -356,7 +356,7 @@ export default function Sidebar({
 
                 {mediaOpen && (
                   <div className="pl-3 space-y-0.5">
-                    {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
+                    {MEDIA_PROVIDER_KINDS.filter((k: any) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind: any) => (
                       <Link
                         key={kind.id}
                         prefetch={false}
@@ -392,7 +392,7 @@ export default function Sidebar({
               </>
             )}
 
-            {apiItems.slice(2).map((item) => (
+            {apiItems.slice(2).map((item: any) => (
               <NavItem key={item.href} {...item} active={isActive(item.href)} onClick={onClose} collapsed={collapsed} />
             ))}
           </NavSection>
@@ -400,7 +400,7 @@ export default function Sidebar({
           {!collapsed && <div className="h-px" />}
 
           <NavSection label="Analytics" collapsed={collapsed}>
-            {analyticsItems.map((item) => (
+            {analyticsItems.map((item: any) => (
               <NavItem key={item.href} {...item} active={isActive(item.href)} onClick={onClose} collapsed={collapsed} />
             ))}
           </NavSection>
@@ -408,7 +408,7 @@ export default function Sidebar({
           {!collapsed && <div className="h-px" />}
 
           <NavSection label="System" collapsed={collapsed}>
-            {systemItems.map((item) => (
+            {systemItems.map((item: any) => (
               <NavItem key={item.href} {...item} active={isActive(item.href)} onClick={onClose} collapsed={collapsed} />
             ))}
           </NavSection>

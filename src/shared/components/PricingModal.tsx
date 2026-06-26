@@ -14,7 +14,7 @@ export default function PricingModal({
   onSave?: any;
   [key: string]: any;
 }) {
-  const [pricingData, setPricingData] = useState({});
+  const [pricingData, setPricingData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -25,9 +25,9 @@ export default function PricingModal({
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   useEffect(() => {
     if (isOpen) {
@@ -56,11 +56,11 @@ export default function PricingModal({
     }
   };
 
-  const handlePricingChange = (provider, model, field, value) => {
+  const handlePricingChange = (provider: any, model: any, field: any, value: any) => {
     const numValue = parseFloat(value);
     if (Number.isNaN(numValue) || numValue < 0) return;
 
-    setPricingData((prev) => {
+    setPricingData((prev: any) => {
       const newData = { ...prev };
       if (!newData[provider]) newData[provider] = {};
       if (!newData[provider][model]) newData[provider][model] = {};
@@ -139,7 +139,7 @@ export default function PricingModal({
               </div>
 
               {/* Pricing Tables */}
-              {allProviders.map((provider) => {
+              {allProviders.map((provider: any) => {
                 const models = Object.keys(pricingData[provider]).sort();
                 return (
                   <div key={provider} className="border border-border rounded-lg overflow-hidden">
@@ -157,10 +157,10 @@ export default function PricingModal({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                          {models.map((model) => (
+                          {models.map((model: any) => (
                             <tr key={model} className="hover:bg-bg-subtle/50">
                               <td className="px-3 py-2 font-medium">{model}</td>
-                              {pricingFields.map((field) => (
+                              {pricingFields.map((field: any) => (
                                 <td key={field} className="px-3 py-2">
                                   <input
                                     aria-label="Pricing"
@@ -168,7 +168,7 @@ export default function PricingModal({
                                     step="0.01"
                                     min="0"
                                     value={pricingData[provider][model][field] || 0}
-                                    onChange={(e) => handlePricingChange(provider, model, field, e.target.value)}
+                                    onChange={(e: any) => handlePricingChange(provider, model, field, e.target.value)}
                                     className="w-20 px-2 py-1 text-right bg-bg-base border border-border rounded focus:outline-none focus:border-primary"
                                   />
                                 </td>

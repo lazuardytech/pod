@@ -47,7 +47,7 @@ export default function RequestLogDetail({
 }) {
   // Close on Escape
   useEffect(() => {
-    const handler = (e) => {
+    const handler = (e: any) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);

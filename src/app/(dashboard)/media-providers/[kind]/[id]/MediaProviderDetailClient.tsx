@@ -21,7 +21,7 @@ import { TTS_PROVIDER_CONFIG } from "@/shared/constants/ttsProviders";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 // Shared row layout — defined outside components to avoid re-mount on re-render
-function Row({ label, children }: any) {
+function Row({ label, children }: any): any {
   return (
     <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
       <span className="w-full text-xs font-medium text-text-muted sm:w-20 sm:shrink-0">{label}</span>
@@ -51,7 +51,7 @@ const DEFAULT_RESPONSE_EXAMPLE = `{
 const CLOUDFLARE_TEST_IMAGE_URL = "https://pub-1fb693cb11cc46b2b2f656f51e015a2c.r2.dev/dog.png";
 const CLOUDFLARE_TEST_MASK_URL = "https://pub-1fb693cb11cc46b2b2f656f51e015a2c.r2.dev/dog-mask.png";
 
-function getImageEditDefaults(providerId, modelId) {
+function getImageEditDefaults(providerId: any, modelId: any): any {
   if (providerId !== "cloudflare-ai") return {};
   if (modelId === "@cf/runwayml/stable-diffusion-v1-5-img2img") {
     return { image: CLOUDFLARE_TEST_IMAGE_URL };
@@ -62,7 +62,7 @@ function getImageEditDefaults(providerId, modelId) {
   return {};
 }
 
-function toImagePreviewSrc(value) {
+function toImagePreviewSrc(value: any): any {
   const trimmed = typeof value === "string" ? value.trim() : "";
   if (!trimmed) return "";
   // Only allow https URLs or data:image/ URIs to prevent XSS via javascript: or other schemes
@@ -164,10 +164,10 @@ const KIND_EXAMPLE_CONFIG = {
 };
 
 // EmbeddingExampleCard
-function EmbeddingExampleCard({ providerId, customAlias }: any) {
+function EmbeddingExampleCard({ providerId, customAlias }: any): any {
   const isCustom = isCustomEmbeddingProvider(providerId);
   const providerAlias = isCustom ? customAlias || providerId : getProviderAlias(providerId);
-  const embeddingModels = isCustom ? [] : getModelsByProviderId(providerId).filter((m) => m.type === "embedding");
+  const embeddingModels = isCustom ? [] : getModelsByProviderId(providerId).filter((m: any): any => m.type === "embedding");
 
   const [selectedModel, setSelectedModel] = useState(embeddingModels[0]?.id ?? "");
   const [input, setInput] = useState("The quick brown fox jumps over the lazy dog");
@@ -182,27 +182,27 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
   const { copied: copiedRes, copy: copyRes } = useCopyToClipboard();
 
-  useEffect(() => {
+  useEffect((): any => {
     setLocalEndpoint(window.location.origin);
     fetch("/api/keys")
-      .then((r) => r.json())
-      .then((d) => {
-        setApiKey((d.keys || []).find((k) => k.isActive !== false)?.key || "");
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
+        setApiKey((d.keys || []).find((k: any): any => k.isActive !== false)?.key || "");
       })
-      .catch(() => {});
+      .catch((): any => {});
     fetch("/api/tunnel/status")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
         if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
-      .catch(() => {});
+      .catch((): any => {});
   }, []);
 
   const endpoint = useTunnel ? tunnelEndpoint : localEndpoint;
   const modelFull = selectedModel ? `${providerAlias}/${selectedModel}` : "";
 
   // Build request body — include dimensions only if user provided a positive number
-  const buildBody = () => {
+  const buildBody = (): any => {
     const body: { model: string; input: string; dimensions?: number } = { model: modelFull, input: input.trim() };
     const dim = Number(dimensions);
     if (dimensions && Number.isFinite(dim) && dim > 0) body.dimensions = dim;
@@ -214,14 +214,14 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
   -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}" \\
   -d '${JSON.stringify(buildBody())}'`;
 
-  const handleRun = async () => {
+  const handleRun = async (): Promise<any> => {
     if (!input.trim() || !modelFull) return;
     setRunning(true);
     setError("");
     setResult(null);
     const start = Date.now();
     try {
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, any> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       const res = await fetch("/api/v1/embeddings", {
         method: "POST",
@@ -243,13 +243,13 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
   };
 
   // Compact embedding array: first 4 values + count
-  const formatResultJson = (data) => {
+  const formatResultJson = (data: any): any => {
     if (!data) return DEFAULT_RESPONSE_EXAMPLE;
     const clone = JSON.parse(JSON.stringify(data));
-    (clone.data || []).forEach((item) => {
+    (clone.data || []).forEach((item: any): any => {
       if (Array.isArray(item.embedding) && item.embedding.length > 4) {
         item.embedding = [
-          ...item.embedding.slice(0, 4).map((v) => parseFloat(v.toFixed(6))),
+          ...item.embedding.slice(0, 4).map((v: any): any => parseFloat(v.toFixed(6))),
           `... (${item.embedding.length} dims)`,
         ];
       }
@@ -270,7 +270,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             <input
               aria-label="Model"
               value={selectedModel}
-              onChange={(e: any) => setSelectedModel(e.target.value)}
+              onChange={(e: any): any => setSelectedModel(e.target.value)}
               placeholder="e.g. voyage-3, embed-english-v3.0, text-embedding-3-small"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="model"
@@ -279,11 +279,11 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             <select
               aria-label="Model"
               value={selectedModel}
-              onChange={(e: any) => setSelectedModel(e.target.value)}
+              onChange={(e: any): any => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="model"
             >
-              {embeddingModels.map((m) => (
+              {embeddingModels.map((m: any): any => (
                 <option key={m.id} value={m.id}>
                   {m.name || m.id}
                 </option>
@@ -298,7 +298,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             <input
               aria-label="Endpoint"
               value={endpoint}
-              onChange={(e: any) => (useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value))}
+              onChange={(e: any): any => (useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value))}
               className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               placeholder="http://localhost:3000"
               name="endpoint"
@@ -306,7 +306,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             {/* Tunnel toggle — only show if tunnel URL is available */}
             {tunnelEndpoint && (
               <button
-                onClick={() => setUseTunnel((v) => !v)}
+                onClick={(): any => setUseTunnel((v: any): any => !v)}
                 title={useTunnel ? "Using tunnel" : "Using local"}
                 className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
                   useTunnel
@@ -327,7 +327,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             aria-label="API Key"
             type="password"
             value={apiKey}
-            onChange={(e: any) => setApiKey(e.target.value)}
+            onChange={(e: any): any => setApiKey(e.target.value)}
             placeholder="sk-..."
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
             name="api-key"
@@ -340,14 +340,14 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             <input
               aria-label="Input"
               value={input}
-              onChange={(e: any) => setInput(e.target.value)}
+              onChange={(e: any): any => setInput(e.target.value)}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="input-text"
             />
             {input && (
               <button
                 type="button"
-                onClick={() => setInput("")}
+                onClick={(): any => setInput("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name="close" className="text-[14px]" />
@@ -363,7 +363,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             type="number"
             min="1"
             value={dimensions}
-            onChange={(e: any) => setDimensions(e.target.value)}
+            onChange={(e: any): any => setDimensions(e.target.value)}
             placeholder="optional, e.g. 512, 1024 (leave empty for default)"
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             name="dimensions"
@@ -376,7 +376,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Request</span>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <button
-                onClick={() => copyCurl(curlSnippet)}
+                onClick={(): any => copyCurl(curlSnippet)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -412,7 +412,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
             </span>
             {result && (
               <button
-                onClick={() => copyRes(resultJson)}
+                onClick={(): any => copyRes(resultJson)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name={copiedRes ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -430,7 +430,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any) {
 }
 
 // ─── TTS Example Card ────────────────────────────────────────────────────────
-function TtsExampleCard({ providerId }: any) {
+function TtsExampleCard({ providerId }: any): any {
   const providerAlias = getProviderAlias(providerId);
   const config = TTS_PROVIDER_CONFIG[providerId] || TTS_PROVIDER_CONFIG["edge-tts"];
 
@@ -441,7 +441,7 @@ function TtsExampleCard({ providerId }: any) {
   // Voices shown below Voice row after language selected
   const [countryVoices, setCountryVoices] = useState([]);
   const [selectedLang, setSelectedLang] = useState("");
-  const [selectedModel, setSelectedModel] = useState(() => {
+  const [selectedModel, setSelectedModel] = useState((): any => {
     const cfgModels = AI_PROVIDERS[providerId]?.ttsConfig?.models;
     if (cfgModels?.length) return cfgModels[0].id;
     if (config.hasModelSelector && config.modelKey) {
@@ -471,24 +471,24 @@ function TtsExampleCard({ providerId }: any) {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalSearch, setModalSearch] = useState("");
   const [modalError, setModalError] = useState("");
-  const [byLang, setByLang] = useState({});
+  const [byLang, setByLang] = useState<Record<string, any>>({});
   // Language hint (e.g. Gemini): controls the spoken language without affecting voice selection
   const [languageHint, setLanguageHint] = useState("");
 
-  useEffect(() => {
+  useEffect((): any => {
     setLocalEndpoint(window.location.origin);
     fetch("/api/keys")
-      .then((r) => r.json())
-      .then((d) => {
-        setApiKey((d.keys || []).find((k) => k.isActive !== false)?.key || "");
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
+        setApiKey((d.keys || []).find((k: any): any => k.isActive !== false)?.key || "");
       })
-      .catch(() => {});
+      .catch((): any => {});
     fetch("/api/tunnel/status")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
         if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
-      .catch(() => {});
+      .catch((): any => {});
 
     // Pre-select default voice based on provider config
     if (config.voiceSource === "hardcoded") {
@@ -498,11 +498,11 @@ function TtsExampleCard({ providerId }: any) {
       const voices =
         config.voicesPerModel && defaultModel
           ? getTtsVoicesForModel(providerId, defaultModel) || []
-          : getModelsByProviderId(config.voiceKey || providerId).filter((m) => m.type === "tts");
+          : getModelsByProviderId(config.voiceKey || providerId).filter((m: any): any => m.type === "tts");
       if (voices.length) {
         if (config.hasBrowseButton) {
           // Google TTS: pre-select "en" (English) as default, show as single voice chip
-          const defaultVoice = voices.find((v) => v.id === "en") || voices[0];
+          const defaultVoice = voices.find((v: any): any => v.id === "en") || voices[0];
           setSelectedLang(defaultVoice.id);
           setSelectedVoice(defaultVoice.id);
           setSelectedVoiceName(defaultVoice.name);
@@ -521,7 +521,7 @@ function TtsExampleCard({ providerId }: any) {
   }, [providerId]);
 
   // Update voices when model changes (voicesPerModel providers)
-  useEffect(() => {
+  useEffect((): any => {
     if (!config.voicesPerModel || !selectedModel) return;
     const voices = getTtsVoicesForModel(providerId, selectedModel) || [];
     setCountryVoices(voices);
@@ -532,7 +532,7 @@ function TtsExampleCard({ providerId }: any) {
   }, [selectedModel]);
 
   // Open modal — load language list
-  const openModal = async () => {
+  const openModal = async (): Promise<any> => {
     setModalOpen(true);
     setModalSearch("");
     setModalError("");
@@ -542,14 +542,14 @@ function TtsExampleCard({ providerId }: any) {
       if (config.voiceSource === "hardcoded") {
         // Build languages/byLang from static providerModels data
         const voiceKey = config.voiceKey || providerId;
-        const voices = getModelsByProviderId(voiceKey).filter((m) => m.type === "tts");
+        const voices = getModelsByProviderId(voiceKey).filter((m: any): any => m.type === "tts");
         const byLangMap: Record<string, { code: string; name: string; voices: Array<{ id: string; name: string }> }> =
           {};
         for (const v of voices) {
           if (!byLangMap[v.id]) byLangMap[v.id] = { code: v.id, name: v.name, voices: [{ id: v.id, name: v.name }] };
         }
         setByLang(byLangMap);
-        setLanguages(Object.values(byLangMap).sort((a, b) => a.name.localeCompare(b.name)));
+        setLanguages(Object.values(byLangMap).sort((a: any, b: any): any => a.name.localeCompare(b.name)));
       } else {
         // Use provider-specific apiEndpoint if available, else default to edge-tts voices API
         const url = config.apiEndpoint
@@ -572,7 +572,7 @@ function TtsExampleCard({ providerId }: any) {
   };
 
   // Click language → close modal → show voices below
-  const handlePickLanguage = (lang) => {
+  const handlePickLanguage = (lang: any): any => {
     setModalOpen(false);
     setSelectedLang(lang.code);
     const voices = byLang[lang.code]?.voices || [];
@@ -587,7 +587,7 @@ function TtsExampleCard({ providerId }: any) {
 
   const filteredLanguages = modalSearch
     ? languages.filter(
-        (c) =>
+        (c: any): any =>
           c.name.toLowerCase().includes(modalSearch.toLowerCase()) ||
           c.code.toLowerCase().includes(modalSearch.toLowerCase()),
       )
@@ -596,7 +596,7 @@ function TtsExampleCard({ providerId }: any) {
   const endpoint = useTunnel ? tunnelEndpoint : localEndpoint;
   // For ElevenLabs/config-driven: prefer manual voiceId (if any), else fall back to selectedVoice
   const activeVoiceId = config.hasVoiceIdInput ? voiceId || selectedVoice : selectedVoice;
-  const modelFull = (() => {
+  const modelFull = ((): any => {
     if (config.hasModelSelector && selectedModel && activeVoiceId)
       return `${providerAlias}/${selectedModel}/${activeVoiceId}`;
     if (config.hasModelSelector && selectedModel) return `${providerAlias}/${selectedModel}`;
@@ -604,7 +604,7 @@ function TtsExampleCard({ providerId }: any) {
     return "";
   })();
 
-  const ttsBody = (() => {
+  const ttsBody = ((): any => {
     const b: { model: string; input: string; language?: string } = { model: modelFull, input };
     if (config.hasLanguageHint && languageHint) b.language = languageHint;
     return b;
@@ -615,7 +615,7 @@ function TtsExampleCard({ providerId }: any) {
   -d '${JSON.stringify(ttsBody)}' \\
   ${responseFormat === "json" ? "" : "--output speech.mp3"}`;
 
-  const handleRun = async () => {
+  const handleRun = async (): Promise<any> => {
     if (!input.trim() || !modelFull) return;
     setRunning(true);
     setError("");
@@ -623,7 +623,7 @@ function TtsExampleCard({ providerId }: any) {
     setJsonResponse(null);
     const start = Date.now();
     try {
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, any> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       const url = `/api/v1/audio/speech${responseFormat === "json" ? "?response_format=json" : ""}`;
       const res = await fetch(url, {
@@ -633,7 +633,7 @@ function TtsExampleCard({ providerId }: any) {
       });
       setLatency(Date.now() - start);
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
+        const d = await res.json().catch((): any => ({}));
         setError(d?.error?.message || d?.error || `HTTP ${res.status}`);
         return;
       }
@@ -641,7 +641,7 @@ function TtsExampleCard({ providerId }: any) {
       if (responseFormat === "json") {
         const data = await res.json();
         setJsonResponse(data); // Store full JSON response
-        const audioBlob = await fetch(`data:audio/mp3;base64,${data.audio}`).then((r) => r.blob());
+        const audioBlob = await fetch(`data:audio/mp3;base64,${data.audio}`).then((r: any): any => r.blob());
         setAudioUrl(URL.createObjectURL(audioBlob));
       } else {
         const blob = await res.blob();
@@ -668,7 +668,7 @@ function TtsExampleCard({ providerId }: any) {
               </span>
               {tunnelEndpoint && (
                 <button
-                  onClick={() => setUseTunnel((v) => !v)}
+                  onClick={(): any => setUseTunnel((v: any): any => !v)}
                   title={useTunnel ? "Using tunnel" : "Using local"}
                   className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
                     useTunnel
@@ -698,7 +698,7 @@ function TtsExampleCard({ providerId }: any) {
               <select
                 aria-label="Model"
                 value={selectedModel}
-                onChange={(e: any) => setSelectedModel(e.target.value)}
+                onChange={(e: any): any => setSelectedModel(e.target.value)}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="model"
               >
@@ -706,7 +706,7 @@ function TtsExampleCard({ providerId }: any) {
                   (AI_PROVIDERS[providerId]?.ttsConfig?.models?.length
                     ? AI_PROVIDERS[providerId].ttsConfig.models
                     : getModelsByProviderId(config.modelKey)) || []
-                ).map((m) => (
+                ).map((m: any): any => (
                   <option key={m.id} value={m.id}>
                     {m.name || m.id}
                   </option>
@@ -721,12 +721,12 @@ function TtsExampleCard({ providerId }: any) {
               <select
                 aria-label="Language"
                 value={languageHint}
-                onChange={(e: any) => setLanguageHint(e.target.value)}
+                onChange={(e: any): any => setLanguageHint(e.target.value)}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="language"
               >
                 <option value="">Auto-detect</option>
-                {GOOGLE_TTS_LANGUAGES.map((l) => (
+                {GOOGLE_TTS_LANGUAGES.map((l: any): any => (
                   <option key={l.id} value={l.name}>
                     {l.name}
                   </option>
@@ -745,7 +745,7 @@ function TtsExampleCard({ providerId }: any) {
                 >
                   {selectedLang ? (
                     <span className="text-text-main">
-                      {languages.find((l) => l.code === selectedLang)?.name || selectedLang}
+                      {languages.find((l: any): any => l.code === selectedLang)?.name || selectedLang}
                     </span>
                   ) : (
                     <span className="text-text-muted">No language selected</span>
@@ -766,10 +766,10 @@ function TtsExampleCard({ providerId }: any) {
           {countryVoices.length > 0 && (
             <Row label="Voice">
               <div className="flex flex-wrap gap-1.5">
-                {countryVoices.map((v) => (
+                {countryVoices.map((v: any): any => (
                   <button
                     key={v.id}
-                    onClick={() => {
+                    onClick={(): any => {
                       setSelectedVoice(v.id);
                       setSelectedVoiceName(v.name);
                       if (config.hasVoiceIdInput) setVoiceId(v.id);
@@ -806,7 +806,7 @@ function TtsExampleCard({ providerId }: any) {
                   <input
                     aria-label="Voice ID"
                     value={voiceId}
-                    onChange={(e: any) => {
+                    onChange={(e: any): any => {
                       setVoiceId(e.target.value);
                       setSelectedVoice(e.target.value);
                     }}
@@ -817,7 +817,7 @@ function TtsExampleCard({ providerId }: any) {
                   {voiceId && (
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(): any => {
                         setVoiceId("");
                         setSelectedVoice("");
                       }}
@@ -838,18 +838,18 @@ function TtsExampleCard({ providerId }: any) {
                 aria-label="Language"
                 value={selectedVoice}
                 name="language"
-                onChange={(e: any) => {
+                onChange={(e: any): any => {
                   const m = getModelsByProviderId(providerId)
-                    .filter((m) => m.type === "tts")
-                    .find((m) => m.id === e.target.value);
+                    .filter((m: any): any => m.type === "tts")
+                    .find((m: any): any => m.id === e.target.value);
                   setSelectedVoice(e.target.value);
                   setSelectedVoiceName(m?.name || e.target.value);
                 }}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               >
                 {getModelsByProviderId(providerId)
-                  .filter((m) => m.type === "tts")
-                  .map((m) => (
+                  .filter((m: any): any => m.type === "tts")
+                  .map((m: any): any => (
                     <option key={m.id} value={m.id}>
                       {m.name || m.id}
                     </option>
@@ -864,14 +864,14 @@ function TtsExampleCard({ providerId }: any) {
               <input
                 aria-label="Input"
                 value={input}
-                onChange={(e: any) => setInput(e.target.value)}
+                onChange={(e: any): any => setInput(e.target.value)}
                 className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="input-text"
               />
               {input && (
                 <button
                   type="button"
-                  onClick={() => setInput("")}
+                  onClick={(): any => setInput("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                 >
                   <LucideIcon name="close" className="text-[14px]" />
@@ -885,7 +885,7 @@ function TtsExampleCard({ providerId }: any) {
             <select
               aria-label="Output format"
               value={responseFormat}
-              onChange={(e: any) => setResponseFormat(e.target.value)}
+              onChange={(e: any): any => setResponseFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="output-format"
             >
@@ -900,7 +900,7 @@ function TtsExampleCard({ providerId }: any) {
               <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Request</span>
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <button
-                  onClick={() => copyCurl(curlSnippet)}
+                  onClick={(): any => copyCurl(curlSnippet)}
                   className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
                 >
                   <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -982,18 +982,18 @@ function TtsExampleCard({ providerId }: any) {
         <div
           className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
           style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }}
-          onClick={() => setModalOpen(false)}
+          onClick={(): any => setModalOpen(false)}
         >
           <div
             className="border border-border rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh]"
             style={{ backgroundColor: "var(--color-bg)", isolation: "isolate" }}
-            onClick={(e: any) => e.stopPropagation()}
+            onClick={(e: any): any => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-xl">
               <h3 className="text-sm font-semibold">Select Language</h3>
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={(): any => setModalOpen(false)}
                 className="text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name="close" className="text-[20px]" />
@@ -1006,7 +1006,7 @@ function TtsExampleCard({ providerId }: any) {
                 aria-label="Search language"
                 autoFocus
                 value={modalSearch}
-                onChange={(e: any) => setModalSearch(e.target.value)}
+                onChange={(e: any): any => setModalSearch(e.target.value)}
                 placeholder="Search language..."
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="search"
@@ -1020,10 +1020,10 @@ function TtsExampleCard({ providerId }: any) {
                 <p className="text-xs text-text-muted px-2 py-3">Loading...</p>
               ) : (
                 <div className="flex flex-col gap-0.5">
-                  {filteredLanguages.map((c) => (
+                  {filteredLanguages.map((c: any): any => (
                     <button
                       key={c.code}
-                      onClick={() => handlePickLanguage(c)}
+                      onClick={(): any => handlePickLanguage(c)}
                       className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-left hover:bg-sidebar transition-colors ${
                         selectedLang === c.code ? "bg-primary/10 text-primary" : ""
                       }`}
@@ -1049,31 +1049,31 @@ function TtsExampleCard({ providerId }: any) {
 }
 
 // Generic Example Card — config-driven for webSearch, webFetch, image, imageToText, stt, video, music
-function GenericExampleCard({ providerId, kind }: any) {
+function GenericExampleCard({ providerId, kind }: any): any {
   const provider = AI_PROVIDERS[providerId];
   const defaultBaseUrl = provider?.searchConfig?.baseUrl || provider?.fetchConfig?.baseUrl || "";
   const supportsBaseUrlOverride = Boolean(defaultBaseUrl) && (kind === "webSearch" || kind === "webFetch");
   const providerAlias = getProviderAlias(providerId);
-  const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kind);
-  const exConfig = KIND_EXAMPLE_CONFIG[kind];
+  const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === kind);
+  const exConfig = (KIND_EXAMPLE_CONFIG as Record<string, any>)[kind];
   const safeExConfig = exConfig || {};
 
   // Get models for this kind (e.g., type="image")
-  const kindModels = getModelsByProviderId(providerId).filter((m) => m.type === kind);
+  const kindModels = getModelsByProviderId(providerId).filter((m: any): any => m.type === kind);
   // Kinds that need a model identifier in the request (image/video/music)
   const KIND_NEEDS_MODEL = new Set(["image", "video", "music", "imageToText"]);
   const needsModel = KIND_NEEDS_MODEL.has(kind);
   const allowManualModel = needsModel && kindModels.length === 0;
   const [selectedModel, setSelectedModel] = useState(kindModels[0]?.id ?? "");
-  const selectedModelObj = kindModels.find((m) => m.id === selectedModel);
+  const selectedModelObj = kindModels.find((m: any): any => m.id === selectedModel);
   const supportsEdit = !!selectedModelObj?.capabilities?.includes("edit");
   const supportsMask = !!selectedModelObj?.capabilities?.includes("mask");
 
   const [input, setInput] = useState(safeExConfig.defaultInput || "");
   const [refImage, setRefImage] = useState("");
   const [maskImage, setMaskImage] = useState("");
-  const [extraValues, setExtraValues] = useState(() =>
-    (safeExConfig.extraFields || []).reduce((acc, f) => {
+  const [extraValues, setExtraValues] = useState((): any =>
+    (safeExConfig.extraFields || []).reduce((acc: any, f: any): any => {
       acc[f.key] = f.default ?? "";
       return acc;
     }, {}),
@@ -1095,31 +1095,31 @@ function GenericExampleCard({ providerId, kind }: any) {
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
   const { copied: copiedRes, copy: copyRes } = useCopyToClipboard();
 
-  useEffect(() => {
+  useEffect((): any => {
     setLocalEndpoint(window.location.origin);
     fetch("/api/keys")
-      .then((r) => r.json())
-      .then((d) => {
-        setApiKey((d.keys || []).find((k) => k.isActive !== false)?.key || "");
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
+        setApiKey((d.keys || []).find((k: any): any => k.isActive !== false)?.key || "");
       })
-      .catch(() => {});
+      .catch((): any => {});
     fetch("/api/tunnel/status")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
         if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
-      .catch(() => {});
+      .catch((): any => {});
     // Load active connections of this provider for pinning
     fetch("/api/providers/client")
-      .then((r) => r.json())
-      .then((d) => {
-        const conns = (d.connections || []).filter((c) => c.provider === providerId && c.isActive !== false);
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
+        const conns = (d.connections || []).filter((c: any): any => c.provider === providerId && c.isActive !== false);
         setConnections(conns);
       })
-      .catch(() => {});
+      .catch((): any => {});
   }, [providerId]);
 
-  useEffect(() => {
+  useEffect((): any => {
     if (supportsBaseUrlOverride) {
       setBaseUrlOverride(defaultBaseUrl);
     } else {
@@ -1147,7 +1147,7 @@ function GenericExampleCard({ providerId, kind }: any) {
   const maskImagePreviewSrc = toImagePreviewSrc(effectiveMaskImage);
 
   // Build request body with optional extra fields (only non-empty values)
-  const extraBodyFromFields = Object.entries(extraValues).reduce((acc, [k, v]) => {
+  const extraBodyFromFields = Object.entries(extraValues).reduce((acc: any, [k, v]: any): any => {
     if (v === "" || v === null || v === undefined) return acc;
     if (typeof v === "number" && Number.isNaN(v)) return acc;
     acc[k] = v;
@@ -1176,7 +1176,7 @@ function GenericExampleCard({ providerId, kind }: any) {
   ${headersPreview.replace(/\\\n {2}/g, "\\\n  ")} \\
   -d '${JSON.stringify(requestBody)}'${wantBinary ? " \\\n  --output image.png" : ""}`;
 
-  const handleRun = async () => {
+  const handleRun = async (): Promise<any> => {
     if (!input.trim() || !modelFull) return;
     setRunning(true);
     setError("");
@@ -1191,7 +1191,7 @@ function GenericExampleCard({ providerId, kind }: any) {
     }
     const start = Date.now();
     try {
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, any> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       if (pinnedConnectionId) headers["x-connection-id"] = pinnedConnectionId;
       if (useStreaming) headers["Accept"] = "text/event-stream";
@@ -1202,7 +1202,7 @@ function GenericExampleCard({ providerId, kind }: any) {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch((): any => ({}));
         setError(data?.error?.message || data?.error || `HTTP ${res.status}`);
         return;
       }
@@ -1267,10 +1267,10 @@ function GenericExampleCard({ providerId, kind }: any) {
   };
 
   // Mask large b64_json strings in JSON view to keep it readable
-  const maskB64 = (obj) => {
+  const maskB64 = (obj: any): any => {
     if (!obj || typeof obj !== "object") return obj;
     if (Array.isArray(obj)) return obj.map(maskB64);
-    const out = {};
+    const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(obj)) {
       out[k] = k === "b64_json" && typeof v === "string" && v.length > 100 ? `<${v.length} chars base64>` : maskB64(v);
     }
@@ -1288,11 +1288,11 @@ function GenericExampleCard({ providerId, kind }: any) {
             <select
               aria-label="Model"
               value={selectedModel}
-              onChange={(e: any) => setSelectedModel(e.target.value)}
+              onChange={(e: any): any => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="model"
             >
-              {kindModels.map((m) => (
+              {kindModels.map((m: any): any => (
                 <option key={m.id} value={m.id}>
                   {m.name || m.id}
                 </option>
@@ -1304,7 +1304,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             <input
               aria-label="Model"
               value={selectedModel}
-              onChange={(e: any) => setSelectedModel(e.target.value)}
+              onChange={(e: any): any => setSelectedModel(e.target.value)}
               placeholder="Enter model id (provider-specific)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="model"
@@ -1321,7 +1321,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             </span>
             {tunnelEndpoint && (
               <button
-                onClick={() => setUseTunnel((v) => !v)}
+                onClick={(): any => setUseTunnel((v: any): any => !v)}
                 title={useTunnel ? "Using tunnel" : "Using local"}
                 className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
                   useTunnel
@@ -1353,12 +1353,12 @@ function GenericExampleCard({ providerId, kind }: any) {
             <select
               aria-label="Connection"
               value={pinnedConnectionId}
-              onChange={(e: any) => setPinnedConnectionId(e.target.value)}
+              onChange={(e: any): any => setPinnedConnectionId(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="connection"
             >
               <option value="">Auto (by priority)</option>
-              {connections.map((c) => {
+              {connections.map((c: any): any => {
                 const plan = c.providerSpecificData?.chatgptPlanType;
                 const label = c.email || c.name || c.id.slice(0, 8);
                 return (
@@ -1378,7 +1378,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             <input
               aria-label="Input"
               value={input}
-              onChange={(e: any) => setInput(e.target.value)}
+              onChange={(e: any): any => setInput(e.target.value)}
               placeholder={exConfig.inputPlaceholder}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="input-text"
@@ -1386,7 +1386,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             {input && (
               <button
                 type="button"
-                onClick={() => setInput("")}
+                onClick={(): any => setInput("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name="close" className="text-[14px]" />
@@ -1403,7 +1403,7 @@ function GenericExampleCard({ providerId, kind }: any) {
                 <input
                   aria-label="Reference image URL"
                   value={refImage}
-                  onChange={(e: any) => setRefImage(e.target.value)}
+                  onChange={(e: any): any => setRefImage(e.target.value)}
                   placeholder={imageEditDefaults.image || "https://example.com/source.png"}
                   className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name="ref-image"
@@ -1411,7 +1411,7 @@ function GenericExampleCard({ providerId, kind }: any) {
                 {refImage && (
                   <button
                     type="button"
-                    onClick={() => setRefImage("")}
+                    onClick={(): any => setRefImage("")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                   >
                     <LucideIcon name="close" className="text-[14px]" />
@@ -1423,10 +1423,10 @@ function GenericExampleCard({ providerId, kind }: any) {
                   src={refImagePreviewSrc} // lgtm[js/xss-through-dom]
                   alt="Reference"
                   className="max-h-40 rounded-lg border border-border object-contain bg-sidebar"
-                  onError={(e) => {
+                  onError={(e: any): any => {
                     e.currentTarget.style.display = "none";
                   }}
-                  onLoad={(e) => {
+                  onLoad={(e: any): any => {
                     e.currentTarget.style.display = "block";
                   }}
                 />
@@ -1442,7 +1442,7 @@ function GenericExampleCard({ providerId, kind }: any) {
                 <input
                   aria-label="Mask image URL"
                   value={maskImage}
-                  onChange={(e: any) => setMaskImage(e.target.value)}
+                  onChange={(e: any): any => setMaskImage(e.target.value)}
                   placeholder={imageEditDefaults.mask_image || "https://example.com/mask.png"}
                   className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name="mask-image"
@@ -1450,7 +1450,7 @@ function GenericExampleCard({ providerId, kind }: any) {
                 {maskImage && (
                   <button
                     type="button"
-                    onClick={() => setMaskImage("")}
+                    onClick={(): any => setMaskImage("")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
                   >
                     <LucideIcon name="close" className="text-[14px]" />
@@ -1462,10 +1462,10 @@ function GenericExampleCard({ providerId, kind }: any) {
                   src={maskImagePreviewSrc} // lgtm[js/xss-through-dom]
                   alt="Mask"
                   className="max-h-40 rounded-lg border border-border object-contain bg-sidebar"
-                  onError={(e) => {
+                  onError={(e: any): any => {
                     e.currentTarget.style.display = "none";
                   }}
-                  onLoad={(e) => {
+                  onLoad={(e: any): any => {
                     e.currentTarget.style.display = "block";
                   }}
                 />
@@ -1477,21 +1477,21 @@ function GenericExampleCard({ providerId, kind }: any) {
         {/* Extra fields — for kinds without model concept (webSearch/webFetch), show all; otherwise filter by model.params */}
         {(exConfig.extraFields || [])
           .filter(
-            (f) =>
+            (f: any): any =>
               kindModels.length === 0 ||
               (Array.isArray(selectedModelObj?.params) && selectedModelObj.params.includes(f.key)),
           )
-          .map((f) => (
+          .map((f: any): any => (
             <Row key={f.key} label={f.label}>
               {f.type === "select" ? (
                 <select
                   aria-label="Parameter value"
                   value={extraValues[f.key] ?? ""}
-                  onChange={(e: any) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
+                  onChange={(e: any): any => setExtraValues((s: any): any => ({ ...s, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
                 >
-                  {(f.options || []).map((opt) => (
+                  {(f.options || []).map((opt: any): any => (
                     <option key={opt} value={opt}>
                       {opt === "" ? "(default)" : opt}
                     </option>
@@ -1503,7 +1503,7 @@ function GenericExampleCard({ providerId, kind }: any) {
                   type="text"
                   value={extraValues[f.key] ?? ""}
                   placeholder={f.placeholder}
-                  onChange={(e: any) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
+                  onChange={(e: any): any => setExtraValues((s: any): any => ({ ...s, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
                 />
@@ -1514,8 +1514,8 @@ function GenericExampleCard({ providerId, kind }: any) {
                   value={extraValues[f.key] ?? ""}
                   min={f.min}
                   max={f.max}
-                  onChange={(e: any) =>
-                    setExtraValues((s) => ({ ...s, [f.key]: e.target.value === "" ? "" : Number(e.target.value) }))
+                  onChange={(e: any): any =>
+                    setExtraValues((s: any): any => ({ ...s, [f.key]: e.target.value === "" ? "" : Number(e.target.value) }))
                   }
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
@@ -1531,7 +1531,7 @@ function GenericExampleCard({ providerId, kind }: any) {
               type="text"
               value={baseUrlOverride}
               placeholder={defaultBaseUrl}
-              onChange={(e: any) => setBaseUrlOverride(e.target.value)}
+              onChange={(e: any): any => setBaseUrlOverride(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="provider-base-url"
             />
@@ -1544,7 +1544,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             <select
               aria-label="Output format"
               value={imageOutputFormat}
-              onChange={(e: any) => setImageOutputFormat(e.target.value)}
+              onChange={(e: any): any => setImageOutputFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="output-format"
             >
@@ -1560,7 +1560,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Request</span>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <button
-                onClick={() => copyCurl(curlSnippet)}
+                onClick={(): any => copyCurl(curlSnippet)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -1623,7 +1623,7 @@ function GenericExampleCard({ providerId, kind }: any) {
             </span>
             {result && (
               <button
-                onClick={() => copyRes(resultJson)}
+                onClick={(): any => copyRes(resultJson)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name={copiedRes ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -1670,14 +1670,14 @@ function GenericExampleCard({ providerId, kind }: any) {
 }
 
 // ─── STT Example Card ────────────────────────────────────────────────────────
-function SttExampleCard({ providerId }: any) {
+function SttExampleCard({ providerId }: any): any {
   const providerAlias = getProviderAlias(providerId);
-  const builtinSttModels = getModelsByProviderId(providerId).filter((m) => m.type === "stt");
+  const builtinSttModels = getModelsByProviderId(providerId).filter((m: any): any => m.type === "stt");
   const [customSttModels, setCustomSttModels] = useState([]);
   const sttModels = [...builtinSttModels, ...customSttModels];
 
   const [selectedModel, setSelectedModel] = useState(builtinSttModels[0]?.id ?? "");
-  const selectedModelObj = sttModels.find((m) => m.id === selectedModel);
+  const selectedModelObj = sttModels.find((m: any): any => m.id === selectedModel);
   const allowedParams = Array.isArray(selectedModelObj?.params) ? selectedModelObj.params : [];
 
   const [audioFile, setAudioFile] = useState(null);
@@ -1696,33 +1696,33 @@ function SttExampleCard({ providerId }: any) {
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
   const { copied: copiedRes, copy: copyRes } = useCopyToClipboard();
 
-  useEffect(() => {
+  useEffect((): any => {
     setLocalEndpoint(window.location.origin);
     fetch("/api/keys")
-      .then((r) => r.json())
-      .then((d) => {
-        setApiKey((d.keys || []).find((k) => k.isActive !== false)?.key || "");
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
+        setApiKey((d.keys || []).find((k: any): any => k.isActive !== false)?.key || "");
       })
-      .catch(() => {});
+      .catch((): any => {});
     fetch("/api/tunnel/status")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
         if (d.tunnel?.tunnelUrl) setTunnelEndpoint(d.tunnel.tunnelUrl);
       })
-      .catch(() => {});
-    const loadCustom = () => {
+      .catch((): any => {});
+    const loadCustom = (): any => {
       fetch("/api/models/custom", { cache: "no-store" })
-        .then((r) => r.json())
-        .then((d) => {
-          const list = (d.models || []).filter((m) => m.type === "stt" && m.providerAlias === providerAlias);
+        .then((r: any): any => r.json())
+        .then((d: any): any => {
+          const list = (d.models || []).filter((m: any): any => m.type === "stt" && m.providerAlias === providerAlias);
           setCustomSttModels(list);
         })
-        .catch(() => {});
+        .catch((): any => {});
     };
     loadCustom();
     window.addEventListener("focus", loadCustom);
     window.addEventListener("customModelChanged", loadCustom);
-    return () => {
+    return (): any => {
       window.removeEventListener("focus", loadCustom);
       window.removeEventListener("customModelChanged", loadCustom);
     };
@@ -1736,7 +1736,7 @@ function SttExampleCard({ providerId }: any) {
   -F "file=@${audioFile?.name || "audio.mp3"}" \\
   -F "model=${modelFull}"${allowedParams.includes("language") && language ? ` \\\n  -F "language=${language}"` : ""}${allowedParams.includes("response_format") ? ` \\\n  -F "response_format=${responseFormat}"` : ""}${allowedParams.includes("temperature") && temperature ? ` \\\n  -F "temperature=${temperature}"` : ""}${allowedParams.includes("prompt") && prompt ? ` \\\n  -F "prompt=${prompt}"` : ""}`;
 
-  const handleRun = async () => {
+  const handleRun = async (): Promise<any> => {
     if (!audioFile || !modelFull) return;
     setRunning(true);
     setError("");
@@ -1751,7 +1751,7 @@ function SttExampleCard({ providerId }: any) {
       if (allowedParams.includes("temperature") && temperature) fd.append("temperature", temperature);
       if (allowedParams.includes("prompt") && prompt) fd.append("prompt", prompt);
 
-      const headers = {};
+      const headers: Record<string, any> = {};
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       const res = await fetch("/api/v1/audio/transcriptions", { method: "POST", headers, body: fd });
       setLatency(Date.now() - start);
@@ -1782,11 +1782,11 @@ function SttExampleCard({ providerId }: any) {
             <select
               aria-label="Model"
               value={selectedModel}
-              onChange={(e: any) => setSelectedModel(e.target.value)}
+              onChange={(e: any): any => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="model"
             >
-              {sttModels.map((m) => (
+              {sttModels.map((m: any): any => (
                 <option key={m.id} value={m.id}>
                   {m.name || m.id}
                 </option>
@@ -1798,7 +1798,7 @@ function SttExampleCard({ providerId }: any) {
             <input
               aria-label="Model"
               value={selectedModel}
-              onChange={(e: any) => setSelectedModel(e.target.value)}
+              onChange={(e: any): any => setSelectedModel(e.target.value)}
               placeholder="Enter model id"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="model"
@@ -1814,7 +1814,7 @@ function SttExampleCard({ providerId }: any) {
             </span>
             {tunnelEndpoint && (
               <button
-                onClick={() => setUseTunnel((v) => !v)}
+                onClick={(): any => setUseTunnel((v: any): any => !v)}
                 title={useTunnel ? "Using tunnel" : "Using local"}
                 className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
                   useTunnel
@@ -1847,7 +1847,7 @@ function SttExampleCard({ providerId }: any) {
               aria-label="Audio file"
               type="file"
               accept="audio/*,video/mp4,.m4a,.mp3,.wav,.ogg,.flac,.webm,.opus"
-              onChange={(e: any) => setAudioFile(e.target.files?.[0] || null)}
+              onChange={(e: any): any => setAudioFile(e.target.files?.[0] || null)}
               className="w-full text-xs text-text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border file:border-border file:bg-background file:text-text-main hover:file:bg-sidebar file:cursor-pointer"
             />
             {audioFile && (
@@ -1864,7 +1864,7 @@ function SttExampleCard({ providerId }: any) {
             <input
               aria-label="Language"
               value={language}
-              onChange={(e: any) => setLanguage(e.target.value)}
+              onChange={(e: any): any => setLanguage(e.target.value)}
               placeholder="e.g. en, vi, ja (auto-detect if empty)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="language"
@@ -1878,7 +1878,7 @@ function SttExampleCard({ providerId }: any) {
             <input
               aria-label="Prompt"
               value={prompt}
-              onChange={(e: any) => setPrompt(e.target.value)}
+              onChange={(e: any): any => setPrompt(e.target.value)}
               placeholder="optional context to improve accuracy"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="prompt"
@@ -1896,7 +1896,7 @@ function SttExampleCard({ providerId }: any) {
               min="0"
               max="1"
               value={temperature}
-              onChange={(e: any) => setTemperature(e.target.value)}
+              onChange={(e: any): any => setTemperature(e.target.value)}
               placeholder="0 - 1 (default 0)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="temperature"
@@ -1910,7 +1910,7 @@ function SttExampleCard({ providerId }: any) {
             <select
               aria-label="Response format"
               value={responseFormat}
-              onChange={(e: any) => setResponseFormat(e.target.value)}
+              onChange={(e: any): any => setResponseFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="response-format"
             >
@@ -1929,7 +1929,7 @@ function SttExampleCard({ providerId }: any) {
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Request</span>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <button
-                onClick={() => copyCurl(curlSnippet)}
+                onClick={(): any => copyCurl(curlSnippet)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name={copiedCurl ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -1964,7 +1964,7 @@ function SttExampleCard({ providerId }: any) {
             </span>
             {result && (
               <button
-                onClick={() => copyRes(resultStr)}
+                onClick={(): any => copyRes(resultStr)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
               >
                 <LucideIcon name={copiedRes ? "check" : "content_copy"} size={12} className="shrink-0" />
@@ -1982,15 +1982,15 @@ function SttExampleCard({ providerId }: any) {
 }
 
 // MediaProviderDetailPage
-export default function MediaProviderDetailPage() {
+export default function MediaProviderDetailPage(): any {
   const { kind: kindParam, id: idParam } = useParams();
   const kind = Array.isArray(kindParam) ? kindParam[0] : kindParam;
   const id = Array.isArray(idParam) ? idParam[0] : idParam;
   const router = useRouter();
-  const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kind);
+  const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === kind);
   const isCustom = isCustomEmbeddingProvider(id) && kind === "embedding";
 
-  const handleDeleteCustom = async () => {
+  const handleDeleteCustom = async (): Promise<any> => {
     try {
       const res = await fetch(`/api/provider-nodes/${id}`, { method: "DELETE" });
       if (res.ok) router.push(`/media-providers/${kind}`);
@@ -2010,27 +2010,27 @@ export default function MediaProviderDetailPage() {
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null }));
 
   // Fetch custom node info from API for custom embedding nodes
-  useEffect(() => {
+  useEffect((): any => {
     if (!isCustom) {
       return undefined;
     }
     let cancelled = false;
     fetch("/api/provider-nodes", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r: any): any => r.json())
+      .then((d: any): any => {
         if (cancelled) return;
-        setCustomNode((d.nodes || []).find((n) => n.id === id) || null);
+        setCustomNode((d.nodes || []).find((n: any): any => n.id === id) || null);
         setCustomLoading(false);
       })
-      .catch(() => {
+      .catch((): any => {
         if (!cancelled) setCustomLoading(false);
       });
-    return () => {
+    return (): any => {
       cancelled = true;
     };
   }, [id, isCustom]);
@@ -2093,7 +2093,7 @@ export default function MediaProviderDetailPage() {
                 Custom · {customNode?.prefix}
               </Badge>
             )}
-            {kinds.map((k) => (
+            {kinds.map((k: any): any => (
               <Badge key={k} variant={k === kind ? "primary" : "default"} size="sm">
                 {k.toUpperCase()}
               </Badge>
@@ -2102,14 +2102,14 @@ export default function MediaProviderDetailPage() {
         </div>
         {isCustom && (
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <Button size="sm" variant="secondary" icon="edit" onClick={() => setShowEditModal(true)}>
+            <Button size="sm" variant="secondary" icon="edit" onClick={(): any => setShowEditModal(true)}>
               Edit
             </Button>
             <Button
               size="sm"
               variant="secondary"
               icon="delete"
-              onClick={() =>
+              onClick={(): any =>
                 openConfirm(
                   "Delete Custom Embedding",
                   "Delete this Custom Embedding node? This cannot be undone.",
@@ -2125,10 +2125,10 @@ export default function MediaProviderDetailPage() {
       </div>
 
       {/* Kind-specific notice (e.g. codex/image requires Plus) */}
-      {!isCustom && builtInProvider?.kindNotice?.[kind] && (
+      {!isCustom && (builtInProvider?.kindNotice as Record<string, any>)?.[kind] && (
         <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
           <LucideIcon name="warning" className="text-[20px] mt-0.5" />
-          <p className="text-sm">{builtInProvider.kindNotice[kind]}</p>
+          <p className="text-sm">{(builtInProvider.kindNotice as Record<string, any>)[kind]}</p>
         </div>
       )}
 
@@ -2202,14 +2202,14 @@ export default function MediaProviderDetailPage() {
       {kind === "embedding" && <EmbeddingExampleCard providerId={id} customAlias={customNode?.prefix} />}
       {kind === "tts" && <TtsExampleCard providerId={id} />}
       {kind === "stt" && !isCustom && <SttExampleCard providerId={id} />}
-      {!isCustom && KIND_EXAMPLE_CONFIG[kind] && <GenericExampleCard providerId={id} kind={kind} />}
+      {!isCustom && (KIND_EXAMPLE_CONFIG as Record<string, any>)[kind] && <GenericExampleCard providerId={id} kind={kind} />}
 
       {isCustom && (
         <AddCustomEmbeddingModal
           isOpen={showEditModal}
           node={customNode}
-          onClose={() => setShowEditModal(false)}
-          onSaved={(updated) => {
+          onClose={(): any => setShowEditModal(false)}
+          onSaved={(updated: any): any => {
             setCustomNode(updated);
             setShowEditModal(false);
           }}
@@ -2220,7 +2220,7 @@ export default function MediaProviderDetailPage() {
         isOpen={confirmDialog.open}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        onConfirm={() => {
+        onConfirm={(): any => {
           confirmDialog.onConfirm?.();
           closeConfirm();
         }}

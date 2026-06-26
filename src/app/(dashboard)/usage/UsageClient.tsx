@@ -30,7 +30,7 @@ function UsageContent() {
   const tabFromUrl = searchParams.get("tab");
   const activeTab = tabFromUrl && ["overview", "logs", "details"].includes(tabFromUrl) ? tabFromUrl : "overview";
 
-  const handleTabChange = (value) => {
+  const handleTabChange = (value: any) => {
     if (value === activeTab) return;
     const params = new URLSearchParams(searchParams);
     params.set("tab", value);

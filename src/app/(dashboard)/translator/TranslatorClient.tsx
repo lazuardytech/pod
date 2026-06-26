@@ -29,20 +29,20 @@ const EDITOR_OPTIONS = {
 };
 
 export default function TranslatorPage() {
-  const [contents, setContents] = useState({});
+  const [contents, setContents] = useState<Record<string, any>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 1: true });
-  const [loading, setLoading] = useState({});
+  const [loading, setLoading] = useState<Record<string, any>>({});
   // Detected from step 1: { provider, model, sourceFormat, targetFormat }
   const [meta, setMeta] = useState(null);
 
-  const setLoad = (key, val) => setLoading((prev) => ({ ...prev, [key]: val }));
-  const setContent = (id, val) => setContents((prev) => ({ ...prev, [id]: val }));
-  const toggle = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  const setLoad = (key: any, val: any) => setLoading((prev: any) => ({ ...prev, [key]: val }));
+  const setContent = (id: any, val: any) => setContents((prev: any) => ({ ...prev, [id]: val }));
+  const toggle = (id: any) => setExpanded((prev: any) => ({ ...prev, [id]: !prev[id] }));
 
   const openNext = (nextId: number) =>
-    setExpanded((prev) => {
+    setExpanded((prev: any) => {
       const next: Record<number, boolean> = {};
-      STEPS.forEach((s) => {
+      STEPS.forEach((s: any) => {
         next[s.id] = false;
       });
       next[nextId] = true;
@@ -50,8 +50,8 @@ export default function TranslatorPage() {
     });
 
   // Load file from logs/translator/
-  const handleLoad = async (stepId) => {
-    const step = STEPS.find((s) => s.id === stepId);
+  const handleLoad = async (stepId: any) => {
+    const step = STEPS.find((s: any) => s.id === stepId);
     setLoad(`load-${stepId}`, true);
     try {
       const res = await fetch(`/api/translator/load?file=${step.file}`);
@@ -69,7 +69,7 @@ export default function TranslatorPage() {
   };
 
   // Step 1: detect provider/format from model field
-  const detectMeta = async (rawContent) => {
+  const detectMeta = async (rawContent: any) => {
     try {
       const body = typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent;
       const res = await fetch("/api/translator/translate", {
@@ -84,7 +84,7 @@ export default function TranslatorPage() {
     }
   };
 
-  const save = (file, content) =>
+  const save = (file: any, content: any) =>
     fetch("/api/translator/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -210,12 +210,12 @@ export default function TranslatorPage() {
 
   const { copy } = useCopyToClipboard();
 
-  const handleCopy = async (id) => {
+  const handleCopy = async (id: any) => {
     if (!contents[id]) return;
     copy(contents[id], `translator-step-${id}`);
   };
 
-  const handleFormat = (id) => {
+  const handleFormat = (id: any) => {
     try {
       const obj = JSON.parse(contents[id]);
       setContent(id, JSON.stringify(obj, null, 2));
@@ -225,7 +225,7 @@ export default function TranslatorPage() {
   };
 
   // Render action button per step
-  const getAction = (stepId) => {
+  const getAction = (stepId: any) => {
     if (stepId === 1)
       return (
         <Button size="sm" icon="arrow_forward" loading={loading["toOpenAI"]} onClick={handleToOpenAI}>
@@ -266,7 +266,7 @@ export default function TranslatorPage() {
         )}
       </div>
 
-      {STEPS.map((step) => {
+      {STEPS.map((step: any) => {
         const action = getAction(step.id);
         const isExpanded = !!expanded[step.id];
         const content = contents[step.id] || "";
@@ -345,7 +345,7 @@ export default function TranslatorPage() {
 }
 
 function MetaBadge({ label, value, color }: any) {
-  const colors = {
+  const colors: Record<string, any> = {
     blue: "bg-blue-500/10 text-blue-500",
     orange: "bg-orange-500/10 text-orange-500",
     green: "bg-green-500/10 text-green-500",

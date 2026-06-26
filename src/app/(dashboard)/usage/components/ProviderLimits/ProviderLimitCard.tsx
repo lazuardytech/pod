@@ -8,7 +8,7 @@ import QuotaProgressBar from "./QuotaProgressBar";
 import { calculatePercentage } from "./utils";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const planVariants = {
+const planVariants: Record<string, any> = {
   free: "default",
   pro: "primary",
   ultra: "success",
@@ -40,7 +40,7 @@ export default function ProviderLimitCard({
 
   // Get provider info from config
   const getProviderColor = () => {
-    const colors = {
+    const colors: Record<string, any> = {
       github: "#000000",
       antigravity: "#4285F4",
       codex: "#10A37F",
@@ -134,7 +134,7 @@ export default function ProviderLimitCard({
       {/* Quota Progress Bars */}
       {!loading && !error && !message && quotas?.length > 0 && (
         <div className="space-y-4">
-          {quotas.map((quota, index) => {
+          {quotas.map((quota: any, index: any) => {
             // For Antigravity, use remainingPercentage if available, otherwise calculate
             const percentage =
               quota.remainingPercentage !== undefined

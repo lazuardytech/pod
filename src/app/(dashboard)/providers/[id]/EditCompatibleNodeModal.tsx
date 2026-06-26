@@ -6,7 +6,7 @@ import { Badge, Button, Input, Modal, Select } from "@/shared/components";
 
 // Type prefix that must be preserved on rename so isOpenAICompatibleProvider()
 // / isAnthropicCompatibleProvider() keep classifying the node correctly.
-function requiredIdPrefix(node, isAnthropic) {
+function requiredIdPrefix(node: any, isAnthropic: any) {
   if (!node) return isAnthropic ? "anthropic-compatible-" : "openai-compatible-";
   if (node.type === "anthropic-compatible") return "anthropic-compatible-";
   if (node.type === "openai-compatible") return "openai-compatible-";

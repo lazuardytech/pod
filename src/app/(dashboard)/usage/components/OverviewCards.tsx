@@ -3,8 +3,8 @@
 import PropTypes from "prop-types";
 import Card from "@/shared/components/Card";
 
-const fmt = (n) => new Intl.NumberFormat().format(n || 0);
-const fmtCost = (n) => {
+const fmt = (n: any) => new Intl.NumberFormat().format(n || 0);
+const fmtCost = (n: any) => {
   const v = n || 0;
   // Round up to 2 decimal places
   const rounded = Math.ceil(v * 100) / 100;

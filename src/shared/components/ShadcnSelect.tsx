@@ -34,20 +34,20 @@ export default function ShadcnSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
-  const selectedOption = useMemo(() => options.find((option) => option.value === value) || null, [options, value]);
+  const selectedOption = useMemo(() => options.find((option: any) => option.value === value) || null, [options, value]);
 
   useEffect(() => {
     if (!open) {
       return undefined;
     }
 
-    const handlePointerDown = (event) => {
+    const handlePointerDown = (event: any) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setOpen(false);
       }
     };
 
-    const handleEscape = (event) => {
+    const handleEscape = (event: any) => {
       if (event.key === "Escape") {
         setOpen(false);
       }
@@ -69,7 +69,7 @@ export default function ShadcnSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen((prev: any) => !prev)}
         className={cn(
           "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-charcoal-grey bg-gunmetal px-3 text-[13px] text-porcelain shadow-[var(--shadow-sm)] transition-colors duration-100",
           "hover:bg-charcoal-grey/70 focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
@@ -98,7 +98,7 @@ export default function ShadcnSelect({
             contentClassName,
           )}
         >
-          {options.map((option) => {
+          {options.map((option: any) => {
             const isSelected = option.value === value;
 
             return (

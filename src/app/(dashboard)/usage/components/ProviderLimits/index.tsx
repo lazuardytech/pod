@@ -11,19 +11,19 @@ import { calculatePercentage, formatResetTime, getStatusColor, parseQuotaData } 
 import LucideIcon from "@/shared/components/LucideIcon";
 
 // Connection is eligible for the quota page when it uses OAuth or is an apikey provider whitelisted for quota
-const isUsageEligible = (conn) =>
+const isUsageEligible: any = (conn: any) =>
   USAGE_SUPPORTED_PROVIDERS.includes(conn.provider) &&
   (conn.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(conn.provider));
 
-const DEPLETED_QUOTA_THRESHOLD = 5; // percent
-const AUTO_REFRESH_STORAGE_KEY = "quotaAutoRefresh";
-const QUOTA_CACHE_KEY = "providerQuotaCache";
-const QUOTA_CACHE_TTL_MS = 300000; // 5 minutes cache TTL
-const COLLAPSE_ALL_STORAGE_KEY = "quotaCollapseAll";
-const EXPIRING_FIRST_STORAGE_KEY = "quotaExpiringFirst";
-const HIDE_DISABLED_STORAGE_KEY = "quotaHideDisabled";
+const DEPLETED_QUOTA_THRESHOLD: any = 5; // percent
+const AUTO_REFRESH_STORAGE_KEY: any = "quotaAutoRefresh";
+const QUOTA_CACHE_KEY: any = "providerQuotaCache";
+const QUOTA_CACHE_TTL_MS: any = 300000; // 5 minutes cache TTL
+const COLLAPSE_ALL_STORAGE_KEY: any = "quotaCollapseAll";
+const EXPIRING_FIRST_STORAGE_KEY: any = "quotaExpiringFirst";
+const HIDE_DISABLED_STORAGE_KEY: any = "quotaHideDisabled";
 
-const readLocalBool = (key) => {
+const readLocalBool: any = (key: any) => {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(key) === "true";
 };
@@ -44,69 +44,69 @@ type QuotaConnectionData = {
 };
 
 export default function ProviderLimits() {
-  const [connections, setConnections] = useState([]);
-  const [quotaData, setQuotaData] = useState<Record<string, QuotaConnectionData>>(() => {
+  const [connections, setConnections]: any = useState([]);
+  const [quotaData, setQuotaData]: any = useState<Record<string, QuotaConnectionData>>(() => {
     if (typeof window === "undefined") return {};
-    const cached = window.localStorage.getItem(QUOTA_CACHE_KEY);
+    const cached: any = window.localStorage.getItem(QUOTA_CACHE_KEY);
     if (cached) {
-      const { data, timestamp } = JSON.parse(cached);
+      const { data, timestamp }: any = JSON.parse(cached);
       if (Date.now() - timestamp < QUOTA_CACHE_TTL_MS) return data;
     }
     return {};
   });
-  const [loading, setLoading] = useState({});
-  const [errors, setErrors] = useState({});
-  const [autoRefresh, setAutoRefresh] = useState(() => {
+  const [loading, setLoading]: any = useState({});
+  const [errors, setErrors]: any = useState({});
+  const [autoRefresh, setAutoRefresh]: any = useState(() => {
     if (typeof window === "undefined") return true;
-    const stored = window.localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
+    const stored: any = window.localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
     return stored === null ? true : stored === "true";
   });
-  const [_lastUpdated, setLastUpdated] = useState(() => {
+  const [_lastUpdated, setLastUpdated]: any = useState(() => {
     if (typeof window === "undefined") return null;
-    const cached = window.localStorage.getItem(QUOTA_CACHE_KEY);
+    const cached: any = window.localStorage.getItem(QUOTA_CACHE_KEY);
     if (cached) {
-      const { timestamp } = JSON.parse(cached);
+      const { timestamp }: any = JSON.parse(cached);
       if (Date.now() - timestamp < QUOTA_CACHE_TTL_MS) return new Date(timestamp);
     }
     return null;
   });
-  const [refreshingAll, setRefreshingAll] = useState(false);
-  const [countdown, setCountdown] = useState(60);
-  const [connectionsLoading, setConnectionsLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState(null);
-  const [togglingId, setTogglingId] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedConnection, setSelectedConnection] = useState(null);
-  const [proxyPools, setProxyPools] = useState([]);
-  const [providerFilter, setProviderFilter] = useState("all");
-  const [expiringFirst, setExpiringFirst] = useState(false);
-  const [providerMenuOpen, setProviderMenuOpen] = useState(false);
-  const [bulkToggling, setBulkToggling] = useState(false);
-  const [collapseAll, setCollapseAll] = useState(false);
-  const [expandedRows, setExpandedRows] = useState({});
-  const [expandedProviders, setExpandedProviders] = useState({});
-  const [hideDisabled, setHideDisabled] = useState(false);
-  const [disabledModels, setDisabledModels] = useState({});
+  const [refreshingAll, setRefreshingAll]: any = useState(false);
+  const [countdown, setCountdown]: any = useState(60);
+  const [connectionsLoading, setConnectionsLoading]: any = useState(true);
+  const [deletingId, setDeletingId]: any = useState(null);
+  const [togglingId, setTogglingId]: any = useState(null);
+  const [showEditModal, setShowEditModal]: any = useState(false);
+  const [selectedConnection, setSelectedConnection]: any = useState(null);
+  const [proxyPools, setProxyPools]: any = useState([]);
+  const [providerFilter, setProviderFilter]: any = useState("all");
+  const [expiringFirst, setExpiringFirst]: any = useState(false);
+  const [providerMenuOpen, setProviderMenuOpen]: any = useState(false);
+  const [bulkToggling, setBulkToggling]: any = useState(false);
+  const [collapseAll, setCollapseAll]: any = useState(false);
+  const [expandedRows, setExpandedRows]: any = useState({});
+  const [expandedProviders, setExpandedProviders]: any = useState({});
+  const [hideDisabled, setHideDisabled]: any = useState(false);
+  const [disabledModels, setDisabledModels]: any = useState({});
 
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog]: any = useState({
     open: false,
     title: "",
     message: "",
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
-  const countdownRef = useRef(null);
-  const refreshingAllRef = useRef(false);
+  const countdownRef: any = useRef(null);
+  const refreshingAllRef: any = useRef(false);
 
   // Hydrate toggle states from localStorage after mount (avoids SSR/hydration mismatch)
   useEffect(() => {
-    const collapse = readLocalBool(COLLAPSE_ALL_STORAGE_KEY);
-    const expiring = readLocalBool(EXPIRING_FIRST_STORAGE_KEY);
-    const hide = readLocalBool(HIDE_DISABLED_STORAGE_KEY);
+    const collapse: any = readLocalBool(COLLAPSE_ALL_STORAGE_KEY);
+    const expiring: any = readLocalBool(EXPIRING_FIRST_STORAGE_KEY);
+    const hide: any = readLocalBool(HIDE_DISABLED_STORAGE_KEY);
     if (collapse) {
       setCollapseAll(true);
       setExpandedRows({ __collapsed: true });
@@ -126,8 +126,8 @@ export default function ProviderLimits() {
   // Fetch disabled models
   useEffect(() => {
     fetch("/api/models/disabled")
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res: any) => res.json())
+      .then((data: any) => {
         if (data && typeof data === "object" && !data.error) {
           setDisabledModels(data.disabled || data);
         }
@@ -136,13 +136,13 @@ export default function ProviderLimits() {
   }, []);
 
   // Fetch all provider connections
-  const fetchConnections = useCallback(async () => {
+  const fetchConnections: any = useCallback(async () => {
     try {
-      const response = await fetch("/api/providers/client");
+      const response: any = await fetch("/api/providers/client");
       if (!response.ok) throw new Error("Failed to fetch connections");
 
-      const data = await response.json();
-      const connectionList = data.connections || [];
+      const data: any = await response.json();
+      const connectionList: any = data.connections || [];
       setConnections(connectionList);
       return connectionList;
     } catch (error) {
@@ -153,16 +153,16 @@ export default function ProviderLimits() {
   }, []);
 
   // Fetch quota for a specific connection
-  const fetchQuota = useCallback(async (connectionId, provider) => {
-    setLoading((prev) => ({ ...prev, [connectionId]: true }));
-    setErrors((prev) => ({ ...prev, [connectionId]: null }));
+  const fetchQuota: any = useCallback(async (connectionId: any, provider: any) => {
+    setLoading((prev: any) => ({ ...prev, [connectionId]: true }));
+    setErrors((prev: any) => ({ ...prev, [connectionId]: null }));
 
     try {
-      const response = await fetch(`/api/usage/${connectionId}`);
+      const response: any = await fetch(`/api/usage/${connectionId}`);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMsg = errorData.error || response.statusText;
+        const errorData: any = await response.json().catch(() => ({}));
+        const errorMsg: any = errorData.error || response.statusText;
 
         // Handle different error types gracefully
         if (response.status === 404) {
@@ -174,7 +174,7 @@ export default function ProviderLimits() {
         if (response.status === 401) {
           // Auth error - show message instead of throwing
           console.warn("[ProviderLimits] Auth error while fetching quota");
-          setQuotaData((prev) => ({
+          setQuotaData((prev: any) => ({
             ...prev,
             [connectionId]: {
               quotas: [],
@@ -187,11 +187,11 @@ export default function ProviderLimits() {
         throw new Error(`HTTP ${response.status}: ${errorMsg}`);
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
       // Parse quota data using provider-specific parser
-      const parsedQuotas = parseQuotaData(provider, data);
+      const parsedQuotas: any = parseQuotaData(provider, data);
 
-      setQuotaData((prev) => ({
+      setQuotaData((prev: any) => ({
         ...prev,
         [connectionId]: {
           quotas: parsedQuotas,
@@ -202,25 +202,25 @@ export default function ProviderLimits() {
       }));
     } catch (error) {
       console.error("[ProviderLimits] Error fetching quota");
-      setErrors((prev) => ({
+      setErrors((prev: any) => ({
         ...prev,
         [connectionId]: error.message || "Failed to fetch quota",
       }));
     } finally {
-      setLoading((prev) => ({ ...prev, [connectionId]: false }));
+      setLoading((prev: any) => ({ ...prev, [connectionId]: false }));
     }
   }, []);
 
   // Refresh quota for a specific provider
-  const refreshProvider = useCallback(
-    async (connectionId, provider) => {
+  const refreshProvider: any = useCallback(
+    async (connectionId: any, provider: any) => {
       await fetchQuota(connectionId, provider);
       setLastUpdated(new Date());
     },
     [fetchQuota],
   );
 
-  const applySnapshot = useCallback((snapshot) => {
+  const applySnapshot: any = useCallback((snapshot: any) => {
     if (!snapshot || typeof snapshot !== "object") return;
     if (Array.isArray(snapshot.connections)) setConnections(snapshot.connections);
     if (snapshot.quotaData && typeof snapshot.quotaData === "object") {
@@ -237,24 +237,24 @@ export default function ProviderLimits() {
     setCountdown(60);
   }, []);
 
-  const handleDeleteConnection = useCallback(async (id) => {
+  const handleDeleteConnection: any = useCallback(async (id: any) => {
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
+      const res: any = await fetch(`/api/providers/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setConnections((prev) => prev.filter((c) => c.id !== id));
-        setQuotaData((prev) => {
-          const next = { ...prev };
+        setConnections((prev: any) => prev.filter((c: any) => c.id !== id));
+        setQuotaData((prev: any) => {
+          const next: any = { ...prev };
           delete next[id];
           return next;
         });
-        setLoading((prev) => {
-          const next = { ...prev };
+        setLoading((prev: any) => {
+          const next: any = { ...prev };
           delete next[id];
           return next;
         });
-        setErrors((prev) => {
-          const next = { ...prev };
+        setErrors((prev: any) => {
+          const next: any = { ...prev };
           delete next[id];
           return next;
         });
@@ -266,16 +266,16 @@ export default function ProviderLimits() {
     }
   }, []);
 
-  const handleToggleConnectionActive = useCallback(async (id, isActive) => {
+  const handleToggleConnectionActive: any = useCallback(async (id: any, isActive: any) => {
     setTogglingId(id);
     try {
-      const res = await fetch(`/api/providers/${id}`, {
+      const res: any = await fetch(`/api/providers/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
       if (res.ok) {
-        setConnections((prev) => prev.map((c) => (c.id === id ? { ...c, isActive } : c)));
+        setConnections((prev: any) => prev.map((c: any) => (c.id === id ? { ...c, isActive } : c)));
       }
     } catch (error) {
       console.error("Error updating connection status:", error);
@@ -284,13 +284,13 @@ export default function ProviderLimits() {
     }
   }, []);
 
-  const handleUpdateConnection = useCallback(
-    async (formData) => {
+  const handleUpdateConnection: any = useCallback(
+    async (formData: any) => {
       if (!selectedConnection?.id) return;
-      const connectionId = selectedConnection.id;
-      const provider = selectedConnection.provider;
+      const connectionId: any = selectedConnection.id;
+      const provider: any = selectedConnection.provider;
       try {
-        const res = await fetch(`/api/providers/${connectionId}`, {
+        const res: any = await fetch(`/api/providers/${connectionId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
@@ -311,10 +311,10 @@ export default function ProviderLimits() {
   );
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled: any = false;
     fetch("/api/proxy-pools?isActive=true", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res: any) => res.json())
+      .then((data: any) => {
         if (!cancelled && data?.proxyPools) {
           setProxyPools(data.proxyPools);
         }
@@ -326,7 +326,7 @@ export default function ProviderLimits() {
   }, []);
 
   // Refresh all providers
-  const refreshAll = useCallback(async () => {
+  const refreshAll: any = useCallback(async () => {
     if (refreshingAllRef.current) return;
 
     refreshingAllRef.current = true;
@@ -334,12 +334,12 @@ export default function ProviderLimits() {
     setCountdown(60);
 
     try {
-      const conns = await fetchConnections();
+      const conns: any = await fetchConnections();
 
       // Filter eligible connections (OAuth + whitelisted apikey)
-      const eligibleConnections = conns.filter(isUsageEligible);
+      const eligibleConnections: any = conns.filter(isUsageEligible);
 
-      await Promise.all(eligibleConnections.map((conn) => fetchQuota(conn.id, conn.provider)));
+      await Promise.all(eligibleConnections.map((conn: any) => fetchQuota(conn.id, conn.provider)));
 
       setLastUpdated(new Date());
     } catch (error) {
@@ -352,21 +352,21 @@ export default function ProviderLimits() {
 
   // Initial load: fetch connections first so cards render immediately, then fetch quotas
   useEffect(() => {
-    const initializeData = async () => {
+    const initializeData: any = async () => {
       setConnectionsLoading(true);
-      const conns = await fetchConnections();
+      const conns: any = await fetchConnections();
       setConnectionsLoading(false);
 
-      const eligibleConnections = conns.filter(isUsageEligible);
+      const eligibleConnections: any = conns.filter(isUsageEligible);
 
       // Mark all as loading before fetching
-      const loadingState = {};
-      eligibleConnections.forEach((conn) => {
+      const loadingState: any = {};
+      eligibleConnections.forEach((conn: any) => {
         loadingState[conn.id] = true;
       });
       setLoading(loadingState);
 
-      await Promise.all(eligibleConnections.map((conn) => fetchQuota(conn.id, conn.provider)));
+      await Promise.all(eligibleConnections.map((conn: any) => fetchQuota(conn.id, conn.provider)));
       setLastUpdated(new Date());
     };
 
@@ -401,17 +401,17 @@ export default function ProviderLimits() {
       return undefined;
     }
 
-    let closed = false;
-    let reconnectTimer = null;
-    let es = null;
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
 
-    const connect = () => {
+    const connect: any = () => {
       if (closed) return;
       es = new EventSource("/api/usage/provider-limits/stream");
 
-      es.onmessage = (event) => {
+      es.onmessage = (event: any) => {
         try {
-          const payload = JSON.parse(event.data);
+          const payload: any = JSON.parse(event.data);
           if (payload?.error) return;
           applySnapshot(payload);
         } catch {
@@ -447,7 +447,7 @@ export default function ProviderLimits() {
     }
 
     countdownRef.current = setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
+      setCountdown((prev: any) => (prev <= 1 ? 60 : prev - 1));
     }, 1000);
 
     return () => {
@@ -459,52 +459,52 @@ export default function ProviderLimits() {
   }, [autoRefresh]);
 
   // Filter eligible connections (OAuth + whitelisted apikey)
-  const filteredConnections = connections.filter(isUsageEligible);
+  const filteredConnections: any = connections.filter(isUsageEligible);
 
-  const providerFilteredConnections = filteredConnections.filter(
-    (conn) => providerFilter === "all" || conn.provider === providerFilter,
+  const providerFilteredConnections: any = filteredConnections.filter(
+    (conn: any) => providerFilter === "all" || conn.provider === providerFilter,
   );
 
-  const getEarliestResetTime = (conn) => {
-    const resetTimes = (quotaData[conn.id]?.quotas || [])
-      .map((quota) => (quota.resetAt ? new Date(quota.resetAt).getTime() : Number.POSITIVE_INFINITY))
-      .filter((time) => Number.isFinite(time));
+  const getEarliestResetTime: any = (conn: any) => {
+    const resetTimes: any = (quotaData[conn.id]?.quotas || [])
+      .map((quota: any) => (quota.resetAt ? new Date(quota.resetAt).getTime() : Number.POSITIVE_INFINITY))
+      .filter((time: any) => Number.isFinite(time));
     return resetTimes.length > 0 ? Math.min(...resetTimes) : Number.POSITIVE_INFINITY;
   };
 
   // Sort providers by USAGE_SUPPORTED_PROVIDERS order, then alphabetically.
   // Optionally surface accounts with quotas expiring soonest first.
   // Always hide connections that are disabled (isActive === false).
-  const sortedConnections = [...providerFilteredConnections]
-    .filter((conn) => !hideDisabled || conn.isActive !== false)
-    .sort((a, b) => {
+  const sortedConnections: any = [...providerFilteredConnections]
+    .filter((conn: any) => !hideDisabled || conn.isActive !== false)
+    .sort((a: any, b: any) => {
       if (expiringFirst) {
-        const expiryDiff = getEarliestResetTime(a) - getEarliestResetTime(b);
+        const expiryDiff: any = getEarliestResetTime(a) - getEarliestResetTime(b);
         if (expiryDiff !== 0) return expiryDiff;
       }
-      const orderA = USAGE_SUPPORTED_PROVIDERS.indexOf(a.provider);
-      const orderB = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);
+      const orderA: any = USAGE_SUPPORTED_PROVIDERS.indexOf(a.provider);
+      const orderB: any = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);
       if (orderA !== orderB) return orderA - orderB;
       return a.provider.localeCompare(b.provider);
     });
 
   // Connection is depleted when any quota entry hit the threshold
-  const isConnectionDepleted = (conn) => {
-    const quotas = quotaData[conn.id]?.quotas;
+  const isConnectionDepleted: any = (conn: any) => {
+    const quotas: any = quotaData[conn.id]?.quotas;
     if (!quotas?.length) return false;
-    return quotas.some((q) => {
+    return quotas.some((q: any) => {
       if (!q.total || q.total <= 0) return false;
       return calculatePercentage(q.used, q.total) <= DEPLETED_QUOTA_THRESHOLD;
     });
   };
 
-  const bulkSetActive = useCallback(
-    async (targetIds, isActive) => {
+  const bulkSetActive: any = useCallback(
+    async (targetIds: any, isActive: any) => {
       if (!targetIds.length || bulkToggling) return;
       setBulkToggling(true);
       try {
         await Promise.all(
-          targetIds.map((id) =>
+          targetIds.map((id: any) =>
             fetch(`/api/providers/${id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
@@ -512,7 +512,7 @@ export default function ProviderLimits() {
             }),
           ),
         );
-        setConnections((prev) => prev.map((c) => (targetIds.includes(c.id) ? { ...c, isActive } : c)));
+        setConnections((prev: any) => prev.map((c: any) => (targetIds.includes(c.id) ? { ...c, isActive } : c)));
       } catch (error) {
         console.error("Error bulk toggling connections:", error);
       } finally {
@@ -522,29 +522,29 @@ export default function ProviderLimits() {
     [bulkToggling],
   );
 
-  const handleDisableDepleted = () => {
-    const ids = sortedConnections.filter((c) => (c.isActive ?? true) && isConnectionDepleted(c)).map((c) => c.id);
+  const handleDisableDepleted: any = () => {
+    const ids: any = sortedConnections.filter((c: any) => (c.isActive ?? true) && isConnectionDepleted(c)).map((c: any) => c.id);
     bulkSetActive(ids, false);
   };
 
-  const handleEnableAvailable = () => {
-    const ids = sortedConnections.filter((c) => !(c.isActive ?? true) && !isConnectionDepleted(c)).map((c) => c.id);
+  const handleEnableAvailable: any = () => {
+    const ids: any = sortedConnections.filter((c: any) => !(c.isActive ?? true) && !isConnectionDepleted(c)).map((c: any) => c.id);
     bulkSetActive(ids, true);
   };
 
-  const providerOptions = Array.from(new Set(filteredConnections.map((conn) => conn.provider))).sort();
-  const selectedProviderLabel = providerFilter === "all" ? "All providers" : providerFilter;
+  const providerOptions: any = Array.from(new Set<any>(filteredConnections.map((conn: any) => conn.provider))).sort();
+  const selectedProviderLabel: any = providerFilter === "all" ? "All providers" : providerFilter;
 
   // Calculate summary stats
-  const _totalProviders = sortedConnections.length;
-  const _activeWithLimits = Object.values(quotaData).filter((data) => data?.quotas?.length > 0).length;
+  const _totalProviders: any = sortedConnections.length;
+  const _activeWithLimits: any = Object.values(quotaData).filter((data: any) => data?.quotas?.length > 0).length;
 
   // Count low quotas (remaining < 30%)
-  const _lowQuotasCount = Object.values(quotaData).reduce((count, data) => {
+  const _lowQuotasCount: any = Object.values(quotaData).reduce((count: any, data: any) => {
     if (!data?.quotas) return count;
 
-    const hasLowQuota = data.quotas.some((quota) => {
-      const percentage = calculatePercentage(quota.used, quota.total);
+    const hasLowQuota: any = data.quotas.some((quota: any) => {
+      const percentage: any = calculatePercentage(quota.used, quota.total);
       return percentage < 30 && quota.total > 0;
     });
 
@@ -552,22 +552,22 @@ export default function ProviderLimits() {
   }, 0);
 
   // Accumulated progress for a connection: sum used / sum total (enabled models only)
-  const getAccumulatedProgress = (conn) => {
-    const quotas = quotaData[conn.id]?.quotas || [];
-    const providerAlias = conn.provider;
-    const disabledSet = new Set(disabledModels[providerAlias] || []);
-    const enabledQuotas = quotas.filter((q) => {
-      const key = q.modelKey || q.name;
+  const getAccumulatedProgress: any = (conn: any) => {
+    const quotas: any = quotaData[conn.id]?.quotas || [];
+    const providerAlias: any = conn.provider;
+    const disabledSet: any = new Set<any>(disabledModels[providerAlias] || []);
+    const enabledQuotas: any = quotas.filter((q: any) => {
+      const key: any = q.modelKey || q.name;
       return !disabledSet.has(key);
     });
-    const totalUsed = enabledQuotas.reduce((s, q) => s + (q.used || 0), 0);
-    const totalLimit = enabledQuotas.reduce((s, q) => s + (q.total || 0), 0);
-    const pct = calculatePercentage(totalUsed, totalLimit);
+    const totalUsed: any = enabledQuotas.reduce((s: any, q: any) => s + (q.used || 0), 0);
+    const totalLimit: any = enabledQuotas.reduce((s: any, q: any) => s + (q.total || 0), 0);
+    const pct: any = calculatePercentage(totalUsed, totalLimit);
     return { totalUsed, totalLimit, pct };
   };
 
   // Color classes from status color name
-  const colorClasses = (color) => {
+  const colorClasses: any = (color: any) => {
     if (color === "green") return { bar: "bg-green-500", track: "bg-green-500/15", text: "text-green-400" };
     if (color === "yellow") return { bar: "bg-yellow-500", track: "bg-yellow-500/15", text: "text-yellow-400" };
     return { bar: "bg-red-500", track: "bg-red-500/15", text: "text-red-400" };
@@ -596,7 +596,7 @@ export default function ProviderLimits() {
         <div className="relative">
           <button
             type="button"
-            onClick={() => setProviderMenuOpen((prev) => !prev)}
+            onClick={() => setProviderMenuOpen((prev: any) => !prev)}
             className="h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:text-porcelain hover:bg-deep-slate transition-colors flex items-center gap-1.5"
             aria-haspopup="menu"
             aria-expanded={providerMenuOpen}
@@ -644,7 +644,7 @@ export default function ProviderLimits() {
                 </button>
                 <div className="my-1 h-px bg-charcoal-grey" />
                 <div className="max-h-60 overflow-y-auto">
-                  {providerOptions.map((provider) => (
+                  {providerOptions.map((provider: any) => (
                     <button
                       key={provider}
                       type="button"
@@ -679,13 +679,13 @@ export default function ProviderLimits() {
         <button
           type="button"
           onClick={() => {
-            const next = !collapseAll;
+            const next: any = !collapseAll;
             setCollapseAll(next);
             if (next) {
-              const allProviderKeys = sortedConnections.map((c) => c.provider);
-              const allConnIds = sortedConnections.map((c) => c.id);
-              setExpandedProviders(Object.fromEntries(allProviderKeys.map((k) => [k, false])));
-              setExpandedRows(Object.fromEntries(allConnIds.map((id) => [id, false])));
+              const allProviderKeys: any = sortedConnections.map((c: any) => c.provider);
+              const allConnIds: any = sortedConnections.map((c: any) => c.id);
+              setExpandedProviders(Object.fromEntries(allProviderKeys.map((k: any) => [k, false])));
+              setExpandedRows(Object.fromEntries(allConnIds.map((id: any) => [id, false])));
             } else {
               setExpandedProviders({});
               setExpandedRows({});
@@ -706,7 +706,7 @@ export default function ProviderLimits() {
         {/* Expiring first */}
         <button
           type="button"
-          onClick={() => setExpiringFirst((prev) => !prev)}
+          onClick={() => setExpiringFirst((prev: any) => !prev)}
           className={cn(
             "h-7 px-2.5 rounded-[4px] border text-[11px] transition-colors flex items-center gap-1",
             expiringFirst
@@ -722,7 +722,7 @@ export default function ProviderLimits() {
         {/* Hide disabled */}
         <button
           type="button"
-          onClick={() => setHideDisabled((prev) => !prev)}
+          onClick={() => setHideDisabled((prev: any) => !prev)}
           className={cn(
             "h-7 px-2.5 rounded-[4px] border text-[11px] transition-colors flex items-center gap-1",
             hideDisabled
@@ -773,7 +773,7 @@ export default function ProviderLimits() {
         {/* Live toggle */}
         <button
           type="button"
-          onClick={() => setAutoRefresh((prev) => !prev)}
+          onClick={() => setAutoRefresh((prev: any) => !prev)}
           className={cn(
             "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
             autoRefresh
@@ -800,7 +800,7 @@ export default function ProviderLimits() {
 
         {connectionsLoading ? (
           <div className="divide-y divide-charcoal-grey/40">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map((i: any) => (
               <div key={i} className="grid grid-cols-[1fr_200px_140px_64px_120px] items-center px-3 py-2.5 bg-graphite">
                 <div className="flex items-center gap-2.5">
                   <div className="size-4 rounded bg-charcoal-grey/40 animate-pulse" />
@@ -814,7 +814,7 @@ export default function ProviderLimits() {
                   <div className="h-3 w-8 rounded bg-charcoal-grey/40 animate-pulse" />
                 </div>
                 <div className="flex justify-end gap-1">
-                  {[1, 2, 3].map((j) => (
+                  {[1, 2, 3].map((j: any) => (
                     <div key={j} className="size-6 rounded-[4px] bg-charcoal-grey/40 animate-pulse" />
                   ))}
                 </div>
@@ -824,26 +824,26 @@ export default function ProviderLimits() {
         ) : (
           (() => {
             // Group connections by provider
-            const groupedByProvider = sortedConnections.reduce<Record<string, typeof sortedConnections>>((acc, conn) => {
+            const groupedByProvider: any = (sortedConnections as any).reduce((acc: any, conn: any) => {
               if (!acc[conn.provider]) acc[conn.provider] = [];
               acc[conn.provider].push(conn);
               return acc;
             }, {});
-            const providerGroups = Object.entries(groupedByProvider);
+            const providerGroups: any = Object.entries(groupedByProvider);
 
-            const isEmail = (v) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            const isEmail: any = (v: any) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-            return providerGroups.map(([provider, conns]) => {
-              const providerExpanded = collapseAll
+            return providerGroups.map(([provider, conns]: any) => {
+              const providerExpanded: any = collapseAll
                 ? (expandedProviders[provider] ?? false)
                 : (expandedProviders[provider] ?? true);
 
               // Latest lastUsedAt across all accounts in this provider group
-              const providerLastUsed = conns.reduce((latest, c) => {
-                const t = c.lastUsedAt ? new Date(c.lastUsedAt).getTime() : 0;
+              const providerLastUsed: any = conns.reduce((latest: any, c: any) => {
+                const t: any = c.lastUsedAt ? new Date(c.lastUsedAt).getTime() : 0;
                 return t > latest ? t : latest;
               }, 0);
-              const providerLastUsedStr = providerLastUsed
+              const providerLastUsedStr: any = providerLastUsed
                 ? new Date(providerLastUsed).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -852,11 +852,11 @@ export default function ProviderLimits() {
                 : null;
 
               // Accumulated progress across all connections in this provider group
-              const providerTotalUsed = conns.reduce((s, c) => s + getAccumulatedProgress(c).totalUsed, 0);
-              const providerTotalLimit = conns.reduce((s, c) => s + getAccumulatedProgress(c).totalLimit, 0);
-              const providerPct = calculatePercentage(providerTotalUsed, providerTotalLimit);
-              const providerColor = getStatusColor(providerPct);
-              const providerCc = colorClasses(providerColor);
+              const providerTotalUsed: any = conns.reduce((s: any, c: any) => s + getAccumulatedProgress(c).totalUsed, 0);
+              const providerTotalLimit: any = conns.reduce((s: any, c: any) => s + getAccumulatedProgress(c).totalLimit, 0);
+              const providerPct: any = calculatePercentage(providerTotalUsed, providerTotalLimit);
+              const providerColor: any = getStatusColor(providerPct);
+              const providerCc: any = colorClasses(providerColor);
 
               return (
                 <div key={provider} className="border-b border-charcoal-grey/60 last:border-0">
@@ -864,7 +864,7 @@ export default function ProviderLimits() {
                   <div
                     className="grid grid-cols-[1fr_200px_140px_64px_120px] items-center px-3 py-2.5 bg-graphite hover:bg-deep-slate cursor-pointer transition-colors duration-100"
                     onClick={() =>
-                      setExpandedProviders((prev) => ({
+                      setExpandedProviders((prev: any) => ({
                         ...prev,
                         // Use render-time default (true when not collapsed) so first click
                         // toggles correctly instead of always collapsing on first click.
@@ -933,19 +933,19 @@ export default function ProviderLimits() {
 
                   {/* Account rows (second level) */}
                   {providerExpanded &&
-                    conns.map((conn) => {
-                      const quota = quotaData[conn.id];
-                      const isLoading = loading[conn.id];
-                      const error = errors[conn.id];
-                      const isInactive = conn.isActive === false;
-                      const rowBusy = deletingId === conn.id || togglingId === conn.id;
-                      const accountExpanded = collapseAll
+                    conns.map((conn: any) => {
+                      const quota: any = quotaData[conn.id];
+                      const isLoading: any = loading[conn.id];
+                      const error: any = errors[conn.id];
+                      const isInactive: any = conn.isActive === false;
+                      const rowBusy: any = deletingId === conn.id || togglingId === conn.id;
+                      const accountExpanded: any = collapseAll
                         ? (expandedRows[conn.id] ?? false)
                         : (expandedRows[conn.id] ?? true);
-                      const { totalLimit, pct } = getAccumulatedProgress(conn);
-                      const color = getStatusColor(pct);
-                      const cc = colorClasses(color);
-                      const accountLabel = isEmail(conn.email) ? conn.email : conn.name || conn.id.slice(0, 8);
+                      const { totalLimit, pct }: any = getAccumulatedProgress(conn);
+                      const color: any = getStatusColor(pct);
+                      const cc: any = colorClasses(color);
+                      const accountLabel: any = isEmail(conn.email) ? conn.email : conn.name || conn.id.slice(0, 8);
 
                       return (
                         <div
@@ -956,7 +956,7 @@ export default function ProviderLimits() {
                           <div
                             className="grid grid-cols-[1fr_200px_140px_64px_120px] items-center px-3 py-2.5 bg-pitch-black/30 hover:bg-deep-slate/60 cursor-pointer transition-colors duration-100"
                             onClick={() =>
-                              setExpandedRows((prev) => ({
+                              setExpandedRows((prev: any) => ({
                                 ...prev,
                                 [conn.id]: !(prev[conn.id] ?? !collapseAll),
                               }))
@@ -1089,14 +1089,14 @@ export default function ProviderLimits() {
                                   <span className="text-[11px] text-storm-cloud">No quota data</span>
                                 </div>
                               ) : (
-                                quota.quotas.map((q, idx) => {
-                                  const remaining =
+                                quota.quotas.map((q: any, idx: any) => {
+                                  const remaining: any =
                                     q.remainingPercentage !== undefined
                                       ? Math.round(q.remainingPercentage)
                                       : calculatePercentage(q.used, q.total);
-                                  const qColor = getStatusColor(remaining);
-                                  const qcc = colorClasses(qColor);
-                                  const resetCountdown = formatResetTime(q.resetAt);
+                                  const qColor: any = getStatusColor(remaining);
+                                  const qcc: any = colorClasses(qColor);
+                                  const resetCountdown: any = formatResetTime(q.resetAt);
 
                                   return (
                                     <div

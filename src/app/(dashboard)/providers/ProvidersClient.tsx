@@ -26,7 +26,7 @@ const OFFLINE_PROVIDERS_CACHE_KEY = "providers:connections";
 const OFFLINE_PROVIDER_NODES_CACHE_KEY = "providers:nodes";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
-function getStatusDisplay(connected, error, errorCode) {
+function getStatusDisplay(connected: any, error: any, errorCode: any) {
   const parts = [];
   if (connected > 0) {
     parts.push(
@@ -49,7 +49,7 @@ function getStatusDisplay(connected, error, errorCode) {
   return parts;
 }
 
-function getConnectionErrorTag(connection) {
+function getConnectionErrorTag(connection: any) {
   if (!connection) return null;
 
   const explicitType = connection.lastErrorType;
@@ -94,17 +94,17 @@ export default function ProvidersPage() {
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
   const offlineNoticeShownRef = useRef(false);
-  const searchQuery = useHeaderSearchStore((s) => s.query);
-  const registerSearch = useHeaderSearchStore((s) => s.register);
-  const unregisterSearch = useHeaderSearchStore((s) => s.unregister);
-  const registerAction = useHeaderActionStore((s) => s.register);
-  const unregisterAction = useHeaderActionStore((s) => s.unregister);
+  const searchQuery = useHeaderSearchStore((s: any) => s.query);
+  const registerSearch = useHeaderSearchStore((s: any) => s.register);
+  const unregisterSearch = useHeaderSearchStore((s: any) => s.unregister);
+  const registerAction = useHeaderActionStore((s: any) => s.register);
+  const unregisterAction = useHeaderActionStore((s: any) => s.unregister);
   const [showConnectedOnly, setShowConnectedOnly] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("providers:connectedOnly") === "true";
   });
 
-  const toggleConnectedOnly = (v) => {
+  const toggleConnectedOnly = (v: any) => {
     const next = typeof v === "boolean" ? v : !showConnectedOnly;
     setShowConnectedOnly(next);
     window.localStorage.setItem("providers:connectedOnly", String(next));
@@ -136,8 +136,8 @@ export default function ProvidersPage() {
     return () => unregisterAction();
   }, [showConnectedOnly, registerAction, unregisterAction]);
 
-  const matchSearch = (name) => !searchQuery.trim() || name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-  const matchConnected = (providerId, authType) => {
+  const matchSearch = (name: any) => !searchQuery.trim() || name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+  const matchConnected = (providerId: any, authType: any) => {
     if (!showConnectedOnly) return true;
     // noAuth providers are always "connected" — they need no credentials
     const providerInfo = AI_PROVIDERS[providerId];
@@ -155,11 +155,11 @@ export default function ProvidersPage() {
             cacheKey: OFFLINE_PROVIDERS_CACHE_KEY,
             maxStaleMs: OFFLINE_MAX_STALE_MS,
             cacheTags: ["providers"],
-            onCacheData: (data) => {
+            onCacheData: (data: any) => {
               const payload = data as { connections?: unknown[] };
               setConnections((payload?.connections || []) as typeof connections);
             },
-            onFreshData: (data) => {
+            onFreshData: (data: any) => {
               const payload = data as { connections?: unknown[] };
               setConnections((payload?.connections || []) as typeof connections);
             },
@@ -169,11 +169,11 @@ export default function ProvidersPage() {
             cacheKey: OFFLINE_PROVIDER_NODES_CACHE_KEY,
             maxStaleMs: OFFLINE_MAX_STALE_MS,
             cacheTags: ["provider-nodes"],
-            onCacheData: (data) => {
+            onCacheData: (data: any) => {
               const payload = data as { nodes?: unknown[] };
               setProviderNodes((payload?.nodes || []) as typeof providerNodes);
             },
-            onFreshData: (data) => {
+            onFreshData: (data: any) => {
               const payload = data as { nodes?: unknown[] };
               setProviderNodes((payload?.nodes || []) as typeof providerNodes);
             },
@@ -181,10 +181,10 @@ export default function ProvidersPage() {
         ]);
 
         const usedCache = [connectionsResult, nodesResult].some(
-          (result) => result.status === "fulfilled" && result.value?.source === "cache",
+          (result: any) => result.status === "fulfilled" && result.value?.source === "cache",
         );
         const gotFreshData = [connectionsResult, nodesResult].some(
-          (result) => result.status === "fulfilled" && result.value?.source === "network",
+          (result: any) => result.status === "fulfilled" && result.value?.source === "network",
         );
 
         if (usedCache) notifyOfflineCache();
@@ -198,32 +198,32 @@ export default function ProvidersPage() {
     fetchData();
   }, [clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const getProviderStats = (providerId, authType) => {
-    const providerConnections = connections.filter((c) => c.provider === providerId && c.authType === authType);
+  const getProviderStats = (providerId: any, authType: any) => {
+    const providerConnections = connections.filter((c: any) => c.provider === providerId && c.authType === authType);
 
-    const getEffectiveStatus = (conn) => {
+    const getEffectiveStatus = (conn: any) => {
       const isCooldown = Object.entries(conn).some(
-        ([k, v]) => k.startsWith("modelLock_") && v && new Date(String(v)).getTime() > Date.now(),
+        ([k, v]: any) => k.startsWith("modelLock_") && v && new Date(String(v)).getTime() > Date.now(),
       );
       return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
     };
 
-    const connected = providerConnections.filter((c) => {
+    const connected = providerConnections.filter((c: any) => {
       const status = getEffectiveStatus(c);
       return status === "active" || status === "success";
     }).length;
 
-    const errorConns = providerConnections.filter((c) => {
+    const errorConns = providerConnections.filter((c: any) => {
       const status = getEffectiveStatus(c);
       return status === "error" || status === "expired" || status === "unavailable";
     });
 
     const error = errorConns.length;
     const total = providerConnections.length;
-    const allDisabled = total > 0 && providerConnections.every((c) => c.isActive === false);
+    const allDisabled = total > 0 && providerConnections.every((c: any) => c.isActive === false);
 
     const latestError = errorConns.sort(
-      (a, b) => new Date(String(b.lastErrorAt || 0)).getTime() - new Date(String(a.lastErrorAt || 0)).getTime(),
+      (a: any, b: any) => new Date(String(b.lastErrorAt || 0)).getTime() - new Date(String(a.lastErrorAt || 0)).getTime(),
     )[0];
     const errorCode = latestError ? getConnectionErrorTag(latestError) : null;
     const errorTime = latestError?.lastErrorAt ? getRelativeTime(latestError.lastErrorAt) : null;
@@ -232,14 +232,14 @@ export default function ProvidersPage() {
   };
 
   // Toggle all connections for a provider on/off
-  const handleToggleProvider = async (providerId, authType, newActive) => {
-    const providerConns = connections.filter((c) => c.provider === providerId && c.authType === authType);
-    setConnections((prev) =>
-      prev.map((c) => (c.provider === providerId && c.authType === authType ? { ...c, isActive: newActive } : c)),
+  const handleToggleProvider = async (providerId: any, authType: any, newActive: any) => {
+    const providerConns = connections.filter((c: any) => c.provider === providerId && c.authType === authType);
+    setConnections((prev: any) =>
+      prev.map((c: any) => (c.provider === providerId && c.authType === authType ? { ...c, isActive: newActive } : c)),
     );
 
     const results = await Promise.allSettled(
-      providerConns.map((c) =>
+      providerConns.map((c: any) =>
         mutateJsonWithOfflineQueue({
           url: `/api/providers/${c.id}`,
           method: "PUT",
@@ -250,13 +250,13 @@ export default function ProvidersPage() {
       ),
     );
 
-    const failedCount = results.filter((r) => r.status === "rejected").length;
+    const failedCount = results.filter((r: any) => r.status === "rejected").length;
     if (failedCount > 0) {
       toast.error(`${failedCount} provider updates failed`);
     }
   };
 
-  const handleBatchTest = async (mode, providerId = null) => {
+  const handleBatchTest = async (mode: any, providerId: any = null) => {
     if (testingMode) return;
     setTestingMode(mode === "provider" ? providerId : mode);
     setTestResults(null);
@@ -282,37 +282,37 @@ export default function ProvidersPage() {
   };
 
   const compatibleProviders = providerNodes
-    .filter((node) => node.type === "openai-compatible")
-    .map((node) => ({
+    .filter((node: any) => node.type === "openai-compatible")
+    .map((node: any) => ({
       id: node.id,
       name: node.name || "OpenAI Compatible",
       color: "#10A37F",
       textIcon: "OC",
       apiType: node.apiType,
     }))
-    .filter((p) => matchSearch(p.name) && matchConnected(p.id, "apikey"));
+    .filter((p: any) => matchSearch(p.name) && matchConnected(p.id, "apikey"));
 
   const anthropicCompatibleProviders = providerNodes
-    .filter((node) => node.type === "anthropic-compatible")
-    .map((node) => ({
+    .filter((node: any) => node.type === "anthropic-compatible")
+    .map((node: any) => ({
       id: node.id,
       name: node.name || "Anthropic Compatible",
       color: "#D97757",
       textIcon: "AC",
     }))
-    .filter((p) => matchSearch(p.name) && matchConnected(p.id, "apikey"));
+    .filter((p: any) => matchSearch(p.name) && matchConnected(p.id, "apikey"));
 
   const oauthEntries = Object.entries(OAUTH_PROVIDERS).filter(
-    ([id, info]) => matchSearch(info.name) && matchConnected(id, "oauth"),
+    ([id, info]: any) => matchSearch(info.name) && matchConnected(id, "oauth"),
   );
   const freeEntries = Object.entries(FREE_PROVIDERS).filter(
-    ([id, info]) => matchSearch(info.name) && matchConnected(id, "oauth"),
+    ([id, info]: any) => matchSearch(info.name) && matchConnected(id, "oauth"),
   );
   const freeTierEntries = Object.entries(FREE_TIER_PROVIDERS).filter(
-    ([id, info]) => matchSearch(info.name) && matchConnected(id, "apikey"),
+    ([id, info]: any) => matchSearch(info.name) && matchConnected(id, "apikey"),
   );
   const apikeyEntries = Object.entries(APIKEY_PROVIDERS).filter(
-    ([id, info]) =>
+    ([id, info]: any) =>
       (info.serviceKinds ?? ["llm"]).includes("llm") && matchSearch(info.name) && matchConnected(id, "apikey"),
   );
 
@@ -364,7 +364,7 @@ export default function ProvidersPage() {
         </div>
         {loading ? (
           <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4].map((i: any) => (
               <CardSkeleton key={i} />
             ))}
           </div>
@@ -375,14 +375,14 @@ export default function ProvidersPage() {
           </div>
         ) : (
           <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {[...compatibleProviders, ...anthropicCompatibleProviders].map((info) => (
+            {[...compatibleProviders, ...anthropicCompatibleProviders].map((info: any) => (
               <ApiKeyProviderCard
                 key={info.id}
                 providerId={info.id}
                 provider={info}
                 stats={getProviderStats(info.id, "apikey")}
                 authType="compatible"
-                onToggle={(active) => handleToggleProvider(info.id, "apikey", active)}
+                onToggle={(active: any) => handleToggleProvider(info.id, "apikey", active)}
               />
             ))}
           </div>
@@ -416,14 +416,14 @@ export default function ProvidersPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {oauthEntries.map(([key, info]) => (
+            {oauthEntries.map(([key, info]: any) => (
               <ProviderCard
                 key={key}
                 providerId={key}
                 provider={info}
                 stats={getProviderStats(key, "oauth")}
                 authType="oauth"
-                onToggle={(active) => handleToggleProvider(key, "oauth", active)}
+                onToggle={(active: any) => handleToggleProvider(key, "oauth", active)}
               />
             ))}
           </div>
@@ -456,24 +456,24 @@ export default function ProvidersPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {freeEntries.map(([key, info]) => (
+            {freeEntries.map(([key, info]: any) => (
               <ProviderCard
                 key={key}
                 providerId={key}
                 provider={info}
                 stats={getProviderStats(key, "oauth")}
                 authType="free"
-                onToggle={(active) => handleToggleProvider(key, "oauth", active)}
+                onToggle={(active: any) => handleToggleProvider(key, "oauth", active)}
               />
             ))}
-            {freeTierEntries.map(([key, info]) => (
+            {freeTierEntries.map(([key, info]: any) => (
               <ApiKeyProviderCard
                 key={key}
                 providerId={key}
                 provider={info}
                 stats={getProviderStats(key, "apikey")}
                 authType="apikey"
-                onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+                onToggle={(active: any) => handleToggleProvider(key, "apikey", active)}
               />
             ))}
           </div>
@@ -506,14 +506,14 @@ export default function ProvidersPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {apikeyEntries.map(([key, info]) => (
+            {apikeyEntries.map(([key, info]: any) => (
               <ApiKeyProviderCard
                 key={key}
                 providerId={key}
                 provider={info}
                 stats={getProviderStats(key, "apikey")}
                 authType="apikey"
-                onToggle={(active) => handleToggleProvider(key, "apikey", active)}
+                onToggle={(active: any) => handleToggleProvider(key, "apikey", active)}
               />
             ))}
           </div>
@@ -523,7 +523,7 @@ export default function ProvidersPage() {
       {/* Web Cookie Providers — use browser subscription cookie instead of API key */}
       {(() => {
         const visibleWebCookieProviders = Object.entries(WEB_COOKIE_PROVIDERS).filter(
-          ([id, info]) => matchSearch(info.name) && matchConnected(id, "cookie"),
+          ([id, info]: any) => matchSearch(info.name) && matchConnected(id, "cookie"),
         );
         if (visibleWebCookieProviders.length === 0) return null;
         return (
@@ -532,14 +532,14 @@ export default function ProvidersPage() {
               <h2 className="text-xl font-semibold flex items-center gap-2">Web Cookie Providers</h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {visibleWebCookieProviders.map(([key, info]) => (
+              {visibleWebCookieProviders.map(([key, info]: any) => (
                 <ApiKeyProviderCard
                   key={key}
                   providerId={key}
                   provider={info}
                   stats={getProviderStats(key, "cookie")}
                   authType="cookie"
-                  onToggle={(active) => handleToggleProvider(key, "cookie", active)}
+                  onToggle={(active: any) => handleToggleProvider(key, "cookie", active)}
                 />
               ))}
             </div>
@@ -550,8 +550,8 @@ export default function ProvidersPage() {
       <AddOpenAICompatibleModal
         isOpen={showAddCompatibleModal}
         onClose={() => setShowAddCompatibleModal(false)}
-        onCreated={(node) => {
-          setProviderNodes((prev) => [...prev, node]);
+        onCreated={(node: any) => {
+          setProviderNodes((prev: any) => [...prev, node]);
           setShowAddCompatibleModal(false);
           toggleConnectedOnly(false);
         }}
@@ -559,8 +559,8 @@ export default function ProvidersPage() {
       <AddAnthropicCompatibleModal
         isOpen={showAddAnthropicCompatibleModal}
         onClose={() => setShowAddAnthropicCompatibleModal(false)}
-        onCreated={(node) => {
-          setProviderNodes((prev) => [...prev, node]);
+        onCreated={(node: any) => {
+          setProviderNodes((prev: any) => [...prev, node]);
           setShowAddAnthropicCompatibleModal(false);
           toggleConnectedOnly(false);
         }}
@@ -1055,13 +1055,13 @@ function ProviderTestResultsView({ results }: any) {
   const { summary, mode } = results;
   const items = results.results || [];
   const modeLabel =
-    {
+    ({
       oauth: "OAuth",
       free: "Free",
       apikey: "API Key",
       provider: "Provider",
       all: "All",
-    }[mode] || mode;
+    } as Record<string, any>)[mode] || mode;
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -1073,7 +1073,7 @@ function ProviderTestResultsView({ results }: any) {
           <span className="text-text-muted sm:ml-auto">{summary.total} tested</span>
         </div>
       )}
-      {items.map((r, i) => (
+      {items.map((r: any, i: any) => (
         <div
           key={r.connectionId || i}
           className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-black/[0.03] px-3 py-2 text-xs dark:bg-white/[0.03] sm:flex-nowrap"

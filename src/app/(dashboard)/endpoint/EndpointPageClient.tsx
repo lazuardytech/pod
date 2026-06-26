@@ -10,85 +10,85 @@ import LucideIcon from "@/shared/components/LucideIcon";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 
-const TUNNEL_BENEFITS = [
+const TUNNEL_BENEFITS: any = [
   { icon: "public", title: "Access Anywhere", desc: "Use your API from any network" },
   { icon: "group", title: "Share Endpoint", desc: "Share URL with team members" },
   { icon: "code", title: "Use in Cursor/Cline", desc: "Connect AI tools remotely" },
   { icon: "lock", title: "Encrypted", desc: "End-to-end TLS via Cloudflare" },
 ];
 
-const TUNNEL_PING_INTERVAL_MS = 2000;
-const TUNNEL_PING_MAX_MS = 300000;
-const OFFLINE_SETTINGS_CACHE_KEY = "endpoint:settings";
-const OFFLINE_TUNNEL_STATUS_CACHE_KEY = "endpoint:tunnel-status";
-const OFFLINE_KEYS_CACHE_KEY = "endpoint:keys";
-const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
-const ENDPOINT_ICON_BUTTON_CLASS =
+const TUNNEL_PING_INTERVAL_MS: any = 2000;
+const TUNNEL_PING_MAX_MS: any = 300000;
+const OFFLINE_SETTINGS_CACHE_KEY: any = "endpoint:settings";
+const OFFLINE_TUNNEL_STATUS_CACHE_KEY: any = "endpoint:tunnel-status";
+const OFFLINE_KEYS_CACHE_KEY: any = "endpoint:keys";
+const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
+const ENDPOINT_ICON_BUTTON_CLASS: any =
   "flex size-9 items-center justify-center rounded-[6px] text-storm-cloud transition-colors hover:bg-deep-slate hover:text-porcelain shrink-0";
-const ENDPOINT_DANGER_BUTTON_CLASS =
+const ENDPOINT_DANGER_BUTTON_CLASS: any =
   "flex size-9 items-center justify-center rounded-[6px] text-warning-red transition-colors hover:bg-warning-red/10 shrink-0";
 
-const CAVEMAN_LEVELS = [
+const CAVEMAN_LEVELS: any = [
   { id: "lite", label: "Lite", desc: "Drop filler, keep grammar" },
   { id: "full", label: "Full", desc: "Drop articles, fragments OK" },
   { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
 ];
 export default function APIPageClient({ machineId }: any) {
-  const [keys, setKeys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newKeyName, setNewKeyName] = useState("");
-  const [editingKey, setEditingKey] = useState(null);
-  const [editKeyName, setEditKeyName] = useState("");
-  const [keysPage, setKeysPage] = useState(1);
-  const KEYS_PAGE_SIZE = 15;
-  const [newKeyLimitType, setNewKeyLimitType] = useState("unlimited");
-  const [newKeyRpm, setNewKeyRpm] = useState("60");
-  const [newKeyConcurrent, setNewKeyConcurrent] = useState("5");
-  const [createdKey, setCreatedKey] = useState(null);
+  const [keys, setKeys]: any = useState([]);
+  const [loading, setLoading]: any = useState(true);
+  const [showAddModal, setShowAddModal]: any = useState(false);
+  const [newKeyName, setNewKeyName]: any = useState("");
+  const [editingKey, setEditingKey]: any = useState(null);
+  const [editKeyName, setEditKeyName]: any = useState("");
+  const [keysPage, setKeysPage]: any = useState(1);
+  const KEYS_PAGE_SIZE: any = 15;
+  const [newKeyLimitType, setNewKeyLimitType]: any = useState("unlimited");
+  const [newKeyRpm, setNewKeyRpm]: any = useState("60");
+  const [newKeyConcurrent, setNewKeyConcurrent]: any = useState("5");
+  const [createdKey, setCreatedKey]: any = useState(null);
 
-  const [requireApiKey, setRequireApiKey] = useState(false);
-  const [requireLogin, setRequireLogin] = useState(true);
-  const [hasPassword, setHasPassword] = useState(true);
-  const [tunnelDashboardAccess, setTunnelDashboardAccess] = useState(false);
-  const [rtkEnabled, setRtkEnabledState] = useState(false);
-  const [cavemanEnabled, setCavemanEnabled] = useState(false);
-  const [cavemanLevel, setCavemanLevel] = useState("full");
+  const [requireApiKey, setRequireApiKey]: any = useState(false);
+  const [requireLogin, setRequireLogin]: any = useState(true);
+  const [hasPassword, setHasPassword]: any = useState(true);
+  const [tunnelDashboardAccess, setTunnelDashboardAccess]: any = useState(false);
+  const [rtkEnabled, setRtkEnabledState]: any = useState(false);
+  const [cavemanEnabled, setCavemanEnabled]: any = useState(false);
+  const [cavemanLevel, setCavemanLevel]: any = useState("full");
 
   // Cloudflare Tunnel state
-  const [tunnelChecking, setTunnelChecking] = useState(true);
-  const [tunnelEnabled, setTunnelEnabled] = useState(false);
-  const [tunnelUrl, setTunnelUrl] = useState("");
-  const [tunnelLoading, setTunnelLoading] = useState(false);
-  const [tunnelProgress, setTunnelProgress] = useState("");
-  const [tunnelStatus, setTunnelStatus] = useState(null);
-  const [showEnableTunnelModal, setShowEnableTunnelModal] = useState(false);
-  const [showDisableTunnelModal, setShowDisableTunnelModal] = useState(false);
+  const [tunnelChecking, setTunnelChecking]: any = useState(true);
+  const [tunnelEnabled, setTunnelEnabled]: any = useState(false);
+  const [tunnelUrl, setTunnelUrl]: any = useState("");
+  const [tunnelLoading, setTunnelLoading]: any = useState(false);
+  const [tunnelProgress, setTunnelProgress]: any = useState("");
+  const [tunnelStatus, setTunnelStatus]: any = useState(null);
+  const [showEnableTunnelModal, setShowEnableTunnelModal]: any = useState(false);
+  const [showDisableTunnelModal, setShowDisableTunnelModal]: any = useState(false);
 
   // Tailscale state
-  const [tsEnabled, setTsEnabled] = useState(false);
-  const [tsUrl, setTsUrl] = useState("");
-  const [tsLoading, setTsLoading] = useState(false);
-  const [tsProgress, setTsProgress] = useState("");
-  const [tsStatus, setTsStatus] = useState(null);
-  const setTsError = (msg) => {
+  const [tsEnabled, setTsEnabled]: any = useState(false);
+  const [tsUrl, setTsUrl]: any = useState("");
+  const [tsLoading, setTsLoading]: any = useState(false);
+  const [tsProgress, setTsProgress]: any = useState("");
+  const [tsStatus, setTsStatus]: any = useState(null);
+  const setTsError: any = (msg: any) => {
     if (typeof msg === "string" && msg.includes("exited with code")) {
       toast.error("Failed to start Tailscale");
     } else {
       setTsStatus({ type: "error", message: msg });
     }
   };
-  const [tsInstalled, setTsInstalled] = useState(null); // null=checking, true/false
-  const [tsInstalling, setTsInstalling] = useState(false);
-  const [tsInstallLog, setTsInstallLog] = useState([]);
-  const [tsSudoPassword, setTsSudoPassword] = useState("");
-  const [tsConnecting, setTsConnecting] = useState(false);
-  const [showTsModal, setShowTsModal] = useState(false);
-  const [showDisableTsModal, setShowDisableTsModal] = useState(false);
-  const tsLogRef = useRef(null);
-  const tunnelStatusSigRef = useRef("");
-  const offlineNoticeShownRef = useRef(false);
-  const unmountRef = useRef(false);
+  const [tsInstalled, setTsInstalled]: any = useState(null); // null=checking, true/false
+  const [tsInstalling, setTsInstalling]: any = useState(false);
+  const [tsInstallLog, setTsInstallLog]: any = useState([]);
+  const [tsSudoPassword, setTsSudoPassword]: any = useState("");
+  const [tsConnecting, setTsConnecting]: any = useState(false);
+  const [showTsModal, setShowTsModal]: any = useState(false);
+  const [showDisableTsModal, setShowDisableTsModal]: any = useState(false);
+  const tsLogRef: any = useRef(null);
+  const tunnelStatusSigRef: any = useRef("");
+  const offlineNoticeShownRef: any = useRef(false);
+  const unmountRef: any = useRef(false);
 
   // Cleanup on unmount — stops all polling loops
   useEffect(() => {
@@ -98,20 +98,20 @@ export default function APIPageClient({ machineId }: any) {
   }, []);
 
   // API key visibility toggle state
-  const [visibleKeys, setVisibleKeys] = useState(new Set());
+  const [visibleKeys, setVisibleKeys]: any = useState(new Set<any>());
 
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog]: any = useState({
     open: false,
     title: "",
     message: "",
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
-  const { copied, copy } = useCopyToClipboard();
+  const { copied, copy }: any = useCopyToClipboard();
 
   // Auto-scroll install log
   useEffect(() => {
@@ -123,25 +123,25 @@ export default function APIPageClient({ machineId }: any) {
     loadSettings();
   }, []);
 
-  const applyTunnelStatus = useCallback((data) => {
+  const applyTunnelStatus: any = useCallback((data: any) => {
     if (!data || typeof data !== "object") return;
 
-    const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
-    const tUrl = data.tunnel?.tunnelUrl || "";
-    const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
-    const tsUrlVal = data.tailscale?.tunnelUrl || "";
-    const sig = `${tEnabled}|${tUrl}|${tsEn}|${tsUrlVal}`;
+    const tEnabled: any = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
+    const tUrl: any = data.tunnel?.tunnelUrl || "";
+    const tsEn: any = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
+    const tsUrlVal: any = data.tailscale?.tunnelUrl || "";
+    const sig: any = `${tEnabled}|${tUrl}|${tsEn}|${tsUrlVal}`;
 
     if (sig === tunnelStatusSigRef.current) return;
     tunnelStatusSigRef.current = sig;
 
-    setTunnelUrl((prev) => (prev === tUrl ? prev : tUrl));
-    setTunnelEnabled((prev) => (prev === tEnabled ? prev : tEnabled));
-    setTsUrl((prev) => (prev === tsUrlVal ? prev : tsUrlVal));
-    setTsEnabled((prev) => (prev === tsEn ? prev : tsEn));
+    setTunnelUrl((prev: any) => (prev === tUrl ? prev : tUrl));
+    setTunnelEnabled((prev: any) => (prev === tEnabled ? prev : tEnabled));
+    setTsUrl((prev: any) => (prev === tsUrlVal ? prev : tsUrlVal));
+    setTsEnabled((prev: any) => (prev === tsEn ? prev : tsEn));
   }, []);
 
-  const applySettingsData = useCallback((data) => {
+  const applySettingsData: any = useCallback((data: any) => {
     if (!data || typeof data !== "object") return;
     setRequireApiKey(data.requireApiKey || false);
     setRequireLogin(data.requireLogin !== false);
@@ -152,29 +152,29 @@ export default function APIPageClient({ machineId }: any) {
     setCavemanLevel(data.cavemanLevel || "full");
   }, []);
 
-  const notifyOfflineCache = useCallback(() => {
+  const notifyOfflineCache: any = useCallback(() => {
     if (offlineNoticeShownRef.current) return;
     offlineNoticeShownRef.current = true;
     toast.info("Network unavailable. Showing cached data.");
   }, []);
 
-  const clearOfflineCacheNotice = useCallback(() => {
+  const clearOfflineCacheNotice: any = useCallback(() => {
     offlineNoticeShownRef.current = false;
   }, []);
 
   // Trust user intent (settingsEnabled): UI stays "enabled" while watchdog restarts process
-  const syncTunnelStatus = useCallback(async () => {
+  const syncTunnelStatus: any = useCallback(async () => {
     try {
-      const result = await loadJsonStaleWhileRevalidate({
+      const result: any = await loadJsonStaleWhileRevalidate({
         url: "/api/tunnel/status",
         cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["tunnel-status"],
         fetchOptions: { cache: "no-store" },
-        onCacheData: (data) => {
+        onCacheData: (data: any) => {
           applyTunnelStatus(data);
         },
-        onFreshData: (data) => {
+        onFreshData: (data: any) => {
           applyTunnelStatus(data);
         },
       });
@@ -188,7 +188,7 @@ export default function APIPageClient({ machineId }: any) {
     }
   }, [applyTunnelStatus, clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const shouldPollTunnelStatus =
+  const shouldPollTunnelStatus: any =
     tunnelEnabled || tsEnabled || tunnelLoading || tsLoading || tunnelChecking || tsConnecting;
 
   useEffect(() => {
@@ -196,17 +196,17 @@ export default function APIPageClient({ machineId }: any) {
       return undefined;
     }
 
-    let closed = false;
-    let reconnectTimer = null;
-    let es = null;
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
 
-    const connect = () => {
+    const connect: any = () => {
       if (closed) return;
       es = new EventSource("/api/tunnel/status/stream");
 
-      es.addEventListener("status", (event) => {
+      es.addEventListener("status", (event: any) => {
         try {
-          const payload = JSON.parse(event.data);
+          const payload: any = JSON.parse(event.data);
           if (payload?.error) return;
           applyTunnelStatus(payload);
         } catch {
@@ -227,7 +227,7 @@ export default function APIPageClient({ machineId }: any) {
     syncTunnelStatus().catch(() => {});
     connect();
 
-    const onVisible = () => {
+    const onVisible: any = () => {
       if (!document.hidden) syncTunnelStatus().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisible);
@@ -240,19 +240,19 @@ export default function APIPageClient({ machineId }: any) {
     };
   }, [applyTunnelStatus, shouldPollTunnelStatus, syncTunnelStatus]);
 
-  const loadSettings = async () => {
+  const loadSettings: any = async () => {
     setTunnelChecking(true);
     try {
-      const [settingsResult, statusResult] = await Promise.all([
+      const [settingsResult, statusResult]: any = await Promise.all([
         loadJsonStaleWhileRevalidate({
           url: "/api/settings",
           cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
           cacheTags: ["settings"],
-          onCacheData: (data) => {
+          onCacheData: (data: any) => {
             applySettingsData(data);
           },
-          onFreshData: (data) => {
+          onFreshData: (data: any) => {
             applySettingsData(data);
           },
         }),
@@ -262,10 +262,10 @@ export default function APIPageClient({ machineId }: any) {
           maxStaleMs: OFFLINE_MAX_STALE_MS,
           cacheTags: ["tunnel-status"],
           fetchOptions: { cache: "no-store" },
-          onCacheData: (data) => {
+          onCacheData: (data: any) => {
             applyTunnelStatus(data);
           },
-          onFreshData: (data) => {
+          onFreshData: (data: any) => {
             applyTunnelStatus(data);
           },
         }),
@@ -278,27 +278,27 @@ export default function APIPageClient({ machineId }: any) {
       }
 
       if (statusResult?.data) {
-        const data = statusResult.data as {
+        const data: any = statusResult.data as {
           tunnel?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
           tailscale?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
         };
-        const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
-        const tUrl = data.tunnel?.tunnelUrl || "";
-        const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
-        const tsUrlVal = data.tailscale?.tunnelUrl || "";
+        const tEnabled: any = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
+        const tUrl: any = data.tunnel?.tunnelUrl || "";
+        const tsEn: any = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
+        const tsUrlVal: any = data.tailscale?.tunnelUrl || "";
 
         // Background reachability probes (non-blocking, only show warning)
         if (tEnabled && tUrl) {
-          const healthUrl = `${tUrl}/api/health`;
+          const healthUrl: any = `${tUrl}/api/health`;
           fetch(healthUrl, { cache: "no-store" })
-            .then((r) => {
+            .then((r: any) => {
               if (!r.ok) setTunnelStatus({ type: "warning", message: "Tunnel reconnecting..." });
             })
             .catch(() => setTunnelStatus({ type: "warning", message: "Tunnel reconnecting..." }));
         }
         if (tsEn && tsUrlVal) {
           fetch(`${tsUrlVal}/api/health`, { mode: "no-cors", cache: "no-store" })
-            .then((r) => {
+            .then((r: any) => {
               if (!(r.ok || r.type === "opaque"))
                 setTsStatus({ type: "warning", message: "Tailscale reconnecting..." });
             })
@@ -312,10 +312,10 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const handleTunnelDashboardAccess = async (value) => {
-    const previous = tunnelDashboardAccess;
+  const handleTunnelDashboardAccess: any = async (value: any) => {
+    const previous: any = tunnelDashboardAccess;
     setTunnelDashboardAccess(value);
-    const result = await patchSetting(
+    const result: any = await patchSetting(
       { tunnelDashboardAccess: value },
       { feature: "endpoint-tunnel-dashboard-access" },
     );
@@ -324,27 +324,27 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const handleRequireApiKey = async (value) => {
-    const previous = requireApiKey;
+  const handleRequireApiKey: any = async (value: any) => {
+    const previous: any = requireApiKey;
     setRequireApiKey(value);
-    const result = await patchSetting({ requireApiKey: value }, { feature: "endpoint-require-api-key" });
+    const result: any = await patchSetting({ requireApiKey: value }, { feature: "endpoint-require-api-key" });
     if ("error" in result && result.error) {
       setRequireApiKey(previous);
     }
   };
 
-  const handleRtkEnabled = async (value) => {
-    const previous = rtkEnabled;
+  const handleRtkEnabled: any = async (value: any) => {
+    const previous: any = rtkEnabled;
     setRtkEnabledState(value);
-    const result = await patchSetting({ rtkEnabled: value }, { feature: "endpoint-rtk-enabled" });
+    const result: any = await patchSetting({ rtkEnabled: value }, { feature: "endpoint-rtk-enabled" });
     if ("error" in result && result.error) {
       setRtkEnabledState(previous);
     }
   };
 
-  const patchSetting = async (patch, { feature = "endpoint-settings" } = {}) => {
+  const patchSetting: any = async (patch: any, { feature = "endpoint-settings" }: any = {}) => {
     try {
-      const result = await mutateJsonWithOfflineQueue({
+      const result: any = await mutateJsonWithOfflineQueue({
         url: "/api/settings",
         method: "PATCH",
         body: patch,
@@ -359,35 +359,35 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const handleCavemanEnabled = (value) => {
-    const previous = cavemanEnabled;
+  const handleCavemanEnabled: any = (value: any) => {
+    const previous: any = cavemanEnabled;
     setCavemanEnabled(value);
-    patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then((result) => {
+    patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then((result: any) => {
       if ("error" in result && result.error) setCavemanEnabled(previous);
     });
   };
 
-  const handleCavemanLevel = (level) => {
-    const previous = cavemanLevel;
+  const handleCavemanLevel: any = (level: any) => {
+    const previous: any = cavemanLevel;
     setCavemanLevel(level);
-    patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then((result) => {
+    patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then((result: any) => {
       if ("error" in result && result.error) setCavemanLevel(previous);
     });
   };
 
-  const fetchData = async () => {
+  const fetchData: any = async () => {
     try {
-      const result = await loadJsonStaleWhileRevalidate({
+      const result: any = await loadJsonStaleWhileRevalidate({
         url: "/api/keys",
         cacheKey: OFFLINE_KEYS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["api-keys"],
-        onCacheData: (data) => {
-          const payload = data as { keys?: unknown[] };
+        onCacheData: (data: any) => {
+          const payload: any = data as { keys?: unknown[] };
           setKeys((payload?.keys || []) as typeof keys);
         },
-        onFreshData: (data) => {
-          const payload = data as { keys?: unknown[] };
+        onFreshData: (data: any) => {
+          const payload: any = data as { keys?: unknown[] };
           setKeys((payload?.keys || []) as typeof keys);
         },
       });
@@ -407,16 +407,16 @@ export default function APIPageClient({ machineId }: any) {
   // u2500u2500u2500 Cloudflare Tunnel handlers
   // Ping tunnel health until reachable, also check backend status to detect process die
   // Background health probe — fire-and-forget, never blocks UI, never shows errors
-  const backgroundTunnelHealth = (url) => {
+  const backgroundTunnelHealth: any = (url: any) => {
     if (!url) return;
-    const healthUrl = `${url}/api/health`;
-    const start = Date.now();
-    const check = async () => {
+    const healthUrl: any = `${url}/api/health`;
+    const start: any = Date.now();
+    const check: any = async () => {
       while (Date.now() - start < TUNNEL_PING_MAX_MS) {
         if (unmountRef.current) return;
-        await new Promise((r) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
+        await new Promise((r: any) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
         try {
-          const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
+          const ping: any = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
           if (ping.ok || ping.type === "opaque") return; // reachable — done
         } catch {
           /* not ready yet */
@@ -424,9 +424,9 @@ export default function APIPageClient({ machineId }: any) {
         // Every ~10s check if backend process died
         if ((Date.now() - start) % 10000 < TUNNEL_PING_INTERVAL_MS) {
           try {
-            const statusRes = await fetch("/api/tunnel/status");
+            const statusRes: any = await fetch("/api/tunnel/status");
             if (statusRes.ok) {
-              const status = await statusRes.json();
+              const status: any = await statusRes.json();
               if (!status.tunnel?.settingsEnabled) {
                 setTunnelEnabled(false);
                 setTunnelStatus({ type: "error", message: "Tunnel process stopped unexpectedly." });
@@ -443,7 +443,7 @@ export default function APIPageClient({ machineId }: any) {
     check().catch(() => {});
   };
 
-  const handleEnableTunnel = async () => {
+  const handleEnableTunnel: any = async () => {
     setShowEnableTunnelModal(false);
     setTunnelLoading(true);
     setTunnelStatus(null);
@@ -456,19 +456,19 @@ export default function APIPageClient({ machineId }: any) {
     });
 
     // Poll /api/tunnel/status until tunnel is live or overall timeout
-    const start = Date.now();
-    const OVERALL_TIMEOUT_MS = 180000; // 3 min
+    const start: any = Date.now();
+    const OVERALL_TIMEOUT_MS: any = 180000; // 3 min
     while (Date.now() - start < OVERALL_TIMEOUT_MS) {
       if (unmountRef.current) return;
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r: any) => setTimeout(r, 1000));
       try {
-        const r = await fetch("/api/tunnel/status");
+        const r: any = await fetch("/api/tunnel/status");
         if (!r.ok) continue;
-        const s = await r.json();
+        const s: any = await r.json();
 
         // Show download progress
         if (s.download?.downloading) {
-          const pct = s.download.progress;
+          const pct: any = s.download.progress;
           setTunnelProgress(pct < 100 ? `Downloading cloudflared... ${pct}%` : "Creating tunnel...");
         } else {
           setTunnelProgress("Creating tunnel...");
@@ -493,9 +493,9 @@ export default function APIPageClient({ machineId }: any) {
 
     // Final check before showing timeout error
     try {
-      const r = await fetch("/api/tunnel/status");
+      const r: any = await fetch("/api/tunnel/status");
       if (r.ok) {
-        const s = await r.json();
+        const s: any = await r.json();
         if (s.tunnel?.enabled && s.tunnel?.tunnelUrl) {
           setTunnelUrl(s.tunnel.tunnelUrl || "");
           setTunnelEnabled(true);
@@ -515,12 +515,12 @@ export default function APIPageClient({ machineId }: any) {
     setTunnelProgress("");
   };
 
-  const handleDisableTunnel = async () => {
+  const handleDisableTunnel: any = async () => {
     setTunnelLoading(true);
     setTunnelStatus(null);
     try {
-      const res = await fetch("/api/tunnel/disable", { method: "POST" });
-      const data = await res.json();
+      const res: any = await fetch("/api/tunnel/disable", { method: "POST" });
+      const data: any = await res.json();
       if (res.ok) {
         setTunnelEnabled(false);
         setTunnelUrl("");
@@ -537,12 +537,12 @@ export default function APIPageClient({ machineId }: any) {
   };
 
   // u2500u2500u2500 Tailscale handlers
-  const checkTailscaleInstalled = async () => {
+  const checkTailscaleInstalled: any = async () => {
     setTsInstalled(null);
     try {
-      const res = await fetch("/api/tunnel/tailscale-check");
+      const res: any = await fetch("/api/tunnel/tailscale-check");
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         setTsInstalled(data.installed);
         return data;
       }
@@ -553,32 +553,32 @@ export default function APIPageClient({ machineId }: any) {
     return { installed: false };
   };
 
-  const handleInstallTailscale = async () => {
+  const handleInstallTailscale: any = async () => {
     setTsInstalling(true);
     setTsStatus(null);
     setTsInstallLog([]);
     try {
-      const res = await fetch("/api/tunnel/tailscale-install", {
+      const res: any = await fetch("/api/tunnel/tailscale-install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sudoPassword: tsSudoPassword }),
       });
       setTsSudoPassword("");
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+      const reader: any = res.body.getReader();
+      const decoder: any = new TextDecoder();
+      let buffer: any = "";
 
       while (true) {
-        const { done, value } = await reader.read();
+        const { done, value }: any = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
+        const parts: any = buffer.split("\n\n");
         buffer = parts.pop() || "";
         for (const part of parts) {
-          const lines = part.split("\n");
-          let event = "progress";
-          let data = null;
+          const lines: any = part.split("\n");
+          let event: any = "progress";
+          let data: any = null;
           for (const line of lines) {
             if (line.startsWith("event: ")) event = line.slice(7).trim();
             if (line.startsWith("data: ")) {
@@ -591,7 +591,7 @@ export default function APIPageClient({ machineId }: any) {
           }
           if (!data) continue;
           if (event === "progress") {
-            setTsInstallLog((prev) => [...prev.slice(-50), data.message]);
+            setTsInstallLog((prev: any) => [...prev.slice(-50), data.message]);
           } else if (event === "done") {
             setTsInstalled(true);
             setTsInstalling(false);
@@ -609,15 +609,15 @@ export default function APIPageClient({ machineId }: any) {
   };
 
   // Ping Tailscale health until reachable
-  const pingTsHealth = async (url) => {
+  const pingTsHealth: any = async (url: any) => {
     setTsProgress("Waiting for Tailscale ready...");
-    const healthUrl = `${url}/api/health`;
-    const start = Date.now();
+    const healthUrl: any = `${url}/api/health`;
+    const start: any = Date.now();
     while (Date.now() - start < TUNNEL_PING_MAX_MS) {
       if (unmountRef.current) return false;
-      await new Promise((r) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
+      await new Promise((r: any) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
       try {
-        const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
+        const ping: any = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
         if (ping.ok || ping.type === "opaque") return true;
       } catch {
         /* not ready yet */
@@ -626,21 +626,21 @@ export default function APIPageClient({ machineId }: any) {
     return false;
   };
 
-  const handleConnectTailscale = async (preOpenedTab) => {
-    const tab = preOpenedTab || null;
+  const handleConnectTailscale: any = async (preOpenedTab: any) => {
+    const tab: any = preOpenedTab || null;
     setShowTsModal(false);
     setTsConnecting(true);
     setTsLoading(true);
     setTsStatus(null);
     setTsProgress("Connecting...");
     try {
-      const res = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
-      const data = await res.json();
+      const res: any = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
+      const data: any = await res.json();
 
       if (res.ok && data.success) {
         if (tab) tab.close();
         setTsUrl(data.tunnelUrl || "");
-        const reachable = await pingTsHealth(data.tunnelUrl);
+        const reachable: any = await pingTsHealth(data.tunnelUrl);
         if (reachable) {
           setTsEnabled(true);
           setTsStatus(null);
@@ -657,19 +657,19 @@ export default function APIPageClient({ machineId }: any) {
         else window.open(data.authUrl, "tailscale_auth", "width=600,height=700");
         setTsProgress("Waiting for login...");
         for (let i = 0; i < 40; i++) {
-          await new Promise((r) => setTimeout(r, 3000));
+          await new Promise((r: any) => setTimeout(r, 3000));
           try {
-            const r2 = await fetch("/api/tunnel/tailscale-check");
+            const r2: any = await fetch("/api/tunnel/tailscale-check");
             if (r2.ok) {
-              const check = await r2.json();
+              const check: any = await r2.json();
               if (check.loggedIn) {
                 setTsProgress("Starting funnel...");
-                const res2 = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
-                const data2 = await res2.json();
+                const res2: any = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
+                const data2: any = await res2.json();
                 if (res2.ok && data2.success) {
                   if (tab) tab.close();
                   setTsUrl(data2.tunnelUrl || "");
-                  const ok2 = await pingTsHealth(data2.tunnelUrl);
+                  const ok2: any = await pingTsHealth(data2.tunnelUrl);
                   if (ok2) {
                     setTsEnabled(true);
                     setTsStatus(null);
@@ -711,20 +711,20 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const pollFunnelEnable = async (enableUrl, tab) => {
+  const pollFunnelEnable: any = async (enableUrl: any, tab: any) => {
     if (tab) tab.location.href = enableUrl;
     else window.open(enableUrl, "tailscale_auth", "width=600,height=700");
     setTsProgress("Enable Funnel in browser, waiting...");
     for (let i = 0; i < 40; i++) {
       if (unmountRef.current) return;
-      await new Promise((r) => setTimeout(r, 3000));
+      await new Promise((r: any) => setTimeout(r, 3000));
       try {
-        const res = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
-        const data = await res.json();
+        const res: any = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
+        const data: any = await res.json();
         if (res.ok && data.success) {
           if (tab) tab.close();
           setTsUrl(data.tunnelUrl || "");
-          const ok3 = await pingTsHealth(data.tunnelUrl);
+          const ok3: any = await pingTsHealth(data.tunnelUrl);
           if (ok3) {
             setTsEnabled(true);
             setTsStatus(null);
@@ -746,12 +746,12 @@ export default function APIPageClient({ machineId }: any) {
     setTsStatus({ type: "error", message: "Timed out waiting for Funnel to be enabled." });
   };
 
-  const handleDisableTailscale = async () => {
+  const handleDisableTailscale: any = async () => {
     setTsLoading(true);
     setTsStatus(null);
     try {
-      const res = await fetch("/api/tunnel/tailscale-disable", { method: "POST" });
-      const data = await res.json();
+      const res: any = await fetch("/api/tunnel/tailscale-disable", { method: "POST" });
+      const data: any = await res.json();
       if (res.ok) {
         setTsEnabled(false);
         setTsUrl("");
@@ -767,24 +767,24 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const handleOpenTsModal = async () => {
+  const handleOpenTsModal: any = async () => {
     setTsStatus(null);
     setTsInstallLog([]);
     setShowTsModal(true);
     await checkTailscaleInstalled();
   };
 
-  const handleCreateKey = async () => {
+  const handleCreateKey: any = async () => {
     if (!newKeyName.trim()) return;
     if (newKeyLimitType === "limited") {
-      const rpm = Number(newKeyRpm);
-      const concurrent = Number(newKeyConcurrent);
+      const rpm: any = Number(newKeyRpm);
+      const concurrent: any = Number(newKeyConcurrent);
       if (!Number.isFinite(rpm) || !Number.isInteger(rpm) || rpm <= 0) return;
       if (!Number.isFinite(concurrent) || !Number.isInteger(concurrent) || concurrent <= 0) return;
     }
 
     try {
-      const res = await fetch("/api/keys", {
+      const res: any = await fetch("/api/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -794,7 +794,7 @@ export default function APIPageClient({ machineId }: any) {
           concurrentRequests: newKeyLimitType === "limited" ? Number(newKeyConcurrent) : null,
         }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
 
       if (res.ok) {
         setCreatedKey(data.key);
@@ -806,7 +806,7 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const resetCreateKeyForm = () => {
+  const resetCreateKeyForm: any = () => {
     setNewKeyName("");
     setNewKeyLimitType("unlimited");
     setNewKeyRpm("60");
@@ -814,13 +814,13 @@ export default function APIPageClient({ machineId }: any) {
     setShowAddModal(false);
   };
 
-  const handleDeleteKey = async (id) => {
+  const handleDeleteKey: any = async (id: any) => {
     try {
-      const res = await fetch(`/api/keys/${id}`, { method: "DELETE" });
+      const res: any = await fetch(`/api/keys/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setKeys(keys.filter((k) => k.id !== id));
-        setVisibleKeys((prev) => {
-          const next = new Set(prev);
+        setKeys(keys.filter((k: any) => k.id !== id));
+        setVisibleKeys((prev: any) => {
+          const next: any = new Set<any>(prev);
           next.delete(id);
           return next;
         });
@@ -830,21 +830,21 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const handleEditKey = (key) => {
+  const handleEditKey: any = (key: any) => {
     setEditingKey(key);
     setEditKeyName(key.name);
   };
 
-  const handleUpdateKey = async () => {
+  const handleUpdateKey: any = async () => {
     if (!editKeyName.trim() || !editingKey) return;
     try {
-      const res = await fetch(`/api/keys/${editingKey.id}`, {
+      const res: any = await fetch(`/api/keys/${editingKey.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editKeyName.trim() }),
       });
       if (res.ok) {
-        setKeys(keys.map((k) => (k.id === editingKey.id ? { ...k, name: editKeyName.trim() } : k)));
+        setKeys(keys.map((k: any) => (k.id === editingKey.id ? { ...k, name: editKeyName.trim() } : k)));
         setEditingKey(null);
         setEditKeyName("");
       }
@@ -853,37 +853,37 @@ export default function APIPageClient({ machineId }: any) {
     }
   };
 
-  const handleToggleKey = async (id, isActive) => {
+  const handleToggleKey: any = async (id: any, isActive: any) => {
     try {
-      const res = await fetch(`/api/keys/${id}`, {
+      const res: any = await fetch(`/api/keys/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
       if (res.ok) {
-        setKeys((prev) => prev.map((k) => (k.id === id ? { ...k, isActive } : k)));
+        setKeys((prev: any) => prev.map((k: any) => (k.id === id ? { ...k, isActive } : k)));
       }
     } catch (error) {
       console.error("Error toggling key:", error);
     }
   };
 
-  const maskKey = (fullKey) => {
+  const maskKey: any = (fullKey: any) => {
     if (!fullKey) return "";
     return fullKey.length > 8 ? fullKey.slice(0, 8) + "..." : fullKey;
   };
 
-  const toggleKeyVisibility = (keyId) => {
-    setVisibleKeys((prev) => {
-      const next = new Set(prev);
+  const toggleKeyVisibility: any = (keyId: any) => {
+    setVisibleKeys((prev: any) => {
+      const next: any = new Set<any>(prev);
       if (next.has(keyId)) next.delete(keyId);
       else next.add(keyId);
       return next;
     });
   };
 
-  const [baseUrl, setBaseUrl] = useState("/v1");
-  const hasValidCreateRateLimitInputs =
+  const [baseUrl, setBaseUrl]: any = useState("/v1");
+  const hasValidCreateRateLimitInputs: any =
     newKeyLimitType !== "limited" ||
     (Number.isInteger(Number(newKeyRpm)) &&
       Number(newKeyRpm) > 0 &&
@@ -897,9 +897,9 @@ export default function APIPageClient({ machineId }: any) {
     }
   }, []);
 
-  const currentEndpoint = baseUrl;
-  const showTunnelEnableAction = !tunnelEnabled && !tunnelLoading && !tunnelChecking;
-  const showTsEnableAction = !tsEnabled && !tsLoading && !tsConnecting;
+  const currentEndpoint: any = baseUrl;
+  const showTunnelEnableAction: any = !tunnelEnabled && !tunnelLoading && !tunnelChecking;
+  const showTsEnableAction: any = !tsEnabled && !tsLoading && !tsConnecting;
 
   return (
     <div className="flex flex-col gap-8">
@@ -1144,7 +1144,7 @@ export default function APIPageClient({ machineId }: any) {
           <div className="flex items-center gap-3 shrink-0">
             {cavemanEnabled && (
               <div className="flex items-center gap-1.5">
-                {CAVEMAN_LEVELS.map((lvl) => (
+                {CAVEMAN_LEVELS.map((lvl: any) => (
                   <button
                     key={lvl.id}
                     onClick={() => handleCavemanLevel(lvl.id)}
@@ -1187,7 +1187,7 @@ export default function APIPageClient({ machineId }: any) {
 
         {loading ? (
           <div className="flex flex-col gap-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map((i: any) => (
               <CardSkeleton key={i} />
             ))}
           </div>
@@ -1232,7 +1232,7 @@ export default function APIPageClient({ machineId }: any) {
                   </tr>
                 </thead>
                 <tbody>
-                  {keys.slice((keysPage - 1) * KEYS_PAGE_SIZE, keysPage * KEYS_PAGE_SIZE).map((key) => (
+                  {keys.slice((keysPage - 1) * KEYS_PAGE_SIZE, keysPage * KEYS_PAGE_SIZE).map((key: any) => (
                     <tr
                       key={key.id}
                       className={`group border-b border-charcoal-grey/50 last:border-0 hover:bg-deep-slate transition-colors duration-100 ${
@@ -1367,13 +1367,13 @@ export default function APIPageClient({ machineId }: any) {
                 </span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setKeysPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setKeysPage((p: any) => Math.max(1, p - 1))}
                     disabled={keysPage === 1}
                     className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
                   >
                     <LucideIcon name="chevron_left" className="text-[14px]" />
                   </button>
-                  {Array.from({ length: Math.ceil(keys.length / KEYS_PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
+                  {Array.from({ length: Math.ceil(keys.length / KEYS_PAGE_SIZE) }, (_: any, i: any) => i + 1).map((p: any) => (
                     <button
                       key={p}
                       onClick={() => setKeysPage(p)}
@@ -1387,7 +1387,7 @@ export default function APIPageClient({ machineId }: any) {
                     </button>
                   ))}
                   <button
-                    onClick={() => setKeysPage((p) => Math.min(Math.ceil(keys.length / KEYS_PAGE_SIZE), p + 1))}
+                    onClick={() => setKeysPage((p: any) => Math.min(Math.ceil(keys.length / KEYS_PAGE_SIZE), p + 1))}
                     disabled={keysPage === Math.ceil(keys.length / KEYS_PAGE_SIZE)}
                     className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
                   >
@@ -1554,7 +1554,7 @@ export default function APIPageClient({ machineId }: any) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {TUNNEL_BENEFITS.map((benefit) => (
+            {TUNNEL_BENEFITS.map((benefit: any) => (
               <div key={benefit.title} className="flex flex-col items-center text-center p-3 rounded-lg bg-sidebar/50">
                 <LucideIcon name={benefit.icon} className="text-xl text-primary mb-1" />
                 <p className="text-xs font-semibold">{benefit.title}</p>
@@ -1645,7 +1645,7 @@ export default function APIPageClient({ machineId }: any) {
                   ref={tsLogRef}
                   className="bg-black/5 dark:bg-white/5 rounded p-2 max-h-40 overflow-y-auto font-mono text-xs text-text-muted"
                 >
-                  {tsInstallLog.map((line, i) => (
+                  {tsInstallLog.map((line: any, i: any) => (
                     <div key={i}>{line}</div>
                   ))}
                 </div>
@@ -1663,15 +1663,15 @@ export default function APIPageClient({ machineId }: any) {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    const tab = window.open("", "tailscale_auth", "width=600,height=700");
+                    const tab: any = window.open("", "tailscale_auth", "width=600,height=700");
                     if (tab) {
-                      const doc = tab.document;
-                      const body = doc.body || doc.createElement("body");
+                      const doc: any = tab.document;
+                      const body: any = doc.body || doc.createElement("body");
                       if (!doc.body) {
                         doc.documentElement?.appendChild(body);
                       }
                       body.replaceChildren();
-                      const message = doc.createElement("p");
+                      const message: any = doc.createElement("p");
                       message.style.cssText = "font-family:sans-serif;text-align:center;margin-top:40px";
                       message.textContent = "Connecting to Tailscale...";
                       body.appendChild(message);
@@ -1734,9 +1734,9 @@ function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }: any) {
 /** Reusable status alert */
 function StatusAlert({ status, className = "" }: any) {
   // Render URLs in message as clickable links
-  const renderMessage = (msg) => {
-    const parts = msg.split(/(https?:\/\/[^\s]+)/g);
-    return parts.map((part, i) =>
+  const renderMessage: any = (msg: any) => {
+    const parts: any = msg.split(/(https?:\/\/[^\s]+)/g);
+    return parts.map((part: any, i: any) =>
       /^https?:\/\//.test(part) ? (
         <a key={i} href={part} target="_blank" rel="noreferrer" className="underline font-medium">
           {part}
@@ -1788,7 +1788,7 @@ function SecurityWarning({ message, action }: any) {
           className="text-xs font-medium underline shrink-0 hover:opacity-80"
           onClick={
             action.href.startsWith("#")
-              ? (e) => {
+              ? (e: any) => {
                   e.preventDefault();
                   document.getElementById(action.href.slice(1))?.scrollIntoView({ behavior: "smooth" });
                 }

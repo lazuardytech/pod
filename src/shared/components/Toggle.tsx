@@ -21,7 +21,7 @@ export default function Toggle({
   className?: any;
   [key: string]: any;
 }) {
-  const sizes = {
+  const sizes: Record<string, any> = {
     sm: { track: "w-7 h-4", thumb: "size-3", translate: "translate-x-3" },
     md: { track: "w-9 h-5", thumb: "size-4", translate: "translate-x-4" },
     lg: { track: "w-11 h-6", thumb: "size-5", translate: "translate-x-5" },

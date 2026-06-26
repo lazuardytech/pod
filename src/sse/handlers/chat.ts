@@ -48,7 +48,7 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
   );
   const authHeader = request.headers.get("Authorization");
   const apiKey = extractApiKey(request);
-  const apiKeyRecord = apiKey ? await getApiKeyByKey(apiKey).catch(() => null) : null;
+  const apiKeyRecord = apiKey ? await getApiKeyByKey(apiKey).catch((): any => null) : null;
   const apiKeyId = (apiKeyRecord as { id?: string } | null)?.id || null;
   if (authHeader && apiKey) log.debug("AUTH", `API Key: ${log.maskKey(apiKey)}`);
   else log.debug("AUTH", "No API key provided (local mode)");
@@ -91,7 +91,7 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
     const comboResponse = await handleComboChat({
       body,
       models: comboInfo.models,
-      handleSingleModel: (b, m) =>
+      handleSingleModel: (b, m): any =>
         handleSingleModelChat(
           b,
           m,
@@ -143,7 +143,7 @@ async function handleSingleModelChat(
       const innerComboResponse = await handleComboChat({
         body,
         models: comboInfo.models,
-        handleSingleModel: (b, m) =>
+        handleSingleModel: (b, m): any =>
           handleSingleModelChat(
             b,
             m,
@@ -209,11 +209,11 @@ async function handleSingleModelChat(
         const pid = await getProjectIdForConnection(credentials.connectionId, refreshedCredentials.accessToken);
         if (pid) {
           refreshedCredentials.projectId = pid;
-          updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch(() => {});
+          updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch((): any => {});
         }
       }
       const chatSettings = await getSettings();
-      const providerThinking = (chatSettings.providerThinking || {})[provider] || null;
+      const providerThinking = ((chatSettings.providerThinking || {}) as Record<string, any>)[provider] || null;
       const result = await handleChatCore({
         body: { ...body, model: `${provider}/${model}` },
         modelInfo: { provider, model },
@@ -233,7 +233,7 @@ async function handleSingleModelChat(
         memoryOwnerId: apiKeyId,
         comboName,
         sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
-        onCredentialsRefreshed: async (newCreds) => {
+        onCredentialsRefreshed: async (newCreds): Promise<any> => {
           await updateProviderCredentials(credentials.connectionId, {
             accessToken: newCreds.accessToken as string | undefined,
             refreshToken: newCreds.refreshToken as string | undefined,
@@ -241,7 +241,7 @@ async function handleSingleModelChat(
             testStatus: "active",
           });
         },
-        onRequestSuccess: async () => {
+        onRequestSuccess: async (): Promise<any> => {
           await clearAccountError(credentials.connectionId, credentials, model);
         },
       });

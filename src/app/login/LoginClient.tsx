@@ -41,7 +41,7 @@ export default function LoginClient() {
     checkAuth();
   }, [router]);
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -96,7 +96,7 @@ export default function LoginClient() {
               label="Password"
               placeholder="Enter password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: any) => setPassword(e.target.value)}
               error={error}
               required
               autoFocus

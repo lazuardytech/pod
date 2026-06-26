@@ -5,20 +5,20 @@ import LucideIcon from "@/shared/components/LucideIcon";
 
 // Only show fields user actually cares about
 const FIELD_SCHEMA = {
-  mode: { label: "Mode", format: (v) => v },
-  defaultModel: { label: "Model", format: (v) => v, mono: true },
-  baseUrl: { label: "Endpoint", format: (v) => v, isLink: true, mono: true },
-  costPerQuery: { label: "Cost / call", format: (v) => (v === 0 ? "Free" : `$${v.toFixed(4)}`) },
+  mode: { label: "Mode", format: (v: any) => v },
+  defaultModel: { label: "Model", format: (v: any) => v, mono: true },
+  baseUrl: { label: "Endpoint", format: (v: any) => v, isLink: true, mono: true },
+  costPerQuery: { label: "Cost / call", format: (v: any) => (v === 0 ? "Free" : `$${v.toFixed(4)}`) },
   pricingUrl: { label: "Pricing", format: () => "View pricing", isLink: true },
-  freeTier: { label: "Free tier", format: (v) => v },
+  freeTier: { label: "Free tier", format: (v: any) => v },
   freeMonthlyQuota: {
     label: "Free quota",
-    format: (v) => (v === 0 ? "—" : v >= 999999 ? "Unlimited" : `${v.toLocaleString()} / mo`),
+    format: (v: any) => (v === 0 ? "—" : v >= 999999 ? "Unlimited" : `${v.toLocaleString()} / mo`),
   },
-  searchTypes: { label: "Types", format: (v) => v.join(", ") },
-  formats: { label: "Formats", format: (v) => v.join(", ") },
-  maxMaxResults: { label: "Max results", format: (v) => v },
-  maxCharacters: { label: "Max chars", format: (v) => v.toLocaleString() },
+  searchTypes: { label: "Types", format: (v: any) => v.join(", ") },
+  formats: { label: "Formats", format: (v: any) => v.join(", ") },
+  maxMaxResults: { label: "Max results", format: (v: any) => v },
+  maxCharacters: { label: "Max chars", format: (v: any) => v.toLocaleString() },
 };
 
 export default function ProviderInfoCard({
@@ -34,8 +34,8 @@ export default function ProviderInfoCard({
   if (!config) return null;
 
   const rows: any[] = Object.entries(FIELD_SCHEMA)
-    .filter(([key]) => config[key] !== undefined && config[key] !== null && config[key] !== "")
-    .map(([key, schema]) => ({
+    .filter(([key]: any) => config[key] !== undefined && config[key] !== null && config[key] !== "")
+    .map(([key, schema]: any) => ({
       key,
       label: schema.label,
       value: schema.format(config[key]),
@@ -64,7 +64,7 @@ export default function ProviderInfoCard({
         )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-        {rows.map((r) => (
+        {rows.map((r: any) => (
           <div key={r.key} className="flex items-center gap-3 min-w-0">
             <span className="text-xs text-text-muted w-28 shrink-0">{r.label}</span>
             {r.isLink ? (

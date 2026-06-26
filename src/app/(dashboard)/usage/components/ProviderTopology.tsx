@@ -7,26 +7,26 @@ import "@xyflow/react/dist/style.css";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 
 // Force-stop FE animation if a provider stays active longer than this
-const FE_ACTIVE_TIMEOUT_MS = 60000;
-const FE_ACTIVE_TICK_MS = 1000;
+const FE_ACTIVE_TIMEOUT_MS: any = 60000;
+const FE_ACTIVE_TICK_MS: any = 1000;
 
-function getProviderConfig(providerId) {
-  return AI_PROVIDERS[providerId] || { color: "#6b7280", name: providerId, textIcon: undefined };
+function getProviderConfig(providerId: any) {
+  return AI_PROVIDERS[providerId] || { color: "#6b7280", name: providerId, textIcon: undefined } as any;
 }
 
 // Use local provider images from /public/providers/
-function getProviderImageUrl(providerId) {
+function getProviderImageUrl(providerId: any) {
   return `/providers/${providerId}.png`;
 }
 
 // Custom provider node - rectangle with image + name
 function ProviderNode({ data }: any) {
   const { label, color, imageUrl, textIcon, active, error } = data;
-  const [imgError, setImgError] = useState(false);
+  const [imgError, setImgError]: any = useState(false);
 
-  const borderColor = error ? "#ef4444" : active ? "#22c55e" : "var(--color-border)";
-  const dotColor = error ? "#ef4444" : "#22c55e";
-  const textColor = error ? "#ef4444" : active ? "#22c55e" : "var(--color-text)";
+  const borderColor: any = error ? "#ef4444" : active ? "#22c55e" : "var(--color-border)";
+  const dotColor: any = error ? "#ef4444" : "#22c55e";
+  const textColor: any = error ? "#ef4444" : active ? "#22c55e" : "var(--color-text)";
 
   return (
     <div
@@ -110,22 +110,22 @@ RouterNode.propTypes = {
   data: PropTypes.object.isRequired,
 };
 
-const nodeTypes = { provider: ProviderNode, router: RouterNode };
+const nodeTypes: any = { provider: ProviderNode, router: RouterNode };
 
 // Place N nodes evenly along an ellipse around the router center.
-function buildLayout(providers, activeSet, lastSet, errorSet) {
-  const nodeW = 180;
-  const nodeH = 30;
-  const routerW = 120;
-  const routerH = 44;
-  const nodeGap = 24;
+function buildLayout(providers: any, activeSet: any, lastSet: any, errorSet: any) {
+  const nodeW: any = 180;
+  const nodeH: any = 30;
+  const routerW: any = 120;
+  const routerH: any = 44;
+  const nodeGap: any = 24;
 
-  const count = providers.length;
+  const count: any = providers.length;
 
   // Compute rx so arc spacing between nodes >= nodeW + nodeGap
-  const minRx = ((nodeW + nodeGap) * count) / (2 * Math.PI);
-  const rx = Math.max(320, minRx);
-  const ry = Math.max(200, rx * 0.55); // ellipse ratio ~0.55
+  const minRx: any = ((nodeW + nodeGap) * count) / (2 * Math.PI);
+  const rx: any = Math.max(320, minRx);
+  const ry: any = Math.max(200, rx * 0.55); // ellipse ratio ~0.55
   if (count === 0) {
     return {
       nodes: [{ id: "router", type: "router", position: { x: 0, y: 0 }, data: { activeCount: 0 }, draggable: false }],
@@ -133,8 +133,8 @@ function buildLayout(providers, activeSet, lastSet, errorSet) {
     };
   }
 
-  const nodes = [];
-  const edges = [];
+  const nodes: any = [];
+  const edges: any = [];
 
   nodes.push({
     id: "router",
@@ -144,20 +144,20 @@ function buildLayout(providers, activeSet, lastSet, errorSet) {
     draggable: false,
   });
 
-  const edgeStyle = (active, last, error, color) => {
+  const edgeStyle: any = (active: any, last: any, error: any, color: any) => {
     if (error) return { stroke: "#ef4444", strokeWidth: 2.5, opacity: 0.9 };
     if (active) return { stroke: "#22c55e", strokeWidth: 2.5, opacity: 0.9 };
     if (last) return { stroke: "#22c55e", strokeWidth: 2, opacity: 0.7 };
     return { stroke: "var(--color-porcelain, #E5E5E6)", strokeWidth: 1, opacity: 0.4 };
   };
 
-  providers.forEach((p, i) => {
-    const config = getProviderConfig(p.provider);
-    const active = activeSet.has(p.provider?.toLowerCase());
-    const last = !active && lastSet.has(p.provider?.toLowerCase());
-    const error = !active && errorSet.has(p.provider?.toLowerCase());
-    const nodeId = `provider-${p.provider}`;
-    const data = {
+  providers.forEach((p: any, i: any) => {
+    const config: any = getProviderConfig(p.provider);
+    const active: any = activeSet.has(p.provider?.toLowerCase());
+    const last: any = !active && lastSet.has(p.provider?.toLowerCase());
+    const error: any = !active && errorSet.has(p.provider?.toLowerCase());
+    const nodeId: any = `provider-${p.provider}`;
+    const data: any = {
       label: (config.name !== p.provider ? config.name : null) || p.name || p.provider,
       color: config.color || "#6b7280",
       imageUrl: getProviderImageUrl(p.provider),
@@ -167,12 +167,12 @@ function buildLayout(providers, activeSet, lastSet, errorSet) {
     };
 
     // Distribute evenly starting from top (−π/2), clockwise
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / count;
-    const cx = rx * Math.cos(angle);
-    const cy = ry * Math.sin(angle);
+    const angle: any = -Math.PI / 2 + (2 * Math.PI * i) / count;
+    const cx: any = rx * Math.cos(angle);
+    const cy: any = ry * Math.sin(angle);
 
     // Pick router handle closest to the node direction
-    let sourceHandle, targetHandle;
+    let sourceHandle: any, targetHandle: any;
     if (Math.abs(angle + Math.PI / 2) < Math.PI / 4 || Math.abs(angle - (3 * Math.PI) / 2) < Math.PI / 4) {
       sourceHandle = "top";
       targetHandle = "bottom";
@@ -209,9 +209,9 @@ function buildLayout(providers, activeSet, lastSet, errorSet) {
   return { nodes, edges };
 }
 
-const VIEWPORT_SESSION_KEY = "providerTopologyViewport";
+const VIEWPORT_SESSION_KEY: any = "providerTopologyViewport";
 
-function saveViewport(viewport) {
+function saveViewport(viewport: any) {
   try {
     sessionStorage.setItem(VIEWPORT_SESSION_KEY, JSON.stringify(viewport));
   } catch {}
@@ -219,7 +219,7 @@ function saveViewport(viewport) {
 
 function loadViewport() {
   try {
-    const raw = sessionStorage.getItem(VIEWPORT_SESSION_KEY);
+    const raw: any = sessionStorage.getItem(VIEWPORT_SESSION_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
   return null;
@@ -232,31 +232,31 @@ export default function ProviderTopology({
   errorProvider = "",
 }: any) {
   // Serialize to stable string keys so useMemo only re-runs when values actually change
-  const activeKey = useMemo(
+  const activeKey: any = useMemo(
     () =>
       activeRequests
-        .map((r) => r.provider?.toLowerCase())
+        .map((r: any) => r.provider?.toLowerCase())
         .filter(Boolean)
         .sort()
         .join(","),
     [activeRequests],
   );
-  const lastKey = lastProvider?.toLowerCase() || "";
-  const errorKey = errorProvider?.toLowerCase() || "";
+  const lastKey: any = lastProvider?.toLowerCase() || "";
+  const errorKey: any = errorProvider?.toLowerCase() || "";
 
-  const rawActiveSet = useMemo(() => new Set(activeKey ? activeKey.split(",") : []), [activeKey]);
-  const lastSet = useMemo(() => new Set(lastKey ? [lastKey] : []), [lastKey]);
-  const errorSet = useMemo(() => new Set(errorKey ? [errorKey] : []), [errorKey]);
+  const rawActiveSet: any = useMemo(() => new Set<any>(activeKey ? activeKey.split(",") : []), [activeKey]);
+  const lastSet: any = useMemo(() => new Set<any>(lastKey ? [lastKey] : []), [lastKey]);
+  const errorSet: any = useMemo(() => new Set<any>(errorKey ? [errorKey] : []), [errorKey]);
 
   // Track firstSeen per active provider; drop provider if running too long (BE stuck)
-  const firstSeenRef = useRef<Record<string, number>>({});
-  const [tick, setTick] = useState(0);
+  const firstSeenRef: any = useRef<Record<string, number>>({});
+  const [tick, setTick]: any = useState(0);
 
   useEffect(() => {
-    const seen = firstSeenRef.current;
-    const now = Date.now();
+    const seen: any = firstSeenRef.current;
+    const now: any = Date.now();
     for (const p of rawActiveSet) {
-      const pk = p as string;
+      const pk: any = p as string;
       if (!seen[pk]) seen[pk] = now;
     }
     for (const p of Object.keys(seen)) {
@@ -268,42 +268,42 @@ export default function ProviderTopology({
     if (rawActiveSet.size === 0) {
       return undefined;
     }
-    const id = setInterval(() => setTick((t) => t + 1), FE_ACTIVE_TICK_MS);
+    const id: any = setInterval(() => setTick((t: any) => t + 1), FE_ACTIVE_TICK_MS);
     return () => clearInterval(id);
   }, [rawActiveSet]);
 
-  const activeSet = useMemo(() => {
-    const now = Date.now();
-    const filtered = new Set();
+  const activeSet: any = useMemo(() => {
+    const now: any = Date.now();
+    const filtered: any = new Set<any>();
     for (const p of rawActiveSet) {
-      const pk = p as string;
-      const ts = firstSeenRef.current[pk];
+      const pk: any = p as string;
+      const ts: any = firstSeenRef.current[pk];
       if (!ts || now - ts < FE_ACTIVE_TIMEOUT_MS) filtered.add(pk);
     }
     return filtered;
   }, [rawActiveSet, tick]);
 
-  const { nodes, edges } = useMemo(
+  const { nodes, edges }: any = useMemo(
     () => buildLayout(providers, activeSet, lastSet, errorSet),
     [providers, activeSet, lastKey, errorKey],
   );
 
   // Stable key — only remount when provider list changes
-  const providersKey = useMemo(
+  const providersKey: any = useMemo(
     () =>
       providers
-        .map((p) => p.provider)
+        .map((p: any) => p.provider)
         .sort()
         .join(","),
     [providers],
   );
 
-  const rfInstance = useRef(null);
-  const containerRef = useRef(null);
-  const fitOpts = { padding: 0.2, duration: 200 };
-  const savedViewport = useRef(loadViewport());
+  const rfInstance: any = useRef(null);
+  const containerRef: any = useRef(null);
+  const fitOpts: any = { padding: 0.2, duration: 200 };
+  const savedViewport: any = useRef(loadViewport());
 
-  const onInit = useCallback((instance) => {
+  const onInit: any = useCallback((instance: any) => {
     rfInstance.current = instance;
     if (savedViewport.current) {
       // Restore saved zoom + pan position
@@ -313,18 +313,18 @@ export default function ProviderTopology({
     }
   }, []);
 
-  const onMoveEnd = useCallback((_, viewport) => {
+  const onMoveEnd: any = useCallback((_: any, viewport: any) => {
     saveViewport(viewport);
     savedViewport.current = viewport;
   }, []);
 
   // Re-fit on container resize — only when no saved viewport
   useEffect(() => {
-    const el = containerRef.current;
+    const el: any = containerRef.current;
     if (!el) {
       return undefined;
     }
-    const ro = new ResizeObserver(() => {
+    const ro: any = new ResizeObserver(() => {
       if (rfInstance.current && !savedViewport.current) rfInstance.current.fitView(fitOpts);
     });
     ro.observe(el);
@@ -334,7 +334,7 @@ export default function ProviderTopology({
   // Re-fit when node count/layout changes — only when no saved viewport
   useEffect(() => {
     if (rfInstance.current && !savedViewport.current) {
-      const id = setTimeout(() => rfInstance.current.fitView(fitOpts), 50);
+      const id: any = setTimeout(() => rfInstance.current.fitView(fitOpts), 50);
       return () => clearTimeout(id);
     }
     return undefined;

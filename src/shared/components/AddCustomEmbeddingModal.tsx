@@ -131,21 +131,21 @@ export default function AddCustomEmbeddingModal({
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Voyage AI"
           hint="Required. A friendly label for this embedding provider."
         />
         <Input
           label="Prefix"
           value={formData.prefix}
-          onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, prefix: e.target.value })}
           placeholder="voyage"
           hint="Required. Used as the provider prefix for model IDs (e.g. voyage/voyage-3)."
         />
         <Input
           label="Base URL"
           value={formData.baseUrl}
-          onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, baseUrl: e.target.value })}
           placeholder="https://api.voyageai.com/v1"
           hint="Most embedding APIs are OpenAI-compatible: Voyage, Cohere, Jina, Mistral, Together..."
         />
@@ -153,12 +153,12 @@ export default function AddCustomEmbeddingModal({
           label="API Key (for Check)"
           type="password"
           value={checkKey}
-          onChange={(e) => setCheckKey(e.target.value)}
+          onChange={(e: any) => setCheckKey(e.target.value)}
         />
         <Input
           label="Model ID (for Check)"
           value={checkModelId}
-          onChange={(e) => setCheckModelId(e.target.value)}
+          onChange={(e: any) => setCheckModelId(e.target.value)}
           placeholder="e.g. voyage-3, embed-english-v3.0, text-embedding-3-small"
           hint="Required for validation. Will send a test embeddings request."
         />

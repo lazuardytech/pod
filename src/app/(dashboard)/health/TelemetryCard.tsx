@@ -6,14 +6,14 @@ import LucideIcon from "@/shared/components/LucideIcon";
 const REFRESH_MS = 30_000;
 const MAX_SAMPLES = 24;
 
-function formatBytes(bytes = 0) {
+function formatBytes(bytes: any = 0) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-function formatDuration(seconds = 0) {
+function formatDuration(seconds: any = 0) {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -24,7 +24,7 @@ function formatDuration(seconds = 0) {
 
 function Sparkline({ samples, field, fmt }: any) {
   const [hovered, setHovered] = useState(null);
-  const values = samples.map((s) => Number(s[field])).filter((v) => Number.isFinite(v));
+  const values = samples.map((s: any) => Number(s[field])).filter((v: any) => Number.isFinite(v));
   if (values.length < 2) return <div className="h-10 rounded-[4px] bg-deep-slate" />;
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -33,7 +33,7 @@ function Sparkline({ samples, field, fmt }: any) {
   const H = 40;
   const PAD = 0;
   const points = values
-    .map((v, i) => {
+    .map((v: any, i: any) => {
       const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
       const y = H - 1 - ((v - min) / range) * (H - 2);
       return `${x.toFixed(2)},${y.toFixed(2)}`;
@@ -59,7 +59,7 @@ function Sparkline({ samples, field, fmt }: any) {
           points={points}
           className="text-porcelain/40"
         />
-        {values.map((v, i) => {
+        {values.map((v: any, i: any) => {
           const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
           const y = H - PAD - ((v - min) / range) * (H - PAD * 2);
           return (
@@ -97,7 +97,7 @@ export default function TelemetryCard({ health }: any) {
     const mem = health.system?.memoryUsage?.rss ?? 0;
     const heap = health.system?.memoryUsage?.heapUsed ?? 0;
     const newSample = { timestamp: Date.now(), memoryBytes: mem, heapUsed: heap };
-    setSamples((prev) => {
+    setSamples((prev: any) => {
       if (prev.length === 0) return [{ ...newSample, timestamp: Date.now() - REFRESH_MS }, newSample];
       return [...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)), newSample];
     });
@@ -157,7 +157,7 @@ export default function TelemetryCard({ health }: any) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-4">
-        {metrics.map((m) => (
+        {metrics.map((m: any) => (
           <div key={m.label} className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-3">
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">{m.label}</p>

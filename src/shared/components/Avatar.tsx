@@ -17,7 +17,7 @@ export default function Avatar({
   className?: any;
   [key: string]: any;
 }) {
-  const sizes = {
+  const sizes: Record<string, string> = {
     xs: "size-6 text-xs",
     sm: "size-8 text-sm",
     md: "size-10 text-base",
@@ -26,7 +26,7 @@ export default function Avatar({
   };
 
   // Get initials from name
-  const getInitials = (name) => {
+  const getInitials = (name: any) => {
     if (!name) return "?";
     const parts = name.split(" ");
     if (parts.length >= 2) {
@@ -36,7 +36,7 @@ export default function Avatar({
   };
 
   // Generate color from name
-  const getColorFromName = (name) => {
+  const getColorFromName = (name: any) => {
     if (!name) return "bg-primary";
     const colors = [
       "bg-red-500",

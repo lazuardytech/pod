@@ -75,10 +75,10 @@ export default function CompatibleModelsSection({
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
   const [testingModelIds, setTestingModelIds] = useState(new Set());
-  const [modelTestResults, setModelTestResults] = useState({});
+  const [modelTestResults, setModelTestResults] = useState<Record<string, any>>({});
 
-  const handleTestModel = async (modelId) => {
-    setTestingModelIds((prev) => new Set([...prev, modelId]));
+  const handleTestModel = async (modelId: any) => {
+    setTestingModelIds((prev: any) => new Set([...prev, modelId]));
     try {
       const res = await fetch("/api/models/test", {
         method: "POST",
@@ -86,11 +86,11 @@ export default function CompatibleModelsSection({
         body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
       });
       const data = await res.json();
-      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+      setModelTestResults((prev: any) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
     } catch {
-      setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
+      setModelTestResults((prev: any) => ({ ...prev, [modelId]: "error" }));
     } finally {
-      setTestingModelIds((prev) => {
+      setTestingModelIds((prev: any) => {
         const next = new Set(prev);
         next.delete(modelId);
         return next;
@@ -99,21 +99,21 @@ export default function CompatibleModelsSection({
   };
 
   const providerAliases = Object.entries(modelAliases).filter(
-    ([, model]) => typeof model === "string" && model.startsWith(`${providerStorageAlias}/`),
+    ([, model]: any) => typeof model === "string" && model.startsWith(`${providerStorageAlias}/`),
   );
 
-  const allModels = providerAliases.map(([alias, fullModel]) => ({
+  const allModels = providerAliases.map(([alias, fullModel]: any) => ({
     modelId: String(fullModel).replace(`${providerStorageAlias}/`, ""),
     fullModel: String(fullModel),
     alias: String(alias),
   }));
 
-  const generateDefaultAlias = (modelId) => {
+  const generateDefaultAlias = (modelId: any) => {
     const parts = modelId.split("/");
     return parts[parts.length - 1];
   };
 
-  const resolveAlias = (modelId) => {
+  const resolveAlias = (modelId: any) => {
     const fullModel = `${providerStorageAlias}/${modelId}`;
     // Skip if this exact model already has an alias
     if (Object.values(modelAliases).includes(fullModel)) return null;
@@ -146,7 +146,7 @@ export default function CompatibleModelsSection({
 
   const handleImport = async () => {
     if (importing) return;
-    const activeConnection = connections.find((conn) => conn.isActive !== false);
+    const activeConnection = connections.find((conn: any) => conn.isActive !== false);
     if (!activeConnection) return;
 
     setImporting(true);
@@ -181,7 +181,7 @@ export default function CompatibleModelsSection({
     }
   };
 
-  const canImport = connections.some((conn) => conn.isActive !== false);
+  const canImport = connections.some((conn: any) => conn.isActive !== false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -216,7 +216,7 @@ export default function CompatibleModelsSection({
 
       {allModels.length > 0 && (
         <div className="flex flex-col gap-3">
-          {allModels.map(({ modelId, fullModel, alias }) => (
+          {allModels.map(({ modelId, fullModel, alias }: any) => (
             <CompatibleModelRow
               key={fullModel}
               modelId={modelId}

@@ -7,7 +7,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 
 const LEVEL_RE = /\[(LOG|INFO|WARN|ERROR|DEBUG)\]/i;
 
-const LEVEL_STYLES = {
+const LEVEL_STYLES: Record<string, any> = {
   LOG: { badge: "bg-emerald/10 text-emerald border-emerald/20", text: "text-emerald" },
   INFO: { badge: "bg-aether-blue/10 text-aether-blue border-aether-blue/20", text: "text-aether-blue" },
   WARN: { badge: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20", text: "text-[#f59e0b]" },
@@ -15,14 +15,14 @@ const LEVEL_STYLES = {
   DEBUG: { badge: "bg-amethyst/10 text-amethyst border-amethyst/20", text: "text-amethyst" },
 };
 
-const LEVEL_ORDER = { DEBUG: 0, LOG: 1, INFO: 2, WARN: 3, ERROR: 4 };
+const LEVEL_ORDER: Record<string, any> = { DEBUG: 0, LOG: 1, INFO: 2, WARN: 3, ERROR: 4 };
 
-function parseLevel(line) {
+function parseLevel(line: any) {
   const m = line.match(LEVEL_RE);
   return m ? m[1].toUpperCase() : "LOG";
 }
 
-function parseTimestamp(line) {
+function parseTimestamp(line: any) {
   const m = line.match(/^\[(\d{2}:\d{2}:\d{2}(?:\.\d+)?)\]/);
   return m ? m[1] : null;
 }
@@ -36,11 +36,11 @@ function nowTs() {
   });
 }
 
-function wrapLine(line) {
+function wrapLine(line: any) {
   return typeof line === "string" ? { line, receivedAt: nowTs() } : line;
 }
 
-function stripLevel(line) {
+function stripLevel(line: any) {
   return line.replace(LEVEL_RE, "").trim();
 }
 
@@ -126,7 +126,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
     if (refreshRef) refreshRef.current = handleRefresh;
   }, [refreshRef, handleRefresh]);
 
-  const handleCopy = useCallback((line, idx) => {
+  const handleCopy = useCallback((line: any, idx: any) => {
     navigator.clipboard?.writeText(line).catch(() => {});
     setCopied(idx);
     setTimeout(() => setCopied(null), 2000);
@@ -141,7 +141,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
       setLastUpdated(new Date());
     };
 
-    es.onmessage = (e) => {
+    es.onmessage = (e: any) => {
       const msg = JSON.parse(e.data);
       if (msg.type === "init") {
         setLogs(msg.logs.slice(-CONSOLE_LOG_CONFIG.maxLines).map(wrapLine));
@@ -154,7 +154,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         });
       } else if (msg.type === "line") {
         if (!liveRef.current) return;
-        setLogs((prev) => {
+        setLogs((prev: any) => {
           const next = [...prev, wrapLine(msg.line)];
           return next.length > CONSOLE_LOG_CONFIG.maxLines ? next.slice(-CONSOLE_LOG_CONFIG.maxLines) : next;
         });
@@ -175,7 +175,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
     }
   }, [logs, autoScroll]);
 
-  const filtered = logs.filter((entry) => {
+  const filtered = logs.filter((entry: any) => {
     const line = typeof entry === "string" ? entry : entry.line;
     const level = parseLevel(line);
     if (levelFilter !== "all") {
@@ -188,8 +188,8 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
 
   const counts = {
     total: logs.length,
-    error: logs.filter((e) => parseLevel(typeof e === "string" ? e : e.line) === "ERROR").length,
-    warn: logs.filter((e) => parseLevel(typeof e === "string" ? e : e.line) === "WARN").length,
+    error: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "ERROR").length,
+    warn: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "WARN").length,
   };
 
   return (
@@ -211,7 +211,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
             />
           </div>
           <div className="flex items-center gap-1">
-            {LEVEL_FILTERS.map((f) => (
+            {LEVEL_FILTERS.map((f: any) => (
               <button
                 key={f.key}
                 onClick={() => setLevelFilter(f.key)}
@@ -257,7 +257,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto custom-scrollbar py-2"
-          onScroll={(e) => {
+          onScroll={(e: any) => {
             const el = e.currentTarget;
             const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
             if (!atBottom && autoScroll) setAutoScroll(false);
@@ -271,7 +271,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
               </p>
             </div>
           ) : (
-            filtered.map((entry, i) => <LogLine key={i} entry={entry} idx={i} onCopy={handleCopy} copied={copied} />)
+            filtered.map((entry: any, i: any) => <LogLine key={i} entry={entry} idx={i} onCopy={handleCopy} copied={copied} />)
           )}
         </div>
       </div>

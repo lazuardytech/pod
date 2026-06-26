@@ -17,11 +17,11 @@ import LucideIcon from "@/shared/components/LucideIcon";
 // Kinds that support combos (currently disabled for image/tts — temporarily hidden).
 // webSearch/webFetch handled by /web page.
 const COMBO_KINDS = new Set([]);
-const COMBO_BASE_NAMES = { image: "image-combo", tts: "tts-combo" };
+const COMBO_BASE_NAMES: Record<string, any> = { image: "image-combo", tts: "tts-combo" };
 
-function getEffectiveStatus(conn) {
+function getEffectiveStatus(conn: any) {
   const isCooldown = Object.entries(conn).some(
-    ([k, v]) => k.startsWith("modelLock_") && v && new Date(v as string | number | Date).getTime() > Date.now(),
+    ([k, v]: any) => k.startsWith("modelLock_") && v && new Date(v as string | number | Date).getTime() > Date.now(),
   );
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
@@ -30,17 +30,17 @@ function MediaProviderCard({ provider, kind, connections, isCustom }: any) {
   const providerInfo = AI_PROVIDERS[provider.id];
   const isNoAuth = !!providerInfo?.noAuth;
 
-  const providerConns = connections.filter((c) => c.provider === provider.id);
-  const connected = providerConns.filter((c) => {
+  const providerConns = connections.filter((c: any) => c.provider === provider.id);
+  const connected = providerConns.filter((c: any) => {
     const s = getEffectiveStatus(c);
     return s === "active" || s === "success";
   }).length;
-  const error = providerConns.filter((c) => {
+  const error = providerConns.filter((c: any) => {
     const s = getEffectiveStatus(c);
     return s === "error" || s === "expired" || s === "unavailable";
   }).length;
   const total = providerConns.length;
-  const allDisabled = total > 0 && providerConns.every((c) => c.isActive === false);
+  const allDisabled = total > 0 && providerConns.every((c: any) => c.isActive === false);
 
   const renderStatus = () => {
     if (isNoAuth)
@@ -120,7 +120,7 @@ function ComboList({ combos }: any) {
   if (combos.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      {combos.map((combo) => (
+      {combos.map((combo: any) => (
         <Link key={combo.id} href={`/media-providers/combo/${combo.id}`}>
           <Card
             padding="xs"
@@ -130,7 +130,7 @@ function ComboList({ combos }: any) {
               <LucideIcon name="layers" className="text-primary text-[18px]" />
               <code className="text-sm font-mono font-medium flex-1 truncate">{combo.name}</code>
               <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
-                {combo.models.slice(0, 6).map((entry, i) => {
+                {combo.models.slice(0, 6).map((entry: any, i: any) => {
                   const pid = typeof entry === "string" ? entry.split("/")[0] : "";
                   const p = AI_PROVIDERS[pid];
                   return (
@@ -183,8 +183,8 @@ export default function MediaProviderKindPage() {
     setShowConnectedOnly(next);
     window.localStorage.setItem("media-providers:connectedOnly", String(next));
   };
-  const registerAction = useHeaderActionStore((s) => s.register);
-  const unregisterAction = useHeaderActionStore((s) => s.unregister);
+  const registerAction = useHeaderActionStore((s: any) => s.register);
+  const unregisterAction = useHeaderActionStore((s: any) => s.unregister);
 
   useEffect(() => {
     registerAction({
@@ -204,26 +204,26 @@ export default function MediaProviderKindPage() {
     }
   }, [kind, router]);
 
-  const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kind);
+  const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any) => k.id === kind);
   const isEmbedding = kind === "embedding";
   const supportsCombo = COMBO_KINDS.has(kind);
 
   useEffect(() => {
     if (!kindConfig) return;
     fetch("/api/providers", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => setConnections(d.connections || []))
+      .then((r: any) => r.json())
+      .then((d: any) => setConnections(d.connections || []))
       .catch(() => {});
     if (isEmbedding) {
       fetch("/api/provider-nodes", { cache: "no-store" })
-        .then((r) => r.json())
-        .then((d) => setCustomNodes((d.nodes || []).filter((n) => n.type === "custom-embedding")))
+        .then((r: any) => r.json())
+        .then((d: any) => setCustomNodes((d.nodes || []).filter((n: any) => n.type === "custom-embedding")))
         .catch(() => {});
     }
     if (supportsCombo) {
       fetch("/api/combos", { cache: "no-store" })
-        .then((r) => r.json())
-        .then((d) => setCombos(d.combos || []))
+        .then((r: any) => r.json())
+        .then((d: any) => setCombos(d.combos || []))
         .catch(() => {});
     }
   }, [isEmbedding, supportsCombo, kindConfig]);
@@ -231,23 +231,23 @@ export default function MediaProviderKindPage() {
   if (!kindConfig) return notFound();
 
   const providers = getProvidersByKind(kind);
-  const kindCombos = combos.filter((c) => c.kind === kind);
+  const kindCombos = combos.filter((c: any) => c.kind === kind);
 
   // Map custom nodes to MediaProviderCard shape
-  const customProviders = customNodes.map((n) => ({
+  const customProviders = customNodes.map((n: any) => ({
     id: n.id,
     name: n.name || "Custom Embedding",
     color: "#6366F1",
     textIcon: "CE",
   }));
 
-  const allProviders = [...providers, ...customProviders].filter((p) => {
+  const allProviders = [...providers, ...customProviders].filter((p: any) => {
     if (!showConnectedOnly) return true;
     // noAuth providers (e.g. Kiro) have no connections — hide when Connected Only
     const providerInfo = AI_PROVIDERS[p.id];
     if (providerInfo?.noAuth) return false;
-    const providerConns = connections.filter((c) => c.provider === p.id);
-    const hasConnected = providerConns.some((c) => {
+    const providerConns = connections.filter((c: any) => c.provider === p.id);
+    const hasConnected = providerConns.some((c: any) => {
       const s = getEffectiveStatus(c);
       return (s === "active" || s === "success") && c.isActive !== false;
     });
@@ -258,7 +258,7 @@ export default function MediaProviderKindPage() {
     const base = COMBO_BASE_NAMES[kind] || `${kind}-combo`;
     let name = base;
     let i = 1;
-    const existing = new Set(combos.map((c) => c.name));
+    const existing = new Set(combos.map((c: any) => c.name));
     while (existing.has(name)) {
       name = `${base}-${i++}`;
     }
@@ -310,13 +310,13 @@ export default function MediaProviderKindPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {allProviders.map((provider) => (
+          {allProviders.map((provider: any) => (
             <MediaProviderCard
               key={provider.id}
               provider={provider}
               kind={kind}
               connections={connections}
-              isCustom={customProviders.some((c) => c.id === provider.id)}
+              isCustom={customProviders.some((c: any) => c.id === provider.id)}
             />
           ))}
         </div>
@@ -326,8 +326,8 @@ export default function MediaProviderKindPage() {
         <AddCustomEmbeddingModal
           isOpen={showAddCustomEmbedding}
           onClose={() => setShowAddCustomEmbedding(false)}
-          onCreated={(node) => {
-            setCustomNodes((prev) => [...prev, node]);
+          onCreated={(node: any) => {
+            setCustomNodes((prev: any) => [...prev, node]);
             setShowAddCustomEmbedding(false);
           }}
         />

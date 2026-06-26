@@ -8,7 +8,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
  * Slugify a label for use as a form field name when no explicit `name` prop is provided.
  * Returns "" for falsy input so the caller can decide to omit the attribute entirely.
  */
-function deriveName(label) {
+function deriveName(label: any) {
   if (typeof label !== "string" || !label) return "";
   return label
     .toLowerCase()

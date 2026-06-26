@@ -4,7 +4,7 @@ import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function deriveName(label) {
+function deriveName(label: any) {
   if (typeof label !== "string" || !label) return "";
   return label
     .toLowerCase()
@@ -77,7 +77,7 @@ export default function Select({
           <option value="" disabled className="bg-graphite text-storm-cloud">
             {placeholder}
           </option>
-          {options.map((option) => (
+          {options.map((option: any) => (
             <option key={option.value} value={option.value} className="bg-graphite text-porcelain">
               {option.label}
             </option>

@@ -77,9 +77,9 @@ export default function ProfilePage() {
     onConfirm: null,
     variant: "default",
   });
-  const _openConfirm = (title, message, onConfirm, variant = "default") =>
+  const _openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
   const [legacyInfo, setLegacyInfo] = useState({ hasLegacyData: false, legacyFilesFound: [] });
   const importFileRef = useRef(null);
   const [proxyForm, setProxyForm] = useState({
@@ -103,7 +103,7 @@ export default function ProfilePage() {
     offlineNoticeShownRef.current = false;
   }, []);
 
-  const applySettingsData = useCallback((data) => {
+  const applySettingsData = useCallback((data: any) => {
     if (!data || typeof data !== "object") return;
     setSettings(data);
     setProxyForm({
@@ -113,7 +113,7 @@ export default function ProfilePage() {
     });
   }, []);
 
-  const patchSettings = useCallback(async (patch, { feature = "profile-settings" } = {}) => {
+  const patchSettings = useCallback(async (patch: any, { feature = "profile-settings" }: any = {}) => {
     try {
       const result = await mutateJsonWithOfflineQueue({
         url: "/api/settings",
@@ -124,12 +124,12 @@ export default function ProfilePage() {
       });
 
       if (result.queued) {
-        setSettings((prev) => ({ ...prev, ...patch }));
+        setSettings((prev: any) => ({ ...prev, ...patch }));
         return { ok: true, queued: true, data: patch };
       }
 
       const nextData = result.data && typeof result.data === "object" ? result.data : patch;
-      setSettings((prev) => ({ ...prev, ...nextData }));
+      setSettings((prev: any) => ({ ...prev, ...nextData }));
       return { ok: true, queued: false, data: nextData };
     } catch (error) {
       console.error("Failed to update settings:", error);
@@ -154,7 +154,7 @@ export default function ProfilePage() {
         if (data && !data.error) setLegacyInfo(data);
       },
     })
-      .then((result) => {
+      .then((result: any) => {
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
       })
@@ -173,16 +173,16 @@ export default function ProfilePage() {
       cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
       cacheTags: ["settings"],
-      onCacheData: (data) => {
+      onCacheData: (data: any) => {
         if (!mounted) return;
         applySettingsData(data);
       },
-      onFreshData: (data) => {
+      onFreshData: (data: any) => {
         if (!mounted) return;
         applySettingsData(data);
       },
     })
-      .then((result) => {
+      .then((result: any) => {
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
       })
@@ -199,7 +199,7 @@ export default function ProfilePage() {
     };
   }, [applySettingsData, clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const updateOutboundProxy = async (e) => {
+  const updateOutboundProxy = async (e: any) => {
     e.preventDefault();
     if (settings.outboundProxyEnabled !== true) return;
     setProxyLoading(true);
@@ -256,13 +256,13 @@ export default function ProfilePage() {
     }
   };
 
-  const updateOutboundProxyEnabled = async (outboundProxyEnabled) => {
+  const updateOutboundProxyEnabled = async (outboundProxyEnabled: any) => {
     setProxyLoading(true);
     setProxyStatus({ type: "", message: "" });
     try {
       const result = await patchSettings({ outboundProxyEnabled }, { feature: "profile-outbound-proxy-enabled" });
       if (result.ok) {
-        setProxyForm((prev) => ({
+        setProxyForm((prev: any) => ({
           ...prev,
           outboundProxyEnabled: (result.data?.outboundProxyEnabled ?? outboundProxyEnabled) === true,
         }));
@@ -284,7 +284,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePasswordChange = async (e) => {
+  const handlePasswordChange = async (e: any) => {
     e.preventDefault();
     if (passwords.new !== passwords.confirm) {
       setPassStatus({ type: "error", message: "Passwords do not match" });
@@ -315,36 +315,36 @@ export default function ProfilePage() {
     }
   };
 
-  const updateFallbackStrategy = async (strategy) => {
+  const updateFallbackStrategy = async (strategy: any) => {
     await patchSettings({ fallbackStrategy: strategy }, { feature: "profile-fallback-strategy" });
   };
 
-  const updateComboStrategy = async (strategy) => {
+  const updateComboStrategy = async (strategy: any) => {
     await patchSettings({ comboStrategy: strategy }, { feature: "profile-combo-strategy" });
   };
 
-  const updateStickyLimit = async (limit) => {
+  const updateStickyLimit = async (limit: any) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
     await patchSettings({ stickyRoundRobinLimit: numLimit }, { feature: "profile-sticky-limit" });
   };
 
-  const updateComboStickyLimit = async (limit) => {
+  const updateComboStickyLimit = async (limit: any) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
     await patchSettings({ comboStickyRoundRobinLimit: numLimit }, { feature: "profile-combo-sticky-limit" });
   };
 
-  const updateMinimumLockout = async (minutes) => {
+  const updateMinimumLockout = async (minutes: any) => {
     const val = Math.max(1, parseInt(minutes, 10) || 60);
     await patchSettings({ minimumLockoutMinutes: val }, { feature: "profile-minimum-lockout" });
   };
 
-  const updateRequireLogin = async (requireLogin) => {
+  const updateRequireLogin = async (requireLogin: any) => {
     await patchSettings({ requireLogin }, { feature: "profile-require-login" });
   };
 
-  const updateModelCostSyncInterval = async (val) => {
+  const updateModelCostSyncInterval = async (val: any) => {
     const hours = Math.max(1, parseInt(val) || 1);
     await patchSettings({ modelCostSyncIntervalHours: hours }, { feature: "profile-model-cost-sync-interval" });
   };
@@ -366,7 +366,7 @@ export default function ProfilePage() {
     }
   };
 
-  const updateObservabilityEnabled = async (enabled) => {
+  const updateObservabilityEnabled = async (enabled: any) => {
     await patchSettings(
       { observabilityEnabled: enabled, enableObservability: enabled },
       { feature: "profile-observability-enabled" },
@@ -379,10 +379,10 @@ export default function ProfilePage() {
         url: "/api/settings",
         cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
-        onCacheData: (data) => {
+        onCacheData: (data: any) => {
           applySettingsData(data);
         },
-        onFreshData: (data) => {
+        onFreshData: (data: any) => {
           applySettingsData(data);
         },
       });
@@ -422,7 +422,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleImportDatabase = async (event) => {
+  const handleImportDatabase = async (event: any) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setDbLoading(true);
@@ -470,7 +470,7 @@ export default function ProfilePage() {
           <SectionHeader icon="contrast" title="Appearance" />
           <SettingRow label="Theme" description="Choose how the interface looks">
             <div className="flex items-center gap-1 p-1 rounded-[6px] border border-charcoal-grey bg-pitch-black/60">
-              {["light", "dark", "system"].map((option) => (
+              {["light", "dark", "system"].map((option: any) => (
                 <button
                   key={option}
                   type="button"
@@ -693,7 +693,7 @@ export default function ProfilePage() {
                   <Input
                     placeholder="http://127.0.0.1:7897"
                     value={proxyForm.outboundProxyUrl}
-                    onChange={(e: any) => setProxyForm((prev) => ({ ...prev, outboundProxyUrl: e.target.value }))}
+                    onChange={(e: any) => setProxyForm((prev: any) => ({ ...prev, outboundProxyUrl: e.target.value }))}
                     disabled={loading || proxyLoading}
                   />
                   <p className="text-[12px] text-storm-cloud">Leave empty to inherit existing env proxy (if any).</p>
@@ -704,7 +704,7 @@ export default function ProfilePage() {
                   <Input
                     placeholder="localhost,127.0.0.1"
                     value={proxyForm.outboundNoProxy}
-                    onChange={(e: any) => setProxyForm((prev) => ({ ...prev, outboundNoProxy: e.target.value }))}
+                    onChange={(e: any) => setProxyForm((prev: any) => ({ ...prev, outboundNoProxy: e.target.value }))}
                     disabled={loading || proxyLoading}
                   />
                   <p className="text-[12px] text-storm-cloud">Comma-separated hostnames/domains to bypass the proxy.</p>
@@ -783,7 +783,7 @@ export default function ProfilePage() {
               { label: "Runtime", value: settings.systemInfo?.runtime || "—" },
               { label: "Platform", value: settings.systemInfo?.platform || "—" },
               { label: "Database", value: "~/.pod/pod.sqlite" },
-            ].map((row) => (
+            ].map((row: any) => (
               <div
                 key={row.label}
                 className="flex items-center justify-between py-1.5 border-b border-charcoal-grey last:border-0"

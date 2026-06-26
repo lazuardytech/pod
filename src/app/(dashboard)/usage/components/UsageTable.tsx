@@ -5,10 +5,10 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Card from "@/shared/components/Card";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const fmt = (n) => new Intl.NumberFormat().format(n || 0);
-const fmtCost = (n) => `$${(n || 0).toFixed(2)}`;
+const fmt = (n: any) => new Intl.NumberFormat().format(n || 0);
+const fmtCost = (n: any) => `$${(n || 0).toFixed(2)}`;
 
-function fmtTime(iso) {
+function fmtTime(iso: any) {
   if (!iso) return "Never";
   const diffMins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (diffMins < 1) return "Just now";
@@ -117,8 +117,8 @@ export default function UsageTable({
     }
   }, [expanded, storageKey]);
 
-  const toggleGroup = useCallback((groupKey) => {
-    setExpanded((prev) => {
+  const toggleGroup = useCallback((groupKey: any) => {
+    setExpanded((prev: any) => {
       const next = new Set(prev);
       next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey);
       return next;
@@ -151,7 +151,7 @@ export default function UsageTable({
         <table className="w-full text-sm text-left">
           <thead className="bg-bg-subtle/30 text-text-muted uppercase text-xs">
             <tr>
-              {columns.map((col) => (
+              {columns.map((col: any) => (
                 <th
                   key={col.field}
                   className={`px-6 py-3 cursor-pointer hover:bg-bg-subtle/50 ${col.align === "right" ? "text-right" : ""}`}
@@ -160,7 +160,7 @@ export default function UsageTable({
                   {col.label} <SortIcon field={col.field} currentSort={sortBy} currentOrder={sortOrder} />
                 </th>
               ))}
-              {valueColumns.map((col) => (
+              {valueColumns.map((col: any) => (
                 <th
                   key={col.field}
                   className="px-6 py-3 text-right cursor-pointer hover:bg-bg-subtle/50"
@@ -172,7 +172,7 @@ export default function UsageTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {groupedData.map((group) => (
+            {groupedData.map((group: any) => (
               <Fragment key={group.groupKey}>
                 {/* Group summary row */}
                 <tr
@@ -197,7 +197,7 @@ export default function UsageTable({
                 </tr>
                 {/* Detail rows */}
                 {expanded.has(group.groupKey) &&
-                  group.items.map((item) => (
+                  group.items.map((item: any) => (
                     <tr key={`detail-${item.key}`} className="group-detail hover:bg-bg-subtle/20 transition-colors">
                       {renderDetailCells(item)}
                       <ValueCells item={item} viewMode={viewMode} />

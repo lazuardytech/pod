@@ -56,10 +56,10 @@ function schedulePersist(connectionId: string, fields: PersistEntry): void {
   const existing = persistQueue.get(connectionId);
   if (existing?.timer) clearTimeout(existing.timer);
   const merged: PersistEntry = { ...(existing || {}), ...fields };
-  merged.timer = setTimeout(() => {
+  merged.timer = setTimeout((): any => {
     const { timer, ...payload } = persistQueue.get(connectionId) || {};
     persistQueue.delete(connectionId);
-    updateProviderConnection(connectionId, payload).catch((err: unknown) => {
+    updateProviderConnection(connectionId, payload).catch((err: unknown): any => {
       log.debug("AUTH", `Persist rotation failed: ${(err as { message?: string })?.message || err}`);
     });
   }, PERSIST_DEBOUNCE_MS);
@@ -127,14 +127,14 @@ export async function getProviderCredentials(
       log.warn("AUTH", `No credentials for ${provider}`);
       return null;
     }
-    const availableConnections = connections.filter((c) => {
+    const availableConnections = connections.filter((c): any => {
       if (excludeSet.has(c.id)) return false;
       if (isConnectionLockActive(c)) return false;
       if (isModelLockActive(c, model)) return false;
       return true;
     });
     log.debug("AUTH", `${provider} | available: ${availableConnections.length}/${connections.length}`);
-    connections.forEach((c) => {
+    connections.forEach((c): any => {
       const excluded = excludeSet.has(c.id);
       const connLocked = isConnectionLockActive(c);
       const locked = isModelLockActive(c, model);
@@ -148,7 +148,7 @@ export async function getProviderCredentials(
     });
     if (availableConnections.length === 0) {
       const expiries = connections
-        .map((c) => getConnectionLockUntil(c) || getEarliestModelLockUntil(c))
+        .map((c): any => getConnectionLockUntil(c) || getEarliestModelLockUntil(c))
         .filter((x): x is string => Boolean(x));
       const earliest = expiries.sort()[0] || null;
       if (earliest) {
@@ -175,7 +175,7 @@ export async function getProviderCredentials(
       (providerOverride.fallbackStrategy as string) || (settings.fallbackStrategy as string) || "fill-first";
     let connection: AnyConnection | undefined;
     if (preferredConnectionId) {
-      connection = availableConnections.find((c) => c.id === preferredConnectionId);
+      connection = availableConnections.find((c): any => c.id === preferredConnectionId);
       if (connection) {
         log.info(
           "AUTH",
@@ -189,9 +189,9 @@ export async function getProviderCredentials(
       const stickyLimit =
         (providerOverride.stickyRoundRobinLimit as number) || (settings.stickyRoundRobinLimit as number) || 3;
       let state = rotationState.get(providerId);
-      let current = state ? availableConnections.find((c) => c.id === state?.lastConnectionId) : null;
+      let current = state ? availableConnections.find((c): any => c.id === state?.lastConnectionId) : null;
       if (!current) {
-        const byRecency = [...availableConnections].sort((a, b) => {
+        const byRecency = [...availableConnections].sort((a, b): any => {
           if (!a.lastUsedAt && !b.lastUsedAt) return (a.priority || 999) - (b.priority || 999);
           if (!a.lastUsedAt) return 1;
           if (!b.lastUsedAt) return -1;
@@ -204,7 +204,7 @@ export async function getProviderCredentials(
         connection = current;
         state.consecutiveCount += 1;
       } else {
-        const sortedByOldest = [...availableConnections].sort((a, b) => {
+        const sortedByOldest = [...availableConnections].sort((a, b): any => {
           if (!a.lastUsedAt && !b.lastUsedAt) return (a.priority || 999) - (b.priority || 999);
           if (!a.lastUsedAt) return -1;
           if (!b.lastUsedAt) return 1;
@@ -258,7 +258,7 @@ export async function markAccountUnavailable(
 ): Promise<{ shouldFallback: boolean; cooldownMs: number }> {
   if (!connectionId || connectionId === "noauth") return { shouldFallback: false, cooldownMs: 0 };
   const connections = await getProviderConnections({ provider });
-  const conn = (connections as AnyConnection[]).find((c) => c.id === connectionId);
+  const conn = (connections as AnyConnection[]).find((c): any => c.id === connectionId);
   const backoffLevel = conn?.backoffLevel || 0;
   if (isConnectionLevelError(status, errorText)) {
     const { update, cooldownMs, newCount, until } = buildConnectionLockUpdate(conn, errorText);
@@ -285,7 +285,7 @@ export async function markAccountUnavailable(
     ({ shouldFallback, cooldownMs, newBackoffLevel } = checkFallbackError(status, errorText, backoffLevel));
   }
   if (!shouldFallback) return { shouldFallback: false, cooldownMs: 0 };
-  const settingsData = await getSettings().catch(() => ({}) as Settings);
+  const settingsData = await getSettings().catch((): any => ({}) as Settings);
   const minimumLockoutMinutes = Number(settingsData.minimumLockoutMinutes) ?? 60;
   const minimumLockoutMs = Math.max(minimumLockoutMinutes, 0) * 60 * 1000;
   const prevLockCount = getModelLockCount(conn, model);
@@ -328,24 +328,24 @@ export async function clearAccountError(
   if (!connectionId || connectionId === "noauth") return;
   const conn: AnyConnection = currentConnection._connection || currentConnection;
   const now = Date.now();
-  const allLockKeys = Object.keys(conn).filter((k) => k.startsWith("modelLock_"));
-  const allLockCountKeys = Object.keys(conn).filter((k) => k.startsWith(MODEL_LOCK_COUNT_PREFIX));
+  const allLockKeys = Object.keys(conn).filter((k): any => k.startsWith("modelLock_"));
+  const allLockCountKeys = Object.keys(conn).filter((k): any => k.startsWith(MODEL_LOCK_COUNT_PREFIX));
   const connLockUntil = conn[CONN_LOCK_UNTIL_KEY];
   const connLockExpired = connLockUntil && new Date(connLockUntil).getTime() <= now;
   if (!conn.testStatus && !conn.lastError && allLockKeys.length === 0 && !connLockExpired) return;
-  const keysToClear = allLockKeys.filter((k) => {
+  const keysToClear = allLockKeys.filter((k): any => {
     if (model && k === `modelLock_${model}`) return true;
     if (model && k === "modelLock___all") return true;
     const expiry = conn[k];
     return expiry && new Date(expiry).getTime() <= now;
   });
   if (keysToClear.length === 0 && conn.testStatus !== "unavailable" && !conn.lastError && !connLockExpired) return;
-  const remainingActiveLocks = allLockKeys.filter((k) => {
+  const remainingActiveLocks = allLockKeys.filter((k): any => {
     if (keysToClear.includes(k)) return false;
     const expiry = conn[k];
     return expiry && new Date(expiry).getTime() > now;
   });
-  const clearObj: Record<string, unknown> = Object.fromEntries(keysToClear.map((k) => [k, null]));
+  const clearObj: Record<string, unknown> = Object.fromEntries(keysToClear.map((k): any => [k, null]));
   if (connLockExpired) {
     clearObj[CONN_LOCK_UNTIL_KEY] = null;
     clearObj[CONN_LOCK_COUNT_KEY] = null;

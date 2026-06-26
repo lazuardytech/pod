@@ -4,7 +4,7 @@ import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 export function Spinner({ size = "md", className, ...rest }: { size?: string; className?: any; [key: string]: any }) {
-  const sizes = {
+  const sizes: Record<string, string> = {
     sm: "text-[16px]",
     md: "text-[20px]",
     lg: "text-[28px]",

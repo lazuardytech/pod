@@ -27,7 +27,7 @@ export default function KiroOAuthWrapper({
   const [idcConfig, setIdcConfig] = useState(null);
 
   const handleMethodSelect = useCallback(
-    (method, config) => {
+    (method: any, config: any) => {
       if (method === "builder-id") {
         // Use device code flow (AWS Builder ID)
         setAuthMethod("builder-id");

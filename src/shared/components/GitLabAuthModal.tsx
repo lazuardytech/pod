@@ -12,7 +12,7 @@ const GITLAB_COM = "https://gitlab.com";
  * Only allows http/https schemes to prevent javascript: XSS.
  * Falls back to GITLAB_COM if the URL is invalid or uses a disallowed scheme.
  */
-function sanitizeGitLabUrl(url) {
+function sanitizeGitLabUrl(url: any) {
   const trimmed = (url || "").trim() || GITLAB_COM;
   try {
     const parsed = new URL(trimmed);
@@ -184,19 +184,19 @@ export default function GitLabAuthModal({
             <Input
               label="GitLab Base URL"
               value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
+              onChange={(e: any) => setBaseUrl(e.target.value)}
               placeholder={GITLAB_COM}
             />
             <Input
               label="Client ID"
               value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
+              onChange={(e: any) => setClientId(e.target.value)}
               placeholder="Your OAuth application client ID"
             />
             <Input
               label="Client Secret (optional for PKCE)"
               value={clientSecret}
-              onChange={(e) => setClientSecret(e.target.value)}
+              onChange={(e: any) => setClientSecret(e.target.value)}
               placeholder="Leave empty for public PKCE app"
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -238,13 +238,13 @@ export default function GitLabAuthModal({
             <Input
               label="GitLab Base URL"
               value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
+              onChange={(e: any) => setBaseUrl(e.target.value)}
               placeholder={GITLAB_COM}
             />
             <Input
               label="Personal Access Token"
               value={pat}
-              onChange={(e) => setPat(e.target.value)}
+              onChange={(e: any) => setPat(e.target.value)}
               placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
               type="password"
             />

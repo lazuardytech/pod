@@ -9,10 +9,10 @@ import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache
 import TelemetryCard from "./TelemetryCard";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const OFFLINE_HEALTH_CACHE_KEY = "health:snapshot";
-const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
+const OFFLINE_HEALTH_CACHE_KEY: any = "health:snapshot";
+const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
 
-function getProviderIconSrc(p) {
+function getProviderIconSrc(p: any) {
   if (p.isCompatible) {
     if (p.provider?.startsWith(ANTHROPIC_COMPATIBLE_PREFIX)) return "/providers/anthropic-m.png";
     return "/providers/oai-cc.png";
@@ -20,17 +20,17 @@ function getProviderIconSrc(p) {
   return `/providers/${p.providerPrefix || p.provider}.png`;
 }
 
-function formatBytes(bytes = 0) {
+function formatBytes(bytes: any = 0) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-function formatUptime(seconds = 0) {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
+function formatUptime(seconds: any = 0) {
+  const d: any = Math.floor(seconds / 86400);
+  const h: any = Math.floor((seconds % 86400) / 3600);
+  const m: any = Math.floor((seconds % 3600) / 60);
   if (d > 0) return `${d}d ${h}h ${m}m`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
@@ -62,38 +62,38 @@ function SectionHeader({ icon, title, children }: any) {
 }
 
 export default function HealthPage() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [lastRefresh, setLastRefresh] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [clearingLock, setClearingLock] = useState(null);
-  const esRef = useRef(null);
-  const offlineNoticeShownRef = useRef(false);
+  const [data, setData]: any = useState(null);
+  const [error, setError]: any = useState(null);
+  const [lastRefresh, setLastRefresh]: any = useState(null);
+  const [refreshing, setRefreshing]: any = useState(false);
+  const [clearingLock, setClearingLock]: any = useState(null);
+  const esRef: any = useRef(null);
+  const offlineNoticeShownRef: any = useRef(false);
 
-  const notifyOfflineCache = useCallback(() => {
+  const notifyOfflineCache: any = useCallback(() => {
     if (offlineNoticeShownRef.current) return;
     offlineNoticeShownRef.current = true;
     toast.info("Network unavailable. Showing cached health snapshot.");
   }, []);
 
-  const clearOfflineCacheNotice = useCallback(() => {
+  const clearOfflineCacheNotice: any = useCallback(() => {
     offlineNoticeShownRef.current = false;
   }, []);
 
-  const fetchHealth = useCallback(async () => {
+  const fetchHealth: any = useCallback(async () => {
     try {
-      const result = await loadJsonStaleWhileRevalidate({
+      const result: any = await loadJsonStaleWhileRevalidate({
         url: "/api/monitoring/health",
         cacheKey: OFFLINE_HEALTH_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["health"],
         fetchOptions: { cache: "no-store" },
-        onCacheData: (snapshot, meta) => {
+        onCacheData: (snapshot: any, meta: any) => {
           setData(snapshot);
           setError(null);
           setLastRefresh(new Date(meta?.updatedAt || Date.now()));
         },
-        onFreshData: (snapshot, meta) => {
+        onFreshData: (snapshot: any, meta: any) => {
           setData(snapshot);
           setError(null);
           setLastRefresh(new Date(meta?.updatedAt || Date.now()));
@@ -113,11 +113,11 @@ export default function HealthPage() {
 
   // SSE connection
   useEffect(() => {
-    let closed = false;
-    let reconnectTimer = null;
-    let es = null;
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
 
-    const cleanup = () => {
+    const cleanup: any = () => {
       if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = null;
       if (es) {
@@ -126,16 +126,16 @@ export default function HealthPage() {
       }
     };
 
-    const connect = () => {
+    const connect: any = () => {
       if (closed) return;
       cleanup();
       es = new EventSource("/api/monitoring/health/stream");
       esRef.current = es;
 
-      es.onmessage = (e) => {
+      es.onmessage = (e: any) => {
         if (closed) return;
         try {
-          const payload = JSON.parse(e.data);
+          const payload: any = JSON.parse(e.data);
           if (payload.error) {
             setError(payload.error);
             return;
@@ -177,7 +177,7 @@ export default function HealthPage() {
         </div>
         {/* Skeleton for each section */}
         <div className="flex flex-col gap-4">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map((i: any) => (
             <CardSkeleton key={i} />
           ))}
         </div>
@@ -323,7 +323,7 @@ export default function HealthPage() {
               { label: "Enabled", value: providers.enabled },
               { label: "Combos", value: providers.combos },
               { label: "API keys", value: providers.apiKeys },
-            ].map((row) => (
+            ].map((row: any) => (
               <div
                 key={row.label}
                 className="flex items-center justify-between py-1 border-b border-charcoal-grey last:border-0"
@@ -350,7 +350,7 @@ export default function HealthPage() {
                 active: tunnel.tailscaleEnabled,
                 url: tunnel.tailscaleUrl,
               },
-            ].map((t) => (
+            ].map((t: any) => (
               <div
                 key={t.label}
                 className="flex items-start justify-between py-1 border-b border-charcoal-grey last:border-0 gap-2"
@@ -388,7 +388,7 @@ export default function HealthPage() {
                 label: "Hit rate",
                 value: typeof semanticCache.hitRate === "number" ? `${semanticCache.hitRate.toFixed(1)}%` : "—",
               },
-            ].map((row) => (
+            ].map((row: any) => (
               <div
                 key={row.label}
                 className="flex items-center justify-between py-1 border-b border-charcoal-grey last:border-0"
@@ -420,14 +420,14 @@ export default function HealthPage() {
           <p className="text-[12px] text-fog-grey text-center py-4">No provider connections configured.</p>
         ) : (
           (() => {
-            const unhealthy = data.providerHealth.filter((p) => p.state !== "CLOSED");
-            const healthy = data.providerHealth.filter((p) => p.state === "CLOSED");
+            const unhealthy: any = data.providerHealth.filter((p: any) => p.state !== "CLOSED");
+            const healthy: any = data.providerHealth.filter((p: any) => p.state === "CLOSED");
             return (
               <div className="space-y-3">
                 {unhealthy.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-[10px] font-[590] text-warning-red uppercase tracking-[0.05em]">Issues</p>
-                    {unhealthy.map((p) => (
+                    {unhealthy.map((p: any) => (
                       <div
                         key={p.provider}
                         className={`rounded-[6px] p-3 border flex items-start gap-3 ${
@@ -477,7 +477,7 @@ export default function HealthPage() {
                       </p>
                     )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {healthy.map((p) => (
+                      {healthy.map((p: any) => (
                         <div
                           key={p.provider}
                           className="rounded-[6px] p-2.5 bg-emerald/5 border border-charcoal-grey flex items-center gap-2"
@@ -518,7 +518,7 @@ export default function HealthPage() {
           <p className="text-[12px] text-fog-grey text-center py-4">No rate limited requests available.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.rateLimitStatus.map((rl) => (
+            {data.rateLimitStatus.map((rl: any) => (
               <div key={rl.provider} className="rounded-[6px] border border-[#f59e0b]/20 bg-[#f59e0b]/5 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[13px] font-[510] text-porcelain">{rl.providerName}</span>
@@ -527,7 +527,7 @@ export default function HealthPage() {
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  {rl.connections.map((c) => (
+                  {rl.connections.map((c: any) => (
                     <div key={c.connectionId} className="flex items-center justify-between text-[11px]">
                       <span className="text-storm-cloud truncate max-w-[140px]">{c.connectionName}</span>
                       <span className="text-fog-grey shrink-0">
@@ -569,7 +569,7 @@ export default function HealthPage() {
           <p className="text-[12px] text-fog-grey text-center py-4">No model lockouts available.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.blockedModelStatus.map((bm) => (
+            {data.blockedModelStatus.map((bm: any) => (
               <div key={bm.model} className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span
@@ -584,11 +584,11 @@ export default function HealthPage() {
                     </Badge>
                     <button
                       onClick={async () => {
-                        const key = `${bm.model}`;
+                        const key: any = `${bm.model}`;
                         setClearingLock(key);
                         try {
-                          const results = await Promise.all(
-                            bm.connections.map((c) =>
+                          const results: any = await Promise.all(
+                            bm.connections.map((c: any) =>
                               fetch("/api/models/availability", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -597,11 +597,11 @@ export default function HealthPage() {
                                   provider: c.provider,
                                   model: bm.model,
                                 }),
-                              }).then((r) => r.json()),
+                              }).then((r: any) => r.json()),
                             ),
                           );
-                          const anyPassed = results.some((r) => r.passed);
-                          const allFailed = results.every((r) => r.tested && !r.passed);
+                          const anyPassed: any = results.some((r: any) => r.passed);
+                          const allFailed: any = results.every((r: any) => r.tested && !r.passed);
                           if (anyPassed) {
                             toast.success("Model recheck passed — lockout cleared");
                           } else if (allFailed) {
@@ -624,7 +624,7 @@ export default function HealthPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  {bm.connections.map((c) => (
+                  {bm.connections.map((c: any) => (
                     <div key={c.connectionId} className="flex items-center justify-between text-[11px]">
                       <div className="flex flex-col min-w-0">
                         <span className="text-storm-cloud truncate max-w-[140px]">{c.connectionName}</span>
@@ -632,7 +632,7 @@ export default function HealthPage() {
                       </div>
                       <span className="text-fog-grey shrink-0">
                         {(() => {
-                          const secs = Math.max(0, Math.round(c.retryAfterMs / 1000));
+                          const secs: any = Math.max(0, Math.round(c.retryAfterMs / 1000));
                           if (secs >= 3600)
                             return `unblocks in ${Math.round(secs / 3600)}h ${Math.round((secs % 3600) / 60)}m`;
                           if (secs >= 60) return `unblocks in ${Math.round(secs / 60)}m`;
@@ -680,7 +680,7 @@ export default function HealthPage() {
           <p className="text-[12px] text-fog-grey text-center py-4">No account lockouts.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.connectionLockStatus.map((acc) => (
+            {data.connectionLockStatus.map((acc: any) => (
               <div key={acc.connectionId} className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex flex-col min-w-0">
@@ -695,7 +695,7 @@ export default function HealthPage() {
                     </Badge>
                     <button
                       onClick={async () => {
-                        const key = `conn-${acc.connectionId}`;
+                        const key: any = `conn-${acc.connectionId}`;
                         setClearingLock(key);
                         try {
                           await fetch(`/api/provider-nodes/${acc.connectionId}/clear-connection-lock`, {
@@ -728,7 +728,7 @@ export default function HealthPage() {
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-storm-cloud">
                     {(() => {
-                      const secs = Math.max(0, Math.round(acc.retryAfterMs / 1000));
+                      const secs: any = Math.max(0, Math.round(acc.retryAfterMs / 1000));
                       if (secs >= 3600)
                         return `unlocks in ${Math.floor(secs / 3600)}h ${Math.round((secs % 3600) / 60)}m`;
                       if (secs >= 60) return `unlocks in ${Math.round(secs / 60)}m`;

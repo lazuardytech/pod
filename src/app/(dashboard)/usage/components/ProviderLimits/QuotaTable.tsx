@@ -5,7 +5,7 @@ import { calculatePercentage, formatResetTime } from "./utils";
 /**
  * Format reset time display (Today, 12:00 PM)
  */
-function formatResetTimeDisplay(resetTime) {
+function formatResetTimeDisplay(resetTime: any) {
   if (!resetTime) return null;
 
   try {
@@ -39,7 +39,7 @@ function formatResetTimeDisplay(resetTime) {
 /**
  * Get color classes based on remaining percentage
  */
-function getColorClasses(remainingPercentage) {
+function getColorClasses(remainingPercentage: any) {
   if (remainingPercentage > 70) {
     return {
       text: "text-green-600 dark:text-green-400",
@@ -84,7 +84,7 @@ export default function QuotaTable({ quotas = [], compact = false }: any) {
     <div className="overflow-x-auto">
       <table className="w-full table-fixed text-left">
         <tbody>
-          {quotas.map((quota, index) => {
+          {quotas.map((quota: any, index: any) => {
             const remaining =
               quota.remainingPercentage !== undefined
                 ? Math.round(quota.remainingPercentage)

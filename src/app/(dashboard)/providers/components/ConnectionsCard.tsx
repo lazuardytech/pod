@@ -52,7 +52,7 @@ function ConnectionRow({
   const [isCooldown, setIsCooldown] = useState(false);
   const proxyDropdownRef = useRef(null);
 
-  const proxyPoolMap = new Map((proxyPools || []).map((p) => [p.id, p]));
+  const proxyPoolMap = new Map((proxyPools || []).map((p: any) => [p.id, p]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
   const boundProxyPool = boundProxyPoolId
     ? (proxyPoolMap.get(boundProxyPoolId) as {
@@ -92,8 +92,8 @@ function ConnectionRow({
 
   const modelLockUntil =
     Object.entries(connection)
-      .filter(([k]) => k.startsWith("modelLock_"))
-      .map(([, v]) => v)
+      .filter(([k]: any) => k.startsWith("modelLock_"))
+      .map(([, v]: any) => v)
       .filter(Boolean)
       .sort()[0] || null;
 
@@ -101,9 +101,9 @@ function ConnectionRow({
     const check = () => {
       const until =
         Object.entries(connection)
-          .filter(([k]) => k.startsWith("modelLock_"))
-          .map(([, v]) => v)
-          .filter((v) => v && new Date(String(v)).getTime() > Date.now())
+          .filter(([k]: any) => k.startsWith("modelLock_"))
+          .map(([, v]: any) => v)
+          .filter((v: any) => v && new Date(String(v)).getTime() > Date.now())
           .sort()[0] || null;
       setIsCooldown(!!until);
     };
@@ -118,7 +118,7 @@ function ConnectionRow({
     if (!showProxyDropdown) {
       return undefined;
     }
-    const handler = (e) => {
+    const handler = (e: any) => {
       if (proxyDropdownRef.current && !proxyDropdownRef.current.contains(e.target)) setShowProxyDropdown(false);
     };
     document.addEventListener("mousedown", handler);
@@ -139,7 +139,7 @@ function ConnectionRow({
     ? connection.name || connection.email || connection.displayName || "OAuth Account"
     : connection.name;
 
-  const handleSelectProxy = async (poolId) => {
+  const handleSelectProxy = async (poolId: any) => {
     setUpdatingProxy(true);
     try {
       await onUpdateProxy(poolId === "__none__" ? null : poolId);
@@ -198,7 +198,7 @@ function ConnectionRow({
           {(proxyPools || []).length > 0 && (
             <div className="relative" ref={proxyDropdownRef}>
               <button
-                onClick={() => setShowProxyDropdown((v) => !v)}
+                onClick={() => setShowProxyDropdown((v: any) => !v)}
                 className={`flex flex-col items-center px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
               >
@@ -213,7 +213,7 @@ function ConnectionRow({
                   >
                     None
                   </button>
-                  {(proxyPools || []).map((pool) => (
+                  {(proxyPools || []).map((pool: any) => (
                     <button
                       key={pool.id}
                       onClick={() => handleSelectProxy(pool.id)}
@@ -387,7 +387,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
           label="Proxy Pool"
           value={formData.proxyPoolId}
           onChange={(e: any) => setFormData({ ...formData, proxyPoolId: e.target.value })}
-          options={[{ value: NONE, label: "None" }, ...(proxyPools || []).map((p) => ({ value: p.id, label: p.name }))]}
+          options={[{ value: NONE, label: "None" }, ...(proxyPools || []).map((p: any) => ({ value: p.id, label: p.name }))]}
         />
         <div className="flex gap-2">
           <Button onClick={handleSubmit} fullWidth disabled={!formData.name || !formData.apiKey || saving}>
@@ -430,9 +430,9 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const fetch_ = useCallback(async () => {
     try {
@@ -444,7 +444,7 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
       const connData = await connRes.json();
       const proxyData = await proxyRes.json();
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-      if (connRes.ok) setConnections((connData.connections || []).filter((c) => c.provider === providerId));
+      if (connRes.ok) setConnections((connData.connections || []).filter((c: any) => c.provider === providerId));
       if (proxyRes.ok) setProxyPools(proxyData.proxyPools || []);
       const override = (settingsData.providerStrategies || {})[providerId] || {};
       setProviderStrategy(override.fallbackStrategy || null);
@@ -460,7 +460,7 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
     fetch_();
   }, [fetch_]);
 
-  const saveStrategy = async (strategy, stickyLimit) => {
+  const saveStrategy = async (strategy: any, stickyLimit: any) => {
     try {
       const res = await fetch("/api/settings", { cache: "no-store" });
       const data = res.ok ? ((await res.json()) as { providerStrategies?: Record<string, Record<string, unknown>> }) : {};
@@ -481,7 +481,7 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
     }
   };
 
-  const handleSwapPriority = async (i1, i2) => {
+  const handleSwapPriority = async (i1: any, i2: any) => {
     const next = [...connections];
     [next[i1], next[i2]] = [next[i2], next[i1]];
     setConnections(next);
@@ -503,30 +503,30 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: any) => {
     if (!id) return;
     try {
       const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
-      if (res.ok) setConnections((prev) => prev.filter((c) => c.id !== id));
+      if (res.ok) setConnections((prev: any) => prev.filter((c: any) => c.id !== id));
     } catch (e) {
       console.error("delete error:", e);
     }
   };
 
-  const handleToggleActive = async (id, isActive) => {
+  const handleToggleActive = async (id: any, isActive: any) => {
     try {
       const res = await fetch(`/api/providers/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
-      if (res.ok) setConnections((prev) => prev.map((c) => (c.id === id ? { ...c, isActive } : c)));
+      if (res.ok) setConnections((prev: any) => prev.map((c: any) => (c.id === id ? { ...c, isActive } : c)));
     } catch (e) {
       console.error("toggle error:", e);
     }
   };
 
-  const handleUpdateProxy = async (connId, proxyPoolId) => {
+  const handleUpdateProxy = async (connId: any, proxyPoolId: any) => {
     try {
       const res = await fetch(`/api/providers/${connId}`, {
         method: "PUT",
@@ -534,8 +534,8 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
         body: JSON.stringify({ proxyPoolId: proxyPoolId || null }),
       });
       if (res.ok)
-        setConnections((prev) =>
-          prev.map((c) =>
+        setConnections((prev: any) =>
+          prev.map((c: any) =>
             c.id === connId
               ? { ...c, providerSpecificData: { ...c.providerSpecificData, proxyPoolId: proxyPoolId || null } }
               : c,
@@ -546,7 +546,7 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
     }
   };
 
-  const handleSaveApiKey = async (formData) => {
+  const handleSaveApiKey = async (formData: any) => {
     try {
       const res = await fetch("/api/providers", {
         method: "POST",
@@ -562,7 +562,7 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
     }
   };
 
-  const handleUpdateConnection = async (formData) => {
+  const handleUpdateConnection = async (formData: any) => {
     try {
       const res = await fetch(`/api/providers/${selectedConnection.id}`, {
         method: "PUT",
@@ -628,7 +628,7 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
           <p className="text-sm text-text-muted">No connections yet</p>
         ) : (
           <div className="flex flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-            {connections.map((conn, idx) => (
+            {connections.map((conn: any, idx: any) => (
               <ConnectionRow
                 key={conn.id}
                 connection={conn}
@@ -638,8 +638,8 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
                 isLast={idx === connections.length - 1}
                 onMoveUp={() => handleSwapPriority(idx, idx - 1)}
                 onMoveDown={() => handleSwapPriority(idx, idx + 1)}
-                onToggleActive={(isActive) => handleToggleActive(conn.id, isActive)}
-                onUpdateProxy={(poolId) => handleUpdateProxy(conn.id, poolId)}
+                onToggleActive={(isActive: any) => handleToggleActive(conn.id, isActive)}
+                onUpdateProxy={(poolId: any) => handleUpdateProxy(conn.id, poolId)}
                 onEdit={() => {
                   setSelectedConnection(conn);
                   setShowEditModal(true);

@@ -27,7 +27,7 @@ export default function Modal({
   className?: any;
   [key: string]: any;
 }) {
-  const sizes = {
+  const sizes: Record<string, string> = {
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
@@ -47,7 +47,7 @@ export default function Modal({
   }, [isOpen]);
 
   useEffect(() => {
-    const handleEscape = (e) => {
+    const handleEscape = (e: any) => {
       if (e.key === "Escape" && isOpen) onClose();
     };
     document.addEventListener("keydown", handleEscape);

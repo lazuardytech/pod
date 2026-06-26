@@ -7,15 +7,15 @@ import { drainOfflineMutationQueue } from "@/shared/services/offlineMutationQueu
 const RETRY_INTERVAL_MS = 1000 * 30;
 const QUEUE_TOAST_DEBOUNCE_MS = 2500;
 
-export default function OfflineMutationProcessor() {
+export default function OfflineMutationProcessor(): any {
   const isDrainingRef = useRef(false);
   const lastQueueToastAtRef = useRef(0);
 
-  useEffect(() => {
+  useEffect((): any => {
     let cancelled = false;
     let intervalId = null;
 
-    const runDrain = async () => {
+    const runDrain = async (): Promise<any> => {
       if (cancelled || isDrainingRef.current) return;
       isDrainingRef.current = true;
       try {
@@ -35,16 +35,16 @@ export default function OfflineMutationProcessor() {
       }
     };
 
-    const onOnline = () => {
-      runDrain().catch(() => {});
+    const onOnline = (): any => {
+      runDrain().catch((): any => {});
     };
 
-    const onVisible = () => {
+    const onVisible = (): any => {
       if (document.hidden) return;
-      runDrain().catch(() => {});
+      runDrain().catch((): any => {});
     };
 
-    const onQueued = (event) => {
+    const onQueued = (event: any): any => {
       const now = Date.now();
       if (now - lastQueueToastAtRef.current < QUEUE_TOAST_DEBOUNCE_MS) return;
       lastQueueToastAtRef.current = now;
@@ -57,14 +57,14 @@ export default function OfflineMutationProcessor() {
       }
     };
 
-    runDrain().catch(() => {});
-    intervalId = window.setInterval(() => runDrain().catch(() => {}), RETRY_INTERVAL_MS);
+    runDrain().catch((): any => {});
+    intervalId = window.setInterval((): any => runDrain().catch((): any => {}), RETRY_INTERVAL_MS);
 
     window.addEventListener("online", onOnline);
     window.addEventListener("pod:offline-mutation-enqueued", onQueued);
     document.addEventListener("visibilitychange", onVisible);
 
-    return () => {
+    return (): any => {
       cancelled = true;
       if (intervalId) window.clearInterval(intervalId);
       window.removeEventListener("online", onOnline);

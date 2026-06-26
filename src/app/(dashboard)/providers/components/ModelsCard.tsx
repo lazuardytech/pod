@@ -185,7 +185,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
   const { copied, copy } = useCopyToClipboard();
   const [modelAliases, setModelAliases] = useState({});
   const [customModels, setCustomModels] = useState([]);
-  const [modelTestResults, setModelTestResults] = useState({});
+  const [modelTestResults, setModelTestResults] = useState<Record<string, any>>({});
   const [testingModelIds, setTestingModelIds] = useState(new Set());
   const [testError, setTestError] = useState("");
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
@@ -205,7 +205,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
       const connData = await connRes.json();
       const customData = await customRes.json();
       if (aliasRes.ok) setModelAliases(aliasData.aliases || {});
-      if (connRes.ok) setConnections((connData.connections || []).filter((c) => c.provider === providerId));
+      if (connRes.ok) setConnections((connData.connections || []).filter((c: any) => c.provider === providerId));
       if (customRes.ok) setCustomModels(customData.models || []);
     } catch (e) {
       console.error("ModelsCard fetch error:", e);
@@ -216,7 +216,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
     fetchData();
   }, [fetchData]);
 
-  const handleSetAlias = async (modelId, alias) => {
+  const handleSetAlias = async (modelId: any, alias: any) => {
     const fullModel = `${providerAlias}/${modelId}`;
     try {
       const res = await fetch("/api/models/alias", {
@@ -230,7 +230,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
     }
   };
 
-  const handleDeleteAlias = async (alias) => {
+  const handleDeleteAlias = async (alias: any) => {
     try {
       const res = await fetch(`/api/models/alias?alias=${encodeURIComponent(alias)}`, { method: "DELETE" });
       if (res.ok) await fetchData();
@@ -239,7 +239,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
     }
   };
 
-  const handleAddCustomModel = async (modelId) => {
+  const handleAddCustomModel = async (modelId: any) => {
     try {
       const res = await fetch("/api/models/custom", {
         method: "POST",
@@ -255,7 +255,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
     }
   };
 
-  const handleDeleteCustomModel = async (modelId) => {
+  const handleDeleteCustomModel = async (modelId: any) => {
     try {
       const params = new URLSearchParams({ providerAlias, id: modelId, type: effectiveType });
       const res = await fetch(`/api/models/custom?${params}`, { method: "DELETE" });
@@ -268,8 +268,8 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
     }
   };
 
-  const handleTestModel = async (modelId) => {
-    setTestingModelIds((prev) => new Set([...prev, modelId]));
+  const handleTestModel = async (modelId: any) => {
+    setTestingModelIds((prev: any) => new Set([...prev, modelId]));
     try {
       const res = await fetch("/api/models/test", {
         method: "POST",
@@ -277,13 +277,13 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
         body: JSON.stringify({ model: `${providerAlias}/${modelId}`, kind: kindFilter }),
       });
       const data = await res.json();
-      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+      setModelTestResults((prev: any) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
       setTestError(data.ok ? "" : data.error || "Model not reachable");
     } catch {
-      setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
+      setModelTestResults((prev: any) => ({ ...prev, [modelId]: "error" }));
       setTestError("Network error");
     } finally {
-      setTestingModelIds((prev) => {
+      setTestingModelIds((prev: any) => {
         const next = new Set(prev);
         next.delete(modelId);
         return next;
@@ -294,7 +294,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
   // Built-in models — filter by kindFilter if provided
   const allBuiltIn = getModelsByProviderId(providerId);
   const builtInModels = kindFilter
-    ? allBuiltIn.filter((m) => {
+    ? allBuiltIn.filter((m: any) => {
         if (m.kinds) return m.kinds.includes(kindFilter);
         return (m.type || "llm") === kindFilter;
       })
@@ -302,10 +302,10 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
 
   // Custom models for this provider + kind, dedupe vs built-in
   const myCustomModels = customModels.filter(
-    (m) =>
+    (m: any) =>
       m.providerAlias === providerAlias &&
       (m.type || "llm") === effectiveType &&
-      !builtInModels.some((b) => b.id === m.id),
+      !builtInModels.some((b: any) => b.id === m.id),
   );
 
   const displayModels = builtInModels;
@@ -319,9 +319,9 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
         {testError && <p className="text-xs text-red-500 mb-3 break-words">{testError}</p>}
 
         <div className="flex flex-wrap gap-3">
-          {displayModels.map((model) => {
+          {displayModels.map((model: any) => {
             const fullModel = `${providerAlias}/${model.id}`;
-            const existingAlias = Object.entries(modelAliases).find(([, m]) => m === fullModel)?.[0];
+            const existingAlias = Object.entries(modelAliases).find(([, m]: any) => m === fullModel)?.[0];
             return (
               <ModelRow
                 key={model.id}
@@ -330,7 +330,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
                 alias={existingAlias}
                 copied={copied}
                 onCopy={copy}
-                onSetAlias={(alias) => handleSetAlias(model.id, alias)}
+                onSetAlias={(alias: any) => handleSetAlias(model.id, alias)}
                 onDeleteAlias={() => handleDeleteAlias(existingAlias)}
                 testStatus={modelTestResults[model.id]}
                 onTest={connections.length > 0 ? () => handleTestModel(model.id) : undefined}
@@ -340,7 +340,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
             );
           })}
 
-          {myCustomModels.map((model) => (
+          {myCustomModels.map((model: any) => (
             <ModelRow
               key={`${model.id}-${model.type}`}
               model={{ id: model.id, name: model.name }}
@@ -368,7 +368,7 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
 
       <AddCustomModelModal
         isOpen={showAddCustomModel}
-        onSave={async (modelId) => {
+        onSave={async (modelId: any) => {
           await handleAddCustomModel(modelId);
           setShowAddCustomModel(false);
         }}

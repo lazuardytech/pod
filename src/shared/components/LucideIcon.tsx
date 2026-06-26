@@ -105,7 +105,7 @@ import {
   Zap,
 } from "lucide-react";
 
-const ICON_MAP = {
+const ICON_MAP: Record<string, any> = {
   account_circle: Users,
   account_tree: GitBranch,
   add: Plus,

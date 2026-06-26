@@ -74,7 +74,7 @@ export default function ProviderDetailPage() {
   // todo(ts): model aliases come from an untyped API response; widen to any
   const [modelAliases, setModelAliases] = useState<any>({});
   const [headerImgError, setHeaderImgError] = useState(false);
-  const [modelTestResults, setModelTestResults] = useState({});
+  const [modelTestResults, setModelTestResults] = useState<Record<string, any>>({});
   const [modelsTestError, setModelsTestError] = useState("");
   const [testingModelIds, setTestingModelIds] = useState(new Set());
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
@@ -106,9 +106,9 @@ export default function ProviderDetailPage() {
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const providerInfo = (providerNode
     ? {
@@ -153,7 +153,7 @@ export default function ProviderDetailPage() {
     }
   }, [providerStorageAlias]);
 
-  const handleDisableModel = async (modelId) => {
+  const handleDisableModel = async (modelId: any) => {
     try {
       const res = await fetch("/api/models/disabled", {
         method: "POST",
@@ -166,7 +166,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleEnableModel = async (modelId) => {
+  const handleEnableModel = async (modelId: any) => {
     try {
       const res = await fetch(
         `/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}&id=${encodeURIComponent(modelId)}`,
@@ -178,7 +178,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleDisableAll = async (ids) => {
+  const handleDisableAll = async (ids: any) => {
     if (!ids.length) return;
     try {
       const res = await fetch("/api/models/disabled", {
@@ -220,8 +220,8 @@ export default function ProviderDetailPage() {
   useEffect(() => {
     if (providerId !== "kilocode") return;
     fetch("/api/providers/kilo/free-models")
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res: any) => res.json())
+      .then((data: any) => {
         if (data.models?.length) setKiloFreeModels(data.models);
       })
       .catch(() => {});
@@ -240,7 +240,7 @@ export default function ProviderDetailPage() {
       const proxyPoolsData = await proxyPoolsRes.json();
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
       if (connectionsRes.ok) {
-        const filtered = (connectionsData.connections || []).filter((c) => c.provider === providerId);
+        const filtered = (connectionsData.connections || []).filter((c: any) => c.provider === providerId);
         setConnections(filtered);
       }
       if (proxyPoolsRes.ok) {
@@ -257,17 +257,17 @@ export default function ProviderDetailPage() {
         thinkingCfg.effortMode === "extra-high" ? "xhigh" : (thinkingCfg.effortMode ?? "default");
       setEffortMode(normalizedEffort);
       if (nodesRes.ok) {
-        let node = (nodesData.nodes || []).find((entry) => entry.id === providerId) || null;
+        let node = (nodesData.nodes || []).find((entry: any) => entry.id === providerId) || null;
 
         // Newly created compatible nodes can be briefly unavailable on one worker.
         // Retry a few times before showing "Provider not found".
         if (!node && isCompatible) {
           for (let attempt = 0; attempt < 3; attempt += 1) {
-            await new Promise((resolve) => setTimeout(resolve, 150));
+            await new Promise((resolve: any) => setTimeout(resolve, 150));
             const retryRes = await fetch("/api/provider-nodes", { cache: "no-store" });
             if (!retryRes.ok) continue;
             const retryData = await retryRes.json();
-            node = (retryData.nodes || []).find((entry) => entry.id === providerId) || null;
+            node = (retryData.nodes || []).find((entry: any) => entry.id === providerId) || null;
             if (node) break;
           }
         }
@@ -276,7 +276,7 @@ export default function ProviderDetailPage() {
         // old id in its `previousIds` list — redirect to its current id.
         if (!node) {
           const renamed = (nodesData.nodes || []).find(
-            (entry) => Array.isArray(entry.previousIds) && entry.previousIds.includes(providerId),
+            (entry: any) => Array.isArray(entry.previousIds) && entry.previousIds.includes(providerId),
           );
           if (renamed) {
             router.replace(`/providers/${renamed.id}`);
@@ -293,7 +293,7 @@ export default function ProviderDetailPage() {
     }
   }, [providerId, isCompatible]);
 
-  const handleUpdateNode = async (formData) => {
+  const handleUpdateNode = async (formData: any) => {
     try {
       const res = await fetch(`/api/provider-nodes/${providerId}`, {
         method: "PUT",
@@ -311,7 +311,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleRenameNode = async (newId) => {
+  const handleRenameNode = async (newId: any) => {
     const res = await fetch(`/api/provider-nodes/${providerId}/rename`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -327,7 +327,7 @@ export default function ProviderDetailPage() {
     router.replace(`/providers/${data.node.id}`);
   };
 
-  const saveProviderStrategy = async (strategy, stickyLimit) => {
+  const saveProviderStrategy = async (strategy: any, stickyLimit: any) => {
     try {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
@@ -359,7 +359,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleRoundRobinToggle = (enabled) => {
+  const handleRoundRobinToggle = (enabled: any) => {
     const strategy = enabled ? "round-robin" : null;
     const sticky = enabled ? providerStickyLimit || "1" : providerStickyLimit;
     if (enabled && !providerStickyLimit) setProviderStickyLimit("1");
@@ -367,12 +367,12 @@ export default function ProviderDetailPage() {
     saveProviderStrategy(strategy, sticky);
   };
 
-  const handleStickyLimitChange = (value) => {
+  const handleStickyLimitChange = (value: any) => {
     setProviderStickyLimit(value);
     saveProviderStrategy("round-robin", value);
   };
 
-  const saveThinkingConfig = async (mode, effort) => {
+  const saveThinkingConfig = async (mode: any, effort: any) => {
     try {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
@@ -397,12 +397,12 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const _handleThinkingModeChange = (mode) => {
+  const _handleThinkingModeChange = (mode: any) => {
     setThinkingMode(mode);
     saveThinkingConfig(mode, effortMode);
   };
 
-  const handleEffortModeChange = (effort) => {
+  const handleEffortModeChange = (effort: any) => {
     setEffortMode(effort);
     saveThinkingConfig(thinkingMode, effort);
   };
@@ -425,7 +425,7 @@ export default function ProviderDetailPage() {
     fetchSuggestedModels(fetcher).then(setSuggestedModels);
   }, [providerId]);
 
-  const handleSetAlias = async (modelId, alias, providerAliasOverride = providerAlias) => {
+  const handleSetAlias = async (modelId: any, alias: any, providerAliasOverride: any = providerAlias) => {
     const fullModel = `${providerAliasOverride}/${modelId}`;
     try {
       const res = await fetch("/api/models/alias", {
@@ -444,7 +444,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleDeleteAlias = async (alias) => {
+  const handleDeleteAlias = async (alias: any) => {
     try {
       const res = await fetch(`/api/models/alias?alias=${encodeURIComponent(alias)}`, {
         method: "DELETE",
@@ -457,11 +457,11 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: any) => {
     try {
       const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setConnections(connections.filter((c) => c.id !== id));
+        setConnections(connections.filter((c: any) => c.id !== id));
       }
     } catch (error) {
       console.error("Error deleting connection:", error);
@@ -478,7 +478,7 @@ export default function ProviderDetailPage() {
     setShowIFlowCookieModal(false);
   };
 
-  const handleSaveApiKey = async (formData) => {
+  const handleSaveApiKey = async (formData: any) => {
     setAddConnectionError("");
     try {
       const res = await fetch("/api/providers", {
@@ -507,7 +507,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleUpdateConnection = async (formData) => {
+  const handleUpdateConnection = async (formData: any) => {
     try {
       const res = await fetch(`/api/providers/${selectedConnection.id}`, {
         method: "PUT",
@@ -523,7 +523,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleUpdateConnectionStatus = async (id, isActive) => {
+  const handleUpdateConnectionStatus = async (id: any, isActive: any) => {
     try {
       const res = await fetch(`/api/providers/${id}`, {
         method: "PUT",
@@ -531,14 +531,14 @@ export default function ProviderDetailPage() {
         body: JSON.stringify({ isActive }),
       });
       if (res.ok) {
-        setConnections((prev) => prev.map((c) => (c.id === id ? { ...c, isActive } : c)));
+        setConnections((prev: any) => prev.map((c: any) => (c.id === id ? { ...c, isActive } : c)));
       }
     } catch (error) {
       console.error("Error updating connection status:", error);
     }
   };
 
-  const _handleSwapPriority = async (index1, index2) => {
+  const _handleSwapPriority = async (index1: any, index2: any) => {
     // Optimistic update state
     const newConnections = [...connections];
     [newConnections[index1], newConnections[index2]] = [newConnections[index2], newConnections[index1]];
@@ -563,12 +563,12 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const selectedConnections = connections.filter((conn) => selectedConnectionIds.includes(conn.id));
+  const selectedConnections = connections.filter((conn: any) => selectedConnectionIds.includes(conn.id));
   const allSelected = connections.length > 0 && selectedConnectionIds.length === connections.length;
 
-  const _toggleSelectConnection = (connectionId) => {
-    setSelectedConnectionIds((prev) =>
-      prev.includes(connectionId) ? prev.filter((id) => id !== connectionId) : [...prev, connectionId],
+  const _toggleSelectConnection = (connectionId: any) => {
+    setSelectedConnectionIds((prev: any) =>
+      prev.includes(connectionId) ? prev.filter((id: any) => id !== connectionId) : [...prev, connectionId],
     );
   };
 
@@ -577,7 +577,7 @@ export default function ProviderDetailPage() {
       setSelectedConnectionIds([]);
       return;
     }
-    setSelectedConnectionIds(connections.map((conn) => conn.id));
+    setSelectedConnectionIds(connections.map((conn: any) => conn.id));
   };
 
   const clearSelection = () => {
@@ -586,16 +586,16 @@ export default function ProviderDetailPage() {
   };
 
   useEffect(() => {
-    setSelectedConnectionIds((prev) => prev.filter((id) => connections.some((conn) => conn.id === id)));
+    setSelectedConnectionIds((prev: any) => prev.filter((id: any) => connections.some((conn: any) => conn.id === id)));
   }, [connections]);
 
   const selectedProxySummary = (() => {
     if (selectedConnections.length === 0) return "";
-    const poolIds = new Set(selectedConnections.map((conn) => conn.providerSpecificData?.proxyPoolId || "__none__"));
+    const poolIds = new Set(selectedConnections.map((conn: any) => conn.providerSpecificData?.proxyPoolId || "__none__"));
     if (poolIds.size === 1) {
       const onlyId = [...poolIds][0];
       if (onlyId === "__none__") return "All selected currently unbound";
-      const pool = proxyPools.find((p) => p.id === onlyId);
+      const pool = proxyPools.find((p: any) => p.id === onlyId);
       return `All selected currently bound to ${pool?.name || onlyId}`;
     }
     return "Selected connections have mixed proxy bindings";
@@ -604,7 +604,7 @@ export default function ProviderDetailPage() {
   const _openBulkProxyModal = () => {
     if (selectedConnections.length === 0) return;
     const uniquePoolIds = [
-      ...new Set(selectedConnections.map((conn) => conn.providerSpecificData?.proxyPoolId || "__none__")),
+      ...new Set(selectedConnections.map((conn: any) => conn.providerSpecificData?.proxyPoolId || "__none__")),
     ];
     setBulkProxyPoolId(uniquePoolIds.length === 1 ? uniquePoolIds[0] : "__none__");
     setShowBulkProxyModal(true);
@@ -636,7 +636,7 @@ export default function ProviderDetailPage() {
         }
       }
 
-      const failedCount = results.filter((ok) => !ok).length;
+      const failedCount = results.filter((ok: any) => !ok).length;
       if (failedCount > 0) {
         alert(`Updated with ${failedCount} failed request(s).`);
       }
@@ -651,18 +651,18 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const handleDragEnd = async (event) => {
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = connections.findIndex((c) => c.id === active.id);
-    const newIndex = connections.findIndex((c) => c.id === over.id);
+    const oldIndex = connections.findIndex((c: any) => c.id === active.id);
+    const newIndex = connections.findIndex((c: any) => c.id === over.id);
     const reordered = arrayMove(connections, oldIndex, newIndex);
     setConnections(reordered);
 
     try {
       await Promise.all(
-        reordered.map((conn, i) =>
+        reordered.map((conn: any, i: any) =>
           fetch(`/api/providers/${conn.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -676,7 +676,7 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const _isSelected = (connectionId) => selectedConnectionIds.includes(connectionId);
+  const _isSelected = (connectionId: any) => selectedConnectionIds.includes(connectionId);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -685,16 +685,16 @@ export default function ProviderDetailPage() {
 
   const connectionsList = (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={connections.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={connections.map((c: any) => c.id)} strategy={verticalListSortingStrategy}>
         <div className="flex min-w-0 flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-          {connections.map((conn, index) => (
+          {connections.map((conn: any, index: any) => (
             <SortableConnectionRow
               key={conn.id}
               conn={conn}
               proxyPools={proxyPools}
               isOAuth={isOAuth}
-              onToggleActive={(isActive) => handleUpdateConnectionStatus(conn.id, isActive)}
-              onUpdateProxy={async (proxyPoolId) => {
+              onToggleActive={(isActive: any) => handleUpdateConnectionStatus(conn.id, isActive)}
+              onUpdateProxy={async (proxyPoolId: any) => {
                 try {
                   const res = await fetch(`/api/providers/${conn.id}`, {
                     method: "PUT",
@@ -702,8 +702,8 @@ export default function ProviderDetailPage() {
                     body: JSON.stringify({ proxyPoolId: proxyPoolId || null }),
                   });
                   if (res.ok) {
-                    setConnections((prev) =>
-                      prev.map((c) =>
+                    setConnections((prev: any) =>
+                      prev.map((c: any) =>
                         c.id === conn.id
                           ? {
                               ...c,
@@ -738,7 +738,7 @@ export default function ProviderDetailPage() {
 
   const bulkProxyOptions = [
     { value: "__none__", label: "None" },
-    ...proxyPools.map((pool) => ({ value: pool.id, label: pool.name })),
+    ...proxyPools.map((pool: any) => ({ value: pool.id, label: pool.name })),
   ];
 
   const bulkHint =
@@ -778,8 +778,8 @@ export default function ProviderDetailPage() {
     </Modal>
   );
 
-  const handleTestModel = async (modelId) => {
-    setTestingModelIds((prev) => new Set([...prev, modelId]));
+  const handleTestModel = async (modelId: any) => {
+    setTestingModelIds((prev: any) => new Set([...prev, modelId]));
     try {
       const res = await fetch("/api/models/test", {
         method: "POST",
@@ -787,13 +787,13 @@ export default function ProviderDetailPage() {
         body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
       });
       const data = await res.json();
-      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+      setModelTestResults((prev: any) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
       setModelsTestError(data.ok ? "" : data.error || "Model not reachable");
     } catch {
-      setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
+      setModelTestResults((prev: any) => ({ ...prev, [modelId]: "error" }));
       setModelsTestError("Network error");
     } finally {
-      setTestingModelIds((prev) => {
+      setTestingModelIds((prev: any) => {
         const next = new Set(prev);
         next.delete(modelId);
         return next;
@@ -819,25 +819,25 @@ export default function ProviderDetailPage() {
     }
     // Combine hardcoded models with Kilo free models (deduplicated)
     // Exclude non-llm models (embedding, tts, etc.) — they have dedicated pages under media-providers
-    const allModels = [...models, ...kiloFreeModels.filter((fm) => !models.some((m) => m.id === fm.id))].filter(
-      (m) => !m.type || m.type === "llm",
+    const allModels = [...models, ...kiloFreeModels.filter((fm: any) => !models.some((m: any) => m.id === fm.id))].filter(
+      (m: any) => !m.type || m.type === "llm",
     );
     const disabledSet = new Set(disabledModelIds);
-    const displayModels = allModels.filter((m) => !disabledSet.has(m.id));
-    const disabledDisplayModels = allModels.filter((m) => disabledSet.has(m.id));
+    const displayModels = allModels.filter((m: any) => !disabledSet.has(m.id));
+    const disabledDisplayModels = allModels.filter((m: any) => disabledSet.has(m.id));
     // Custom models added by user (stored as aliases: modelId → providerAlias/modelId)
     const customModels = Object.entries(modelAliases)
-      .filter(([alias, fullModel]) => {
+      .filter(([alias, fullModel]: any) => {
         if (typeof fullModel !== "string") return false;
         const prefix = `${providerStorageAlias}/`;
         if (!fullModel.startsWith(prefix)) return false;
         const modelId = fullModel.slice(prefix.length);
         // Only show if not already in hardcoded list
         // For passthroughModels, include all aliases (model IDs may contain slashes like "anthropic/claude-3")
-        if (providerInfo.passthroughModels) return !models.some((m) => m.id === modelId);
-        return !models.some((m) => m.id === modelId) && alias === modelId;
+        if (providerInfo.passthroughModels) return !models.some((m: any) => m.id === modelId);
+        return !models.some((m: any) => m.id === modelId) && alias === modelId;
       })
-      .map(([alias, fullModel]) => ({
+      .map(([alias, fullModel]: any) => ({
         id: String(fullModel).slice(`${providerStorageAlias}/`.length),
         alias: String(alias),
         fullModel: String(fullModel),
@@ -846,7 +846,7 @@ export default function ProviderDetailPage() {
     return (
       <div className="flex flex-wrap gap-3">
         {/* Custom models first */}
-        {customModels.map((model) => (
+        {customModels.map((model: any) => (
           <ModelRow
             key={model.id}
             model={{ id: model.id }}
@@ -864,11 +864,11 @@ export default function ProviderDetailPage() {
           />
         ))}
 
-        {displayModels.map((model) => {
+        {displayModels.map((model: any) => {
           const fullModel = `${providerStorageAlias}/${model.id}`;
           const oldFormatModel = `${providerId}/${model.id}`;
           const existingAlias = Object.entries(modelAliases).find(
-            ([, m]) => m === fullModel || m === oldFormatModel,
+            ([, m]: any) => m === fullModel || m === oldFormatModel,
           )?.[0];
           return (
             <ModelRow
@@ -878,7 +878,7 @@ export default function ProviderDetailPage() {
               alias={existingAlias}
               copied={copied}
               onCopy={copy}
-              onSetAlias={(alias) => handleSetAlias(model.id, alias, providerStorageAlias)}
+              onSetAlias={(alias: any) => handleSetAlias(model.id, alias, providerStorageAlias)}
               onDeleteAlias={() => handleDeleteAlias(existingAlias)}
               testStatus={modelTestResults[model.id]}
               onTest={connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined}
@@ -902,16 +902,16 @@ export default function ProviderDetailPage() {
         {suggestedModels.length > 0 &&
           (() => {
             const addedFullModels = new Set(Object.values(modelAliases));
-            const hardcodedIds = new Set(models.map((m) => m.id));
+            const hardcodedIds = new Set(models.map((m: any) => m.id));
             const notAdded = suggestedModels.filter(
-              (m) => !addedFullModels.has(`${providerStorageAlias}/${m.id}`) && !hardcodedIds.has(m.id),
+              (m: any) => !addedFullModels.has(`${providerStorageAlias}/${m.id}`) && !hardcodedIds.has(m.id),
             );
             if (notAdded.length === 0) return null;
             return (
               <div className="w-full mt-2">
                 <p className="text-xs text-text-muted mb-2">Suggested free models (≥200k context):</p>
                 <div className="flex flex-wrap gap-2">
-                  {notAdded.map((m) => (
+                  {notAdded.map((m: any) => (
                     <button
                       key={m.id}
                       onClick={async () => {
@@ -935,7 +935,7 @@ export default function ProviderDetailPage() {
           <div className="w-full mt-2">
             <p className="text-xs text-text-muted mb-2">Disabled models ({disabledDisplayModels.length}):</p>
             <div className="flex flex-wrap gap-2">
-              {disabledDisplayModels.map((m) => (
+              {disabledDisplayModels.map((m: any) => (
                 <button
                   key={m.id}
                   onClick={() => handleEnableModel(m.id)}
@@ -1233,10 +1233,10 @@ export default function ProviderDetailPage() {
           <h2 className="text-lg font-semibold">{"Available Models"}</h2>
           {!isCompatible &&
             (() => {
-              const allIds = [...models, ...kiloFreeModels.filter((fm) => !models.some((m) => m.id === fm.id))]
-                .filter((m) => !m.type || m.type === "llm")
-                .map((m) => m.id);
-              const activeIds = allIds.filter((id) => !disabledModelIds.includes(id));
+              const allIds = [...models, ...kiloFreeModels.filter((fm: any) => !models.some((m: any) => m.id === fm.id))]
+                .filter((m: any) => !m.type || m.type === "llm")
+                .map((m: any) => m.id);
+              const activeIds = allIds.filter((id: any) => !disabledModelIds.includes(id));
               return (
                 <div className="flex gap-2">
                   {disabledModelIds.length > 0 && (
@@ -1349,7 +1349,7 @@ export default function ProviderDetailPage() {
           isOpen={showAddCustomModel}
           providerAlias={providerStorageAlias}
           providerDisplayAlias={providerDisplayAlias}
-          onSave={async (modelId) => {
+          onSave={async (modelId: any) => {
             // For passthrough providers (OpenRouter), use last segment as alias to avoid slash conflicts
             const alias = providerInfo?.passthroughModels ? modelId.split("/").pop() : modelId;
             await handleSetAlias(modelId, alias, providerStorageAlias);

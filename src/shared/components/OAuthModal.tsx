@@ -29,21 +29,21 @@ export default function OAuthModal({
   idcConfig?: any;
   [key: string]: any;
 }) {
-  const [step, setStep] = useState("waiting"); // waiting | input | success | error
-  const [authData, setAuthData] = useState(null);
-  const [callbackUrl, setCallbackUrl] = useState("");
-  const [error, setError] = useState(null);
-  const [isDeviceCode, setIsDeviceCode] = useState(false);
-  const [deviceData, setDeviceData] = useState(null);
-  const [polling, setPolling] = useState(false);
-  const popupRef = useRef(null);
-  const pollingAbortRef = useRef(false);
-  const { copied, copy } = useCopyToClipboard();
+  const [step, setStep]: any = useState("waiting"); // waiting | input | success | error
+  const [authData, setAuthData]: any = useState(null);
+  const [callbackUrl, setCallbackUrl]: any = useState("");
+  const [error, setError]: any = useState(null);
+  const [isDeviceCode, setIsDeviceCode]: any = useState(false);
+  const [deviceData, setDeviceData]: any = useState(null);
+  const [polling, setPolling]: any = useState(false);
+  const popupRef: any = useRef(null);
+  const pollingAbortRef: any = useRef(false);
+  const { copied, copy }: any = useCopyToClipboard();
 
   // State for client-only values to avoid hydration mismatch
-  const [isLocalhost, setIsLocalhost] = useState(false);
-  const [placeholderUrl, setPlaceholderUrl] = useState("/callback?code=...");
-  const callbackProcessedRef = useRef(false);
+  const [isLocalhost, setIsLocalhost]: any = useState(false);
+  const [placeholderUrl, setPlaceholderUrl]: any = useState("/callback?code=...");
+  const callbackProcessedRef: any = useRef(false);
 
   // Detect if running on localhost (client-side only)
   useEffect(() => {
@@ -56,11 +56,11 @@ export default function OAuthModal({
   // Define all useCallback hooks BEFORE the useEffects that reference them
 
   // Exchange tokens
-  const exchangeTokens = useCallback(
-    async (code, state) => {
+  const exchangeTokens: any = useCallback(
+    async (code: any, state: any) => {
       if (!authData) return;
       try {
-        const res = await fetch(`/api/oauth/${provider}/exchange`, {
+        const res: any = await fetch(`/api/oauth/${provider}/exchange`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -72,7 +72,7 @@ export default function OAuthModal({
           }),
         });
 
-        const data = await res.json();
+        const data: any = await res.json();
         if (!res.ok) throw new Error(data.error);
 
         setStep("success");
@@ -86,11 +86,11 @@ export default function OAuthModal({
   );
 
   // Poll for device code token
-  const startPolling = useCallback(
-    async (deviceCode, codeVerifier, interval, extraData) => {
+  const startPolling: any = useCallback(
+    async (deviceCode: any, codeVerifier: any, interval: any, extraData: any) => {
       pollingAbortRef.current = false;
       setPolling(true);
-      const maxAttempts = 60;
+      const maxAttempts: any = 60;
 
       for (let i = 0; i < maxAttempts; i++) {
         // Check if polling should be aborted
@@ -99,7 +99,7 @@ export default function OAuthModal({
           return;
         }
 
-        await new Promise((r) => setTimeout(r, interval * 1000));
+        await new Promise((r: any) => setTimeout(r, interval * 1000));
 
         // Check again after sleep
         if (pollingAbortRef.current) {
@@ -108,13 +108,13 @@ export default function OAuthModal({
         }
 
         try {
-          const res = await fetch(`/api/oauth/${provider}/poll`, {
+          const res: any = await fetch(`/api/oauth/${provider}/poll`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ deviceCode, codeVerifier, extraData }),
           });
 
-          const data = await res.json();
+          const data: any = await res.json();
 
           if (data.success) {
             pollingAbortRef.current = true; // Stop polling immediately
@@ -147,18 +147,18 @@ export default function OAuthModal({
   );
 
   // Start OAuth flow
-  const startOAuthFlow = useCallback(async () => {
+  const startOAuthFlow: any = useCallback(async () => {
     if (!provider) return;
     try {
       setError(null);
 
       // Device code flow providers
-      const deviceCodeProviders = ["github", "qwen", "kiro", "kimi-coding", "kilocode", "codebuddy"];
+      const deviceCodeProviders: any = ["github", "qwen", "kiro", "kimi-coding", "kilocode", "codebuddy"];
       if (deviceCodeProviders.includes(provider)) {
         setIsDeviceCode(true);
         setStep("waiting");
 
-        const deviceCodeUrl = new URL(`/api/oauth/${provider}/device-code`, window.location.origin);
+        const deviceCodeUrl: any = new URL(`/api/oauth/${provider}/device-code`, window.location.origin);
         if (provider === "kiro" && idcConfig?.startUrl) {
           deviceCodeUrl.searchParams.set("start_url", idcConfig.startUrl);
           if (idcConfig.region) {
@@ -166,18 +166,18 @@ export default function OAuthModal({
           }
           deviceCodeUrl.searchParams.set("auth_method", "idc");
         }
-        const res = await fetch(deviceCodeUrl.toString());
-        const data = await res.json();
+        const res: any = await fetch(deviceCodeUrl.toString());
+        const data: any = await res.json();
         if (!res.ok) throw new Error(data.error);
 
         setDeviceData(data);
 
         // Auto-open verification URL in new tab
-        const verifyUrl = data.verification_uri_complete || data.verification_uri;
+        const verifyUrl: any = data.verification_uri_complete || data.verification_uri;
         if (verifyUrl) window.open(verifyUrl, "_blank", "noopener,noreferrer");
 
         // Pass extraData for Kiro (contains _clientId, _clientSecret)
-        const extraData =
+        const extraData: any =
           provider === "kiro"
             ? {
                 _clientId: data._clientId,
@@ -192,8 +192,8 @@ export default function OAuthModal({
       }
 
       // Authorization code flow - build redirect URI (some providers require fixed ports)
-      const appPort = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
-      let redirectUri;
+      const appPort: any = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
+      let redirectUri: any;
       if (provider === "codex") {
         // Codex CLI OAuth only accepts http://localhost:1455/auth/callback as redirect URI.
         // The local proxy on port 1455 handles the callback and relays it back via poll-status.
@@ -203,29 +203,29 @@ export default function OAuthModal({
       }
 
       // Build authorize URL first to get codeVerifier/state for codex server-side mode
-      const authorizeUrl = new URL(`/api/oauth/${provider}/authorize`, window.location.origin);
+      const authorizeUrl: any = new URL(`/api/oauth/${provider}/authorize`, window.location.origin);
       authorizeUrl.searchParams.set("redirect_uri", redirectUri);
       if (oauthMeta) {
-        Object.entries(oauthMeta).forEach(([k, v]) => {
+        Object.entries(oauthMeta).forEach(([k, v]: any) => {
           if (v) authorizeUrl.searchParams.set(k, String(v));
         });
       }
-      const res = await fetch(authorizeUrl.toString());
-      const data = await res.json();
+      const res: any = await fetch(authorizeUrl.toString());
+      const data: any = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       // Codex: start proxy with server-side session (auto-exchange) + fallback to channels
-      let codexProxyActive = false;
-      let codexServerSide = false;
+      let codexProxyActive: any = false;
+      let codexServerSide: any = false;
       if (provider === "codex") {
         try {
-          const proxyUrl = new URL(`/api/oauth/codex/start-proxy`, window.location.origin);
+          const proxyUrl: any = new URL(`/api/oauth/codex/start-proxy`, window.location.origin);
           proxyUrl.searchParams.set("app_port", appPort);
           proxyUrl.searchParams.set("state", data.state);
           proxyUrl.searchParams.set("code_verifier", data.codeVerifier);
           proxyUrl.searchParams.set("redirect_uri", redirectUri);
-          const proxyRes = await fetch(proxyUrl.toString());
-          const proxyData = await proxyRes.json();
+          const proxyRes: any = await fetch(proxyUrl.toString());
+          const proxyData: any = await proxyRes.json();
           codexProxyActive = proxyData.success;
           codexServerSide = !!proxyData.serverSide;
         } catch {
@@ -285,17 +285,17 @@ export default function OAuthModal({
     if (!authData?.codexServerSide || !authData?.state || callbackProcessedRef.current) {
       return undefined;
     }
-    let cancelled = false;
-    const POLL_INTERVAL_MS = 1500;
-    const MAX_ATTEMPTS = 200; // ~5 minutes
-    let attempts = 0;
+    let cancelled: any = false;
+    const POLL_INTERVAL_MS: any = 1500;
+    const MAX_ATTEMPTS: any = 200; // ~5 minutes
+    let attempts: any = 0;
 
-    const tick = async () => {
+    const tick: any = async () => {
       if (cancelled || callbackProcessedRef.current) return;
       attempts += 1;
       try {
-        const res = await fetch(`/api/oauth/codex/poll-status?state=${encodeURIComponent(authData.state)}`);
-        const data = await res.json();
+        const res: any = await fetch(`/api/oauth/codex/poll-status?state=${encodeURIComponent(authData.state)}`);
+        const data: any = await res.json();
         if (cancelled || callbackProcessedRef.current) return;
         if (data.status === "done") {
           callbackProcessedRef.current = true;
@@ -334,7 +334,7 @@ export default function OAuthModal({
     callbackProcessedRef.current = false; // Reset when authData changes
 
     // Handler for callback data - only process once
-    const handleCallback = async (data) => {
+    const handleCallback: any = async (data: any) => {
       if (callbackProcessedRef.current) return; // Already processed
 
       const { code, state, error: callbackError, errorDescription } = data;
@@ -353,10 +353,10 @@ export default function OAuthModal({
     };
 
     // Method 1: postMessage from popup
-    const handleMessage = (event) => {
+    const handleMessage: any = (event: any) => {
       // Allow messages from same origin or localhost (any port)
-      const isLocalhost = event.origin.includes("localhost") || event.origin.includes("127.0.0.1");
-      const isSameOrigin = event.origin === window.location.origin;
+      const isLocalhost: any = event.origin.includes("localhost") || event.origin.includes("127.0.0.1");
+      const isSameOrigin: any = event.origin === window.location.origin;
       if (!isLocalhost && !isSameOrigin) return;
 
       if (event.data?.type === "oauth_callback") {
@@ -366,19 +366,19 @@ export default function OAuthModal({
     window.addEventListener("message", handleMessage);
 
     // Method 2: BroadcastChannel
-    let channel;
+    let channel: any;
     try {
       channel = new BroadcastChannel("oauth_callback");
-      channel.onmessage = (event) => handleCallback(event.data);
+      channel.onmessage = (event: any) => handleCallback(event.data);
     } catch (_e) {
       console.warn("BroadcastChannel not supported");
     }
 
     // Method 3: localStorage event
-    const handleStorage = (event) => {
+    const handleStorage: any = (event: any) => {
       if (event.key === "oauth_callback" && event.newValue) {
         try {
-          const data = JSON.parse(event.newValue);
+          const data: any = JSON.parse(event.newValue);
           handleCallback(data);
           localStorage.removeItem("oauth_callback");
         } catch (_e) {
@@ -390,9 +390,9 @@ export default function OAuthModal({
 
     // Also check localStorage on mount (in case callback already happened)
     try {
-      const stored = localStorage.getItem("oauth_callback");
+      const stored: any = localStorage.getItem("oauth_callback");
       if (stored) {
-        const data = JSON.parse(stored);
+        const data: any = JSON.parse(stored);
         if (data.timestamp && Date.now() - data.timestamp < 30000) {
           handleCallback(data);
         }
@@ -410,13 +410,13 @@ export default function OAuthModal({
   }, [authData, exchangeTokens]);
 
   // Handle manual URL input
-  const handleManualSubmit = async () => {
+  const handleManualSubmit: any = async () => {
     try {
       setError(null);
-      const url = new URL(callbackUrl);
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      const errorParam = url.searchParams.get("error");
+      const url: any = new URL(callbackUrl);
+      const code: any = url.searchParams.get("code");
+      const state: any = url.searchParams.get("state");
+      const errorParam: any = url.searchParams.get("error");
 
       if (errorParam) {
         throw new Error(url.searchParams.get("error_description") || errorParam);
@@ -434,7 +434,7 @@ export default function OAuthModal({
   };
 
   // Clear session on modal close + cleanup proxy
-  const handleClose = useCallback(() => {
+  const handleClose: any = useCallback(() => {
     if (provider === "codex") {
       fetch("/api/oauth/codex/stop-proxy").catch(() => {});
     }
@@ -442,7 +442,7 @@ export default function OAuthModal({
   }, [onClose, provider]);
 
   if (!provider || !providerInfo) return null;
-  const deviceLoginUrl = deviceData?.verification_uri_complete || deviceData?.verification_uri || "";
+  const deviceLoginUrl: any = deviceData?.verification_uri_complete || deviceData?.verification_uri || "";
 
   return (
     <Modal isOpen={isOpen} title={`Connect ${providerInfo.name}`} onClose={handleClose} size="lg">
@@ -487,7 +487,7 @@ export default function OAuthModal({
                 </p>
                 <Input
                   value={callbackUrl}
-                  onChange={(e) => setCallbackUrl(e.target.value)}
+                  onChange={(e: any) => setCallbackUrl(e.target.value)}
                   placeholder={placeholderUrl}
                   className="font-mono text-xs"
                 />

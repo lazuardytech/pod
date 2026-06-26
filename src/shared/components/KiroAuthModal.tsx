@@ -57,7 +57,7 @@ export default function KiroAuthModal({
     autoDetect();
   }, [selectedMethod, isOpen]);
 
-  const handleMethodSelect = (method) => {
+  const handleMethodSelect = (method: any) => {
     setSelectedMethod(method);
     setError(null);
   };
@@ -106,7 +106,7 @@ export default function KiroAuthModal({
     onMethodSelect("idc", { startUrl: idcStartUrl.trim(), region: idcRegion });
   };
 
-  const handleSocialLogin = (provider) => {
+  const handleSocialLogin = (provider: any) => {
     onMethodSelect("social", { provider });
   };
 
@@ -199,7 +199,7 @@ export default function KiroAuthModal({
               </label>
               <Input
                 value={idcStartUrl}
-                onChange={(e) => setIdcStartUrl(e.target.value)}
+                onChange={(e: any) => setIdcStartUrl(e.target.value)}
                 placeholder="https://your-org.awsapps.com/start"
                 className="font-mono text-sm"
               />
@@ -210,7 +210,7 @@ export default function KiroAuthModal({
               <label className="block text-sm font-medium mb-2">AWS Region</label>
               <Input
                 value={idcRegion}
-                onChange={(e) => setIdcRegion(e.target.value)}
+                onChange={(e: any) => setIdcRegion(e.target.value)}
                 placeholder="us-east-1"
                 className="font-mono text-sm"
               />
@@ -329,7 +329,7 @@ export default function KiroAuthModal({
                   </label>
                   <Input
                     value={refreshToken}
-                    onChange={(e) => setRefreshToken(e.target.value)}
+                    onChange={(e: any) => setRefreshToken(e.target.value)}
                     placeholder="Token will be auto-filled..."
                     className="font-mono text-sm"
                   />

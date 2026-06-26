@@ -7,12 +7,12 @@ import { Button, Card, Input, Select, Toggle } from "@/shared/components";
 import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const providerOptions = Object.values(AI_PROVIDERS).map((p) => ({
+const providerOptions = Object.values(AI_PROVIDERS).map((p: any) => ({
   value: p.id,
   label: p.name,
 }));
 
-const authMethodOptions = Object.values(AUTH_METHODS).map((m) => ({
+const authMethodOptions = Object.values(AUTH_METHODS).map((m: any) => ({
   value: m.id,
   label: m.name,
 }));
@@ -31,10 +31,10 @@ export default function NewProviderPage() {
   });
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (field: any, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }));
+      setErrors((prev: any) => ({ ...prev, [field]: null }));
     }
   };
 
@@ -48,7 +48,7 @@ export default function NewProviderPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -120,7 +120,7 @@ export default function NewProviderPage() {
               Authentication Method <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-3">
-              {authMethodOptions.map((method) => (
+              {authMethodOptions.map((method: any) => (
                 <button
                   key={method.value}
                   type="button"

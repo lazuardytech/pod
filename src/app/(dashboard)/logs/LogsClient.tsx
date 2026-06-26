@@ -46,7 +46,7 @@ function RequestLogsToolbar({
           ariaLabel="Filter by provider"
           value={filterProvider}
           onValueChange={setFilterProvider}
-          options={[{ value: "all", label: "All Providers" }, ...providerOptions.map((p) => ({ value: p, label: p }))]}
+          options={[{ value: "all", label: "All Providers" }, ...providerOptions.map((p: any) => ({ value: p, label: p }))]}
           triggerClassName="h-7 w-[130px] rounded-[6px] bg-deep-slate px-2 text-[12px] shadow-none"
           contentClassName="min-w-[130px]"
           name="filter-provider"
@@ -70,7 +70,7 @@ function RequestLogsToolbar({
         <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
-        onClick={() => setRecording((v) => !v)}
+        onClick={() => setRecording((v: any) => !v)}
         title={recording ? "Pause recording" : "Resume recording"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -109,7 +109,7 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
         <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
-        onClick={() => setLive((v) => !v)}
+        onClick={() => setLive((v: any) => !v)}
         title={live ? "Pause live" : "Resume live"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -137,7 +137,7 @@ function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refresh
         <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
-        onClick={() => setLive((v) => !v)}
+        onClick={() => setLive((v: any) => !v)}
         title={live ? "Pause live" : "Resume live"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -150,7 +150,7 @@ function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refresh
         {live ? "Live" : "Paused"}
       </button>
       <button
-        onClick={() => setAutoScroll((v) => !v)}
+        onClick={() => setAutoScroll((v: any) => !v)}
         title={autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -244,7 +244,7 @@ function LogsInner() {
     }
   };
 
-  const setTab = (key) => {
+  const setTab = (key: any) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", key);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -256,7 +256,7 @@ function LogsInner() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Pill tabs */}
         <SegmentedControl
-          options={TABS.map((tab) => ({ value: tab.key, label: tab.label, icon: tab.icon }))}
+          options={TABS.map((tab: any) => ({ value: tab.key, label: tab.label, icon: tab.icon }))}
           value={activeTab}
           onChange={setTab}
           size="sm"

@@ -43,7 +43,7 @@ export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleClickOutside = (e: any) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setIsOpen(false);
       }
@@ -60,7 +60,7 @@ export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]
   return (
     <div className="relative" ref={menuRef}>
       <button
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => setIsOpen((v: any) => !v)}
         className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
         title="Menu"
       >

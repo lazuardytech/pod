@@ -21,7 +21,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
   }, [isOpen]);
 
   // Strip provider's own alias prefix (e.g. "cc/model" -> "model" for cc provider)
-  const stripAlias = (id) => {
+  const stripAlias = (id: any) => {
     const prefix = `${providerAlias}/`;
     return id.startsWith(prefix) ? id.slice(prefix.length) : id;
   };
@@ -57,7 +57,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: any) => {
     if (e.key === "Enter") handleTest();
   };
 

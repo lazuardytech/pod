@@ -21,7 +21,7 @@ export default function ManualConfigModal({
   const { copy } = useCopyToClipboard();
   const [copiedIndex, setCopiedIndex] = useState(null);
 
-  const copyConfig = (text, index) => {
+  const copyConfig = (text: any, index: any) => {
     copy(text, `manualconfig-${index}`);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
@@ -30,7 +30,7 @@ export default function ManualConfigModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="xl">
       <div className="flex flex-col gap-4">
-        {configs.map((config, index) => (
+        {configs.map((config: any, index: any) => (
           <div key={index} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-text-main">{config.filename}</span>

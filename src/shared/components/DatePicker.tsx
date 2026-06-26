@@ -39,7 +39,7 @@ export default function DatePicker({
     if (!open) {
       return undefined;
     }
-    const handler = (e) => {
+    const handler = (e: any) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setOpen(false);
       }
@@ -56,7 +56,7 @@ export default function DatePicker({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen((prev: any) => !prev)}
         className={cn(
           "flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-sm transition-colors",
           "border-black/10 dark:border-white/10 bg-surface text-text-main",
@@ -75,11 +75,11 @@ export default function DatePicker({
             tabIndex={0}
             aria-label="Clear date"
             className="text-[14px] text-text-muted hover:text-text-main shrink-0"
-            onClick={(e) => {
+            onClick={(e: any) => {
               e.stopPropagation();
               onChange(null);
             }}
-            onKeyDown={(e) => {
+            onKeyDown={(e: any) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.stopPropagation();
                 onChange(null);

@@ -53,7 +53,7 @@ export default function PWAInstallPrompt() {
       setVisible(true);
     }
 
-    const onBeforeInstallPrompt = (event) => {
+    const onBeforeInstallPrompt = (event: any) => {
       event.preventDefault();
       setDeferredPrompt(event);
       setCanPromptInstall(true);

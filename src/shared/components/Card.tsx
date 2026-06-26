@@ -28,7 +28,7 @@ export default function Card({
   className?: any;
   [key: string]: any;
 }) {
-  const paddings = {
+  const paddings: Record<string, string> = {
     none: "",
     xs: "px-2 py-2",
     sm: "p-3",

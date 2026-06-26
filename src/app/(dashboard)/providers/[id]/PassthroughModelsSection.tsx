@@ -97,17 +97,17 @@ export default function PassthroughModelsSection({
 
   // Filter aliases for this provider - models are persisted via alias
   const providerAliases = Object.entries(modelAliases).filter(
-    ([, model]) => typeof model === "string" && model.startsWith(`${providerAlias}/`),
+    ([, model]: any) => typeof model === "string" && model.startsWith(`${providerAlias}/`),
   );
 
-  const allModels = providerAliases.map(([alias, fullModel]) => ({
+  const allModels = providerAliases.map(([alias, fullModel]: any) => ({
     modelId: String(fullModel).replace(`${providerAlias}/`, ""),
     fullModel: String(fullModel),
     alias: String(alias),
   }));
 
   // Generate default alias from modelId (last part after /)
-  const generateDefaultAlias = (modelId) => {
+  const generateDefaultAlias = (modelId: any) => {
     const parts = modelId.split("/");
     return parts[parts.length - 1];
   };
@@ -164,7 +164,7 @@ export default function PassthroughModelsSection({
       {/* Models list */}
       {allModels.length > 0 && (
         <div className="flex flex-col gap-3">
-          {allModels.map(({ modelId, fullModel, alias }) => (
+          {allModels.map(({ modelId, fullModel, alias }: any) => (
             <PassthroughModelRow
               key={fullModel}
               modelId={modelId}

@@ -6,15 +6,15 @@ import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle } from "@/share
 import { ConfirmModal } from "@/shared/components/Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function getStatusVariant(status) {
+function getStatusVariant(status: any) {
   if (status === "active") return "success";
   if (status === "error") return "error";
   return "default";
 }
 
-function formatDateTime(value) {
+function formatDateTime(value: any) {
   if (!value) return "Never";
-  const date = new Date(value);
+  const date: any = new Date(value);
   if (Number.isNaN(date.getTime())) return "Never";
   return date.toLocaleString();
 }
@@ -38,39 +38,39 @@ function normalizeFormData(
 }
 
 export default function ProxyPoolsPage() {
-  const [proxyPools, setProxyPools] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [showBatchImportModal, setShowBatchImportModal] = useState(false);
-  const [showVercelModal, setShowVercelModal] = useState(false);
-  const [editingProxyPool, setEditingProxyPool] = useState(null);
-  const [formData, setFormData] = useState(normalizeFormData());
-  const [batchImportText, setBatchImportText] = useState("");
-  const [vercelForm, setVercelForm] = useState({ vercelToken: "", projectName: "vercel-relay" });
-  const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [deploying, setDeploying] = useState(false);
-  const [testingId, setTestingId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [healthChecking, setHealthChecking] = useState(false);
-  const [healthProgress, setHealthProgress] = useState({ current: 0, total: 0 });
-  const [bulkBusy, setBulkBusy] = useState(false);
+  const [proxyPools, setProxyPools]: any = useState([]);
+  const [loading, setLoading]: any = useState(true);
+  const [showFormModal, setShowFormModal]: any = useState(false);
+  const [showBatchImportModal, setShowBatchImportModal]: any = useState(false);
+  const [showVercelModal, setShowVercelModal]: any = useState(false);
+  const [editingProxyPool, setEditingProxyPool]: any = useState(null);
+  const [formData, setFormData]: any = useState(normalizeFormData());
+  const [batchImportText, setBatchImportText]: any = useState("");
+  const [vercelForm, setVercelForm]: any = useState({ vercelToken: "", projectName: "vercel-relay" });
+  const [saving, setSaving]: any = useState(false);
+  const [importing, setImporting]: any = useState(false);
+  const [deploying, setDeploying]: any = useState(false);
+  const [testingId, setTestingId]: any = useState(null);
+  const [selectedIds, setSelectedIds]: any = useState([]);
+  const [healthChecking, setHealthChecking]: any = useState(false);
+  const [healthProgress, setHealthProgress]: any = useState({ current: 0, total: 0 });
+  const [bulkBusy, setBulkBusy]: any = useState(false);
 
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog]: any = useState({
     open: false,
     title: "",
     message: "",
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title, message, onConfirm, variant = "default") =>
+  const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
-  const fetchProxyPools = useCallback(async () => {
+  const fetchProxyPools: any = useCallback(async () => {
     try {
-      const res = await fetch("/api/proxy-pools?includeUsage=true", { cache: "no-store" });
-      const data = await res.json();
+      const res: any = await fetch("/api/proxy-pools?includeUsage=true", { cache: "no-store" });
+      const data: any = await res.json();
       if (res.ok) {
         setProxyPools(data.proxyPools || []);
       }
@@ -85,29 +85,29 @@ export default function ProxyPoolsPage() {
     fetchProxyPools();
   }, [fetchProxyPools]);
 
-  const resetForm = () => {
+  const resetForm: any = () => {
     setEditingProxyPool(null);
     setFormData(normalizeFormData());
   };
 
-  const openCreateModal = () => {
+  const openCreateModal: any = () => {
     resetForm();
     setShowFormModal(true);
   };
 
-  const openEditModal = (proxyPool) => {
+  const openEditModal: any = (proxyPool: any) => {
     setEditingProxyPool(proxyPool);
     setFormData(normalizeFormData(proxyPool));
     setShowFormModal(true);
   };
 
-  const closeFormModal = () => {
+  const closeFormModal: any = () => {
     setShowFormModal(false);
     resetForm();
   };
 
-  const handleSave = async () => {
-    const payload = {
+  const handleSave: any = async () => {
+    const payload: any = {
       name: formData.name.trim(),
       proxyUrl: formData.proxyUrl.trim(),
       noProxy: formData.noProxy.trim(),
@@ -119,8 +119,8 @@ export default function ProxyPoolsPage() {
 
     setSaving(true);
     try {
-      const isEdit = !!editingProxyPool;
-      const res = await fetch(isEdit ? `/api/proxy-pools/${editingProxyPool.id}` : "/api/proxy-pools", {
+      const isEdit: any = !!editingProxyPool;
+      const res: any = await fetch(isEdit ? `/api/proxy-pools/${editingProxyPool.id}` : "/api/proxy-pools", {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -131,7 +131,7 @@ export default function ProxyPoolsPage() {
         closeFormModal();
         toast.success(editingProxyPool ? "Proxy pool updated" : "Proxy pool created");
       } else {
-        const data = await res.json();
+        const data: any = await res.json();
         toast.error(data.error || "Failed to save proxy pool");
       }
     } catch (error) {
@@ -141,16 +141,16 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const handleDelete = async (proxyPool) => {
+  const handleDelete: any = async (proxyPool: any) => {
     try {
-      const res = await fetch(`/api/proxy-pools/${proxyPool.id}`, { method: "DELETE" });
+      const res: any = await fetch(`/api/proxy-pools/${proxyPool.id}`, { method: "DELETE" });
       if (res.ok) {
-        setProxyPools((prev) => prev.filter((item) => item.id !== proxyPool.id));
+        setProxyPools((prev: any) => prev.filter((item: any) => item.id !== proxyPool.id));
         toast.success("Proxy pool deleted");
         return;
       }
 
-      const data = await res.json();
+      const data: any = await res.json();
       if (res.status === 409) {
         toast.warning(`Cannot delete: ${data.boundConnectionCount || 0} connection(s) are still using this pool.`);
       } else {
@@ -162,11 +162,11 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const handleTest = async (proxyPoolId) => {
+  const handleTest: any = async (proxyPoolId: any) => {
     setTestingId(proxyPoolId);
     try {
-      const res = await fetch(`/api/proxy-pools/${proxyPoolId}/test`, { method: "POST" });
-      const data = await res.json();
+      const res: any = await fetch(`/api/proxy-pools/${proxyPoolId}/test`, { method: "POST" });
+      const data: any = await res.json();
 
       if (!res.ok) {
         toast.error(data.error || "Failed to test proxy");
@@ -183,41 +183,41 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const handleToggleActive = async (pool) => {
-    const next = !pool.isActive;
-    setProxyPools((prev) => prev.map((p) => (p.id === pool.id ? { ...p, isActive: next } : p)));
+  const handleToggleActive: any = async (pool: any) => {
+    const next: any = !pool.isActive;
+    setProxyPools((prev: any) => prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: next } : p)));
     try {
-      const res = await fetch(`/api/proxy-pools/${pool.id}`, {
+      const res: any = await fetch(`/api/proxy-pools/${pool.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: next }),
       });
       if (!res.ok) {
-        setProxyPools((prev) => prev.map((p) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
+        setProxyPools((prev: any) => prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
         toast.error("Failed to update active state");
       }
     } catch (error) {
       console.error("Error toggling active:", error);
-      setProxyPools((prev) => prev.map((p) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
+      setProxyPools((prev: any) => prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
     }
   };
 
-  const allSelected = proxyPools.length > 0 && selectedIds.length === proxyPools.length;
-  const toggleSelect = (id) =>
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  const toggleSelectAll = () => setSelectedIds(allSelected ? [] : proxyPools.map((p) => p.id));
-  const clearSelection = () => setSelectedIds([]);
+  const allSelected: any = proxyPools.length > 0 && selectedIds.length === proxyPools.length;
+  const toggleSelect: any = (id: any) =>
+    setSelectedIds((prev: any) => (prev.includes(id) ? prev.filter((x: any) => x !== id) : [...prev, id]));
+  const toggleSelectAll: any = () => setSelectedIds(allSelected ? [] : proxyPools.map((p: any) => p.id));
+  const clearSelection: any = () => setSelectedIds([]);
 
-  const bulkSetActive = async (isActive) => {
-    const targets = selectedIds.length > 0 ? selectedIds : proxyPools.map((p) => p.id);
+  const bulkSetActive: any = async (isActive: any) => {
+    const targets: any = selectedIds.length > 0 ? selectedIds : proxyPools.map((p: any) => p.id);
     if (targets.length === 0) return;
     setBulkBusy(true);
     try {
-      let ok = 0;
-      let failed = 0;
+      let ok: any = 0;
+      let failed: any = 0;
       for (const id of targets) {
         try {
-          const res = await fetch(`/api/proxy-pools/${id}`, {
+          const res: any = await fetch(`/api/proxy-pools/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ isActive }),
@@ -235,16 +235,16 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const bulkDelete = async () => {
+  const bulkDelete: any = async () => {
     if (selectedIds.length === 0) return;
     setBulkBusy(true);
     try {
-      let ok = 0;
-      let blocked = 0;
-      let failed = 0;
+      let ok: any = 0;
+      let blocked: any = 0;
+      let failed: any = 0;
       for (const id of selectedIds) {
         try {
-          const res = await fetch(`/api/proxy-pools/${id}`, { method: "DELETE" });
+          const res: any = await fetch(`/api/proxy-pools/${id}`, { method: "DELETE" });
           if (res.ok) ok += 1;
           else if (res.status === 409) blocked += 1;
           else failed += 1;
@@ -260,24 +260,24 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const handleHealthCheck = async () => {
-    const targets = selectedIds.length > 0 ? proxyPools.filter((p) => selectedIds.includes(p.id)) : proxyPools;
+  const handleHealthCheck: any = async () => {
+    const targets: any = selectedIds.length > 0 ? proxyPools.filter((p: any) => selectedIds.includes(p.id)) : proxyPools;
     if (targets.length === 0) return;
     setHealthChecking(true);
     setHealthProgress({ current: 0, total: targets.length });
-    let alive = 0;
-    const deadIds = [];
-    let done = 0;
-    const CONCURRENCY = 10;
-    const queue = [...targets];
+    let alive: any = 0;
+    const deadIds: any = [];
+    let done: any = 0;
+    const CONCURRENCY: any = 10;
+    const queue: any = [...targets];
 
-    const worker = async () => {
+    const worker: any = async () => {
       while (queue.length > 0) {
-        const pool = queue.shift();
+        const pool: any = queue.shift();
         if (!pool) break;
         try {
-          const res = await fetch(`/api/proxy-pools/${pool.id}/test`, { method: "POST" });
-          const data = await res.json();
+          const res: any = await fetch(`/api/proxy-pools/${pool.id}/test`, { method: "POST" });
+          const data: any = await res.json();
           if (res.ok && data.ok) alive += 1;
           else deadIds.push(pool.id);
         } catch {
@@ -325,39 +325,39 @@ export default function ProxyPoolsPage() {
 
   // Cleanup selectedIds when pools change
   useEffect(() => {
-    setSelectedIds((prev) => prev.filter((id) => proxyPools.some((p) => p.id === id)));
+    setSelectedIds((prev: any) => prev.filter((id: any) => proxyPools.some((p: any) => p.id === id)));
   }, [proxyPools]);
 
-  const openBatchImportModal = () => {
+  const openBatchImportModal: any = () => {
     setBatchImportText("");
     setShowBatchImportModal(true);
   };
 
-  const closeBatchImportModal = () => {
+  const closeBatchImportModal: any = () => {
     if (importing) return;
     setShowBatchImportModal(false);
   };
 
-  const openVercelModal = () => {
+  const openVercelModal: any = () => {
     setVercelForm({ vercelToken: "", projectName: "vercel-relay" });
     setShowVercelModal(true);
   };
 
-  const closeVercelModal = () => {
+  const closeVercelModal: any = () => {
     if (deploying) return;
     setShowVercelModal(false);
   };
 
-  const handleVercelDeploy = async () => {
+  const handleVercelDeploy: any = async () => {
     if (!vercelForm.vercelToken.trim()) return;
     setDeploying(true);
     try {
-      const res = await fetch("/api/proxy-pools/vercel-deploy", {
+      const res: any = await fetch("/api/proxy-pools/vercel-deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(vercelForm),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (res.ok) {
         await fetchProxyPools();
         closeVercelModal();
@@ -373,28 +373,28 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const parseProxyLine = (line) => {
-    const trimmed = line.trim();
+  const parseProxyLine: any = (line: any) => {
+    const trimmed: any = line.trim();
     if (!trimmed) return null;
 
     if (trimmed.includes("://")) {
-      const parsed = new URL(trimmed);
-      const hostLabel = parsed.port ? `${parsed.hostname}:${parsed.port}` : parsed.hostname;
+      const parsed: any = new URL(trimmed);
+      const hostLabel: any = parsed.port ? `${parsed.hostname}:${parsed.port}` : parsed.hostname;
       return {
         proxyUrl: parsed.toString(),
         name: `Imported ${hostLabel}`,
       };
     }
 
-    const parts = trimmed.split(":");
+    const parts: any = trimmed.split(":");
     if (parts.length === 4) {
       const [host, port, username, password] = parts;
       if (!host || !port || !username || !password) {
         throw new Error("Invalid host:port:user:pass format");
       }
 
-      const proxyUrl = `http://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${host}:${port}`;
-      const parsed = new URL(proxyUrl);
+      const proxyUrl: any = `http://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${host}:${port}`;
+      const parsed: any = new URL(proxyUrl);
       return {
         proxyUrl: parsed.toString(),
         name: `Imported ${host}:${port}`,
@@ -404,10 +404,10 @@ export default function ProxyPoolsPage() {
     throw new Error("Unsupported format");
   };
 
-  const handleBatchImport = async () => {
-    const lines = batchImportText
+  const handleBatchImport: any = async () => {
+    const lines: any = batchImportText
       .split(/\r?\n/)
-      .map((line) => line.trim())
+      .map((line: any) => line.trim())
       .filter(Boolean);
 
     if (lines.length === 0) {
@@ -415,12 +415,12 @@ export default function ProxyPoolsPage() {
       return;
     }
 
-    const parsedEntries = [];
-    const invalidLines = [];
+    const parsedEntries: any = [];
+    const invalidLines: any = [];
 
-    lines.forEach((line, index) => {
+    lines.forEach((line: any, index: any) => {
       try {
-        const parsed = parseProxyLine(line);
+        const parsed: any = parseProxyLine(line);
         if (parsed) {
           parsedEntries.push({
             ...parsed,
@@ -439,22 +439,22 @@ export default function ProxyPoolsPage() {
 
     setImporting(true);
     try {
-      const existingKeys = new Set(
-        proxyPools.map((pool) => `${(pool.proxyUrl || "").trim()}|||${(pool.noProxy || "").trim()}`),
+      const existingKeys: any = new Set<any>(
+        proxyPools.map((pool: any) => `${(pool.proxyUrl || "").trim()}|||${(pool.noProxy || "").trim()}`),
       );
 
-      let created = 0;
-      let skipped = 0;
-      let failed = 0;
+      let created: any = 0;
+      let skipped: any = 0;
+      let failed: any = 0;
 
       for (const entry of parsedEntries) {
-        const dedupeKey = `${entry.proxyUrl}|||`;
+        const dedupeKey: any = `${entry.proxyUrl}|||`;
         if (existingKeys.has(dedupeKey)) {
           skipped += 1;
           continue;
         }
 
-        const res = await fetch("/api/proxy-pools", {
+        const res: any = await fetch("/api/proxy-pools", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -484,7 +484,7 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const activeCount = useMemo(() => proxyPools.filter((pool) => pool.isActive === true).length, [proxyPools]);
+  const activeCount: any = useMemo(() => proxyPools.filter((pool: any) => pool.isActive === true).length, [proxyPools]);
 
   if (loading) {
     return (
@@ -606,7 +606,7 @@ export default function ProxyPoolsPage() {
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-black/[0.04] dark:divide-white/[0.05]">
-            {proxyPools.map((pool) => (
+            {proxyPools.map((pool: any) => (
               <div key={pool.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <input
@@ -740,7 +740,7 @@ export default function ProxyPoolsPage() {
           <Input
             label="Vercel API Token"
             value={vercelForm.vercelToken}
-            onChange={(e: any) => setVercelForm((prev) => ({ ...prev, vercelToken: e.target.value }))}
+            onChange={(e: any) => setVercelForm((prev: any) => ({ ...prev, vercelToken: e.target.value }))}
             placeholder="your-vercel-api-token"
             hint={
               <>
@@ -760,7 +760,7 @@ export default function ProxyPoolsPage() {
           <Input
             label="Project Name"
             value={vercelForm.projectName}
-            onChange={(e: any) => setVercelForm((prev) => ({ ...prev, projectName: e.target.value }))}
+            onChange={(e: any) => setVercelForm((prev: any) => ({ ...prev, projectName: e.target.value }))}
             placeholder="my-relay"
             hint="Unique name for your Vercel project. Leave empty for auto-generated name."
           />
@@ -784,19 +784,19 @@ export default function ProxyPoolsPage() {
           <Input
             label="Name"
             value={formData.name}
-            onChange={(e: any) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+            onChange={(e: any) => setFormData((prev: any) => ({ ...prev, name: e.target.value }))}
             placeholder="Office Proxy"
           />
           <Input
             label="Proxy URL"
             value={formData.proxyUrl}
-            onChange={(e: any) => setFormData((prev) => ({ ...prev, proxyUrl: e.target.value }))}
+            onChange={(e: any) => setFormData((prev: any) => ({ ...prev, proxyUrl: e.target.value }))}
             placeholder="http://127.0.0.1:7897"
           />
           <Input
             label="No Proxy"
             value={formData.noProxy}
-            onChange={(e: any) => setFormData((prev) => ({ ...prev, noProxy: e.target.value }))}
+            onChange={(e: any) => setFormData((prev: any) => ({ ...prev, noProxy: e.target.value }))}
             placeholder="localhost,127.0.0.1,.internal"
             hint="Comma-separated hosts/domains to bypass proxy"
           />
@@ -808,7 +808,7 @@ export default function ProxyPoolsPage() {
             </div>
             <Toggle
               checked={formData.isActive === true}
-              onChange={() => setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))}
+              onChange={() => setFormData((prev: any) => ({ ...prev, isActive: !prev.isActive }))}
               disabled={saving}
             />
           </div>
@@ -822,7 +822,7 @@ export default function ProxyPoolsPage() {
             </div>
             <Toggle
               checked={formData.strictProxy === true}
-              onChange={() => setFormData((prev) => ({ ...prev, strictProxy: !prev.strictProxy }))}
+              onChange={() => setFormData((prev: any) => ({ ...prev, strictProxy: !prev.strictProxy }))}
               disabled={saving}
             />
           </div>

@@ -3,28 +3,28 @@ import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
+const SECRET: any = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
 
-const CLI_TOKEN_HEADER = "x-9r-cli-token";
-const CLI_TOKEN_SALT = "9r-cli-auth";
+const CLI_TOKEN_HEADER: any = "x-9r-cli-token";
+const CLI_TOKEN_SALT: any = "9r-cli-auth";
 
-let cachedCliToken = null;
+let cachedCliToken: any = null;
 async function getCliToken() {
   if (!cachedCliToken) cachedCliToken = await getConsistentMachineId(CLI_TOKEN_SALT);
   return cachedCliToken;
 }
 
-async function hasValidCliToken(request) {
-  const token = request.headers.get(CLI_TOKEN_HEADER);
+async function hasValidCliToken(request: any) {
+  const token: any = request.headers.get(CLI_TOKEN_HEADER);
   if (!token) return false;
   return token === (await getCliToken());
 }
 
 // Always require JWT token regardless of requireLogin setting
-const ALWAYS_PROTECTED = ["/api/shutdown", "/api/restart", "/api/settings/database", "/api/settings/migrate-sqlite"];
+const ALWAYS_PROTECTED: any = ["/api/shutdown", "/api/restart", "/api/settings/database", "/api/settings/migrate-sqlite"];
 
 // Require explicit dashboard auth even when requireLogin=false.
-const STRICT_PROTECTED_API_PATHS = [
+const STRICT_PROTECTED_API_PATHS: any = [
   "/api/cloud/auth",
   "/api/cloud/credentials/update",
   "/api/oauth",
@@ -46,10 +46,10 @@ const STRICT_PROTECTED_API_PATHS = [
 ];
 
 // Require auth, but allow through if requireLogin is disabled.
-const PROTECTED_API_PATHS = ["/api/settings", "/api/keys", "/api/cache", "/api/models", "/api/translator"];
+const PROTECTED_API_PATHS: any = ["/api/settings", "/api/keys", "/api/cache", "/api/models", "/api/translator"];
 
-async function hasValidToken(request) {
-  const token = request.cookies.get("auth_token")?.value;
+async function hasValidToken(request: any) {
+  const token: any = request.cookies.get("auth_token")?.value;
   if (!token) return false;
   try {
     await jwtVerify(token, SECRET);
@@ -68,37 +68,37 @@ async function loadSettings() {
   }
 }
 
-async function isAuthenticated(request) {
+async function isAuthenticated(request: any) {
   if (await hasValidToken(request)) return true;
-  const settings = await loadSettings();
+  const settings: any = await loadSettings();
   if (settings && settings.requireLogin === false) return true;
   return false;
 }
 
-export async function proxy(request) {
-  const { pathname } = request.nextUrl;
+export async function proxy(request: any) {
+  const { pathname }: any = request.nextUrl;
 
   // Always protected - require valid JWT or local CLI token (machineId-based)
-  if (ALWAYS_PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (ALWAYS_PROTECTED.some((p: any) => pathname.startsWith(p))) {
     if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Sensitive admin APIs stay protected even when the dashboard itself is public.
-  if (STRICT_PROTECTED_API_PATHS.some((p) => pathname.startsWith(p))) {
+  if (STRICT_PROTECTED_API_PATHS.some((p: any) => pathname.startsWith(p))) {
     if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Protect sensitive API endpoints (allow CLI token, JWT, or requireLogin=false)
-  if (PROTECTED_API_PATHS.some((p) => pathname.startsWith(p))) {
+  if (PROTECTED_API_PATHS.some((p: any) => pathname.startsWith(p))) {
     if (pathname === "/api/settings/require-login") return NextResponse.next();
     if ((await hasValidCliToken(request)) || (await isAuthenticated(request))) return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Protect all dashboard routes (top-level paths served by the (dashboard) layout)
-  const DASHBOARD_PATHS = [
+  const DASHBOARD_PATHS: any = [
     "/endpoint",
     "/providers",
     "/combos",
@@ -114,22 +114,22 @@ export async function proxy(request) {
     "/basic-chat",
     "/media-providers",
   ];
-  const isDashboardRoute = DASHBOARD_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isDashboardRoute: any = DASHBOARD_PATHS.some((p: any) => pathname === p || pathname.startsWith(p + "/"));
   if (isDashboardRoute) {
-    let requireLogin = true;
-    let tunnelDashboardAccess = true;
+    let requireLogin: any = true;
+    let tunnelDashboardAccess: any = true;
 
     try {
-      const settings = await loadSettings();
+      const settings: any = await loadSettings();
       if (settings) {
         requireLogin = settings.requireLogin !== false;
         tunnelDashboardAccess = settings.tunnelDashboardAccess === true;
 
         // Block tunnel/tailscale access if disabled (redirect to login)
         if (!tunnelDashboardAccess) {
-          const host = (request.headers.get("host") || "").split(":")[0].toLowerCase();
-          const tunnelHost = settings.tunnelUrl ? new URL(settings.tunnelUrl).hostname.toLowerCase() : "";
-          const tailscaleHost = settings.tailscaleUrl ? new URL(settings.tailscaleUrl).hostname.toLowerCase() : "";
+          const host: any = (request.headers.get("host") || "").split(":")[0].toLowerCase();
+          const tunnelHost: any = settings.tunnelUrl ? new URL(settings.tunnelUrl).hostname.toLowerCase() : "";
+          const tailscaleHost: any = settings.tailscaleUrl ? new URL(settings.tailscaleUrl).hostname.toLowerCase() : "";
           if ((tunnelHost && host === tunnelHost) || (tailscaleHost && host === tailscaleHost)) {
             return NextResponse.redirect(new URL("/login", request.url));
           }
@@ -143,7 +143,7 @@ export async function proxy(request) {
     if (!requireLogin) return NextResponse.next();
 
     // Verify JWT token
-    const token = request.cookies.get("auth_token")?.value;
+    const token: any = request.cookies.get("auth_token")?.value;
     if (token) {
       try {
         await jwtVerify(token, SECRET);
@@ -164,7 +164,7 @@ export async function proxy(request) {
   return NextResponse.next();
 }
 
-export const config = {
+export const config: any = {
   matcher: [
     "/",
     "/endpoint/:path*",

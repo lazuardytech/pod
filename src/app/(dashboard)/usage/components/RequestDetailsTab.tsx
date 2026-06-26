@@ -13,22 +13,22 @@ import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:list";
-const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY = "usage:provider-nodes";
-const OFFLINE_USAGE_DETAILS_CACHE_KEY = "usage:request-details";
-const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
-const DEFAULT_PAGE_SIZE = 20;
+const OFFLINE_USAGE_PROVIDERS_CACHE_KEY: any = "usage:providers:list";
+const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY: any = "usage:provider-nodes";
+const OFFLINE_USAGE_DETAILS_CACHE_KEY: any = "usage:request-details";
+const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
+const DEFAULT_PAGE_SIZE: any = 20;
 
-let providerNameCache = null;
-let providerNodesCache = null;
+let providerNameCache: any = null;
+let providerNodesCache: any = null;
 
 async function fetchProviderNames() {
   if (providerNameCache && providerNodesCache) {
     return { providerNameCache, providerNodesCache, source: "memory" };
   }
 
-  const applyNodesData = (nodesData) => {
-    const nodes = nodesData?.nodes || [];
+  const applyNodesData: any = (nodesData: any) => {
+    const nodes: any = nodesData?.nodes || [];
     providerNodesCache = {};
     for (const node of nodes) {
       providerNodesCache[node.id] = node.name;
@@ -39,7 +39,7 @@ async function fetchProviderNames() {
     };
   };
 
-  const result = await loadJsonStaleWhileRevalidate({
+  const result: any = await loadJsonStaleWhileRevalidate({
     url: "/api/provider-nodes",
     cacheKey: OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY,
     maxStaleMs: OFFLINE_MAX_STALE_MS,
@@ -50,11 +50,11 @@ async function fetchProviderNames() {
   return { providerNameCache, providerNodesCache, source: result.source };
 }
 
-function getProviderName(providerId, cache) {
+function getProviderName(providerId: any, cache: any) {
   if (!providerId) return providerId;
   if (!cache) return providerId;
 
-  const cached = cache[providerId];
+  const cached: any = cache[providerId];
 
   if (typeof cached === "string") {
     return cached;
@@ -64,12 +64,12 @@ function getProviderName(providerId, cache) {
     return cached.name;
   }
 
-  const providerConfig = getProviderByAlias(providerId) || AI_PROVIDERS[providerId];
+  const providerConfig: any = getProviderByAlias(providerId) || AI_PROVIDERS[providerId];
   return providerConfig?.name || providerId;
 }
 
 function CollapsibleSection({ title, children, defaultOpen = false, icon = null }: any) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isOpen, setIsOpen]: any = useState(defaultOpen);
 
   return (
     <div className="border border-black/5 dark:border-white/5 rounded-lg overflow-hidden">
@@ -93,46 +93,46 @@ function CollapsibleSection({ title, children, defaultOpen = false, icon = null 
   );
 }
 
-function getInputTokens(tokens) {
-  const prompt = tokens?.prompt_tokens || tokens?.input_tokens || 0;
-  const cache = tokens?.cached_tokens || tokens?.cache_read_input_tokens || 0;
+function getInputTokens(tokens: any) {
+  const prompt: any = tokens?.prompt_tokens || tokens?.input_tokens || 0;
+  const cache: any = tokens?.cached_tokens || tokens?.cache_read_input_tokens || 0;
   return prompt < cache ? cache : prompt;
 }
 
 export default function RequestDetailsTab() {
-  const [details, setDetails] = useState([]);
-  const [fetchError, setFetchError] = useState(null);
-  const [pagination, setPagination] = useState({
+  const [details, setDetails]: any = useState([]);
+  const [fetchError, setFetchError]: any = useState(null);
+  const [pagination, setPagination]: any = useState({
     page: 1,
     pageSize: 20,
     totalItems: 0,
     totalPages: 0,
   });
-  const [loading, setLoading] = useState(false);
-  const [selectedDetail, setSelectedDetail] = useState(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [providers, setProviders] = useState([]);
-  const [providerNameCache, setProviderNameCache] = useState(null);
-  const [filters, setFilters] = useState({
+  const [loading, setLoading]: any = useState(false);
+  const [selectedDetail, setSelectedDetail]: any = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen]: any = useState(false);
+  const [providers, setProviders]: any = useState([]);
+  const [providerNameCache, setProviderNameCache]: any = useState(null);
+  const [filters, setFilters]: any = useState({
     provider: "",
     startDate: null,
     endDate: null,
   });
-  const offlineNoticeShownRef = useRef(false);
+  const offlineNoticeShownRef: any = useRef(false);
 
-  const notifyOfflineCache = useCallback(() => {
+  const notifyOfflineCache: any = useCallback(() => {
     if (offlineNoticeShownRef.current) return;
     offlineNoticeShownRef.current = true;
     toast.info("Network unavailable. Showing cached request data.");
   }, []);
 
-  const clearOfflineCacheNotice = useCallback(() => {
+  const clearOfflineCacheNotice: any = useCallback(() => {
     offlineNoticeShownRef.current = false;
   }, []);
 
-  const fetchProviders = useCallback(async () => {
+  const fetchProviders: any = useCallback(async () => {
     try {
-      const [providersResult, namesResult] = await Promise.allSettled([
+      const [providersResult, namesResult]: any = await Promise.allSettled([
         loadJsonStaleWhileRevalidate({
           url: "/api/usage/providers",
           cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
@@ -151,7 +151,7 @@ export default function RequestDetailsTab() {
         setProviderNameCache(namesResult.value.providerNameCache);
       }
 
-      const sources = [];
+      const sources: any = [];
       if (providersResult.status === "fulfilled") sources.push(providersResult.value?.source);
       if (namesResult.status === "fulfilled") sources.push(namesResult.value?.source);
 
@@ -162,18 +162,18 @@ export default function RequestDetailsTab() {
     }
   }, [clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const applyRequestDetailsData = useCallback((data) => {
+  const applyRequestDetailsData: any = useCallback((data: any) => {
     setDetails(data?.details || []);
     if (data?.pagination) {
-      setPagination((prev) => ({ ...prev, ...data.pagination }));
+      setPagination((prev: any) => ({ ...prev, ...data.pagination }));
     }
   }, []);
 
-  const fetchDetails = useCallback(async () => {
+  const fetchDetails: any = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
 
-    const isDefaultSnapshot =
+    const isDefaultSnapshot: any =
       pagination.page === 1 &&
       pagination.pageSize === DEFAULT_PAGE_SIZE &&
       !filters.provider &&
@@ -181,7 +181,7 @@ export default function RequestDetailsTab() {
       !filters.endDate;
 
     try {
-      const params = new URLSearchParams({
+      const params: any = new URLSearchParams({
         page: pagination.page.toString(),
         pageSize: pagination.pageSize.toString(),
       });
@@ -190,7 +190,7 @@ export default function RequestDetailsTab() {
       if (filters.endDate) params.append("endDate", filters.endDate.toISOString());
 
       if (isDefaultSnapshot) {
-        const result = await loadJsonStaleWhileRevalidate({
+        const result: any = await loadJsonStaleWhileRevalidate({
           url: `/api/usage/request-details?${params.toString()}`,
           cacheKey: OFFLINE_USAGE_DETAILS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
@@ -202,12 +202,12 @@ export default function RequestDetailsTab() {
         return;
       }
 
-      const res = await fetch(`/api/usage/request-details?${params.toString()}`);
+      const res: any = await fetch(`/api/usage/request-details?${params.toString()}`);
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const err: any = await res.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const data = await res.json();
+      const data: any = await res.json();
       applyRequestDetailsData(data);
       clearOfflineCacheNotice();
     } catch (error) {
@@ -233,20 +233,20 @@ export default function RequestDetailsTab() {
     fetchDetails();
   }, [fetchDetails]);
 
-  const handleViewDetail = (detail) => {
+  const handleViewDetail: any = (detail: any) => {
     setSelectedDetail(detail);
     setIsDrawerOpen(true);
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
+  const handlePageChange: any = (newPage: any) => {
+    setPagination((prev: any) => ({ ...prev, page: newPage }));
   };
 
-  const handlePageSizeChange = (newPageSize) => {
-    setPagination((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+  const handlePageSizeChange: any = (newPageSize: any) => {
+    setPagination((prev: any) => ({ ...prev, pageSize: newPageSize, page: 1 }));
   };
 
-  const handleClearFilters = () => {
+  const handleClearFilters: any = () => {
     setFilters({ provider: "", startDate: null, endDate: null });
   };
 
@@ -269,7 +269,7 @@ export default function RequestDetailsTab() {
               }
               options={[
                 { value: "__all__", label: "All Providers" },
-                ...providers.map((provider) => ({ value: provider.id, label: provider.name })),
+                ...providers.map((provider: any) => ({ value: provider.id, label: provider.name })),
               ]}
               placeholder="Select provider"
               className="w-full min-w-0"
@@ -355,7 +355,7 @@ export default function RequestDetailsTab() {
                   </td>
                 </tr>
               ) : (
-                details.map((detail, index) => (
+                details.map((detail: any, index: any) => (
                   <tr
                     key={`${detail.id}-${index}`}
                     onClick={() => handleViewDetail(detail)}

@@ -20,7 +20,7 @@ export default function SegmentedControl({
   className?: any;
   [key: string]: any;
 }) {
-  const sizes = {
+  const sizes: Record<string, string> = {
     sm: "h-7 text-[12px]",
     md: "h-9 text-sm",
     lg: "h-11 text-base",

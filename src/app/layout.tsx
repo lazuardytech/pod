@@ -67,7 +67,7 @@ const themeInitScript = `
   })();
 `;
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: any) {
   return (
     <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} ${dmSans.variable} dark`}>
       <head>

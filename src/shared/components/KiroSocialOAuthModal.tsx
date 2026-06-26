@@ -148,7 +148,7 @@ export default function KiroSocialOAuthModal({
                 </p>
                 <Input
                   value={callbackUrl}
-                  onChange={(e) => setCallbackUrl(e.target.value)}
+                  onChange={(e: any) => setCallbackUrl(e.target.value)}
                   placeholder="kiro://kiro.kiroAgent/authenticate-success?code=..."
                   className="font-mono text-xs"
                 />

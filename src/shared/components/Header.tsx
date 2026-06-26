@@ -12,14 +12,14 @@ import { useHeaderActionStore } from "@/store/headerActionStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const getPageInfo = (pathname) => {
+const getPageInfo = (pathname: any) => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };
 
   const mediaDetailMatch = pathname.match(/\/media-providers\/([^/]+)\/([^/]+)$/);
   if (mediaDetailMatch) {
     const kindId = mediaDetailMatch[1];
     const providerId = mediaDetailMatch[2];
-    const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
+    const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any) => k.id === kindId);
     const provider = AI_PROVIDERS[providerId];
     return {
       title: provider?.name || providerId,
@@ -46,13 +46,13 @@ const getPageInfo = (pathname) => {
         breadcrumbs: [],
       };
     }
-    const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
+    const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any) => k.id === kindId);
     return {
       title: kindConfig?.label || kindId,
       description: `Manage your ${kindConfig?.label || kindId} providers`,
       icon: kindConfig?.icon || "perm_media",
       breadcrumbs: [],
-    };
+    } as any;
   }
 
   const providerMatch = pathname.match(/\/providers\/([^/]+)$/);
@@ -185,7 +185,7 @@ export default function Header({
       {/* Center: breadcrumbs / title */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {breadcrumbs.length > 0 ? (
-          breadcrumbs.map((crumb, index) => (
+          breadcrumbs.map((crumb: any, index: any) => (
             <div key={`${crumb.label}-${crumb.href || "current"}`} className="flex items-center gap-1.5">
               {index > 0 && <LucideIcon name="chevron_right" className="text-fog-grey text-[14px]" />}
               {crumb.href ? (
@@ -235,7 +235,7 @@ export default function Header({
 }
 
 function HeaderAction() {
-  const action = useHeaderActionStore((s) => s.action);
+  const action = useHeaderActionStore((s: any) => s.action);
   if (!action) return null;
   return (
     <button
@@ -255,10 +255,10 @@ function HeaderAction() {
 }
 
 function HeaderSearch() {
-  const visible = useHeaderSearchStore((s) => s.visible);
-  const query = useHeaderSearchStore((s) => s.query);
-  const placeholder = useHeaderSearchStore((s) => s.placeholder);
-  const setQuery = useHeaderSearchStore((s) => s.setQuery);
+  const visible = useHeaderSearchStore((s: any) => s.visible);
+  const query = useHeaderSearchStore((s: any) => s.query);
+  const placeholder = useHeaderSearchStore((s: any) => s.placeholder);
+  const setQuery = useHeaderSearchStore((s: any) => s.setQuery);
 
   if (!visible) return null;
 
@@ -272,7 +272,7 @@ function HeaderSearch() {
         aria-label="Search"
         type="text"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e: any) => setQuery(e.target.value)}
         placeholder={placeholder}
         className="w-full h-7 pl-8 pr-6 rounded-[6px] border border-charcoal-grey bg-gunmetal text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/50 transition-colors duration-100"
         name="search"

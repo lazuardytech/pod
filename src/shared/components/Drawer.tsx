@@ -21,7 +21,7 @@ export default function Drawer({
   className?: any;
   [key: string]: any;
 }) {
-  const widths = {
+  const widths: Record<string, string> = {
     sm: "w-[400px]",
     md: "w-[500px]",
     lg: "w-[600px]",
@@ -41,7 +41,7 @@ export default function Drawer({
   }, [isOpen]);
 
   useEffect(() => {
-    const handleEscape = (e) => {
+    const handleEscape = (e: any) => {
       if (e.key === "Escape" && isOpen) onClose();
     };
     document.addEventListener("keydown", handleEscape);
