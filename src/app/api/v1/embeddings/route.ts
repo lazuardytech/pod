@@ -1,5 +1,5 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
-import { handleEmbeddings } from "@/sse/handlers/embeddings.js";
+import { handleEmbeddings } from "@/sse/handlers/embeddings";
 
 /**
  * Handle CORS preflight

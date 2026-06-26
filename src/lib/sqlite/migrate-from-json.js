@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { warn } from "@/sse/utils/logger.js";
+import { warn } from "@/sse/utils/logger";
 
 const DB_JSON = "db.json";
 const USAGE_JSON = "usage.json";

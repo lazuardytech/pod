@@ -19,7 +19,7 @@ import {
 import { getProviderConnections, getSettings, updateProviderConnection, validateApiKey } from "@/lib/localDb.js";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { FREE_PROVIDERS, resolveProviderId } from "@/shared/constants/providers";
-import * as log from "../utils/logger.js";
+import * as log from "../utils/logger";
 
 type RotationState = { lastConnectionId: string; consecutiveCount: number };
 const rotationState = new Map<string, RotationState>();

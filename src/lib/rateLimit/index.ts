@@ -2,7 +2,7 @@
 // Replaces previous @/app/api/v1/_utils/apiKeyRateLimit.js
 
 import { getApiKeyByKey } from "@/lib/localDb";
-import { extractApiKey } from "@/sse/services/auth.js";
+import { extractApiKey } from "@/sse/services/auth";
 import { getBackend, initRateLimit } from "./backend";
 
 export { initRateLimit };

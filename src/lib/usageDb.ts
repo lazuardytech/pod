@@ -6,7 +6,7 @@
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import { DATA_DIR } from "@/lib/dataDir";
-import { error as logError, info as logInfo } from "@/sse/utils/logger.js";
+import { error as logError, info as logInfo } from "@/sse/utils/logger";
 import { LRUCache } from "@/lib/cacheLayer";
 import { closeDatabase, getDatabase } from "@/lib/sqlite/connection";
 

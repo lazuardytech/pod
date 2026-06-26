@@ -14,10 +14,10 @@ import {
   getProviderCredentials,
   isValidApiKey,
   markAccountUnavailable,
-} from "../services/auth.js";
-import { getComboInfo, getModelInfo } from "../services/model.js";
-import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh.js";
-import * as log from "../utils/logger.js";
+} from "../services/auth";
+import { getComboInfo, getModelInfo } from "../services/model";
+import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh";
+import * as log from "../utils/logger";
 
 export async function handleChat(request: Request, clientRawRequest: unknown = null): Promise<Response> {
   const text = await request.text();

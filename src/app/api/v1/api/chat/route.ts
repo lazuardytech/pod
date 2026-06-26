@@ -1,7 +1,7 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { transformToOllama } from "open-sse/utils/ollamaTransform.js";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
-import { handleChat } from "@/sse/handlers/chat.js";
+import { handleChat } from "@/sse/handlers/chat";
 
 let initialized = false;
 

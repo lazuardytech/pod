@@ -1,4 +1,4 @@
-import { error as logError } from "@/sse/utils/logger.js";
+import { error as logError } from "@/sse/utils/logger";
 import { getProxyPoolById } from "@/models";
 
 // Safely normalize any value into a trimmed string.

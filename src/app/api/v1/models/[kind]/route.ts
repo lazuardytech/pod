@@ -1,6 +1,6 @@
 import { checkRateLimitByKey } from "@/lib/rateLimit";
 import { getSettings, validateApiKey } from "@/lib/localDb";
-import { extractApiKey } from "@/sse/services/auth.js";
+import { extractApiKey } from "@/sse/services/auth";
 import { buildModelsList } from "../route";
 
 import { sanitizeError } from "@/lib/sanitizeError";

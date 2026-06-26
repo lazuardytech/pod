@@ -1,5 +1,5 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
-import { handleStt } from "@/sse/handlers/stt.js";
+import { handleStt } from "@/sse/handlers/stt";
 
 // Allow large audio uploads — 5min for processing large files
 export const maxDuration = 300;

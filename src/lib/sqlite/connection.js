@@ -7,7 +7,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { warn, info } from "@/sse/utils/logger.js";
+import { warn, info } from "@/sse/utils/logger";
 import { migrateFromJson } from "./migrate-from-json.js";
 import { SCHEMA_SQL } from "./schema.js";
 

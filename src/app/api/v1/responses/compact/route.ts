@@ -1,6 +1,6 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
-import { handleChat } from "@/sse/handlers/chat.js";
+import { handleChat } from "@/sse/handlers/chat";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
 let initialized = false;

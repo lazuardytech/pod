@@ -4,9 +4,9 @@ import { handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
-import { extractApiKey, getProviderCredentials, isValidApiKey, markAccountUnavailable } from "../services/auth.js";
-import { getComboModels, getModelInfo } from "../services/model.js";
-import * as log from "../utils/logger.js";
+import { extractApiKey, getProviderCredentials, isValidApiKey, markAccountUnavailable } from "../services/auth";
+import { getComboModels, getModelInfo } from "../services/model";
+import * as log from "../utils/logger";
 
 const CREDENTIALED_PROVIDERS = new Set(
   Object.entries(AI_PROVIDERS)

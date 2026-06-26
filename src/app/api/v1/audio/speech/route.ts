@@ -1,5 +1,5 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
-import { handleTts } from "@/sse/handlers/tts.js";
+import { handleTts } from "@/sse/handlers/tts";
 
 export async function OPTIONS() {
   return new Response(null, {

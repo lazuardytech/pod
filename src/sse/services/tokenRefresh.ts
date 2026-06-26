@@ -17,7 +17,7 @@ import {
 } from "open-sse/services/tokenRefresh.js";
 import { getProjectIdForConnection, invalidateProjectId, removeConnection } from "open-sse/services/projectId.js";
 import { updateProviderConnection } from "@/lib/localDb.js";
-import * as log from "../utils/logger.js";
+import * as log from "../utils/logger";
 
 export const TOKEN_EXPIRY_BUFFER_MS: number = BUFFER_MS;
 type AnyCreds = Record<string, any>;

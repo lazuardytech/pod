@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 
 import { sanitizeError } from "@/lib/sanitizeError";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
-import { error as logError } from "@/sse/utils/logger.js";
+import { error as logError } from "@/sse/utils/logger";
 const execFileAsync = promisify(execFile);
 
 const ACCESS_TOKEN_KEYS = ["cursorAuth/accessToken", "cursorAuth/token"];

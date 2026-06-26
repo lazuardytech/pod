@@ -3,7 +3,7 @@
 // callers push into an in-memory buffer and a single transactional INSERT
 // runs on batch threshold or after a debounce timer.
 
-import { error as logError } from "@/sse/utils/logger.js";
+import { error as logError } from "@/sse/utils/logger";
 import { closeDatabase, getDatabase } from "@/lib/sqlite/connection";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";

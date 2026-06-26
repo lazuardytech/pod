@@ -10,9 +10,9 @@ import {
   getProviderCredentials,
   isValidApiKey,
   markAccountUnavailable,
-} from "../services/auth.js";
-import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh.js";
-import * as log from "../utils/logger.js";
+} from "../services/auth";
+import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh";
+import * as log from "../utils/logger";
 
 export async function handleSearch(request: Request): Promise<Response> {
   let body: Record<string, any>;

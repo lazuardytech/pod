@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { warn } from "@/sse/utils/logger.js";
+import { warn } from "@/sse/utils/logger";
 
 const APP_NAME = "pod";
 

@@ -9,10 +9,10 @@ import {
   getProviderCredentials,
   isValidApiKey,
   markAccountUnavailable,
-} from "../services/auth.js";
-import { getComboModels, getModelInfo } from "../services/model.js";
-import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh.js";
-import * as log from "../utils/logger.js";
+} from "../services/auth";
+import { getComboModels, getModelInfo } from "../services/model";
+import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh";
+import * as log from "../utils/logger";
 
 const NO_AUTH_PROVIDERS = new Set(["sdwebui", "comfyui"]);
 type ImageGenOptions = { wantsStream: boolean; binaryOutput: boolean; preferredConnectionId: string | null };

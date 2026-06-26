@@ -1,6 +1,6 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
 import { requireValidApiKey } from "@/lib/routeAuth";
-import { handleFetch } from "@/sse/handlers/fetch.js";
+import { handleFetch } from "@/sse/handlers/fetch";
 
 /**
  * Handle CORS preflight

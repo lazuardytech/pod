@@ -14,7 +14,7 @@ import {
   isAnthropicCompatibleProvider,
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
-import { extractApiKey } from "@/sse/services/auth.js";
+import { extractApiKey } from "@/sse/services/auth";
 import { sanitizeError } from "@/lib/sanitizeError";
 
 const parseOpenAIStyleModels = (data) => {
