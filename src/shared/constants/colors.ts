@@ -2,7 +2,43 @@
 // Light theme: Warm beige/cream tones
 // Dark theme: Deep charcoal/brown tones
 
-export const COLORS = {
+export type ColorPalette = {
+  primary: { DEFAULT: string; hover: string; light: string; dark: string };
+  light: {
+    bg: string;
+    bgAlt: string;
+    surface: string;
+    sidebar: string;
+    border: string;
+    textMain: string;
+    textMuted: string;
+  };
+  dark: {
+    bg: string;
+    bgAlt: string;
+    surface: string;
+    sidebar: string;
+    border: string;
+    textMain: string;
+    textMuted: string;
+  };
+  status: {
+    success: string;
+    successLight: string;
+    successDark: string;
+    warning: string;
+    warningLight: string;
+    warningDark: string;
+    error: string;
+    errorLight: string;
+    errorDark: string;
+    info: string;
+    infoLight: string;
+    infoDark: string;
+  };
+};
+
+export const COLORS: ColorPalette = {
   // Primary - Warm Coral/Terracotta (Claude-like)
   primary: {
     DEFAULT: "#D97757",
@@ -51,7 +87,10 @@ export const COLORS = {
 };
 
 // CSS Variables mapping for Tailwind
-export const CSS_VARIABLES = {
+export const CSS_VARIABLES: {
+  light: Record<`--color-${string}`, string>;
+  dark: Record<`--color-${string}`, string>;
+} = {
   light: {
     "--color-primary": COLORS.primary.DEFAULT,
     "--color-primary-hover": COLORS.primary.hover,

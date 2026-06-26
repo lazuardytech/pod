@@ -5,11 +5,24 @@
 //   2. MODEL_PRICING[model]               — canonical model price (provider-agnostic)
 //   3. PATTERN_PRICING                    — glob pattern match (e.g. "codex-*")
 
+export type ModelPricing = {
+  input: number;
+  output: number;
+  cached: number;
+  reasoning: number;
+  cache_creation: number;
+};
+
+export type PatternPricingEntry = {
+  pattern: string;
+  pricing: ModelPricing;
+};
+
 /**
  * Canonical model pricing — provider-agnostic.
  * Cover all known models; deduplicated across providers.
  */
-export const MODEL_PRICING = {
+export const MODEL_PRICING: Record<string, ModelPricing> = {
   // === Anthropic / Claude ===
   "claude-opus-4-6": { input: 5.0, output: 25.0, cached: 0.5, reasoning: 25.0, cache_creation: 6.25 },
   "claude-opus-4-5-20251101": { input: 5.0, output: 25.0, cached: 0.5, reasoning: 25.0, cache_creation: 6.25 },
@@ -116,7 +129,7 @@ export const MODEL_PRICING = {
  * Only include entries where price DIFFERS from MODEL_PRICING.
  * Keyed by provider alias (cc, cx, gc, gh, ...) or provider id (openai, anthropic, ...).
  */
-export const PROVIDER_PRICING = {
+export const PROVIDER_PRICING: Record<string, Record<string, ModelPricing>> = {
   // GitHub Copilot (gh) — gpt-5.3-codex has different rate than canonical
   gh: {
     "gpt-5.3-codex": { input: 1.75, output: 14.0, cached: 0.175, reasoning: 14.0, cache_creation: 1.75 },
@@ -128,7 +141,7 @@ export const PROVIDER_PRICING = {
  * Patterns use simple glob: "*" matches any substring.
  * First match wins — order matters.
  */
-export const PATTERN_PRICING = [
+export const PATTERN_PRICING: PatternPricingEntry[] = [
   // --- Codex variants ---
   {
     pattern: "*-codex-xhigh",
@@ -243,10 +256,21 @@ export const PATTERN_PRICING = [
   { pattern: "grok-*", pricing: { input: 0.5, output: 2.0, cached: 0.25, reasoning: 3.0, cache_creation: 0.5 } },
 ];
 
+export type TokenUsage = {
+  prompt_tokens?: number;
+  input_tokens?: number;
+  completion_tokens?: number;
+  output_tokens?: number;
+  cached_tokens?: number;
+  cache_read_input_tokens?: number;
+  reasoning_tokens?: number;
+  cache_creation_input_tokens?: number;
+};
+
 /**
  * Match a model ID against a glob pattern (* = wildcard).
  */
-function matchPattern(pattern, model) {
+function matchPattern(pattern: string, model: string): boolean {
   const regex = new RegExp(
     "^" +
       pattern
@@ -263,12 +287,8 @@ function matchPattern(pattern, model) {
  *   1. PROVIDER_PRICING[provider][model]
  *   2. MODEL_PRICING[model]
  *   3. PATTERN_PRICING (glob match)
- *
- * @param {string} provider
- * @param {string} model
- * @returns {object|null}
  */
-export function getPricingForModel(provider, model) {
+export function getPricingForModel(provider: string, model: string): ModelPricing | null {
   if (!model) return null;
 
   // 1. Provider-specific override
@@ -277,7 +297,7 @@ export function getPricingForModel(provider, model) {
   }
 
   // 2. Canonical model pricing (strip vendor prefix if needed: "deepseek/deepseek-chat" → "deepseek-chat")
-  const baseModel = model.includes("/") ? model.split("/").pop() : model;
+  const baseModel = model.includes("/") ? model.split("/").pop() || model : model;
   if (MODEL_PRICING[baseModel]) return MODEL_PRICING[baseModel];
   if (MODEL_PRICING[model]) return MODEL_PRICING[model];
 
@@ -295,27 +315,26 @@ export function getPricingForModel(provider, model) {
  * Get all provider pricing (for UI / API).
  * Returns PROVIDER_PRICING — consumers should fall back to MODEL_PRICING for unlisted models.
  */
-export function getDefaultPricing() {
+export function getDefaultPricing(): Record<string, Record<string, ModelPricing>> {
   return PROVIDER_PRICING;
 }
 
 /**
  * Format cost for display
- * @param {number} cost
- * @returns {string}
  */
-export function formatCost(cost) {
+export function formatCost(cost: number | null | undefined): string {
   if (cost === null || cost === undefined || Number.isNaN(cost)) return "$0.00";
   return `$${cost.toFixed(2)}`;
 }
 
 /**
  * Calculate cost from tokens and pricing
- * @param {object} tokens
- * @param {object} pricing
- * @returns {number} cost in dollars
+ * @returns cost in dollars
  */
-export function calculateCostFromTokens(tokens, pricing) {
+export function calculateCostFromTokens(
+  tokens: TokenUsage | null | undefined,
+  pricing: ModelPricing | null | undefined,
+): number {
   if (!tokens || !pricing) return 0;
 
   let cost = 0;

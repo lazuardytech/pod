@@ -2,7 +2,22 @@
  * TTS Provider Configuration
  * Centralized config for TTS provider UI behavior
  */
-export const TTS_PROVIDER_CONFIG = {
+export type TtsVoiceSource = "hardcoded" | "api-language" | "config";
+
+export type TtsProviderUIConfig = {
+  hasLanguageDropdown?: boolean;
+  hasLanguageHint?: boolean;
+  hasModelSelector?: boolean;
+  hasBrowseButton?: boolean;
+  hasVoiceIdInput?: boolean;
+  voiceSource: TtsVoiceSource;
+  modelKey?: string;
+  voiceKey?: string;
+  voicesPerModel?: boolean;
+  apiEndpoint?: string;
+};
+
+export const TTS_PROVIDER_CONFIG: Record<string, TtsProviderUIConfig> = {
   "google-tts": {
     hasLanguageDropdown: false,
     hasModelSelector: false,

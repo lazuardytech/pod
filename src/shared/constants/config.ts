@@ -1,47 +1,42 @@
 import pkg from "../../../package.json" with { type: "json" };
 
-// App configuration
 export const APP_CONFIG = {
   name: "Pod",
   description: "AI Infrastructure Management",
   version: pkg.version,
   displayVersion: "0.0.79",
-};
+} as const;
 
-// GitHub configuration
 export const GITHUB_CONFIG = {
   changelogUrl: "https://raw.githubusercontent.com/lazuardytech/pod/refs/heads/master/CHANGELOG.md",
-};
+} as const;
 
-// Theme configuration
 export const THEME_CONFIG = {
   storageKey: "theme",
   defaultTheme: "dark", // "light" | "dark" | "system"
-};
+} as const;
 
-// Subscription
 export const SUBSCRIPTION_CONFIG = {
   price: 1.0,
   currency: "USD",
   interval: "month",
   planName: "Pro Plan",
-};
+} as const;
 
-// API endpoints
 export const API_ENDPOINTS = {
   users: "/api/users",
   providers: "/api/providers",
   payments: "/api/payments",
   auth: "/api/auth",
-};
+} as const;
 
 export const CONSOLE_LOG_CONFIG = {
   maxLines: 200,
   pollIntervalMs: 1000,
-};
+} as const;
 
 // Provider API endpoints (for display only)
-export const PROVIDER_ENDPOINTS = {
+export const PROVIDER_ENDPOINTS: Record<string, string> = {
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
   glm: "https://api.z.ai/api/anthropic/v1/messages",
   "glm-cn": "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
@@ -60,10 +55,7 @@ export const PROVIDER_ENDPOINTS = {
 };
 
 // Re-export from models.js for backward compatibility
-export {
-  AI_MODELS,
-  PROVIDER_MODELS,
-} from "./models.js";
+export { AI_MODELS, PROVIDER_MODELS } from "./models.js";
 // Re-export from providers.js for backward compatibility
 export {
   AI_PROVIDERS,

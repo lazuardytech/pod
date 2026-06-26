@@ -1,7 +1,154 @@
 // Provider definitions
 
+// ─── Domain types ─────────────────────────────────────────────────────────────
+
+export type ServiceKind =
+  | "llm"
+  | "embedding"
+  | "tts"
+  | "stt"
+  | "image"
+  | "imageToText"
+  | "webSearch"
+  | "webFetch"
+  | "video"
+  | "music";
+
+export type AuthType = "oauth" | "apikey" | "cookie" | "none";
+
+export type TtsFormat =
+  | "openai"
+  | "gemini-tts"
+  | "minimax-tts"
+  | "nvidia-tts"
+  | "hyperbolic"
+  | "deepgram"
+  | "elevenlabs"
+  | "cartesia"
+  | "playht"
+  | "huggingface-tts"
+  | "local-device"
+  | "google-tts"
+  | "edge-tts"
+  | "coqui"
+  | "tortoise"
+  | "inworld"
+  | "aws-polly"
+  | "assemblyai";
+
+export type SttFormat = "openai" | "gemini-stt" | "deepgram" | "assemblyai" | "huggingface-asr";
+
+export type MediaModelDescriptor = { id: string; name: string; dimensions?: number };
+
+export type TtsProviderConfig = {
+  baseUrl: string;
+  authType: AuthType;
+  authHeader: string;
+  format: TtsFormat;
+  models: MediaModelDescriptor[];
+  async?: boolean;
+};
+
+export type SttProviderConfig = {
+  baseUrl: string;
+  authType: AuthType;
+  authHeader: string;
+  format: SttFormat;
+  models: MediaModelDescriptor[];
+  async?: boolean;
+};
+
+export type EmbeddingProviderConfig = {
+  baseUrl: string;
+  authType: AuthType;
+  authHeader: string;
+  models: MediaModelDescriptor[];
+};
+
+export type SearchProviderConfig = {
+  baseUrl: string;
+  method: "GET" | "POST";
+  authType: AuthType;
+  authHeader: string;
+  costPerQuery: number;
+  freeMonthlyQuota: number;
+  searchTypes: string[];
+  defaultMaxResults: number;
+  maxMaxResults: number;
+  timeoutMs: number;
+  cacheTTLMs: number;
+};
+
+export type FetchProviderConfig = {
+  baseUrl: string;
+  method: "GET" | "POST";
+  authType: AuthType;
+  authHeader: string;
+  costPerQuery: number;
+  freeMonthlyQuota: number;
+  formats: string[];
+  maxCharacters: number;
+  timeoutMs: number;
+};
+
+export type ImageProviderConfig = {
+  baseUrl: string;
+  method: "GET" | "POST";
+  authType: AuthType;
+  authHeader: string;
+  extraHeaders?: Record<string, string>;
+};
+
+export type ThinkingConfig = {
+  options: string[];
+  defaultMode: string;
+  defaultBudgetTokens?: number;
+};
+
+export type ProviderNotice = {
+  text?: string;
+  signupUrl?: string;
+  apiKeyUrl?: string;
+};
+
+export type ModelsFetcher = { url: string; type: string };
+
+export type SearchViaChatConfig = { defaultModel: string; pricingUrl: string; freeTier?: string };
+
+export type ProviderDefinition = {
+  id: string;
+  alias: string;
+  name: string;
+  icon: string;
+  color: string;
+  textIcon?: string;
+  website?: string;
+  notice?: ProviderNotice;
+  deprecated?: boolean;
+  deprecationNotice?: string;
+  hidden?: boolean;
+  serviceKinds?: ServiceKind[];
+  hiddenKinds?: ServiceKind[];
+  noAuth?: boolean;
+  passthroughModels?: boolean;
+  hasProviderSpecificData?: boolean;
+  authType?: AuthType;
+  authHint?: string;
+  mediaPriority?: number;
+  thinkingConfig?: ThinkingConfig;
+  kindNotice?: Partial<Record<ServiceKind, string>>;
+  ttsConfig?: TtsProviderConfig;
+  sttConfig?: SttProviderConfig;
+  embeddingConfig?: EmbeddingProviderConfig;
+  searchConfig?: SearchProviderConfig;
+  fetchConfig?: FetchProviderConfig;
+  imageConfig?: ImageProviderConfig;
+  searchViaChat?: SearchViaChatConfig;
+  modelsFetcher?: ModelsFetcher;
+};
+
 // Free Providers (kiro first, iflow last)
-export const FREE_PROVIDERS = {
+export const FREE_PROVIDERS: Record<string, ProviderDefinition> = {
   kiro: {
     id: "kiro",
     alias: "kr",
@@ -69,7 +216,7 @@ export const FREE_PROVIDERS = {
 };
 
 // Free Tier Providers (has free access but may require account/API key)
-export const FREE_TIER_PROVIDERS = {
+export const FREE_TIER_PROVIDERS: Record<string, ProviderDefinition> = {
   openrouter: {
     id: "openrouter",
     alias: "openrouter",
@@ -236,7 +383,7 @@ export const FREE_TIER_PROVIDERS = {
 // defaultMode: fallback when user hasn't configured
 // extended: claude-style thinking (thinking.type + budget_tokens) — used by most providers
 // effort: openai-style reasoning_effort — only openai + codex
-export const THINKING_CONFIG = {
+export const THINKING_CONFIG: Record<"extended" | "effort", ThinkingConfig> = {
   extended: {
     options: ["auto", "on", "off"],
     defaultMode: "auto",
@@ -249,7 +396,7 @@ export const THINKING_CONFIG = {
 };
 
 // OAuth Providers
-export const OAUTH_PROVIDERS = {
+export const OAUTH_PROVIDERS: Record<string, ProviderDefinition> = {
   claude: {
     id: "claude",
     alias: "cc",
@@ -337,7 +484,7 @@ export const OAUTH_PROVIDERS = {
   // opencode: { id: "opencode", alias: "oc", name: "OpenCode", icon: "terminal", color: "#E87040", textIcon: "OC" },
 };
 
-export const APIKEY_PROVIDERS = {
+export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
   glm: {
     id: "glm",
     alias: "glm",
@@ -1354,7 +1501,7 @@ export const APIKEY_PROVIDERS = {
     icon: "image",
     color: "#EC4899",
     textIcon: "RC",
-    website: "https://recraft.ai",
+    website: "https://www.recraft.ai",
     notice: { apiKeyUrl: "https://www.recraft.ai/profile/api" },
     serviceKinds: ["image"],
     imageConfig: {
@@ -1469,7 +1616,7 @@ export const APIKEY_PROVIDERS = {
 };
 
 // Web Cookie Providers (use browser session cookie instead of API key)
-export const WEB_COOKIE_PROVIDERS = {
+export const WEB_COOKIE_PROVIDERS: Record<string, ProviderDefinition> = {
   "grok-web": {
     id: "grok-web",
     alias: "gw",
@@ -1497,8 +1644,15 @@ export const WEB_COOKIE_PROVIDERS = {
   },
 };
 
+export type MediaProviderKind = {
+  id: ServiceKind;
+  label: string;
+  icon: string;
+  endpoint: { method: "GET" | "POST"; path: string };
+};
+
 // Media provider kinds — each kind maps to a route and endpoint config
-export const MEDIA_PROVIDER_KINDS = [
+export const MEDIA_PROVIDER_KINDS: MediaProviderKind[] = [
   { id: "embedding", label: "Embedding", icon: "data_array", endpoint: { method: "POST", path: "/v1/embeddings" } },
   { id: "image", label: "Text to Image", icon: "brush", endpoint: { method: "POST", path: "/v1/images/generations" } },
   {
@@ -1524,20 +1678,20 @@ export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
 export const ANTHROPIC_COMPATIBLE_PREFIX = "anthropic-compatible-";
 export const CUSTOM_EMBEDDING_PREFIX = "custom-embedding-";
 
-export function isOpenAICompatibleProvider(providerId) {
+export function isOpenAICompatibleProvider(providerId: unknown): boolean {
   return typeof providerId === "string" && providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
 }
 
-export function isAnthropicCompatibleProvider(providerId) {
+export function isAnthropicCompatibleProvider(providerId: unknown): boolean {
   return typeof providerId === "string" && providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);
 }
 
-export function isCustomEmbeddingProvider(providerId) {
+export function isCustomEmbeddingProvider(providerId: unknown): boolean {
   return typeof providerId === "string" && providerId.startsWith(CUSTOM_EMBEDDING_PREFIX);
 }
 
 // All providers (combined)
-export const AI_PROVIDERS = {
+export const AI_PROVIDERS: Record<string, ProviderDefinition> = {
   ...FREE_PROVIDERS,
   ...FREE_TIER_PROVIDERS,
   ...OAUTH_PROVIDERS,
@@ -1546,14 +1700,16 @@ export const AI_PROVIDERS = {
 };
 
 // Auth methods
-export const AUTH_METHODS = {
+export type AuthMethod = { id: AuthType; name: string; icon: string };
+
+export const AUTH_METHODS: Record<string, AuthMethod> = {
   oauth: { id: "oauth", name: "OAuth", icon: "lock" },
   apikey: { id: "apikey", name: "API Key", icon: "key" },
   cookie: { id: "cookie", name: "Browser Cookie", icon: "cookie" },
 };
 
 // Helper: Get provider by alias
-export function getProviderByAlias(alias) {
+export function getProviderByAlias(alias: string): ProviderDefinition | null {
   for (const provider of Object.values(AI_PROVIDERS)) {
     if (provider.alias === alias || provider.id === alias) {
       return provider;
@@ -1563,32 +1719,38 @@ export function getProviderByAlias(alias) {
 }
 
 // Helper: Get provider ID from alias
-export function resolveProviderId(aliasOrId) {
+export function resolveProviderId(aliasOrId: string): string {
   const provider = getProviderByAlias(aliasOrId);
   return provider?.id || aliasOrId;
 }
 
 // Helper: Get alias from provider ID
-export function getProviderAlias(providerId) {
+export function getProviderAlias(providerId: string): string {
   const provider = AI_PROVIDERS[providerId];
   return provider?.alias || providerId;
 }
 
 // Alias to ID mapping (for quick lookup)
-export const ALIAS_TO_ID = Object.values(AI_PROVIDERS).reduce((acc, p) => {
-  acc[p.alias] = p.id;
-  return acc;
-}, {});
+export const ALIAS_TO_ID: Record<string, string> = Object.values(AI_PROVIDERS).reduce(
+  (acc, p) => {
+    acc[p.alias] = p.id;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // ID to Alias mapping
-export const ID_TO_ALIAS = Object.values(AI_PROVIDERS).reduce((acc, p) => {
-  acc[p.id] = p.alias;
-  return acc;
-}, {});
+export const ID_TO_ALIAS: Record<string, string> = Object.values(AI_PROVIDERS).reduce(
+  (acc, p) => {
+    acc[p.id] = p.alias;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // Helper: Get providers by service kind (e.g. "tts", "embedding", "image")
 // Providers without serviceKinds default to ["llm"]
-export function getProvidersByKind(kind) {
+export function getProvidersByKind(kind: ServiceKind): ProviderDefinition[] {
   return Object.values(AI_PROVIDERS)
     .filter((p) => {
       const kinds = p.serviceKinds ?? ["llm"];
@@ -1601,7 +1763,7 @@ export function getProvidersByKind(kind) {
 }
 
 // Providers that support usage/quota API
-export const USAGE_SUPPORTED_PROVIDERS = [
+export const USAGE_SUPPORTED_PROVIDERS: string[] = [
   "claude",
   "antigravity",
   "kiro",
@@ -1617,4 +1779,4 @@ export const USAGE_SUPPORTED_PROVIDERS = [
 ];
 
 // Subset that uses apikey auth (still surfaced on quota page)
-export const USAGE_APIKEY_PROVIDERS = ["glm", "glm-cn", "minimax", "minimax-cn"];
+export const USAGE_APIKEY_PROVIDERS: string[] = ["glm", "glm-cn", "minimax", "minimax-cn"];
