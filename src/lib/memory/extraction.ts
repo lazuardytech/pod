@@ -1,5 +1,5 @@
-import { createMemory } from "./store.js";
-import { MemoryType } from "./types.js";
+import { createMemory } from "./store";
+import { MemoryType } from "./types";
 
 const PREFERENCE_PATTERNS = [
   /\bI\s+(?:really\s+)?prefer\s+([^.,\n]+)/gi,
@@ -51,19 +51,19 @@ const MAX_FACT_LENGTH = 500;
 const MIN_FACT_LENGTH = 3;
 const MAX_EXTRACTION_TEXT_LENGTH = 64 * 1024;
 
-function sanitizeMatch(raw) {
+function sanitizeMatch(raw: string): string {
   return String(raw || "")
     .trim()
     .replace(/\s+/g, " ")
     .slice(0, MAX_FACT_LENGTH);
 }
 
-function capExtractionText(text) {
+function capExtractionText(text: string): string {
   if (text.length <= MAX_EXTRACTION_TEXT_LENGTH) return text;
   return text.slice(-MAX_EXTRACTION_TEXT_LENGTH);
 }
 
-function factKey(category, content) {
+function factKey(category: string, content: string): string {
   const slug = content
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
@@ -72,11 +72,19 @@ function factKey(category, content) {
   return `${category}:${slug}`;
 }
 
-function runPatterns(text, patterns, category, type, seen) {
-  const facts = [];
+type ExtractedFact = { key: string; content: string; type: string; category: string };
+
+function runPatterns(
+  text: string,
+  patterns: RegExp[],
+  category: string,
+  type: string,
+  seen: Set<string>,
+): ExtractedFact[] {
+  const facts: ExtractedFact[] = [];
   for (const pattern of patterns) {
     pattern.lastIndex = 0;
-    let match;
+    let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop pattern
     while ((match = pattern.exec(text)) !== null) {
       const raw = match[1];
@@ -93,18 +101,18 @@ function runPatterns(text, patterns, category, type, seen) {
   return facts;
 }
 
-export function extractFactsFromText(text) {
+export function extractFactsFromText(text: string | null | undefined): ExtractedFact[] {
   if (!text || typeof text !== "string") return [];
   const cappedText = capExtractionText(text);
-  const seen = new Set();
-  const facts = [];
+  const seen = new Set<string>();
+  const facts: ExtractedFact[] = [];
   facts.push(...runPatterns(cappedText, PREFERENCE_PATTERNS, "preference", MemoryType.FACTUAL, seen));
   facts.push(...runPatterns(cappedText, DECISION_PATTERNS, "decision", MemoryType.EPISODIC, seen));
   facts.push(...runPatterns(cappedText, PATTERN_PATTERNS, "pattern", MemoryType.FACTUAL, seen));
   return facts;
 }
 
-export function extractFacts(text, apiKeyId, sessionId) {
+export function extractFacts(text: string, apiKeyId: string, sessionId: string): void {
   if (!text || !apiKeyId || !sessionId) return;
   const cappedText = capExtractionText(text);
 

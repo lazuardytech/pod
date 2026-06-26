@@ -3,7 +3,7 @@ import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 
 let initialized = false;
 
-export async function ensureOutboundProxyInitialized() {
+export async function ensureOutboundProxyInitialized(): Promise<boolean> {
   if (initialized) return true;
 
   try {

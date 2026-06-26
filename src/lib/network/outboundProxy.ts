@@ -1,9 +1,17 @@
-function normalizeString(value) {
+function normalizeString(value: unknown): string {
   if (value === undefined || value === null) return "";
   return String(value).trim();
 }
 
-export function applyOutboundProxyEnv({ outboundProxyEnabled, outboundProxyUrl, outboundNoProxy } = {}) {
+export function applyOutboundProxyEnv({
+  outboundProxyEnabled,
+  outboundProxyUrl,
+  outboundNoProxy,
+}: {
+  outboundProxyEnabled?: unknown;
+  outboundProxyUrl?: unknown;
+  outboundNoProxy?: unknown;
+} = {}): void {
   if (typeof process === "undefined" || !process.env) return;
   const enabled = Boolean(outboundProxyEnabled);
   const proxyUrl = normalizeString(outboundProxyUrl);

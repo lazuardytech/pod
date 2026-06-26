@@ -2,15 +2,28 @@ import { error as logError } from "@/sse/utils/logger.js";
 import { getProxyPoolById } from "@/models";
 
 // Safely normalize any value into a trimmed string.
-function normalizeString(value) {
+function normalizeString(value: unknown): string {
   if (value === undefined || value === null) return "";
   return String(value).trim();
 }
 
+type ProviderSpecificData = {
+  connectionProxyEnabled?: unknown;
+  connectionProxyUrl?: unknown;
+  connectionNoProxy?: unknown;
+  proxyPoolId?: unknown;
+};
+
+type LegacyProxy = {
+  connectionProxyEnabled: boolean;
+  connectionProxyUrl: string;
+  connectionNoProxy: string;
+};
+
 /**
  * Normalize legacy proxy configuration.
  */
-function normalizeLegacyProxy(providerSpecificData = {}) {
+function normalizeLegacyProxy(providerSpecificData: ProviderSpecificData = {}): LegacyProxy {
   const connectionProxyEnabled = providerSpecificData?.connectionProxyEnabled === true;
 
   const connectionProxyUrl = normalizeString(providerSpecificData?.connectionProxyUrl);
@@ -24,6 +37,18 @@ function normalizeLegacyProxy(providerSpecificData = {}) {
   };
 }
 
+export type ConnectionProxyConfig = {
+  source: "pool" | "vercel" | "legacy" | "none" | "error";
+  proxyPoolId: string | null;
+  proxyPool: unknown;
+  connectionProxyEnabled: boolean;
+  connectionProxyUrl: string;
+  connectionNoProxy: string;
+  strictProxy: boolean;
+  vercelRelayUrl?: string;
+  relayAuthToken?: string;
+};
+
 /**
  * Resolve final proxy configuration.
  *
@@ -32,7 +57,9 @@ function normalizeLegacyProxy(providerSpecificData = {}) {
  * 2. Legacy Proxy
  * 3. No Proxy
  */
-export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
+export async function resolveConnectionProxyConfig(
+  providerSpecificData: ProviderSpecificData = {},
+): Promise<ConnectionProxyConfig> {
   try {
     const proxyPoolIdRaw = normalizeString(providerSpecificData?.proxyPoolId);
 
@@ -49,17 +76,23 @@ export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
     if (proxyPoolId) {
       const proxyPool = await getProxyPoolById(proxyPoolId);
 
-      const proxyUrl = normalizeString(proxyPool?.proxyUrl);
-      const noProxy = normalizeString(proxyPool?.noProxy);
+      const proxyUrl = normalizeString((proxyPool as { proxyUrl?: unknown })?.proxyUrl);
+      const noProxy = normalizeString((proxyPool as { noProxy?: unknown })?.noProxy);
 
-      const isValidPool = proxyPool && proxyPool.isActive === true && proxyUrl;
+      const isValidPool = proxyPool && (proxyPool as { isActive?: unknown }).isActive === true && proxyUrl;
 
       if (isValidPool) {
+        const pool = proxyPool as {
+          type?: string;
+          strictProxy?: boolean;
+          relayAuthToken?: string;
+        };
+
         /**
          * Vercel relay proxies use base URL rewriting
          * instead of HTTP_PROXY environment variables.
          */
-        if (proxyPool.type === "vercel") {
+        if (pool.type === "vercel") {
           return {
             source: "vercel",
 
@@ -70,10 +103,10 @@ export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
             connectionProxyUrl: "",
             connectionNoProxy: noProxy,
 
-            strictProxy: proxyPool.strictProxy === true,
+            strictProxy: pool.strictProxy === true,
 
             vercelRelayUrl: proxyUrl,
-            relayAuthToken: normalizeString(proxyPool.relayAuthToken),
+            relayAuthToken: normalizeString(pool.relayAuthToken),
           };
         }
 
@@ -90,7 +123,7 @@ export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
           connectionProxyUrl: proxyUrl,
           connectionNoProxy: noProxy,
 
-          strictProxy: proxyPool.strictProxy === true,
+          strictProxy: pool.strictProxy === true,
         };
       }
     }
@@ -107,7 +140,10 @@ export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
         proxyPoolId: proxyPoolId || null,
         proxyPool: null,
 
-        ...legacy,
+        connectionProxyEnabled: legacy.connectionProxyEnabled,
+        connectionProxyUrl: legacy.connectionProxyUrl,
+        connectionNoProxy: legacy.connectionNoProxy,
+        strictProxy: false,
       };
     }
 
@@ -122,10 +158,15 @@ export async function resolveConnectionProxyConfig(providerSpecificData = {}) {
       proxyPoolId: proxyPoolId || null,
       proxyPool: null,
 
-      ...legacy,
+      connectionProxyEnabled: legacy.connectionProxyEnabled,
+      connectionProxyUrl: legacy.connectionProxyUrl,
+      connectionNoProxy: legacy.connectionNoProxy,
+      strictProxy: false,
     };
   } catch (error) {
-    logError("resolveConnectionProxyConfig", "Failed to resolve proxy config", { error: error.message });
+    logError("resolveConnectionProxyConfig", "Failed to resolve proxy config", {
+      error: (error as Error).message,
+    });
 
     return {
       source: "error",

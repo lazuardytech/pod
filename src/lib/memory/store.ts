@@ -1,36 +1,49 @@
 import crypto from "node:crypto";
-import { LRUCache } from "../cacheLayer.js";
-import { getDatabase, tx } from "../sqlite/connection.js";
-import { MEMORY_TYPES, MemoryType } from "./types.js";
+import { LRUCache } from "@/lib/cacheLayer";
+import { getDatabase, tx } from "@/lib/sqlite/connection";
+import { MEMORY_TYPES, MemoryType, type MemoryTypeValue } from "./types";
 
 const MEMORY_CACHE_TTL = 300_000;
 // Use LRUCache instead of plain Map: bounded by size + bytes + TTL,
 // no manual eviction needed, no unbounded growth under write-heavy load.
-const memoryCache = new LRUCache({
+const memoryCache = new LRUCache<unknown>({
   maxSize: 500,
   maxBytes: 4 * 1024 * 1024, // 4 MB
   defaultTTL: MEMORY_CACHE_TTL,
 });
 
-function setCache(cacheKey, value) {
+function setCache(cacheKey: string, value: unknown): void {
   memoryCache.set(cacheKey, value);
 }
 
-function getCache(cacheKey) {
-  return memoryCache.get(cacheKey); // undefined on miss or expired
+function getCache<T = unknown>(cacheKey: string): T | undefined {
+  return memoryCache.get(cacheKey) as T | undefined;
 }
 
-function parseJSON(value) {
+function parseJSON(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "string" || !value.trim()) return {};
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" ? parsed : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   } catch {
     return {};
   }
 }
 
-function rowToMemory(row) {
+type MemoryRow = {
+  id: string;
+  api_key_id: string;
+  session_id: string | null;
+  type: string;
+  key: string | null;
+  content: string;
+  metadata: string | null;
+  created_at: string;
+  updated_at: string;
+  expires_at: string | null;
+};
+
+function rowToMemory(row: MemoryRow): MemoryRecord {
   return {
     id: String(row.id),
     apiKeyId: String(row.api_key_id),
@@ -45,15 +58,39 @@ function rowToMemory(row) {
   };
 }
 
-function findExistingMemory(db, apiKeyId, key) {
+function findExistingMemory(db: ReturnType<typeof getDatabase>, apiKeyId: string, key: string): MemoryRow | undefined {
   if (!key) return undefined;
   const stmt = db.prepare("SELECT * FROM memories WHERE api_key_id = ? AND key = ? ORDER BY created_at DESC LIMIT 1");
-  return stmt.get(apiKeyId, key);
+  return stmt.get(apiKeyId, key) as MemoryRow | undefined;
 }
 
-export async function createMemory(memory) {
+export type MemoryRecord = {
+  id: string;
+  apiKeyId: string;
+  sessionId: string;
+  type: string;
+  key: string;
+  content: string;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+  expiresAt: Date | null;
+};
+
+export type CreateMemoryInput = {
+  apiKeyId?: string;
+  sessionId?: string;
+  type?: string;
+  key?: string;
+  content?: string;
+  metadata?: Record<string, unknown>;
+  expiresAt?: string | Date | null;
+};
+
+export async function createMemory(memory: CreateMemoryInput): Promise<MemoryRecord> {
   const now = new Date().toISOString();
-  const type = MEMORY_TYPES.has(memory?.type) ? memory.type : MemoryType.FACTUAL;
+  const requestedType = (memory?.type ?? "") as MemoryTypeValue;
+  const type: string = MEMORY_TYPES.has(requestedType) ? requestedType : MemoryType.FACTUAL;
   const key = typeof memory?.key === "string" ? memory.key.trim() : "";
   const apiKeyId = String(memory?.apiKeyId || "");
   if (!apiKeyId) throw new Error("apiKeyId is required");
@@ -109,7 +146,7 @@ export async function createMemory(memory) {
       memory.expiresAt ? new Date(memory.expiresAt).toISOString() : null,
     );
 
-    const created = {
+    const created: MemoryRecord = {
       id,
       apiKeyId,
       sessionId: memory.sessionId || "",
@@ -126,14 +163,14 @@ export async function createMemory(memory) {
   });
 }
 
-export async function getMemory(id) {
+export async function getMemory(id: string): Promise<MemoryRecord | null> {
   if (!id) return null;
   const cacheKey = `id:${id}`;
-  const cached = getCache(cacheKey);
+  const cached = getCache<MemoryRecord | null>(cacheKey);
   if (cached !== undefined) return cached;
 
   const db = getDatabase();
-  const row = db.prepare("SELECT * FROM memories WHERE id = ?").get(id);
+  const row = db.prepare("SELECT * FROM memories WHERE id = ?").get(id) as MemoryRow | undefined;
   if (!row) {
     setCache(cacheKey, null);
     return null;
@@ -143,14 +180,24 @@ export async function getMemory(id) {
   return memory;
 }
 
-export async function updateMemory(id, updates = {}) {
+export async function updateMemory(
+  id: string,
+  updates: {
+    type?: string;
+    key?: string;
+    content?: string;
+    metadata?: Record<string, unknown>;
+    expiresAt?: string | Date | null;
+    sessionId?: string;
+  } = {},
+): Promise<boolean> {
   if (!id) return false;
   const db = getDatabase();
   const now = new Date().toISOString();
-  const fields = [];
-  const values = [];
+  const fields: string[] = [];
+  const values: unknown[] = [];
 
-  if (updates.type !== undefined && MEMORY_TYPES.has(updates.type)) {
+  if (updates.type !== undefined && MEMORY_TYPES.has((updates.type as MemoryTypeValue) || "" as MemoryTypeValue)) {
     fields.push("type = ?");
     values.push(updates.type);
   }
@@ -185,7 +232,7 @@ export async function updateMemory(id, updates = {}) {
   return (result.changes || 0) > 0;
 }
 
-export async function deleteMemory(id) {
+export async function deleteMemory(id: string): Promise<boolean> {
   if (!id) return false;
   const db = getDatabase();
   const result = db.prepare("DELETE FROM memories WHERE id = ?").run(id);
@@ -193,7 +240,7 @@ export async function deleteMemory(id) {
   return (result.changes || 0) > 0;
 }
 
-export async function clearMemories(apiKeyId = null) {
+export async function clearMemories(apiKeyId: string | null = null): Promise<number> {
   const db = getDatabase();
   const hasApiKeyScope = typeof apiKeyId === "string" && apiKeyId.trim().length > 0;
   const result = hasApiKeyScope
@@ -203,12 +250,27 @@ export async function clearMemories(apiKeyId = null) {
   return result.changes || 0;
 }
 
-export async function listMemories(options = {}) {
+export type ListMemoriesOptions = {
+  apiKeyId?: string;
+  sessionId?: string;
+  type?: string;
+  query?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type ListMemoriesResult = {
+  data: MemoryRecord[];
+  total: number;
+  byType: Record<string, number>;
+};
+
+export async function listMemories(options: ListMemoriesOptions = {}): Promise<ListMemoriesResult> {
   const db = getDatabase();
   const limit = Math.max(1, Math.min(Number(options.limit) || 50, 200));
   const offset = Math.max(0, Number(options.offset) || 0);
-  const clauses = ["1=1"];
-  const params = [];
+  const clauses: string[] = ["1=1"];
+  const params: unknown[] = [];
 
   if (options.apiKeyId) {
     clauses.push("api_key_id = ?");
@@ -218,13 +280,13 @@ export async function listMemories(options = {}) {
     clauses.push("session_id = ?");
     params.push(options.sessionId);
   }
-  if (options.type && MEMORY_TYPES.has(options.type)) {
+  if (options.type && MEMORY_TYPES.has((options.type as MemoryTypeValue) || "" as MemoryTypeValue)) {
     clauses.push("type = ?");
     params.push(options.type);
   }
   clauses.push("(expires_at IS NULL OR datetime(expires_at) > datetime('now'))");
 
-  let rows = [];
+  let rows: MemoryRow[] = [];
   if (options.query && String(options.query).trim()) {
     const whereSql = clauses.length ? ` AND ${clauses.join(" AND ")}` : "";
     try {
@@ -236,7 +298,7 @@ export async function listMemories(options = {}) {
            ORDER BY m.created_at DESC
            LIMIT ? OFFSET ?`,
         )
-        .all(String(options.query), ...params, limit, offset);
+        .all(String(options.query), ...params, limit, offset) as MemoryRow[];
     } catch {
       rows = db
         .prepare(
@@ -244,7 +306,7 @@ export async function listMemories(options = {}) {
            ORDER BY created_at DESC
            LIMIT ? OFFSET ?`,
         )
-        .all(...params, limit, offset);
+        .all(...params, limit, offset) as MemoryRow[];
     }
   } else {
     rows = db
@@ -254,15 +316,17 @@ export async function listMemories(options = {}) {
          ORDER BY created_at DESC
          LIMIT ? OFFSET ?`,
       )
-      .all(...params, limit, offset);
+      .all(...params, limit, offset) as MemoryRow[];
   }
 
-  const countRow = db.prepare(`SELECT COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")}`).get(...params);
+  const countRow = db.prepare(`SELECT COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")}`).get(...params) as
+    | { count?: number }
+    | undefined;
   const typeRows = db
     .prepare(`SELECT type, COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")} GROUP BY type`)
-    .all(...params);
+    .all(...params) as Array<{ type: string; count: number }>;
 
-  const byType = {};
+  const byType: Record<string, number> = {};
   for (const row of typeRows) byType[String(row.type)] = Number(row.count || 0);
 
   return {
@@ -275,6 +339,6 @@ export async function listMemories(options = {}) {
 /**
  * Returns memory store LRU cache stats for monitoring.
  */
-export function getMemoryStoreStats() {
+export function getMemoryStoreStats(): ReturnType<LRUCache<unknown>["getStats"]> {
   return memoryCache.getStats();
 }
