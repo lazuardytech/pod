@@ -9,7 +9,7 @@
     "build": "NODE_ENV=production bun --bun next build --turbopack",
     "start": "NODE_ENV=production bun ./.next/standalone/server.js",
     "format": "biome format --write .",
-    "check": "biome format --write . && biome lint . && bun x eslint .",
+    "check": "biome format --write . && biome lint . && bun x oxlint .",
     "test:run": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage --reporter=verbose"
   },
@@ -58,6 +58,7 @@
     "better-sqlite3": "^12.10.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.9",
+    "oxlint": "^1.71.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "vite-tsconfig-paths": "^6.1.1",

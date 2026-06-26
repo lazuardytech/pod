@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "nextjs", "import", "typescript", "oxc"],
+  "categories": {},
+  "rules": {
+    "import/no-anonymous-default-export": "off",
+    "nextjs/no-img-element": "off",
+    "react/exhaustive-deps": "off",
+    "no-unused-vars": "off",
+    "no-control-regex": "off",
+    "no-unused-expressions": "off",
+    "no-useless-catch": "off",
+    "no-constant-binary-expression": "off",
+    "no-unreachable": "off",
+    "no-useless-escape": "off"
+  },
+  "ignorePatterns": [".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**"]
+}

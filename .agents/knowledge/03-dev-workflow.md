@@ -9,7 +9,7 @@
 | `bun run build` | Production build (standalone output) |
 | `bun run start` | Start production server |
 | `bun run format` | Biome format |
-| `bun run check` | Biome format + lint + ESLint |
+| `bun run check` | Biome format + lint + Oxlint |
 | `bun run test:run` | Vitest (verbose) |
 | `bun run test:coverage` | Vitest with coverage |
 
