@@ -1,19 +1,16 @@
+import crypto from "node:crypto";
 import { machineIdSync } from "node-machine-id";
 
 /**
  * Get consistent machine ID using node-machine-id with salt
  * This ensures the same physical machine gets the same ID across runs
- *
- * @param {string} salt - Optional salt to use (defaults to environment variable)
- * @returns {Promise<string>} Machine ID (16-character base32)
  */
-export async function getConsistentMachineId(salt = null) {
+export async function getConsistentMachineId(salt: string | null = null): Promise<string> {
   // For server-side, use node-machine-id with salt
   const saltValue = salt || process.env.MACHINE_ID_SALT || "endpoint-proxy-salt";
   try {
     const rawMachineId = machineIdSync();
     // Create consistent ID using salt
-    const crypto = await import("node:crypto");
     const hashedMachineId = crypto
       .createHash("sha256")
       .update(rawMachineId + saltValue)
@@ -35,9 +32,8 @@ export async function getConsistentMachineId(salt = null) {
 
 /**
  * Get raw machine ID without hashing (for debugging purposes)
- * @returns {Promise<string>} Raw machine ID
  */
-export async function getRawMachineId() {
+export async function getRawMachineId(): Promise<string> {
   // For server-side, use raw node-machine-id
   try {
     return machineIdSync();
@@ -56,8 +52,7 @@ export async function getRawMachineId() {
 
 /**
  * Check if we're running in browser or server environment
- * @returns {boolean} True if in browser, false if in server
  */
-export function isBrowser() {
+export function isBrowser(): boolean {
   return typeof window !== "undefined";
 }

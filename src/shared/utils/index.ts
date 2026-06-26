@@ -7,16 +7,13 @@ import { v4 as uuidv4 } from "uuid";
 
 /**
  * Generate unique ID (UUID v4)
- * @returns {string} UUID v4 string
  */
-export const generateId = uuidv4;
+export const generateId: () => string = uuidv4;
 
 /**
  * Extract error code from error message (401, 429, 503...)
- * @param {string} lastError - Error message
- * @returns {string|null} Error code or null
  */
-export function getErrorCode(lastError) {
+export function getErrorCode(lastError: string | null | undefined): string | null {
   if (!lastError) return null;
   const match = lastError.match(/\b([45]\d{2})\b/);
   return match ? match[1] : "ERR";
@@ -24,10 +21,8 @@ export function getErrorCode(lastError) {
 
 /**
  * Get relative time string (e.g. "5 min ago")
- * @param {string} isoDate - ISO date string
- * @returns {string} Relative time
  */
-export function getRelativeTime(isoDate) {
+export function getRelativeTime(isoDate: string | null | undefined): string {
   if (!isoDate) return "";
   const diff = Date.now() - new Date(isoDate).getTime();
   const mins = Math.floor(diff / 60000);

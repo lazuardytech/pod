@@ -1,4 +1,4 @@
-import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mjs";
+import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mts";
 import { buildKimiHeaders, OAUTH_ENDPOINTS } from "../config/appConstants.js";
 import { PROVIDERS } from "../config/providers.js";
 import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.js";

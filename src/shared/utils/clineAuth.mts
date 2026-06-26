@@ -2,21 +2,21 @@ import pkg from "../../../package.json" with { type: "json" };
 
 const APP_VERSION = pkg.version || "0.0.0";
 
-export function getClineAccessToken(token) {
+export function getClineAccessToken(token: unknown): string {
   if (typeof token !== "string") return "";
   const trimmed = token.trim();
   if (!trimmed) return "";
   return trimmed.startsWith("workos:") ? trimmed : `workos:${trimmed}`;
 }
 
-export function getClineAuthorizationHeader(token) {
+export function getClineAuthorizationHeader(token: unknown): string {
   const accessToken = getClineAccessToken(token);
   return accessToken ? `Bearer ${accessToken}` : "";
 }
 
-export function buildClineHeaders(token, extraHeaders = {}) {
+export function buildClineHeaders(token: unknown, extraHeaders: Record<string, string> = {}): Record<string, string> {
   const authorization = getClineAuthorizationHeader(token);
-  const headers = {
+  const headers: Record<string, string> = {
     "HTTP-Referer": "https://cline.bot",
     "X-Title": "Cline",
     "User-Agent": `Pod/${APP_VERSION}`,

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
-import { DEFAULT_API_KEY_SECRET, resolveApiKeySecret } from "@/lib/security/runtimeSecrets.mts";
+import { DEFAULT_API_KEY_SECRET, resolveApiKeySecret } from "@/lib/security/runtimeSecrets.mjs";
 
-function getApiKeySecret() {
+function getApiKeySecret(): string {
   const secret = resolveApiKeySecret();
   if (secret) return secret;
 
@@ -19,7 +19,7 @@ function getApiKeySecret() {
  * Note: this is NOT a password hash — it is a short identifier component
  * embedded in an API key whose integrity is protected by the HMAC-SHA256 CRC.
  */
-function generateKeyId() {
+function generateKeyId(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = new Uint8Array(6);
   crypto.getRandomValues(bytes);
@@ -39,7 +39,7 @@ function generateKeyId() {
  * nosemgrep: node_crypto_weak_hash
  * lgtm[js/insufficient-password-hash]
  */
-function generateCrc(machineId, keyId) {
+function generateCrc(machineId: string, keyId: string): string {
   return crypto
     .createHmac("sha256", getApiKeySecret()) // lgtm[js/insufficient-password-hash]
     .update(machineId + keyId)
@@ -47,28 +47,29 @@ function generateCrc(machineId, keyId) {
     .slice(0, 8);
 }
 
+export type GeneratedApiKey = { key: string; keyId: string };
+
 /**
  * Generate API key with machineId embedded
  * Format: sk-{machineId}-{keyId}-{crc8}
- * @param {string} machineId - 16-char machine ID
- * @returns {{ key: string, keyId: string }}
+ * @param machineId - 16-char machine ID
  */
-export function generateApiKeyWithMachine(machineId) {
+export function generateApiKeyWithMachine(machineId: string): GeneratedApiKey {
   const keyId = generateKeyId();
   const crc = generateCrc(machineId, keyId);
   const key = `sk-${machineId}-${keyId}-${crc}`;
   return { key, keyId };
 }
 
+export type ParsedApiKey = { machineId: string; keyId: string; isNewFormat: boolean };
+
 /**
  * Parse API key and extract machineId + keyId
  * Supports both formats:
  * - New: sk-{machineId}-{keyId}-{crc8}
  * - Old: sk-{random8}
- * @param {string} apiKey
- * @returns {{ machineId: string, keyId: string, isNewFormat: boolean } | null}
  */
-export function parseApiKey(apiKey) {
+export function parseApiKey(apiKey: string): ParsedApiKey | null {
   if (!apiKey || !apiKey.startsWith("sk-")) return null;
 
   const parts = apiKey.split("-");
@@ -86,7 +87,7 @@ export function parseApiKey(apiKey) {
 
   // Old format: sk-{random8} = 2 parts
   if (parts.length === 2) {
-    return { machineId: null, keyId: parts[1], isNewFormat: false };
+    return { machineId: "", keyId: parts[1] ?? "", isNewFormat: false };
   }
 
   return null;
@@ -94,10 +95,8 @@ export function parseApiKey(apiKey) {
 
 /**
  * Verify API key CRC (only for new format)
- * @param {string} apiKey
- * @returns {boolean}
  */
-export function verifyApiKeyCrc(apiKey) {
+export function verifyApiKeyCrc(apiKey: string): boolean {
   const parsed = parseApiKey(apiKey);
   if (!parsed) return false;
 
@@ -110,10 +109,8 @@ export function verifyApiKeyCrc(apiKey) {
 
 /**
  * Check if API key is new format (contains machineId)
- * @param {string} apiKey
- * @returns {boolean}
  */
-export function isNewFormatKey(apiKey) {
+export function isNewFormatKey(apiKey: string): boolean {
   const parsed = parseApiKey(apiKey);
   return parsed?.isNewFormat === true;
 }
