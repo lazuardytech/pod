@@ -3,7 +3,15 @@ import React from "react";
 import PropTypes from "prop-types";
 import { useState } from "react";
 
-export default function ProviderIcon({ src, alt, size = 32, className = "", fallbackText = "?", fallbackColor, ...rest }: {
+export default function ProviderIcon({
+  src,
+  alt,
+  size = 32,
+  className = "",
+  fallbackText = "?",
+  fallbackColor,
+  ...rest
+}: {
   src?: any;
   alt?: any;
   size?: number;

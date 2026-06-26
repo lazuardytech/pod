@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import os from "node:os";
-import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings, type Settings } from "@/lib/localDb";
+import {
+  getApiKeys,
+  getCombos,
+  getProviderConnections,
+  getProviderNodes,
+  getSettings,
+  type Settings,
+} from "@/lib/localDb";
 import { getPromptCache } from "@/lib/cacheLayer";
 import { getMemoryStoreStats } from "@/lib/memory/store";
 import { getCacheStats, getInFlightStats } from "@/lib/semanticCache";
@@ -150,7 +157,10 @@ export async function buildHealthPayload() {
   const keys = apiKeys.status === "fulfilled" ? apiKeys.value : [];
   const cfg: Settings = settings.status === "fulfilled" ? settings.value : ({} as Settings);
   const nodeMap = new Map<string, Record<string, unknown>>(
-    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [n.id, n as Record<string, unknown>]),
+    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [
+      n.id,
+      n as Record<string, unknown>,
+    ]),
   );
 
   const providers: Record<string, unknown> = {

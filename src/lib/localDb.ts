@@ -241,7 +241,10 @@ let cloudDb: Low<CloudData> | null = null;
 async function getCloudDb(): Promise<Low<CloudData>> {
   if (!cloudDb) {
     const data = cloneDefaultData();
-    cloudDb = new Low<CloudData>({ read: () => Promise.resolve(null as CloudData | null), write: async () => {} }, data);
+    cloudDb = new Low<CloudData>(
+      { read: () => Promise.resolve(null as CloudData | null), write: async () => {} },
+      data,
+    );
     cloudDb.data = data;
   }
   return cloudDb;
@@ -254,7 +257,16 @@ async function getCloudDb(): Promise<Low<CloudData>> {
 // native module.
 const db: () => SqliteDatabase = getDatabase;
 
-const CONN_COLS = new Set<string>(["id", "provider", "authType", "name", "priority", "isActive", "createdAt", "updatedAt"]);
+const CONN_COLS = new Set<string>([
+  "id",
+  "provider",
+  "authType",
+  "name",
+  "priority",
+  "isActive",
+  "createdAt",
+  "updatedAt",
+]);
 const NODE_COLS = new Set<string>(["id", "type", "name", "prefix", "apiType", "baseUrl", "createdAt", "updatedAt"]);
 const POOL_COLS = new Set<string>(["id", "name", "proxyUrl", "type", "isActive", "createdAt", "updatedAt"]);
 const COMBO_COLS = new Set<string>(["id", "name", "createdAt", "updatedAt"]);
@@ -332,11 +344,17 @@ function rowToApiKey(r: ApiKeyRow): ApiKey {
   const requestsPerMinuteRaw = r.requests_per_minute;
   const concurrentRequestsRaw = r.concurrent_requests;
   const requestsPerMinute =
-    limitType === "limited" && Number.isInteger(requestsPerMinuteRaw) && requestsPerMinuteRaw && requestsPerMinuteRaw > 0
+    limitType === "limited" &&
+    Number.isInteger(requestsPerMinuteRaw) &&
+    requestsPerMinuteRaw &&
+    requestsPerMinuteRaw > 0
       ? requestsPerMinuteRaw
       : null;
   const concurrentRequests =
-    limitType === "limited" && Number.isInteger(concurrentRequestsRaw) && concurrentRequestsRaw && concurrentRequestsRaw > 0
+    limitType === "limited" &&
+    Number.isInteger(concurrentRequestsRaw) &&
+    concurrentRequestsRaw &&
+    concurrentRequestsRaw > 0
       ? concurrentRequestsRaw
       : null;
 
@@ -431,7 +449,9 @@ export async function getProviderConnectionById(id: string): Promise<ProviderCon
     const d = await getCloudDb();
     return d.data.providerConnections.find((c) => c.id === id) || null;
   }
-  const r = db().prepare("SELECT * FROM provider_connections WHERE id = ?").get(id) as ProviderConnectionRow | undefined;
+  const r = db().prepare("SELECT * FROM provider_connections WHERE id = ?").get(id) as
+    | ProviderConnectionRow
+    | undefined;
   return r ? rowToConnection(r) : null;
 }
 
@@ -458,7 +478,9 @@ function insertConnectionRowInTx(database: SqliteDatabase, conn: ProviderConnect
 
 function updateConnectionRow(id: string, patch: Record<string, unknown>): ProviderConnection | null {
   return tx((db) => {
-    const row = db.prepare("SELECT * FROM provider_connections WHERE id = ?").get(id) as ProviderConnectionRow | undefined;
+    const row = db.prepare("SELECT * FROM provider_connections WHERE id = ?").get(id) as
+      | ProviderConnectionRow
+      | undefined;
     if (!row) return null;
     const current = rowToConnection(row);
     const merged = { ...current, ...patch, updatedAt: nowIso() } as ProviderConnection;
@@ -537,7 +559,9 @@ export async function createProviderConnection(data: Record<string, unknown>): P
       if (data.email) {
         connectionName = data.email as string;
       } else {
-        const row = db.prepare("SELECT COUNT(*) as c FROM provider_connections WHERE provider = ?").get(data.provider) as { c: number } | undefined;
+        const row = db
+          .prepare("SELECT COUNT(*) as c FROM provider_connections WHERE provider = ?")
+          .get(data.provider) as { c: number } | undefined;
         connectionName = `Account ${(row?.c || 0) + 1}`;
       }
     }
@@ -617,12 +641,18 @@ async function createProviderConnectionCloud(data: Record<string, unknown>): Pro
     );
   }
   if (idx !== -1) {
-    d.data.providerConnections[idx] = { ...d.data.providerConnections[idx], ...data, updatedAt: now } as ProviderConnection;
+    d.data.providerConnections[idx] = {
+      ...d.data.providerConnections[idx],
+      ...data,
+      updatedAt: now,
+    } as ProviderConnection;
     return d.data.providerConnections[idx];
   }
   let name = (data.name as string) || undefined;
   if (!name && data.authType === "oauth") {
-    name = (data.email as string) || `Account ${d.data.providerConnections.filter((c) => c.provider === data.provider).length + 1}`;
+    name =
+      (data.email as string) ||
+      `Account ${d.data.providerConnections.filter((c) => c.provider === data.provider).length + 1}`;
   }
   let priority = data.priority as number | undefined;
   if (!priority) {
@@ -646,7 +676,10 @@ async function createProviderConnectionCloud(data: Record<string, unknown>): Pro
   return connection;
 }
 
-export async function updateProviderConnection(id: string, data: Record<string, unknown>): Promise<ProviderConnection | null> {
+export async function updateProviderConnection(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<ProviderConnection | null> {
   if (isCloud) {
     const d = await getCloudDb();
     const idx = d.data.providerConnections.findIndex((c) => c.id === id);
@@ -944,7 +977,9 @@ export async function renameProviderNode(oldId: string, newId: string): Promise<
     }
   }
 
-  const aliasRows = db().prepare("SELECT alias, target FROM model_aliases WHERE target LIKE ?").all(`${oldId}/%`) as AliasRow[];
+  const aliasRows = db()
+    .prepare("SELECT alias, target FROM model_aliases WHERE target LIKE ?")
+    .all(`${oldId}/%`) as AliasRow[];
   const aliasUpdates = aliasRows
     .map((r) => ({ alias: r.alias, target: rewriteAliasTarget(r.target, oldId, newId) }))
     .filter((u): u is { alias: string; target: string } => u.target !== null);
@@ -962,8 +997,15 @@ export async function renameProviderNode(oldId: string, newId: string): Promise<
   }
 
   // Build updated node row payload
-  const previousIds = Array.from(new Set([...((current as Record<string, unknown>).previousIds as string[] || []), oldId]));
-  const updatedNode: ProviderNode = { ...current, id: newId, previousIds: previousIds as string[], updatedAt: nowIso() };
+  const previousIds = Array.from(
+    new Set([...(((current as Record<string, unknown>).previousIds as string[]) || []), oldId]),
+  );
+  const updatedNode: ProviderNode = {
+    ...current,
+    id: newId,
+    previousIds: previousIds as string[],
+    updatedAt: nowIso(),
+  };
   const nodeExtras = splitExtras(updatedNode as unknown as Record<string, unknown>, NODE_COLS);
 
   const settingsStmt = db().prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
@@ -1179,7 +1221,17 @@ export async function getCustomModels(): Promise<CustomModel[]> {
   }));
 }
 
-export async function addCustomModel({ providerAlias, id, type = "llm", name }: { providerAlias: string; id: string; type?: string; name?: string }): Promise<boolean> {
+export async function addCustomModel({
+  providerAlias,
+  id,
+  type = "llm",
+  name,
+}: {
+  providerAlias: string;
+  id: string;
+  type?: string;
+  name?: string;
+}): Promise<boolean> {
   if (isCloud) {
     const d = await getCloudDb();
     if (!d.data.customModels) d.data.customModels = [];
@@ -1196,7 +1248,15 @@ export async function addCustomModel({ providerAlias, id, type = "llm", name }: 
   return info.changes > 0;
 }
 
-export async function deleteCustomModel({ providerAlias, id, type = "llm" }: { providerAlias: string; id: string; type?: string }): Promise<void> {
+export async function deleteCustomModel({
+  providerAlias,
+  id,
+  type = "llm",
+}: {
+  providerAlias: string;
+  id: string;
+  type?: string;
+}): Promise<void> {
   if (isCloud) {
     const d = await getCloudDb();
     if (!d.data.customModels) return;
@@ -1328,13 +1388,19 @@ export async function getApiKeys(): Promise<ApiKey[]> {
   return rows.map(rowToApiKey);
 }
 
-export async function createApiKey(name: string, machineId: string, options: Record<string, unknown> = {}): Promise<ApiKey> {
+export async function createApiKey(
+  name: string,
+  machineId: string,
+  options: Record<string, unknown> = {},
+): Promise<ApiKey> {
   if (!machineId) throw new Error("machineId is required");
   const now = nowIso();
-  const { generateApiKeyWithMachine } = await import("@/shared/utils/apiKey") as { generateApiKeyWithMachine: (machineId: string) => { key: string } };
+  const { generateApiKeyWithMachine } = (await import("@/shared/utils/apiKey")) as {
+    generateApiKeyWithMachine: (machineId: string) => { key: string };
+  };
   const result = generateApiKeyWithMachine(machineId);
   const limits = normalizeApiKeyRateLimitInput(options);
-    const apiKey: ApiKey = {
+  const apiKey: ApiKey = {
     id: uuidv4(),
     name,
     key: result.key,
@@ -1483,7 +1549,9 @@ export async function getApiKeyByKey(key: string): Promise<ApiKey | null> {
     if (found) found.lastAccessAt = nowIso();
     return found;
   }
-  const r = db().prepare("SELECT * FROM api_keys WHERE key = ? AND is_active != 0 LIMIT 1").get(key) as ApiKeyRow | undefined;
+  const r = db().prepare("SELECT * FROM api_keys WHERE key = ? AND is_active != 0 LIMIT 1").get(key) as
+    | ApiKeyRow
+    | undefined;
   if (!r) return null;
   const now = nowIso();
   db().prepare("UPDATE api_keys SET last_access_at = ? WHERE id = ?").run(now, r.id);
@@ -1495,7 +1563,7 @@ export async function getApiKeyByKey(key: string): Promise<ApiKey | null> {
 export async function getSettings(): Promise<Settings> {
   if (isCloud) {
     const d = await getCloudDb();
-    return (d.data.settings as Settings) || { cloudEnabled: false } as Settings;
+    return (d.data.settings as Settings) || ({ cloudEnabled: false } as Settings);
   }
   const rows = db().prepare("SELECT key, value FROM settings").all() as { key: string; value: string }[];
   const out = { ...DEFAULT_SETTINGS } as Settings;
@@ -1590,7 +1658,7 @@ export async function exportDb(): Promise<CloudData> {
     combos: await getCombos(),
     apiKeys: await getApiKeys(),
     customModels: await getCustomModels(),
-    settings: await getSettings() as Record<string, unknown>,
+    settings: (await getSettings()) as Record<string, unknown>,
     pricing: await getRawPricing(),
   };
 }
@@ -1785,14 +1853,18 @@ async function getRawPricing(): Promise<Record<string, Record<string, unknown>>>
 
 export async function getPricing(): Promise<Record<string, Record<string, unknown>>> {
   const userPricing = await getRawPricing();
-  const { PROVIDER_PRICING } = await import("@/shared/constants/pricing") as { PROVIDER_PRICING: Record<string, Record<string, unknown>> };
+  const { PROVIDER_PRICING } = (await import("@/shared/constants/pricing")) as {
+    PROVIDER_PRICING: Record<string, Record<string, unknown>>;
+  };
 
   const merged: Record<string, Record<string, unknown>> = {};
   for (const [provider, models] of Object.entries(PROVIDER_PRICING)) {
     merged[provider] = { ...models };
     if (userPricing[provider]) {
       for (const [model, pricing] of Object.entries(userPricing[provider])) {
-        merged[provider][model] = merged[provider][model] ? { ...(merged[provider][model] as Record<string, unknown>), ...(pricing as Record<string, unknown>) } : (pricing as Record<string, unknown>);
+        merged[provider][model] = merged[provider][model]
+          ? { ...(merged[provider][model] as Record<string, unknown>), ...(pricing as Record<string, unknown>) }
+          : (pricing as Record<string, unknown>);
       }
     }
   }
@@ -1817,21 +1889,29 @@ export async function getPricingForModel(provider: string, model: string): Promi
     if (provider && userPricing[provider]?.[model]) return userPricing[provider][model] as Record<string, unknown>;
   } else {
     if (provider) {
-      const r = db().prepare("SELECT data FROM pricing WHERE provider = ? AND model = ?").get(provider, model) as PricingRow | undefined;
+      const r = db().prepare("SELECT data FROM pricing WHERE provider = ? AND model = ?").get(provider, model) as
+        | PricingRow
+        | undefined;
       if (r) return parseExtras(r.data);
     }
   }
 
   // Check models.dev synced pricing
-  const { getModelsDevPricingForModel } = await import("@/lib/modelsDevSync") as { getModelsDevPricingForModel: (provider: string, model: string) => Record<string, unknown> | null };
+  const { getModelsDevPricingForModel } = (await import("@/lib/modelsDevSync")) as {
+    getModelsDevPricingForModel: (provider: string, model: string) => Record<string, unknown> | null;
+  };
   const mdPricing = getModelsDevPricingForModel(provider, model);
   if (mdPricing) return mdPricing;
 
-  const { getPricingForModel: resolve } = await import("@/shared/constants/pricing") as { getPricingForModel: (provider: string, model: string) => Record<string, unknown> | null };
+  const { getPricingForModel: resolve } = (await import("@/shared/constants/pricing")) as {
+    getPricingForModel: (provider: string, model: string) => Record<string, unknown> | null;
+  };
   return resolve(provider, model);
 }
 
-export async function updatePricing(pricingData: Record<string, Record<string, unknown>>): Promise<Record<string, Record<string, unknown>>> {
+export async function updatePricing(
+  pricingData: Record<string, Record<string, unknown>>,
+): Promise<Record<string, Record<string, unknown>>> {
   if (isCloud) {
     const d = await getCloudDb();
     if (!d.data.pricing) d.data.pricing = {};

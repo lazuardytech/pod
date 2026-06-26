@@ -58,10 +58,11 @@ export async function handleFetch(request: Request): Promise<Response> {
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid URL format");
   }
   const combos = await getCombos();
-  const comboModels = getComboModelsFromData(providerInput, combos as unknown as { name: string; models: string[]; }[]);
+  const comboModels = getComboModelsFromData(providerInput, combos as unknown as { name: string; models: string[] }[]);
   if (comboModels) {
     const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
-    const comboStrategy = (comboStrategies[providerInput]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
+    const comboStrategy =
+      (comboStrategies[providerInput]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "FETCH",

@@ -9,7 +9,11 @@ import LucideIcon from "@/shared/components/LucideIcon";
  * Cursor Auth Modal
  * Auto-detect and import token from Cursor IDE's local SQLite database
  */
-export default function CursorAuthModal({ isOpen, onSuccess, onClose }: {
+export default function CursorAuthModal({
+  isOpen,
+  onSuccess,
+  onClose,
+}: {
   isOpen?: any;
   onSuccess?: any;
   onClose?: any;

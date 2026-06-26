@@ -2,7 +2,14 @@
 import React from "react";
 import { cn } from "@/shared/utils/cn";
 
-export default function Avatar({ src, alt = "Avatar", name, size = "md", className, ...rest }: {
+export default function Avatar({
+  src,
+  alt = "Avatar",
+  name,
+  size = "md",
+  className,
+  ...rest
+}: {
   src?: any;
   alt?: any;
   name?: any;

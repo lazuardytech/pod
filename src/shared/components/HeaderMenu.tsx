@@ -5,7 +5,18 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/shared/hooks/useTheme";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function MenuItem({ icon, label, onClick, danger }: { icon?: any; label?: any; onClick?: any; danger?: any; [key: string]: any }) {
+function MenuItem({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon?: any;
+  label?: any;
+  onClick?: any;
+  danger?: any;
+  [key: string]: any;
+}) {
   return (
     <button
       onClick={onClick}

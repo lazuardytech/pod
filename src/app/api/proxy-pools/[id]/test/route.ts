@@ -74,7 +74,9 @@ export async function POST(request, { params }) {
     await updateProxyPool(id, {
       testStatus: testResult.ok ? "active" : "error",
       lastTestedAt: now,
-      lastError: testResult.ok ? null : proxyTestError(testResult) || `Proxy test failed with status ${testResult.status}`,
+      lastError: testResult.ok
+        ? null
+        : proxyTestError(testResult) || `Proxy test failed with status ${testResult.status}`,
       isActive: testResult.ok,
     });
 

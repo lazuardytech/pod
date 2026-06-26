@@ -3,7 +3,15 @@ import React from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function SegmentedControl({ options = [], value, onChange, size = "md", iconSize = 14, className, ...rest }: {
+export default function SegmentedControl({
+  options = [],
+  value,
+  onChange,
+  size = "md",
+  iconSize = 14,
+  className,
+  ...rest
+}: {
   options?: any[];
   value?: any;
   onChange?: any;

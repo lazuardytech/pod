@@ -8,7 +8,13 @@ import { Badge, Button, Input, Modal } from "@/shared/components";
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 
 // Dual-mode modal: edit when `node` provided, add otherwise
-export default function AddCustomEmbeddingModal({ isOpen, onClose, onCreated, onSaved, node }: {
+export default function AddCustomEmbeddingModal({
+  isOpen,
+  onClose,
+  onCreated,
+  onSaved,
+  node,
+}: {
   isOpen?: any;
   onClose?: any;
   onCreated?: any;

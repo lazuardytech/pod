@@ -17,7 +17,7 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
-function SortIcon({ field, currentSort, currentOrder }) {
+function SortIcon({ field, currentSort, currentOrder }: any) {
   if (currentSort !== field) return <span className="ml-1 opacity-20">↕</span>;
   return <span className="ml-1">{currentOrder === "asc" ? "↑" : "↓"}</span>;
 }
@@ -31,7 +31,7 @@ SortIcon.propTypes = {
 /**
  * Render 3 token or cost cells based on viewMode
  */
-function ValueCells({ item, viewMode, isSummary = false }) {
+function ValueCells({ item, viewMode, isSummary = false }: any) {
   if (viewMode === "tokens") {
     return (
       <>
@@ -95,7 +95,7 @@ export default function UsageTable({
   renderDetailCells,
   renderSummaryCells,
   emptyMessage,
-}) {
+}: any) {
   const [expanded, setExpanded] = useState(new Set());
 
   // Load expanded state from localStorage

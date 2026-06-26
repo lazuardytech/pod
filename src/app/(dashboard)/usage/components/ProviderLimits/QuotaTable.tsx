@@ -70,7 +70,7 @@ function getColorClasses(remainingPercentage) {
 /**
  * Quota Table Component - Table-based display for quota data
  */
-export default function QuotaTable({ quotas = [], compact = false }) {
+export default function QuotaTable({ quotas = [], compact = false }: any) {
   if (!quotas || quotas.length === 0) {
     return null;
   }

@@ -44,7 +44,7 @@ function stripLevel(line) {
   return line.replace(LEVEL_RE, "").trim();
 }
 
-function LogLine({ entry, idx, onCopy, copied }) {
+function LogLine({ entry, idx, onCopy, copied }: any) {
   const line = typeof entry === "string" ? entry : entry.line;
   const receivedAt = typeof entry === "object" ? entry.receivedAt : null;
   const level = parseLevel(line);
@@ -83,7 +83,7 @@ const LEVEL_FILTERS = [
   { key: "ERROR", label: "Error" },
 ];
 
-export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, live = true, refreshRef }) {
+export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, live = true, refreshRef }: any) {
   const [logs, setLogs] = useState([]);
   const [connected, setConnected] = useState(false);
   const [levelFilter, setLevelFilter] = useState("all");
@@ -204,7 +204,7 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
               aria-label="Search console logs"
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e: any) => setSearch(e.target.value)}
               placeholder="Search console logs..."
               className="w-full h-7 pl-8 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
               name="search"

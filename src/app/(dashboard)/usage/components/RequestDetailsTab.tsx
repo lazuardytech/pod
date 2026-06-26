@@ -68,7 +68,7 @@ function getProviderName(providerId, cache) {
   return providerConfig?.name || providerId;
 }
 
-function CollapsibleSection({ title, children, defaultOpen = false, icon = null }) {
+function CollapsibleSection({ title, children, defaultOpen = false, icon = null }: any) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
@@ -261,7 +261,7 @@ export default function RequestDetailsTab() {
             <Select
               id="provider-filter"
               value={filters.provider || "__all__"}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 setFilters({
                   ...filters,
                   provider: e.target.value === "__all__" ? "" : e.target.value,
@@ -285,7 +285,7 @@ export default function RequestDetailsTab() {
             <label className="text-sm font-medium text-text-main">Start Date</label>
             <DatePicker
               value={filters.startDate}
-              onChange={(date) => setFilters({ ...filters, startDate: date })}
+              onChange={(date: any) => setFilters({ ...filters, startDate: date })}
               placeholder="Pick start date"
             />
           </div>
@@ -294,7 +294,7 @@ export default function RequestDetailsTab() {
             <label className="text-sm font-medium text-text-main">End Date</label>
             <DatePicker
               value={filters.endDate}
-              onChange={(date) => setFilters({ ...filters, endDate: date })}
+              onChange={(date: any) => setFilters({ ...filters, endDate: date })}
               placeholder="Pick end date"
             />
           </div>

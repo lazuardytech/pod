@@ -11,7 +11,7 @@ const fmtCost = (n) => {
   return `$${rounded.toFixed(2)}`;
 };
 
-export default function OverviewCards({ stats }) {
+export default function OverviewCards({ stats }: any) {
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 sm:gap-4">
       <Card className="flex min-w-0 flex-col gap-1 px-4 py-3">

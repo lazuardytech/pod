@@ -1,10 +1,6 @@
 declare module "open-sse/index.js" {
   export function getExecutor(provider: string): unknown;
-  export function refreshTokenByProvider(
-    provider: string,
-    credentials: unknown,
-    log?: unknown,
-  ): Promise<unknown>;
+  export function refreshTokenByProvider(provider: string, credentials: unknown, log?: unknown): Promise<unknown>;
 }
 
 declare module "open-sse/services/combo.js" {

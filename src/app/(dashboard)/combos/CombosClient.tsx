@@ -331,7 +331,7 @@ function SortableComboList({
   testingComboId,
   comboTestResults,
   onDragEnd,
-}) {
+}: any) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -393,7 +393,7 @@ function ComboCard({
   isTesting,
   testStatus,
   dragHandleProps,
-}) {
+}: any) {
   return (
     <Card padding="sm" className="group">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -442,7 +442,7 @@ function ComboCard({
 
           <div className="grid grid-cols-4 gap-1 sm:flex">
             <button
-              onClick={(e) => {
+              onClick={(e: any) => {
                 e.stopPropagation();
                 onTest?.();
               }}
@@ -471,7 +471,7 @@ function ComboCard({
               <span className="text-[10px] leading-tight">Test</span>
             </button>
             <button
-              onClick={(e) => {
+              onClick={(e: any) => {
                 e.stopPropagation();
                 onCopy(combo.name, `combo-${combo.id}`);
               }}
@@ -505,7 +505,7 @@ function ComboCard({
 }
 
 // Inline editable model item
-function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onRemove }) {
+function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onRemove }: any) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(model);
 
@@ -535,7 +535,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
           aria-label="Model value"
           autoFocus
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e: any) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
           className="min-w-0 flex-1 rounded border border-primary/40 bg-white px-1.5 py-0.5 font-mono text-xs text-text-main outline-none dark:bg-black/20"
@@ -585,7 +585,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
 
 const SYSTEM_PROMPT_MAX = 50000;
 
-function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindFilter = null }) {
+function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindFilter = null }: any) {
   // Initialize state with combo values - key prop on parent handles reset on remount
   const [name, setName] = useState(combo?.name || "");
   const [models, setModels] = useState(combo?.models || []);
@@ -742,7 +742,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
                 </>
               }
               value={modelId}
-              onChange={(e) => setModelId(e.target.value)}
+              onChange={(e: any) => setModelId(e.target.value)}
               placeholder="e.g. melma-zen"
             />
             <p className="text-[10px] text-text-muted mt-0.5">
@@ -759,7 +759,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
                 </>
               }
               value={contentFilterMessage}
-              onChange={(e) => setContentFilterMessage(e.target.value.slice(0, 2000))}
+              onChange={(e: any) => setContentFilterMessage(e.target.value.slice(0, 2000))}
               placeholder="e.g. I'm sorry, I can't help with that."
             />
             <p className="text-[10px] text-text-muted mt-0.5">
@@ -783,7 +783,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
             <textarea
               id="combo-system-prompt"
               value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value.slice(0, SYSTEM_PROMPT_MAX))}
+              onChange={(e: any) => setSystemPrompt(e.target.value.slice(0, SYSTEM_PROMPT_MAX))}
               placeholder="Optional system prompt injected into every request routed through this combo (max 50000 chars)."
               rows={6}
               className="w-full rounded-[6px] border border-charcoal-grey bg-deep-slate px-3 py-2 text-[13px] text-porcelain placeholder:text-fog-grey outline-none focus:border-porcelain/30 resize-y min-h-[96px] transition-colors duration-100"

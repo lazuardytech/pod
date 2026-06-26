@@ -3,7 +3,15 @@ import React from "react";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function Pagination({ currentPage, pageSize, totalItems, onPageChange, onPageSizeChange, className, ...rest }: {
+export default function Pagination({
+  currentPage,
+  pageSize,
+  totalItems,
+  onPageChange,
+  onPageSizeChange,
+  className,
+  ...rest
+}: {
   currentPage?: any;
   pageSize?: any;
   totalItems?: any;

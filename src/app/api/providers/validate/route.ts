@@ -70,14 +70,22 @@ async function probeMediaProvider(provider, apiKey) {
   const kinds = p.serviceKinds || ["llm"];
   const isMediaOnly = kinds.every((k) => MEDIA_KINDS.has(k));
   if (!isMediaOnly) return null;
-  const cfg = (p.ttsConfig || p.sttConfig || p.embeddingConfig || p.imageConfig || (p as Record<string, unknown>).videoConfig || (p as Record<string, unknown>).musicConfig) as Record<string, unknown> | undefined;
+  const cfg = (p.ttsConfig ||
+    p.sttConfig ||
+    p.embeddingConfig ||
+    p.imageConfig ||
+    (p as Record<string, unknown>).videoConfig ||
+    (p as Record<string, unknown>).musicConfig) as Record<string, unknown> | undefined;
   // No probe config → best-effort accept (validate at usage time)
   if (!cfg) return true;
   if (p.noAuth || cfg.authType === "none") return true;
   // Skip auth schemes that need provider-specific data
   if (cfg.authHeader === "playht" || cfg.authHeader === "aws-sigv4") return true;
 
-  const headers: Record<string, string> = { "Content-Type": "application/json", ...((cfg.extraHeaders as Record<string, string>) || {}) };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((cfg.extraHeaders as Record<string, string>) || {}),
+  };
 
   switch (cfg.authHeader) {
     case "bearer":
@@ -114,7 +122,12 @@ async function probeMediaProvider(provider, apiKey) {
     body:
       method === "GET"
         ? undefined
-        : JSON.stringify({ input: "ping", text: "ping", prompt: "ping", model: ((cfg.models as { id?: string }[])?.[0]?.id) || "test" }),
+        : JSON.stringify({
+            input: "ping",
+            text: "ping",
+            prompt: "ping",
+            model: (cfg.models as { id?: string }[])?.[0]?.id || "test",
+          }),
     signal: AbortSignal.timeout(8000),
   });
   return res.status !== 401 && res.status !== 403;
@@ -174,7 +187,10 @@ export async function POST(request) {
         const nodeBaseUrl = node.baseUrl?.replace(/\/$/, "") || "";
         const nodeUrlCheck = validateFetchUrl(nodeBaseUrl);
         if (!nodeUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${fetchUrlError(nodeUrlCheck)}` });
+          return NextResponse.json({
+            valid: false,
+            error: `Invalid provider base URL: ${fetchUrlError(nodeUrlCheck)}`,
+          });
         }
         const modelsUrl = `${nodeBaseUrl}/models`;
         const res = await fetch(modelsUrl, {
@@ -196,7 +212,10 @@ export async function POST(request) {
         const baseUrl = node.baseUrl?.replace(/\/$/, "") || "";
         const embedUrlCheck = validateFetchUrl(baseUrl);
         if (!embedUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${fetchUrlError(embedUrlCheck)}` });
+          return NextResponse.json({
+            valid: false,
+            error: `Invalid provider base URL: ${fetchUrlError(embedUrlCheck)}`,
+          });
         }
         const modelsRes = await fetch(`${baseUrl}/models`, {
           headers: { Authorization: `Bearer ${apiKey}` },
@@ -234,7 +253,10 @@ export async function POST(request) {
         }
         const anthropicUrlCheck = validateFetchUrl(normalizedBase);
         if (!anthropicUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid provider base URL: ${fetchUrlError(anthropicUrlCheck)}` });
+          return NextResponse.json({
+            valid: false,
+            error: `Invalid provider base URL: ${fetchUrlError(anthropicUrlCheck)}`,
+          });
         }
 
         const modelsUrl = `${normalizedBase}/models`;

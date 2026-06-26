@@ -308,7 +308,7 @@ export default function ComboDetailPage() {
             <Input
               label="Combo Name"
               value={name}
-              onChange={(e) => {
+              onChange={(e: any) => {
                 setName(e.target.value);
                 validateName(e.target.value);
               }}

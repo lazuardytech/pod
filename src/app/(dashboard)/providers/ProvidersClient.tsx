@@ -575,7 +575,7 @@ export default function ProvidersPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
             className="relative bg-surface border border-border rounded-xl w-full max-w-[600px] max-h-[86vh] sm:max-h-[80vh] overflow-y-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: any) => e.stopPropagation()}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3 border-b border-border bg-surface/95 backdrop-blur-sm rounded-t-xl">
               <h3 className="font-semibold">Test Results</h3>
@@ -597,7 +597,7 @@ export default function ProvidersPage() {
   );
 }
 
-function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
+function ProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats;
   const isNoAuth = !!provider.noAuth;
 
@@ -659,7 +659,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
             {stats.total > 0 && (
               <div
                 className="opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.preventDefault();
                   e.stopPropagation();
                   onToggle(!!allDisabled);
@@ -698,7 +698,7 @@ ProviderCard.propTypes = {
   onToggle: PropTypes.func,
 };
 
-function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle }) {
+function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats;
   const isCompatible = providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
   const isAnthropicCompatible = providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);
@@ -773,7 +773,7 @@ function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle })
             {stats.total > 0 && (
               <div
                 className="opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-                onClick={(e) => {
+                onClick={(e: any) => {
                   e.preventDefault();
                   e.stopPropagation();
                   onToggle(!!allDisabled);
@@ -813,7 +813,7 @@ ApiKeyProviderCard.propTypes = {
   onToggle: PropTypes.func,
 };
 
-function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
+function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }: any) {
   const [formData, setFormData] = useState({
     name: "",
     prefix: "",
@@ -877,14 +877,14 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
           placeholder="OpenAI Compatible (Prod)"
           hint="Required. A friendly label for this node."
         />
         <Input
           label="Identifier"
           value={formData.identifier}
-          onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, identifier: e.target.value })}
           placeholder="my-openai-prod"
           hint={
             'Optional. Custom suffix — the prefix "openai-compatible-" is auto-prepended. Leave empty to auto-generate.'
@@ -893,7 +893,7 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
         <Input
           label="Prefix"
           value={formData.prefix}
-          onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, prefix: e.target.value })}
           placeholder="oc-prod"
           hint="Required. Used as the provider prefix for model IDs."
         />
@@ -901,12 +901,12 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }) {
           label="API Type"
           options={apiTypeOptions}
           value={formData.apiType}
-          onChange={(e) => setFormData({ ...formData, apiType: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, apiType: e.target.value })}
         />
         <Input
           label="Base URL"
           value={formData.baseUrl}
-          onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, baseUrl: e.target.value })}
           placeholder="https://api.openai.com/v1"
           hint="Use the base URL (ending in /v1) for your OpenAI-compatible API."
         />
@@ -934,7 +934,7 @@ AddOpenAICompatibleModal.propTypes = {
   onCreated: PropTypes.func.isRequired,
 };
 
-function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
+function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }: any) {
   const [formData, setFormData] = useState({
     name: "",
     prefix: "",
@@ -991,14 +991,14 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Anthropic Compatible (Prod)"
           hint="Required. A friendly label for this node."
         />
         <Input
           label="Identifier"
           value={formData.identifier}
-          onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, identifier: e.target.value })}
           placeholder="my-anthropic-prod"
           hint={
             'Optional. Custom suffix — the prefix "anthropic-compatible-" is auto-prepended. Leave empty to auto-generate.'
@@ -1007,14 +1007,14 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }) {
         <Input
           label="Prefix"
           value={formData.prefix}
-          onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, prefix: e.target.value })}
           placeholder="ac-prod"
           hint="Required. Used as the provider prefix for model IDs."
         />
         <Input
           label="Base URL"
           value={formData.baseUrl}
-          onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, baseUrl: e.target.value })}
           placeholder="https://api.anthropic.com/v1"
           hint="Use the base URL (ending in /v1) for your Anthropic-compatible API. The system will append /messages."
         />
@@ -1042,7 +1042,7 @@ AddAnthropicCompatibleModal.propTypes = {
   onCreated: PropTypes.func.isRequired,
 };
 
-function ProviderTestResultsView({ results }) {
+function ProviderTestResultsView({ results }: any) {
   if (results.error && !results.results) {
     return (
       <div className="text-center py-6">

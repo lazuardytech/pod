@@ -24,7 +24,7 @@ export default function ProviderLimitCard({
   loading = false,
   error = null,
   onRefresh,
-}) {
+}: any) {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {

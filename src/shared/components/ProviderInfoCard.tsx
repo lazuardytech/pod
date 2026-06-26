@@ -21,7 +21,11 @@ const FIELD_SCHEMA = {
   maxCharacters: { label: "Max chars", format: (v) => v.toLocaleString() },
 };
 
-export default function ProviderInfoCard({ config, provider, title = "Provider Info" }: {
+export default function ProviderInfoCard({
+  config,
+  provider,
+  title = "Provider Info",
+}: {
   config?: any;
   provider?: any;
   title?: any;

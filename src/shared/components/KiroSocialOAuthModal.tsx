@@ -10,7 +10,12 @@ import LucideIcon from "@/shared/components/LucideIcon";
  * Kiro Social OAuth Modal (Google/GitHub)
  * Handles manual callback URL flow for social login
  */
-export default function KiroSocialOAuthModal({ isOpen, provider, onSuccess, onClose }: {
+export default function KiroSocialOAuthModal({
+  isOpen,
+  provider,
+  onSuccess,
+  onClose,
+}: {
   isOpen?: any;
   provider?: any;
   onSuccess?: any;

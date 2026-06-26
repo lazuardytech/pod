@@ -7,6 +7,6 @@ export const metadata = {
   },
 };
 
-export default function DashboardRootLayout({ children }) {
+export default function DashboardRootLayout({ children }: any) {
   return <DashboardLayout>{children}</DashboardLayout>;
 }

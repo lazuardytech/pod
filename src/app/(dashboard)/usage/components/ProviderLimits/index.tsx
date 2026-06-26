@@ -896,7 +896,7 @@ export default function ProviderLimits() {
                     </div>
 
                     {/* Accumulated progress bar */}
-                    <div className="pr-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="pr-3" onClick={(e: any) => e.stopPropagation()}>
                       {providerTotalLimit > 0 ? (
                         <div className={`h-1.5 rounded-full overflow-hidden ${providerCc.track}`}>
                           <div
@@ -910,7 +910,7 @@ export default function ProviderLimits() {
                     </div>
 
                     {/* Last Request At */}
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div onClick={(e: any) => e.stopPropagation()}>
                       {providerLastUsedStr ? (
                         <span className="text-[11px] text-storm-cloud tabular-nums">{providerLastUsedStr}</span>
                       ) : (
@@ -919,7 +919,7 @@ export default function ProviderLimits() {
                     </div>
 
                     {/* Percentage badge */}
-                    <div className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="text-right" onClick={(e: any) => e.stopPropagation()}>
                       {providerTotalLimit > 0 ? (
                         <span className={`text-[11px] font-[510] tabular-nums ${providerCc.text}`}>{providerPct}%</span>
                       ) : (
@@ -977,7 +977,7 @@ export default function ProviderLimits() {
                             </div>
 
                             {/* Accumulated progress bar */}
-                            <div className="pr-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="pr-3" onClick={(e: any) => e.stopPropagation()}>
                               {totalLimit > 0 ? (
                                 <div className={`h-1.5 rounded-full overflow-hidden ${cc.track}`}>
                                   <div
@@ -991,7 +991,7 @@ export default function ProviderLimits() {
                             </div>
 
                             {/* Last Request At */}
-                            <div onClick={(e) => e.stopPropagation()}>
+                            <div onClick={(e: any) => e.stopPropagation()}>
                               {conn.lastUsedAt ? (
                                 <span className="text-[11px] text-storm-cloud tabular-nums">
                                   {new Date(conn.lastUsedAt).toLocaleDateString("en-US", {
@@ -1006,7 +1006,7 @@ export default function ProviderLimits() {
                             </div>
 
                             {/* Percentage badge */}
-                            <div className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-right" onClick={(e: any) => e.stopPropagation()}>
                               {totalLimit > 0 ? (
                                 <span className={`text-[11px] font-[510] tabular-nums ${cc.text}`}>{pct}%</span>
                               ) : (
@@ -1015,7 +1015,7 @@ export default function ProviderLimits() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-0.5" onClick={(e: any) => e.stopPropagation()}>
                               <button
                                 type="button"
                                 onClick={() => refreshProvider(conn.id, conn.provider)}
@@ -1064,7 +1064,7 @@ export default function ProviderLimits() {
                                   size="sm"
                                   checked={conn.isActive ?? true}
                                   disabled={rowBusy}
-                                  onChange={(nextActive) => handleToggleConnectionActive(conn.id, nextActive)}
+                                  onChange={(nextActive: any) => handleToggleConnectionActive(conn.id, nextActive)}
                                 />
                               </div>
                             </div>

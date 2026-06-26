@@ -25,7 +25,11 @@ interface SpawnSyncOptions {
   env?: NodeJS.ProcessEnv;
 }
 
-function runCommandSync(command: string, args: string[], { timeout = 5000, env }: SpawnSyncOptions = {}): string | null {
+function runCommandSync(
+  command: string,
+  args: string[],
+  { timeout = 5000, env }: SpawnSyncOptions = {},
+): string | null {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     windowsHide: true,
@@ -36,7 +40,10 @@ function runCommandSync(command: string, args: string[], { timeout = 5000, env }
   return typeof result.stdout === "string" ? result.stdout : "";
 }
 
-function runTailscaleJson(args: string[], { timeout = 5000 }: { timeout?: number } = {}): Record<string, unknown> | null {
+function runTailscaleJson(
+  args: string[],
+  { timeout = 5000 }: { timeout?: number } = {},
+): Record<string, unknown> | null {
   const bin = getTailscaleBin();
   if (!bin) return null;
   const out = runCommandSync(bin, tsArgs(...args), {

@@ -308,7 +308,7 @@ export default function TranslatorPage() {
                       height="400px"
                       defaultLanguage={step.lang === "text" ? "plaintext" : "json"}
                       value={content}
-                      onChange={(v) => {
+                      onChange={(v: any) => {
                         setContent(step.id, v || "");
                         if (step.id === 1) detectMeta(v || "");
                       }}
@@ -344,7 +344,7 @@ export default function TranslatorPage() {
   );
 }
 
-function MetaBadge({ label, value, color }) {
+function MetaBadge({ label, value, color }: any) {
   const colors = {
     blue: "bg-blue-500/10 text-blue-500",
     orange: "bg-orange-500/10 text-orange-500",

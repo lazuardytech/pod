@@ -68,7 +68,9 @@ export interface SqliteDatabase {
     run(...params: unknown[]): any;
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  transaction<T extends (...args: any[]) => any>(fn: T): T & {
+  transaction<T extends (...args: any[]) => any>(
+    fn: T,
+  ): T & {
     default?: T;
     deferred?: T;
     exclusive?: T;
@@ -82,7 +84,8 @@ let schemaReady = false;
 
 function applyPragmas(db: SqliteDatabase) {
   // bun:sqlite has no `.pragma()` shorthand — fall back to exec.
-  const setPragma = typeof db.pragma === "function" ? (s: string) => db.pragma!(s) : (s: string) => db.exec(`PRAGMA ${s}`);
+  const setPragma =
+    typeof db.pragma === "function" ? (s: string) => db.pragma!(s) : (s: string) => db.exec(`PRAGMA ${s}`);
   setPragma("journal_mode = WAL");
   setPragma("synchronous = NORMAL");
   setPragma("foreign_keys = ON");
@@ -202,7 +205,9 @@ export function getDatabase(): SqliteDatabase {
   // createRequire at call time.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const DatabaseCtor: any =
-    typeof Bun !== "undefined" ? (require("bun:sqlite") as { Database: new (filename: string) => unknown }).Database : require("better-sqlite3");
+    typeof Bun !== "undefined"
+      ? (require("bun:sqlite") as { Database: new (filename: string) => unknown }).Database
+      : require("better-sqlite3");
 
   const db: SqliteDatabase = new DatabaseCtor(SQLITE_FILE) as SqliteDatabase;
   applyPragmas(db);

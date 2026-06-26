@@ -38,7 +38,7 @@ function RequestLogsToolbar({
   filterProvider,
   setFilterProvider,
   providerOptions,
-}) {
+}: any) {
   return (
     <div className="flex items-center gap-2">
       {providerOptions.length > 0 && (
@@ -86,7 +86,7 @@ function RequestLogsToolbar({
   );
 }
 
-function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setLive, count }) {
+function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setLive, count }: any) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-[11px] text-fog-grey">{count} configured</span>
@@ -125,7 +125,7 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
   );
 }
 
-function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refreshing, live, setLive }) {
+function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refreshing, live, setLive }: any) {
   return (
     <div className="flex items-center gap-2">
       <button

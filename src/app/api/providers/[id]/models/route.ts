@@ -319,7 +319,10 @@ export async function GET(request, { params }) {
                   expiresIn: refreshed.expiresIn,
                 });
 
-                const models = await kiroService.listAvailableModels(asString(refreshed.accessToken), asString(profileArn));
+                const models = await kiroService.listAvailableModels(
+                  asString(refreshed.accessToken),
+                  asString(profileArn),
+                );
                 return NextResponse.json({
                   provider: connection.provider,
                   connectionId: connection.id,
@@ -374,7 +377,11 @@ export async function GET(request, { params }) {
 
         // Attempt refresh on 401/403 when refresh token exists
         if (!response.ok && (response.status === 401 || response.status === 403) && refreshToken) {
-          const refreshed = await refreshGoogleToken(asString(refreshToken), GEMINI_CONFIG.clientId, GEMINI_CONFIG.clientSecret);
+          const refreshed = await refreshGoogleToken(
+            asString(refreshToken),
+            GEMINI_CONFIG.clientId,
+            GEMINI_CONFIG.clientSecret,
+          );
           if (refreshed?.accessToken) {
             await updateProviderCredentials(connection.id, {
               accessToken: refreshed.accessToken,

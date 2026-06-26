@@ -21,7 +21,7 @@ import { TTS_PROVIDER_CONFIG } from "@/shared/constants/ttsProviders";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 // Shared row layout — defined outside components to avoid re-mount on re-render
-function Row({ label, children }) {
+function Row({ label, children }: any) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
       <span className="w-full text-xs font-medium text-text-muted sm:w-20 sm:shrink-0">{label}</span>
@@ -164,7 +164,7 @@ const KIND_EXAMPLE_CONFIG = {
 };
 
 // EmbeddingExampleCard
-function EmbeddingExampleCard({ providerId, customAlias }) {
+function EmbeddingExampleCard({ providerId, customAlias }: any) {
   const isCustom = isCustomEmbeddingProvider(providerId);
   const providerAlias = isCustom ? customAlias || providerId : getProviderAlias(providerId);
   const embeddingModels = isCustom ? [] : getModelsByProviderId(providerId).filter((m) => m.type === "embedding");
@@ -270,7 +270,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             <input
               aria-label="Model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e: any) => setSelectedModel(e.target.value)}
               placeholder="e.g. voyage-3, embed-english-v3.0, text-embedding-3-small"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="model"
@@ -279,7 +279,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             <select
               aria-label="Model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e: any) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="model"
             >
@@ -298,7 +298,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             <input
               aria-label="Endpoint"
               value={endpoint}
-              onChange={(e) => (useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value))}
+              onChange={(e: any) => (useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value))}
               className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               placeholder="http://localhost:3000"
               name="endpoint"
@@ -327,7 +327,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             aria-label="API Key"
             type="password"
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            onChange={(e: any) => setApiKey(e.target.value)}
             placeholder="sk-..."
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
             name="api-key"
@@ -340,7 +340,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             <input
               aria-label="Input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e: any) => setInput(e.target.value)}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="input-text"
             />
@@ -363,7 +363,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
             type="number"
             min="1"
             value={dimensions}
-            onChange={(e) => setDimensions(e.target.value)}
+            onChange={(e: any) => setDimensions(e.target.value)}
             placeholder="optional, e.g. 512, 1024 (leave empty for default)"
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             name="dimensions"
@@ -430,7 +430,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
 }
 
 // ─── TTS Example Card ────────────────────────────────────────────────────────
-function TtsExampleCard({ providerId }) {
+function TtsExampleCard({ providerId }: any) {
   const providerAlias = getProviderAlias(providerId);
   const config = TTS_PROVIDER_CONFIG[providerId] || TTS_PROVIDER_CONFIG["edge-tts"];
 
@@ -698,7 +698,7 @@ function TtsExampleCard({ providerId }) {
               <select
                 aria-label="Model"
                 value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
+                onChange={(e: any) => setSelectedModel(e.target.value)}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="model"
               >
@@ -721,7 +721,7 @@ function TtsExampleCard({ providerId }) {
               <select
                 aria-label="Language"
                 value={languageHint}
-                onChange={(e) => setLanguageHint(e.target.value)}
+                onChange={(e: any) => setLanguageHint(e.target.value)}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="language"
               >
@@ -806,7 +806,7 @@ function TtsExampleCard({ providerId }) {
                   <input
                     aria-label="Voice ID"
                     value={voiceId}
-                    onChange={(e) => {
+                    onChange={(e: any) => {
                       setVoiceId(e.target.value);
                       setSelectedVoice(e.target.value);
                     }}
@@ -838,7 +838,7 @@ function TtsExampleCard({ providerId }) {
                 aria-label="Language"
                 value={selectedVoice}
                 name="language"
-                onChange={(e) => {
+                onChange={(e: any) => {
                   const m = getModelsByProviderId(providerId)
                     .filter((m) => m.type === "tts")
                     .find((m) => m.id === e.target.value);
@@ -864,7 +864,7 @@ function TtsExampleCard({ providerId }) {
               <input
                 aria-label="Input"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e: any) => setInput(e.target.value)}
                 className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="input-text"
               />
@@ -885,7 +885,7 @@ function TtsExampleCard({ providerId }) {
             <select
               aria-label="Output format"
               value={responseFormat}
-              onChange={(e) => setResponseFormat(e.target.value)}
+              onChange={(e: any) => setResponseFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="output-format"
             >
@@ -987,7 +987,7 @@ function TtsExampleCard({ providerId }) {
           <div
             className="border border-border rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh]"
             style={{ backgroundColor: "var(--color-bg)", isolation: "isolate" }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: any) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-xl">
@@ -1006,7 +1006,7 @@ function TtsExampleCard({ providerId }) {
                 aria-label="Search language"
                 autoFocus
                 value={modalSearch}
-                onChange={(e) => setModalSearch(e.target.value)}
+                onChange={(e: any) => setModalSearch(e.target.value)}
                 placeholder="Search language..."
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="search"
@@ -1049,7 +1049,7 @@ function TtsExampleCard({ providerId }) {
 }
 
 // Generic Example Card — config-driven for webSearch, webFetch, image, imageToText, stt, video, music
-function GenericExampleCard({ providerId, kind }) {
+function GenericExampleCard({ providerId, kind }: any) {
   const provider = AI_PROVIDERS[providerId];
   const defaultBaseUrl = provider?.searchConfig?.baseUrl || provider?.fetchConfig?.baseUrl || "";
   const supportsBaseUrlOverride = Boolean(defaultBaseUrl) && (kind === "webSearch" || kind === "webFetch");
@@ -1288,7 +1288,7 @@ function GenericExampleCard({ providerId, kind }) {
             <select
               aria-label="Model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e: any) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="model"
             >
@@ -1304,7 +1304,7 @@ function GenericExampleCard({ providerId, kind }) {
             <input
               aria-label="Model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e: any) => setSelectedModel(e.target.value)}
               placeholder="Enter model id (provider-specific)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="model"
@@ -1353,7 +1353,7 @@ function GenericExampleCard({ providerId, kind }) {
             <select
               aria-label="Connection"
               value={pinnedConnectionId}
-              onChange={(e) => setPinnedConnectionId(e.target.value)}
+              onChange={(e: any) => setPinnedConnectionId(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="connection"
             >
@@ -1378,7 +1378,7 @@ function GenericExampleCard({ providerId, kind }) {
             <input
               aria-label="Input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e: any) => setInput(e.target.value)}
               placeholder={exConfig.inputPlaceholder}
               className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="input-text"
@@ -1403,7 +1403,7 @@ function GenericExampleCard({ providerId, kind }) {
                 <input
                   aria-label="Reference image URL"
                   value={refImage}
-                  onChange={(e) => setRefImage(e.target.value)}
+                  onChange={(e: any) => setRefImage(e.target.value)}
                   placeholder={imageEditDefaults.image || "https://example.com/source.png"}
                   className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name="ref-image"
@@ -1442,7 +1442,7 @@ function GenericExampleCard({ providerId, kind }) {
                 <input
                   aria-label="Mask image URL"
                   value={maskImage}
-                  onChange={(e) => setMaskImage(e.target.value)}
+                  onChange={(e: any) => setMaskImage(e.target.value)}
                   placeholder={imageEditDefaults.mask_image || "https://example.com/mask.png"}
                   className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name="mask-image"
@@ -1487,7 +1487,7 @@ function GenericExampleCard({ providerId, kind }) {
                 <select
                   aria-label="Parameter value"
                   value={extraValues[f.key] ?? ""}
-                  onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
+                  onChange={(e: any) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
                 >
@@ -1503,7 +1503,7 @@ function GenericExampleCard({ providerId, kind }) {
                   type="text"
                   value={extraValues[f.key] ?? ""}
                   placeholder={f.placeholder}
-                  onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
+                  onChange={(e: any) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
                 />
@@ -1514,7 +1514,7 @@ function GenericExampleCard({ providerId, kind }) {
                   value={extraValues[f.key] ?? ""}
                   min={f.min}
                   max={f.max}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setExtraValues((s) => ({ ...s, [f.key]: e.target.value === "" ? "" : Number(e.target.value) }))
                   }
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
@@ -1531,7 +1531,7 @@ function GenericExampleCard({ providerId, kind }) {
               type="text"
               value={baseUrlOverride}
               placeholder={defaultBaseUrl}
-              onChange={(e) => setBaseUrlOverride(e.target.value)}
+              onChange={(e: any) => setBaseUrlOverride(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="provider-base-url"
             />
@@ -1544,7 +1544,7 @@ function GenericExampleCard({ providerId, kind }) {
             <select
               aria-label="Output format"
               value={imageOutputFormat}
-              onChange={(e) => setImageOutputFormat(e.target.value)}
+              onChange={(e: any) => setImageOutputFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="output-format"
             >
@@ -1670,7 +1670,7 @@ function GenericExampleCard({ providerId, kind }) {
 }
 
 // ─── STT Example Card ────────────────────────────────────────────────────────
-function SttExampleCard({ providerId }) {
+function SttExampleCard({ providerId }: any) {
   const providerAlias = getProviderAlias(providerId);
   const builtinSttModels = getModelsByProviderId(providerId).filter((m) => m.type === "stt");
   const [customSttModels, setCustomSttModels] = useState([]);
@@ -1782,7 +1782,7 @@ function SttExampleCard({ providerId }) {
             <select
               aria-label="Model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e: any) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="model"
             >
@@ -1798,7 +1798,7 @@ function SttExampleCard({ providerId }) {
             <input
               aria-label="Model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e: any) => setSelectedModel(e.target.value)}
               placeholder="Enter model id"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="model"
@@ -1847,7 +1847,7 @@ function SttExampleCard({ providerId }) {
               aria-label="Audio file"
               type="file"
               accept="audio/*,video/mp4,.m4a,.mp3,.wav,.ogg,.flac,.webm,.opus"
-              onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+              onChange={(e: any) => setAudioFile(e.target.files?.[0] || null)}
               className="w-full text-xs text-text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border file:border-border file:bg-background file:text-text-main hover:file:bg-sidebar file:cursor-pointer"
             />
             {audioFile && (
@@ -1864,7 +1864,7 @@ function SttExampleCard({ providerId }) {
             <input
               aria-label="Language"
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e: any) => setLanguage(e.target.value)}
               placeholder="e.g. en, vi, ja (auto-detect if empty)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               name="language"
@@ -1878,7 +1878,7 @@ function SttExampleCard({ providerId }) {
             <input
               aria-label="Prompt"
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e: any) => setPrompt(e.target.value)}
               placeholder="optional context to improve accuracy"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="prompt"
@@ -1896,7 +1896,7 @@ function SttExampleCard({ providerId }) {
               min="0"
               max="1"
               value={temperature}
-              onChange={(e) => setTemperature(e.target.value)}
+              onChange={(e: any) => setTemperature(e.target.value)}
               placeholder="0 - 1 (default 0)"
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="temperature"
@@ -1910,7 +1910,7 @@ function SttExampleCard({ providerId }) {
             <select
               aria-label="Response format"
               value={responseFormat}
-              onChange={(e) => setResponseFormat(e.target.value)}
+              onChange={(e: any) => setResponseFormat(e.target.value)}
               className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="response-format"
             >

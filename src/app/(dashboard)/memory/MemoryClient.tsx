@@ -280,7 +280,7 @@ export default function MemoryClient() {
             label="Strategy"
             value={settings.strategy}
             options={STRATEGY_OPTIONS}
-            onChange={(event) => setSettings((prev) => ({ ...prev, strategy: event.target.value }))}
+            onChange={(event: any) => setSettings((prev) => ({ ...prev, strategy: event.target.value }))}
           />
 
           <Input
@@ -289,7 +289,7 @@ export default function MemoryClient() {
             min="0"
             max="16000"
             value={settings.maxTokens}
-            onChange={(event) => setSettings((prev) => ({ ...prev, maxTokens: event.target.value }))}
+            onChange={(event: any) => setSettings((prev) => ({ ...prev, maxTokens: event.target.value }))}
           />
 
           <Input
@@ -298,7 +298,7 @@ export default function MemoryClient() {
             min="1"
             max="365"
             value={settings.retentionDays}
-            onChange={(event) => setSettings((prev) => ({ ...prev, retentionDays: event.target.value }))}
+            onChange={(event: any) => setSettings((prev) => ({ ...prev, retentionDays: event.target.value }))}
           />
         </div>
       </Card>
@@ -317,7 +317,7 @@ export default function MemoryClient() {
           <Input
             label="Search"
             value={draftFilters.q}
-            onChange={(event) => setDraftFilters((prev) => ({ ...prev, q: event.target.value }))}
+            onChange={(event: any) => setDraftFilters((prev) => ({ ...prev, q: event.target.value }))}
             placeholder="Search memory content..."
             icon="search"
           />
@@ -326,14 +326,14 @@ export default function MemoryClient() {
             placeholder="All API Keys"
             value={draftFilters.apiKeyId}
             options={apiKeys.map((key) => ({ value: key.id, label: key.name || key.id }))}
-            onChange={(event) => setDraftFilters((prev) => ({ ...prev, apiKeyId: event.target.value }))}
+            onChange={(event: any) => setDraftFilters((prev) => ({ ...prev, apiKeyId: event.target.value }))}
           />
           <Select
             label="Type"
             placeholder="All Types"
             value={draftFilters.type}
             options={MEMORY_TYPE_OPTIONS}
-            onChange={(event) => setDraftFilters((prev) => ({ ...prev, type: event.target.value }))}
+            onChange={(event: any) => setDraftFilters((prev) => ({ ...prev, type: event.target.value }))}
           />
           <div className="flex items-end">
             <Button icon="filter_alt" onClick={handleApplyFilters} className="w-full">
@@ -467,7 +467,7 @@ export default function MemoryClient() {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value }: any) {
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2">
       <p className="text-xs text-text-muted">{label}</p>

@@ -11,7 +11,15 @@ import LucideIcon from "@/shared/components/LucideIcon";
  * - Localhost: Auto callback via popup message
  * - Remote: Manual paste callback URL
  */
-export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, onClose, oauthMeta, idcConfig }: {
+export default function OAuthModal({
+  isOpen,
+  provider,
+  providerInfo,
+  onSuccess,
+  onClose,
+  oauthMeta,
+  idcConfig,
+}: {
   isOpen?: any;
   provider?: any;
   providerInfo?: any;

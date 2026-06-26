@@ -1018,7 +1018,7 @@ export default function BasicChatPageClient() {
                 <textarea
                   aria-label="Message"
                   value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
+                  onChange={(event: any) => setDraft(event.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Message AI"
                   rows={1}

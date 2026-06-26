@@ -10,7 +10,16 @@ import { cn } from "@/shared/utils/cn";
 import { ConfirmModal } from "./Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function MediaFlyout({ isMediaActive, pathname, onClose }: { isMediaActive?: any; pathname?: any; onClose?: any; [key: string]: any }) {
+function MediaFlyout({
+  isMediaActive,
+  pathname,
+  onClose,
+}: {
+  isMediaActive?: any;
+  pathname?: any;
+  onClose?: any;
+  [key: string]: any;
+}) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0 });
   const triggerRef = useRef(null);
@@ -151,7 +160,16 @@ const systemItems = [
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
-function NavSection({ label, children, collapsed }: { label?: any; children?: any; collapsed?: any; [key: string]: any }) {
+function NavSection({
+  label,
+  children,
+  collapsed,
+}: {
+  label?: any;
+  children?: any;
+  collapsed?: any;
+  [key: string]: any;
+}) {
   if (collapsed) return <div className="space-y-0.5">{children}</div>;
   return (
     <div className="pt-4 first:pt-0">
@@ -161,7 +179,14 @@ function NavSection({ label, children, collapsed }: { label?: any; children?: an
   );
 }
 
-function NavItem({ href, label, icon, active, onClick, collapsed }: {
+function NavItem({
+  href,
+  label,
+  icon,
+  active,
+  onClick,
+  collapsed,
+}: {
   href?: any;
   label?: any;
   icon?: any;
@@ -192,7 +217,11 @@ function NavItem({ href, label, icon, active, onClick, collapsed }: {
   );
 }
 
-export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }: {
+export default function Sidebar({
+  onClose,
+  collapsed = false,
+  onToggleCollapse,
+}: {
   onClose?: any;
   collapsed?: boolean;
   onToggleCollapse?: any;

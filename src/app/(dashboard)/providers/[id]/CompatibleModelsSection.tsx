@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
+function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }: any) {
   const borderColor =
     testStatus === "ok" ? "border-green-500/40" : testStatus === "error" ? "border-red-500/40" : "border-border";
 
@@ -70,7 +70,7 @@ export default function CompatibleModelsSection({
   onDeleteAlias,
   connections,
   isAnthropic,
-}) {
+}: any) {
   const [newModel, setNewModel] = useState("");
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -198,8 +198,8 @@ export default function CompatibleModelsSection({
             id="new-compatible-model-input"
             type="text"
             value={newModel}
-            onChange={(e) => setNewModel(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            onChange={(e: any) => setNewModel(e.target.value)}
+            onKeyDown={(e: any) => e.key === "Enter" && handleAdd()}
             placeholder={isAnthropic ? "claude-3-opus-20240229" : "gpt-4o"}
             className="w-full h-8 px-3 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
           />

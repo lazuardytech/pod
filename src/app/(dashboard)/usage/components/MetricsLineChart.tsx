@@ -23,7 +23,7 @@ const PERIOD_UNIT = {
   "90d": "per Quarter",
 };
 
-function Sparkline({ data, field, color, fmt }) {
+function Sparkline({ data, field, color, fmt }: any) {
   const values = data.map((d) => d[field] ?? 0);
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -132,7 +132,7 @@ const METRICS = [
   },
 ];
 
-export default function MetricsLineChart({ period = "7d" }) {
+export default function MetricsLineChart({ period = "7d" }: any) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const offlineNoticeShownRef = useRef(false);

@@ -14,7 +14,7 @@ export default function ConnectionRow({
   onUpdateProxy,
   onEdit,
   onDelete,
-}) {
+}: any) {
   const [showProxyDropdown, setShowProxyDropdown] = useState(false);
   const [updatingProxy, setUpdatingProxy] = useState(false);
   const proxyDropdownRef = useRef(null);

@@ -7,7 +7,7 @@ import { ConfirmModal } from "@/shared/components/Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 // ── CooldownTimer ──────────────────────────────────────────────
-function CooldownTimer({ until }) {
+function CooldownTimer({ until }: any) {
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {
@@ -46,7 +46,7 @@ function ConnectionRow({
   onUpdateProxy,
   onEdit,
   onDelete,
-}) {
+}: any) {
   const [showProxyDropdown, setShowProxyDropdown] = useState(false);
   const [updatingProxy, setUpdatingProxy] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
@@ -276,7 +276,7 @@ ConnectionRow.propTypes = {
 };
 
 // ── AddApiKeyModal ─────────────────────────────────────────────
-function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, onClose }) {
+function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, onClose }: any) {
   const NONE = "__none__";
   const [formData, setFormData] = useState({ name: "", apiKey: "", priority: 1, proxyPoolId: NONE });
   const [validating, setValidating] = useState(false);
@@ -344,7 +344,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
             aria-label="Name"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Production Key"
             name="connection-name"
           />
@@ -357,7 +357,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
               type="password"
               className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               value={formData.apiKey}
-              onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+              onChange={(e: any) => setFormData({ ...formData, apiKey: e.target.value })}
               name="api-key"
             />
           </div>
@@ -379,14 +379,14 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
             type="number"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })}
+            onChange={(e: any) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })}
             name="priority"
           />
         </div>
         <Select
           label="Proxy Pool"
           value={formData.proxyPoolId}
-          onChange={(e) => setFormData({ ...formData, proxyPoolId: e.target.value })}
+          onChange={(e: any) => setFormData({ ...formData, proxyPoolId: e.target.value })}
           options={[{ value: NONE, label: "None" }, ...(proxyPools || []).map((p) => ({ value: p.id, label: p.name }))]}
         />
         <div className="flex gap-2">
@@ -413,7 +413,7 @@ AddApiKeyModal.propTypes = {
 
 // ── ConnectionsCard ────────────────────────────────────────────
 // Self-contained card: fetches, displays and manages all connections for a provider.
-export default function ConnectionsCard({ providerId, isOAuth }) {
+export default function ConnectionsCard({ providerId, isOAuth }: any) {
   const [connections, setConnections] = useState([]);
   const [proxyPools, setProxyPools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -594,7 +594,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
             <span className="text-xs text-text-muted font-medium">Round Robin</span>
             <Toggle
               checked={providerStrategy === "round-robin"}
-              onChange={(enabled) => {
+              onChange={(enabled: any) => {
                 const strategy = enabled ? "round-robin" : null;
                 setProviderStrategy(strategy);
                 if (enabled && !providerStickyLimit) setProviderStickyLimit("1");
@@ -609,7 +609,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
                   type="number"
                   min={1}
                   value={providerStickyLimit}
-                  onChange={(e) => {
+                  onChange={(e: any) => {
                     setProviderStickyLimit(e.target.value);
                     saveStrategy("round-robin", e.target.value);
                   }}

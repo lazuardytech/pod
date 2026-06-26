@@ -33,7 +33,7 @@ const CAVEMAN_LEVELS = [
   { id: "full", label: "Full", desc: "Drop articles, fragments OK" },
   { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
 ];
-export default function APIPageClient({ machineId }) {
+export default function APIPageClient({ machineId }: any) {
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1310,7 +1310,7 @@ export default function APIPageClient({ machineId }) {
                           <Toggle
                             size="sm"
                             checked={key.isActive ?? true}
-                            onChange={(checked) => {
+                            onChange={(checked: any) => {
                               if (key.isActive && !checked) {
                                 openConfirm(
                                   "Pause API Key",
@@ -1426,7 +1426,7 @@ export default function APIPageClient({ machineId }) {
           <Input
             label="Key Name"
             value={newKeyName}
-            onChange={(e) => setNewKeyName(e.target.value)}
+            onChange={(e: any) => setNewKeyName(e.target.value)}
             placeholder="Production Key"
           />
           <div className="flex flex-col gap-1.5">
@@ -1450,7 +1450,7 @@ export default function APIPageClient({ machineId }) {
                 min={1}
                 step={1}
                 value={newKeyRpm}
-                onChange={(e) => setNewKeyRpm(e.target.value)}
+                onChange={(e: any) => setNewKeyRpm(e.target.value)}
                 placeholder="60"
               />
               <Input
@@ -1459,7 +1459,7 @@ export default function APIPageClient({ machineId }) {
                 min={1}
                 step={1}
                 value={newKeyConcurrent}
-                onChange={(e) => setNewKeyConcurrent(e.target.value)}
+                onChange={(e: any) => setNewKeyConcurrent(e.target.value)}
                 placeholder="5"
               />
             </div>
@@ -1505,7 +1505,7 @@ export default function APIPageClient({ machineId }) {
         <Input
           label="Key Name"
           value={editKeyName}
-          onChange={(e) => setEditKeyName(e.target.value)}
+          onChange={(e: any) => setEditKeyName(e.target.value)}
           placeholder="Production Key"
           autoFocus
         />
@@ -1718,7 +1718,7 @@ export default function APIPageClient({ machineId }) {
 }
 
 /** Endpoint card for static provider URLs */
-function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }) {
+function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }: any) {
   return (
     <Card title={title} icon={icon} className="h-full">
       <div className="flex items-center gap-2">
@@ -1732,7 +1732,7 @@ function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }) {
 }
 
 /** Reusable status alert */
-function StatusAlert({ status, className = "" }) {
+function StatusAlert({ status, className = "" }: any) {
   // Render URLs in message as clickable links
   const renderMessage = (msg) => {
     const parts = msg.split(/(https?:\/\/[^\s]+)/g);
@@ -1765,7 +1765,7 @@ function StatusAlert({ status, className = "" }) {
 }
 
 /** Inline tooltip, Claude Code CLI style */
-function Tooltip({ text }) {
+function Tooltip({ text }: any) {
   return (
     <span className="relative group inline-flex items-center">
       <LucideIcon name="help" className="text-[14px] text-text-muted cursor-help" />
@@ -1777,7 +1777,7 @@ function Tooltip({ text }) {
 }
 
 /** Security warning banner with optional action link */
-function SecurityWarning({ message, action }) {
+function SecurityWarning({ message, action }: any) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
       <LucideIcon name="warning" className="text-[16px] shrink-0 mt-0.5" />

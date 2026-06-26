@@ -214,7 +214,11 @@ const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:connected";
 const OFFLINE_USAGE_STATS_CACHE_KEY = "usage:stats";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
-export default function UsageStats({ period: periodProp, setPeriod: setPeriodProp, hidePeriodSelector = false }: {
+export default function UsageStats({
+  period: periodProp,
+  setPeriod: setPeriodProp,
+  hidePeriodSelector = false,
+}: {
   period?: any;
   setPeriod?: any;
   hidePeriodSelector?: boolean;

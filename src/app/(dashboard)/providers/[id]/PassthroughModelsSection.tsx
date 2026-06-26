@@ -14,7 +14,7 @@ function PassthroughModelRow({
   onTest = undefined,
   testStatus = undefined,
   isTesting = false,
-}) {
+}: any) {
   const borderColor =
     testStatus === "ok" ? "border-green-500/40" : testStatus === "error" ? "border-red-500/40" : "border-border";
 
@@ -91,7 +91,7 @@ export default function PassthroughModelsSection({
   onCopy,
   onSetAlias,
   onDeleteAlias,
-}) {
+}: any) {
   const [newModel, setNewModel] = useState("");
   const [adding, setAdding] = useState(false);
 
@@ -150,8 +150,8 @@ export default function PassthroughModelsSection({
             id="new-model-input"
             type="text"
             value={newModel}
-            onChange={(e) => setNewModel(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            onChange={(e: any) => setNewModel(e.target.value)}
+            onKeyDown={(e: any) => e.key === "Enter" && handleAdd()}
             placeholder="anthropic/claude-3-opus"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
           />

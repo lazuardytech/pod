@@ -91,7 +91,7 @@ export default function NewProviderPage() {
             label="Provider"
             options={providerOptions}
             value={formData.provider}
-            onChange={(e) => handleChange("provider", e.target.value)}
+            onChange={(e: any) => handleChange("provider", e.target.value)}
             placeholder="Select a provider"
             error={errors.provider}
             required
@@ -145,7 +145,7 @@ export default function NewProviderPage() {
               type="password"
               placeholder="Enter your API key"
               value={formData.apiKey}
-              onChange={(e) => handleChange("apiKey", e.target.value)}
+              onChange={(e: any) => handleChange("apiKey", e.target.value)}
               error={errors.apiKey}
               hint="Your API key will be encrypted and stored securely."
               required
@@ -167,14 +167,14 @@ export default function NewProviderPage() {
             label="Display Name"
             placeholder="e.g., Production API, Dev Environment"
             value={formData.displayName}
-            onChange={(e) => handleChange("displayName", e.target.value)}
+            onChange={(e: any) => handleChange("displayName", e.target.value)}
             hint="Optional. A friendly name to identify this configuration."
           />
 
           {/* Active Toggle */}
           <Toggle
             checked={formData.isActive}
-            onChange={(checked) => handleChange("isActive", checked)}
+            onChange={(checked: any) => handleChange("isActive", checked)}
             label="Active"
             description="Enable this provider for use in your applications"
           />

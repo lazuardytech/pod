@@ -156,7 +156,7 @@ export default function ModelSelectModal({
     if (isOpen) fetchDisabledModels();
   }, [isOpen]);
 
-    const allProviders: any = useMemo(
+  const allProviders: any = useMemo(
     () => ({ ...OAUTH_PROVIDERS, ...FREE_PROVIDERS, ...FREE_TIER_PROVIDERS, ...APIKEY_PROVIDERS }),
     [],
   );
@@ -519,24 +519,24 @@ export default function ModelSelectModal({
         {Object.entries(filteredGroups).map(([providerId, group]) => {
           const g = group as Record<string, unknown>;
           return (
-          <div key={providerId}>
-            {/* Provider header */}
-            <div className="flex items-center gap-1.5 mb-1.5 sticky top-0 bg-surface py-0.5">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.color as string }} />
-              <span className="text-xs font-medium text-primary">{g.name as string}</span>
-              <span className="text-[10px] text-text-muted">({(g.models as Array<unknown>).length})</span>
-            </div>
+            <div key={providerId}>
+              {/* Provider header */}
+              <div className="flex items-center gap-1.5 mb-1.5 sticky top-0 bg-surface py-0.5">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.color as string }} />
+                <span className="text-xs font-medium text-primary">{g.name as string}</span>
+                <span className="text-[10px] text-text-muted">({(g.models as Array<unknown>).length})</span>
+              </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              {(g.models as Array<Record<string, unknown>>).map((model) => {
-                const isSelected = selectedModel === model.value;
-                const isPlaceholder = model.isPlaceholder;
-                return (
-                  <button
-                    key={String(model.value)}
-                    onClick={() => handleSelect(model)}
-                    title={isPlaceholder ? "Select to pre-fill, then edit model ID in the input" : undefined}
-                    className={`
+              <div className="flex flex-wrap gap-1.5">
+                {(g.models as Array<Record<string, unknown>>).map((model) => {
+                  const isSelected = selectedModel === model.value;
+                  const isPlaceholder = model.isPlaceholder;
+                  return (
+                    <button
+                      key={String(model.value)}
+                      onClick={() => handleSelect(model)}
+                      title={isPlaceholder ? "Select to pre-fill, then edit model ID in the input" : undefined}
+                      className={`
                       px-2 py-1 rounded-xl text-xs font-medium transition-all border hover:cursor-pointer
                       ${
                         isPlaceholder
@@ -548,30 +548,30 @@ export default function ModelSelectModal({
                               : "bg-surface border-border text-text-main hover:border-primary/50 hover:bg-primary/5"
                       }
                     `}
-                  >
-                    <span className="flex items-center gap-1">
-                      {addedModelValues.includes(model.value) && !isPlaceholder && (
-                        <LucideIcon name="check_circle" className="text-[12px]" />
-                      )}
-                      {isPlaceholder ? (
-                        <>
-                          <LucideIcon name="edit" className="text-[11px]" />
-                          {String(model.name)}
-                        </>
-                      ) : model.isCustom ? (
-                        <>
-                          {String(model.name)}
-                          <span className="text-[9px] opacity-60 font-normal">custom</span>
-                        </>
-                      ) : (
-                        String(model.name)
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
+                    >
+                      <span className="flex items-center gap-1">
+                        {addedModelValues.includes(model.value) && !isPlaceholder && (
+                          <LucideIcon name="check_circle" className="text-[12px]" />
+                        )}
+                        {isPlaceholder ? (
+                          <>
+                            <LucideIcon name="edit" className="text-[11px]" />
+                            {String(model.name)}
+                          </>
+                        ) : model.isCustom ? (
+                          <>
+                            {String(model.name)}
+                            <span className="text-[9px] opacity-60 font-normal">custom</span>
+                          </>
+                        ) : (
+                          String(model.name)
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
           );
         })}
 

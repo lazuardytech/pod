@@ -8,7 +8,13 @@ import Input from "@/shared/components/Input";
 import Modal from "@/shared/components/Modal";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 
-export default function EditConnectionModal({ isOpen, connection, proxyPools, onSave, onClose }: {
+export default function EditConnectionModal({
+  isOpen,
+  connection,
+  proxyPools,
+  onSave,
+  onClose,
+}: {
   isOpen?: any;
   connection?: any;
   proxyPools?: any;

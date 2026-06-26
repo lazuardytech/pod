@@ -13,7 +13,12 @@ function getDataDir() {
 
 const DATA_DIR = getDataDir();
 
-function runCommandSync(spawnSync, command, args, { timeout = 5000, env }: { timeout?: number; env?: NodeJS.ProcessEnv } = {}) {
+function runCommandSync(
+  spawnSync,
+  command,
+  args,
+  { timeout = 5000, env }: { timeout?: number; env?: NodeJS.ProcessEnv } = {},
+) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     windowsHide: true,

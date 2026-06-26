@@ -20,7 +20,7 @@ function getProviderImageUrl(providerId) {
 }
 
 // Custom provider node - rectangle with image + name
-function ProviderNode({ data }) {
+function ProviderNode({ data }: any) {
   const { label, color, imageUrl, textIcon, active, error } = data;
   const [imgError, setImgError] = useState(false);
 
@@ -87,7 +87,7 @@ ProviderNode.propTypes = {
 };
 
 // Center Pod node
-function RouterNode({ data }) {
+function RouterNode({ data }: any) {
   return (
     <div className="flex items-center justify-center px-5 py-3 rounded-xl border-2 border-primary bg-primary/5 shadow-md min-w-[130px]">
       <Handle type="source" position={Position.Top} id="top" className="!bg-transparent !border-0 !w-0 !h-0" />
@@ -230,7 +230,7 @@ export default function ProviderTopology({
   activeRequests = [],
   lastProvider = "",
   errorProvider = "",
-}) {
+}: any) {
   // Serialize to stable string keys so useMemo only re-runs when values actually change
   const activeKey = useMemo(
     () =>

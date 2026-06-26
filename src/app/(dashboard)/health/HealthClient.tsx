@@ -36,7 +36,7 @@ function formatUptime(seconds = 0) {
   return `${m}m`;
 }
 
-function StatCard({ icon, label, value, sub = null, tone = "bg-deep-slate" }) {
+function StatCard({ icon, label, value, sub = null, tone = "bg-deep-slate" }: any) {
   return (
     <div className={`rounded-[6px] border border-charcoal-grey p-4 ${tone}`}>
       <div className="flex items-center gap-2 mb-2">
@@ -49,7 +49,7 @@ function StatCard({ icon, label, value, sub = null, tone = "bg-deep-slate" }) {
   );
 }
 
-function SectionHeader({ icon, title, children }) {
+function SectionHeader({ icon, title, children }: any) {
   return (
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2">

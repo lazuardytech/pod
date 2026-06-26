@@ -33,7 +33,12 @@ function TokenPill({ label, value, color }: { label?: any; value?: any; color?: 
  *   loading — boolean, true while fetching detail
  *   onClose — callback
  */
-export default function RequestLogDetail({ log, detail, loading, onClose }: {
+export default function RequestLogDetail({
+  log,
+  detail,
+  loading,
+  onClose,
+}: {
   log?: any;
   detail?: any;
   loading?: any;

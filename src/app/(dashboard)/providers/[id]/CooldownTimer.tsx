@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 
-export default function CooldownTimer({ until }) {
+export default function CooldownTimer({ until }: any) {
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {

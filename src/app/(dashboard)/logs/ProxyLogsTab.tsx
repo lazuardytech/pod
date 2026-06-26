@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function TypeBadge({ type }) {
+function TypeBadge({ type }: any) {
   const styles = {
     http: "bg-aether-blue/10 text-aether-blue border-aether-blue/20",
     vercel: "bg-amethyst/10 text-amethyst border-amethyst/20",
@@ -22,7 +22,7 @@ function TypeBadge({ type }) {
   );
 }
 
-function StatusBadge({ active }) {
+function StatusBadge({ active }: any) {
   return (
     <span
       className={cn(
@@ -38,7 +38,7 @@ function StatusBadge({ active }) {
 
 import { DetailRow, DetailSection, LogDrawer, LogDrawerBody, LogDrawerHeader } from "@/shared/components/LogDrawer";
 
-export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefresh, onCountChange }) {
+export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefresh, onCountChange }: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [testing, setTesting] = useState(null);
@@ -340,7 +340,7 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
 
               <div className="pt-2">
                 <button
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.stopPropagation();
                     handleTest(selectedPool);
                   }}

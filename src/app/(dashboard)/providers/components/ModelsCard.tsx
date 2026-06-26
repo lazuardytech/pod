@@ -134,7 +134,7 @@ ModelRow.propTypes = {
 };
 
 // ── AddCustomModelModal ────────────────────────────────────────
-function AddCustomModelModal({ isOpen, onSave, onClose }) {
+function AddCustomModelModal({ isOpen, onSave, onClose }: any) {
   const [modelId, setModelId] = useState("");
 
   const handleSave = () => {
@@ -152,8 +152,8 @@ function AddCustomModelModal({ isOpen, onSave, onClose }) {
             aria-label="Model ID"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={modelId}
-            onChange={(e) => setModelId(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+            onChange={(e: any) => setModelId(e.target.value)}
+            onKeyDown={(e: any) => e.key === "Enter" && handleSave()}
             placeholder="e.g. tts-1-hd"
             autoFocus
             name="model-id"
@@ -181,7 +181,7 @@ AddCustomModelModal.propTypes = {
 // ── ModelsCard ─────────────────────────────────────────────────
 // Self-contained card: shows models for a provider, filtered by optional `kindFilter`.
 // kindFilter: if provided, only shows models with matching type/kinds field.
-export default function ModelsCard({ providerId, kindFilter, providerAliasOverride }) {
+export default function ModelsCard({ providerId, kindFilter, providerAliasOverride }: any) {
   const { copied, copy } = useCopyToClipboard();
   const [modelAliases, setModelAliases] = useState({});
   const [customModels, setCustomModels] = useState([]);

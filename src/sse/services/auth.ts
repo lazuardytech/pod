@@ -16,7 +16,13 @@ import {
   isModelLockActive,
   MODEL_LOCK_COUNT_PREFIX,
 } from "open-sse/services/accountFallback.js";
-import { getProviderConnections, getSettings, updateProviderConnection, validateApiKey, type Settings } from "@/lib/localDb";
+import {
+  getProviderConnections,
+  getSettings,
+  updateProviderConnection,
+  validateApiKey,
+  type Settings,
+} from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { FREE_PROVIDERS, resolveProviderId } from "@/shared/constants/providers";
 import * as log from "../utils/logger";
@@ -95,7 +101,8 @@ export async function getProviderCredentials(
     const providerId = resolveProviderId(provider);
     if (FREE_PROVIDERS[providerId]?.noAuth) {
       const settings = await getSettings();
-      const override = ((settings.providerStrategies || {}) as Record<string, Record<string, unknown>>)[providerId] || {};
+      const override =
+        ((settings.providerStrategies || {}) as Record<string, Record<string, unknown>>)[providerId] || {};
       const resolvedProxy = await resolveConnectionProxyConfig({ proxyPoolId: (override.proxyPoolId as string) || "" });
       return {
         id: "noauth",
@@ -162,8 +169,10 @@ export async function getProviderCredentials(
       return null;
     }
     const settings = await getSettings();
-    const providerOverride = ((settings.providerStrategies || {}) as Record<string, Record<string, unknown>>)[providerId] || {};
-    const strategy = (providerOverride.fallbackStrategy as string) || (settings.fallbackStrategy as string) || "fill-first";
+    const providerOverride =
+      ((settings.providerStrategies || {}) as Record<string, Record<string, unknown>>)[providerId] || {};
+    const strategy =
+      (providerOverride.fallbackStrategy as string) || (settings.fallbackStrategy as string) || "fill-first";
     let connection: AnyConnection | undefined;
     if (preferredConnectionId) {
       connection = availableConnections.find((c) => c.id === preferredConnectionId);
@@ -177,7 +186,8 @@ export async function getProviderCredentials(
     if (connection) {
       // skip strategy
     } else if (strategy === "round-robin") {
-      const stickyLimit = (providerOverride.stickyRoundRobinLimit as number) || (settings.stickyRoundRobinLimit as number) || 3;
+      const stickyLimit =
+        (providerOverride.stickyRoundRobinLimit as number) || (settings.stickyRoundRobinLimit as number) || 3;
       let state = rotationState.get(providerId);
       let current = state ? availableConnections.find((c) => c.id === state?.lastConnectionId) : null;
       if (!current) {
@@ -275,7 +285,7 @@ export async function markAccountUnavailable(
     ({ shouldFallback, cooldownMs, newBackoffLevel } = checkFallbackError(status, errorText, backoffLevel));
   }
   if (!shouldFallback) return { shouldFallback: false, cooldownMs: 0 };
-  const settingsData = await getSettings().catch(() => ({} as Settings));
+  const settingsData = await getSettings().catch(() => ({}) as Settings);
   const minimumLockoutMinutes = Number(settingsData.minimumLockoutMinutes) ?? 60;
   const minimumLockoutMs = Math.max(minimumLockoutMinutes, 0) * 60 * 1000;
   const prevLockCount = getModelLockCount(conn, model);

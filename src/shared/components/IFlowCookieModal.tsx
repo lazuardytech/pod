@@ -8,7 +8,11 @@ import { Button, Modal } from "@/shared/components";
  * iFlow Cookie Authentication Modal
  * User pastes browser cookie to get fresh API key
  */
-export default function IFlowCookieModal({ isOpen, onSuccess, onClose }: {
+export default function IFlowCookieModal({
+  isOpen,
+  onSuccess,
+  onClose,
+}: {
   isOpen?: any;
   onSuccess?: any;
   onClose?: any;

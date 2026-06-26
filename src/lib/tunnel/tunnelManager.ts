@@ -1,12 +1,7 @@
 import crypto from "node:crypto";
 import { machineIdSync } from "node-machine-id";
 import { getSettings, updateSettings } from "@/lib/localDb";
-import {
-  isCloudflaredRunning,
-  killCloudflared,
-  setUnexpectedExitHandler,
-  spawnQuickTunnel,
-} from "./cloudflared.ts";
+import { isCloudflaredRunning, killCloudflared, setUnexpectedExitHandler, spawnQuickTunnel } from "./cloudflared.ts";
 import { probeUrlAlive } from "./networkProbe.ts";
 import { generateShortId, loadState, saveState } from "./state.ts";
 
@@ -142,7 +137,8 @@ export async function disableTunnel(): Promise<{ success: boolean }> {
   killCloudflared(tunnelSvc.activeLocalPort!);
 
   const state = loadState() as Record<string, unknown> | null;
-  if (state) saveState({ shortId: state.shortId, machineId: state.machineId, tunnelUrl: null } as Record<string, unknown>);
+  if (state)
+    saveState({ shortId: state.shortId, machineId: state.machineId, tunnelUrl: null } as Record<string, unknown>);
 
   await updateSettings({ tunnelEnabled: false, tunnelUrl: "" });
   return { success: true };

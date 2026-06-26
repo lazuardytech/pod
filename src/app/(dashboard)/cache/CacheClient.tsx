@@ -190,14 +190,14 @@ export default function CacheClient() {
             type="number"
             min="1"
             value={config.semanticCacheMaxSize}
-            onChange={(event) => setConfig((prev) => ({ ...prev, semanticCacheMaxSize: event.target.value }))}
+            onChange={(event: any) => setConfig((prev) => ({ ...prev, semanticCacheMaxSize: event.target.value }))}
           />
           <Input
             label="Cache TTL (minutes)"
             type="number"
             min="1"
             value={config.semanticCacheTTLMinutes}
-            onChange={(event) => setConfig((prev) => ({ ...prev, semanticCacheTTLMinutes: event.target.value }))}
+            onChange={(event: any) => setConfig((prev) => ({ ...prev, semanticCacheTTLMinutes: event.target.value }))}
           />
         </div>
       </Card>
@@ -235,7 +235,7 @@ export default function CacheClient() {
               label="Invalidate by Model"
               placeholder="example: melma/zen"
               value={maintenance.model}
-              onChange={(event) => setMaintenance((prev) => ({ ...prev, model: event.target.value }))}
+              onChange={(event: any) => setMaintenance((prev) => ({ ...prev, model: event.target.value }))}
               className="flex-1"
             />
             <Button
@@ -256,7 +256,7 @@ export default function CacheClient() {
               label="Invalidate by Signature"
               placeholder="sha256 signature"
               value={maintenance.signature}
-              onChange={(event) => setMaintenance((prev) => ({ ...prev, signature: event.target.value }))}
+              onChange={(event: any) => setMaintenance((prev) => ({ ...prev, signature: event.target.value }))}
               className="flex-1"
             />
             <Button
@@ -278,7 +278,7 @@ export default function CacheClient() {
               type="number"
               min="1"
               value={maintenance.staleMinutes}
-              onChange={(event) => setMaintenance((prev) => ({ ...prev, staleMinutes: event.target.value }))}
+              onChange={(event: any) => setMaintenance((prev) => ({ ...prev, staleMinutes: event.target.value }))}
               className="flex-1"
             />
             <Button
@@ -312,7 +312,7 @@ export default function CacheClient() {
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value }: any) {
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2">
       <p className="text-xs text-text-muted">{label}</p>

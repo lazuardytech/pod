@@ -41,7 +41,8 @@ export async function handleImageGeneration(request: Request): Promise<Response>
   const comboModels = await getComboModels(modelStr);
   if (comboModels) {
     const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
-    const comboStrategy = (comboStrategies[modelStr]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
+    const comboStrategy =
+      (comboStrategies[modelStr]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "IMAGE",

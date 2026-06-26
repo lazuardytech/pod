@@ -16,7 +16,7 @@ const OFFLINE_LEGACY_INFO_CACHE_KEY = "settings:legacy-info";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 // ─── Section header ───────────────────────────────────────────────────────────
-function SectionHeader({ icon, title }) {
+function SectionHeader({ icon, title }: any) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <LucideIcon name={icon} className="text-storm-cloud text-[16px]" />
@@ -31,7 +31,7 @@ function Section({ children, className }: { children: any; className?: any }) {
 }
 
 // ─── Row: label + description + right slot ────────────────────────────────────
-function SettingRow({ label, description, children, border = false }) {
+function SettingRow({ label, description, children, border = false }: any) {
   return (
     <div
       className={cn(
@@ -49,7 +49,7 @@ function SettingRow({ label, description, children, border = false }) {
 }
 
 // ─── Status message ───────────────────────────────────────────────────────────
-function StatusMsg({ status }) {
+function StatusMsg({ status }: any) {
   if (!status?.message) return null;
   return (
     <p className={cn("text-[12px]", status.type === "error" ? "text-warning-red" : "text-emerald")}>{status.message}</p>
@@ -57,7 +57,7 @@ function StatusMsg({ status }) {
 }
 
 // ─── Label for form fields ────────────────────────────────────────────────────
-function FieldLabel({ children }) {
+function FieldLabel({ children }: any) {
   return <label className="text-[13px] font-[510] text-porcelain">{children}</label>;
 }
 
@@ -186,7 +186,7 @@ export default function ProfilePage() {
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Failed to fetch settings:", err);
       })
       .finally(() => {
@@ -558,7 +558,7 @@ export default function ProfilePage() {
                       type="password"
                       placeholder="Enter current password"
                       value={passwords.current}
-                      onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                      onChange={(e: any) => setPasswords({ ...passwords, current: e.target.value })}
                       required
                     />
                   </div>
@@ -570,7 +570,7 @@ export default function ProfilePage() {
                       type="password"
                       placeholder="Enter new password"
                       value={passwords.new}
-                      onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                      onChange={(e: any) => setPasswords({ ...passwords, new: e.target.value })}
                       required
                     />
                   </div>
@@ -580,7 +580,7 @@ export default function ProfilePage() {
                       type="password"
                       placeholder="Confirm new password"
                       value={passwords.confirm}
-                      onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                      onChange={(e: any) => setPasswords({ ...passwords, confirm: e.target.value })}
                       required
                     />
                   </div>
@@ -617,7 +617,7 @@ export default function ProfilePage() {
                   min="1"
                   max="10"
                   value={settings.stickyRoundRobinLimit || 3}
-                  onChange={(e) => updateStickyLimit(e.target.value)}
+                  onChange={(e: any) => updateStickyLimit(e.target.value)}
                   disabled={loading}
                   className="w-16 text-center shrink-0"
                 />
@@ -645,7 +645,7 @@ export default function ProfilePage() {
                   min="1"
                   max="100"
                   value={settings.comboStickyRoundRobinLimit || 1}
-                  onChange={(e) => updateComboStickyLimit(e.target.value)}
+                  onChange={(e: any) => updateComboStickyLimit(e.target.value)}
                   disabled={loading}
                   className="w-16 text-center shrink-0"
                 />
@@ -657,7 +657,7 @@ export default function ProfilePage() {
                 type="number"
                 min="1"
                 value={settings.minimumLockoutMinutes ?? 60}
-                onChange={(e) => updateMinimumLockout(e.target.value)}
+                onChange={(e: any) => updateMinimumLockout(e.target.value)}
                 disabled={loading}
                 className="w-20 text-center shrink-0"
               />
@@ -693,7 +693,7 @@ export default function ProfilePage() {
                   <Input
                     placeholder="http://127.0.0.1:7897"
                     value={proxyForm.outboundProxyUrl}
-                    onChange={(e) => setProxyForm((prev) => ({ ...prev, outboundProxyUrl: e.target.value }))}
+                    onChange={(e: any) => setProxyForm((prev) => ({ ...prev, outboundProxyUrl: e.target.value }))}
                     disabled={loading || proxyLoading}
                   />
                   <p className="text-[12px] text-storm-cloud">Leave empty to inherit existing env proxy (if any).</p>
@@ -704,7 +704,7 @@ export default function ProfilePage() {
                   <Input
                     placeholder="localhost,127.0.0.1"
                     value={proxyForm.outboundNoProxy}
-                    onChange={(e) => setProxyForm((prev) => ({ ...prev, outboundNoProxy: e.target.value }))}
+                    onChange={(e: any) => setProxyForm((prev) => ({ ...prev, outboundNoProxy: e.target.value }))}
                     disabled={loading || proxyLoading}
                   />
                   <p className="text-[12px] text-storm-cloud">Comma-separated hostnames/domains to bypass the proxy.</p>
@@ -753,7 +753,7 @@ export default function ProfilePage() {
                 min="1"
                 max="168"
                 value={settings.modelCostSyncIntervalHours ?? 1}
-                onChange={(e) => updateModelCostSyncInterval(e.target.value)}
+                onChange={(e: any) => updateModelCostSyncInterval(e.target.value)}
                 disabled={loading}
                 inputClassName="h-8 w-[84px] text-center shrink-0 px-2 text-[12px]"
                 className="shrink-0"

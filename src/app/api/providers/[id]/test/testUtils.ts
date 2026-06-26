@@ -313,7 +313,10 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
     const headers = config.noAuth
       ? { ...config.extraHeaders }
       : { [config.authHeader]: `${config.authPrefix}${accessToken}`, ...config.extraHeaders };
-    const fetchOpts: { method: string; headers: Record<string, string>; body?: string } = { method: config.method, headers };
+    const fetchOpts: { method: string; headers: Record<string, string>; body?: string } = {
+      method: config.method,
+      headers,
+    };
     if (config.body) fetchOpts.body = config.body;
     const res = await fetchWithConnectionProxy(testUrl, fetchOpts, effectiveProxy);
 
@@ -327,7 +330,10 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
         const retryHeaders = config.noAuth
           ? { ...config.extraHeaders }
           : { [config.authHeader]: `${config.authPrefix}${tokens.accessToken}`, ...config.extraHeaders };
-        const retryOpts: { method: string; headers: Record<string, string>; body?: string } = { method: config.method, headers: retryHeaders };
+        const retryOpts: { method: string; headers: Record<string, string>; body?: string } = {
+          method: config.method,
+          headers: retryHeaders,
+        };
         if (config.body) retryOpts.body = config.body;
         const retryRes = await fetchWithConnectionProxy(retryUrl, retryOpts, effectiveProxy);
         const retryAccepted = retryRes.ok || (config.acceptStatuses && config.acceptStatuses.includes(retryRes.status));
@@ -828,7 +834,8 @@ export async function testSingleConnection(id) {
   if (effectiveProxy.connectionProxyEnabled && effectiveProxy.connectionProxyUrl && !effectiveProxy.vercelRelayUrl) {
     const proxyResult = await testProxyUrl({ proxyUrl: effectiveProxy.connectionProxyUrl });
     if (!proxyResult.ok) {
-      const proxyError = proxyTestError(proxyResult) || `Proxy test failed with status ${(proxyResult as { status?: number }).status}`;
+      const proxyError =
+        proxyTestError(proxyResult) || `Proxy test failed with status ${(proxyResult as { status?: number }).status}`;
       await updateProviderConnection(id, {
         testStatus: "error",
         lastError: proxyError,

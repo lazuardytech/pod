@@ -29,7 +29,15 @@ const dotColors = {
   violet: "bg-amethyst",
 };
 
-export default function Badge({ children, variant = "default", size = "md", dot = false, icon, className, ...rest }: {
+export default function Badge({
+  children,
+  variant = "default",
+  size = "md",
+  dot = false,
+  icon,
+  className,
+  ...rest
+}: {
   children?: any;
   variant?: string;
   size?: string;

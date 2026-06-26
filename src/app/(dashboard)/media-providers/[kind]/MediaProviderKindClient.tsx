@@ -26,7 +26,7 @@ function getEffectiveStatus(conn) {
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
 
-function MediaProviderCard({ provider, kind, connections, isCustom }) {
+function MediaProviderCard({ provider, kind, connections, isCustom }: any) {
   const providerInfo = AI_PROVIDERS[provider.id];
   const isNoAuth = !!providerInfo?.noAuth;
 
@@ -116,7 +116,7 @@ function MediaProviderCard({ provider, kind, connections, isCustom }) {
   );
 }
 
-function ComboList({ combos }) {
+function ComboList({ combos }: any) {
   if (combos.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">

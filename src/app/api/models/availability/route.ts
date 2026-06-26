@@ -96,7 +96,7 @@ export async function POST(request) {
 
       const connections = await getProviderConnections({ provider: providerStr });
       const lockKey = `${MODEL_LOCK_PREFIX}${modelStr}`;
-      const settings = await getSettings().catch(() => ({} as Settings));
+      const settings = await getSettings().catch(() => ({}) as Settings);
       const minimumLockoutMinutes = Number(settings.minimumLockoutMinutes) || 0;
 
       if (testOk) {

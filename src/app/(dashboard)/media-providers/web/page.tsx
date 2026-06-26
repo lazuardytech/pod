@@ -16,7 +16,7 @@ function getEffectiveStatus(conn) {
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
 
-function ProviderCard({ provider, kind, connections }) {
+function ProviderCard({ provider, kind, connections }: any) {
   const providerInfo = AI_PROVIDERS[provider.id];
   const isNoAuth = !!providerInfo?.noAuth;
   const providerConns = connections.filter((c) => c.provider === provider.id);
@@ -98,7 +98,7 @@ function ProviderCard({ provider, kind, connections }) {
   );
 }
 
-function ComboList({ combos }) {
+function ComboList({ combos }: any) {
   if (combos.length === 0) {
     return <p className="text-xs text-text-muted italic">No combos yet.</p>;
   }
@@ -150,7 +150,7 @@ function ComboList({ combos }) {
   );
 }
 
-function Section({ title, icon, kind, providers, connections, combos, onCreateCombo }) {
+function Section({ title, icon, kind, providers, connections, combos, onCreateCombo }: any) {
   return (
     <div>
       {/* Header — title left, Create Combo right */}

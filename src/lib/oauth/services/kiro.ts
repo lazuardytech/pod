@@ -346,7 +346,14 @@ export class KiroService {
 
     const data = await response.json();
     return (data.models || []).map(
-      (m: { modelId: string; modelName?: string; description: string; rateMultiplier: number; rateUnit: string; tokenLimits?: { maxInputTokens?: number } }) => ({
+      (m: {
+        modelId: string;
+        modelName?: string;
+        description: string;
+        rateMultiplier: number;
+        rateUnit: string;
+        tokenLimits?: { maxInputTokens?: number };
+      }) => ({
         id: m.modelId,
         name: m.modelName || m.modelId,
         description: m.description,

@@ -698,7 +698,7 @@ export default function ProxyPoolsPage() {
             <textarea
               aria-label="Proxy list"
               value={batchImportText}
-              onChange={(e) => setBatchImportText(e.target.value)}
+              onChange={(e: any) => setBatchImportText(e.target.value)}
               placeholder={"http://user:pass@127.0.0.1:7897\n127.0.0.1:7897:user:pass"}
               className="w-full min-h-[180px] py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all"
               name="proxy-list"
@@ -740,7 +740,7 @@ export default function ProxyPoolsPage() {
           <Input
             label="Vercel API Token"
             value={vercelForm.vercelToken}
-            onChange={(e) => setVercelForm((prev) => ({ ...prev, vercelToken: e.target.value }))}
+            onChange={(e: any) => setVercelForm((prev) => ({ ...prev, vercelToken: e.target.value }))}
             placeholder="your-vercel-api-token"
             hint={
               <>
@@ -760,7 +760,7 @@ export default function ProxyPoolsPage() {
           <Input
             label="Project Name"
             value={vercelForm.projectName}
-            onChange={(e) => setVercelForm((prev) => ({ ...prev, projectName: e.target.value }))}
+            onChange={(e: any) => setVercelForm((prev) => ({ ...prev, projectName: e.target.value }))}
             placeholder="my-relay"
             hint="Unique name for your Vercel project. Leave empty for auto-generated name."
           />
@@ -784,19 +784,19 @@ export default function ProxyPoolsPage() {
           <Input
             label="Name"
             value={formData.name}
-            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+            onChange={(e: any) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Office Proxy"
           />
           <Input
             label="Proxy URL"
             value={formData.proxyUrl}
-            onChange={(e) => setFormData((prev) => ({ ...prev, proxyUrl: e.target.value }))}
+            onChange={(e: any) => setFormData((prev) => ({ ...prev, proxyUrl: e.target.value }))}
             placeholder="http://127.0.0.1:7897"
           />
           <Input
             label="No Proxy"
             value={formData.noProxy}
-            onChange={(e) => setFormData((prev) => ({ ...prev, noProxy: e.target.value }))}
+            onChange={(e: any) => setFormData((prev) => ({ ...prev, noProxy: e.target.value }))}
             placeholder="localhost,127.0.0.1,.internal"
             hint="Comma-separated hosts/domains to bypass proxy"
           />

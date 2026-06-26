@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Button, Modal } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function AddCustomModelModal({ isOpen, providerAlias, providerDisplayAlias, onSave, onClose }) {
+export default function AddCustomModelModal({ isOpen, providerAlias, providerDisplayAlias, onSave, onClose }: any) {
   const [modelId, setModelId] = useState("");
   const [testStatus, setTestStatus] = useState(null); // null | "testing" | "ok" | "error"
   const [testError, setTestError] = useState("");
@@ -71,7 +71,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
               aria-label="Model ID"
               type="text"
               value={modelId}
-              onChange={(e) => {
+              onChange={(e: any) => {
                 setModelId(e.target.value);
                 setTestStatus(null);
                 setTestError("");

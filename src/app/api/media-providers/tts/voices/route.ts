@@ -85,7 +85,9 @@ export async function GET(request) {
         const [lang, country] = locale.split("-");
         return {
           id: v.ShortName,
-          name: asString(v.FriendlyName || v.ShortName).replace("Microsoft ", "").replace(/ Online \(Natural\) - /g, " ("),
+          name: asString(v.FriendlyName || v.ShortName)
+            .replace("Microsoft ", "")
+            .replace(/ Online \(Natural\) - /g, " ("),
           locale,
           lang,
           country: country || "",

@@ -758,7 +758,7 @@ export default function ProviderDetailPage() {
         <Select
           label="Proxy Pool"
           value={bulkProxyPoolId}
-          onChange={(e) => setBulkProxyPoolId(e.target.value)}
+          onChange={(e: any) => setBulkProxyPoolId(e.target.value)}
           options={bulkProxyOptions}
           placeholder="None"
         />
@@ -1136,7 +1136,7 @@ export default function ProviderDetailPage() {
                       type="number"
                       min={1}
                       value={providerStickyLimit}
-                      onChange={(e) => handleStickyLimitChange(e.target.value)}
+                      onChange={(e: any) => handleStickyLimitChange(e.target.value)}
                       placeholder="1"
                       className="w-14 px-2 py-1 text-xs border border-border rounded-md bg-background focus:outline-none focus:border-primary"
                       name="sticky-limit"
@@ -1376,7 +1376,7 @@ export default function ProviderDetailPage() {
   );
 }
 
-function SortableConnectionRow({ conn, proxyPools, isOAuth, onToggleActive, onUpdateProxy, onEdit, onDelete }) {
+function SortableConnectionRow({ conn, proxyPools, isOAuth, onToggleActive, onUpdateProxy, onEdit, onDelete }: any) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: conn.id,
   });
