@@ -115,7 +115,8 @@ export default function ModelAvailabilityBadge() {
   const isHealthy = unavailableCount === 0;
 
   // Group unhealthy models by provider
-  const byProvider = {};
+  // todo(ts): grouped buckets are untyped; widen to any until the API surfaces a shared shape
+  const byProvider: any = {};
   models.forEach((m) => {
     if (m.status === "available") return;
     const key = m.provider || "unknown";
@@ -168,7 +169,7 @@ export default function ModelAvailabilityBadge() {
                   <div key={provider}>
                     <p className="text-xs font-semibold text-text-main mb-1.5 capitalize">{provider}</p>
                     <div className="flex flex-col gap-1">
-                      {provModels.map((m) => {
+                      {(provModels as Array<{ provider: string; model: string; status: string }>).map((m) => {
                         const status = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;
                         const isClearing = clearing === `${m.provider}:${m.model}`;
                         return (

@@ -5,7 +5,16 @@ import { useState } from "react";
 import { Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
+function PassthroughModelRow({
+  modelId,
+  fullModel,
+  copied,
+  onCopy,
+  onDeleteAlias,
+  onTest = undefined,
+  testStatus = undefined,
+  isTesting = false,
+}) {
   const borderColor =
     testStatus === "ok" ? "border-green-500/40" : testStatus === "error" ? "border-red-500/40" : "border-border";
 
@@ -87,12 +96,14 @@ export default function PassthroughModelsSection({
   const [adding, setAdding] = useState(false);
 
   // Filter aliases for this provider - models are persisted via alias
-  const providerAliases = Object.entries(modelAliases).filter(([, model]) => model.startsWith(`${providerAlias}/`));
+  const providerAliases = Object.entries(modelAliases).filter(
+    ([, model]) => typeof model === "string" && model.startsWith(`${providerAlias}/`),
+  );
 
   const allModels = providerAliases.map(([alias, fullModel]) => ({
-    modelId: fullModel.replace(`${providerAlias}/`, ""),
-    fullModel,
-    alias,
+    modelId: String(fullModel).replace(`${providerAlias}/`, ""),
+    fullModel: String(fullModel),
+    alias: String(alias),
   }));
 
   // Generate default alias from modelId (last part after /)

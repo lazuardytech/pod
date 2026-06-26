@@ -54,7 +54,14 @@ function ConnectionRow({
 
   const proxyPoolMap = new Map((proxyPools || []).map((p) => [p.id, p]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
-  const boundProxyPool = boundProxyPoolId ? proxyPoolMap.get(boundProxyPoolId) : null;
+  const boundProxyPool = boundProxyPoolId
+    ? (proxyPoolMap.get(boundProxyPoolId) as {
+        name?: string;
+        proxyUrl?: string;
+        noProxy?: string;
+        isActive?: boolean;
+      } | undefined)
+    : null;
   const hasLegacyProxy =
     connection.providerSpecificData?.connectionProxyEnabled === true &&
     !!connection.providerSpecificData?.connectionProxyUrl;
@@ -96,7 +103,7 @@ function ConnectionRow({
         Object.entries(connection)
           .filter(([k]) => k.startsWith("modelLock_"))
           .map(([, v]) => v)
-          .filter((v) => v && new Date(v).getTime() > Date.now())
+          .filter((v) => v && new Date(String(v)).getTime() > Date.now())
           .sort()[0] || null;
       setIsCooldown(!!until);
     };
@@ -454,9 +461,9 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
   const saveStrategy = async (strategy, stickyLimit) => {
     try {
       const res = await fetch("/api/settings", { cache: "no-store" });
-      const data = res.ok ? await res.json() : {};
+      const data = res.ok ? ((await res.json()) as { providerStrategies?: Record<string, Record<string, unknown>> }) : {};
       const current = data.providerStrategies || {};
-      const override = {};
+      const override: Record<string, unknown> = {};
       if (strategy) override.fallbackStrategy = strategy;
       if (strategy === "round-robin" && stickyLimit !== "") override.stickyRoundRobinLimit = Number(stickyLimit) || 3;
       const updated = { ...current };
@@ -652,6 +659,7 @@ export default function ConnectionsCard({ providerId, isOAuth }) {
       <AddApiKeyModal
         isOpen={showAddModal}
         provider={providerId}
+        providerName={providerId}
         proxyPools={proxyPools}
         onSave={handleSaveApiKey}
         onClose={() => setShowAddModal(false)}

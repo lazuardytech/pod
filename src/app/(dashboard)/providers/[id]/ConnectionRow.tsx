@@ -21,7 +21,14 @@ export default function ConnectionRow({
 
   const proxyPoolMap = new Map((proxyPools || []).map((pool) => [pool.id, pool]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
-  const boundProxyPool = boundProxyPoolId ? proxyPoolMap.get(boundProxyPoolId) : null;
+  const boundProxyPool = boundProxyPoolId
+    ? (proxyPoolMap.get(boundProxyPoolId) as {
+        name?: string;
+        proxyUrl?: string;
+        noProxy?: string;
+        isActive?: boolean;
+      } | undefined)
+    : null;
   const hasLegacyProxy =
     connection.providerSpecificData?.connectionProxyEnabled === true &&
     !!connection.providerSpecificData?.connectionProxyUrl;
@@ -102,7 +109,7 @@ export default function ConnectionRow({
         Object.entries(connection)
           .filter(([k]) => k.startsWith("modelLock_"))
           .map(([, v]) => v)
-          .filter((v) => v && new Date(v).getTime() > Date.now())
+          .filter((v) => v && new Date(String(v)).getTime() > Date.now())
           .sort()[0] || null;
       setIsCooldown(!!until);
     };

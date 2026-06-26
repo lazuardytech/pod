@@ -36,7 +36,7 @@ function formatUptime(seconds = 0) {
   return `${m}m`;
 }
 
-function StatCard({ icon, label, value, sub, tone = "bg-deep-slate" }) {
+function StatCard({ icon, label, value, sub = null, tone = "bg-deep-slate" }) {
   return (
     <div className={`rounded-[6px] border border-charcoal-grey p-4 ${tone}`}>
       <div className="flex items-center gap-2 mb-2">
@@ -253,7 +253,7 @@ export default function HealthPage() {
 
       {/* System + DB */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon="timer" label="Uptime" value={formatUptime(system.uptime)} tone="bg-graphite" />
+        <StatCard icon="timer" label="Uptime" value={formatUptime(system.uptime)} tone="bg-graphite" sub={null} />
         <StatCard
           icon="code"
           label="Node.js"
@@ -316,7 +316,7 @@ export default function HealthPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Providers */}
         <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
-          <SectionHeader icon="dns" title="Providers" />
+          <SectionHeader icon="dns" title="Providers">{null}</SectionHeader>
           <div className="space-y-2">
             {[
               { label: "Total connections", value: providers.total },
@@ -337,7 +337,7 @@ export default function HealthPage() {
 
         {/* Tunnel */}
         <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
-          <SectionHeader icon="vpn_lock" title="Tunnel" />
+          <SectionHeader icon="vpn_lock" title="Tunnel">{null}</SectionHeader>
           <div className="space-y-2">
             {[
               {

@@ -300,6 +300,7 @@ export default function CombosPage() {
       <ComboFormModal
         key="create"
         isOpen={showCreateModal}
+        combo={null}
         onClose={() => setShowCreateModal(false)}
         onSave={handleCreate}
         activeProviders={activeProviders}
@@ -815,6 +816,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
         onClose={() => setShowModelSelect(false)}
         onSelect={handleAddModel}
         onDeselect={handleDeselectModel}
+        selectedModel={null}
         activeProviders={activeProviders}
         modelAliases={modelAliases}
         title="Add Model to Combo"

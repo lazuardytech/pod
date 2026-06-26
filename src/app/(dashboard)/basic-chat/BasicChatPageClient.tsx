@@ -554,7 +554,7 @@ export default function BasicChatPageClient() {
   };
 
   const handleAttachFiles = async (event) => {
-    const files = Array.from(event.target.files || []);
+    const files = Array.from((event.target as HTMLInputElement).files ?? []) as File[];
     if (files.length === 0) return;
 
     const images = files.filter((file) => file.type.startsWith("image/"));

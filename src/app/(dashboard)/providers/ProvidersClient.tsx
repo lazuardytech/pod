@@ -131,7 +131,7 @@ export default function ProvidersPage() {
       icon: "wifi",
       active: showConnectedOnly,
       title: "Show connected providers only",
-      onClick: () => toggleConnectedOnly(),
+      onClick: () => toggleConnectedOnly(!showConnectedOnly),
     });
     return () => unregisterAction();
   }, [showConnectedOnly, registerAction, unregisterAction]);
@@ -156,10 +156,12 @@ export default function ProvidersPage() {
             maxStaleMs: OFFLINE_MAX_STALE_MS,
             cacheTags: ["providers"],
             onCacheData: (data) => {
-              setConnections(data?.connections || []);
+              const payload = data as { connections?: unknown[] };
+              setConnections((payload?.connections || []) as typeof connections);
             },
             onFreshData: (data) => {
-              setConnections(data?.connections || []);
+              const payload = data as { connections?: unknown[] };
+              setConnections((payload?.connections || []) as typeof connections);
             },
           }),
           loadJsonStaleWhileRevalidate({
@@ -168,10 +170,12 @@ export default function ProvidersPage() {
             maxStaleMs: OFFLINE_MAX_STALE_MS,
             cacheTags: ["provider-nodes"],
             onCacheData: (data) => {
-              setProviderNodes(data?.nodes || []);
+              const payload = data as { nodes?: unknown[] };
+              setProviderNodes((payload?.nodes || []) as typeof providerNodes);
             },
             onFreshData: (data) => {
-              setProviderNodes(data?.nodes || []);
+              const payload = data as { nodes?: unknown[] };
+              setProviderNodes((payload?.nodes || []) as typeof providerNodes);
             },
           }),
         ]);
@@ -199,7 +203,7 @@ export default function ProvidersPage() {
 
     const getEffectiveStatus = (conn) => {
       const isCooldown = Object.entries(conn).some(
-        ([k, v]) => k.startsWith("modelLock_") && v && new Date(v).getTime() > Date.now(),
+        ([k, v]) => k.startsWith("modelLock_") && v && new Date(String(v)).getTime() > Date.now(),
       );
       return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
     };
@@ -218,7 +222,9 @@ export default function ProvidersPage() {
     const total = providerConnections.length;
     const allDisabled = total > 0 && providerConnections.every((c) => c.isActive === false);
 
-    const latestError = errorConns.sort((a, b) => new Date(b.lastErrorAt || 0) - new Date(a.lastErrorAt || 0))[0];
+    const latestError = errorConns.sort(
+      (a, b) => new Date(String(b.lastErrorAt || 0)).getTime() - new Date(String(a.lastErrorAt || 0)).getTime(),
+    )[0];
     const errorCode = latestError ? getConnectionErrorTag(latestError) : null;
     const errorTime = latestError?.lastErrorAt ? getRelativeTime(latestError.lastErrorAt) : null;
 

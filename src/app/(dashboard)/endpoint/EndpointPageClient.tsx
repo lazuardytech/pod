@@ -276,7 +276,10 @@ export default function APIPageClient({ machineId }) {
       }
 
       if (statusResult?.data) {
-        const data = statusResult.data;
+        const data = statusResult.data as {
+          tunnel?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
+          tailscale?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
+        };
         const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
         const tUrl = data.tunnel?.tunnelUrl || "";
         const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
@@ -314,7 +317,7 @@ export default function APIPageClient({ machineId }) {
       { tunnelDashboardAccess: value },
       { feature: "endpoint-tunnel-dashboard-access" },
     );
-    if (result?.error) {
+    if ("error" in result && result.error) {
       setTunnelDashboardAccess(previous);
     }
   };
@@ -323,7 +326,7 @@ export default function APIPageClient({ machineId }) {
     const previous = requireApiKey;
     setRequireApiKey(value);
     const result = await patchSetting({ requireApiKey: value }, { feature: "endpoint-require-api-key" });
-    if (result?.error) {
+    if ("error" in result && result.error) {
       setRequireApiKey(previous);
     }
   };
@@ -332,7 +335,7 @@ export default function APIPageClient({ machineId }) {
     const previous = rtkEnabled;
     setRtkEnabledState(value);
     const result = await patchSetting({ rtkEnabled: value }, { feature: "endpoint-rtk-enabled" });
-    if (result?.error) {
+    if ("error" in result && result.error) {
       setRtkEnabledState(previous);
     }
   };
@@ -358,7 +361,7 @@ export default function APIPageClient({ machineId }) {
     const previous = cavemanEnabled;
     setCavemanEnabled(value);
     patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then((result) => {
-      if (result?.error) setCavemanEnabled(previous);
+      if ("error" in result && result.error) setCavemanEnabled(previous);
     });
   };
 
@@ -366,7 +369,7 @@ export default function APIPageClient({ machineId }) {
     const previous = cavemanLevel;
     setCavemanLevel(level);
     patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then((result) => {
-      if (result?.error) setCavemanLevel(previous);
+      if ("error" in result && result.error) setCavemanLevel(previous);
     });
   };
 
@@ -378,10 +381,12 @@ export default function APIPageClient({ machineId }) {
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["api-keys"],
         onCacheData: (data) => {
-          setKeys(data?.keys || []);
+          const payload = data as { keys?: unknown[] };
+          setKeys((payload?.keys || []) as typeof keys);
         },
         onFreshData: (data) => {
-          setKeys(data?.keys || []);
+          const payload = data as { keys?: unknown[] };
+          setKeys((payload?.keys || []) as typeof keys);
         },
       });
 

@@ -288,32 +288,34 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
 
       {/* Proxy Pool Detail Drawer */}
       <LogDrawer open={!!selectedPool} onClose={() => setSelectedPool(null)}>
-        <LogDrawerHeader title="Proxy Pool Detail" onClose={() => setSelectedPool(null)} />
+        <LogDrawerHeader title="Proxy Pool Detail" onClose={() => setSelectedPool(null)}>
+          {null}
+        </LogDrawerHeader>
         <LogDrawerBody>
           {selectedPool && (
             <>
               <DetailSection title="Pool Info" icon="lan">
                 <DetailRow label="Name" value={selectedPool.name} accent="text-porcelain font-[510]" />
-                <DetailRow label="URL" value={selectedPool.proxyUrl} mono />
-                <DetailRow label="Type" value={selectedPool.type || "http"} />
+                <DetailRow label="URL" value={selectedPool.proxyUrl} mono accent="" />
+                <DetailRow label="Type" value={selectedPool.type || "http"} accent="" />
                 <DetailRow
                   label="Status"
                   value={selectedPool.isActive ? "Enabled" : "Disabled"}
                   accent={selectedPool.isActive ? "text-emerald" : "text-warning-red"}
                 />
-                <DetailRow label="Connections" value={String(selectedPool.boundConnectionCount ?? 0)} />
+                <DetailRow label="Connections" value={String(selectedPool.boundConnectionCount ?? 0)} accent="" />
               </DetailSection>
 
               {selectedPool.username && (
                 <DetailSection title="Authentication" icon="lock">
-                  <DetailRow label="Username" value={selectedPool.username} mono />
-                  <DetailRow label="Password" value="••••••••" mono />
+                  <DetailRow label="Username" value={selectedPool.username} mono accent="" />
+                  <DetailRow label="Password" value="••••••••" mono accent="" />
                 </DetailSection>
               )}
 
               {selectedPool.noProxy && (
                 <DetailSection title="No Proxy" icon="block">
-                  <DetailRow label="Bypass" value={selectedPool.noProxy} mono />
+                  <DetailRow label="Bypass" value={selectedPool.noProxy} mono accent="" />
                 </DetailSection>
               )}
 

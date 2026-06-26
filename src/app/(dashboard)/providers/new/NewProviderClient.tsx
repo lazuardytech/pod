@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { Button, Card, Input, Select, Toggle } from "@/shared/components";
 import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
 import LucideIcon from "@/shared/components/LucideIcon";
@@ -17,17 +17,19 @@ const authMethodOptions = Object.values(AUTH_METHODS).map((m) => ({
   label: m.name,
 }));
 
+const CardSection = (Card as typeof Card & { Section: ComponentType<{ children?: ReactNode; className?: string }> }).Section;
+
 export default function NewProviderPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     provider: "",
-    authMethod: "api_key",
+    authMethod: "apikey",
     apiKey: "",
     displayName: "",
     isActive: true,
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -37,9 +39,9 @@ export default function NewProviderPage() {
   };
 
   const validate = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     if (!formData.provider) newErrors.provider = "Please select a provider";
-    if (formData.authMethod === "api_key" && !formData.apiKey) {
+    if (formData.authMethod === "apikey" && !formData.apiKey) {
       newErrors.apiKey = "API Key is required";
     }
     setErrors(newErrors);
@@ -97,7 +99,7 @@ export default function NewProviderPage() {
 
           {/* Provider Info */}
           {selectedProvider && (
-            <Card.Section className="flex items-center gap-3">
+            <CardSection className="flex items-center gap-3">
               <div className="size-10 rounded-lg flex items-center justify-center bg-bg border border-border">
                 <LucideIcon
                   name={selectedProvider.icon}
@@ -109,7 +111,7 @@ export default function NewProviderPage() {
                 <p className="font-medium">{selectedProvider.name}</p>
                 <p className="text-sm text-text-muted">Selected provider</p>
               </div>
-            </Card.Section>
+            </CardSection>
           )}
 
           {/* Auth Method */}
@@ -129,7 +131,7 @@ export default function NewProviderPage() {
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <LucideIcon name={method.value === "api_key" ? "key" : "lock"} className="" />
+                  <LucideIcon name={method.value === "apikey" ? "key" : "lock"} className="" />
                   <span className="font-medium">{method.label}</span>
                 </button>
               ))}
@@ -137,7 +139,7 @@ export default function NewProviderPage() {
           </div>
 
           {/* API Key Input */}
-          {formData.authMethod === "api_key" && (
+          {formData.authMethod === "apikey" && (
             <Input
               label="API Key"
               type="password"
@@ -151,13 +153,13 @@ export default function NewProviderPage() {
           )}
 
           {/* OAuth2 Button */}
-          {formData.authMethod === "oauth2" && (
-            <Card.Section>
+          {formData.authMethod === "oauth" && (
+            <CardSection>
               <p className="text-sm text-text-muted mb-4">Connect your account using OAuth2 authentication.</p>
               <Button type="button" variant="secondary" icon="link">
                 Connect with OAuth2
               </Button>
-            </Card.Section>
+            </CardSection>
           )}
 
           {/* Display Name */}

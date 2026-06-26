@@ -52,7 +52,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
     if (!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim()) return;
     setSaving(true);
     try {
-      const payload = {
+      const payload: { name: string; prefix: string; baseUrl: string; apiType?: string } = {
         name: formData.name,
         prefix: formData.prefix,
         baseUrl: formData.baseUrl,

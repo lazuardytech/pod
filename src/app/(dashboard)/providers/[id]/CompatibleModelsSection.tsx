@@ -98,14 +98,14 @@ export default function CompatibleModelsSection({
     }
   };
 
-  const providerAliases = Object.entries(modelAliases).filter(([, model]) =>
-    model.startsWith(`${providerStorageAlias}/`),
+  const providerAliases = Object.entries(modelAliases).filter(
+    ([, model]) => typeof model === "string" && model.startsWith(`${providerStorageAlias}/`),
   );
 
   const allModels = providerAliases.map(([alias, fullModel]) => ({
-    modelId: fullModel.replace(`${providerStorageAlias}/`, ""),
-    fullModel,
-    alias,
+    modelId: String(fullModel).replace(`${providerStorageAlias}/`, ""),
+    fullModel: String(fullModel),
+    alias: String(alias),
   }));
 
   const generateDefaultAlias = (modelId) => {

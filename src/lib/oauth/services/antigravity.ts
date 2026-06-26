@@ -128,6 +128,10 @@ export class AntigravityService {
       projectId = projectId.id;
     }
 
+    if (!projectId) {
+      throw new Error("No project ID returned from code assist");
+    }
+
     // Extract tier ID (default to legacy-tier)
     let tierId = "legacy-tier";
     if (Array.isArray(data.allowedTiers)) {

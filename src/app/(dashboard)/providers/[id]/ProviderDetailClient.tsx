@@ -57,7 +57,8 @@ import ModelRow from "./ModelRow";
 export default function ProviderDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const providerId = params.id;
+  // todo(ts): useParams id is string|string[]; route guarantees a single segment
+  const providerId = params.id as string;
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [providerNode, setProviderNode] = useState(null);
@@ -70,7 +71,8 @@ export default function ProviderDetailPage() {
   const [showEditNodeModal, setShowEditNodeModal] = useState(false);
   const [showBulkProxyModal, setShowBulkProxyModal] = useState(false);
   const [selectedConnection, setSelectedConnection] = useState(null);
-  const [modelAliases, setModelAliases] = useState({});
+  // todo(ts): model aliases come from an untyped API response; widen to any
+  const [modelAliases, setModelAliases] = useState<any>({});
   const [headerImgError, setHeaderImgError] = useState(false);
   const [modelTestResults, setModelTestResults] = useState({});
   const [modelsTestError, setModelsTestError] = useState("");
@@ -108,7 +110,7 @@ export default function ProviderDetailPage() {
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () => setConfirmDialog((prev) => ({ ...prev, open: false, onConfirm: null }));
 
-  const providerInfo = providerNode
+  const providerInfo = (providerNode
     ? {
         id: providerNode.id,
         name:
@@ -124,7 +126,7 @@ export default function ProviderDetailPage() {
       APIKEY_PROVIDERS[providerId] ||
       FREE_PROVIDERS[providerId] ||
       FREE_TIER_PROVIDERS[providerId] ||
-      WEB_COOKIE_PROVIDERS[providerId];
+      WEB_COOKIE_PROVIDERS[providerId]) as Record<string, any>;
   const isOAuth = !!OAUTH_PROVIDERS[providerId] || !!FREE_PROVIDERS[providerId];
   const isFreeNoAuth = !!FREE_PROVIDERS[providerId]?.noAuth;
   const models = getModelsByProviderId(providerId);
@@ -329,10 +331,12 @@ export default function ProviderDetailPage() {
     try {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-      const current = settingsData.providerStrategies || {};
+      // todo(ts): settings payload shape lives outside the client; treat as any for now
+      const current: any = settingsData.providerStrategies || {};
 
       // Build override: null strategy means remove override, use global
-      const override = {};
+      // todo(ts): untyped override object; widening to any to avoid the empty-literal type
+      const override: any = {};
       if (strategy) override.fallbackStrategy = strategy;
       if (strategy === "round-robin" && stickyLimit !== "") {
         override.stickyRoundRobinLimit = Number(stickyLimit) || 3;
@@ -372,9 +376,10 @@ export default function ProviderDetailPage() {
     try {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-      const current = settingsData.providerThinking || {};
+      // todo(ts): settings payload shape lives outside the client; treat as any for now
+      const current: any = settingsData.providerThinking || {};
       const updated = { ...current };
-      const cfg = {};
+      const cfg: any = {};
       if (mode && mode !== "auto") cfg.mode = mode;
       if (effort && effort !== "default") cfg.effortMode = effort;
       if (Object.keys(cfg).length === 0) {
@@ -823,6 +828,7 @@ export default function ProviderDetailPage() {
     // Custom models added by user (stored as aliases: modelId → providerAlias/modelId)
     const customModels = Object.entries(modelAliases)
       .filter(([alias, fullModel]) => {
+        if (typeof fullModel !== "string") return false;
         const prefix = `${providerStorageAlias}/`;
         if (!fullModel.startsWith(prefix)) return false;
         const modelId = fullModel.slice(prefix.length);
@@ -832,9 +838,9 @@ export default function ProviderDetailPage() {
         return !models.some((m) => m.id === modelId) && alias === modelId;
       })
       .map(([alias, fullModel]) => ({
-        id: fullModel.slice(`${providerStorageAlias}/`.length),
-        alias,
-        fullModel,
+        id: String(fullModel).slice(`${providerStorageAlias}/`.length),
+        alias: String(alias),
+        fullModel: String(fullModel),
       }));
 
     return (
@@ -1291,6 +1297,8 @@ export default function ProviderDetailPage() {
           isOpen={showOAuthModal}
           provider={providerId}
           providerInfo={providerInfo}
+          oauthMeta={null}
+          idcConfig={null}
           onSuccess={handleOAuthSuccess}
           onClose={() => setShowOAuthModal(false)}
         />
