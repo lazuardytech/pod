@@ -5,10 +5,10 @@
 
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
-import { DATA_DIR } from "@/lib/dataDir.js";
+import { DATA_DIR } from "@/lib/dataDir";
 import { error as logError, info as logInfo } from "@/sse/utils/logger.js";
-import { LRUCache } from "./cacheLayer.js";
-import { closeDatabase, getDatabase } from "./sqlite/connection.js";
+import { LRUCache } from "@/lib/cacheLayer";
+import { closeDatabase, getDatabase } from "@/lib/sqlite/connection";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
 
@@ -21,30 +21,33 @@ if (!isCloud && fs?.existsSync && !fs.existsSync(DATA_DIR)) {
 // ===== Global in-memory state (unchanged semantics) ======================
 
 if (!global._pendingRequests) global._pendingRequests = { byModel: {}, byAccount: {} };
-const pendingRequests = global._pendingRequests;
+const pendingRequests = global._pendingRequests as {
+  byModel: Record<string, number>;
+  byAccount: Record<string, Record<string, number>>;
+};
 
 if (!global._lastErrorProvider) global._lastErrorProvider = { provider: "", ts: 0 };
-const lastErrorProvider = global._lastErrorProvider;
+const lastErrorProvider = global._lastErrorProvider as { provider: string; ts: number };
 
 if (!global._statsEmitter) {
   global._statsEmitter = new EventEmitter();
   global._statsEmitter.setMaxListeners(50);
 }
-export const statsEmitter = global._statsEmitter;
+export const statsEmitter: EventEmitter = global._statsEmitter;
 
 if (!global._pendingTimers) global._pendingTimers = {};
-const pendingTimers = global._pendingTimers;
+const pendingTimers = global._pendingTimers as Record<string, ReturnType<typeof setTimeout>[]>;
 
 const PENDING_TIMEOUT_MS = 60 * 1000;
 
 // ===== Helpers ===========================================================
 
-function getLocalDateKey(timestamp) {
+function getLocalDateKey(timestamp?: string | number | Date): string {
   const d = timestamp ? new Date(timestamp) : new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function tokensFromEntry(entry) {
+function tokensFromEntry(entry: UsageEntry): { prompt: number; completion: number } {
   const t = entry.tokens || {};
   return {
     prompt: t.prompt_tokens ?? t.input_tokens ?? 0,
@@ -52,7 +55,14 @@ function tokensFromEntry(entry) {
   };
 }
 
-function upsertSummary(db, dateKey, bucket, key, delta, meta = null) {
+function upsertSummary(
+  db: ReturnType<typeof getDatabase>,
+  dateKey: string,
+  bucket: string,
+  key: string,
+  delta: { requests?: number; promptTokens?: number; completionTokens?: number; cost?: number },
+  meta: unknown = null,
+): void {
   db.prepare(`
     INSERT INTO daily_summary
       (date_key, bucket, key, requests, prompt_tokens, completion_tokens, cost, data)
@@ -75,14 +85,20 @@ function upsertSummary(db, dateKey, bucket, key, delta, meta = null) {
   );
 }
 
-function bumpTotalRequests(db) {
+function bumpTotalRequests(db: ReturnType<typeof getDatabase>): void {
   db.prepare(`
     INSERT INTO meta (key, value) VALUES ('totalRequestsLifetime', '1')
     ON CONFLICT(key) DO UPDATE SET value = CAST((CAST(meta.value AS INTEGER) + 1) AS TEXT)
   `).run();
 }
 
-export function trackPendingRequest(model, provider, connectionId, started, error = false) {
+export function trackPendingRequest(
+  model: string,
+  provider: string,
+  connectionId: string,
+  started: boolean,
+  error: boolean = false,
+): void {
   const modelKey = provider ? `${model} (${provider})` : model;
   const timerKey = `${connectionId}|${modelKey}`;
 
@@ -111,14 +127,14 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
         pendingRequests.byAccount[connectionId][modelKey]--;
       }
       statsEmitter.emit("pending");
-    }, PENDING_TIMEOUT_MS);
+    }, PENDING_TIMEOUT_MS) as ReturnType<typeof setTimeout>;
     if (handle.unref) handle.unref();
     pendingTimers[timerKey].push(handle);
   } else {
     // Pop one outstanding timer for this key (paired with its start).
     const arr = pendingTimers[timerKey];
     if (arr && arr.length > 0) {
-      clearTimeout(arr.pop());
+      clearTimeout(arr.pop() as ReturnType<typeof setTimeout>);
       if (arr.length === 0) delete pendingTimers[timerKey];
     }
   }
@@ -136,24 +152,55 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
 
 // ===== Write path ========================================================
 
+type UsageEntry = {
+  timestamp?: string;
+  provider?: string;
+  model?: string;
+  connectionId?: string;
+  apiKey?: string;
+  endpoint?: string;
+  status?: string;
+  tokens?: {
+    prompt_tokens?: number;
+    input_tokens?: number;
+    completion_tokens?: number;
+    output_tokens?: number;
+    cached_tokens?: number;
+    cache_read_input_tokens?: number;
+    reasoning_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+  cost?: number;
+};
+
 // In-memory queue of pending daily_summary upserts. usage_history rows still
 // inserted synchronously so dashboard real-time view stays accurate.
 if (!global._summaryQueue) global._summaryQueue = [];
-const summaryQueue = global._summaryQueue;
-let summaryFlushTimer = null;
+const summaryQueue = (global._summaryQueue as Array<{
+  timestamp: string;
+  provider?: string;
+  model?: string;
+  connectionId?: string;
+  apiKey?: string;
+  endpoint?: string;
+  prompt: number;
+  completion: number;
+  cost: number;
+}>) || [];
+let summaryFlushTimer: ReturnType<typeof setTimeout> | null = null;
 const SUMMARY_BATCH_SIZE = 50;
 const SUMMARY_FLUSH_INTERVAL_MS = 500;
 
-function scheduleSummaryFlush() {
+function scheduleSummaryFlush(): void {
   if (summaryFlushTimer) return;
-  summaryFlushTimer = setTimeout(flushSummaryQueue, SUMMARY_FLUSH_INTERVAL_MS);
+  summaryFlushTimer = setTimeout(flushSummaryQueue, SUMMARY_FLUSH_INTERVAL_MS) as ReturnType<typeof setTimeout>;
   if (summaryFlushTimer.unref) summaryFlushTimer.unref();
 }
 
-async function calculateCost(provider, model, tokens) {
+async function calculateCost(provider: string | undefined, model: string | undefined, tokens: UsageEntry["tokens"] | undefined): Promise<number> {
   if (!tokens || !provider || !model) return 0;
   try {
-    const { getPricingForModel } = await import("@/lib/localDb.js");
+    const { getPricingForModel } = await import("@/lib/localDb");
     const pricing = await getPricingForModel(provider, model);
     if (!pricing) return 0;
 
@@ -184,12 +231,12 @@ async function calculateCost(provider, model, tokens) {
   }
 }
 
-function readTotalRequests(db) {
-  const r = db.prepare("SELECT value FROM meta WHERE key = 'totalRequestsLifetime'").get();
+function readTotalRequests(db: ReturnType<typeof getDatabase>): number {
+  const r = db.prepare("SELECT value FROM meta WHERE key = 'totalRequestsLifetime'").get() as { value?: string } | undefined;
   return r ? parseInt(r.value, 10) || 0 : 0;
 }
 
-function flushSummaryQueue() {
+function flushSummaryQueue(): void {
   if (summaryFlushTimer) {
     clearTimeout(summaryFlushTimer);
     summaryFlushTimer = null;
@@ -237,7 +284,7 @@ function flushSummaryQueue() {
     run();
     statsEmitter.emit("update");
   } catch (err) {
-    logError("usageDb", "Failed to flush daily_summary batch", { error: err?.message || err });
+    logError("usageDb", "Failed to flush daily_summary batch", { error: (err as Error)?.message || err });
   }
 }
 
@@ -247,7 +294,7 @@ const USAGE_HISTORY_MAX_DAYS = 90;
 let usageHistoryTrimCounter = 0;
 const USAGE_HISTORY_TRIM_EVERY = 100;
 
-function trimUsageHistoryIfNeeded(db) {
+function trimUsageHistoryIfNeeded(db: ReturnType<typeof getDatabase>): void {
   usageHistoryTrimCounter += 1;
   if (usageHistoryTrimCounter < USAGE_HISTORY_TRIM_EVERY) return;
   usageHistoryTrimCounter = 0;
@@ -257,7 +304,7 @@ function trimUsageHistoryIfNeeded(db) {
   } catch {}
 }
 
-export async function saveRequestUsage(entry) {
+export async function saveRequestUsage(entry: UsageEntry): Promise<void> {
   if (isCloud) return;
 
   try {
@@ -306,14 +353,14 @@ export async function saveRequestUsage(entry) {
     // Periodic trim to keep usage_history bounded
     trimUsageHistoryIfNeeded(db);
   } catch (err) {
-    logError("usageDb", "Failed to save usage stats", { error: err?.message || err });
+    logError("usageDb", "Failed to save usage stats", { error: (err as Error)?.message || err });
   }
 }
 
 // ===== Logs (SQLite-backed, batched async writes) ========================
 
-function formatLogDate(date = new Date()) {
-  const pad = (n) => String(n).padStart(2, "0");
+function formatLogDate(date: Date = new Date()): string {
+  const pad = (n: number): string => String(n).padStart(2, "0");
   return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
@@ -321,14 +368,14 @@ function formatLogDate(date = new Date()) {
 // independently and memory is bounded (replaces the old single-object
 // all-or-nothing TTL cache).
 const CONN_CACHE_TTL_MS = 30_000;
-const connectionNameCache = new LRUCache({ maxSize: 500, defaultTTL: CONN_CACHE_TTL_MS });
+const connectionNameCache = new LRUCache<string>({ maxSize: 500, defaultTTL: CONN_CACHE_TTL_MS });
 
-async function getConnectionName(connectionId) {
+async function getConnectionName(connectionId: string | undefined): Promise<string> {
   if (!connectionId) return "-";
   const cached = connectionNameCache.get(connectionId);
   if (cached !== undefined) return cached;
   try {
-    const { getProviderConnections } = await import("@/lib/localDb.js");
+    const { getProviderConnections } = await import("@/lib/localDb");
     const list = await getProviderConnections();
     for (const c of list) {
       connectionNameCache.set(c.id, c.name || c.email || c.id?.slice(0, 8));
@@ -339,23 +386,35 @@ async function getConnectionName(connectionId) {
   }
 }
 
+type LogQueueItem = {
+  timestamp: string;
+  model: string;
+  provider: string;
+  account: string;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  status: string;
+  combo: string | null;
+  details_id: string | null;
+};
+
 // In-memory log queue, flushed on threshold or interval. Hot path is non-blocking.
 const LOG_BATCH_SIZE = 50;
 const LOG_FLUSH_INTERVAL_MS = 500;
 const LOG_MAX_ROWS = 10000; // trim threshold
 
 if (!global._logQueue) global._logQueue = [];
-const logQueue = global._logQueue;
-let logFlushTimer = null;
+const logQueue: LogQueueItem[] = (global._logQueue as LogQueueItem[]) || [];
+let logFlushTimer: ReturnType<typeof setTimeout> | null = null;
 let logTrimCounter = 0;
 
-function scheduleLogFlush() {
+function scheduleLogFlush(): void {
   if (logFlushTimer) return;
-  logFlushTimer = setTimeout(flushLogs, LOG_FLUSH_INTERVAL_MS);
+  logFlushTimer = setTimeout(flushLogs, LOG_FLUSH_INTERVAL_MS) as ReturnType<typeof setTimeout>;
   if (logFlushTimer.unref) logFlushTimer.unref();
 }
 
-function clearPendingRequestTimers() {
+function clearPendingRequestTimers(): void {
   for (const timerKey of Object.keys(pendingTimers)) {
     const handles = pendingTimers[timerKey] || [];
     for (const handle of handles) clearTimeout(handle);
@@ -363,7 +422,7 @@ function clearPendingRequestTimers() {
   }
 }
 
-function flushLogs() {
+function flushLogs(): void {
   if (logFlushTimer) {
     clearTimeout(logFlushTimer);
     logFlushTimer = null;
@@ -384,7 +443,7 @@ function flushLogs() {
          ORDER BY id DESC LIMIT 1
        )`,
     );
-    const processMany = db.transaction((rows) => {
+    const processMany = db.transaction((rows: LogQueueItem[]) => {
       for (const r of rows) {
         if (r.status !== "PENDING") {
           // Try to update existing PENDING row first
@@ -439,14 +498,14 @@ function flushLogs() {
       ).run(LOG_MAX_ROWS);
     }
   } catch (err) {
-    logError("usageDb", "Failed to flush request_log", { error: err?.message || err });
+    logError("usageDb", "Failed to flush request_log", { error: (err as Error)?.message || err });
   }
 }
 
 // Final flush on process exit (safety net for buffered queues)
 if (!isCloud && !global._flushHooksRegistered) {
   global._flushHooksRegistered = true;
-  const flushAll = () => {
+  const flushAll = (): void => {
     clearPendingRequestTimers();
     flushSummaryQueue();
     flushLogs();
@@ -462,7 +521,25 @@ if (!isCloud && !global._flushHooksRegistered) {
   process.on("exit", flushAll);
 }
 
-export async function appendRequestLog({ model, provider, connectionId, tokens, status, combo, detailsId }) {
+export type AppendRequestLogInput = {
+  model?: string;
+  provider?: string;
+  connectionId?: string;
+  tokens?: { prompt_tokens?: number; completion_tokens?: number } | null;
+  status?: string;
+  combo?: string | null;
+  detailsId?: string | null;
+};
+
+export async function appendRequestLog({
+  model,
+  provider,
+  connectionId,
+  tokens,
+  status,
+  combo,
+  detailsId,
+}: AppendRequestLogInput): Promise<void> {
   if (isCloud) return;
   try {
     const account = await getConnectionName(connectionId);
@@ -482,11 +559,11 @@ export async function appendRequestLog({ model, provider, connectionId, tokens, 
     if (logQueue.length >= LOG_BATCH_SIZE) flushLogs();
     else scheduleLogFlush();
   } catch (err) {
-    logError("usageDb", "Failed to enqueue request log", { error: err?.message || err });
+    logError("usageDb", "Failed to enqueue request log", { error: (err as Error)?.message || err });
   }
 }
 
-export async function getRecentLogs(limit = 200) {
+export async function getRecentLogs(limit: number = 200): Promise<string[]> {
   if (isCloud) return [];
   try {
     const db = getDatabase();
@@ -495,7 +572,16 @@ export async function getRecentLogs(limit = 200) {
         `SELECT timestamp, model, provider, account, prompt_tokens, completion_tokens, status, combo
        FROM request_log ORDER BY id DESC LIMIT ?`,
       )
-      .all(limit);
+      .all(limit) as Array<{
+        timestamp: string;
+        model: string;
+        provider: string;
+        account: string;
+        prompt_tokens: number | null;
+        completion_tokens: number | null;
+        status: string;
+        combo: string | null;
+      }>;
     return rows.map((r) => {
       const sent = r.prompt_tokens ?? "-";
       const received = r.completion_tokens ?? "-";
@@ -506,7 +592,20 @@ export async function getRecentLogs(limit = 200) {
   }
 }
 
-export async function getRecentLogsStructured(limit = 300) {
+export type RecentLogEntry = {
+  id: number;
+  timestamp: string;
+  model: string;
+  provider: string;
+  account: string;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  status: string;
+  combo: string | null;
+  detailsId: string | null;
+};
+
+export async function getRecentLogsStructured(limit: number = 300): Promise<RecentLogEntry[]> {
   if (isCloud) return [];
   try {
     const db = getDatabase();
@@ -515,7 +614,18 @@ export async function getRecentLogsStructured(limit = 300) {
         `SELECT id, timestamp, model, provider, account, prompt_tokens, completion_tokens, status, combo, details_id
          FROM request_log ORDER BY id DESC LIMIT ?`,
       )
-      .all(limit);
+      .all(limit) as Array<{
+        id: number;
+        timestamp: string;
+        model: string;
+        provider: string;
+        account: string;
+        prompt_tokens: number | null;
+        completion_tokens: number | null;
+        status: string;
+        combo: string | null;
+        details_id: string | null;
+      }>;
     return rows.map((r) => ({
       id: r.id,
       timestamp: r.timestamp,
@@ -535,16 +645,39 @@ export async function getRecentLogsStructured(limit = 300) {
 
 // ===== Read path =========================================================
 
-function historyRow(r) {
-  const blob = r.data
-    ? (() => {
-        try {
-          return JSON.parse(r.data);
-        } catch {
-          return {};
-        }
-      })()
-    : {};
+type HistoryEntry = {
+  timestamp: string;
+  provider?: string | null;
+  model?: string | null;
+  connection_id?: string | null;
+  api_key?: string | null;
+  endpoint?: string | null;
+  status?: string | null;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  cost?: number;
+  data?: string;
+};
+
+function historyRow(r: HistoryEntry): {
+  timestamp: string;
+  provider: string;
+  model: string;
+  connectionId: string | null;
+  apiKey: string | null;
+  endpoint: string | null;
+  status: string;
+  tokens: UsageEntry["tokens"] | { prompt_tokens: number | null; completion_tokens: number | null };
+  cost: number | null;
+} {
+  let blob: { tokens?: UsageEntry["tokens"] } = {};
+  if (r.data) {
+    try {
+      blob = JSON.parse(r.data) as { tokens?: UsageEntry["tokens"] };
+    } catch {
+      blob = {};
+    }
+  }
   return {
     timestamp: r.timestamp,
     provider: r.provider || "",
@@ -553,16 +686,18 @@ function historyRow(r) {
     apiKey: r.api_key,
     endpoint: r.endpoint,
     status: r.status || "ok",
-    tokens: blob.tokens || { prompt_tokens: r.prompt_tokens, completion_tokens: r.completion_tokens },
-    cost: r.cost,
+    tokens: blob.tokens || { prompt_tokens: r.prompt_tokens ?? null, completion_tokens: r.completion_tokens ?? null },
+    cost: r.cost ?? null,
   };
 }
 
-export async function getUsageHistory(filter = {}) {
+export async function getUsageHistory(
+  filter: { provider?: string; model?: string; startDate?: string; endDate?: string; limit?: number } = {},
+): Promise<ReturnType<typeof historyRow>[]> {
   if (isCloud) return [];
   const db = getDatabase();
-  const clauses = [];
-  const params = [];
+  const clauses: string[] = [];
+  const params: unknown[] = [];
   if (filter.provider) {
     clauses.push("provider = ?");
     params.push(filter.provider);
@@ -581,11 +716,28 @@ export async function getUsageHistory(filter = {}) {
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const limit = filter.limit || 10000;
-  const rows = db.prepare(`SELECT * FROM usage_history ${where} ORDER BY timestamp DESC LIMIT ?`).all(...params, limit);
+  const rows = db
+    .prepare(`SELECT * FROM usage_history ${where} ORDER BY timestamp DESC LIMIT ?`)
+    .all(...params, limit) as HistoryEntry[];
   return rows.map(historyRow);
 }
 
-export async function getActiveRequests() {
+export type ActiveRequest = { model: string; provider: string; account: string; count: number };
+export type RecentRequest = {
+  timestamp: string;
+  model: string;
+  provider: string;
+  promptTokens: number;
+  completionTokens: number;
+  status: string;
+};
+export type ActiveRequestsResult = {
+  activeRequests: ActiveRequest[];
+  recentRequests: RecentRequest[];
+  errorProvider: string;
+};
+
+export async function getActiveRequests(): Promise<ActiveRequestsResult> {
   if (isCloud) {
     return { activeRequests: [], recentRequests: [], errorProvider: "" };
   }
@@ -593,15 +745,15 @@ export async function getActiveRequests() {
   const db = getDatabase();
 
   // Active requests from in-memory pending state
-  const connectionMap = {};
+  const connectionMap: Record<string, string> = {};
   try {
-    const { getProviderConnections } = await import("@/lib/localDb.js");
+    const { getProviderConnections } = await import("@/lib/localDb");
     for (const c of await getProviderConnections()) {
       connectionMap[c.id] = c.name || c.email || c.id;
     }
   } catch {}
 
-  const activeRequests = [];
+  const activeRequests: ActiveRequest[] = [];
   for (const [connectionId, models] of Object.entries(pendingRequests.byAccount)) {
     for (const [modelKey, count] of Object.entries(models)) {
       if (count > 0) {
@@ -622,9 +774,9 @@ export async function getActiveRequests() {
     .prepare(`
     SELECT * FROM usage_history ORDER BY timestamp DESC LIMIT 200
   `)
-    .all();
-  const seen = new Set();
-  const recentRequests = [];
+    .all() as HistoryEntry[];
+  const seen = new Set<string>();
+  const recentRequests: RecentRequest[] = [];
   for (const r of rows) {
     const pt = r.prompt_tokens || 0;
     const ct = r.completion_tokens || 0;
@@ -635,7 +787,7 @@ export async function getActiveRequests() {
     seen.add(key);
     recentRequests.push({
       timestamp: r.timestamp,
-      model: r.model,
+      model: r.model || "",
       provider: r.provider || "",
       promptTokens: pt,
       completionTokens: ct,
@@ -648,9 +800,38 @@ export async function getActiveRequests() {
   return { activeRequests, recentRequests, errorProvider };
 }
 
-const PERIOD_MS = { "24h": 86400000, "7d": 604800000, "30d": 2592000000, "90d": 7776000000 };
+const PERIOD_MS: Record<string, number> = {
+  "24h": 86400000,
+  "7d": 604800000,
+  "30d": 2592000000,
+  "90d": 7776000000,
+};
 
-export async function getUsageStats(period = "all") {
+type StatsBucket = { requests: number; promptTokens: number; completionTokens: number; cost: number };
+type LastUsedBucket = StatsBucket & { lastUsed?: string };
+type ModelStatsBucket = StatsBucket & { rawModel: string; provider: string; lastUsed: string };
+type AccountStatsBucket = StatsBucket & { rawModel: string; provider: string; connectionId: string; accountName: string; lastUsed: string };
+type ApiKeyStatsBucket = StatsBucket & { rawModel: string; provider: string; apiKey: string | null; keyName: string; apiKeyKey: string; lastUsed: string };
+type EndpointStatsBucket = StatsBucket & { endpoint: string; rawModel: string; provider: string; lastUsed: string };
+
+export type UsageStatsResult = {
+  totalRequests: number;
+  totalPromptTokens: number;
+  totalCompletionTokens: number;
+  totalCost: number;
+  byProvider: Record<string, StatsBucket>;
+  byModel: Record<string, ModelStatsBucket>;
+  byAccount: Record<string, AccountStatsBucket>;
+  byApiKey: Record<string, ApiKeyStatsBucket>;
+  byEndpoint: Record<string, EndpointStatsBucket>;
+  last10Minutes: Array<{ requests: number; promptTokens: number; completionTokens: number; cost: number }>;
+  pending: { byModel: Record<string, number>; byAccount: Record<string, Record<string, number>> };
+  activeRequests: ActiveRequest[];
+  recentRequests: RecentRequest[];
+  errorProvider: string;
+};
+
+export async function getUsageStats(period: string = "all"): Promise<UsageStatsResult> {
   if (isCloud) {
     return {
       totalRequests: 0,
@@ -671,32 +852,32 @@ export async function getUsageStats(period = "all") {
   }
 
   const db = getDatabase();
-  const { getProviderConnections, getApiKeys, getProviderNodes } = await import("@/lib/localDb.js");
+  const { getProviderConnections, getApiKeys, getProviderNodes } = await import("@/lib/localDb");
 
-  let allConnections = [];
+  let allConnections: Array<{ id: string; name?: string; email?: string }> = [];
   try {
     allConnections = await getProviderConnections();
   } catch {}
-  const connectionMap = {};
+  const connectionMap: Record<string, string> = {};
   for (const c of allConnections) connectionMap[c.id] = c.name || c.email || c.id;
 
-  const providerNodeNameMap = {};
+  const providerNodeNameMap: Record<string, string> = {};
   try {
     for (const n of await getProviderNodes()) {
       if (n.id && n.name) providerNodeNameMap[n.id] = n.name;
     }
   } catch {}
 
-  let allApiKeys = [];
+  let allApiKeys: Array<{ id?: string; key: string; name?: string; createdAt?: string }> = [];
   try {
     allApiKeys = await getApiKeys();
   } catch {}
-  const apiKeyMap = {};
+  const apiKeyMap: Record<string, { name?: string; id?: string; createdAt?: string }> = {};
   for (const k of allApiKeys) apiKeyMap[k.key] = { name: k.name, id: k.id, createdAt: k.createdAt };
 
   const { recentRequests } = await getActiveRequests();
 
-  const stats = {
+  const stats: UsageStatsResult = {
     totalRequests: 0,
     totalPromptTokens: 0,
     totalCompletionTokens: 0,
@@ -733,7 +914,7 @@ export async function getUsageStats(period = "all") {
   const now = new Date();
   const currentMinuteStart = new Date(Math.floor(now.getTime() / 60000) * 60000);
   const tenMinutesAgo = new Date(currentMinuteStart.getTime() - 9 * 60 * 1000);
-  const bucketMap = {};
+  const bucketMap: Record<number, { requests: number; promptTokens: number; completionTokens: number; cost: number }> = {};
   for (let i = 0; i < 10; i++) {
     const bucketKey = currentMinuteStart.getTime() - (9 - i) * 60 * 1000;
     bucketMap[bucketKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
@@ -744,7 +925,12 @@ export async function getUsageStats(period = "all") {
     SELECT timestamp, prompt_tokens, completion_tokens, cost
     FROM usage_history WHERE timestamp >= ?
   `)
-    .all(tenMinutesAgo.toISOString());
+    .all(tenMinutesAgo.toISOString()) as Array<{
+      timestamp: string;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      cost?: number;
+    }>;
   for (const r of tenMinRows) {
     const et = new Date(r.timestamp).getTime();
     const bucket = Math.floor(et / 60000) * 60000;
@@ -759,10 +945,10 @@ export async function getUsageStats(period = "all") {
   const useDailySummary = period !== "24h";
 
   if (useDailySummary) {
-    const periodDays = { "7d": 7, "30d": 30, "90d": 90 };
+    const periodDays: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
     const maxDays = periodDays[period] || null;
     let whereClause = "";
-    const params = [];
+    const params: unknown[] = [];
     if (maxDays !== null) {
       const today = new Date();
       const cutoff = new Date(today);
@@ -777,18 +963,26 @@ export async function getUsageStats(period = "all") {
       SELECT date_key, bucket, key, requests, prompt_tokens, completion_tokens, cost, data
       FROM daily_summary ${whereClause}
     `)
-      .all(...params);
+      .all(...params) as Array<{
+        date_key: string;
+        bucket: string;
+        key: string;
+        requests?: number;
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        cost?: number;
+        data?: string;
+      }>;
 
     for (const r of rows) {
-      const meta = r.data
-        ? (() => {
-            try {
-              return JSON.parse(r.data);
-            } catch {
-              return {};
-            }
-          })()
-        : {};
+      let meta: { rawModel?: string; provider?: string; endpoint?: string; apiKey?: string } = {};
+      if (r.data) {
+        try {
+          meta = JSON.parse(r.data) as typeof meta;
+        } catch {
+          meta = {};
+        }
+      }
       const prompt = r.prompt_tokens || 0;
       const completion = r.completion_tokens || 0;
       const cost = r.cost || 0;
@@ -802,8 +996,7 @@ export async function getUsageStats(period = "all") {
       }
 
       if (r.bucket === "byProvider") {
-        if (!stats.byProvider[r.key])
-          stats.byProvider[r.key] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
+        if (!stats.byProvider[r.key]) stats.byProvider[r.key] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
         const t = stats.byProvider[r.key];
         t.requests += requests;
         t.promptTokens += prompt;
@@ -873,7 +1066,7 @@ export async function getUsageStats(period = "all") {
             cost: 0,
             rawModel,
             provider: providerDisplayName,
-            apiKey: apiKeyVal,
+            apiKey: apiKeyVal || null,
             keyName,
             apiKeyKey,
             lastUsed: r.date_key,
@@ -929,12 +1122,19 @@ export async function getUsageStats(period = "all") {
              ORDER BY timestamp DESC LIMIT 10000`,
           )
           .all();
-    for (const entry of overlayRows) {
+    for (const entry of overlayRows as Array<{
+      timestamp: string;
+      provider?: string;
+      model?: string;
+      connectionId?: string;
+      apiKey?: string;
+      endpoint?: string;
+    }>) {
       const ts = entry.timestamp;
       if (!ts || new Date(ts).getTime() < overlayCutoff) continue;
 
       const modelKey = entry.provider ? `${entry.model} (${entry.provider})` : entry.model;
-      if (stats.byModel[modelKey] && new Date(ts) > new Date(stats.byModel[modelKey].lastUsed)) {
+      if (modelKey && stats.byModel[modelKey] && new Date(ts) > new Date(stats.byModel[modelKey].lastUsed)) {
         stats.byModel[modelKey].lastUsed = ts;
       }
 
@@ -967,13 +1167,13 @@ export async function getUsageStats(period = "all") {
       .prepare(`
       SELECT * FROM usage_history WHERE timestamp >= ?
     `)
-      .all(cutoff);
+      .all(cutoff) as HistoryEntry[];
 
     for (const r of rows) {
       const prompt = r.prompt_tokens || 0;
       const completion = r.completion_tokens || 0;
       const cost = r.cost || 0;
-      const providerDisplayName = providerNodeNameMap[r.provider] || r.provider;
+      const providerDisplayName = providerNodeNameMap[r.provider || ""] || r.provider;
 
       stats.totalPromptTokens += prompt;
       stats.totalCompletionTokens += completion;
@@ -989,24 +1189,26 @@ export async function getUsageStats(period = "all") {
         t.cost += cost;
       }
 
-      const modelKey = r.provider ? `${r.model} (${r.provider})` : r.model;
-      if (!stats.byModel[modelKey]) {
-        stats.byModel[modelKey] = {
-          requests: 0,
-          promptTokens: 0,
-          completionTokens: 0,
-          cost: 0,
-          rawModel: r.model,
-          provider: providerDisplayName,
-          lastUsed: r.timestamp,
-        };
+      const modelKey = r.provider ? `${r.model} (${r.provider})` : (r.model || "");
+      if (modelKey) {
+        if (!stats.byModel[modelKey]) {
+          stats.byModel[modelKey] = {
+            requests: 0,
+            promptTokens: 0,
+            completionTokens: 0,
+            cost: 0,
+            rawModel: r.model || "",
+            provider: providerDisplayName || "",
+            lastUsed: r.timestamp,
+          };
+        }
+        const m = stats.byModel[modelKey];
+        m.requests++;
+        m.promptTokens += prompt;
+        m.completionTokens += completion;
+        m.cost += cost;
+        if (new Date(r.timestamp) > new Date(m.lastUsed)) m.lastUsed = r.timestamp;
       }
-      const m = stats.byModel[modelKey];
-      m.requests++;
-      m.promptTokens += prompt;
-      m.completionTokens += completion;
-      m.cost += cost;
-      if (new Date(r.timestamp) > new Date(m.lastUsed)) m.lastUsed = r.timestamp;
 
       if (r.connection_id) {
         const accountName = connectionMap[r.connection_id] || `Account ${r.connection_id.slice(0, 8)}...`;
@@ -1017,8 +1219,8 @@ export async function getUsageStats(period = "all") {
             promptTokens: 0,
             completionTokens: 0,
             cost: 0,
-            rawModel: r.model,
-            provider: providerDisplayName,
+            rawModel: r.model || "",
+            provider: providerDisplayName || "",
             connectionId: r.connection_id,
             accountName,
             lastUsed: r.timestamp,
@@ -1042,8 +1244,8 @@ export async function getUsageStats(period = "all") {
             promptTokens: 0,
             completionTokens: 0,
             cost: 0,
-            rawModel: r.model,
-            provider: providerDisplayName,
+            rawModel: r.model || "",
+            provider: providerDisplayName || "",
             apiKey: r.api_key,
             keyName,
             apiKeyKey: r.api_key,
@@ -1063,8 +1265,8 @@ export async function getUsageStats(period = "all") {
             promptTokens: 0,
             completionTokens: 0,
             cost: 0,
-            rawModel: r.model,
-            provider: providerDisplayName,
+            rawModel: r.model || "",
+            provider: providerDisplayName || "",
             apiKey: null,
             keyName: "Local (No API Key)",
             apiKeyKey: "local-no-key",
@@ -1088,8 +1290,8 @@ export async function getUsageStats(period = "all") {
           completionTokens: 0,
           cost: 0,
           endpoint,
-          rawModel: r.model,
-          provider: providerDisplayName,
+          rawModel: r.model || "",
+          provider: providerDisplayName || "",
           lastUsed: r.timestamp,
         };
       }
@@ -1110,7 +1312,16 @@ export async function getUsageStats(period = "all") {
   return stats;
 }
 
-export async function getChartData(period = "7d") {
+export type ChartBucket = {
+  label: string;
+  requests: number;
+  promptTokens: number;
+  completionTokens: number;
+  tokens: number;
+  cost: number;
+};
+
+export async function getChartData(period: string = "7d"): Promise<ChartBucket[]> {
   if (isCloud) return [];
   const db = getDatabase();
   const now = Date.now();
@@ -1118,10 +1329,10 @@ export async function getChartData(period = "7d") {
   if (period === "24h") {
     const bucketCount = 24;
     const bucketMs = 3600000;
-    const labelFn = (ts) =>
+    const labelFn = (ts: number): string =>
       new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
     const startTime = now - bucketCount * bucketMs;
-    const buckets = Array.from({ length: bucketCount }, (_, i) => {
+    const buckets: ChartBucket[] = Array.from({ length: bucketCount }, (_, i) => {
       const ts = startTime + i * bucketMs;
       return { label: labelFn(ts), tokens: 0, cost: 0, requests: 0, promptTokens: 0, completionTokens: 0 };
     });
@@ -1131,7 +1342,12 @@ export async function getChartData(period = "7d") {
       SELECT timestamp, prompt_tokens, completion_tokens, cost
       FROM usage_history WHERE timestamp >= ?
     `)
-      .all(new Date(startTime).toISOString());
+      .all(new Date(startTime).toISOString()) as Array<{
+        timestamp: string;
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        cost?: number;
+      }>;
 
     for (const r of rows) {
       const et = new Date(r.timestamp).getTime();
@@ -1148,7 +1364,7 @@ export async function getChartData(period = "7d") {
 
   const bucketCount = period === "7d" ? 7 : period === "30d" ? 30 : 90;
   const today = new Date();
-  const labelFn = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const labelFn = (d: Date): string => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   const dayStart = new Date(today);
   dayStart.setDate(dayStart.getDate() - (bucketCount - 1));
@@ -1158,8 +1374,14 @@ export async function getChartData(period = "7d") {
     FROM daily_summary
     WHERE bucket = 'day' AND date_key >= ?
   `)
-    .all(getLocalDateKey(dayStart));
-  const byDate = {};
+    .all(getLocalDateKey(dayStart)) as Array<{
+      date_key: string;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      cost?: number;
+      requests?: number;
+    }>;
+  const byDate: Record<string, { prompt_tokens?: number; completion_tokens?: number; cost?: number; requests?: number }> = {};
   for (const r of dayRows) byDate[r.date_key] = r;
 
   return Array.from({ length: bucketCount }, (_, i) => {
@@ -1178,7 +1400,7 @@ export async function getChartData(period = "7d") {
   });
 }
 
-export function getQueueDepths() {
+export function getQueueDepths(): { logQueue: number; summaryQueue: number } {
   return {
     logQueue: logQueue.length,
     summaryQueue: summaryQueue?.length ?? 0,
@@ -1189,8 +1411,8 @@ export function getQueueDepths() {
  * Returns pending request counts for monitoring.
  * Aggregates byModel into per-provider totals.
  */
-export function getPendingStats() {
-  const byProvider = {};
+export function getPendingStats(): { total: number; byProvider: Record<string, number> } {
+  const byProvider: Record<string, number> = {};
   let total = 0;
   for (const [modelKey, count] of Object.entries(pendingRequests.byModel)) {
     // modelKey format: "model (provider)" or bare "model"
@@ -1205,10 +1427,10 @@ export function getPendingStats() {
 /**
  * Returns connection-name LRU cache stats for monitoring.
  */
-export function getConnectionNameCacheStats() {
+export function getConnectionNameCacheStats(): ReturnType<LRUCache<string>["getStats"]> {
   return connectionNameCache.getStats();
 }
 
 // Re-export request details for back-compat (existing routes import these
 // names from @/lib/usageDb)
-export { generateDetailId, getRequestDetailById, getRequestDetails, saveRequestDetail } from "./requestDetailsDb.js";
+export { generateDetailId, getRequestDetailById, getRequestDetails, saveRequestDetail } from "@/lib/requestDetailsDb";

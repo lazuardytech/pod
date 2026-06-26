@@ -1,16 +1,16 @@
 // In-flight request deduplication: signature → Promise<response>
 // Prevents N concurrent identical requests from all hitting upstream simultaneously.
-const inFlightRequests = new Map();
+const inFlightRequests = new Map<string, Promise<unknown>>();
 
 import crypto from "node:crypto";
-import { LRUCache } from "./cacheLayer.js";
-import { getDatabase } from "./sqlite/connection.js";
+import { LRUCache } from "@/lib/cacheLayer";
+import { getDatabase } from "@/lib/sqlite/connection";
 
-function asRecord(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
-function toNumber(value, fallback = 0) {
+function toNumber(value: unknown, fallback: number = 0): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim().length > 0) {
     const parsed = Number(value);
@@ -19,7 +19,7 @@ function toNumber(value, fallback = 0) {
   return fallback;
 }
 
-function ensureCacheMetricsTable() {
+function ensureCacheMetricsTable(): void {
   try {
     const db = getDatabase();
     db.prepare(
@@ -37,7 +37,7 @@ function ensureCacheMetricsTable() {
   }
 }
 
-function incrementMetric(metric, amount = 1) {
+function incrementMetric(metric: string, amount: number = 1): void {
   try {
     const db = getDatabase();
     db.prepare(`UPDATE cache_metrics SET value = value + ?, updated_at = datetime('now') WHERE key = ?`).run(
@@ -49,34 +49,40 @@ function incrementMetric(metric, amount = 1) {
   }
 }
 
-function getMetricValue(metric) {
+function getMetricValue(metric: string): number {
   try {
     const db = getDatabase();
-    const row = db.prepare(`SELECT value FROM cache_metrics WHERE key = ?`).get(metric);
+    const row = db.prepare(`SELECT value FROM cache_metrics WHERE key = ?`).get(metric) as { value?: number } | undefined;
     return row ? toNumber(asRecord(row).value, 0) : 0;
   } catch {
     return 0;
   }
 }
 
-function getHeaderValue(headers, name) {
+function getHeaderValue(headers: unknown, name: string): string | null {
   if (!headers) return null;
-  if (typeof headers.get === "function") {
-    return headers.get(name);
+  if (typeof (headers as Headers).get === "function") {
+    return (headers as Headers).get(name);
   }
   const needle = String(name || "").toLowerCase();
-  for (const [key, value] of Object.entries(headers || {})) {
+  for (const [key, value] of Object.entries((headers as Record<string, unknown>) || {})) {
     if (String(key).toLowerCase() !== needle) continue;
     return typeof value === "string" ? value : null;
   }
   return null;
 }
 
-let memoryCache = null;
+type CacheEntry = {
+  response: unknown;
+  tokensSaved: number;
+  model: string;
+};
 
-function getMemoryCache() {
+let memoryCache: LRUCache<CacheEntry> | null = null;
+
+function getMemoryCache(): LRUCache<CacheEntry> {
   if (!memoryCache) {
-    memoryCache = new LRUCache({
+    memoryCache = new LRUCache<CacheEntry>({
       maxSize: parseInt(process.env.SEMANTIC_CACHE_MAX_SIZE || "100", 10),
       maxBytes: parseInt(process.env.SEMANTIC_CACHE_MAX_BYTES || String(4 * 1024 * 1024), 10),
       defaultTTL: parseInt(process.env.SEMANTIC_CACHE_TTL_MS || "1800000", 10),
@@ -92,7 +98,7 @@ function getMemoryCache() {
 // generateSignature O(1) instead of O(context_length).
 const SIGNATURE_MAX_BYTES = 64 * 1024; // 64 KB
 
-function stringifyForSignature(value) {
+function stringifyForSignature(value: unknown): string {
   if (typeof value === "string") return value;
   try {
     return JSON.stringify(value);
@@ -101,19 +107,28 @@ function stringifyForSignature(value) {
   }
 }
 
-function normalizeConversation(conversation) {
+type ConversationItem = { role?: string; content?: unknown };
+type NormalizedMessage = { role: string; content: string };
+
+function normalizeConversation(conversation: unknown): NormalizedMessage[] {
   if (typeof conversation === "string") {
     return [{ role: "user", content: conversation }];
   }
   if (!Array.isArray(conversation)) return [];
 
-  return conversation.map((item) => ({
+  return (conversation as ConversationItem[]).map((item) => ({
     role: typeof item?.role === "string" && item.role.trim() ? item.role : "user",
     content: stringifyForSignature(item?.content),
   }));
 }
 
-export function generateSignature(model, conversation, temperature, topP, memoryOwnerId = null) {
+export function generateSignature(
+  model: string,
+  conversation: unknown,
+  temperature: number | null | undefined,
+  topP: number | null | undefined,
+  memoryOwnerId: string | null = null,
+): string {
   // Normalize temperature and top_p: treat undefined/null as their semantic
   // defaults so requests with explicit defaults hash identically to those
   // that omit the field entirely (very common across different clients).
@@ -134,7 +149,7 @@ export function generateSignature(model, conversation, temperature, topP, memory
   return crypto.createHash("sha256").update(slice).digest("hex");
 }
 
-export function getCachedResponse(signature) {
+export function getCachedResponse(signature: string): unknown {
   const memResult = getMemoryCache().get(signature);
   if (memResult) {
     incrementMetric("hits");
@@ -148,7 +163,7 @@ export function getCachedResponse(signature) {
       .prepare(
         "SELECT response, tokens_saved, model, expires_at FROM semantic_cache WHERE signature = ? AND expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
       )
-      .get(signature);
+      .get(signature) as { response?: string; tokens_saved?: number; model?: string; expires_at?: string } | undefined;
 
     if (!row) {
       incrementMetric("misses");
@@ -156,15 +171,15 @@ export function getCachedResponse(signature) {
     }
 
     const record = asRecord(row);
-    if (typeof record.response !== "string" || !record.response.trim()) {
+    if (typeof record.response !== "string" || !(record.response as string).trim()) {
       incrementMetric("misses");
       return null;
     }
 
-    const parsed = JSON.parse(record.response);
+    const parsed = JSON.parse(record.response as string);
     const tokensSaved = toNumber(record.tokens_saved, 0);
     // Compute remaining TTL from expires_at
-    let memoryTtl = undefined;
+    let memoryTtl: number | undefined;
     if (typeof record.expires_at === "string") {
       const remaining = new Date(record.expires_at).getTime() - Date.now();
       if (remaining > 0) memoryTtl = remaining;
@@ -182,7 +197,13 @@ export function getCachedResponse(signature) {
   }
 }
 
-export function setCachedResponse(signature, model, response, tokensSaved = 0, ttlMs = 3600000) {
+export function setCachedResponse(
+  signature: string,
+  model: string,
+  response: unknown,
+  tokensSaved: number = 0,
+  ttlMs: number = 3600000,
+): void {
   const ttl = parseInt(process.env.SEMANTIC_CACHE_TTL_MS || String(ttlMs), 10);
   getMemoryCache().set(signature, { response, tokensSaved, model }, ttl);
 
@@ -203,7 +224,7 @@ export function setCachedResponse(signature, model, response, tokensSaved = 0, t
   }
 }
 
-export function clearCache() {
+export function clearCache(): number {
   getMemoryCache().clear();
   let removed = 0;
   try {
@@ -217,10 +238,10 @@ export function clearCache() {
   return removed;
 }
 
-export function invalidateByModel(model) {
+export function invalidateByModel(model: string): number {
   // Targeted eviction: only remove entries matching this model from memory cache
   const cache = getMemoryCache();
-  const toEvict = [];
+  const toEvict: string[] = [];
   cache.forEach((key, value) => {
     if (value && typeof value === "object" && value.model === model) {
       toEvict.push(key);
@@ -242,7 +263,7 @@ export function invalidateByModel(model) {
   }
 }
 
-export function invalidateBySignature(signature) {
+export function invalidateBySignature(signature: string): boolean {
   getMemoryCache().delete(signature);
   try {
     const db = getDatabase();
@@ -253,7 +274,7 @@ export function invalidateBySignature(signature) {
   }
 }
 
-export function invalidateStale(maxAgeMs) {
+export function invalidateStale(maxAgeMs: number): number {
   // invalidation criterion (age) is based on DB created_at, not memory cache
   // entry timestamp — we can't do targeted eviction from memory without storing
   // the DB timestamp alongside each memory entry, so clear the memory cache.
@@ -268,14 +289,23 @@ export function invalidateStale(maxAgeMs) {
   }
 }
 
-export function getCacheStats() {
+export type CacheStats = {
+  memoryEntries: number;
+  dbEntries: number;
+  hits: number;
+  misses: number;
+  hitRate: string;
+  tokensSaved: number;
+};
+
+export function getCacheStats(): CacheStats {
   const memStats = getMemoryCache().getStats();
   let dbSize = 0;
   try {
     const db = getDatabase();
     const row = db
       .prepare("SELECT COUNT(*) AS count FROM semantic_cache WHERE expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')")
-      .get();
+      .get() as { count?: number } | undefined;
     dbSize = toNumber(asRecord(row).count, 0);
   } catch {
     // ignore
@@ -296,22 +326,22 @@ export function getCacheStats() {
   };
 }
 
-export function isCacheableForRead(body, headers) {
+export function isCacheableForRead(body: unknown, headers: unknown): boolean {
   if ((getHeaderValue(headers, "x-pod-no-cache") || "").toLowerCase() === "true") return false;
   if ((getHeaderValue(headers, "x-omniroute-no-cache") || "").toLowerCase() === "true") return false;
   // Use same default as generateSignature (null → 1) so a request with no
   // temperature field and one with temperature=1 produce the same signature
   // AND both pass this check — previously the default was 0 here vs 1 in
   // generateSignature, causing a signature mismatch for omitted temperature.
-  const temp = body?.temperature ?? 1;
+  const temp = (body as { temperature?: number } | null)?.temperature ?? 1;
   if (temp > 1) return false;
   return true;
 }
 
-export function isCacheableForWrite(body, headers) {
+export function isCacheableForWrite(body: unknown, headers: unknown): boolean {
   if ((getHeaderValue(headers, "x-pod-no-cache") || "").toLowerCase() === "true") return false;
   if ((getHeaderValue(headers, "x-omniroute-no-cache") || "").toLowerCase() === "true") return false;
-  const temp = body?.temperature ?? 1;
+  const temp = (body as { temperature?: number } | null)?.temperature ?? 1;
   if (temp > 1) return false;
   return true;
 }
@@ -321,11 +351,11 @@ export function isCacheableForWrite(body, headers) {
  * When N concurrent identical requests all miss the cache, only one
  * should hit upstream — the others await the in-flight promise.
  */
-export function getInFlight(signature) {
-  return inFlightRequests.get(signature) ?? null;
+export function getInFlight<T = unknown>(signature: string): Promise<T> | null {
+  return (inFlightRequests.get(signature) as Promise<T> | undefined) ?? null;
 }
 
-export function setInFlight(signature, promise) {
+export function setInFlight(signature: string, promise: Promise<unknown>): void {
   inFlightRequests.set(signature, promise);
   // Auto-clear after 60s to prevent memory leak if upstream never resolves
   const timer = setTimeout(() => inFlightRequests.delete(signature), 60000);
@@ -336,13 +366,13 @@ export function setInFlight(signature, promise) {
   );
 }
 
-export function clearInFlight(signature) {
+export function clearInFlight(signature: string): void {
   inFlightRequests.delete(signature);
 }
 
 /**
  * Returns in-flight dedup map size for monitoring.
  */
-export function getInFlightStats() {
+export function getInFlightStats(): { count: number } {
   return { count: inFlightRequests.size };
 }

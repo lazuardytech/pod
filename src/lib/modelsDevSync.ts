@@ -3,11 +3,20 @@
 // survives Next.js HMR via globalThis singleton.
 
 import { info, warn, error as logError } from "@/sse/utils/logger.js";
-import { getDatabase } from "@/lib/sqlite/connection.js";
+import { getDatabase } from "@/lib/sqlite/connection";
 
 // ─── HMR-safe singleton ───────────────────────────────────────────────────────
+
+type ModelsDevSyncState = {
+  timer: ReturnType<typeof setInterval> | null;
+  lastSync: string | null;
+  lastSyncModelCount: number;
+  intervalMs: number;
+  syncPromise: Promise<unknown> | null;
+};
+
 // biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
-const g = (globalThis.__modelsDevSync ??= {
+const g: ModelsDevSyncState = (globalThis.__modelsDevSync ??= {
   timer: null,
   lastSync: null,
   lastSyncModelCount: 0,
@@ -16,10 +25,10 @@ const g = (globalThis.__modelsDevSync ??= {
 });
 
 // In-memory pricing cache: { [provider]: { [model]: { input, output, ... } } }
-let _pricingCache = null;
+let _pricingCache: Record<string, Record<string, ModelPricingEntry>> | null = null;
 
 // In-memory raw API cache with TTL
-let _apiCache = null;
+let _apiCache: unknown = null;
 let _apiCacheAt = 0;
 const API_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
@@ -27,7 +36,7 @@ const MODELS_DEV_URL = "https://models.dev/api.json";
 
 // ─── Provider ID mapping ──────────────────────────────────────────────────────
 // Maps models.dev provider IDs → Pod provider IDs
-const MODELS_DEV_PROVIDER_MAP = {
+const MODELS_DEV_PROVIDER_MAP: Record<string, string> = {
   openai: "openai",
   anthropic: "anthropic",
   google: "gemini",
@@ -89,10 +98,8 @@ const MODELS_DEV_PROVIDER_MAP = {
 
 /**
  * Fetch models.dev API JSON with 24h in-memory cache.
- * @param {AbortSignal} [signal]
- * @returns {Promise<object>}
  */
-export async function fetchModelsDev(signal) {
+export async function fetchModelsDev(signal?: AbortSignal): Promise<unknown> {
   const now = Date.now();
   if (_apiCache && now - _apiCacheAt < API_CACHE_TTL_MS) {
     return _apiCache;
@@ -115,28 +122,39 @@ export async function fetchModelsDev(signal) {
 
 // ─── Transform ───────────────────────────────────────────────────────────────
 
+export type ModelPricingEntry = {
+  input?: number;
+  output?: number;
+  cached?: number;
+  cache_creation?: number;
+  reasoning?: number;
+};
+
+export type ModelsDevPricingData = Record<string, Record<string, ModelPricingEntry>>;
+
 /**
  * Transform raw models.dev API response to Pod pricing shape.
  * Returns { [podProvider]: { [modelId]: { input, output, cached?, cache_creation?, reasoning? } } }
  * All rates are in $/1M tokens (models.dev uses $/1M natively).
- *
- * @param {object} raw
- * @returns {object}
  */
-export function transformModelsDevToPricing(raw) {
-  const result = {};
+export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData {
+  const result: ModelsDevPricingData = {};
 
   // models.dev api.json shape: { [providerId]: { models: { [modelId]: { pricing?: { input, output, ... } } } } }
   // or flat array — handle both shapes defensively
-  const entries = Array.isArray(raw) ? raw : Object.entries(raw);
+  const entries: unknown[] = Array.isArray(raw) ? raw : Object.entries(raw as Record<string, unknown>);
 
   for (const entry of entries) {
-    let providerId, providerData;
+    let providerId: string | undefined;
+    let providerData: Record<string, unknown> | undefined;
     if (Array.isArray(entry)) {
-      [providerId, providerData] = entry;
+      const [id, data] = entry as [string, Record<string, unknown>];
+      providerId = id;
+      providerData = data;
     } else if (entry && typeof entry === "object") {
-      providerId = entry.id || entry.provider;
-      providerData = entry;
+      const obj = entry as { id?: unknown; provider?: unknown };
+      providerId = (typeof obj.id === "string" ? obj.id : typeof obj.provider === "string" ? obj.provider : undefined);
+      providerData = entry as Record<string, unknown>;
     } else {
       continue;
     }
@@ -149,13 +167,14 @@ export function transformModelsDevToPricing(raw) {
     const modelsRaw = providerData.models;
     if (!modelsRaw) continue;
 
-    const modelEntries = Array.isArray(modelsRaw)
-      ? modelsRaw.map((m) => [m.id ?? m.name, m])
-      : Object.entries(modelsRaw);
+    const modelEntries: Array<[string, unknown]> = Array.isArray(modelsRaw)
+      ? (modelsRaw as Array<{ id?: string; name?: string }>).map((m) => [m.id ?? m.name ?? "", m])
+      : Object.entries(modelsRaw as Record<string, unknown>);
 
-    for (const [modelId, modelData] of modelEntries) {
-      if (!modelId || !modelData || typeof modelData !== "object") continue;
+    for (const [modelId, modelDataRaw] of modelEntries) {
+      if (!modelId || !modelDataRaw || typeof modelDataRaw !== "object") continue;
 
+      const modelData = modelDataRaw as { cost?: Record<string, unknown> };
       // pricing is under .cost in models.dev api.json
       const cost = modelData.cost;
       if (!cost || typeof cost !== "object") continue;
@@ -166,21 +185,21 @@ export function transformModelsDevToPricing(raw) {
       // Skip models with no usable pricing
       if (input == null && output == null) continue;
 
-      const entry = {};
-      if (input != null) entry.input = input;
-      if (output != null) entry.output = output;
+      const entryOut: ModelPricingEntry = {};
+      if (input != null) entryOut.input = input;
+      if (output != null) entryOut.output = output;
 
       const cached = toMillionTokenRate(cost.cache_read);
-      if (cached != null) entry.cached = cached;
+      if (cached != null) entryOut.cached = cached;
 
       const cacheCreation = toMillionTokenRate(cost.cache_write);
-      if (cacheCreation != null) entry.cache_creation = cacheCreation;
+      if (cacheCreation != null) entryOut.cache_creation = cacheCreation;
 
       const reasoning = toMillionTokenRate(cost.reasoning);
-      if (reasoning != null) entry.reasoning = reasoning;
+      if (reasoning != null) entryOut.reasoning = reasoning;
 
       if (!result[podProvider]) result[podProvider] = {};
-      result[podProvider][String(modelId)] = entry;
+      result[podProvider][String(modelId)] = entryOut;
     }
   }
 
@@ -190,10 +209,8 @@ export function transformModelsDevToPricing(raw) {
 /**
  * Normalize a pricing value to $/1M tokens.
  * models.dev already uses $/1M, but guard against null/undefined/string.
- * @param {*} val
- * @returns {number|null}
  */
-function toMillionTokenRate(val) {
+function toMillionTokenRate(val: unknown): number | null {
   if (val == null) return null;
   const n = Number(val);
   if (!Number.isFinite(n) || n < 0) return null;
@@ -205,12 +222,11 @@ function toMillionTokenRate(val) {
 /**
  * Save transformed pricing data to models_dev_pricing table.
  * Uses INSERT OR REPLACE so re-runs are idempotent.
- * @param {object} data — { [provider]: { [model]: pricingObj } }
  */
-export function saveModelsDevPricing(data) {
+export function saveModelsDevPricing(data: ModelsDevPricingData): void {
   const db = getDatabase();
   const stmt = db.prepare("INSERT OR REPLACE INTO models_dev_pricing (provider, model, data) VALUES (?, ?, ?)");
-  const run = db.transaction((pricing) => {
+  const run = db.transaction((pricing: ModelsDevPricingData) => {
     for (const [provider, models] of Object.entries(pricing)) {
       for (const [model, p] of Object.entries(models)) {
         stmt.run(provider, model, JSON.stringify(p));
@@ -228,14 +244,18 @@ export function saveModelsDevPricing(data) {
 /**
  * Load all models_dev_pricing rows into the in-memory cache.
  */
-export function loadModelsDevPricingCache() {
+export function loadModelsDevPricingCache(): Record<string, Record<string, ModelPricingEntry>> {
   const db = getDatabase();
-  const rows = db.prepare("SELECT provider, model, data FROM models_dev_pricing").all();
+  const rows = db.prepare("SELECT provider, model, data FROM models_dev_pricing").all() as Array<{
+    provider: string;
+    model: string;
+    data: string;
+  }>;
   _pricingCache = {};
   for (const r of rows) {
     if (!_pricingCache[r.provider]) _pricingCache[r.provider] = {};
     try {
-      _pricingCache[r.provider][r.model] = JSON.parse(r.data);
+      _pricingCache[r.provider][r.model] = JSON.parse(r.data) as ModelPricingEntry;
     } catch {
       // skip malformed rows
     }
@@ -246,35 +266,37 @@ export function loadModelsDevPricingCache() {
 /**
  * Look up pricing for a specific provider+model from the in-memory cache.
  * Loads from DB on first call.
- * @param {string} provider
- * @param {string} model
- * @returns {object|null}
  */
-export function getModelsDevPricingForModel(provider, model) {
+export function getModelsDevPricingForModel(provider: string, model: string): ModelPricingEntry | null {
   if (!_pricingCache) loadModelsDevPricingCache();
   if (!provider || !model) return null;
-  return _pricingCache[provider]?.[model] ?? null;
+  return _pricingCache?.[provider]?.[model] ?? null;
 }
 
 // ─── Sync ─────────────────────────────────────────────────────────────────────
 
+export type SyncResult = {
+  success: boolean;
+  modelCount: number;
+  providerCount: number;
+  error?: string;
+};
+
 /**
  * Fetch, transform, and save models.dev pricing.
  * Deduplicates concurrent calls via g.syncPromise.
- * @param {{ signal?: AbortSignal }} [opts]
- * @returns {Promise<{ success: boolean, modelCount: number, providerCount: number, error?: string }>}
  */
-export async function syncModelsDev(opts = {}) {
+export async function syncModelsDev(opts: { signal?: AbortSignal } = {}): Promise<SyncResult> {
   // Deduplicate concurrent syncs
-  if (g.syncPromise) return g.syncPromise;
+  if (g.syncPromise) return g.syncPromise as Promise<SyncResult>;
 
   g.syncPromise = _doSync(opts).finally(() => {
     g.syncPromise = null;
   });
-  return g.syncPromise;
+  return g.syncPromise as Promise<SyncResult>;
 }
 
-async function _doSync(opts = {}) {
+async function _doSync(opts: { signal?: AbortSignal } = {}): Promise<SyncResult> {
   try {
     info("modelsDevSync", "Starting sync...");
     const raw = await fetchModelsDev(opts.signal);
@@ -298,7 +320,7 @@ async function _doSync(opts = {}) {
         metaStmt.run("lastSyncModelCount", String(modelCount));
       })();
     } catch (metaErr) {
-      warn("modelsDevSync", "Failed to write sync meta", { error: metaErr.message });
+      warn("modelsDevSync", "Failed to write sync meta", { error: (metaErr as Error).message });
     }
 
     g.lastSync = new Date().toISOString();
@@ -307,8 +329,8 @@ async function _doSync(opts = {}) {
     info("modelsDevSync", `Sync complete: ${modelCount} models across ${providerCount} providers`);
     return { success: true, modelCount, providerCount };
   } catch (err) {
-    logError("modelsDevSync", "Sync failed", { error: err.message });
-    return { success: false, modelCount: 0, providerCount: 0, error: err.message };
+    logError("modelsDevSync", "Sync failed", { error: (err as Error).message });
+    return { success: false, modelCount: 0, providerCount: 0, error: (err as Error).message };
   }
 }
 
@@ -317,18 +339,17 @@ async function _doSync(opts = {}) {
 /**
  * Start periodic sync. Runs an initial sync immediately.
  * Safe to call multiple times — only one timer runs at a time.
- * @param {number} intervalMs
  */
-export function startPeriodicSync(intervalMs = 3600000) {
+export function startPeriodicSync(intervalMs: number = 3600000): void {
   if (g.timer) return; // already running
 
   g.intervalMs = intervalMs;
 
   // Run immediately (non-blocking)
-  syncModelsDev().catch((err) => logError("modelsDevSync", "Initial sync error", { error: err.message }));
+  syncModelsDev().catch((err) => logError("modelsDevSync", "Initial sync error", { error: (err as Error).message }));
 
   g.timer = setInterval(() => {
-    syncModelsDev().catch((err) => logError("modelsDevSync", "Periodic sync error", { error: err.message }));
+    syncModelsDev().catch((err) => logError("modelsDevSync", "Periodic sync error", { error: (err as Error).message }));
   }, intervalMs);
 
   if (g.timer.unref) g.timer.unref();
@@ -338,7 +359,7 @@ export function startPeriodicSync(intervalMs = 3600000) {
 /**
  * Stop periodic sync.
  */
-export function stopPeriodicSync() {
+export function stopPeriodicSync(): void {
   if (g.timer) {
     clearInterval(g.timer);
     g.timer = null;
@@ -346,11 +367,17 @@ export function stopPeriodicSync() {
   }
 }
 
+export type SyncStatus = {
+  lastSync: string | null;
+  lastSyncModelCount: number;
+  nextSync: string | null;
+  intervalMs: number;
+};
+
 /**
  * Return current sync status.
- * @returns {{ lastSync: string|null, lastSyncModelCount: number, nextSync: string|null, intervalMs: number }}
  */
-export function getSyncStatus() {
+export function getSyncStatus(): SyncStatus {
   const nextSync = g.lastSync && g.timer ? new Date(new Date(g.lastSync).getTime() + g.intervalMs).toISOString() : null;
   return {
     lastSync: g.lastSync,

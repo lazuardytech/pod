@@ -4,7 +4,7 @@
 // runs on batch threshold or after a debounce timer.
 
 import { error as logError } from "@/sse/utils/logger.js";
-import { closeDatabase, getDatabase } from "./sqlite/connection.js";
+import { closeDatabase, getDatabase } from "@/lib/sqlite/connection";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
 
@@ -15,10 +15,18 @@ const DEFAULT_MAX_JSON_SIZE = 5 * 1024;
 const CONFIG_CACHE_TTL_MS = 5000;
 const WRITE_BUFFER_MAX = 500; // hard cap — prevent unbounded growth if flush stalls
 
-let cachedConfig = null;
+type ObservabilityConfig = {
+  enabled: boolean;
+  maxRecords: number;
+  batchSize: number;
+  flushIntervalMs: number;
+  maxJsonSize: number;
+};
+
+let cachedConfig: ObservabilityConfig | null = null;
 let cachedConfigTs = 0;
 
-async function getObservabilityConfig() {
+async function getObservabilityConfig(): Promise<ObservabilityConfig> {
   if (cachedConfig && Date.now() - cachedConfigTs < CONFIG_CACHE_TTL_MS) {
     return cachedConfig;
   }
@@ -59,16 +67,34 @@ async function getObservabilityConfig() {
   return cachedConfig;
 }
 
-let writeBuffer = [];
-let flushTimer = null;
-let isFlushing = false;
-const _estimatedDbSize = 0;
-const _flushCount = 0;
+type DetailItem = {
+  id?: string;
+  timestamp?: string;
+  provider?: string | null;
+  model?: string | null;
+  connectionId?: string | null;
+  status?: string | null;
+  latency?: number | { total?: number; totalMs?: number } | null;
+  tokens?: {
+    prompt_tokens?: number;
+    input_tokens?: number;
+    completion_tokens?: number;
+    output_tokens?: number;
+  } | null;
+  request?: { headers?: Record<string, unknown> } & Record<string, unknown>;
+  providerRequest?: Record<string, unknown>;
+  providerResponse?: Record<string, unknown>;
+  response?: Record<string, unknown>;
+};
 
-function sanitizeHeaders(headers) {
+let writeBuffer: DetailItem[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+let isFlushing = false;
+
+function sanitizeHeaders(headers: Record<string, unknown> | null | undefined): Record<string, unknown> {
   if (!headers || typeof headers !== "object") return {};
   const sensitiveKeys = ["authorization", "x-api-key", "cookie", "token", "api-key"];
-  const sanitized = { ...headers };
+  const sanitized: Record<string, unknown> = { ...headers };
   for (const key of Object.keys(sanitized)) {
     if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
       delete sanitized[key];
@@ -77,7 +103,7 @@ function sanitizeHeaders(headers) {
   return sanitized;
 }
 
-function generateDetailId(model) {
+function generateDetailId(model?: string | null): string {
   const timestamp = new Date().toISOString();
   const random = Math.random().toString(36).substring(2, 8);
   const modelPart = model ? model.replace(/[^a-zA-Z0-9-]/g, "-") : "unknown";
@@ -86,7 +112,7 @@ function generateDetailId(model) {
 
 export { generateDetailId };
 
-function truncateIfLarge(obj, maxSize) {
+function truncateIfLarge(obj: unknown, maxSize: number): unknown {
   const str = JSON.stringify(obj);
   if (str.length > maxSize) {
     return { _truncated: true, _originalSize: str.length, _preview: str.substring(0, 200) };
@@ -95,10 +121,21 @@ function truncateIfLarge(obj, maxSize) {
 }
 
 // Returns a flat { id, ts, provider, ... latency_ms, prompt, completion, dataBlob } row.
-function prepareRecord(item, maxSize) {
+function prepareRecord(item: DetailItem, maxSize: number): {
+  id: string;
+  timestamp: string;
+  provider: string | null;
+  model: string | null;
+  connectionId: string | null;
+  status: string | null;
+  latency_ms: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  data: string;
+} {
   if (!item.id) item.id = generateDetailId(item.model);
   if (!item.timestamp) item.timestamp = new Date().toISOString();
-  if (item.request?.headers) item.request.headers = sanitizeHeaders(item.request.headers);
+  if (item.request?.headers) item.request.headers = sanitizeHeaders(item.request.headers) as never;
 
   const payload = {
     latency: item.latency || {},
@@ -110,7 +147,7 @@ function prepareRecord(item, maxSize) {
   };
 
   const latency =
-    typeof item.latency === "number" ? item.latency : (item.latency?.total ?? item.latency?.totalMs ?? null);
+    typeof item.latency === "number" ? item.latency : ((item.latency?.total ?? item.latency?.totalMs) ?? null);
   const t = item.tokens || {};
   return {
     id: item.id,
@@ -126,12 +163,12 @@ function prepareRecord(item, maxSize) {
   };
 }
 
-async function flushToDatabase() {
+async function flushToDatabase(): Promise<void> {
   if (isCloud || isFlushing || writeBuffer.length === 0) return;
   isFlushing = true;
   // Resolve config + db BEFORE draining the buffer so items are not lost
   // if either call throws (previously the buffer was drained first).
-  let items;
+  let items: DetailItem[];
   try {
     const config = await getObservabilityConfig();
     const db = getDatabase();
@@ -173,13 +210,13 @@ async function flushToDatabase() {
     });
     run();
   } catch (err) {
-    logError("requestDetailsDb", "Batch write failed", { error: err.message });
+    logError("requestDetailsDb", "Batch write failed", { error: (err as Error).message });
   } finally {
     isFlushing = false;
   }
 }
 
-export async function saveRequestDetail(detail) {
+export async function saveRequestDetail(detail: DetailItem): Promise<void> {
   if (isCloud) return;
   const config = await getObservabilityConfig();
   if (!config.enabled) return;
@@ -205,10 +242,23 @@ export async function saveRequestDetail(detail) {
   }
 }
 
-function rowToDetail(r) {
-  let payload = {};
+type DetailRow = {
+  id: string;
+  timestamp: string;
+  provider: string | null;
+  model: string | null;
+  connection_id: string | null;
+  status: string | null;
+  latency_ms: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  data: string;
+};
+
+function rowToDetail(r: DetailRow): DetailItem {
+  let payload: Record<string, unknown> = {};
   try {
-    payload = JSON.parse(r.data || "{}");
+    payload = JSON.parse(r.data || "{}") as Record<string, unknown>;
   } catch {}
   return {
     id: r.id,
@@ -217,19 +267,44 @@ function rowToDetail(r) {
     model: r.model,
     connectionId: r.connection_id,
     status: r.status,
-    latency: payload.latency ?? (r.latency_ms != null ? { total: r.latency_ms } : {}),
-    tokens: payload.tokens ?? {
+    latency: (payload.latency as number | { total?: number; totalMs?: number } | undefined) ?? (r.latency_ms != null ? { total: r.latency_ms } : {}),
+    tokens: (payload.tokens as DetailItem["tokens"]) ?? {
       prompt_tokens: r.prompt_tokens,
       completion_tokens: r.completion_tokens,
     },
-    request: payload.request ?? {},
-    providerRequest: payload.providerRequest ?? {},
-    providerResponse: payload.providerResponse ?? {},
-    response: payload.response ?? {},
+    request: (payload.request as DetailItem["request"]) ?? {},
+    providerRequest: (payload.providerRequest as DetailItem["providerRequest"]) ?? {},
+    providerResponse: (payload.providerResponse as DetailItem["providerResponse"]) ?? {},
+    response: (payload.response as DetailItem["response"]) ?? {},
   };
 }
 
-export async function getRequestDetails(filter = {}) {
+export type GetRequestDetailsFilter = {
+  provider?: string;
+  model?: string;
+  connectionId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type RequestDetailsPagination = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+};
+
+export type GetRequestDetailsResult = {
+  details: DetailItem[];
+  pagination: RequestDetailsPagination;
+};
+
+export async function getRequestDetails(filter: GetRequestDetailsFilter = {}): Promise<GetRequestDetailsResult> {
   if (isCloud) {
     return {
       details: [],
@@ -238,8 +313,8 @@ export async function getRequestDetails(filter = {}) {
   }
   const db = getDatabase();
 
-  const clauses = [];
-  const params = [];
+  const clauses: string[] = [];
+  const params: unknown[] = [];
   if (filter.provider) {
     clauses.push("provider = ?");
     params.push(filter.provider);
@@ -266,7 +341,7 @@ export async function getRequestDetails(filter = {}) {
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-  const countRow = db.prepare(`SELECT COUNT(*) AS c FROM request_details ${where}`).get(...params);
+  const countRow = db.prepare(`SELECT COUNT(*) AS c FROM request_details ${where}`).get(...params) as { c?: number } | undefined;
   const totalItems = countRow?.c || 0;
 
   const page = filter.page || 1;
@@ -279,7 +354,7 @@ export async function getRequestDetails(filter = {}) {
     ORDER BY timestamp DESC
     LIMIT ? OFFSET ?
   `)
-    .all(...params, pageSize, (page - 1) * pageSize);
+    .all(...params, pageSize, (page - 1) * pageSize) as DetailRow[];
 
   return {
     details: rows.map(rowToDetail),
@@ -287,15 +362,15 @@ export async function getRequestDetails(filter = {}) {
   };
 }
 
-export async function getRequestDetailById(id) {
+export async function getRequestDetailById(id: string): Promise<DetailItem | null> {
   if (isCloud) return null;
   const db = getDatabase();
-  const r = db.prepare("SELECT * FROM request_details WHERE id = ?").get(id);
+  const r = db.prepare("SELECT * FROM request_details WHERE id = ?").get(id) as DetailRow | undefined;
   return r ? rowToDetail(r) : null;
 }
 
 // Graceful shutdown — flush pending buffer before exit.
-const _shutdownHandler = async () => {
+const _shutdownHandler = async (): Promise<void> => {
   if (flushTimer) {
     clearTimeout(flushTimer);
     flushTimer = null;
@@ -308,7 +383,7 @@ const _shutdownHandler = async () => {
   }
 };
 
-function ensureShutdownHandler() {
+function ensureShutdownHandler(): void {
   if (isCloud) return;
   const previous = globalThis.__podRequestDetailsShutdownHandler;
   if (previous) {
