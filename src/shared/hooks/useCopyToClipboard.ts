@@ -3,18 +3,22 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
+export type CopyToClipboardResult = {
+  copied: string | null;
+  copy: (text: string, id?: string) => void;
+};
+
 /**
- * Hook for copy to clipboard with feedback
- * @param {number} resetDelay - Time in ms before resetting copied state (default: 2000)
- * @returns {{ copied: string|null, copy: (text: string, id?: string) => void }}
+ * Hook for copy to clipboard with feedback.
+ * @param resetDelay - Time in ms before resetting copied state (default: 2000)
  */
-export function useCopyToClipboard(resetDelay = 2000) {
-  const [copied, setCopied] = useState(null);
-  const timeoutRef = useRef(null);
+export function useCopyToClipboard(resetDelay: number = 2000): CopyToClipboardResult {
+  const [copied, setCopied] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const copy = useCallback(
-    (text, id = "default") => {
-      const write = async () => {
+    (text: string, id: string = "default") => {
+      const write = async (): Promise<void> => {
         if (navigator?.clipboard?.writeText) {
           await navigator.clipboard.writeText(text);
         } else {
@@ -24,9 +28,9 @@ export function useCopyToClipboard(resetDelay = 2000) {
           textarea.style.opacity = "0";
           document.body.appendChild(textarea);
           textarea.select();
-          const copied = document.execCommand("copy");
+          const ok = document.execCommand("copy");
           document.body.removeChild(textarea);
-          if (!copied) {
+          if (!ok) {
             throw new Error("Copy command failed");
           }
         }

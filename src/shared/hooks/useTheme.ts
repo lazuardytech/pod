@@ -4,7 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import useThemeStore from "@/store/themeStore";
 
 // Subscribe to system theme changes
-function subscribeToSystemTheme(callback) {
+function subscribeToSystemTheme(callback: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   mediaQuery.addEventListener("change", callback);
@@ -12,17 +12,22 @@ function subscribeToSystemTheme(callback) {
 }
 
 // Get current system theme preference
-function getSystemThemeSnapshot() {
+function getSystemThemeSnapshot(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 // Server snapshot always returns false
-function getServerSnapshot() {
+function getServerSnapshot(): boolean {
   return false;
 }
 
-export function useTheme() {
+export function useTheme(): {
+  theme: string;
+  setTheme: (theme: string) => void;
+  toggleTheme: () => void;
+  isDark: boolean;
+} {
   const { theme, setTheme, toggleTheme, initTheme } = useThemeStore();
 
   // Use useSyncExternalStore to safely subscribe to system theme
