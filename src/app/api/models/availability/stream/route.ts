@@ -1,7 +1,6 @@
-import { getModelAvailabilityPayload } from "../_availability";
-import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap";
-
 import { sanitizeError } from "@/lib/sanitizeError";
+import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap";
+import { getModelAvailabilityPayload } from "../_availability";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/models/availability/stream";

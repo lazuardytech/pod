@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Button, Card } from "@/shared/components";
-import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 

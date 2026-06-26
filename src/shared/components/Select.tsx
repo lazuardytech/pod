@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
 import { useId } from "react";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 function deriveName(label: any) {
   if (typeof label !== "string" || !label) return "";

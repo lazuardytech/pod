@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card } from "@/shared/components";
-import ProviderIcon from "@/shared/components/ProviderIcon";
-import { useHeaderActionStore } from "@/store/headerActionStore";
-import { AI_PROVIDERS, getProvidersByKind } from "@/shared/constants/providers";
 import LucideIcon from "@/shared/components/LucideIcon";
+import ProviderIcon from "@/shared/components/ProviderIcon";
+import { AI_PROVIDERS, getProvidersByKind } from "@/shared/constants/providers";
+import { useHeaderActionStore } from "@/store/headerActionStore";
 
 function getEffectiveStatus(conn: any) {
   const isCooldown = Object.entries(conn).some(
@@ -116,7 +116,7 @@ function ComboList({ combos }: any) {
               {/* Provider icons preview */}
               <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
                 {combo.models.slice(0, 6).map((entry: any, i: any) => {
-                  const pid = typeof entry === "string" ? entry.split("/")[0] ?? "" : "";
+                  const pid = typeof entry === "string" ? (entry.split("/")[0] ?? "") : "";
                   const p = AI_PROVIDERS[pid];
                   return (
                     <div

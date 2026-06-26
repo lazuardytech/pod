@@ -1,7 +1,6 @@
 "use client";
-import React from "react";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 const variants: Record<string, any> = {
   primary:

@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
 import { useId } from "react";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 /**
  * Slugify a label for use as a form field name when no explicit `name` prop is provided.

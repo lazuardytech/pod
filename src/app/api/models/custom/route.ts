@@ -1,7 +1,7 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { addCustomModel, deleteCustomModel, getCustomModels } from "@/models";
+import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { addCustomModel, deleteCustomModel, getCustomModels } from "@/models";
 
 export const dynamic = "force-dynamic";
 

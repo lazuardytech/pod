@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Badge from "@/shared/components/Badge";
 import Card from "@/shared/components/Card";
+import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import QuotaProgressBar from "./QuotaProgressBar";
 import { calculatePercentage } from "./utils";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const planVariants: Record<string, any> = {
   free: "default",

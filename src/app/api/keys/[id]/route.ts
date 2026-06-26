@@ -1,9 +1,8 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
+import { asString } from "@/app/api/_types";
 import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 // GET /api/keys/[id] - Get single key
 export async function GET(request: any, { params }: { params: any }) {
   try {

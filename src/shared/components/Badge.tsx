@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 

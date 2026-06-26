@@ -2,8 +2,8 @@
 // pricing data in the local SQLite DB. Runs on a configurable interval and
 // survives Next.js HMR via globalThis singleton.
 
-import { info, warn, error as logError } from "@/sse/utils/logger";
 import { getDatabase } from "@/lib/sqlite/connection";
+import { info, error as logError, warn } from "@/sse/utils/logger";
 
 // ─── HMR-safe singleton ───────────────────────────────────────────────────────
 

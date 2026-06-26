@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
+import { asString } from "@/app/api/_types";
 import { getDisabledModels } from "@/lib/disabledModelsDb";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import { getModelAliases, setModelAlias } from "@/models";
 import { AI_MODELS } from "@/shared/constants/config";
 import { getProviderAlias } from "@/shared/constants/providers";
-import { parseJsonBody } from "@/lib/parseJsonBody";
-import { asString } from "@/app/api/_types";
 
 // GET /api/models - Get models with aliases
 export async function GET() {

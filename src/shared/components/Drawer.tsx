@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
 import { useEffect } from "react";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 export default function Drawer({
   isOpen,

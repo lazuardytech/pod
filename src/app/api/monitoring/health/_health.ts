@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
+import { getPromptCache } from "@/lib/cacheLayer";
 import {
   getApiKeys,
   getCombos,
@@ -8,24 +9,29 @@ import {
   getSettings,
   type Settings,
 } from "@/lib/localDb";
-import { getPromptCache } from "@/lib/cacheLayer";
 import { getMemoryStoreStats } from "@/lib/memory/store";
-import { getCacheStats, getInFlightStats } from "@/lib/semanticCache";
-import { DATA_DIR, SQLITE_FILE, getDatabase } from "@/lib/sqlite/connection";
-import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/lib/usageDb";
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync";
-import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler";
-import { APP_CONFIG } from "@/shared/constants/config";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { getCacheStats, getInFlightStats } from "@/lib/semanticCache";
+import { DATA_DIR, getDatabase, SQLITE_FILE } from "@/lib/sqlite/connection";
+import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/lib/usageDb";
+import { APP_CONFIG } from "@/shared/constants/config";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
   isCustomEmbeddingProvider,
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
+import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler";
 
-// biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
-const START_TIME = (globalThis as Record<string, any>).__pod_start_time ?? ((globalThis as Record<string, any>).__pod_start_time = Date.now());
+// HMR-safe singleton: initialize ONCE on first import, survive hot reloads
+function initStartTime(): number {
+  const g = globalThis as Record<string, number | undefined>;
+  if (g.__pod_start_time) return g.__pod_start_time;
+  g.__pod_start_time = Date.now();
+  return g.__pod_start_time;
+}
+const START_TIME = initStartTime();
 
 // Cache integrity_check result — it's an O(n-pages) full scan, too expensive
 // to run on every SSE poll. Re-run at most once every 5 minutes.
@@ -172,7 +178,7 @@ export async function buildHealthPayload() {
 
   // — Provider breakdown by status —
   const now = Date.now();
-    const byStatus: Record<string, number> = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
+  const byStatus: Record<string, number> = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
   const byProvider: Record<string, { total: number; active: number; error: number; rateLimited: number }> = {};
 
   for (const c of conns) {
@@ -378,7 +384,15 @@ export async function buildHealthPayload() {
     }
   }
 
-  const rateLimitByProvider: Record<string, { provider: string; providerName: string; rateLimitedCount: number; connections: { connectionId: string; connectionName: string; rateLimitedUntil: string; retryAfterMs: number }[] }> = {};
+  const rateLimitByProvider: Record<
+    string,
+    {
+      provider: string;
+      providerName: string;
+      rateLimitedCount: number;
+      connections: { connectionId: string; connectionName: string; rateLimitedUntil: string; retryAfterMs: number }[];
+    }
+  > = {};
   for (const c of conns) {
     const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     if (!isRateLimited) continue;

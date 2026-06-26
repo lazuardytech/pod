@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { TRANSIENT_COOLDOWN_MS, DEFAULT_ERROR_MESSAGES } from "../../open-sse/config/errorConfig.js";
+import { DEFAULT_ERROR_MESSAGES, TRANSIENT_COOLDOWN_MS } from "../../open-sse/config/errorConfig.js";
 import {
+  errorResponse,
+  formatProviderError,
   parseUpstreamError,
   unavailableResponse,
-  formatProviderError,
-  errorResponse,
 } from "../../open-sse/utils/error.js";
 
 // ─── parseUpstreamError ───────────────────────────────────────────────

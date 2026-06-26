@@ -7,8 +7,8 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { warn, info } from "@/sse/utils/logger";
-import { migrateFromJson, type MigrationSummary } from "./migrate-from-json.ts";
+import { info, warn } from "@/sse/utils/logger";
+import { type MigrationSummary, migrateFromJson } from "./migrate-from-json.ts";
 import { SCHEMA_SQL } from "./schema.ts";
 
 const require = createRequire(import.meta.url);

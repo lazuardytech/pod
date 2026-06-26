@@ -1,16 +1,15 @@
 "use client";
-import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import PropTypes from "prop-types";
 import { useMemo } from "react";
 import HeaderMenu from "@/shared/components/HeaderMenu";
+import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { APIKEY_PROVIDERS, OAUTH_PROVIDERS } from "@/shared/constants/config";
 import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { useHeaderActionStore } from "@/store/headerActionStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const getPageInfo = (pathname: any) => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };

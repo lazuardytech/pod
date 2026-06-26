@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 export default function ShadcnSelect({
   value,

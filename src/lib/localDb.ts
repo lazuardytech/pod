@@ -5,7 +5,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { Low } from "lowdb";
 import { v4 as uuidv4 } from "uuid";
-import { getDatabase, tx, type SqliteDatabase } from "./sqlite/connection.ts";
+import { getDatabase, type SqliteDatabase, tx } from "./sqlite/connection.ts";
 
 // ===== Types =============================================================
 

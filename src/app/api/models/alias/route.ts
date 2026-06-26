@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { deleteModelAlias, getModelAliases, setModelAlias } from "@/models";
-import { parseJsonBody } from "@/lib/parseJsonBody";
 import { asString } from "@/app/api/_types";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { deleteModelAlias, getModelAliases, setModelAlias } from "@/models";
 
 export const dynamic = "force-dynamic";
 

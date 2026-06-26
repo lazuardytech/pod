@@ -1,11 +1,10 @@
 "use client";
-import React from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import Badge from "./Badge";
 import Card from "./Card";
 import Select from "./Select";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const NONE_PROXY_POOL_VALUE = "__none__";
 

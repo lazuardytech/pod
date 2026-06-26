@@ -1,4 +1,3 @@
-import { checkRateLimitByKey } from "@/lib/rateLimit";
 import {
   getCombos,
   getCustomModels,
@@ -7,6 +6,8 @@ import {
   getSettings,
   validateApiKey,
 } from "@/lib/localDb";
+import { checkRateLimitByKey } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { PROVIDER_ID_TO_ALIAS, PROVIDER_MODELS } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,
@@ -15,7 +16,6 @@ import {
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
 import { extractApiKey } from "@/sse/services/auth";
-import { sanitizeError } from "@/lib/sanitizeError";
 
 const parseOpenAIStyleModels = (data: any) => {
   if (Array.isArray(data)) return data;
@@ -235,7 +235,9 @@ export async function buildModelsList(kindFilter: any) {
       const staticModelKindById = new Map(providerModels.map((m: any) => [m.id, modelKind(m)]));
 
       let rawModelIds = hasExplicitEnabledModels
-        ? Array.from(new Set(enabledModels.filter((modelId: any) => typeof modelId === "string" && modelId.trim() !== "")))
+        ? Array.from(
+            new Set(enabledModels.filter((modelId: any) => typeof modelId === "string" && modelId.trim() !== "")),
+          )
         : providerModels.map((model: any) => model.id);
 
       if (isCompatibleProvider && rawModelIds.length === 0 && !UPSTREAM_CONNECTION_RE.test(providerId)) {

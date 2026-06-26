@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/providerModels.js";
 import { getApiKeys, getProviderConnectionById } from "@/lib/localDb";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 
-import { sanitizeError } from "@/lib/sanitizeError";
 /**
  * Get an active API key to pass through auth when requireApiKey is enabled.
  */

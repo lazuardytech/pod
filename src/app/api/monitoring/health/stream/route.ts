@@ -1,8 +1,7 @@
+import { sanitizeError } from "@/lib/sanitizeError";
+import { releaseSSESlot, tryAcquireSSESlot } from "../../_sseConnectionCap";
 import { checkMonitoringAuth } from "../_auth";
 import { buildHealthPayload } from "../_health";
-import { releaseSSESlot, tryAcquireSSESlot } from "../../_sseConnectionCap";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/monitoring/health/stream";

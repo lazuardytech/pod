@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { sanitizeError } from "@/lib/sanitizeError";
 import { getSettings } from "@/lib/localDb";
+import { sanitizeError } from "@/lib/sanitizeError";
 import {
   clearCache,
   getCacheStats,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 /**
@@ -26,7 +27,10 @@ export async function GET(request: any) {
     const data = await res.json();
     const voices = data.voices || [];
 
-    const byLang: Record<string, { code: string; name: string; voices: { id: string; name: string; gender: string; lang: string }[] }> = {};
+    const byLang: Record<
+      string,
+      { code: string; name: string; voices: { id: string; name: string; gender: string; lang: string }[] }
+    > = {};
     for (const v of voices) {
       // Each voice has `languages: ["en", "es", ...]`
       const langs = Array.isArray(v.languages) && v.languages.length ? v.languages : ["en"];

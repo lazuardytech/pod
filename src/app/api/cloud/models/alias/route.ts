@@ -1,7 +1,7 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { getModelAliases, setModelAlias, validateApiKey } from "@/models";
+import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { getModelAliases, setModelAlias, validateApiKey } from "@/models";
 
 // PUT /api/cloud/models/alias - Set model alias (for cloud/CLI)
 export async function PUT(request: any) {

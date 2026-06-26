@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";

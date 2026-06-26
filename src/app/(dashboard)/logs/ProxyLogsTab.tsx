@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { cn } from "@/shared/utils/cn";
+import { useCallback, useEffect, useRef, useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 function TypeBadge({ type }: any) {
   const styles: Record<string, any> = {

@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import PropTypes from "prop-types";
 
 export default function AuthLayout({ children }: { children?: any; [key: string]: any }) {

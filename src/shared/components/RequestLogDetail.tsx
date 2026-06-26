@@ -1,10 +1,9 @@
 "use client";
-import React from "react";
 import { useEffect } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 import Badge from "./Badge";
 import { DetailRow, DetailSection, JsonBlock, LogDrawer, LogDrawerBody, LogDrawerHeader } from "./LogDrawer";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 function PayloadSection({ title, icon, data }: { title?: any; icon?: any; data?: any; [key: string]: any }) {
   if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;

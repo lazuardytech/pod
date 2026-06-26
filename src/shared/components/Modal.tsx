@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
 import { useEffect } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 import Button from "./Button";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function Modal({
   isOpen,

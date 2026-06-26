@@ -9,7 +9,6 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses Device Code Flow with PKCE
  */
 export class QwenService {
-  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
   public config: any;
 
   constructor() {

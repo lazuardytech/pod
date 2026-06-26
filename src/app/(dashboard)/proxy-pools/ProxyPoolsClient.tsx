@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle } from "@/shared/components";
-import { ConfirmModal } from "@/shared/components/Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { ConfirmModal } from "@/shared/components/Modal";
 
 function getStatusVariant(status: any) {
   if (status === "active") return "success";

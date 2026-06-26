@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProviderConnections } from "@/models";
 import {
@@ -9,7 +10,6 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { testSingleConnection } from "../[id]/test/testUtils";
-import { parseJsonBody } from "@/lib/parseJsonBody";
 
 function getAuthGroup(providerId: any, connection = null as any) {
   // Prioritize authType from connection if available

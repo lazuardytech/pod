@@ -10,7 +10,6 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses Authorization Code flow with Basic Auth
  */
 export class QoderService {
-  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
   public config: any;
 
   constructor() {

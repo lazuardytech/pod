@@ -5,10 +5,10 @@
 
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
-import { DATA_DIR } from "@/lib/dataDir";
-import { error as logError, info as logInfo } from "@/sse/utils/logger";
 import { LRUCache } from "@/lib/cacheLayer";
+import { DATA_DIR } from "@/lib/dataDir";
 import { closeDatabase, getDatabase } from "@/lib/sqlite/connection";
+import { error as logError, info as logInfo } from "@/sse/utils/logger";
 
 const isCloud = typeof caches !== "undefined" || typeof caches === "object";
 
@@ -816,7 +816,7 @@ const PERIOD_MS: Record<string, number> = {
 };
 
 type StatsBucket = { requests: number; promptTokens: number; completionTokens: number; cost: number };
-type LastUsedBucket = StatsBucket & { lastUsed?: string };
+// type LastUsedBucket = StatsBucket & { lastUsed?: string };
 type ModelStatsBucket = StatsBucket & { rawModel: string; provider: string; lastUsed: string };
 type AccountStatsBucket = StatsBucket & {
   rawModel: string;

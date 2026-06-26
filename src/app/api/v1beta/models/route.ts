@@ -1,9 +1,8 @@
-import { checkRateLimitByKey } from "@/lib/rateLimit";
 import { getSettings, validateApiKey } from "@/lib/localDb";
+import { checkRateLimitByKey } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { PROVIDER_MODELS } from "@/shared/constants/models";
 import { extractApiKey } from "@/sse/services/auth";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 /**
  * Handle CORS preflight
  */

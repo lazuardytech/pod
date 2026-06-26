@@ -1,9 +1,9 @@
-import { checkRateLimitByKey } from "@/lib/rateLimit";
 import { getSettings, validateApiKey } from "@/lib/localDb";
+import { checkRateLimitByKey } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { extractApiKey } from "@/sse/services/auth";
 import { buildModelsList } from "../route";
 
-import { sanitizeError } from "@/lib/sanitizeError";
 // URL slug → service kind(s). `web` covers both webSearch and webFetch.
 const KIND_SLUG_MAP = {
   image: ["image"],

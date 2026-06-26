@@ -9,14 +9,14 @@
  * - injectMemory immutability
  */
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { extractFacts, extractFactsFromText } from "../../src/lib/memory/extraction.js";
 import {
-  shouldInjectMemory,
-  injectMemory,
   formatMemoryContext,
+  injectMemory,
   providerSupportsSystemMessage,
+  shouldInjectMemory,
 } from "../../src/lib/memory/injection.js";
-import { extractFactsFromText, extractFacts } from "../../src/lib/memory/extraction.js";
 import { normalizeMemorySettings } from "../../src/lib/memory/settings.js";
 
 // ---------------------------------------------------------------------------

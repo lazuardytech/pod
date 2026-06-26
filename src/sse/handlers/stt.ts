@@ -3,13 +3,7 @@ import { handleSttCore } from "open-sse/handlers/sttCore.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
-import {
-  clearAccountError,
-  extractApiKey,
-  getProviderCredentials,
-  isValidApiKey,
-  markAccountUnavailable,
-} from "../services/auth";
+import { extractApiKey, getProviderCredentials, isValidApiKey, markAccountUnavailable } from "../services/auth";
 import { getModelInfo } from "../services/model";
 import * as log from "../utils/logger";
 

@@ -1,7 +1,6 @@
 "use client";
-import React from "react";
-import Card from "./Card";
 import LucideIcon from "@/shared/components/LucideIcon";
+import Card from "./Card";
 
 // Only show fields user actually cares about
 const FIELD_SCHEMA = {

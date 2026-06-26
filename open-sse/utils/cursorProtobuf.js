@@ -3,8 +3,8 @@
  * Implements ConnectRPC protobuf wire format for Cursor API
  */
 
-import { v4 as uuidv4 } from "uuid";
 import zlib from "node:zlib";
+import { v4 as uuidv4 } from "uuid";
 
 const DEBUG = process.env.CURSOR_PROTOBUF_DEBUG === "1";
 const log = (tag, ...args) => DEBUG && console.log(`[PROTOBUF:${tag}]`, ...args);

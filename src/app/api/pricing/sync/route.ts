@@ -1,9 +1,8 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { getSyncStatus, syncModelsDev, startPeriodicSync, stopPeriodicSync } from "@/lib/modelsDevSync";
-
-import { sanitizeError } from "@/lib/sanitizeError";
+import { asString } from "@/app/api/_types";
+import { getSyncStatus, startPeriodicSync, stopPeriodicSync, syncModelsDev } from "@/lib/modelsDevSync";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 // GET — return current sync status
 export async function GET() {
   try {

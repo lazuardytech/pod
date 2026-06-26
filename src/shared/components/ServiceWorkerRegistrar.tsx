@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import { useEffect } from "react";
 import { APP_CONFIG } from "@/shared/constants/config";
 

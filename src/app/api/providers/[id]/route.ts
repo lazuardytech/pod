@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
+import { asApiRecord } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 import {
   deleteProviderConnection,
   getProviderConnectionById,
   getProxyPoolById,
   updateProviderConnection,
 } from "@/models";
-import { asApiRecord } from "@/app/api/_types";
-import { sanitizeError } from "@/lib/sanitizeError";
 
 function normalizeProxyConfig(body: Record<string, unknown> = {}) {
   const hasAnyProxyField =

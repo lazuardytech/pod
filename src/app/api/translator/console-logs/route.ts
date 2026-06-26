@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { clearConsoleLogs, getConsoleLogs, initConsoleLogCapture } from "@/lib/consoleLogBuffer";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+
 initConsoleLogCapture();
 
 export async function GET() {

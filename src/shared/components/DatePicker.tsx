@@ -1,11 +1,10 @@
 "use client";
-import React from "react";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 /**
  * DatePicker — shadcn-style date picker using react-day-picker.

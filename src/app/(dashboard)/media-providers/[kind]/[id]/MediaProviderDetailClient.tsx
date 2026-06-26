@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 import ConnectionsCard from "@/app/(dashboard)/providers/components/ConnectionsCard";
 import ModelsCard from "@/app/(dashboard)/providers/components/ModelsCard";
 import { AddCustomEmbeddingModal, Badge, Button, Card, NoAuthProxyCard, ProviderInfoCard } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
-import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,

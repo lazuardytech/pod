@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { CursorService } from "@/lib/oauth/services/cursor";
-import { createProviderConnection } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 import { sanitizeError } from "@/lib/sanitizeError";
-import { parseJsonBody } from "@/lib/parseJsonBody";
+import { createProviderConnection } from "@/models";
 /**
  * POST /api/oauth/cursor/import
  * Import and validate access token from Cursor IDE's local SQLite database

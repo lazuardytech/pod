@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
 import { useRef } from "react";
 import { Drawer } from "vaul";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 export function LogDrawer({
   open,

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { getProviderNodeById, getProviderNodes, renameProviderNode } from "@/models";
 import {
   AI_PROVIDERS,
@@ -10,8 +12,6 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { invalidateConnectionsCache } from "@/sse/services/auth";
-import { sanitizeError } from "@/lib/sanitizeError";
-import { parseJsonBody } from "@/lib/parseJsonBody";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +89,8 @@ export async function PATCH(request: any, { params }: { params: any }) {
 
     return NextResponse.json({ node: updated });
   } catch (error) {
-    const message = typeof (error as any)?.message === "string" ? sanitizeError(error) : "Failed to rename provider node";
+    const message =
+      typeof (error as any)?.message === "string" ? sanitizeError(error) : "Failed to rename provider node";
     console.log("Error renaming provider node:", message);
     const status = /not found/i.test(message)
       ? 404

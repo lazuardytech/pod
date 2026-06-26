@@ -11,8 +11,8 @@
 
 import crypto from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseVertexSaJson, refreshVertexToken } from "../../open-sse/services/tokenRefresh.js";
 import { VertexExecutor } from "../../open-sse/executors/vertex.js";
+import { parseVertexSaJson, refreshVertexToken } from "../../open-sse/services/tokenRefresh.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

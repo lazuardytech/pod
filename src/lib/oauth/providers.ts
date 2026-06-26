@@ -16,13 +16,13 @@ import {
   GEMINI_CONFIG,
   GITHUB_CONFIG,
   GITLAB_CONFIG,
+  getOAuthClientMetadata,
   IFLOW_CONFIG,
   KILOCODE_CONFIG,
   KIMI_CODING_CONFIG,
   KIRO_CONFIG,
   QODER_CONFIG,
   QWEN_CONFIG,
-  getOAuthClientMetadata,
 } from "./constants/oauth";
 import { generatePKCE } from "./utils/pkce";
 
@@ -393,7 +393,6 @@ const PROVIDERS: Record<string, ProviderHandler> = {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
             metadata: getOAuthClientMetadata(),
             mode: 1,
           }),

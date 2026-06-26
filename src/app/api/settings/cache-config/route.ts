@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
+
 const DEFAULTS = {
   semanticCacheEnabled: false,
   semanticCacheMaxSize: 100,
@@ -20,7 +20,8 @@ export async function GET() {
   try {
     const settings = await getSettings();
     const config: Record<string, unknown> = {};
-    for (const key of ALLOWED_KEYS) config[key] = settings[key as keyof typeof DEFAULTS] ?? DEFAULTS[key as keyof typeof DEFAULTS];
+    for (const key of ALLOWED_KEYS)
+      config[key] = settings[key as keyof typeof DEFAULTS] ?? DEFAULTS[key as keyof typeof DEFAULTS];
     return NextResponse.json(config);
   } catch (error) {
     return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });

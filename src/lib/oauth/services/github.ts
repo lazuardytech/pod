@@ -150,7 +150,6 @@ export class GitHubService extends OAuthService {
    * Complete GitHub Copilot authentication flow
    * GitHub uses Device Code flow; deliberately shadows OAuthService PKCE authenticate.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: device-flow authenticate shadows PKCE parent — intentional.
   // @ts-expect-error — device flow has no PKCE params, shadows parent authenticate.
   async authenticate(): Promise<{
     accessToken: string;

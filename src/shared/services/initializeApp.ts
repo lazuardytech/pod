@@ -2,8 +2,6 @@ import os from "node:os";
 import { cleanupProviderConnections, getSettings } from "@/lib/localDb";
 import { initRateLimit } from "@/lib/rateLimit";
 import { validateStartupSecrets } from "@/lib/security/runtimeSecrets.mts";
-import { error as logError, info as logInfo } from "@/sse/utils/logger";
-
 import { ensureCloudflared, isCloudflaredRunning } from "@/lib/tunnel/cloudflared";
 import { checkInternet, probeUrlAlive } from "@/lib/tunnel/networkProbe";
 import { loadState } from "@/lib/tunnel/state";
@@ -15,6 +13,7 @@ import {
   WATCHDOG_INTERVAL_MS,
 } from "@/lib/tunnel/tunnelConfig";
 import { enableTailscale, enableTunnel, getTailscaleService, getTunnelService } from "@/lib/tunnel/tunnelManager";
+import { error as logError, info as logInfo } from "@/sse/utils/logger";
 
 process.setMaxListeners(20);
 
@@ -33,7 +32,9 @@ export async function initializeApp(): Promise<void> {
     validateStartupSecrets();
 
     // Init rate limit backend (Redis if REDIS_URL set, else in-memory)
-    await initRateLimit().catch((err) => logError("InitApp", "Rate limit init failed", { error: (err as any)?.message || err }));
+    await initRateLimit().catch((err) =>
+      logError("InitApp", "Rate limit init failed", { error: (err as any)?.message || err }),
+    );
 
     await cleanupProviderConnections();
     const settings = await getSettings();

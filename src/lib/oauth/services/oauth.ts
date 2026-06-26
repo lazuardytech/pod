@@ -11,7 +11,6 @@ import { spinner as createSpinner } from "../utils/ui";
 // authorizeUrl, tokenUrl, clientId, codeChallengeMethod). Until we centralize
 // the config union (ClaudeConfig | CodexConfig | …) we accept it loosely.
 export class OAuthService {
-  // biome-ignore lint/suspicious/noExplicitAny: OAuth base class accepts the per-provider config union — typed per-subclass.
   constructor(public config: any) {}
 
   /**

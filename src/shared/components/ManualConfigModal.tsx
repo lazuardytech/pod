@@ -1,10 +1,9 @@
 "use client";
-import React from "react";
 import { useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import Modal from "./Modal";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function ManualConfigModal({
   isOpen,

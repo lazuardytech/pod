@@ -1,9 +1,9 @@
 "use client";
 
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -12,8 +12,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button, Card, CardSkeleton, Input, Modal, ModelSelectModal, Toggle } from "@/shared/components";
-import { ConfirmModal } from "@/shared/components/Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _

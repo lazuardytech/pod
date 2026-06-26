@@ -1,7 +1,6 @@
 "use client";
-import React from "react";
-import { cn } from "@/shared/utils/cn";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { cn } from "@/shared/utils/cn";
 
 export function Spinner({ size = "md", className, ...rest }: { size?: string; className?: any; [key: string]: any }) {
   const sizes: Record<string, string> = {

@@ -1,9 +1,9 @@
 "use client";
 
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -29,8 +29,8 @@ import {
   ShadcnSelect,
   Toggle,
 } from "@/shared/components";
-import { ConfirmModal } from "@/shared/components/Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { ConfirmModal } from "@/shared/components/Modal";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,

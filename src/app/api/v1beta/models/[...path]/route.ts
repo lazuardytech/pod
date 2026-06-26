@@ -1,10 +1,10 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { getSettings, validateApiKey } from "@/lib/localDb";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { handleChat } from "@/sse/handlers/chat";
 import { extractApiKey } from "@/sse/services/auth";
 
-import { sanitizeError } from "@/lib/sanitizeError";
-import { parseJsonBody } from "@/lib/parseJsonBody";
 let initialized = false;
 
 /**

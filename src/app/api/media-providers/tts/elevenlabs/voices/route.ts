@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { fetchElevenLabsVoices } from "open-sse/handlers/ttsCore.js";
-import { getProviderConnections } from "@/lib/localDb";
 import { asString } from "@/app/api/_types";
+import { getProviderConnections } from "@/lib/localDb";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 /**
@@ -26,7 +27,14 @@ export async function GET(request: any) {
     const voices = await fetchElevenLabsVoices(asString(apiKey));
 
     // Group by all supported languages (verified_languages + labels.language)
-    const byLang: Record<string, { code: string; name: string; voices: { id: string; name: string; gender: string; lang: string; free_users_allowed?: boolean }[] }> = {};
+    const byLang: Record<
+      string,
+      {
+        code: string;
+        name: string;
+        voices: { id: string; name: string; gender: string; lang: string; free_users_allowed?: boolean }[];
+      }
+    > = {};
     const addToLang = (code: any, voice: any) => {
       if (!byLang[code]) {
         byLang[code] = {

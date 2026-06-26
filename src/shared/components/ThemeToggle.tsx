@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { cn } from "@/shared/utils/cn";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function ThemeToggle({
   className,

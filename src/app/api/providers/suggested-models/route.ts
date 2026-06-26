@@ -1,5 +1,5 @@
-import { fetchUrlError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
+import { fetchUrlError } from "@/app/api/_types";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,8 @@ const FILTERS = {
       .map((m: any) => ({ id: m.id, name: (m as any).name, contextLength: m.context_length }))
       .sort((a: any, b: any) => b.contextLength - a.contextLength),
 
-  "opencode-free": (models: any) => models.filter((m: any) => m.id?.endsWith("-free")).map((m: any) => ({ id: m.id, name: m.id })),
+  "opencode-free": (models: any) =>
+    models.filter((m: any) => m.id?.endsWith("-free")).map((m: any) => ({ id: m.id, name: m.id })),
 };
 
 export async function GET(request: any) {

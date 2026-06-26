@@ -17,8 +17,8 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { PROVIDERS } from "../../open-sse/config/providers.js";
 import { PROVIDER_MODELS } from "../../open-sse/config/providerModels.js";
+import { PROVIDERS } from "../../open-sse/config/providers.js";
 import { getExecutor } from "../../open-sse/executors/index.js";
 import { getEmbeddingAdapter } from "../../open-sse/handlers/embeddingProviders/index.js";
 

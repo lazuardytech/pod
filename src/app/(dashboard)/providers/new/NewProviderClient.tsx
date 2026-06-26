@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType, type ReactNode } from "react";
+import { type ComponentType, type ReactNode, useState } from "react";
 import { Button, Card, Input, Select, Toggle } from "@/shared/components";
-import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
 
 const providerOptions = Object.values(AI_PROVIDERS).map((p: any) => ({
   value: p.id,

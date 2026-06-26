@@ -8,6 +8,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { error as logError } from "@/sse/utils/logger";
+
 // Removed initDbHooks call
 
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;

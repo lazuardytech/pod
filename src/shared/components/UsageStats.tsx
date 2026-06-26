@@ -1,10 +1,9 @@
 "use client";
-import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AI_PROVIDERS, FREE_PROVIDERS } from "@/shared/constants/providers";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { AI_PROVIDERS, FREE_PROVIDERS } from "@/shared/constants/providers";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 
 // Keep providers without serviceKinds (default LLM) or with "llm" in serviceKinds

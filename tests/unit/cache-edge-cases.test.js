@@ -8,21 +8,21 @@
  * - clearInFlight always called (even when isCacheableForWrite=false or empty content)
  */
 
-import { describe, expect, it, afterEach } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
+  clearCache,
+  clearInFlight,
   generateSignature,
   getCachedResponse,
-  setCachedResponse,
-  clearCache,
-  invalidateStale,
+  getCacheStats,
+  getInFlight,
   invalidateByModel,
   invalidateBySignature,
-  getInFlight,
-  setInFlight,
-  clearInFlight,
+  invalidateStale,
   isCacheableForRead,
   isCacheableForWrite,
-  getCacheStats,
+  setCachedResponse,
+  setInFlight,
 } from "../../src/lib/semanticCache.js";
 
 afterEach(() => {

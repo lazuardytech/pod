@@ -1,5 +1,5 @@
+import { registerShutdownHook, setupSignalHandlers } from "./lib/shutdown";
 import initializeApp from "./shared/services/initializeApp";
-import { setupSignalHandlers, registerShutdownHook } from "./lib/shutdown";
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("[FATAL] Unhandled Rejection at:", promise, "reason:", reason);

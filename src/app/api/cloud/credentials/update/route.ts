@@ -1,8 +1,8 @@
-import { asRecord, asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { getProviderConnections, updateProviderConnection } from "@/models";
+import { asRecord, asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
+import { getProviderConnections, updateProviderConnection } from "@/models";
 
 // Update provider credentials (for cloud token refresh)
 export async function PUT(request: any) {

@@ -1,6 +1,6 @@
-import { proxyTestError } from "@/app/api/_types";
 import { getDefaultModel } from "open-sse/config/providerModels.js";
 import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
+import { proxyTestError } from "@/app/api/_types";
 import { getProviderConnectionById, updateProviderConnection } from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { testProxyUrl } from "@/lib/network/proxyTest";
@@ -14,10 +14,10 @@ import {
   KIRO_CONFIG,
   QWEN_CONFIG,
 } from "@/lib/oauth/constants/oauth";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 import { buildClineHeaders } from "@/shared/utils/clineAuth.mts";
-import { sanitizeError } from "@/lib/sanitizeError";
 
 // OAuth provider test endpoints
 const OAUTH_TEST_CONFIG = {
@@ -312,7 +312,10 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
     const testUrl = (config as any).buildUrl ? (config as any).buildUrl(accessToken) : (config as any).url;
     const headers = (config as any).noAuth
       ? { ...(config as any).extraHeaders }
-      : { [(config as any).authHeader]: `${(config as any).authPrefix}${accessToken}`, ...(config as any).extraHeaders };
+      : {
+          [(config as any).authHeader]: `${(config as any).authPrefix}${accessToken}`,
+          ...(config as any).extraHeaders,
+        };
     const fetchOpts: { method: string; headers: Record<string, string>; body?: string } = {
       method: (config as any).method,
       headers,
@@ -329,14 +332,18 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
         const retryUrl = (config as any).buildUrl ? (config as any).buildUrl(tokens.accessToken) : testUrl;
         const retryHeaders = (config as any).noAuth
           ? { ...(config as any).extraHeaders }
-          : { [(config as any).authHeader]: `${(config as any).authPrefix}${tokens.accessToken}`, ...(config as any).extraHeaders };
+          : {
+              [(config as any).authHeader]: `${(config as any).authPrefix}${tokens.accessToken}`,
+              ...(config as any).extraHeaders,
+            };
         const retryOpts: { method: string; headers: Record<string, string>; body?: string } = {
           method: (config as any).method,
           headers: retryHeaders,
         };
         if ((config as any).body) retryOpts.body = (config as any).body;
         const retryRes = await fetchWithConnectionProxy(retryUrl, retryOpts, effectiveProxy);
-        const retryAccepted = retryRes.ok || ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(retryRes.status));
+        const retryAccepted =
+          retryRes.ok || ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(retryRes.status));
         if (retryAccepted) return { valid: true, error: null, refreshed: true, newTokens: tokens };
       }
       return { valid: false, error: "Token invalid or revoked", refreshed: false };

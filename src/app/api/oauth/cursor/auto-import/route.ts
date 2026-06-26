@@ -1,13 +1,13 @@
 import { execFile } from "node:child_process";
 import { access, constants } from "node:fs/promises";
-import { NextResponse } from "next/server";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-
-import { sanitizeError } from "@/lib/sanitizeError";
+import { NextResponse } from "next/server";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { error as logError } from "@/sse/utils/logger";
+
 const execFileAsync = promisify(execFile);
 
 const ACCESS_TOKEN_KEYS = ["cursorAuth/accessToken", "cursorAuth/token"];

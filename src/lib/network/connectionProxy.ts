@@ -1,5 +1,5 @@
-import { error as logError } from "@/sse/utils/logger";
 import { getProxyPoolById } from "@/models";
+import { error as logError } from "@/sse/utils/logger";
 
 // Safely normalize any value into a trimmed string.
 function normalizeString(value: unknown): string {

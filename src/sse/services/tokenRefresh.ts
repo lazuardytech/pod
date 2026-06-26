@@ -1,3 +1,4 @@
+import { getProjectIdForConnection, invalidateProjectId, removeConnection } from "open-sse/services/projectId.js";
 import {
   formatProviderCredentials as _formatProviderCredentials,
   getAccessToken as _getAccessToken,
@@ -15,7 +16,6 @@ import {
   refreshTokenByProvider as _refreshTokenByProvider,
   TOKEN_EXPIRY_BUFFER_MS as BUFFER_MS,
 } from "open-sse/services/tokenRefresh.js";
-import { getProjectIdForConnection, invalidateProjectId, removeConnection } from "open-sse/services/projectId.js";
 import { updateProviderConnection } from "@/lib/localDb";
 import * as log from "../utils/logger";
 

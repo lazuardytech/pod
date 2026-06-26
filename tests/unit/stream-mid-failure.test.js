@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createStreamController, createDisconnectAwareStream } from "../../open-sse/utils/streamHandler.js";
+import { createDisconnectAwareStream, createStreamController } from "../../open-sse/utils/streamHandler.js";
 
 // ─── createStreamController ───────────────────────────────────────────
 

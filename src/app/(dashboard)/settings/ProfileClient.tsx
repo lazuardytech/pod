@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button, Input, Toggle } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 import { cn } from "@/shared/utils/cn";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const OFFLINE_SETTINGS_CACHE_KEY = "settings:profile";
 const OFFLINE_LEGACY_INFO_CACHE_KEY = "settings:legacy-info";

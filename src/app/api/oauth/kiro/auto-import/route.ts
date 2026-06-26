@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
-import { NextResponse } from "next/server";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { NextResponse } from "next/server";
 
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 import { sanitizeError } from "@/lib/sanitizeError";

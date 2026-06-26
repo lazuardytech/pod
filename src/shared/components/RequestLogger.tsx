@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 import RequestLogDetail from "./RequestLogDetail";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 

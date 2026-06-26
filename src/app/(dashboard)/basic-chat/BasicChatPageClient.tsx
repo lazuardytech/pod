@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const STORAGE_KEYS: any = {
   sessions: "basic-chat.sessions",

@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, CardSkeleton } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { ANTHROPIC_COMPATIBLE_PREFIX } from "@/shared/constants/providers";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import TelemetryCard from "./TelemetryCard";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const OFFLINE_HEALTH_CACHE_KEY: any = "health:snapshot";
 const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;

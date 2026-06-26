@@ -1,7 +1,7 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
+import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
 
 function sanitizeProxyPool(pool: any) {
   if (!pool) return pool;

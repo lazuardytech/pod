@@ -3,10 +3,10 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Modal } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import { getProviderAlias } from "@/shared/constants/providers";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 // ── ModelRow ───────────────────────────────────────────────────
 export function ModelRow({

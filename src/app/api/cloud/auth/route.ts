@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getModelAliases, getProviderConnections } from "@/models";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
+import { getModelAliases, getProviderConnections } from "@/models";
 
 // Verify API key and return provider credentials
 export async function POST(request: any) {

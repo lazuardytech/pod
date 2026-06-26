@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { enableTunnel } from "@/lib/tunnel/tunnelManager";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
-
 import { sanitizeError } from "@/lib/sanitizeError";
+import { enableTunnel } from "@/lib/tunnel/tunnelManager";
 export async function POST(request: any) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);

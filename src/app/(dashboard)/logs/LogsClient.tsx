@@ -2,13 +2,13 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import RequestLogger from "@/shared/components/RequestLogger";
 import SegmentedControl from "@/shared/components/SegmentedControl";
 import ShadcnSelect from "@/shared/components/ShadcnSelect";
 import { cn } from "@/shared/utils/cn";
 import ConsoleLogClient from "./ConsoleLogClient";
 import ProxyLogsTab from "./ProxyLogsTab";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const TABS = [
   { key: "request-logs", label: "Request Logs", icon: "receipt_long" },

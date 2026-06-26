@@ -3,8 +3,8 @@
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { Badge, Toggle } from "@/shared/components";
-import CooldownTimer from "./CooldownTimer";
 import LucideIcon from "@/shared/components/LucideIcon";
+import CooldownTimer from "./CooldownTimer";
 
 export default function ConnectionRow({
   connection,

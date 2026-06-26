@@ -1,10 +1,10 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
+import { asString } from "@/app/api/_types";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { normalizeMemorySettings, toMemorySettingsUpdates } from "@/lib/memory/settings";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
+
 function toBooleanOrNull(value: any) {
   if (typeof value === "boolean") return value;
   return null;

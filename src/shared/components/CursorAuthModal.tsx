@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/shared/components";

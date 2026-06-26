@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
-import { createProviderConnection } from "@/models";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 import { sanitizeError } from "@/lib/sanitizeError";
-import { parseJsonBody } from "@/lib/parseJsonBody";
+import { createProviderConnection } from "@/models";
 /**
  * POST /api/oauth/kiro/import
  * Import and validate refresh token from Kiro IDE

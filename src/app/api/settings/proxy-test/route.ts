@@ -1,8 +1,8 @@
-import { proxyTestError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
+import { proxyTestError } from "@/app/api/_types";
 import { testProxyUrl } from "@/lib/network/proxyTest";
-import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 export async function POST(request: any) {
   try {

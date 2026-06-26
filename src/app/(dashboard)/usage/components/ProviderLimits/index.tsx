@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditConnectionModal } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import Toggle from "@/shared/components/Toggle";
 import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
 import { cn } from "@/shared/utils/cn";
 import { calculatePercentage, formatResetTime, getStatusColor, parseQuotaData } from "./utils";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 // Connection is eligible for the quota page when it uses OAuth or is an apikey provider whitelisted for quota
 const isUsageEligible: any = (conn: any) =>

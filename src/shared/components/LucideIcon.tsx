@@ -1,5 +1,3 @@
-import React from "react";
-import PropTypes from "prop-types";
 import {
   Activity,
   ArrowDown,
@@ -104,6 +102,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import PropTypes from "prop-types";
 
 const ICON_MAP: Record<string, any> = {
   account_circle: Users,

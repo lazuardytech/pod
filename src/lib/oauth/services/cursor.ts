@@ -15,7 +15,6 @@ import { CURSOR_CONFIG } from "../constants/oauth";
  */
 
 export class CursorService {
-  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
   public config: any;
 
   constructor() {

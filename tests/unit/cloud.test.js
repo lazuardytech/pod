@@ -61,13 +61,13 @@ vi.mock("../../cloud/src/services/landingPage.js", () => ({
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
-import { handleTestClaude } from "../../cloud/src/handlers/testClaude.js";
-import { parseApiKey, extractBearerToken } from "../../cloud/src/utils/apiKey.js";
-import { getMachineData, saveMachineData, deleteMachineData } from "../../cloud/src/services/storage.js";
-import { handleSync } from "../../cloud/src/handlers/sync.js";
 import { handleCleanup } from "../../cloud/src/handlers/cleanup.js";
+import { handleSync } from "../../cloud/src/handlers/sync.js";
+import { handleTestClaude } from "../../cloud/src/handlers/testClaude.js";
 import { handleVerify } from "../../cloud/src/handlers/verify.js";
 import worker from "../../cloud/src/index.js";
+import { deleteMachineData, getMachineData, saveMachineData } from "../../cloud/src/services/storage.js";
+import { extractBearerToken, parseApiKey } from "../../cloud/src/utils/apiKey.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

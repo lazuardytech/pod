@@ -1,5 +1,5 @@
-import { proxyTestError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
+import { proxyTestError } from "@/app/api/_types";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProxyPoolById, updateProxyPool } from "@/models";

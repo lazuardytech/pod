@@ -2,10 +2,10 @@ import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import {
   buildConnectionLockUpdate,
   buildModelLockUpdate,
-  checkFallbackError,
   CONN_LOCK_COUNT_KEY,
   CONN_LOCK_REASON_KEY,
   CONN_LOCK_UNTIL_KEY,
+  checkFallbackError,
   formatRetryAfter,
   getConnectionLockUntil,
   getEarliestModelLockUntil,
@@ -19,9 +19,9 @@ import {
 import {
   getProviderConnections,
   getSettings,
+  type Settings,
   updateProviderConnection,
   validateApiKey,
-  type Settings,
 } from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { FREE_PROVIDERS, resolveProviderId } from "@/shared/constants/providers";

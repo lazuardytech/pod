@@ -3,15 +3,15 @@
  * Covers: settings normalization, extraction, injection, retrieval strategies, store operations.
  */
 
-import { describe, expect, it, vi, afterEach } from "vitest";
-import { normalizeMemorySettings, toMemoryRetrievalConfig } from "../../src/lib/memory/settings.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { extractFactsFromText } from "../../src/lib/memory/extraction.js";
 import {
-  injectMemory,
   formatMemoryContext,
-  shouldInjectMemory,
+  injectMemory,
   providerSupportsSystemMessage,
+  shouldInjectMemory,
 } from "../../src/lib/memory/injection.js";
+import { normalizeMemorySettings, toMemoryRetrievalConfig } from "../../src/lib/memory/settings.js";
 import { MemoryType } from "../../src/lib/memory/types.js";
 
 // ─── Group 1: Settings normalization ─────────────────────────────────────────

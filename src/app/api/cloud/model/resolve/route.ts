@@ -1,7 +1,7 @@
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { getModelAliases, validateApiKey } from "@/models";
+import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { getModelAliases, validateApiKey } from "@/models";
 
 // Resolve model alias to provider/model
 export async function POST(request: any) {

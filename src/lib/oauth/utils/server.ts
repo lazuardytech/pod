@@ -84,7 +84,7 @@ export function startLocalServer(
   });
 }
 
-type CallbackWaiter = {
+// type CallbackWaiter = {
   promise: Promise<Record<string, string>>;
   resolve: (params: Record<string, string>) => void;
   reject: (err: Error) => void;

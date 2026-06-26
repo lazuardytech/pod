@@ -10,7 +10,6 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses standard OAuth2 Authorization Code flow (similar to Gemini)
  */
 export class AntigravityService {
-  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
   public config: any;
 
   constructor() {

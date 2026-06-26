@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getProviderConnections, getSettings, updateProviderConnection, type Settings } from "@/lib/localDb";
+import { asString } from "@/app/api/_types";
+import { getProviderConnections, getSettings, type Settings, updateProviderConnection } from "@/lib/localDb";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { getModelAvailabilityPayload, MODEL_LOCK_PREFIX } from "./_availability";
-import { parseJsonBody } from "@/lib/parseJsonBody";
-import { asString } from "@/app/api/_types";
 
 export async function GET() {
   try {

@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
-import { useTheme } from "@/shared/hooks/useTheme";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { useTheme } from "@/shared/hooks/useTheme";
 
 function MenuItem({
   icon,

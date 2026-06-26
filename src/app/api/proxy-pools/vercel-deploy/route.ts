@@ -1,10 +1,10 @@
-import { asString, fetchUrlError } from "@/app/api/_types";
-import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { createProxyPool } from "@/models";
-import { validateFetchUrl } from "@/lib/validateUrl";
+import { NextResponse } from "next/server";
+import { asString, fetchUrlError } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { validateFetchUrl } from "@/lib/validateUrl";
+import { createProxyPool } from "@/models";
 
 const VERCEL_API = "https://api.vercel.com";
 

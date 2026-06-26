@@ -13,8 +13,8 @@
 
 import { describe, expect, it } from "vitest";
 import { FORMATS } from "../../open-sse/translator/formats.js";
-import { openaiToVertexRequest } from "../../open-sse/translator/request/openai-to-vertex.js";
 import { translateRequest } from "../../open-sse/translator/index.js";
+import { openaiToVertexRequest } from "../../open-sse/translator/request/openai-to-vertex.js";
 
 // ─── Guard 1: openaiToVertexRequest translator ────────────────────────────────
 

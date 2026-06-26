@@ -1,12 +1,12 @@
-import { asString, fetchUrlError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { createProviderConnection } from "@/models";
+import { fetchUrlError } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
-import { checkStrictDashboardAuth } from "@/lib/routeAuth";
-import { validateFetchUrl } from "@/lib/validateUrl";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { validateFetchUrl } from "@/lib/validateUrl";
+import { createProviderConnection } from "@/models";
+
 const GITLAB_DEFAULT_BASE = "https://gitlab.com";
 
 /**

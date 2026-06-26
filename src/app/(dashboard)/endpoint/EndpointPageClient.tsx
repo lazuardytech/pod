@@ -4,9 +4,9 @@ import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardSkeleton, Input, Modal, SegmentedControl, Toggle } from "@/shared/components";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
-import LucideIcon from "@/shared/components/LucideIcon";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 

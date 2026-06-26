@@ -1,12 +1,11 @@
 import bcrypt from "bcryptjs";
-import { asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { resetComboRotation } from "open-sse/services/combo.js";
+import { asString } from "@/app/api/_types";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
-
-import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

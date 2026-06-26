@@ -1,8 +1,8 @@
 import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 import { getSettings, validateApiKey } from "@/lib/localDb";
-import { extractApiKey } from "@/sse/services/auth";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
+import { extractApiKey } from "@/sse/services/auth";
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
 

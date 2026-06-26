@@ -1,4 +1,4 @@
-import { DM_Sans, Inter, IBM_Plex_Mono } from "next/font/google";
+import { DM_Sans, IBM_Plex_Mono, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import OfflineMutationProcessor from "@/shared/components/OfflineMutationProcessor";

@@ -1,4 +1,4 @@
-import { execSync, spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess, execSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import type { IncomingMessage } from "node:http";
 import https from "node:https";

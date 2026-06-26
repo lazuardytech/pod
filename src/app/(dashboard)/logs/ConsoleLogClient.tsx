@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import LucideIcon from "@/shared/components/LucideIcon";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
 import { cn } from "@/shared/utils/cn";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 const LEVEL_RE = /\[(LOG|INFO|WARN|ERROR|DEBUG)\]/i;
 

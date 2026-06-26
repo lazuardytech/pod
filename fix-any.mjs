@@ -1,5 +1,5 @@
+import { execSync } from "node:child_process";
 import fs from "fs";
-import { execSync } from "child_process";
 
 // Collect all errors from tsc
 function getErrors() {

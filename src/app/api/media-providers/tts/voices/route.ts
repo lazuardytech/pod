@@ -1,8 +1,9 @@
-import { asApiRecord, asString } from "@/app/api/_types";
 import { NextResponse } from "next/server";
 import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.js";
+import { asApiRecord, asString } from "@/app/api/_types";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+
 // Map locale code → country name
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
@@ -105,7 +106,8 @@ export async function GET(request: any) {
     const byLang = {};
     for (const v of voices) {
       const key = v.lang as string;
-      if (!(byLang as Record<string, any>)[key]) (byLang as Record<string, any>)[key] = { code: key, name: v.langName, voices: [] };
+      if (!(byLang as Record<string, any>)[key])
+        (byLang as Record<string, any>)[key] = { code: key, name: v.langName, voices: [] };
       (byLang as Record<string, any>)[key].voices.push(v);
     }
 

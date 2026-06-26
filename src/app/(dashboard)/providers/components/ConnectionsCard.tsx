@@ -3,8 +3,8 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Card, EditConnectionModal, Modal, Select, Toggle } from "@/shared/components";
-import { ConfirmModal } from "@/shared/components/Modal";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { ConfirmModal } from "@/shared/components/Modal";
 
 // ── CooldownTimer ──────────────────────────────────────────────
 function CooldownTimer({ until }: any) {

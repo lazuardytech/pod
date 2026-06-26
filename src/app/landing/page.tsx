@@ -1,12 +1,12 @@
 "use client";
 import { useRouter } from "next/navigation";
+import LucideIcon from "@/shared/components/LucideIcon";
 import Features from "./components/Features";
 import Footer from "./components/Footer";
 import GetStarted from "./components/GetStarted";
 import HeroSection from "./components/HeroSection";
 import HowItWorks from "./components/HowItWorks";
 import Navigation from "./components/Navigation";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function LandingPage() {
   const router = useRouter();
