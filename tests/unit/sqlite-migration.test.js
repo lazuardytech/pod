@@ -130,7 +130,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -142,7 +142,7 @@ afterAll(async () => {
 describe("SQLite migration from legacy JSON", () => {
   it("creates the SQLite file and backs up legacy JSON on first boot", async () => {
     // Trigger the migration by importing a module that opens the DB.
-    const { getDatabase, SQLITE_FILE } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase, SQLITE_FILE } = await import("@/lib/sqlite/connection.ts");
     getDatabase();
 
     expect(fs.existsSync(SQLITE_FILE)).toBe(true);

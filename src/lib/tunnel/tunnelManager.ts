@@ -1,47 +1,61 @@
 import crypto from "node:crypto";
 import { machineIdSync } from "node-machine-id";
 import { getSettings, updateSettings } from "@/lib/localDb";
-import { isCloudflaredRunning, killCloudflared, setUnexpectedExitHandler, spawnQuickTunnel } from "./cloudflared.js";
-import { probeUrlAlive } from "./networkProbe.js";
-import { generateShortId, loadState, saveState } from "./state.js";
-
-// Removed initDbHooks call
+import {
+  isCloudflaredRunning,
+  killCloudflared,
+  setUnexpectedExitHandler,
+  spawnQuickTunnel,
+} from "./cloudflared.ts";
+import { probeUrlAlive } from "./networkProbe.ts";
+import { generateShortId, loadState, saveState } from "./state.ts";
 
 const MACHINE_ID_SALT = "pod-tunnel-salt";
 
+interface CancelToken {
+  cancelled: boolean;
+}
+
+interface PerServiceState {
+  cancelToken: CancelToken;
+  spawnInProgress: boolean;
+  lastRestartAt: number;
+  activeLocalPort: number | null;
+}
+
 // Per-service state (independent: tunnel ≠ tailscale)
-const tunnelSvc = {
+const tunnelSvc: PerServiceState = {
   cancelToken: { cancelled: false },
   spawnInProgress: false,
   lastRestartAt: 0,
   activeLocalPort: null,
 };
 
-const tailscaleSvc = {
+const tailscaleSvc: PerServiceState = {
   cancelToken: { cancelled: false },
   spawnInProgress: false,
   lastRestartAt: 0,
   activeLocalPort: null,
 };
 
-export function getTunnelService() {
+export function getTunnelService(): PerServiceState {
   return tunnelSvc;
 }
-export function getTailscaleService() {
+export function getTailscaleService(): PerServiceState {
   return tailscaleSvc;
 }
 
-export function isTunnelManuallyDisabled() {
+export function isTunnelManuallyDisabled(): boolean {
   return tunnelSvc.cancelToken.cancelled;
 }
-export function isTunnelReconnecting() {
+export function isTunnelReconnecting(): boolean {
   return tunnelSvc.spawnInProgress;
 }
-export function isTailscaleReconnecting() {
+export function isTailscaleReconnecting(): boolean {
   return tailscaleSvc.spawnInProgress;
 }
 
-function getMachineId() {
+function getMachineId(): string {
   try {
     const raw = machineIdSync();
     return crypto
@@ -60,15 +74,22 @@ function getMachineId() {
 // `shortId` is kept in persisted state for backward compatibility with installs
 // from earlier versions, but is no longer used to build a public URL.
 
-function throwIfCancelled(token, label) {
+function throwIfCancelled(token: CancelToken, label: string) {
   if (token.cancelled) throw new Error(`${label} cancelled`);
 }
 
-async function getTailscaleModule() {
-  return import("./tailscale.js");
+async function getTailscaleModule(): Promise<typeof import("./tailscale.ts")> {
+  return import("./tailscale.ts");
 }
 
-export async function enableTunnel(localPort = 20128) {
+export interface TunnelEnableResult {
+  success: boolean;
+  tunnelUrl?: string;
+  shortId?: string;
+  alreadyRunning?: boolean;
+}
+
+export async function enableTunnel(localPort: number = 20128): Promise<TunnelEnableResult> {
   tunnelSvc.cancelToken = { cancelled: false };
   tunnelSvc.activeLocalPort = localPort;
   tunnelSvc.spawnInProgress = true;
@@ -76,12 +97,12 @@ export async function enableTunnel(localPort = 20128) {
 
   try {
     if (isCloudflaredRunning()) {
-      const existing = loadState();
-      if (existing?.tunnelUrl && (await probeUrlAlive(existing.tunnelUrl))) {
+      const existing = loadState() as Record<string, unknown> | null;
+      if (existing?.tunnelUrl && (await probeUrlAlive(existing.tunnelUrl as string))) {
         return {
           success: true,
-          tunnelUrl: existing.tunnelUrl,
-          shortId: existing.shortId,
+          tunnelUrl: existing.tunnelUrl as string,
+          shortId: existing.shortId as string,
           alreadyRunning: true,
         };
       }
@@ -91,19 +112,19 @@ export async function enableTunnel(localPort = 20128) {
     throwIfCancelled(token, "tunnel");
 
     const machineId = getMachineId();
-    const existing = loadState();
-    const shortId = existing?.shortId || generateShortId();
+    const existing = loadState() as Record<string, unknown> | null;
+    const shortId = (existing?.shortId as string) || generateShortId();
 
-    const onUrlUpdate = async (url) => {
+    const onUrlUpdate = async (url: string) => {
       if (token.cancelled) return;
-      saveState({ shortId, machineId, tunnelUrl: url });
+      saveState({ shortId, machineId, tunnelUrl: url } as Record<string, unknown>);
       await updateSettings({ tunnelEnabled: true, tunnelUrl: url });
     };
 
     const { tunnelUrl } = await spawnQuickTunnel(localPort, onUrlUpdate);
     throwIfCancelled(token, "tunnel");
 
-    saveState({ shortId, machineId, tunnelUrl });
+    saveState({ shortId, machineId, tunnelUrl } as Record<string, unknown>);
     await updateSettings({ tunnelEnabled: true, tunnelUrl });
 
     // Health probe is done client-side (pingTunnelHealth) — skip server-side
@@ -115,28 +136,36 @@ export async function enableTunnel(localPort = 20128) {
   }
 }
 
-export async function disableTunnel() {
+export async function disableTunnel(): Promise<{ success: boolean }> {
   tunnelSvc.cancelToken.cancelled = true;
   setUnexpectedExitHandler(null);
-  killCloudflared(tunnelSvc.activeLocalPort);
+  killCloudflared(tunnelSvc.activeLocalPort!);
 
-  const state = loadState();
-  if (state) saveState({ shortId: state.shortId, machineId: state.machineId, tunnelUrl: null });
+  const state = loadState() as Record<string, unknown> | null;
+  if (state) saveState({ shortId: state.shortId, machineId: state.machineId, tunnelUrl: null } as Record<string, unknown>);
 
   await updateSettings({ tunnelEnabled: false, tunnelUrl: "" });
   return { success: true };
 }
 
-export async function getTunnelStatus() {
-  const state = loadState();
+export interface TunnelStatus {
+  enabled: boolean;
+  settingsEnabled: boolean;
+  tunnelUrl: string;
+  shortId: string;
+  running: boolean;
+}
+
+export async function getTunnelStatus(): Promise<TunnelStatus> {
+  const state = loadState() as Record<string, unknown> | null;
   const running = isCloudflaredRunning();
   const settings = await getSettings();
-  const shortId = state?.shortId || "";
+  const shortId = (state?.shortId as string) || "";
 
   return {
     enabled: settings.tunnelEnabled === true && running,
     settingsEnabled: settings.tunnelEnabled === true,
-    tunnelUrl: state?.tunnelUrl || "",
+    tunnelUrl: (state?.tunnelUrl as string) || "",
     shortId,
     running,
   };
@@ -144,7 +173,17 @@ export async function getTunnelStatus() {
 
 // ─── Tailscale Funnel ─────────────────────────────────────────────────────────
 
-export async function enableTailscale(localPort = 20128) {
+export interface TailscaleEnableResult {
+  success: boolean;
+  tunnelUrl?: string;
+  needsLogin?: boolean;
+  authUrl?: string;
+  funnelNotEnabled?: boolean;
+  enableUrl?: string;
+  error?: string;
+}
+
+export async function enableTailscale(localPort: number = 20128): Promise<TailscaleEnableResult> {
   tailscaleSvc.cancelToken = { cancelled: false };
   tailscaleSvc.activeLocalPort = localPort;
   tailscaleSvc.spawnInProgress = true;
@@ -157,8 +196,8 @@ export async function enableTailscale(localPort = 20128) {
     await startDaemonWithPassword(sudoPass);
     throwIfCancelled(token, "tailscale");
 
-    const existing = loadState();
-    const shortId = existing?.shortId || generateShortId();
+    const existing = loadState() as Record<string, unknown> | null;
+    const shortId = (existing?.shortId as string) || generateShortId();
     const tsHostname = shortId;
 
     if (!isTailscaleLoggedIn()) {
@@ -190,7 +229,7 @@ export async function enableTailscale(localPort = 20128) {
   }
 }
 
-export async function disableTailscale() {
+export async function disableTailscale(): Promise<{ success: boolean }> {
   const { stopFunnel } = await getTailscaleModule();
   tailscaleSvc.cancelToken.cancelled = true;
   stopFunnel();
@@ -198,7 +237,14 @@ export async function disableTailscale() {
   return { success: true };
 }
 
-export async function getTailscaleStatus() {
+export interface TailscaleStatus {
+  enabled: boolean;
+  settingsEnabled: boolean;
+  tunnelUrl: string;
+  running: boolean;
+}
+
+export async function getTailscaleStatus(): Promise<TailscaleStatus> {
   const { isTailscaleRunning } = await getTailscaleModule();
   const settings = await getSettings();
   const running = isTailscaleRunning();

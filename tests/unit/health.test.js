@@ -119,7 +119,7 @@ describe("GET /api/monitoring/health (integration)", () => {
     vi.resetModules();
 
     // Mock SQLite connection
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
@@ -271,7 +271,7 @@ describe("GET /api/monitoring/health — degraded DB", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
@@ -316,7 +316,7 @@ describe("GET /api/monitoring/health — SQLite unavailable", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => {
         throw new Error("SQLITE_CANTOPEN: unable to open database file");
       },
@@ -361,7 +361,7 @@ describe("GET /api/monitoring/health — localDb partial failure", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {

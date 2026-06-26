@@ -1,11 +1,11 @@
 import net from "node:net";
-import { HEALTH_CHECK, INTERNET_CHECK } from "./tunnelConfig.js";
+import { HEALTH_CHECK, INTERNET_CHECK } from "./tunnelConfig.ts";
 
-export function checkInternet() {
+export function checkInternet(): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     let done = false;
-    const finish = (ok) => {
+    const finish = (ok: boolean) => {
       if (done) return;
       done = true;
       try {
@@ -30,7 +30,7 @@ export function checkInternet() {
 // Single health probe: direct fetch (no DNS pre-check — trycloudflare.com
 // subdomains are ephemeral and not in public DNS, so resolve4() always fails
 // for them even when the tunnel is perfectly functional).
-export async function probeUrlAlive(url) {
+export async function probeUrlAlive(url: string): Promise<boolean> {
   if (!url) return false;
   try {
     const res = await fetch(`${url}/api/health`, {
@@ -42,8 +42,12 @@ export async function probeUrlAlive(url) {
   }
 }
 
+export interface CancelToken {
+  cancelled: boolean;
+}
+
 // Poll until tunnel responds /api/health, or timeout. Cancellable via token.
-export async function waitForHealth(url, cancelToken = { cancelled: false }) {
+export async function waitForHealth(url: string, cancelToken: CancelToken = { cancelled: false }): Promise<boolean> {
   const start = Date.now();
   while (Date.now() - start < HEALTH_CHECK.timeoutMs) {
     if (cancelToken.cancelled) throw new Error("cancelled");

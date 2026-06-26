@@ -5,7 +5,16 @@
 
 import { create } from "zustand";
 
-export const useHeaderSearchStore = create((set) => ({
+export interface HeaderSearchState {
+  query: string;
+  placeholder: string;
+  visible: boolean;
+  setQuery: (query: string) => void;
+  register: (placeholder?: string) => void;
+  unregister: () => void;
+}
+
+export const useHeaderSearchStore = create<HeaderSearchState>((set) => ({
   query: "",
   placeholder: "",
   visible: false,

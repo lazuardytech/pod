@@ -20,7 +20,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -224,7 +224,7 @@ describe("cache invalidation", () => {
     const { generateSignature, setCachedResponse, getCachedResponse, invalidateStale } = await import(
       "@/lib/semanticCache.js"
     );
-    const { getDatabase } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const db = getDatabase();
 
     const sigOld = generateSignature("m/stale", [{ role: "user", content: "old" }], 0, 1);
@@ -383,7 +383,7 @@ describe("DELETE /api/cache", () => {
 
   it("invalidates stale entries by age", async () => {
     const { generateSignature, setCachedResponse } = await import("@/lib/semanticCache.js");
-    const { getDatabase } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const cacheRoute = await import("@/app/api/cache/route.js");
 
     const sig = generateSignature("m/stale-api", [{ role: "user", content: "stale-api" }], 0, 1);

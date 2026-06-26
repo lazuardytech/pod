@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 
 // Mock dependencies before importing the module under test
-vi.mock("@/lib/sqlite/connection.js", () => ({
+vi.mock("@/lib/sqlite/connection.ts", () => ({
   getDatabase: () => ({
     prepare: () => ({
       run: () => {},

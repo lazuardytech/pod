@@ -290,7 +290,7 @@ describe("providerSupportsSystemMessage", () => {
 
 // ─── Group 4: Retrieval strategies (mock DB) ─────────────────────────────────
 
-vi.mock("../../src/lib/sqlite/connection.js", () => ({
+vi.mock("../../src/lib/sqlite/connection.ts", () => ({
   getDatabase: vi.fn(),
 }));
 
@@ -310,7 +310,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("returns [] when maxTokens=0 (effectively disabled)", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const mockDb = {
       prepare: vi
         .fn()
@@ -323,7 +323,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("'recent' strategy works as alias for 'exact'", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const now = new Date().toISOString();
     const mockRows = [
       {
@@ -358,7 +358,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("respects maxTokens budget", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const now = new Date().toISOString();
     // Each entry ~25 tokens (100 chars / 4)
     const mockRows = Array.from({ length: 10 }, (_, i) => ({
@@ -392,7 +392,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("always returns at least one memory even if over budget", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const now = new Date().toISOString();
     const mockRows = [
       {

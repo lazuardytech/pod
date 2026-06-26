@@ -10,7 +10,7 @@ vi.mock("@/lib/localDb.js", () => ({
   validateApiKey: vi.fn(),
 }));
 
-vi.mock("@/lib/sqlite/connection.js", () => ({
+vi.mock("@/lib/sqlite/connection.ts", () => ({
   getDatabase: vi.fn(() => ({
     prepare: vi.fn(() => ({
       get: vi.fn(() => ({ integrity_check: "ok", value: "1" })),

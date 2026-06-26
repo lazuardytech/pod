@@ -1,11 +1,12 @@
-import { execSync, spawn } from "node:child_process";
-import fs from "fs";
+import { execSync, spawn, type ChildProcess } from "node:child_process";
+import fs from "node:fs";
+import type { IncomingMessage } from "node:http";
 import https from "node:https";
 import os from "node:os";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/dataDir";
-import { resetDownloadState, setDownloadState } from "./downloadState.js";
-import { clearPid, loadPid, savePid } from "./state.js";
+import { resetDownloadState, setDownloadState } from "./downloadState.ts";
+import { clearPid, loadPid, savePid } from "./state.ts";
 
 const BIN_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "bin");
 const BINARY_NAME = "cloudflared";
@@ -16,7 +17,7 @@ const POWERSHELL_HIDDEN_COMMAND = "powershell -NoProfile -NonInteractive -Window
 
 const GITHUB_BASE_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download";
 
-const PLATFORM_MAPPINGS = {
+const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
   darwin: {
     x64: "cloudflared-darwin-amd64.tgz",
     arm64: "cloudflared-darwin-arm64.tgz",
@@ -33,13 +34,13 @@ const PLATFORM_MAPPINGS = {
 };
 
 // Fallback order: prefer smallest/most-compatible binary per platform
-const PLATFORM_FALLBACK = {
+const PLATFORM_FALLBACK: Record<string, string> = {
   darwin: "cloudflared-darwin-amd64.tgz",
   win32: "cloudflared-windows-386.exe",
   linux: "cloudflared-linux-amd64",
 };
 
-function getDownloadUrl() {
+function getDownloadUrl(): string {
   const platform = os.platform();
   const arch = os.arch();
 
@@ -52,16 +53,16 @@ function getDownloadUrl() {
   return `${GITHUB_BASE_URL}/${binaryName}`;
 }
 
-function downloadFile(url, dest) {
+function downloadFile(url: string, dest: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(/*turbopackIgnore: true*/ dest);
 
     https
-      .get(url, (response) => {
-        if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
+      .get(url, (response: IncomingMessage) => {
+        if (response.statusCode && [301, 302, 303, 307, 308].includes(response.statusCode)) {
           file.close();
           fs.unlinkSync(/*turbopackIgnore: true*/ dest);
-          downloadFile(response.headers.location, dest).then(resolve).catch(reject);
+          downloadFile(response.headers.location!, dest).then(resolve).catch(reject);
           return;
         }
 
@@ -72,11 +73,11 @@ function downloadFile(url, dest) {
           return;
         }
 
-        const totalBytes = parseInt(response.headers["content-length"], 10) || 0;
+        const totalBytes = parseInt(response.headers["content-length"]!, 10) || 0;
         let receivedBytes = 0;
         setDownloadState({ downloading: true, progress: 0 });
 
-        response.on("data", (chunk) => {
+        response.on("data", (chunk: Buffer) => {
           receivedBytes += chunk.length;
           if (totalBytes > 0) {
             setDownloadState({ progress: Math.round((receivedBytes / totalBytes) * 100) });
@@ -109,7 +110,7 @@ function downloadFile(url, dest) {
 const MIN_BINARY_SIZE = 1024 * 1024; // 1MB - cloudflared is ~30MB+
 
 // Validate binary is executable on current platform and not truncated
-function isValidBinary(filePath) {
+function isValidBinary(filePath: string): boolean {
   try {
     const stat = fs.statSync(/*turbopackIgnore: true*/ filePath);
     if (stat.size < MIN_BINARY_SIZE) return false;
@@ -126,9 +127,9 @@ function isValidBinary(filePath) {
   }
 }
 
-let downloadPromise = null;
+let downloadPromise: Promise<string> | null = null;
 
-export async function ensureCloudflared() {
+export async function ensureCloudflared(): Promise<string> {
   if (downloadPromise) return downloadPromise;
   downloadPromise = _ensureCloudflared().finally(() => {
     downloadPromise = null;
@@ -136,7 +137,7 @@ export async function ensureCloudflared() {
   return downloadPromise;
 }
 
-async function _ensureCloudflared() {
+async function _ensureCloudflared(): Promise<string> {
   resetDownloadState();
 
   if (!fs.existsSync(/*turbopackIgnore: true*/ BIN_DIR)) {
@@ -183,9 +184,9 @@ async function _ensureCloudflared() {
   return BIN_PATH;
 }
 
-let cloudflaredProcess = null;
-let unexpectedExitHandler = null;
-let spawnLock = null;
+let cloudflaredProcess: ChildProcess | null = null;
+let unexpectedExitHandler: (() => void) | null = null;
+let spawnLock: Promise<void> | null = null;
 
 function killExistingProcess() {
   if (cloudflaredProcess) {
@@ -204,15 +205,15 @@ function killExistingProcess() {
 }
 
 /** Register a callback to be called when cloudflared exits unexpectedly after connecting */
-export function setUnexpectedExitHandler(handler) {
+export function setUnexpectedExitHandler(handler: (() => void) | null) {
   unexpectedExitHandler = handler;
 }
 
-export async function spawnCloudflared(tunnelToken) {
+export async function spawnCloudflared(tunnelToken: string): Promise<ChildProcess> {
   // Serialize spawns to prevent orphaned processes on concurrent calls
   while (spawnLock) await spawnLock;
-  let unlock;
-  spawnLock = new Promise((r) => {
+  let unlock: () => void;
+  spawnLock = new Promise<void>((r) => {
     unlock = r;
   });
 
@@ -227,9 +228,9 @@ export async function spawnCloudflared(tunnelToken) {
     });
 
     cloudflaredProcess = child;
-    savePid(child.pid);
+    savePid(child.pid!);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<ChildProcess>((resolve, reject) => {
       let connectionCount = 0;
       let resolved = false;
       const timeout = setTimeout(() => {
@@ -237,7 +238,7 @@ export async function spawnCloudflared(tunnelToken) {
         resolve(child);
       }, 90000);
 
-      const handleLog = (data) => {
+      const handleLog = (data: Buffer) => {
         const msg = data.toString();
         // Count exact occurrences in this chunk (each chunk may contain multiple lines)
         const matches = msg.match(/Registered tunnel connection/g);
@@ -251,8 +252,8 @@ export async function spawnCloudflared(tunnelToken) {
         }
       };
 
-      child.stdout.on("data", handleLog);
-      child.stderr.on("data", handleLog);
+      child.stdout!.on("data", handleLog);
+      child.stderr!.on("data", handleLog);
 
       child.on("error", (err) => {
         if (!resolved) {
@@ -270,11 +271,7 @@ export async function spawnCloudflared(tunnelToken) {
           resolved = true;
           clearTimeout(timeout);
           // Collect stderr output for better error diagnosis
-          let stderrOutput = "";
-          if (child.stderr && !child.stderr.destroyed) {
-            // Try to read any buffered stderr (may not have all output but helps with common errors)
-            stderrOutput = " Check cloudflared logs for details.";
-          }
+          const stderrOutput = " Check cloudflared logs for details.";
           if (code === 1) {
             // Common exit code 1 issues: invalid token, auth failure, network issues
             reject(
@@ -305,11 +302,19 @@ export async function spawnCloudflared(tunnelToken) {
   }
 }
 
+export interface QuickTunnelResult {
+  child: ChildProcess;
+  tunnelUrl: string;
+}
+
 /**
  * Spawn cloudflared quick tunnel (no account needed)
  * Returns the generated trycloudflare.com URL
  */
-export async function spawnQuickTunnel(localPort, onUrlUpdate) {
+export async function spawnQuickTunnel(
+  localPort: number,
+  onUrlUpdate?: (url: string) => void,
+): Promise<QuickTunnelResult> {
   const binaryPath = await ensureCloudflared();
 
   const configDir = fs.mkdtempSync(path.join(/*turbopackIgnore: true*/ os.tmpdir(), "cloudflared-quick-"));
@@ -339,16 +344,16 @@ export async function spawnQuickTunnel(localPort, onUrlUpdate) {
   );
 
   cloudflaredProcess = child;
-  savePid(child.pid);
+  savePid(child.pid!);
 
   return new Promise((resolve, reject) => {
     let resolved = false;
 
-    function getQuickTunnelUrlFromLog(message) {
+    function getQuickTunnelUrlFromLog(message: string): string | null {
       // cloudflared logs may contain "api.trycloudflare.com" as well,
       // but that is NOT the quick-tunnel endpoint we need.
       const regex = /https:\/\/([a-z0-9-]+)\.trycloudflare\.com/gi;
-      const candidates = [];
+      const candidates: string[] = [];
 
       for (const match of message.matchAll(regex)) {
         const host = match[1];
@@ -357,7 +362,7 @@ export async function spawnQuickTunnel(localPort, onUrlUpdate) {
       }
 
       if (!candidates.length) return null;
-      return candidates[candidates.length - 1];
+      return candidates[candidates.length - 1]!;
     }
 
     const timeout = setTimeout(() => {
@@ -367,9 +372,9 @@ export async function spawnQuickTunnel(localPort, onUrlUpdate) {
       reject(new Error("Quick tunnel timed out"));
     }, 90000);
 
-    let lastUrl = null;
+    let lastUrl: string | null = null;
 
-    const handleLog = (data) => {
+    const handleLog = (data: Buffer) => {
       const msg = data.toString();
       const tunnelUrl = getQuickTunnelUrlFromLog(msg);
       if (!tunnelUrl) return;
@@ -391,8 +396,8 @@ export async function spawnQuickTunnel(localPort, onUrlUpdate) {
       }
     };
 
-    child.stdout.on("data", handleLog);
-    child.stderr.on("data", handleLog);
+    child.stdout!.on("data", handleLog);
+    child.stderr!.on("data", handleLog);
 
     child.on("error", (err) => {
       if (resolved) return;
@@ -431,7 +436,7 @@ export async function spawnQuickTunnel(localPort, onUrlUpdate) {
 
 // Kill cloudflared processes whose command line targets the given port (any host).
 // Boundary check ensures :20128 doesn't match :201280 or :202128.
-function killCloudflaredByPort(port) {
+function killCloudflaredByPort(port: number) {
   if (!port) return;
   try {
     if (IS_WINDOWS) {
@@ -445,7 +450,7 @@ function killCloudflaredByPort(port) {
   }
 }
 
-export function killCloudflared(localPort) {
+export function killCloudflared(localPort?: number) {
   if (cloudflaredProcess) {
     try {
       cloudflaredProcess.kill();
@@ -465,10 +470,10 @@ export function killCloudflared(localPort) {
     clearPid();
   }
 
-  killCloudflaredByPort(localPort);
+  if (localPort) killCloudflaredByPort(localPort);
 }
 
-export function isCloudflaredRunning() {
+export function isCloudflaredRunning(): boolean {
   const pid = loadPid();
   if (!pid) return false;
   try {

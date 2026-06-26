@@ -327,11 +327,11 @@ describe("api route contracts", () => {
 
   describe("GET /api/tunnel/status", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/tunnel/tunnelManager.js", () => ({
+      vi.doMock("@/lib/tunnel/tunnelManager.ts", () => ({
         getTunnelStatus: vi.fn().mockResolvedValue({ enabled: false, url: null }),
         getTailscaleStatus: vi.fn().mockResolvedValue({ enabled: false, url: null }),
       }));
-      vi.doMock("@/lib/tunnel/cloudflared.js", () => ({
+      vi.doMock("@/lib/tunnel/cloudflared.ts", () => ({
         getDownloadStatus: vi.fn().mockResolvedValue({ downloaded: false }),
       }));
     });

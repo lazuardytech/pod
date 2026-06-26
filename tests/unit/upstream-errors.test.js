@@ -189,7 +189,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;

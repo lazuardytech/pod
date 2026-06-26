@@ -269,7 +269,7 @@ describe("provider smoke — provider icons exist", () => {
 describe("provider smoke — defensive: no 9router/decolua references in runtime code", () => {
   it("tunnelManager has no 9router host", async () => {
     const fs = await import("node:fs/promises");
-    const src = await fs.readFile(path.resolve(__dirname, "../../src/lib/tunnel/tunnelManager.js"), "utf8");
+    const src = await fs.readFile(path.resolve(__dirname, "../../src/lib/tunnel/tunnelManager.ts"), "utf8");
     expect(src).not.toMatch(/9router\.com/i);
     expect(src).not.toMatch(/registerTunnelUrl\s*\(/);
   });

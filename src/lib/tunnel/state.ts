@@ -13,10 +13,10 @@ function ensureDir() {
   }
 }
 
-export function loadState() {
+export function loadState(): any {
   try {
     if (fs.existsSync(/*turbopackIgnore: true*/ STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ STATE_FILE, "utf8"));
+      return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ STATE_FILE, "utf8")) as Record<string, unknown>;
     }
   } catch (_e) {
     /* ignore corrupt state */
@@ -24,7 +24,7 @@ export function loadState() {
   return null;
 }
 
-export function saveState(state) {
+export function saveState(state: any) {
   ensureDir();
   fs.writeFileSync(/*turbopackIgnore: true*/ STATE_FILE, JSON.stringify(state, null, 2));
 }
@@ -38,12 +38,12 @@ export function clearState() {
 }
 
 // Cloudflare-specific PID
-export function savePid(pid) {
+export function savePid(pid: number) {
   ensureDir();
   fs.writeFileSync(/*turbopackIgnore: true*/ CLOUDFLARED_PID_FILE, pid.toString());
 }
 
-export function loadPid() {
+export function loadPid(): number | null {
   try {
     if (fs.existsSync(/*turbopackIgnore: true*/ CLOUDFLARED_PID_FILE)) {
       return parseInt(fs.readFileSync(/*turbopackIgnore: true*/ CLOUDFLARED_PID_FILE, "utf8"));
@@ -65,12 +65,12 @@ export function clearPid() {
 }
 
 // Tailscale-specific PID
-export function saveTailscalePid(pid) {
+export function saveTailscalePid(pid: number) {
   ensureDir();
   fs.writeFileSync(/*turbopackIgnore: true*/ TAILSCALE_PID_FILE, pid.toString());
 }
 
-export function loadTailscalePid() {
+export function loadTailscalePid(): number | null {
   try {
     if (fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_PID_FILE)) {
       return parseInt(fs.readFileSync(/*turbopackIgnore: true*/ TAILSCALE_PID_FILE, "utf8"));
@@ -93,7 +93,7 @@ export function clearTailscalePid() {
 const SHORT_ID_LENGTH = 6;
 const SHORT_ID_CHARS = "abcdefghijklmnpqrstuvwxyz23456789";
 
-export function generateShortId() {
+export function generateShortId(): string {
   let result = "";
   for (let i = 0; i < SHORT_ID_LENGTH; i++) {
     result += SHORT_ID_CHARS.charAt(Math.floor(Math.random() * SHORT_ID_CHARS.length));

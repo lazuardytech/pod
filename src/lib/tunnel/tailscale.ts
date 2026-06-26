@@ -1,5 +1,5 @@
-import { execSync, spawn, spawnSync } from "node:child_process";
-import fs from "fs";
+import { execSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/dataDir";
@@ -13,14 +13,19 @@ const TAILSCALE_BIN = path.join(/*turbopackIgnore: true*/ BIN_DIR, IS_WINDOWS ? 
 // Custom socket for userspace-networking mode (no root required)
 const TAILSCALE_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "tailscale");
 export const TAILSCALE_SOCKET = path.join(/*turbopackIgnore: true*/ TAILSCALE_DIR, "tailscaled.sock");
-const SOCKET_FLAG = IS_WINDOWS ? [] : ["--socket", TAILSCALE_SOCKET];
+const SOCKET_FLAG: string[] = IS_WINDOWS ? [] : ["--socket", TAILSCALE_SOCKET];
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
 
 // Well-known Windows install path
 const WINDOWS_TAILSCALE_BIN = "C:\\Program Files\\Tailscale\\tailscale.exe";
 const SUDO_PASSWORD_ERROR_RE = /(incorrect password|sorry, try again|a password is required)/i;
 
-function runCommandSync(command, args, { timeout = 5000, env } = {}) {
+interface SpawnSyncOptions {
+  timeout?: number;
+  env?: NodeJS.ProcessEnv;
+}
+
+function runCommandSync(command: string, args: string[], { timeout = 5000, env }: SpawnSyncOptions = {}): string | null {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     windowsHide: true,
@@ -31,7 +36,7 @@ function runCommandSync(command, args, { timeout = 5000, env } = {}) {
   return typeof result.stdout === "string" ? result.stdout : "";
 }
 
-function runTailscaleJson(args, { timeout = 5000 } = {}) {
+function runTailscaleJson(args: string[], { timeout = 5000 }: { timeout?: number } = {}): Record<string, unknown> | null {
   const bin = getTailscaleBin();
   if (!bin) return null;
   const out = runCommandSync(bin, tsArgs(...args), {
@@ -40,14 +45,14 @@ function runTailscaleJson(args, { timeout = 5000 } = {}) {
   });
   if (!out) return null;
   try {
-    return JSON.parse(out);
+    return JSON.parse(out) as Record<string, unknown>;
   } catch {
     return null;
   }
 }
 
 // Prefer system tailscale, fallback to local bin, then Windows default path
-function getTailscaleBin() {
+function getTailscaleBin(): string | null {
   try {
     const lookupCommand = IS_WINDOWS ? "where" : "which";
     const lookupArg = "tailscale";
@@ -64,33 +69,35 @@ function getTailscaleBin() {
   return null;
 }
 
-export function isTailscaleInstalled() {
+export function isTailscaleInstalled(): boolean {
   return getTailscaleBin() !== null;
 }
 
 /** Build tailscale CLI args with custom socket (no root needed) */
-function tsArgs(...args) {
+function tsArgs(...args: string[]): string[] {
   return [...SOCKET_FLAG, ...args];
 }
 
-export function isTailscaleLoggedIn() {
+export function isTailscaleLoggedIn(): boolean {
   const json = runTailscaleJson(["status", "--json"], { timeout: 5000 });
   if (!json) return false;
   // BackendState "Running" means fully logged in and connected
   return json.BackendState === "Running";
 }
 
-export function isTailscaleRunning() {
+export function isTailscaleRunning(): boolean {
   const json = runTailscaleJson(["funnel", "status", "--json"], { timeout: 5000 });
   if (!json) return false;
-  return Object.keys(json.AllowFunnel || {}).length > 0;
+  const allowFunnel = json.AllowFunnel as Record<string, unknown> | undefined;
+  return Object.keys(allowFunnel || {}).length > 0;
 }
 
 /** Get funnel URL from tailscale status */
-export function getTailscaleFunnelUrl(port) {
+export function getTailscaleFunnelUrl(port: number): string | null {
   const json = runTailscaleJson(["status", "--json"], { timeout: 5000 });
   if (!json) return null;
-  const dnsName = json.Self?.DNSName?.replace(/\.$/, "");
+  const self = json.Self as { DNSName?: string } | undefined;
+  const dnsName = self?.DNSName?.replace(/\.$/, "");
   if (dnsName) return `https://${dnsName}`;
   return null;
 }
@@ -102,11 +109,15 @@ export function getTailscaleFunnelUrl(port) {
  * - Linux: fetch install.sh, pipe to sudo -S sh via stdin
  * - Windows: download MSI via UAC-elevated PowerShell
  */
-export async function installTailscale(sudoPassword, hostname, onProgress) {
+export async function installTailscale(
+  sudoPassword: string,
+  hostname: string,
+  onProgress?: (msg: string) => void,
+): Promise<LoginResult> {
   const log = onProgress || (() => {});
   if (IS_WINDOWS) {
     await installTailscaleWindows(log);
-    return { success: true };
+    return { alreadyLoggedIn: true };
   }
   if (IS_MAC) await installTailscaleMac(sudoPassword, log);
   else await installTailscaleLinux(sudoPassword, log);
@@ -117,7 +128,7 @@ export async function installTailscale(sudoPassword, hostname, onProgress) {
   return startLogin(hostname);
 }
 
-function hasBrew() {
+function hasBrew(): boolean {
   try {
     execSync("which brew", { stdio: "ignore", windowsHide: true, env: { ...process.env, PATH: EXTENDED_PATH } });
     return true;
@@ -131,7 +142,7 @@ function hasBrew() {
  * - If `sudoPassword` provided, pass it via stdin (`sudo -S`).
  * - If not provided, require passwordless sudo (`sudo -n`), fail fast otherwise.
  */
-function execWithPassword(command, sudoPassword) {
+function execWithPassword(command: string, sudoPassword: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (IS_WINDOWS) {
       resolve();
@@ -149,10 +160,10 @@ function execWithPassword(command, sudoPassword) {
     let stderr = "";
     let stdout = "";
 
-    child.stdout.on("data", (d) => {
+    child.stdout.on("data", (d: Buffer) => {
       stdout += d.toString();
     });
-    child.stderr.on("data", (d) => {
+    child.stderr.on("data", (d: Buffer) => {
       stderr += d.toString();
     });
     child.on("error", reject);
@@ -171,26 +182,26 @@ function execWithPassword(command, sudoPassword) {
     });
 
     if (hasPassword) {
-      child.stdin.write(`${sudoPassword}\n`);
+      child.stdin!.write(`${sudoPassword}\n`);
     }
-    child.stdin.end();
+    child.stdin!.end();
   });
 }
 
-async function installTailscaleMac(sudoPassword, log) {
+async function installTailscaleMac(sudoPassword: string, log: (msg: string) => void) {
   if (hasBrew()) {
     log("Installing via Homebrew...");
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const child = spawn("brew", ["install", "tailscale"], {
         stdio: ["ignore", "pipe", "pipe"],
         windowsHide: true,
         env: { ...process.env, PATH: EXTENDED_PATH },
       });
-      child.stdout.on("data", (d) => {
+      child.stdout.on("data", (d: Buffer) => {
         const line = d.toString().trim();
         if (line) log(line);
       });
-      child.stderr.on("data", (d) => {
+      child.stderr.on("data", (d: Buffer) => {
         const line = d.toString().trim();
         if (line) log(line);
       });
@@ -208,12 +219,12 @@ async function installTailscaleMac(sudoPassword, log) {
   const pkgPath = path.join(/*turbopackIgnore: true*/ os.tmpdir(), "tailscale.pkg");
 
   log("Downloading Tailscale package...");
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const child = spawn("curl", ["-fL", "--progress-bar", pkgUrl, "-o", pkgPath], {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
-    child.stderr.on("data", (d) => {
+    child.stderr.on("data", (d: Buffer) => {
       const line = d.toString().trim();
       if (line) log(line);
     });
@@ -225,16 +236,16 @@ async function installTailscaleMac(sudoPassword, log) {
   });
 
   log("Installing package...");
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const child = spawn("sudo", ["-S", "installer", "-pkg", pkgPath, "-target", "/"], {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
     });
     let stderr = "";
-    child.stderr.on("data", (d) => {
+    child.stderr.on("data", (d: Buffer) => {
       stderr += d.toString();
     });
-    child.stdout.on("data", (d) => {
+    child.stdout.on("data", (d: Buffer) => {
       const line = d.toString().trim();
       if (line) log(line);
     });
@@ -254,24 +265,24 @@ async function installTailscaleMac(sudoPassword, log) {
       }
     });
     child.on("error", reject);
-    child.stdin.write(`${sudoPassword}\n`);
-    child.stdin.end();
+    child.stdin!.write(`${sudoPassword}\n`);
+    child.stdin!.end();
   });
 }
 
-async function installTailscaleLinux(sudoPassword, log) {
+async function installTailscaleLinux(sudoPassword: string, log: (msg: string) => void) {
   log("Downloading install script...");
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const curlChild = spawn("curl", ["-fsSL", "https://tailscale.com/install.sh"], {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
     let scriptContent = "";
     let curlErr = "";
-    curlChild.stdout.on("data", (d) => {
+    curlChild.stdout.on("data", (d: Buffer) => {
       scriptContent += d.toString();
     });
-    curlChild.stderr.on("data", (d) => {
+    curlChild.stderr.on("data", (d: Buffer) => {
       curlErr += d.toString();
     });
     curlChild.on("exit", (code) => {
@@ -279,11 +290,11 @@ async function installTailscaleLinux(sudoPassword, log) {
       log("Running install script...");
       const child = spawn("sudo", ["-S", "sh"], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
       let stderr = "";
-      child.stdout.on("data", (d) => {
+      child.stdout.on("data", (d: Buffer) => {
         const line = d.toString().trim();
         if (line) log(line);
       });
-      child.stderr.on("data", (d) => {
+      child.stderr.on("data", (d: Buffer) => {
         stderr += d.toString();
       });
       child.on("close", (c) => {
@@ -297,32 +308,32 @@ async function installTailscaleLinux(sudoPassword, log) {
         }
       });
       child.on("error", reject);
-      child.stdin.write(`${sudoPassword}\n`);
-      child.stdin.write(scriptContent);
-      child.stdin.end();
+      child.stdin!.write(`${sudoPassword}\n`);
+      child.stdin!.write(scriptContent);
+      child.stdin!.end();
     });
     curlChild.on("error", reject);
   });
 }
 
-async function installTailscaleWindows(log) {
+async function installTailscaleWindows(log: (msg: string) => void) {
   const msiUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi";
   const msiPath = path.join(/*turbopackIgnore: true*/ os.tmpdir(), "tailscale-setup.msi");
 
   // Download MSI via curl.exe (built-in on Win10+) — no PowerShell window, streams progress
   log("Downloading Tailscale installer...");
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const child = spawn("curl.exe", ["-L", "-#", "-o", msiPath, msiUrl], {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
     // curl outputs progress to stderr with -# flag
     let lastPct = "";
-    child.stderr.on("data", (d) => {
+    child.stderr.on("data", (d: Buffer) => {
       const text = d.toString();
       const match = text.match(/(\d+\.\d)%/);
       if (match && match[1] !== lastPct) {
-        lastPct = match[1];
+        lastPct = match[1]!;
         log(`Downloading... ${lastPct}%`);
       }
     });
@@ -332,14 +343,14 @@ async function installTailscaleWindows(log) {
 
   // Install MSI with UAC elevation via PowerShell Start-Process -Verb RunAs
   log("Installing Tailscale (UAC prompt may appear)...");
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const args = `'/i','${msiPath}','TS_NOLAUNCH=true','/quiet','/norestart'`;
     const child = spawn(
       "powershell",
       ["-NoProfile", "-NonInteractive", "-Command", `Start-Process msiexec -ArgumentList ${args} -Verb RunAs -Wait`],
       { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
     );
-    child.stderr.on("data", (d) => {
+    child.stderr.on("data", (d: Buffer) => {
       const l = d.toString().trim();
       if (l) log(l);
     });
@@ -369,7 +380,7 @@ async function installTailscaleWindows(log) {
 }
 
 /** Start tailscaled with sudo (TUN mode required for Funnel) */
-export async function startDaemonWithPassword(sudoPassword) {
+export async function startDaemonWithPassword(sudoPassword: string) {
   if (IS_WINDOWS) {
     // Windows: tailscale runs as a Windows Service, try to start it
     try {
@@ -425,11 +436,16 @@ function ensureDaemon() {
   startDaemonWithPassword("").catch(() => {});
 }
 
+export interface LoginResult {
+  alreadyLoggedIn?: boolean;
+  authUrl?: string;
+}
+
 /**
  * Run `tailscale up` and capture the auth URL for browser login.
  * Resolves with { authUrl } or { alreadyLoggedIn: true }.
  */
-export function startLogin(hostname) {
+export function startLogin(hostname: string): Promise<LoginResult> {
   const bin = getTailscaleBin();
   if (!bin) return Promise.reject(new Error("Tailscale not installed"));
 
@@ -442,6 +458,11 @@ export function startLogin(hostname) {
       resolve({ alreadyLoggedIn: true });
       return;
     }
+
+    const parseAuthUrl = (text: string): string | null => {
+      const match = text.match(/https:\/\/login\.tailscale\.com\/a\/[a-zA-Z0-9]+/);
+      return match ? match[0] : null;
+    };
 
     // Spawn detached so process survives API request lifecycle
     const args = tsArgs("up", "--accept-routes");
@@ -465,12 +486,7 @@ export function startLogin(hostname) {
       else reject(new Error("tailscale up timed out without auth URL"));
     }, 15000);
 
-    const parseAuthUrl = (text) => {
-      const match = text.match(/https:\/\/login\.tailscale\.com\/a\/[a-zA-Z0-9]+/);
-      return match ? match[0] : null;
-    };
-
-    const handleData = (data) => {
+    const handleData = (data: Buffer) => {
       output += data.toString();
       const url = parseAuthUrl(output);
       if (url && !resolved) {
@@ -482,8 +498,8 @@ export function startLogin(hostname) {
       }
     };
 
-    child.stdout.on("data", handleData);
-    child.stderr.on("data", handleData);
+    child.stdout!.on("data", handleData);
+    child.stderr!.on("data", handleData);
 
     child.on("error", (err) => {
       if (resolved) return;
@@ -504,8 +520,14 @@ export function startLogin(hostname) {
   });
 }
 
+export interface FunnelResult {
+  tunnelUrl?: string;
+  funnelNotEnabled?: boolean;
+  enableUrl?: string;
+}
+
 /** Start tailscale funnel for the given port */
-export async function startFunnel(port) {
+export async function startFunnel(port: number): Promise<FunnelResult> {
   const bin = getTailscaleBin();
   if (!bin) throw new Error("Tailscale not installed");
 
@@ -525,6 +547,9 @@ export async function startFunnel(port) {
     let resolved = false;
     let output = "";
 
+    const parseFunnelUrl = (text: string): string | null =>
+      (text.match(/https:\/\/[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net[^\s]*/i) || [])[0]?.replace(/\/$/, "") || null;
+
     const timeout = setTimeout(() => {
       if (resolved) return;
       resolved = true;
@@ -534,12 +559,9 @@ export async function startFunnel(port) {
       else reject(new Error(`Tailscale funnel timed out: ${output.trim() || "no output"}`));
     }, 30000);
 
-    const parseFunnelUrl = (text) =>
-      (text.match(/https:\/\/[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net[^\s]*/i) || [])[0]?.replace(/\/$/, "") || null;
-
     let funnelNotEnabled = false;
 
-    const handleData = (data) => {
+    const handleData = (data: Buffer) => {
       output += data.toString();
 
       if (output.includes("Funnel is not enabled")) funnelNotEnabled = true;
@@ -564,8 +586,8 @@ export async function startFunnel(port) {
       }
     };
 
-    child.stdout.on("data", handleData);
-    child.stderr.on("data", handleData);
+    child.stdout!.on("data", handleData);
+    child.stderr!.on("data", handleData);
 
     child.on("exit", (code) => {
       if (resolved) return;
@@ -597,7 +619,7 @@ export function stopFunnel() {
 }
 
 /** Kill tailscaled daemon (runs as root, needs sudo) */
-export async function stopDaemon(sudoPassword) {
+export async function stopDaemon(sudoPassword: string) {
   // Try non-sudo first
   try {
     execSync("pkill -x tailscaled", { stdio: "ignore", windowsHide: true, timeout: 3000 });

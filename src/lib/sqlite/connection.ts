@@ -8,8 +8,8 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { warn, info } from "@/sse/utils/logger";
-import { migrateFromJson } from "./migrate-from-json.js";
-import { SCHEMA_SQL } from "./schema.js";
+import { migrateFromJson, type MigrationSummary } from "./migrate-from-json.ts";
+import { SCHEMA_SQL } from "./schema.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -17,7 +17,7 @@ const APP_NAME = "pod";
 const SQLITE_FILE_NAME = "pod.sqlite";
 const SCHEMA_VERSION = "1";
 
-function getDataDir() {
+function getDataDir(): string {
   if (process.env.DATA_DIR) return process.env.DATA_DIR;
 
   const homeDir = os.homedir();
@@ -30,7 +30,7 @@ function getDataDir() {
   return path.join(/*turbopackIgnore: true*/ homeDir, `.${APP_NAME}`);
 }
 
-function tryEnsureDir(dirPath) {
+function tryEnsureDir(dirPath: string): boolean {
   try {
     if (!fs.existsSync(/*turbopackIgnore: true*/ dirPath))
       fs.mkdirSync(/*turbopackIgnore: true*/ dirPath, { recursive: true });
@@ -54,12 +54,35 @@ export const DATA_DIR = (() => {
 
 export const SQLITE_FILE = path.join(/*turbopackIgnore: true*/ DATA_DIR, SQLITE_FILE_NAME);
 
-let dbInstance = null;
+// Minimal typed interface covering the subset of both better-sqlite3 and
+// bun:sqlite Database APIs used in this file.
+export interface SqliteDatabase {
+  exec(sql: string): unknown;
+  pragma?(s: string): unknown;
+  prepare(sql: string): {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    all(...params: unknown[]): any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get(...params: unknown[]): any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    run(...params: unknown[]): any;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transaction<T extends (...args: any[]) => any>(fn: T): T & {
+    default?: T;
+    deferred?: T;
+    exclusive?: T;
+    immediate?: T;
+  };
+  close(): void;
+}
+
+let dbInstance: SqliteDatabase | null = null;
 let schemaReady = false;
 
-function applyPragmas(db) {
+function applyPragmas(db: SqliteDatabase) {
   // bun:sqlite has no `.pragma()` shorthand — fall back to exec.
-  const setPragma = typeof db.pragma === "function" ? (s) => db.pragma(s) : (s) => db.exec(`PRAGMA ${s}`);
+  const setPragma = typeof db.pragma === "function" ? (s: string) => db.pragma!(s) : (s: string) => db.exec(`PRAGMA ${s}`);
   setPragma("journal_mode = WAL");
   setPragma("synchronous = NORMAL");
   setPragma("foreign_keys = ON");
@@ -75,23 +98,23 @@ function applyPragmas(db) {
   setPragma("wal_autocheckpoint = 1000");
 }
 
-function ensureSchema(db) {
+function ensureSchema(db: SqliteDatabase) {
   if (schemaReady) return;
   db.exec(SCHEMA_SQL);
   schemaReady = true;
 }
 
-function hasColumn(db, tableName, columnName) {
+function hasColumn(db: SqliteDatabase, tableName: string, columnName: string): boolean {
   try {
     const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
-    return columns.some((col) => String(col.name) === columnName);
+    return columns.some((col: unknown) => String((col as { name: string }).name) === columnName);
   } catch {
     return false;
   }
 }
 
-function ensureSchemaPatches(db) {
-  const apiKeyColumns = [
+function ensureSchemaPatches(db: SqliteDatabase) {
+  const apiKeyColumns: [string, string][] = [
     ["limit_type", "limit_type TEXT NOT NULL DEFAULT 'unlimited'"],
     ["requests_per_minute", "requests_per_minute INTEGER"],
     ["concurrent_requests", "concurrent_requests INTEGER"],
@@ -146,29 +169,29 @@ function ensureSchemaPatches(db) {
   `);
 }
 
-function readMeta(db, key) {
-  const row = db.prepare("SELECT value FROM meta WHERE key = ?").get(key);
+function readMeta(db: SqliteDatabase, key: string): string | null {
+  const row = db.prepare("SELECT value FROM meta WHERE key = ?").get(key) as { value: string } | undefined;
   return row ? row.value : null;
 }
 
-function writeMeta(db, key, value) {
+function writeMeta(db: SqliteDatabase, key: string, value: string) {
   db.prepare("INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(
     key,
     String(value),
   );
 }
 
-function runInitialMigration(db) {
+function runInitialMigration(db: SqliteDatabase) {
   if (readMeta(db, "schema_version")) return;
 
-  const summary = migrateFromJson(db, DATA_DIR);
+  const summary: MigrationSummary | null = migrateFromJson(db as never, DATA_DIR);
   if (summary && summary.imported > 0) {
     info("sqlite", "migrated legacy JSON", summary);
   }
   writeMeta(db, "schema_version", SCHEMA_VERSION);
 }
 
-export function getDatabase() {
+export function getDatabase(): SqliteDatabase {
   if (dbInstance) return dbInstance;
 
   // DATA_DIR is already ensured at module load time via tryEnsureDir
@@ -177,8 +200,11 @@ export function getDatabase() {
   // built-in `bun:sqlite` instead. `bun:sqlite` is marked as a server
   // external package in next.config.mjs, so the runtime resolves it via
   // createRequire at call time.
-  const Database = typeof Bun !== "undefined" ? require("bun:sqlite").Database : require("better-sqlite3");
-  const db = new Database(SQLITE_FILE);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const DatabaseCtor: any =
+    typeof Bun !== "undefined" ? (require("bun:sqlite") as { Database: new (filename: string) => unknown }).Database : require("better-sqlite3");
+
+  const db: SqliteDatabase = new DatabaseCtor(SQLITE_FILE) as SqliteDatabase;
   applyPragmas(db);
   ensureSchema(db);
   ensureSchemaPatches(db);
@@ -199,7 +225,7 @@ export function closeDatabase() {
 }
 
 // Run `fn(db)` inside a BEGIN IMMEDIATE transaction. Returns fn's result.
-export function tx(fn) {
+export function tx<R>(fn: (db: SqliteDatabase) => R): R {
   const db = getDatabase();
   const wrapped = db.transaction(fn);
   return wrapped.immediate(db);

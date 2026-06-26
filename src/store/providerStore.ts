@@ -2,7 +2,25 @@
 
 import { create } from "zustand";
 
-const useProviderStore = create((set, get) => ({
+export interface Provider {
+  _id: string;
+  [key: string]: unknown;
+}
+
+export interface ProviderState {
+  providers: Provider[];
+  loading: boolean;
+  error: string | null;
+  setProviders: (providers: Provider[]) => void;
+  addProvider: (provider: Provider) => void;
+  updateProvider: (id: string, updates: Partial<Provider>) => void;
+  removeProvider: (id: string) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  fetchProviders: () => Promise<void>;
+}
+
+const useProviderStore = create<ProviderState>((set, get) => ({
   providers: [],
   loading: false,
   error: null,
@@ -31,9 +49,9 @@ const useProviderStore = create((set, get) => ({
       const response = await fetch("/api/providers");
       const data = await response.json();
       if (response.ok) {
-        set({ providers: data.providers, loading: false });
+        set({ providers: data.providers as Provider[], loading: false });
       } else {
-        set({ error: data.error, loading: false });
+        set({ error: data.error as string, loading: false });
       }
     } catch (_error) {
       set({ error: "Failed to fetch providers", loading: false });

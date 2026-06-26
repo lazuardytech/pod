@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -185,7 +185,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
   it("rewrites usage_history.provider and request_log.provider rows", async () => {
     await seedCustomNode();
     const { renameProviderNode } = await import("@/lib/localDb.js");
-    const { getDatabase } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const db = getDatabase();
 
     db.prepare(

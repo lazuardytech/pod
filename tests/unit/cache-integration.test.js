@@ -17,7 +17,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -276,7 +276,7 @@ describe("TTL expiry", () => {
   it("getCachedResponse skips SQLite rows whose expires_at is in the past", async () => {
     // Insert a row with an already-expired timestamp directly into SQLite,
     // bypassing setCachedResponse, then confirm getCachedResponse returns null.
-    const { getDatabase } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const { generateSignature, getCachedResponse } = await import("@/lib/semanticCache.js");
     const crypto = await import("node:crypto");
 

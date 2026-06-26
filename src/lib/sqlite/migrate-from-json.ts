@@ -6,10 +6,29 @@
 import fs from "node:fs";
 import path from "node:path";
 import { warn } from "@/sse/utils/logger";
+import type { SqliteDatabase } from "./connection.ts";
 
 const DB_JSON = "db.json";
 const USAGE_JSON = "usage.json";
 const REQUEST_DETAILS_JSON = "request-details.json";
+
+interface ConfigDbData {
+  providerConnections?: unknown[];
+  providerNodes?: unknown[];
+  proxyPools?: unknown[];
+  combos?: unknown[];
+  apiKeys?: unknown[];
+  modelAliases?: Record<string, string>;
+  customModels?: unknown[];
+  settings?: Record<string, unknown>;
+  pricing?: Record<string, Record<string, unknown>>;
+}
+
+interface UsageDbData {
+  history?: unknown[];
+  totalRequestsLifetime?: number;
+  dailySummary?: Record<string, Record<string, unknown>>;
+}
 
 const STRUCTURED_CONN_FIELDS = new Set([
   "id",
@@ -37,39 +56,129 @@ const STRUCTURED_POOL_FIELDS = new Set(["id", "name", "proxyUrl", "type", "isAct
 
 const STRUCTURED_COMBO_FIELDS = new Set(["id", "name", "createdAt", "updatedAt"]);
 
-function pickExtraAsJson(obj, structured) {
-  const extras = {};
+function pickExtraAsJson(obj: Record<string, unknown>, structured: Set<string>): string {
+  const extras: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (!structured.has(k)) extras[k] = v;
   }
   return JSON.stringify(extras);
 }
 
-function readJson(filePath) {
+function readJson(filePath: string): unknown {
   if (!fs.existsSync(/*turbopackIgnore: true*/ filePath)) return null;
   const raw = fs.readFileSync(/*turbopackIgnore: true*/ filePath, "utf-8");
   if (!raw.trim()) return null;
   try {
     return JSON.parse(raw);
-  } catch (err) {
-    warn("sqlite", `could not parse ${filePath}, skipping`, { error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    warn("sqlite", `could not parse ${filePath}, skipping`, { error: message });
     return null;
   }
 }
 
-function renameToBak(filePath) {
+function renameToBak(filePath: string) {
   try {
     fs.renameSync(/*turbopackIgnore: true*/ filePath, /*turbopackIgnore: true*/ `${filePath}.bak`);
-  } catch (err) {
-    warn("sqlite", `could not rename ${filePath} to .bak`, { error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    warn("sqlite", `could not rename ${filePath} to .bak`, { error: message });
   }
 }
 
-function nowIso() {
+function nowIso(): string {
   return new Date().toISOString();
 }
 
-function importConfigDb(db, data) {
+interface ProviderConnection {
+  id: string;
+  provider: string;
+  authType?: string;
+  name?: string;
+  priority?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+interface ProviderNode {
+  id: string;
+  type?: string;
+  name?: string;
+  prefix?: string;
+  apiType?: string;
+  baseUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+interface ProxyPool {
+  id: string;
+  name?: string;
+  proxyUrl?: string;
+  type?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+interface Combo {
+  id: string;
+  name?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+interface ApiKey {
+  id: string;
+  key: string;
+  name?: string;
+  machineId?: string;
+  isActive?: boolean;
+  limitType?: string;
+  requestsPerMinute?: number;
+  concurrentRequests?: number;
+  createdAt?: string;
+}
+
+interface UsageEntry {
+  timestamp: string;
+  provider?: string;
+  model?: string;
+  connectionId?: string;
+  apiKey?: unknown;
+  endpoint?: string;
+  status?: string;
+  tokens?: Record<string, number>;
+  cost?: number;
+  [key: string]: unknown;
+}
+
+interface RequestDetailRecord {
+  id: string;
+  timestamp?: string;
+  provider?: string;
+  model?: string;
+  connectionId?: string;
+  status?: string;
+  latency?: number | { total?: number; totalMs?: number };
+  tokens?: Record<string, number>;
+  [key: string]: unknown;
+}
+
+interface DailyStats {
+  requests?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  cost?: number;
+  [key: string]: unknown;
+}
+
+function importConfigDb(db: SqliteDatabase, data: ConfigDbData): number {
   let imported = 0;
 
   if (Array.isArray(data.providerConnections)) {
@@ -78,7 +187,7 @@ function importConfigDb(db, data) {
       (id, provider, auth_type, name, priority, is_active, data, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const c of data.providerConnections) {
+    for (const c of data.providerConnections as ProviderConnection[]) {
       if (!c?.id || !c.provider) continue;
       stmt.run(
         c.id,
@@ -101,7 +210,7 @@ function importConfigDb(db, data) {
       (id, type, name, prefix, api_type, base_url, data, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const n of data.providerNodes) {
+    for (const n of data.providerNodes as ProviderNode[]) {
       if (!n?.id) continue;
       stmt.run(
         n.id,
@@ -124,7 +233,7 @@ function importConfigDb(db, data) {
       (id, name, proxy_url, type, is_active, data, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const p of data.proxyPools) {
+    for (const p of data.proxyPools as ProxyPool[]) {
       if (!p?.id) continue;
       stmt.run(
         p.id,
@@ -146,7 +255,7 @@ function importConfigDb(db, data) {
       (id, name, data, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?)
     `);
-    for (const c of data.combos) {
+    for (const c of data.combos as Combo[]) {
       if (!c?.id) continue;
       stmt.run(
         c.id,
@@ -165,15 +274,15 @@ function importConfigDb(db, data) {
       (id, name, key, machine_id, is_active, created_at, limit_type, requests_per_minute, concurrent_requests)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const k of data.apiKeys) {
+    for (const k of data.apiKeys as ApiKey[]) {
       if (!k?.id || !k.key) continue;
       const limitType = k.limitType === "limited" ? "limited" : "unlimited";
       const requestsPerMinute =
-        limitType === "limited" && Number.isInteger(k.requestsPerMinute) && k.requestsPerMinute > 0
+        limitType === "limited" && Number.isInteger(k.requestsPerMinute) && k.requestsPerMinute! > 0
           ? k.requestsPerMinute
           : null;
       const concurrentRequests =
-        limitType === "limited" && Number.isInteger(k.concurrentRequests) && k.concurrentRequests > 0
+        limitType === "limited" && Number.isInteger(k.concurrentRequests) && k.concurrentRequests! > 0
           ? k.concurrentRequests
           : null;
       stmt.run(
@@ -202,7 +311,7 @@ function importConfigDb(db, data) {
 
   if (Array.isArray(data.customModels)) {
     const stmt = db.prepare("INSERT OR IGNORE INTO custom_models (provider_alias, id, type, name) VALUES (?, ?, ?, ?)");
-    for (const m of data.customModels) {
+    for (const m of data.customModels as Record<string, string>[]) {
       if (!m?.providerAlias || !m?.id) continue;
       stmt.run(m.providerAlias, m.id, m.type || "llm", m.name || m.id);
       imported++;
@@ -231,7 +340,7 @@ function importConfigDb(db, data) {
   return imported;
 }
 
-function importUsageDb(db, data) {
+function importUsageDb(db: SqliteDatabase, data: UsageDbData): number {
   let imported = 0;
 
   if (Array.isArray(data.history)) {
@@ -241,12 +350,12 @@ function importUsageDb(db, data) {
        prompt_tokens, completion_tokens, cost, data)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const e of data.history) {
+    for (const e of data.history as UsageEntry[]) {
       if (!e?.timestamp) continue;
       const t = e.tokens || {};
       const prompt = t.prompt_tokens ?? t.input_tokens ?? 0;
       const completion = t.completion_tokens ?? t.output_tokens ?? 0;
-      const rest = {};
+      const rest: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(e)) {
         if (
           ![
@@ -296,20 +405,21 @@ function importUsageDb(db, data) {
     `);
     for (const [dateKey, day] of Object.entries(data.dailySummary)) {
       if (!day || typeof day !== "object") continue;
+      const d = day as DailyStats;
       dayStmt.run(
         dateKey,
         "day",
         "_",
-        day.requests || 0,
-        day.promptTokens || 0,
-        day.completionTokens || 0,
-        day.cost || 0,
+        d.requests || 0,
+        d.promptTokens || 0,
+        d.completionTokens || 0,
+        d.cost || 0,
         null,
       );
       for (const bucket of ["byProvider", "byModel", "byAccount", "byApiKey", "byEndpoint"]) {
-        const obj = day[bucket];
+        const obj = d[bucket];
         if (!obj || typeof obj !== "object") continue;
-        for (const [k, v] of Object.entries(obj)) {
+        for (const [k, v] of Object.entries(obj as Record<string, DailyStats>)) {
           const { requests, promptTokens, completionTokens, cost, ...meta } = v || {};
           dayStmt.run(
             dateKey,
@@ -330,7 +440,7 @@ function importUsageDb(db, data) {
   return imported;
 }
 
-function importRequestDetails(db, data) {
+function importRequestDetails(db: SqliteDatabase, data: { records?: RequestDetailRecord[] }): number {
   if (!Array.isArray(data.records)) return 0;
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO request_details
@@ -368,14 +478,19 @@ function importRequestDetails(db, data) {
   return imported;
 }
 
+export interface MigrationSummary {
+  imported: number;
+  files: { file: string; rows: number }[];
+}
+
 // Public entry — runs inside the caller's transaction scope if wrapped.
 // Each legacy file is imported in its own transaction so a corrupt file
 // doesn't block the others.
-export function migrateFromJson(db, dataDir) {
-  const summary = { imported: 0, files: [] };
+export function migrateFromJson(db: SqliteDatabase, dataDir: string): MigrationSummary {
+  const summary: MigrationSummary = { imported: 0, files: [] };
 
   const cfgPath = path.join(/*turbopackIgnore: true*/ dataDir, DB_JSON);
-  const cfg = readJson(cfgPath);
+  const cfg = readJson(cfgPath) as ConfigDbData | null;
   if (cfg) {
     const count = db.transaction(() => importConfigDb(db, cfg)).immediate();
     summary.imported += count;
@@ -384,7 +499,7 @@ export function migrateFromJson(db, dataDir) {
   }
 
   const usagePath = path.join(/*turbopackIgnore: true*/ dataDir, USAGE_JSON);
-  const usage = readJson(usagePath);
+  const usage = readJson(usagePath) as UsageDbData | null;
   if (usage) {
     const count = db.transaction(() => importUsageDb(db, usage)).immediate();
     summary.imported += count;
@@ -393,7 +508,7 @@ export function migrateFromJson(db, dataDir) {
   }
 
   const rdPath = path.join(/*turbopackIgnore: true*/ dataDir, REQUEST_DETAILS_JSON);
-  const rd = readJson(rdPath);
+  const rd = readJson(rdPath) as { records?: RequestDetailRecord[] } | null;
   if (rd) {
     const count = db.transaction(() => importRequestDetails(db, rd)).immediate();
     summary.imported += count;

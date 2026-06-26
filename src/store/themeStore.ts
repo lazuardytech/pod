@@ -4,10 +4,19 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { THEME_CONFIG } from "@/shared/constants/config";
 
-const useThemeStore = create(
+export type Theme = "dark" | "light" | "system";
+
+export interface ThemeState {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
+  initTheme: () => void;
+}
+
+const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: THEME_CONFIG.defaultTheme,
+      theme: THEME_CONFIG.defaultTheme as Theme,
 
       setTheme: (theme) => {
         set({ theme });
@@ -16,7 +25,7 @@ const useThemeStore = create(
 
       toggleTheme: () => {
         const currentTheme = get().theme;
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        const newTheme: Theme = currentTheme === "dark" ? "light" : "dark";
         set({ theme: newTheme });
         applyTheme(newTheme);
       },
@@ -33,11 +42,11 @@ const useThemeStore = create(
 );
 
 // Apply theme to document
-function applyTheme(theme) {
+function applyTheme(theme: Theme) {
   if (typeof window === "undefined") return;
 
   const root = document.documentElement;
-  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const systemTheme: Theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
   const effectiveTheme = theme === "system" ? systemTheme : theme;
 

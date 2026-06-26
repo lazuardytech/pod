@@ -5,7 +5,7 @@
 // Source of truth is still `schema.sql` next to this file; if you edit one,
 // keep the other in sync. The SQL text below is identical to schema.sql.
 
-export const SCHEMA_SQL = `
+export const SCHEMA_SQL: string = `
 -- Pod SQLite schema v1
 -- Hybrid model: hot fields as columns, flexible fields as JSON TEXT.
 

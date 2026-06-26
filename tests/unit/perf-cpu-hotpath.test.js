@@ -18,7 +18,7 @@ describe("_health.js: PRAGMA integrity_check is cached", () => {
     vi.resetModules();
     pragmaCallCount = 0;
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
@@ -126,7 +126,7 @@ describe("_health.js: integrity_check cache works with non-ok result", () => {
     vi.resetModules();
     pragmaCallCount = 0;
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
@@ -277,7 +277,7 @@ describe("buildHealthPayload: payload shape unchanged after caching fix", () => 
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {

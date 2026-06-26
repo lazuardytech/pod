@@ -18,7 +18,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -94,7 +94,7 @@ describe('strategy: "exact" / "recent"', () => {
 
   it("respects retentionDays cutoff — old memories excluded", async () => {
     const { deleteMemory } = await import("@/lib/memory/store.js");
-    const { getDatabase } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     const apiKeyId = uid();
 
