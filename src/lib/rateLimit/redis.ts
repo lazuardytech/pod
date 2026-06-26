@@ -9,37 +9,40 @@ const WINDOW_MS = 60000;
 const CLEANUP_TTL = 120;
 const CONC_SAFETY_TTL = 60;
 
+export type RpmResult =
+  | { ok: true; member: string }
+  | { ok: false; retryAfterSeconds: number; type: "rpm" | "concurrent" | "error" };
+
+export type ConcResult =
+  | { ok: true; release: () => Promise<void>; type: "concurrent" }
+  | { ok: false; retryAfterSeconds: number; type: "rpm" | "concurrent" | "error" };
+
 export class RedisBackend {
-  constructor(url) {
+  url: string;
+  client: Bun.RedisClient | null = null;
+  connected: boolean = false;
+
+  constructor(url: string) {
     this.url = url;
-    this.client = null;
-    this.connected = false;
   }
 
-  async connect() {
-    this.client = new Bun.RedisClient();
-    // Bun.RedisClient.connect() with REDIS_URL
-    // The client reads REDIS_URL from env, but we need to pass it explicitly.
-    // Try: set env var temporarily or use the connect method if it accepts a URL
-
-    // Bun.RedisClient constructor with url
-    // From Bun docs: client connects using environment variable, or we can
-    // call connect(url)
+  async connect(): Promise<void> {
+    this.client = new Bun.RedisClient(this.url);
     try {
-      await this.client.connect(this.url);
+      await this.client.connect();
       await this.client.ping();
       this.connected = true;
     } catch (err) {
       this.connected = false;
       // Explicitly disconnect to release the TCP socket
       try {
-        await this.client.close();
+        this.client.close();
       } catch {}
       throw err;
     }
   }
 
-  async close() {
+  async close(): Promise<void> {
     if (this.client && this.connected) {
       await this.client.close();
       this.connected = false;
@@ -48,10 +51,9 @@ export class RedisBackend {
 
   /**
    * Acquire RPM permit using sliding window via Sorted Set.
-   * Returns { ok: false, retryAfterSeconds } or { ok: true }.
    */
-  async acquireRpm(keyId, maxRpm) {
-    if (!this.connected) return { ok: false, retryAfterSeconds: 1 };
+  async acquireRpm(keyId: string, maxRpm: number): Promise<RpmResult> {
+    if (!this.connected || !this.client) return { ok: false, retryAfterSeconds: 1, type: "error" };
 
     const now = Date.now();
     const windowStart = now - WINDOW_MS;
@@ -78,17 +80,16 @@ export class RedisBackend {
       await this.client.zadd(key, now, member);
       return { ok: true, member };
     } catch (err) {
-      console.warn("[RateLimit] Redis RPM error:", err?.message || err);
+      console.warn("[RateLimit] Redis RPM error:", (err as Error)?.message || err);
       return { ok: false, retryAfterSeconds: 1, type: "error" };
     }
   }
 
   /**
    * Release an RPM slot (called when concurrent check fails after RPM passes).
-   * Removes the most-recently-added entry using the unique requestId.
    */
-  async releaseRpm(keyId, requestId) {
-    if (!this.connected) return;
+  async releaseRpm(keyId: string, requestId: string | undefined): Promise<void> {
+    if (!this.connected || !this.client) return;
     const key = RPM_KEY_PREFIX + keyId;
     try {
       if (requestId) {
@@ -104,10 +105,9 @@ export class RedisBackend {
 
   /**
    * Acquire concurrent request permit via INCR/DECR.
-   * Returns { ok: true, release: fn } or { ok: false, retryAfterSeconds: 1 }.
    */
-  async acquireConc(keyId, maxConc) {
-    if (!this.connected) return { ok: false, retryAfterSeconds: 1 };
+  async acquireConc(keyId: string, maxConc: number): Promise<ConcResult> {
+    if (!this.connected || !this.client) return { ok: false, retryAfterSeconds: 1, type: "error" };
 
     const key = CONC_KEY_PREFIX + keyId;
 
@@ -128,7 +128,7 @@ export class RedisBackend {
           if (released) return;
           released = true;
           try {
-            await this.client.decr(key);
+            await this.client?.decr(key);
           } catch {
             // Best effort
           }
@@ -136,7 +136,7 @@ export class RedisBackend {
         type: "concurrent",
       };
     } catch (err) {
-      console.warn("[RateLimit] Redis concurrent error:", err?.message || err);
+      console.warn("[RateLimit] Redis concurrent error:", (err as Error)?.message || err);
       return { ok: false, retryAfterSeconds: 1, type: "error" };
     }
   }

@@ -1,21 +1,21 @@
 // Public API for rate limiting — Redis-backed when REDIS_URL is set, in-memory fallback.
 // Replaces previous @/app/api/v1/_utils/apiKeyRateLimit.js
 
-import { initRateLimit, getBackend } from "./backend.js";
 import { getApiKeyByKey } from "@/lib/localDb";
 import { extractApiKey } from "@/sse/services/auth.js";
+import { getBackend, initRateLimit } from "./backend";
 
 export { initRateLimit };
 
 // ======== Response helpers (shared across backends) ========
 
-function rateLimitResponse(reason, retryAfterSeconds) {
+function rateLimitResponse(reason: string, retryAfterSeconds: number | undefined): Response {
   const message =
     reason === "concurrent"
       ? "Too many concurrent requests for this API key"
       : "Request rate limit exceeded for this API key";
 
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Retry-After": String(retryAfterSeconds || 1),
@@ -33,27 +33,27 @@ function rateLimitResponse(reason, retryAfterSeconds) {
   );
 }
 
-function wrapStreamingResponse(response, release) {
+function wrapStreamingResponse(response: Response, release: () => void | Promise<void>): Response {
   const sourceBody = response.body;
   if (!sourceBody) {
-    release();
+    void release();
     return response;
   }
 
-  let reader = null;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   const safeRelease = (() => {
     let done = false;
-    return () => {
+    return (): void => {
       if (done) return;
       done = true;
-      release();
+      void release();
     };
   })();
 
-  const wrappedBody = new ReadableStream({
+  const wrappedBody = new ReadableStream<Uint8Array>({
     start(controller) {
       reader = sourceBody.getReader();
-      const pump = async () => {
+      const pump = async (): Promise<void> => {
         try {
           while (true) {
             const { done, value } = await reader.read();
@@ -62,14 +62,14 @@ function wrapStreamingResponse(response, release) {
               controller.close();
               return;
             }
-            controller.enqueue(value);
+            if (value) controller.enqueue(value);
           }
         } catch (error) {
           safeRelease();
           controller.error(error);
         }
       };
-      pump();
+      void pump();
     },
     async cancel(reason) {
       safeRelease();
@@ -88,10 +88,10 @@ function wrapStreamingResponse(response, release) {
   });
 }
 
-function finalizeResponse(response, release) {
+function finalizeResponse(response: Response | unknown, release: (() => void | Promise<void>) | null): Response | unknown {
   if (!release) return response;
   if (!(response instanceof Response)) {
-    release();
+    void release();
     return response;
   }
 
@@ -101,7 +101,7 @@ function finalizeResponse(response, release) {
     contentType.includes("application/x-ndjson") ||
     contentType.includes("application/ndjson");
   if (!isStreaming) {
-    release();
+    void release();
     return response;
   }
   return wrapStreamingResponse(response, release);
@@ -109,10 +109,14 @@ function finalizeResponse(response, release) {
 
 // ======== Public API ========
 
+type RateLimitCheckResult =
+  | { ok: true; release: (() => void) | null; response: undefined }
+  | { ok: false; release: null; response: Response };
+
 /**
  * Standalone rate limit check for routes that already handle auth themselves.
  */
-export async function checkRateLimitByKey(apiKey) {
+export async function checkRateLimitByKey(apiKey: string | null | undefined): Promise<RateLimitCheckResult> {
   if (!apiKey) return { ok: true, release: null, response: undefined };
   const apiKeyRecord = await getApiKeyByKey(apiKey).catch(() => null);
   if (!apiKeyRecord) return { ok: true, release: null, response: undefined };
@@ -120,11 +124,17 @@ export async function checkRateLimitByKey(apiKey) {
   const backend = await getBackend();
 
   // Duck-type: RedisBackend has acquireRpm, MemoryBackend doesn't
-  if (backend.acquireRpm) {
+  type RedisLike = {
+    acquireRpm: (keyId: string, max: number) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
+    acquireConc: (keyId: string, max: number) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
+    releaseRpm?: (keyId: string, member: string | undefined) => Promise<void>;
+  };
+  const redisBackend = backend as unknown as Partial<RedisLike>;
+  if (redisBackend.acquireRpm) {
     const config = getLimitConfigFromRecord(apiKeyRecord);
     if (!config) return { ok: true, release: null, response: undefined };
 
-    const rpmResult = await backend.acquireRpm(apiKeyRecord.id, config.requestsPerMinute);
+    const rpmResult = await redisBackend.acquireRpm(apiKeyRecord.id, config.requestsPerMinute);
     if (!rpmResult.ok) {
       return {
         ok: false,
@@ -133,29 +143,41 @@ export async function checkRateLimitByKey(apiKey) {
       };
     }
 
-    const concResult = await backend.acquireConc(apiKeyRecord.id, config.concurrentRequests);
+    if (!redisBackend.acquireConc) {
+      return { ok: true, release: null, response: undefined };
+    }
+    const concResult = await redisBackend.acquireConc(apiKeyRecord.id, config.concurrentRequests);
     if (!concResult.ok) {
       // Release RPM slot — consumed but we can't proceed due to concurrent limit
       try {
-        await backend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
+        await redisBackend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
       } catch {}
       return { ok: false, release: null, response: rateLimitResponse(concResult.type || "concurrent", 1) };
     }
 
-    return { ok: true, release: concResult.release, response: undefined };
+    return { ok: true, release: concResult.release ? () => void concResult.release?.() : null, response: undefined };
   }
 
   // MemoryBackend path
-  const permit = backend.acquirePermit(apiKeyRecord);
+  type MemoryLike = {
+    acquirePermit: (record: { id: string; limitType?: string; requestsPerMinute?: number; concurrentRequests?: number }) => {
+      ok: boolean;
+      reason?: string;
+      retryAfterSeconds?: number;
+      release?: (() => void) | null;
+    };
+  };
+  const memBackend = backend as unknown as MemoryLike;
+  const permit = memBackend.acquirePermit(apiKeyRecord);
   if (!permit.ok) {
-    return { ok: false, release: null, response: rateLimitResponse(permit.reason, permit.retryAfterSeconds) };
+    return { ok: false, release: null, response: rateLimitResponse(permit.reason || "rpm", permit.retryAfterSeconds) };
   }
-  return { ok: true, release: permit.release, response: undefined };
+  return { ok: true, release: permit.release ?? null, response: undefined };
 }
 
-function getLimitConfigFromRecord(apiKeyRecord) {
+function getLimitConfigFromRecord(apiKeyRecord: { limitType?: string; requestsPerMinute?: number; concurrentRequests?: number } | null): { requestsPerMinute: number; concurrentRequests: number } | null {
   if (!apiKeyRecord || apiKeyRecord.limitType !== "limited") return null;
-  const toPositiveInt = (v) => {
+  const toPositiveInt = (v: unknown): number | null => {
     const num = Number(v);
     if (!Number.isFinite(num) || !Number.isInteger(num) || num <= 0) return null;
     return num;
@@ -168,9 +190,8 @@ function getLimitConfigFromRecord(apiKeyRecord) {
 
 /**
  * Wraps an API handler with rate limit enforcement.
- * Uses backend.acquireRpm + backend.acquireConc for Redis, or backend.acquirePermit for memory.
  */
-export async function withApiKeyRateLimit(request, handler) {
+export async function withApiKeyRateLimit(request: Request, handler: () => Promise<unknown>): Promise<unknown> {
   const apiKey = extractApiKey(request);
   if (!apiKey) return await handler();
 
@@ -179,42 +200,58 @@ export async function withApiKeyRateLimit(request, handler) {
 
   const backend = await getBackend();
 
-  // Duck-type: RedisBackend has acquireRpm, MemoryBackend doesn't
-  if (backend.acquireRpm) {
+  type RedisLike = {
+    acquireRpm: (keyId: string, max: number) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
+    acquireConc: (keyId: string, max: number) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
+    releaseRpm?: (keyId: string, member: string | undefined) => Promise<void>;
+  };
+  const redisBackend = backend as unknown as Partial<RedisLike>;
+  if (redisBackend.acquireRpm) {
     const config = getLimitConfigFromRecord(apiKeyRecord);
     if (!config) return await handler();
 
-    const rpmResult = await backend.acquireRpm(apiKeyRecord.id, config.requestsPerMinute);
+    const rpmResult = await redisBackend.acquireRpm(apiKeyRecord.id, config.requestsPerMinute);
     if (!rpmResult.ok) {
       return rateLimitResponse(rpmResult.type || "rpm", rpmResult.retryAfterSeconds);
     }
 
-    const concResult = await backend.acquireConc(apiKeyRecord.id, config.concurrentRequests);
+    if (!redisBackend.acquireConc) {
+      return await handler();
+    }
+    const concResult = await redisBackend.acquireConc(apiKeyRecord.id, config.concurrentRequests);
     if (!concResult.ok) {
-      // Release RPM slot — consumed but we can't proceed due to concurrent limit
       try {
-        await backend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
+        await redisBackend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
       } catch {}
       return rateLimitResponse(concResult.type || "concurrent", 1);
     }
 
-    let release = concResult.release;
+    let release: (() => void | Promise<void>) | null = concResult.release ? () => void concResult.release() : null;
     try {
       const response = await handler();
       const finalResponse = finalizeResponse(response, release);
       release = null;
       return finalResponse;
     } catch (error) {
-      if (release) release?.();
+      if (release) await release();
       throw error;
     }
   }
 
   // MemoryBackend path
-  const permit = backend.acquirePermit(apiKeyRecord);
-  if (!permit.ok) return rateLimitResponse(permit.reason, permit.retryAfterSeconds);
+  type MemoryLike = {
+    acquirePermit: (record: { id: string; limitType?: string; requestsPerMinute?: number; concurrentRequests?: number }) => {
+      ok: boolean;
+      reason?: string;
+      retryAfterSeconds?: number;
+      release?: (() => void) | null;
+    };
+  };
+  const memBackend = backend as unknown as MemoryLike;
+  const permit = memBackend.acquirePermit(apiKeyRecord);
+  if (!permit.ok) return rateLimitResponse(permit.reason || "rpm", permit.retryAfterSeconds);
 
-  let release = permit.release;
+  let release: (() => void) | null = permit.release ?? null;
   try {
     const response = await handler();
     const finalResponse = finalizeResponse(response, release);

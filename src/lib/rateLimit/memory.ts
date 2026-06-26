@@ -1,13 +1,13 @@
 // In-memory rate limiter — extracted from original apiKeyRateLimit.js
 // Falls back to this when Redis is unavailable.
 
-const minuteCounters = new Map();
-const concurrentCounters = new Map();
+const minuteCounters = new Map<string, { windowStart: number; count: number; updatedAt: number }>();
+const concurrentCounters = new Map<string, { count: number; lastAccess: number }>();
 const COUNTER_TTL_MS = 120000;
 let lastConcurrentTrim = Date.now();
 const CONCURRENT_TRIM_INTERVAL_MS = 60000;
 
-function trimConcurrentCounters(nowMs) {
+function trimConcurrentCounters(nowMs: number): void {
   if (nowMs - lastConcurrentTrim < CONCURRENT_TRIM_INTERVAL_MS) return;
   lastConcurrentTrim = nowMs;
   for (const [keyId, entry] of concurrentCounters.entries()) {
@@ -17,25 +17,33 @@ function trimConcurrentCounters(nowMs) {
   }
 }
 
-function toPositiveInt(value) {
+function toPositiveInt(value: unknown): number | null {
   const num = Number(value);
   if (!Number.isFinite(num) || !Number.isInteger(num) || num <= 0) return null;
   return num;
 }
 
+export type LimitConfig = { requestsPerMinute: number; concurrentRequests: number };
+
+export type ApiKeyRecord = { id: string; limitType?: string; requestsPerMinute?: number; concurrentRequests?: number };
+
+export type PermitResult =
+  | { ok: true; release: (() => void) | null }
+  | { ok: false; reason: "rpm" | "concurrent"; retryAfterSeconds: number };
+
 export class MemoryBackend {
   constructor() {}
 
-  async connect() {
+  async connect(): Promise<void> {
     // No-op: in-memory is always ready
   }
 
-  async close() {
+  async close(): Promise<void> {
     minuteCounters.clear();
     concurrentCounters.clear();
   }
 
-  getLimitConfig(apiKeyRecord) {
+  getLimitConfig(apiKeyRecord: ApiKeyRecord | null | undefined): LimitConfig | null {
     if (!apiKeyRecord || apiKeyRecord.limitType !== "limited") return null;
     const requestsPerMinute = toPositiveInt(apiKeyRecord.requestsPerMinute);
     const concurrentRequests = toPositiveInt(apiKeyRecord.concurrentRequests);
@@ -43,9 +51,9 @@ export class MemoryBackend {
     return { requestsPerMinute, concurrentRequests };
   }
 
-  maybeTrimCounterMaps(nowMs) {
+  maybeTrimCounterMaps(nowMs: number): void {
     // Periodic time-based trim for all entries beyond TTL (not just when >10k)
-    const expired = [];
+    const expired: string[] = [];
     for (const [keyId, entry] of minuteCounters.entries()) {
       if (nowMs - entry.updatedAt > COUNTER_TTL_MS) {
         expired.push(keyId);
@@ -56,7 +64,7 @@ export class MemoryBackend {
     }
   }
 
-  acquirePermit(apiKeyRecord) {
+  acquirePermit(apiKeyRecord: ApiKeyRecord): PermitResult {
     const config = this.getLimitConfig(apiKeyRecord);
     if (!config) return { ok: true, release: null };
 
