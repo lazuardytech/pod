@@ -113,6 +113,6 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
       lastStatus = result.status;
       continue;
     }
-    return result.response;
+    return errorResponse(result.status, result.error);
   }
 }

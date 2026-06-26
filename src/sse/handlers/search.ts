@@ -177,6 +177,6 @@ async function handleSingleProviderSearch(
       lastStatus = result.status;
       continue;
     }
-    return result.response;
+    return errorResponse(result.status, result.error);
   }
 }

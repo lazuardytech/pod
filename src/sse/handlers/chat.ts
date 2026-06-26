@@ -70,7 +70,10 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
   }
   const userAgent = request?.headers?.get("user-agent") || "";
   const bypassResponse = handleBypassRequest(body, modelStr, userAgent, !!settings.ccFilterNaming);
-  if (bypassResponse) return (bypassResponse.response || bypassResponse) as Response;
+  if (bypassResponse) {
+    if ("response" in bypassResponse && bypassResponse.response) return bypassResponse.response;
+    return bypassResponse as Response;
+  }
   const comboInfo = await getComboInfo(modelStr);
   if (comboInfo) {
     if (comboInfo.systemPrompt) {
@@ -89,7 +92,16 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
       body,
       models: comboInfo.models,
       handleSingleModel: (b, m) =>
-        handleSingleModelChat(b, m, clientRawRequest, request, apiKey, comboInfo.contentFilterMessage, apiKeyId, modelStr),
+        handleSingleModelChat(
+          b,
+          m,
+          clientRawRequest,
+          request,
+          apiKey,
+          comboInfo.contentFilterMessage,
+          apiKeyId,
+          modelStr,
+        ),
       log,
       comboName: modelStr,
       comboStrategy,
@@ -132,7 +144,16 @@ async function handleSingleModelChat(
         body,
         models: comboInfo.models,
         handleSingleModel: (b, m) =>
-          handleSingleModelChat(b, m, clientRawRequest, request, apiKey, comboInfo.contentFilterMessage, apiKeyId, modelStr),
+          handleSingleModelChat(
+            b,
+            m,
+            clientRawRequest,
+            request,
+            apiKey,
+            comboInfo.contentFilterMessage,
+            apiKeyId,
+            modelStr,
+          ),
         log,
         comboName: modelStr,
         comboStrategy,
@@ -240,9 +261,13 @@ async function handleSingleModelChat(
         lastStatus = result.status;
         continue;
       }
-      return result.response;
+      return errorResponse(result.status, result.error);
     } catch (err) {
-      log.error("CHAT", `Unexpected error in fallback loop for ${provider}/${model}:`, (err as { message?: string })?.message || err);
+      log.error(
+        "CHAT",
+        `Unexpected error in fallback loop for ${provider}/${model}:`,
+        (err as { message?: string })?.message || err,
+      );
       excludeConnectionIds.add(credentials?.connectionId || "unknown");
       lastError = (err as { message?: string })?.message || "Unexpected error";
       lastStatus = HTTP_STATUS.INTERNAL_SERVER_ERROR;
