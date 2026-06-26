@@ -21,8 +21,8 @@ describe("logging audit regressions", () => {
   });
 
   it("does not log raw worker forwarder error messages", () => {
-    const forwardSource = read("cloud/src/handlers/forward.js");
-    const forwardRawSource = read("cloud/src/handlers/forwardRaw.js");
+    const forwardSource = read("cloud/src/handlers/forward.ts");
+    const forwardRawSource = read("cloud/src/handlers/forwardRaw.ts");
 
     expect(forwardSource).not.toContain('console.error("[FORWARD] Error:", error.message);');
     expect(forwardRawSource).not.toContain('console.error("[FORWARD_RAW] Error:", error.message);');

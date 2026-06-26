@@ -240,7 +240,7 @@ async function getProviderCredentials(
     const allConnections = Object.entries(providers)
       .filter(([, conn]) => (conn.provider as string) === provider && conn.isActive)
       .map(([, conn]) => conn);
-    const earliest = getEarliestRateLimitedUntil(allConnections.map(c => c.rateLimitedUntil as string | undefined));
+    const earliest = getEarliestRateLimitedUntil(allConnections);
     if (earliest) {
       const rateLimitedConns = allConnections.filter(
         c => c.rateLimitedUntil && new Date(c.rateLimitedUntil as string).getTime() > Date.now()
