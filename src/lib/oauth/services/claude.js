@@ -1,6 +1,6 @@
 import { getServerCredentials } from "../config/index.js";
-import { CLAUDE_CONFIG } from "../constants/oauth.js";
-import { spinner as createSpinner } from "../utils/ui.js";
+import { CLAUDE_CONFIG } from "../constants/oauth";
+import { spinner as createSpinner } from "../utils/ui";
 import { OAuthService } from "./oauth.js";
 
 /**

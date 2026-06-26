@@ -1,8 +1,8 @@
 import open from "open";
 import { getServerCredentials } from "../config/index.js";
-import { QWEN_CONFIG } from "../constants/oauth.js";
-import { generatePKCE } from "../utils/pkce.js";
-import { spinner as createSpinner } from "../utils/ui.js";
+import { QWEN_CONFIG } from "../constants/oauth";
+import { generatePKCE } from "../utils/pkce";
+import { spinner as createSpinner } from "../utils/ui";
 
 /**
  * Qwen OAuth Service

@@ -1,5 +1,5 @@
-import { GITHUB_CONFIG } from "../constants/oauth.js";
-import { spinner as createSpinner } from "../utils/ui.js";
+import { GITHUB_CONFIG } from "../constants/oauth";
+import { spinner as createSpinner } from "../utils/ui";
 import { OAuthService } from "./oauth.js";
 
 /**
@@ -189,7 +189,7 @@ export class GitHubService extends OAuthService {
 
       // Send credentials to server
       const { server, token, userId } = await import("../config/index.js").then((m) => m.getServerCredentials());
-      const spinner = (await import("../utils/ui.js")).spinner("Connecting to server...").start();
+      const spinner = (await import("../utils/ui")).spinner("Connecting to server...").start();
 
       const response = await fetch(`${server}/api/cli/providers/github`, {
         method: "POST",
@@ -214,7 +214,7 @@ export class GitHubService extends OAuthService {
       spinner.succeed("GitHub Copilot connected successfully!");
       console.log(`\nConnected as: ${authResult.userInfo.login}`);
     } catch (error) {
-      const { error: showError } = await import("../utils/ui.js");
+      const { error: showError } = await import("../utils/ui");
       showError(`GitHub connection failed: ${error.message}`);
       throw error;
     }

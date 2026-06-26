@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import open from "open";
 import { getServerCredentials } from "../config/index.js";
-import { ANTIGRAVITY_CONFIG } from "../constants/oauth.js";
-import { startLocalServer } from "../utils/server.js";
-import { spinner as createSpinner } from "../utils/ui.js";
+import { ANTIGRAVITY_CONFIG } from "../constants/oauth";
+import { startLocalServer } from "../utils/server";
+import { spinner as createSpinner } from "../utils/ui";
 
 /**
  * Antigravity OAuth Service

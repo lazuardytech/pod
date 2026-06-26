@@ -1,4 +1,4 @@
-import { KIRO_CONFIG } from "../constants/oauth.js";
+import { KIRO_CONFIG } from "../constants/oauth";
 
 /**
  * Kiro OAuth Service

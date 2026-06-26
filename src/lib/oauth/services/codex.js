@@ -1,9 +1,9 @@
 import open from "open";
 import { getServerCredentials } from "../config/index.js";
-import { CODEX_CONFIG } from "../constants/oauth.js";
-import { generatePKCE } from "../utils/pkce.js";
-import { startLocalServer } from "../utils/server.js";
-import { spinner as createSpinner } from "../utils/ui.js";
+import { CODEX_CONFIG } from "../constants/oauth";
+import { generatePKCE } from "../utils/pkce";
+import { startLocalServer } from "../utils/server";
+import { spinner as createSpinner } from "../utils/ui";
 import { OAuthService } from "./oauth.js";
 
 /**

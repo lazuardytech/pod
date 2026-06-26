@@ -3,19 +3,18 @@ import { URL } from "node:url";
 
 /**
  * Start a local HTTP server to receive OAuth callback
- * @param {Function} onCallback - Called with query params when callback received
- * @param {number} fixedPort - Optional fixed port number (default: random)
- * @returns {Promise<{server: http.Server, port: number, close: Function}>}
  */
-export function startLocalServer(onCallback, fixedPort = null) {
+export function startLocalServer(
+  onCallback: (params: Record<string, string>) => void,
+  fixedPort: number | null = null,
+): Promise<{ server: http.Server; port: number; close: () => void }> {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
-      const url = new URL(req.url, `http://localhost`);
+      const url = new URL(req.url ?? "/", `http://localhost`);
 
       if (url.pathname === "/callback" || url.pathname === "/auth/callback") {
         const params = Object.fromEntries(url.searchParams);
 
-        // Send success response to browser with auto-close attempt
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(`<!DOCTYPE html>
 <html>
@@ -56,7 +55,6 @@ export function startLocalServer(onCallback, fixedPort = null) {
 </body>
 </html>`);
 
-        // Call callback with params
         onCallback(params);
       } else {
         res.writeHead(404);
@@ -64,10 +62,10 @@ export function startLocalServer(onCallback, fixedPort = null) {
       }
     });
 
-    // Listen on fixed port or find available port
     const portToUse = fixedPort || 0;
     server.listen(portToUse, "127.0.0.1", () => {
-      const { port } = server.address();
+      const addr = server.address();
+      const port = typeof addr === "object" && addr ? addr.port : 0;
       resolve({
         server,
         port,
@@ -76,7 +74,8 @@ export function startLocalServer(onCallback, fixedPort = null) {
     });
 
     server.on("error", (err) => {
-      if (err.code === "EADDRINUSE" && fixedPort) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "EADDRINUSE" && fixedPort) {
         reject(new Error(`Port ${fixedPort} is already in use. Please close other applications using this port.`));
       } else {
         reject(err);
@@ -85,50 +84,57 @@ export function startLocalServer(onCallback, fixedPort = null) {
   });
 }
 
+type CallbackWaiter = {
+  promise: Promise<Record<string, string>>;
+  resolve: (params: Record<string, string>) => void;
+  reject: (err: Error) => void;
+  timeout: ReturnType<typeof setTimeout> | null;
+};
+
 /**
  * Wait for callback with timeout
- * @param {number} timeoutMs - Timeout in milliseconds
- * @returns {Promise<Object>} - Callback params
  */
-export function waitForCallback(timeoutMs = 300000) {
+export function waitForCallback(timeoutMs: number = 300000): Promise<Record<string, string>> {
   return new Promise((resolve, reject) => {
-    let resolved = false;
-
     const timeout = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        reject(new Error("Authentication timeout"));
-      }
+      reject(new Error("Authentication timeout"));
     }, timeoutMs);
-
-    const onCallback = (params) => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        resolve(params);
-      }
+    // Caller wires the resolve into startLocalServer's onCallback.
+    (resolve as unknown as { __onCallback?: (p: Record<string, string>) => void }).__onCallback = (params) => {
+      clearTimeout(timeout);
+      resolve(params);
     };
-
-    // Return the callback function
-    resolve.__onCallback = onCallback;
   });
 }
 
 // Singleton proxy server for Codex OAuth callback on fixed port
-let codexProxyServer = null;
-let codexProxyTimeout = null;
+let codexProxyServer: http.Server | null = null;
+let codexProxyTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const CODEX_PROXY_TIMEOUT_MS = 300000; // 5 minutes
+const CODEX_PROXY_TIMEOUT_MS = 300000;
 const CODEX_PORT = 1455;
 
-// Pending exchange sessions keyed by state — used by server-side exchange mode
-const pendingExchanges = new Map();
+type CodexSession = {
+  codeVerifier: string;
+  redirectUri: string;
+  status: "pending" | "done" | "error";
+  createdAt: number;
+  connectionId?: string;
+  email?: string;
+  error?: string;
+};
 
-/**
- * Register a pending exchange session for server-side mode.
- * Modal client calls this before opening popup.
- */
-export function registerCodexSession({ state, codeVerifier, redirectUri }) {
+const pendingExchanges = new Map<string, CodexSession>();
+
+export function registerCodexSession({
+  state,
+  codeVerifier,
+  redirectUri,
+}: {
+  state: string;
+  codeVerifier: string;
+  redirectUri: string;
+}): boolean {
   if (!state || !codeVerifier || !redirectUri) return false;
   pendingExchanges.set(state, {
     codeVerifier,
@@ -139,21 +145,15 @@ export function registerCodexSession({ state, codeVerifier, redirectUri }) {
   return true;
 }
 
-/**
- * Read session status (modal polls this).
- */
-export function getCodexSessionStatus(state) {
+export function getCodexSessionStatus(state: string): CodexSession | null {
   return pendingExchanges.get(state) || null;
 }
 
-/**
- * Clear a session (called after modal consumes status).
- */
-export function clearCodexSession(state) {
+export function clearCodexSession(state: string): void {
   pendingExchanges.delete(state);
 }
 
-function renderCodexResultPage(success, message) {
+function renderCodexResultPage(success: boolean, message: string): string {
   const color = success ? "#22c55e" : "#ef4444";
   const icon = success ? "&#10003;" : "&#10007;";
   const title = success ? "Authentication Successful" : "Authentication Failed";
@@ -165,12 +165,7 @@ function renderCodexResultPage(success, message) {
 </div></body></html>`;
 }
 
-/**
- * Start Codex proxy on fixed port 1455.
- * Mode A (server-side): if any session was registered, proxy auto-exchanges + saves DB.
- * Mode B (channel fallback): if no session, proxy 302 redirects to app port for legacy channel-based flow.
- */
-export function startCodexProxy(appPort) {
+export function startCodexProxy(appPort: number): Promise<{ success: true } | { success: false; reason: string }> {
   return new Promise((resolve) => {
     if (codexProxyServer) {
       resolve({ success: true });
@@ -178,7 +173,7 @@ export function startCodexProxy(appPort) {
     }
 
     const server = http.createServer(async (req, res) => {
-      const url = new URL(req.url, "http://localhost");
+      const url = new URL(req.url ?? "/", "http://localhost");
 
       if (url.pathname !== "/callback" && url.pathname !== "/auth/callback") {
         res.writeHead(404);
@@ -191,7 +186,6 @@ export function startCodexProxy(appPort) {
       const errorParam = url.searchParams.get("error");
       const session = state ? pendingExchanges.get(state) : null;
 
-      // Mode A: server-side exchange (session registered)
       if (session) {
         try {
           if (errorParam) {
@@ -199,18 +193,22 @@ export function startCodexProxy(appPort) {
           }
           if (!code) throw new Error("No authorization code received");
 
-          // Lazy import to avoid circular deps
-          const { exchangeTokens } = await import("../providers.js");
+          const { exchangeTokens } = await import("../providers");
           const { createProviderConnection } = await import("@/models");
 
-          const tokenData = await exchangeTokens("codex", code, session.redirectUri, session.codeVerifier, state);
-          const connection = await createProviderConnection({
+          const tokenData = (await exchangeTokens("codex", code, session.redirectUri, session.codeVerifier, state)) as {
+            accessToken?: string;
+            refreshToken?: string;
+            expiresIn?: number;
+            email?: string;
+          };
+          const connection = (await createProviderConnection({
             provider: "codex",
             authType: "oauth",
             ...tokenData,
             expiresAt: tokenData.expiresIn ? new Date(Date.now() + tokenData.expiresIn * 1000).toISOString() : null,
             testStatus: "active",
-          });
+          })) as { id: string; email?: string };
 
           session.status = "done";
           session.connectionId = connection.id;
@@ -220,16 +218,15 @@ export function startCodexProxy(appPort) {
           res.end(renderCodexResultPage(true, "You can close this window."));
         } catch (err) {
           session.status = "error";
-          session.error = err.message;
+          session.error = (err as Error).message;
           res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-          res.end(renderCodexResultPage(false, err.message));
+          res.end(renderCodexResultPage(false, (err as Error).message));
         } finally {
           stopCodexProxy();
         }
         return;
       }
 
-      // Mode B: legacy channel fallback — 302 redirect to app /callback
       const redirectUrl = `http://localhost:${appPort}/callback${url.search}`;
       res.writeHead(302, { Location: redirectUrl });
       res.end();
@@ -243,19 +240,17 @@ export function startCodexProxy(appPort) {
     });
 
     server.on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "EADDRINUSE") {
         resolve({ success: false, reason: "port_busy" });
       } else {
-        resolve({ success: false, reason: err.message });
+        resolve({ success: false, reason: (err as Error).message });
       }
     });
   });
 }
 
-/**
- * Stop the Codex proxy server and cleanup
- */
-export function stopCodexProxy() {
+export function stopCodexProxy(): void {
   if (codexProxyTimeout) {
     clearTimeout(codexProxyTimeout);
     codexProxyTimeout = null;
