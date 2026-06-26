@@ -1,7 +1,7 @@
 # Plan: JavaScript → TypeScript Migration (Pod)
 
-Status: planning
-Scope: `src/`, `cloud/`, `open-sse/` (deferred — see Phase 9)
+Status: done
+Scope: `src/`, `cloud/` ✅, `open-sse/` (frozen as JS — see Phase 9)
 Goal: end state is a strictly-typed, real type system across `src/`, with `tsc --noEmit --strict` green in CI.
 
 ## Non-Negotiables
