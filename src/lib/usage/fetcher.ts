@@ -129,7 +129,9 @@ async function getGitHubUsage(
   }
 }
 
-function formatGitHubQuotaSnapshot(quota: { entitlement: number; remaining: number; unlimited?: boolean } | undefined): GitHubQuota {
+function formatGitHubQuotaSnapshot(
+  quota: { entitlement: number; remaining: number; unlimited?: boolean } | undefined,
+): GitHubQuota {
   if (!quota) return { used: 0, total: 0, unlimited: true };
 
   return {

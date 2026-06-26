@@ -1,4 +1,4 @@
-import { getServerCredentials } from "../config/index.js";
+import { getServerCredentials } from "../config/index";
 import { OPENAI_CONFIG } from "../constants/oauth";
 import { spinner as createSpinner } from "../utils/ui";
 import { OAuthService } from "./oauth.js";

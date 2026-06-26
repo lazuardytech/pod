@@ -176,17 +176,18 @@ type UsageEntry = {
 // In-memory queue of pending daily_summary upserts. usage_history rows still
 // inserted synchronously so dashboard real-time view stays accurate.
 if (!global._summaryQueue) global._summaryQueue = [];
-const summaryQueue = (global._summaryQueue as Array<{
-  timestamp: string;
-  provider?: string;
-  model?: string;
-  connectionId?: string;
-  apiKey?: string;
-  endpoint?: string;
-  prompt: number;
-  completion: number;
-  cost: number;
-}>) || [];
+const summaryQueue =
+  (global._summaryQueue as Array<{
+    timestamp: string;
+    provider?: string;
+    model?: string;
+    connectionId?: string;
+    apiKey?: string;
+    endpoint?: string;
+    prompt: number;
+    completion: number;
+    cost: number;
+  }>) || [];
 let summaryFlushTimer: ReturnType<typeof setTimeout> | null = null;
 const SUMMARY_BATCH_SIZE = 50;
 const SUMMARY_FLUSH_INTERVAL_MS = 500;
@@ -197,7 +198,11 @@ function scheduleSummaryFlush(): void {
   if (summaryFlushTimer.unref) summaryFlushTimer.unref();
 }
 
-async function calculateCost(provider: string | undefined, model: string | undefined, tokens: UsageEntry["tokens"] | undefined): Promise<number> {
+async function calculateCost(
+  provider: string | undefined,
+  model: string | undefined,
+  tokens: UsageEntry["tokens"] | undefined,
+): Promise<number> {
   if (!tokens || !provider || !model) return 0;
   try {
     const { getPricingForModel } = await import("@/lib/localDb");
@@ -232,7 +237,9 @@ async function calculateCost(provider: string | undefined, model: string | undef
 }
 
 function readTotalRequests(db: ReturnType<typeof getDatabase>): number {
-  const r = db.prepare("SELECT value FROM meta WHERE key = 'totalRequestsLifetime'").get() as { value?: string } | undefined;
+  const r = db.prepare("SELECT value FROM meta WHERE key = 'totalRequestsLifetime'").get() as
+    | { value?: string }
+    | undefined;
   return r ? parseInt(r.value, 10) || 0 : 0;
 }
 
@@ -573,15 +580,15 @@ export async function getRecentLogs(limit: number = 200): Promise<string[]> {
        FROM request_log ORDER BY id DESC LIMIT ?`,
       )
       .all(limit) as Array<{
-        timestamp: string;
-        model: string;
-        provider: string;
-        account: string;
-        prompt_tokens: number | null;
-        completion_tokens: number | null;
-        status: string;
-        combo: string | null;
-      }>;
+      timestamp: string;
+      model: string;
+      provider: string;
+      account: string;
+      prompt_tokens: number | null;
+      completion_tokens: number | null;
+      status: string;
+      combo: string | null;
+    }>;
     return rows.map((r) => {
       const sent = r.prompt_tokens ?? "-";
       const received = r.completion_tokens ?? "-";
@@ -615,17 +622,17 @@ export async function getRecentLogsStructured(limit: number = 300): Promise<Rece
          FROM request_log ORDER BY id DESC LIMIT ?`,
       )
       .all(limit) as Array<{
-        id: number;
-        timestamp: string;
-        model: string;
-        provider: string;
-        account: string;
-        prompt_tokens: number | null;
-        completion_tokens: number | null;
-        status: string;
-        combo: string | null;
-        details_id: string | null;
-      }>;
+      id: number;
+      timestamp: string;
+      model: string;
+      provider: string;
+      account: string;
+      prompt_tokens: number | null;
+      completion_tokens: number | null;
+      status: string;
+      combo: string | null;
+      details_id: string | null;
+    }>;
     return rows.map((r) => ({
       id: r.id,
       timestamp: r.timestamp,
@@ -810,8 +817,21 @@ const PERIOD_MS: Record<string, number> = {
 type StatsBucket = { requests: number; promptTokens: number; completionTokens: number; cost: number };
 type LastUsedBucket = StatsBucket & { lastUsed?: string };
 type ModelStatsBucket = StatsBucket & { rawModel: string; provider: string; lastUsed: string };
-type AccountStatsBucket = StatsBucket & { rawModel: string; provider: string; connectionId: string; accountName: string; lastUsed: string };
-type ApiKeyStatsBucket = StatsBucket & { rawModel: string; provider: string; apiKey: string | null; keyName: string; apiKeyKey: string; lastUsed: string };
+type AccountStatsBucket = StatsBucket & {
+  rawModel: string;
+  provider: string;
+  connectionId: string;
+  accountName: string;
+  lastUsed: string;
+};
+type ApiKeyStatsBucket = StatsBucket & {
+  rawModel: string;
+  provider: string;
+  apiKey: string | null;
+  keyName: string;
+  apiKeyKey: string;
+  lastUsed: string;
+};
 type EndpointStatsBucket = StatsBucket & { endpoint: string; rawModel: string; provider: string; lastUsed: string };
 
 export type UsageStatsResult = {
@@ -914,7 +934,8 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
   const now = new Date();
   const currentMinuteStart = new Date(Math.floor(now.getTime() / 60000) * 60000);
   const tenMinutesAgo = new Date(currentMinuteStart.getTime() - 9 * 60 * 1000);
-  const bucketMap: Record<number, { requests: number; promptTokens: number; completionTokens: number; cost: number }> = {};
+  const bucketMap: Record<number, { requests: number; promptTokens: number; completionTokens: number; cost: number }> =
+    {};
   for (let i = 0; i < 10; i++) {
     const bucketKey = currentMinuteStart.getTime() - (9 - i) * 60 * 1000;
     bucketMap[bucketKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
@@ -926,11 +947,11 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
     FROM usage_history WHERE timestamp >= ?
   `)
     .all(tenMinutesAgo.toISOString()) as Array<{
-      timestamp: string;
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      cost?: number;
-    }>;
+    timestamp: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    cost?: number;
+  }>;
   for (const r of tenMinRows) {
     const et = new Date(r.timestamp).getTime();
     const bucket = Math.floor(et / 60000) * 60000;
@@ -964,15 +985,15 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
       FROM daily_summary ${whereClause}
     `)
       .all(...params) as Array<{
-        date_key: string;
-        bucket: string;
-        key: string;
-        requests?: number;
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        cost?: number;
-        data?: string;
-      }>;
+      date_key: string;
+      bucket: string;
+      key: string;
+      requests?: number;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      cost?: number;
+      data?: string;
+    }>;
 
     for (const r of rows) {
       let meta: { rawModel?: string; provider?: string; endpoint?: string; apiKey?: string } = {};
@@ -996,7 +1017,8 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
       }
 
       if (r.bucket === "byProvider") {
-        if (!stats.byProvider[r.key]) stats.byProvider[r.key] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
+        if (!stats.byProvider[r.key])
+          stats.byProvider[r.key] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
         const t = stats.byProvider[r.key];
         t.requests += requests;
         t.promptTokens += prompt;
@@ -1189,7 +1211,7 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
         t.cost += cost;
       }
 
-      const modelKey = r.provider ? `${r.model} (${r.provider})` : (r.model || "");
+      const modelKey = r.provider ? `${r.model} (${r.provider})` : r.model || "";
       if (modelKey) {
         if (!stats.byModel[modelKey]) {
           stats.byModel[modelKey] = {
@@ -1343,11 +1365,11 @@ export async function getChartData(period: string = "7d"): Promise<ChartBucket[]
       FROM usage_history WHERE timestamp >= ?
     `)
       .all(new Date(startTime).toISOString()) as Array<{
-        timestamp: string;
-        prompt_tokens?: number;
-        completion_tokens?: number;
-        cost?: number;
-      }>;
+      timestamp: string;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      cost?: number;
+    }>;
 
     for (const r of rows) {
       const et = new Date(r.timestamp).getTime();
@@ -1375,13 +1397,16 @@ export async function getChartData(period: string = "7d"): Promise<ChartBucket[]
     WHERE bucket = 'day' AND date_key >= ?
   `)
     .all(getLocalDateKey(dayStart)) as Array<{
-      date_key: string;
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      cost?: number;
-      requests?: number;
-    }>;
-  const byDate: Record<string, { prompt_tokens?: number; completion_tokens?: number; cost?: number; requests?: number }> = {};
+    date_key: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    cost?: number;
+    requests?: number;
+  }>;
+  const byDate: Record<
+    string,
+    { prompt_tokens?: number; completion_tokens?: number; cost?: number; requests?: number }
+  > = {};
   for (const r of dayRows) byDate[r.date_key] = r;
 
   return Array.from({ length: bucketCount }, (_, i) => {

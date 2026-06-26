@@ -1,4 +1,4 @@
-import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb.js";
+import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb";
 import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.js";
 import { FORMATS } from "../translator/formats.js";
 import { initState, translateResponse } from "../translator/index.js";

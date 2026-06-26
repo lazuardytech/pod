@@ -1,4 +1,4 @@
-import { saveRequestDetail } from "@/lib/usageDb.js";
+import { saveRequestDetail } from "@/lib/usageDb";
 import { FORMATS } from "../../translator/formats.js";
 import { needsTranslation } from "../../translator/index.js";
 import { createPassthroughStreamWithLogger, createSSETransformStreamWithLogger } from "../../utils/stream.js";

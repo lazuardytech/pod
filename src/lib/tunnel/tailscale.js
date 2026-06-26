@@ -2,7 +2,7 @@ import { execSync, spawn, spawnSync } from "node:child_process";
 import fs from "fs";
 import os from "node:os";
 import path from "node:path";
-import { DATA_DIR } from "@/lib/dataDir.js";
+import { DATA_DIR } from "@/lib/dataDir";
 
 const BIN_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "bin");
 const IS_MAC = os.platform() === "darwin";

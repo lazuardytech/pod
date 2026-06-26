@@ -39,7 +39,7 @@ export async function initializeApp(): Promise<void> {
     const settings = await getSettings();
 
     // Start models.dev pricing sync
-    const { startPeriodicSync } = await import("@/lib/modelsDevSync.js");
+    const { startPeriodicSync } = await import("@/lib/modelsDevSync");
     const intervalHours = settings.modelCostSyncIntervalHours ?? 1;
     startPeriodicSync(intervalHours * 60 * 60 * 1000);
 

@@ -22,9 +22,9 @@
 
 import { createHash } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
-import { QODER_CHAT_URL_ENCODED, QODER_MODEL_MAP } from "@/lib/qoder/constants.js";
-import { buildCosyHeaders } from "@/lib/qoder/cosy.js";
-import { qoderEncodeBody } from "@/lib/qoder/encoding.js";
+import { QODER_CHAT_URL_ENCODED, QODER_MODEL_MAP } from "@/lib/qoder/constants";
+import { buildCosyHeaders } from "@/lib/qoder/cosy";
+import { qoderEncodeBody } from "@/lib/qoder/encoding";
 import { PROVIDERS } from "../config/providers.js";
 import { getQoderModelConfig, resolveQoderModels } from "../services/qoderModels.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";

@@ -1,5 +1,5 @@
 import open from "open";
-import { getServerCredentials } from "../config/index.js";
+import { getServerCredentials } from "../config/index";
 import { QWEN_CONFIG } from "../constants/oauth";
 import { generatePKCE } from "../utils/pkce";
 import { spinner as createSpinner } from "../utils/ui";

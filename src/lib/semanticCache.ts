@@ -52,7 +52,9 @@ function incrementMetric(metric: string, amount: number = 1): void {
 function getMetricValue(metric: string): number {
   try {
     const db = getDatabase();
-    const row = db.prepare(`SELECT value FROM cache_metrics WHERE key = ?`).get(metric) as { value?: number } | undefined;
+    const row = db.prepare(`SELECT value FROM cache_metrics WHERE key = ?`).get(metric) as
+      | { value?: number }
+      | undefined;
     return row ? toNumber(asRecord(row).value, 0) : 0;
   } catch {
     return 0;

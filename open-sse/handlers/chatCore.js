@@ -1,4 +1,4 @@
-import { appendRequestLog, saveRequestDetail, trackPendingRequest } from "@/lib/usageDb.js";
+import { appendRequestLog, saveRequestDetail, trackPendingRequest } from "@/lib/usageDb";
 import { getModelStrip, getModelTargetFormat, PROVIDER_ID_TO_ALIAS } from "../config/providerModels.js";
 import { HTTP_STATUS, LOCAL_UPSTREAM_TIMEOUT_MS } from "../config/runtimeConfig.js";
 import { getExecutor } from "../executors/index.js";
@@ -61,10 +61,10 @@ function buildCacheHitSSEResponse(cached, model) {
   });
 }
 
-import { extractFacts } from "@/lib/memory/extraction.js";
-import { injectMemory, shouldInjectMemory } from "@/lib/memory/injection.js";
-import { retrieveMemories } from "@/lib/memory/retrieval.js";
-import { normalizeMemorySettings, toMemoryRetrievalConfig } from "@/lib/memory/settings.js";
+import { extractFacts } from "@/lib/memory/extraction";
+import { injectMemory, shouldInjectMemory } from "@/lib/memory/injection";
+import { retrieveMemories } from "@/lib/memory/retrieval";
+import { normalizeMemorySettings, toMemoryRetrievalConfig } from "@/lib/memory/settings";
 import {
   clearInFlight,
   generateSignature,
@@ -74,7 +74,7 @@ import {
   isCacheableForWrite,
   setCachedResponse,
   setInFlight,
-} from "@/lib/semanticCache.js";
+} from "@/lib/semanticCache";
 import { injectCaveman } from "../rtk/caveman.js";
 
 async function createRequestLogger(sourceFormat, targetFormat, model) {

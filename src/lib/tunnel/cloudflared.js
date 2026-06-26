@@ -3,7 +3,7 @@ import fs from "fs";
 import https from "node:https";
 import os from "node:os";
 import path from "node:path";
-import { DATA_DIR } from "@/lib/dataDir.js";
+import { DATA_DIR } from "@/lib/dataDir";
 import { resetDownloadState, setDownloadState } from "./downloadState.js";
 import { clearPid, loadPid, savePid } from "./state.js";
 

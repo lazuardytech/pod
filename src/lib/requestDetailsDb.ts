@@ -121,7 +121,10 @@ function truncateIfLarge(obj: unknown, maxSize: number): unknown {
 }
 
 // Returns a flat { id, ts, provider, ... latency_ms, prompt, completion, dataBlob } row.
-function prepareRecord(item: DetailItem, maxSize: number): {
+function prepareRecord(
+  item: DetailItem,
+  maxSize: number,
+): {
   id: string;
   timestamp: string;
   provider: string | null;
@@ -147,7 +150,7 @@ function prepareRecord(item: DetailItem, maxSize: number): {
   };
 
   const latency =
-    typeof item.latency === "number" ? item.latency : ((item.latency?.total ?? item.latency?.totalMs) ?? null);
+    typeof item.latency === "number" ? item.latency : (item.latency?.total ?? item.latency?.totalMs ?? null);
   const t = item.tokens || {};
   return {
     id: item.id,
@@ -267,7 +270,9 @@ function rowToDetail(r: DetailRow): DetailItem {
     model: r.model,
     connectionId: r.connection_id,
     status: r.status,
-    latency: (payload.latency as number | { total?: number; totalMs?: number } | undefined) ?? (r.latency_ms != null ? { total: r.latency_ms } : {}),
+    latency:
+      (payload.latency as number | { total?: number; totalMs?: number } | undefined) ??
+      (r.latency_ms != null ? { total: r.latency_ms } : {}),
     tokens: (payload.tokens as DetailItem["tokens"]) ?? {
       prompt_tokens: r.prompt_tokens,
       completion_tokens: r.completion_tokens,
@@ -341,7 +346,9 @@ export async function getRequestDetails(filter: GetRequestDetailsFilter = {}): P
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-  const countRow = db.prepare(`SELECT COUNT(*) AS c FROM request_details ${where}`).get(...params) as { c?: number } | undefined;
+  const countRow = db.prepare(`SELECT COUNT(*) AS c FROM request_details ${where}`).get(...params) as
+    | { c?: number }
+    | undefined;
   const totalItems = countRow?.c || 0;
 
   const page = filter.page || 1;

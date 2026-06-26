@@ -197,7 +197,7 @@ export async function updateMemory(
   const fields: string[] = [];
   const values: unknown[] = [];
 
-  if (updates.type !== undefined && MEMORY_TYPES.has((updates.type as MemoryTypeValue) || "" as MemoryTypeValue)) {
+  if (updates.type !== undefined && MEMORY_TYPES.has((updates.type as MemoryTypeValue) || ("" as MemoryTypeValue))) {
     fields.push("type = ?");
     values.push(updates.type);
   }
@@ -280,7 +280,7 @@ export async function listMemories(options: ListMemoriesOptions = {}): Promise<L
     clauses.push("session_id = ?");
     params.push(options.sessionId);
   }
-  if (options.type && MEMORY_TYPES.has((options.type as MemoryTypeValue) || "" as MemoryTypeValue)) {
+  if (options.type && MEMORY_TYPES.has((options.type as MemoryTypeValue) || ("" as MemoryTypeValue))) {
     clauses.push("type = ?");
     params.push(options.type);
   }

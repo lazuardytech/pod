@@ -153,7 +153,7 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
       providerData = data;
     } else if (entry && typeof entry === "object") {
       const obj = entry as { id?: unknown; provider?: unknown };
-      providerId = (typeof obj.id === "string" ? obj.id : typeof obj.provider === "string" ? obj.provider : undefined);
+      providerId = typeof obj.id === "string" ? obj.id : typeof obj.provider === "string" ? obj.provider : undefined;
       providerData = entry as Record<string, unknown>;
     } else {
       continue;

@@ -1,4 +1,4 @@
-import { generateDetailId, saveRequestDetail } from "@/lib/usageDb.js";
+import { generateDetailId, saveRequestDetail } from "@/lib/usageDb";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.js";
 import { FORMATS } from "../../translator/formats.js";

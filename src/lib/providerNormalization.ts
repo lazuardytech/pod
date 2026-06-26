@@ -23,7 +23,8 @@ export function normalizeProviderSpecificData(
   body: Record<string, unknown> = {},
   providerSpecificData: Record<string, unknown> | null = null,
 ): Record<string, unknown> | null {
-  const next: Record<string, unknown> = providerSpecificData && typeof providerSpecificData === "object" ? { ...providerSpecificData } : {};
+  const next: Record<string, unknown> =
+    providerSpecificData && typeof providerSpecificData === "object" ? { ...providerSpecificData } : {};
 
   if (provider === "ollama-local") {
     const baseUrl = String(next.baseUrl || body.baseUrl || body.baseURL || body.ollamaHostUrl || "").trim();

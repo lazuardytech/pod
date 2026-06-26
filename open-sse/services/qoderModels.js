@@ -13,8 +13,8 @@
  */
 
 import { createHash } from "node:crypto";
-import { QODER_MODEL_LIST_URL } from "@/lib/qoder/constants.js";
-import { buildCosyHeaders } from "@/lib/qoder/cosy.js";
+import { QODER_MODEL_LIST_URL } from "@/lib/qoder/constants";
+import { buildCosyHeaders } from "@/lib/qoder/cosy";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 
 const FETCH_TIMEOUT_MS = 15_000;

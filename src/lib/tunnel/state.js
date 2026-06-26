@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "node:path";
-import { DATA_DIR } from "@/lib/dataDir.js";
+import { DATA_DIR } from "@/lib/dataDir";
 
 const TUNNEL_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "tunnel");
 const STATE_FILE = path.join(/*turbopackIgnore: true*/ TUNNEL_DIR, "state.json");

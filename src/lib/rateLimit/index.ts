@@ -88,7 +88,10 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
   });
 }
 
-function finalizeResponse(response: Response | unknown, release: (() => void | Promise<void>) | null): Response | unknown {
+function finalizeResponse(
+  response: Response | unknown,
+  release: (() => void | Promise<void>) | null,
+): Response | unknown {
   if (!release) return response;
   if (!(response instanceof Response)) {
     void release();
@@ -125,8 +128,14 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
 
   // Duck-type: RedisBackend has acquireRpm, MemoryBackend doesn't
   type RedisLike = {
-    acquireRpm: (keyId: string, max: number) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
-    acquireConc: (keyId: string, max: number) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
+    acquireRpm: (
+      keyId: string,
+      max: number,
+    ) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
+    acquireConc: (
+      keyId: string,
+      max: number,
+    ) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
     releaseRpm?: (keyId: string, member: string | undefined) => Promise<void>;
   };
   const redisBackend = backend as unknown as Partial<RedisLike>;
@@ -160,7 +169,12 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
 
   // MemoryBackend path
   type MemoryLike = {
-    acquirePermit: (record: { id: string; limitType?: string; requestsPerMinute?: number; concurrentRequests?: number }) => {
+    acquirePermit: (record: {
+      id: string;
+      limitType?: string;
+      requestsPerMinute?: number;
+      concurrentRequests?: number;
+    }) => {
       ok: boolean;
       reason?: string;
       retryAfterSeconds?: number;
@@ -175,7 +189,9 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
   return { ok: true, release: permit.release ?? null, response: undefined };
 }
 
-function getLimitConfigFromRecord(apiKeyRecord: { limitType?: string; requestsPerMinute?: number; concurrentRequests?: number } | null): { requestsPerMinute: number; concurrentRequests: number } | null {
+function getLimitConfigFromRecord(
+  apiKeyRecord: { limitType?: string; requestsPerMinute?: number; concurrentRequests?: number } | null,
+): { requestsPerMinute: number; concurrentRequests: number } | null {
   if (!apiKeyRecord || apiKeyRecord.limitType !== "limited") return null;
   const toPositiveInt = (v: unknown): number | null => {
     const num = Number(v);
@@ -201,8 +217,14 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
   const backend = await getBackend();
 
   type RedisLike = {
-    acquireRpm: (keyId: string, max: number) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
-    acquireConc: (keyId: string, max: number) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
+    acquireRpm: (
+      keyId: string,
+      max: number,
+    ) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
+    acquireConc: (
+      keyId: string,
+      max: number,
+    ) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
     releaseRpm?: (keyId: string, member: string | undefined) => Promise<void>;
   };
   const redisBackend = backend as unknown as Partial<RedisLike>;
@@ -240,7 +262,12 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
 
   // MemoryBackend path
   type MemoryLike = {
-    acquirePermit: (record: { id: string; limitType?: string; requestsPerMinute?: number; concurrentRequests?: number }) => {
+    acquirePermit: (record: {
+      id: string;
+      limitType?: string;
+      requestsPerMinute?: number;
+      concurrentRequests?: number;
+    }) => {
       ok: boolean;
       reason?: string;
       retryAfterSeconds?: number;

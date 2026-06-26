@@ -1645,7 +1645,7 @@ export async function getPricingForModel(provider, model) {
   }
 
   // Check models.dev synced pricing
-  const { getModelsDevPricingForModel } = await import("@/lib/modelsDevSync.js");
+  const { getModelsDevPricingForModel } = await import("@/lib/modelsDevSync");
   const mdPricing = getModelsDevPricingForModel(provider, model);
   if (mdPricing) return mdPricing;
 
