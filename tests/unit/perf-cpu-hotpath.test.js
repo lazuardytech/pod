@@ -182,7 +182,7 @@ describe("health/stream: poll interval is 10s", () => {
     // this test will catch it.
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/monitoring/health/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/monitoring/health/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     // Must contain 10000, must NOT contain 2000 as the INTERVAL_MS value
@@ -193,7 +193,7 @@ describe("health/stream: poll interval is 10s", () => {
   it("health stream route uses setTimeout (not setInterval) for polling", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/monitoring/health/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/monitoring/health/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
     // Polling via recursive setTimeout is the correct pattern (not setInterval)
     // so cleanup on abort is simpler
@@ -207,7 +207,7 @@ describe("request-logs/stream: fixed 2s poll, no 1s fast-poll", () => {
   it("POLL_MS constant is 2000", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     expect(source).toMatch(/POLL_MS\s*=\s*2000/);
@@ -216,7 +216,7 @@ describe("request-logs/stream: fixed 2s poll, no 1s fast-poll", () => {
   it("does NOT contain 1s fast-poll logic for PENDING entries", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     // The old fast-poll set pollInterval to 1000 when PENDING entries existed
@@ -228,7 +228,7 @@ describe("request-logs/stream: fixed 2s poll, no 1s fast-poll", () => {
   it("does NOT use a mutable pollInterval variable", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     // Old code used `let pollInterval = 2000` which was mutated to 1000
@@ -238,7 +238,7 @@ describe("request-logs/stream: fixed 2s poll, no 1s fast-poll", () => {
   it("uses recursive setTimeout with POLL_MS for polling", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     expect(source).toMatch(/setTimeout\(poll,\s*POLL_MS\)/);
@@ -251,7 +251,7 @@ describe("request-logs/stream: SSE abort cleanup", () => {
   it("attaches abort listener to request.signal", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     // Abort listener must be present to prevent timer leaks on disconnect
@@ -261,7 +261,7 @@ describe("request-logs/stream: SSE abort cleanup", () => {
   it("cleanup sets closed=true and clears heartbeat interval", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.js");
+    const routePath = path.resolve(process.cwd(), "src/app/api/usage/request-logs/stream/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     expect(source).toMatch(/closed\s*=\s*true/);

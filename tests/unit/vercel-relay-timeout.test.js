@@ -154,7 +154,7 @@ describe("proxyAwareFetch — relay timeout margin (Fix 1)", () => {
 
 describe("testVercelRelay — healthcheck endpoint (Fix 3)", () => {
   it("targets google.com/generate_204 with identifiable headers", () => {
-    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.js");
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     // Verify correct target (JS object keys are unquoted, values are quoted)
@@ -166,14 +166,14 @@ describe("testVercelRelay — healthcheck endpoint (Fix 3)", () => {
   });
 
   it("considers 204 No Content as healthy (res.ok covers 200-299)", () => {
-    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.js");
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
     expect(source).toContain("ok: res.ok");
     expect(source).not.toContain("res.status === 200");
   });
 
   it("keeps 10s timeout and AbortController", () => {
-    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.js");
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/[id]/test/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
     expect(source).toContain("timeoutMs = 10000");
     expect(source).toContain("new AbortController()");
@@ -331,7 +331,7 @@ describe("chatCore — one-shot retry on 502/504 (Fix 4)", () => {
 
 describe("RELAY_FUNCTION_CODE — timeout cleanup", () => {
   it("calls clearTimeout on both success and error paths", () => {
-    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.js");
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
 
     // clearTimeout in try block (success path)
@@ -342,7 +342,7 @@ describe("RELAY_FUNCTION_CODE — timeout cleanup", () => {
   });
 
   it("pollDeployment has bounded retries with 120s budget", () => {
-    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.js");
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
     expect(source).toContain("maxMs = 120000");
     expect(source).toContain("Date.now() - start < maxMs");
@@ -350,7 +350,7 @@ describe("RELAY_FUNCTION_CODE — timeout cleanup", () => {
   });
 
   it("requires a relay auth token and strips it before forwarding", () => {
-    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.js");
+    const routePath = path.resolve(import.meta.dirname, "../../src/app/api/proxy-pools/vercel-deploy/route.ts");
     const source = fs.readFileSync(routePath, "utf8");
     expect(source).toContain("const RELAY_AUTH_TOKEN =");
     expect(source).toContain('req.headers.get("x-relay-auth")');

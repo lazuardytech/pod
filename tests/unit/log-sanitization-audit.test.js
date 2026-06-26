@@ -10,7 +10,7 @@ function read(relativePath) {
 
 describe("logging audit regressions", () => {
   it("does not log provider token refresh failures with provider-specific text", () => {
-    const source = read("src/app/api/providers/[id]/test/testUtils.js");
+    const source = read("src/app/api/providers/[id]/test/testUtils.ts");
     expect(source).not.toContain("Error refreshing ${provider} token");
   });
 
@@ -55,10 +55,10 @@ describe("logging audit regressions", () => {
     const proxyFetchSource = read("open-sse/utils/proxyFetch.js");
     const nonStreamingSource = read("open-sse/handlers/chatCore/nonStreamingHandler.js");
     const streamHandlerSource = read("open-sse/utils/streamHandler.js");
-    const providerLimitUtilsSource = read("src/app/(dashboard)/usage/components/ProviderLimits/utils.js");
-    const providerLimitIndexSource = read("src/app/(dashboard)/usage/components/ProviderLimits/index.js");
-    const authSource = read("src/sse/services/auth.js");
-    const usageRouteSource = read("src/app/api/usage/[connectionId]/route.js");
+    const providerLimitUtilsSource = read("src/app/(dashboard)/usage/components/ProviderLimits/utils.tsx");
+    const providerLimitIndexSource = read("src/app/(dashboard)/usage/components/ProviderLimits/index.tsx");
+    const authSource = read("src/sse/services/auth.ts");
+    const usageRouteSource = read("src/app/api/usage/[connectionId]/route.ts");
 
     expect(proxyFetchSource).not.toContain(
       "console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);",
