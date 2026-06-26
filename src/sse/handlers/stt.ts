@@ -3,7 +3,13 @@ import { handleSttCore } from "open-sse/handlers/sttCore.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
-import { extractApiKey, getProviderCredentials, isValidApiKey, markAccountUnavailable } from "../services/auth";
+import {
+  clearAccountError,
+  extractApiKey,
+  getProviderCredentials,
+  isValidApiKey,
+  markAccountUnavailable,
+} from "../services/auth";
 import { getModelInfo } from "../services/model";
 import * as log from "../utils/logger";
 
@@ -33,7 +39,8 @@ export async function handleStt(request: Request): Promise<Response> {
   if (!formData.get("file")) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: file");
   const modelInfo = await getModelInfo(modelStr);
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
-  const { provider, model } = modelInfo;
+  const provider = modelInfo.provider!;
+  const model = modelInfo.model;
   log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
   if (!CREDENTIALED_PROVIDERS.has(provider)) {
     const result = await handleSttCore({ provider, model, formData });
@@ -52,8 +59,8 @@ export async function handleStt(request: Request): Promise<Response> {
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${msg}`,
-          credentials.retryAfter,
-          credentials.retryAfterHuman,
+          credentials.retryAfter ?? null,
+          credentials.retryAfterHuman ?? "",
         );
       }
       if (excludeConnectionIds.size === 0)
@@ -61,6 +68,7 @@ export async function handleStt(request: Request): Promise<Response> {
       return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
     }
     log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
+    const connectionId = credentials.connectionId!;
     const result = await handleSttCore({
       provider,
       model,
@@ -68,15 +76,9 @@ export async function handleStt(request: Request): Promise<Response> {
       credentials: credentials as Record<string, unknown>,
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(
-      credentials.connectionId,
-      result.status,
-      result.error,
-      provider,
-      model,
-    );
+    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
     if (shouldFallback) {
-      excludeConnectionIds.add(credentials.connectionId);
+      excludeConnectionIds.add(connectionId);
       lastError = result.error;
       lastStatus = result.status;
       continue;

@@ -133,8 +133,8 @@ async function handleSingleProviderSearch(
         return unavailableResponse(
           status,
           `[${providerId}] ${errorMsg}`,
-          credentials.retryAfter,
-          credentials.retryAfterHuman,
+          credentials.retryAfter ?? null,
+          credentials.retryAfterHuman ?? "",
         );
       }
       if (excludeConnectionIds.size === 0) {
@@ -144,7 +144,9 @@ async function handleSingleProviderSearch(
       log.warn("SEARCH", "No more accounts available", { provider: providerId });
       return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
     }
-    log.info("AUTH", `\x1b[32mUsing ${providerId} account: ${credentials.connectionName}\x1b[0m`);
+    const connectionId = credentials.connectionId!;
+    const connName = credentials.connectionName;
+    log.info("AUTH", `\x1b[32mUsing ${providerId} account: ${connName}\x1b[0m`);
     const refreshedCredentials = await checkAndRefreshToken(providerId, credentials);
     const result = await handleSearchCore({
       body: coreBody,
@@ -153,7 +155,7 @@ async function handleSingleProviderSearch(
       credentials: refreshedCredentials,
       log: log as unknown,
       onCredentialsRefreshed: async (newCreds) => {
-        await updateProviderCredentials(credentials.connectionId, {
+        await updateProviderCredentials(connectionId, {
           accessToken: newCreds.accessToken as string | undefined,
           refreshToken: newCreds.refreshToken as string | undefined,
           providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
@@ -161,19 +163,14 @@ async function handleSingleProviderSearch(
         });
       },
       onRequestSuccess: async () => {
-        await clearAccountError(credentials.connectionId, credentials);
+        await clearAccountError(connectionId, credentials);
       },
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(
-      credentials.connectionId,
-      result.status,
-      result.error,
-      providerId,
-    );
+    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, providerId);
     if (shouldFallback) {
-      log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
-      excludeConnectionIds.add(credentials.connectionId);
+      log.warn("AUTH", `Account ${connName} unavailable (${result.status}), trying fallback`);
+      excludeConnectionIds.add(connectionId);
       lastError = result.error;
       lastStatus = result.status;
       continue;

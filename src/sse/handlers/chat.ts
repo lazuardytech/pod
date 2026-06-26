@@ -165,7 +165,8 @@ async function handleSingleModelChat(
     log.warn("CHAT", "Invalid model format", { model: modelStr });
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
   }
-  const { provider, model } = modelInfo;
+  const provider = modelInfo.provider!;
+  const model = modelInfo.model;
   if (modelStr !== `${provider}/${model}`) log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
   else log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
   const userAgent = request?.headers?.get("user-agent") || "";
@@ -181,7 +182,7 @@ async function handleSingleModelChat(
         `All accounts exhausted after ${MAX_FALLBACK_ITERATIONS} attempts`,
       );
     }
-    let credentials: Awaited<ReturnType<typeof getProviderCredentials>>;
+    let credentials: Awaited<ReturnType<typeof getProviderCredentials>> | null = null;
     try {
       credentials = await getProviderCredentials(provider, excludeConnectionIds, model);
       if (!credentials || credentials.allRateLimited) {
@@ -192,8 +193,8 @@ async function handleSingleModelChat(
           return unavailableResponse(
             status,
             `[${provider}/${model}] ${errorMsg}`,
-            credentials.retryAfter,
-            credentials.retryAfterHuman,
+            credentials.retryAfter ?? null,
+            credentials.retryAfterHuman ?? "",
           );
         }
         if (excludeConnectionIds.size === 0) {
@@ -203,13 +204,15 @@ async function handleSingleModelChat(
         log.warn("CHAT", "No more accounts available", { provider });
         return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
       }
-      log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
+      const connectionId = credentials.connectionId!;
+      const connName = credentials.connectionName;
+      log.info("AUTH", `\x1b[32mUsing ${provider} account: ${connName}\x1b[0m`);
       const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
       if ((provider === "antigravity" || provider === "gemini-cli") && !refreshedCredentials.projectId) {
-        const pid = await getProjectIdForConnection(credentials.connectionId, refreshedCredentials.accessToken);
+        const pid = await getProjectIdForConnection(connectionId, refreshedCredentials.accessToken ?? "");
         if (pid) {
           refreshedCredentials.projectId = pid;
-          updateProviderCredentials(credentials.connectionId, { projectId: pid }).catch((): any => {});
+          updateProviderCredentials(connectionId, { projectId: pid }).catch((): any => {});
         }
       }
       const chatSettings = await getSettings();
@@ -220,7 +223,7 @@ async function handleSingleModelChat(
         credentials: refreshedCredentials,
         log,
         clientRawRequest,
-        connectionId: credentials.connectionId,
+        connectionId,
         userAgent,
         apiKey,
         ccFilterNaming: !!chatSettings.ccFilterNaming,
@@ -234,7 +237,7 @@ async function handleSingleModelChat(
         comboName,
         sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
         onCredentialsRefreshed: async (newCreds): Promise<any> => {
-          await updateProviderCredentials(credentials.connectionId, {
+          await updateProviderCredentials(connectionId, {
             accessToken: newCreds.accessToken as string | undefined,
             refreshToken: newCreds.refreshToken as string | undefined,
             providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
@@ -242,12 +245,12 @@ async function handleSingleModelChat(
           });
         },
         onRequestSuccess: async (): Promise<any> => {
-          await clearAccountError(credentials.connectionId, credentials, model);
+          await clearAccountError(connectionId, credentials, model);
         },
       });
       if (result.success === true) return result.response;
       const { shouldFallback } = await markAccountUnavailable(
-        credentials.connectionId,
+        connectionId,
         result.status,
         result.error,
         provider,
@@ -255,8 +258,8 @@ async function handleSingleModelChat(
         result.resetsAtMs,
       );
       if (shouldFallback) {
-        log.warn("AUTH", `Account ${credentials.connectionName} unavailable (${result.status}), trying fallback`);
-        excludeConnectionIds.add(credentials.connectionId);
+        log.warn("AUTH", `Account ${connName} unavailable (${result.status}), trying fallback`);
+        excludeConnectionIds.add(connectionId);
         lastError = result.error;
         lastStatus = result.status;
         continue;

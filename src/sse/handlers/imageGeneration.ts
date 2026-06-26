@@ -72,7 +72,8 @@ async function handleSingleModelImage(
 ): Promise<Response> {
   const modelInfo = await getModelInfo(modelStr);
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
-  const { provider, model } = modelInfo;
+  const provider = modelInfo.provider!;
+  const model = modelInfo.model;
   if (NO_AUTH_PROVIDERS.has(provider)) {
     const result = await handleImageGenerationCore({
       body,
@@ -97,8 +98,8 @@ async function handleSingleModelImage(
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${errorMsg}`,
-          credentials.retryAfter,
-          credentials.retryAfterHuman,
+          credentials.retryAfter ?? null,
+          credentials.retryAfterHuman ?? "",
         );
       }
       if (excludeConnectionIds.size === 0) {
@@ -106,6 +107,8 @@ async function handleSingleModelImage(
       }
       return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
     }
+    const connectionId = credentials.connectionId!;
+    const connName = credentials.connectionName;
     const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
     const result = await handleImageGenerationCore({
       body,
@@ -114,7 +117,7 @@ async function handleSingleModelImage(
       streamToClient: wantsStream,
       binaryOutput,
       onCredentialsRefreshed: async (newCreds) => {
-        await updateProviderCredentials(credentials.connectionId, {
+        await updateProviderCredentials(connectionId, {
           accessToken: newCreds.accessToken as string | undefined,
           refreshToken: newCreds.refreshToken as string | undefined,
           providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
@@ -122,19 +125,14 @@ async function handleSingleModelImage(
         });
       },
       onRequestSuccess: async () => {
-        await clearAccountError(credentials.connectionId, credentials, model);
+        await clearAccountError(connectionId, credentials, model);
       },
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(
-      credentials.connectionId,
-      result.status,
-      result.error,
-      provider,
-      model,
-    );
+    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
     if (shouldFallback) {
-      excludeConnectionIds.add(credentials.connectionId);
+      log.warn("AUTH", `Account ${connName} unavailable (${result.status}), trying fallback`);
+      excludeConnectionIds.add(connectionId);
       lastError = result.error;
       lastStatus = result.status;
       continue;

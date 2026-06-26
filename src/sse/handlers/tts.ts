@@ -69,7 +69,8 @@ async function handleSingleModelTts(
 ): Promise<Response> {
   const modelInfo = await getModelInfo(modelStr);
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
-  const { provider, model } = modelInfo;
+  const provider = modelInfo.provider!;
+  const model = modelInfo.model;
   log.info("ROUTING", `Provider: ${provider}, Voice: ${model}`);
   if (!CREDENTIALED_PROVIDERS.has(provider)) {
     const result = await handleTtsCore({ provider, model, input: body.input, responseFormat, language });
@@ -88,8 +89,8 @@ async function handleSingleModelTts(
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${msg}`,
-          credentials.retryAfter,
-          credentials.retryAfterHuman,
+          credentials.retryAfter ?? null,
+          credentials.retryAfterHuman ?? "",
         );
       }
       if (excludeConnectionIds.size === 0)
@@ -97,6 +98,7 @@ async function handleSingleModelTts(
       return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
     }
     log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
+    const connectionId = credentials.connectionId!;
     const result = await handleTtsCore({
       provider,
       model,
@@ -106,15 +108,9 @@ async function handleSingleModelTts(
       language,
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(
-      credentials.connectionId,
-      result.status,
-      result.error,
-      provider,
-      model,
-    );
+    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
     if (shouldFallback) {
-      excludeConnectionIds.add(credentials.connectionId);
+      excludeConnectionIds.add(connectionId);
       lastError = result.error;
       lastStatus = result.status;
       continue;

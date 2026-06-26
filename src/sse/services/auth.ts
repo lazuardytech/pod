@@ -200,9 +200,9 @@ export async function getProviderCredentials(
         current = byRecency[0];
         state = { lastConnectionId: current?.id, consecutiveCount: current?.consecutiveUseCount || 0 };
       }
-      if (current && state.consecutiveCount < stickyLimit) {
+      if (current && state!.consecutiveCount < stickyLimit) {
         connection = current;
-        state.consecutiveCount += 1;
+        state!.consecutiveCount += 1;
       } else {
         const sortedByOldest = [...availableConnections].sort((a, b): any => {
           if (!a.lastUsedAt && !b.lastUsedAt) return (a.priority || 999) - (b.priority || 999);
@@ -213,10 +213,10 @@ export async function getProviderCredentials(
         connection = sortedByOldest[0];
         state = { lastConnectionId: connection.id, consecutiveCount: 1 };
       }
-      rotationState.set(providerId, state);
+      rotationState.set(providerId, state!);
       schedulePersist(connection.id, {
         lastUsedAt: new Date().toISOString(),
-        consecutiveUseCount: state.consecutiveCount,
+        consecutiveUseCount: state!.consecutiveCount,
       });
     } else {
       connection = availableConnections[0];
@@ -257,7 +257,7 @@ export async function markAccountUnavailable(
   resetsAtMs: number | null = null,
 ): Promise<{ shouldFallback: boolean; cooldownMs: number }> {
   if (!connectionId || connectionId === "noauth") return { shouldFallback: false, cooldownMs: 0 };
-  const connections = await getProviderConnections({ provider });
+  const connections = await getProviderConnections({ provider: provider ?? undefined });
   const conn = (connections as AnyConnection[]).find((c): any => c.id === connectionId);
   const backoffLevel = conn?.backoffLevel || 0;
   if (isConnectionLevelError(status, errorText)) {

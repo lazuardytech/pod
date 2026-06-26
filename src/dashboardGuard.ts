@@ -21,7 +21,12 @@ async function hasValidCliToken(request: any) {
 }
 
 // Always require JWT token regardless of requireLogin setting
-const ALWAYS_PROTECTED: any = ["/api/shutdown", "/api/restart", "/api/settings/database", "/api/settings/migrate-sqlite"];
+const ALWAYS_PROTECTED: any = [
+  "/api/shutdown",
+  "/api/restart",
+  "/api/settings/database",
+  "/api/settings/migrate-sqlite",
+];
 
 // Require explicit dashboard auth even when requireLogin=false.
 const STRICT_PROTECTED_API_PATHS: any = [
