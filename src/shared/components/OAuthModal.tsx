@@ -30,13 +30,13 @@ export default function OAuthModal({
   [key: string]: any;
 }) {
   const [step, setStep]: any = useState("waiting"); // waiting | input | success | error
-  const [authData, setAuthData]: any = useState(null);
+  const [authData, setAuthData]: any = useState<any>(null);
   const [callbackUrl, setCallbackUrl]: any = useState("");
-  const [error, setError]: any = useState(null);
+  const [error, setError]: any = useState<any>(null);
   const [isDeviceCode, setIsDeviceCode]: any = useState(false);
-  const [deviceData, setDeviceData]: any = useState(null);
+  const [deviceData, setDeviceData]: any = useState<any>(null);
   const [polling, setPolling]: any = useState(false);
-  const popupRef: any = useRef(null);
+  const popupRef: any = useRef<any>(null);
   const pollingAbortRef: any = useRef(false);
   const { copied, copy }: any = useCopyToClipboard();
 
@@ -337,7 +337,7 @@ export default function OAuthModal({
     const handleCallback: any = async (data: any) => {
       if (callbackProcessedRef.current) return; // Already processed
 
-      const { code, state, error: callbackError, errorDescription } = data;
+      const { code, state, error: callbackError, errorDescription  } = data ?? {} as any;
 
       if (callbackError) {
         callbackProcessedRef.current = true;

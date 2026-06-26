@@ -64,11 +64,11 @@ export default function ModelSelectModal({
     });
   }, [activeProviders, kindFilter]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [combos, setCombos] = useState([]);
-  const [providerNodes, setProviderNodes] = useState([]);
-  const [customModels, setCustomModels] = useState([]);
+  const [combos, setCombos] = useState<any[]>([]);
+  const [providerNodes, setProviderNodes] = useState<any[]>([]);
+  const [customModels, setCustomModels] = useState<any[]>([]);
   const [disabledModels, setDisabledModels] = useState<Record<string, any>>({});
-  const [kiloFreeModels, setKiloFreeModels] = useState([]);
+  const [kiloFreeModels, setKiloFreeModels] = useState<any[]>([]);
 
   const fetchCombos = async () => {
     try {

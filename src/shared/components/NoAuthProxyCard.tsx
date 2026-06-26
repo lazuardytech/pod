@@ -10,7 +10,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 const NONE_PROXY_POOL_VALUE = "__none__";
 
 export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key: string]: any }) {
-  const [proxyPools, setProxyPools] = useState([]);
+  const [proxyPools, setProxyPools] = useState<any[]>([]);
   const [proxyPoolId, setProxyPoolId] = useState(NONE_PROXY_POOL_VALUE);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);

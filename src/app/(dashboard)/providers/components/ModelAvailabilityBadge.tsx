@@ -21,11 +21,11 @@ const STATUS_CONFIG: any = {
 };
 
 export default function ModelAvailabilityBadge() {
-  const [data, setData]: any = useState(null);
+  const [data, setData]: any = useState<any>(null);
   const [loading, setLoading]: any = useState(true);
   const [expanded, setExpanded]: any = useState(false);
-  const [clearing, setClearing]: any = useState(null);
-  const ref: any = useRef(null);
+  const [clearing, setClearing]: any = useState<any>(null);
+  const ref: any = useRef<any>(null);
 
   const fetchStatus: any = useCallback(async () => {
     try {

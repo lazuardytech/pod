@@ -169,9 +169,9 @@ export default function MediaProviderKindPage() {
   const { kind: kindParam } = useParams();
   const kind = (Array.isArray(kindParam) ? kindParam[0] : kindParam) as ServiceKind;
   const router = useRouter();
-  const [connections, setConnections] = useState([]);
-  const [customNodes, setCustomNodes] = useState([]);
-  const [combos, setCombos] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
+  const [customNodes, setCustomNodes] = useState<any[]>([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const [showAddCustomEmbedding, setShowAddCustomEmbedding] = useState(false);
   const [showConnectedOnly, setShowConnectedOnly] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -206,7 +206,7 @@ export default function MediaProviderKindPage() {
 
   const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any) => k.id === kind);
   const isEmbedding = kind === "embedding";
-  const supportsCombo = COMBO_KINDS.has(kind);
+  const supportsCombo = (COMBO_KINDS as Set<string>).has(kind);
 
   useEffect(() => {
     if (!kindConfig) return;

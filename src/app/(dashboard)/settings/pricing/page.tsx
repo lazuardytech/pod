@@ -8,7 +8,7 @@ import PricingModal from "@/shared/components/PricingModal";
 export default function PricingSettingsPage() {
   const _router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  const [currentPricing, setCurrentPricing] = useState(null);
+  const [currentPricing, setCurrentPricing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

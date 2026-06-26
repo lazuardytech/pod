@@ -74,7 +74,7 @@ function buildUserContent(message: any): any {
 
   if (attachments.length === 0) return text;
 
-  const content = [];
+  const content: any[] = [];
   if (text) content.push({ type: "text", text });
 
   for (const attachment of attachments) {
@@ -169,7 +169,7 @@ function dedupeModels(models: any): any {
 }
 
 export default function BasicChatPageClient(): any {
-  const [providerGroups, setProviderGroups] = useState([]);
+  const [providerGroups, setProviderGroups] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [sessions, setSessions] = useState((): any => {
@@ -199,18 +199,18 @@ export default function BasicChatPageClient(): any {
     if (typeof window === "undefined") return "";
     return globalThis.localStorage.getItem(STORAGE_KEYS.draft) || "";
   });
-  const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState("");
   const [streamingText, setStreamingText] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const fileInputRef = useRef(null);
-  const abortRef = useRef(null);
+  const fileInputRef = useRef<any>(null);
+  const abortRef = useRef<any>(null);
   const initializedRef = useRef(false);
-  const modelMenuRef = useRef(null);
-  const historyMenuRef = useRef(null);
+  const modelMenuRef = useRef<any>(null);
+  const historyMenuRef = useRef<any>(null);
 
   useEffect((): any => {
     setIsHydrated(true);

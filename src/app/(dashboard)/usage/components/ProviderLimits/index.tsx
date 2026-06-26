@@ -44,7 +44,7 @@ type QuotaConnectionData = {
 };
 
 export default function ProviderLimits() {
-  const [connections, setConnections]: any = useState([]);
+  const [connections, setConnections]: any = useState<any[]>([]);
   const [quotaData, setQuotaData]: any = useState<Record<string, QuotaConnectionData>>(() => {
     if (typeof window === "undefined") return {};
     const cached: any = window.localStorage.getItem(QUOTA_CACHE_KEY);
@@ -73,11 +73,11 @@ export default function ProviderLimits() {
   const [refreshingAll, setRefreshingAll]: any = useState(false);
   const [countdown, setCountdown]: any = useState(60);
   const [connectionsLoading, setConnectionsLoading]: any = useState(true);
-  const [deletingId, setDeletingId]: any = useState(null);
-  const [togglingId, setTogglingId]: any = useState(null);
+  const [deletingId, setDeletingId]: any = useState<any>(null);
+  const [togglingId, setTogglingId]: any = useState<any>(null);
   const [showEditModal, setShowEditModal]: any = useState(false);
-  const [selectedConnection, setSelectedConnection]: any = useState(null);
-  const [proxyPools, setProxyPools]: any = useState([]);
+  const [selectedConnection, setSelectedConnection]: any = useState<any>(null);
+  const [proxyPools, setProxyPools]: any = useState<any[]>([]);
   const [providerFilter, setProviderFilter]: any = useState("all");
   const [expiringFirst, setExpiringFirst]: any = useState(false);
   const [providerMenuOpen, setProviderMenuOpen]: any = useState(false);
@@ -99,7 +99,7 @@ export default function ProviderLimits() {
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
-  const countdownRef: any = useRef(null);
+  const countdownRef: any = useRef<any>(null);
   const refreshingAllRef: any = useRef(false);
 
   // Hydrate toggle states from localStorage after mount (avoids SSR/hydration mismatch)

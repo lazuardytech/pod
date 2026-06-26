@@ -35,9 +35,9 @@ export default function EditConnectionModal({
   });
   const [cloudflareData, setCloudflareData] = useState({ accountId: "" });
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null);
+  const [testResult, setTestResult] = useState<any>(null);
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
+  const [validationResult, setValidationResult] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {

@@ -27,7 +27,7 @@ const OFFLINE_PROVIDER_NODES_CACHE_KEY = "providers:nodes";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 function getStatusDisplay(connected: any, error: any, errorCode: any) {
-  const parts = [];
+  const parts: any[] = [];
   if (connected > 0) {
     parts.push(
       <Badge key="connected" variant="success" size="sm" dot>
@@ -86,13 +86,13 @@ function getConnectionErrorTag(connection: any) {
 }
 
 export default function ProvidersPage() {
-  const [connections, setConnections] = useState([]);
-  const [providerNodes, setProviderNodes] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
+  const [providerNodes, setProviderNodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
   const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] = useState(false);
-  const [testingMode, setTestingMode] = useState(null);
-  const [testResults, setTestResults] = useState(null);
+  const [testingMode, setTestingMode] = useState<any>(null);
+  const [testResults, setTestResults] = useState<any>(null);
   const offlineNoticeShownRef = useRef(false);
   const searchQuery = useHeaderSearchStore((s: any) => s.query);
   const registerSearch = useHeaderSearchStore((s: any) => s.register);
@@ -269,7 +269,7 @@ export default function ProvidersPage() {
       const data = await res.json();
       setTestResults(data);
       if (data.summary) {
-        const { passed, failed, total } = data.summary;
+        const { passed, failed, total  } = data.summary ?? {} as any;
         if (failed === 0) toast.success(`All ${total} tests passed`);
         else toast.warning(`${passed}/${total} passed, ${failed} failed`);
       }
@@ -598,7 +598,7 @@ export default function ProvidersPage() {
 }
 
 function ProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
-  const { connected, error, errorCode, errorTime, allDisabled } = stats;
+  const { connected, error, errorCode, errorTime, allDisabled  } = stats ?? {} as any;
   const isNoAuth = !!provider.noAuth;
 
   const _dotColors = {
@@ -699,7 +699,7 @@ ProviderCard.propTypes = {
 };
 
 function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
-  const { connected, error, errorCode, errorTime, allDisabled } = stats;
+  const { connected, error, errorCode, errorTime, allDisabled  } = stats ?? {} as any;
   const isCompatible = providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
   const isAnthropicCompatible = providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);
 
@@ -1052,7 +1052,7 @@ function ProviderTestResultsView({ results }: any) {
     );
   }
 
-  const { summary, mode } = results;
+  const { summary, mode  } = results ?? {} as any;
   const items = results.results || [];
   const modeLabel =
     ({

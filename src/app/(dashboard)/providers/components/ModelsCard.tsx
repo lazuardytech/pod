@@ -184,12 +184,12 @@ AddCustomModelModal.propTypes = {
 export default function ModelsCard({ providerId, kindFilter, providerAliasOverride }: any) {
   const { copied, copy } = useCopyToClipboard();
   const [modelAliases, setModelAliases] = useState({});
-  const [customModels, setCustomModels] = useState([]);
+  const [customModels, setCustomModels] = useState<any[]>([]);
   const [modelTestResults, setModelTestResults] = useState<Record<string, any>>({});
   const [testingModelIds, setTestingModelIds] = useState(new Set());
   const [testError, setTestError] = useState("");
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
-  const [connections, setConnections] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
 
   const providerAlias = providerAliasOverride || getProviderAlias(providerId);
   const effectiveType = kindFilter || "llm";

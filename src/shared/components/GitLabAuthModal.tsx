@@ -47,15 +47,15 @@ export default function GitLabAuthModal({
   onClose?: any;
   [key: string]: any;
 }) {
-  const [mode, setMode] = useState(null); // null | "oauth" | "pat"
+  const [mode, setMode] = useState<any>(null); // null | "oauth" | "pat"
   const [baseUrl, setBaseUrl] = useState(GITLAB_COM);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [pat, setPat] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
   const [showOAuth, setShowOAuth] = useState(false);
-  const [oauthMeta, setOauthMeta] = useState(null);
+  const [oauthMeta, setOauthMeta] = useState<any>(null);
 
   const reset = () => {
     setMode(null);

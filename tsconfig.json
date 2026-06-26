@@ -18,6 +18,7 @@
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
     "noImplicitReturns": true,
+    "strictNullChecks": true,
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false,
     "baseUrl": ".",

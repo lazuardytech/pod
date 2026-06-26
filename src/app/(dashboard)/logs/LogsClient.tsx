@@ -184,9 +184,9 @@ function LogsInner() {
   const [sortBy, setSortBy] = useState("newest");
   const [recording, setRecording] = useState(true);
   const [filterProvider, setFilterProvider] = useState("all");
-  const [providerOptions, setProviderOptions] = useState([]);
+  const [providerOptions, setProviderOptions] = useState<any[]>([]);
   const [requestRefreshing, setRequestRefreshing] = useState(false);
-  const refreshRef = useRef(null);
+  const refreshRef = useRef<any>(null);
 
   // ProxyLogsTab lifted state
   const [proxySortBy, setProxySortBy] = useState("newest");
@@ -197,7 +197,7 @@ function LogsInner() {
   });
   const [proxyCount, setProxyCount] = useState(0);
   const [proxyRefreshing, setProxyRefreshing] = useState(false);
-  const proxyRefreshRef = useRef(null);
+  const proxyRefreshRef = useRef<any>(null);
 
   // ConsoleLogClient lifted state
   const [autoScroll, setAutoScroll] = useState(true);
@@ -207,8 +207,8 @@ function LogsInner() {
     return stored === null ? true : stored === "true";
   });
   const [consoleRefreshing, setConsoleRefreshing] = useState(false);
-  const clearRef = useRef(null);
-  const consoleRefreshRef = useRef(null);
+  const clearRef = useRef<any>(null);
+  const consoleRefreshRef = useRef<any>(null);
 
   // Persist live toggle states
   useEffect(() => {

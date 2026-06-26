@@ -21,7 +21,7 @@ function getProviderImageUrl(providerId: any) {
 
 // Custom provider node - rectangle with image + name
 function ProviderNode({ data }: any) {
-  const { label, color, imageUrl, textIcon, active, error } = data;
+  const { label, color, imageUrl, textIcon, active, error  } = data ?? {} as any;
   const [imgError, setImgError]: any = useState(false);
 
   const borderColor: any = error ? "#ef4444" : active ? "#22c55e" : "var(--color-border)";
@@ -298,8 +298,8 @@ export default function ProviderTopology({
     [providers],
   );
 
-  const rfInstance: any = useRef(null);
-  const containerRef: any = useRef(null);
+  const rfInstance: any = useRef<any>(null);
+  const containerRef: any = useRef<any>(null);
   const fitOpts: any = { padding: 0.2, duration: 200 };
   const savedViewport: any = useRef(loadViewport());
 

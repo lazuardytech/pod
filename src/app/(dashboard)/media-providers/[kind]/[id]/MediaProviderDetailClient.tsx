@@ -176,7 +176,7 @@ function EmbeddingExampleCard({ providerId, customAlias }: any): any {
   const [useTunnel, setUseTunnel] = useState(false);
   const [localEndpoint, setLocalEndpoint] = useState("");
   const [tunnelEndpoint, setTunnelEndpoint] = useState("");
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<any>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
@@ -439,7 +439,7 @@ function TtsExampleCard({ providerId }: any): any {
   const [_selectedVoiceName, setSelectedVoiceName] = useState("");
   const [voiceId, setVoiceId] = useState(""); // editable voice id (elevenlabs)
   // Voices shown below Voice row after language selected
-  const [countryVoices, setCountryVoices] = useState([]);
+  const [countryVoices, setCountryVoices] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   const [selectedModel, setSelectedModel] = useState((): any => {
     const cfgModels = AI_PROVIDERS[providerId]?.ttsConfig?.models;
@@ -459,15 +459,15 @@ function TtsExampleCard({ providerId }: any): any {
   const [tunnelEndpoint, setTunnelEndpoint] = useState("");
   const [responseFormat, setResponseFormat] = useState("mp3"); // mp3 | json
   const [audioUrl, setAudioUrl] = useState("");
-  const [jsonResponse, setJsonResponse] = useState(null); // Store JSON response
+  const [jsonResponse, setJsonResponse] = useState<any>(null); // Store JSON response
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
-  const [latency, setLatency] = useState(null);
+  const [latency, setLatency] = useState<any>(null);
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
 
   // Country picker modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [languages, setLanguages] = useState([]);
+  const [languages, setLanguages] = useState<any[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalSearch, setModalSearch] = useState("");
   const [modalError, setModalError] = useState("");
@@ -1083,14 +1083,14 @@ function GenericExampleCard({ providerId, kind }: any): any {
   const [useTunnel, setUseTunnel] = useState(false);
   const [localEndpoint, setLocalEndpoint] = useState("");
   const [tunnelEndpoint, setTunnelEndpoint] = useState("");
-  const [result, setResult] = useState(null);
-  const [progress, setProgress] = useState(null); // { stage, bytesReceived }
-  const [partialImage, setPartialImage] = useState(null);
+  const [result, setResult] = useState<any>(null);
+  const [progress, setProgress] = useState<any>(null); // { stage, bytesReceived }
+  const [partialImage, setPartialImage] = useState<any>(null);
   const [imageOutputFormat, setImageOutputFormat] = useState("json"); // json | binary
   const [binaryImageUrl, setBinaryImageUrl] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
-  const [connections, setConnections] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
   const [pinnedConnectionId, setPinnedConnectionId] = useState("");
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
   const { copied: copiedRes, copy: copyRes } = useCopyToClipboard();
@@ -1232,7 +1232,7 @@ function GenericExampleCard({ providerId, kind }: any): any {
           while ((sep = buf.indexOf("\n\n")) !== -1) {
             const block = buf.slice(0, sep);
             buf = buf.slice(sep + 2);
-            let evt = null,
+            let evt: string | null = null,
               dataStr = "";
             for (const line of block.split("\n")) {
               if (line.startsWith("event:")) evt = line.slice(6).trim();
@@ -1673,14 +1673,14 @@ function GenericExampleCard({ providerId, kind }: any): any {
 function SttExampleCard({ providerId }: any): any {
   const providerAlias = getProviderAlias(providerId);
   const builtinSttModels = getModelsByProviderId(providerId).filter((m: any): any => m.type === "stt");
-  const [customSttModels, setCustomSttModels] = useState([]);
+  const [customSttModels, setCustomSttModels] = useState<any[]>([]);
   const sttModels = [...builtinSttModels, ...customSttModels];
 
   const [selectedModel, setSelectedModel] = useState(builtinSttModels[0]?.id ?? "");
   const selectedModelObj = sttModels.find((m: any): any => m.id === selectedModel);
   const allowedParams = Array.isArray(selectedModelObj?.params) ? selectedModelObj.params : [];
 
-  const [audioFile, setAudioFile] = useState(null);
+  const [audioFile, setAudioFile] = useState<any>(null);
   const [language, setLanguage] = useState("");
   const [prompt, setPrompt] = useState("");
   const [responseFormat, setResponseFormat] = useState("json");
@@ -1689,8 +1689,8 @@ function SttExampleCard({ providerId }: any): any {
   const [useTunnel, setUseTunnel] = useState(false);
   const [localEndpoint, setLocalEndpoint] = useState("");
   const [tunnelEndpoint, setTunnelEndpoint] = useState("");
-  const [result, setResult] = useState(null);
-  const [latency, setLatency] = useState(null);
+  const [result, setResult] = useState<any>(null);
+  const [latency, setLatency] = useState<any>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
@@ -1984,7 +1984,7 @@ function SttExampleCard({ providerId }: any): any {
 // MediaProviderDetailPage
 export default function MediaProviderDetailPage(): any {
   const { kind: kindParam, id: idParam } = useParams();
-  const kind = Array.isArray(kindParam) ? kindParam[0] : kindParam;
+  const kind = (Array.isArray(kindParam) ? kindParam[0] : kindParam) as string;
   const id = Array.isArray(idParam) ? idParam[0] : idParam;
   const router = useRouter();
   const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === kind);
@@ -1999,7 +1999,7 @@ export default function MediaProviderDetailPage(): any {
     }
   };
 
-  const [customNode, setCustomNode] = useState(null);
+  const [customNode, setCustomNode] = useState<any>(null);
   const [customLoading, setCustomLoading] = useState(isCustom);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -2007,12 +2007,12 @@ export default function MediaProviderDetailPage(): any {
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   // Fetch custom node info from API for custom embedding nodes
   useEffect((): any => {
@@ -2037,7 +2037,7 @@ export default function MediaProviderDetailPage(): any {
 
   if (!kindConfig) return notFound();
 
-  const builtInProvider = AI_PROVIDERS[id];
+  const builtInProvider = AI_PROVIDERS[id as string];
 
   // For custom embedding nodes, build a synthetic provider object
   const provider = isCustom

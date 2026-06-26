@@ -33,7 +33,7 @@ export default function TranslatorPage() {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 1: true });
   const [loading, setLoading] = useState<Record<string, any>>({});
   // Detected from step 1: { provider, model, sourceFormat, targetFormat }
-  const [meta, setMeta] = useState(null);
+  const [meta, setMeta] = useState<any>(null);
 
   const setLoad = (key: any, val: any) => setLoading((prev: any) => ({ ...prev, [key]: val }));
   const setContent = (id: any, val: any) => setContents((prev: any) => ({ ...prev, [id]: val }));
@@ -52,6 +52,7 @@ export default function TranslatorPage() {
   // Load file from logs/translator/
   const handleLoad = async (stepId: any) => {
     const step = STEPS.find((s: any) => s.id === stepId);
+    if (!step) return;
     setLoad(`load-${stepId}`, true);
     try {
       const res = await fetch(`/api/translator/load?file=${step.file}`);
@@ -183,7 +184,7 @@ export default function TranslatorPage() {
       }
 
       // Accumulate streaming response
-      const reader = res.body.getReader();
+      const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let full = "";
       while (true) {

@@ -32,7 +32,7 @@ export default function ShadcnSelect({
   [key: string]: any;
 }) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<any>(null);
 
   const selectedOption = useMemo(() => options.find((option: any) => option.value === value) || null, [options, value]);
 
@@ -42,7 +42,7 @@ export default function ShadcnSelect({
     }
 
     const handlePointerDown = (event: any) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (containerRef.current && !containerRef.current!.contains(event.target)) {
         setOpen(false);
       }
     };

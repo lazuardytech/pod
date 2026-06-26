@@ -46,7 +46,7 @@ export default function AddApiKeyModal({
   });
   const [cloudflareData, setCloudflareData] = useState({ accountId: "" });
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
+  const [validationResult, setValidationResult] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
   const buildProviderSpecificData = () => {

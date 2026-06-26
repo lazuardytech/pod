@@ -23,7 +23,7 @@ function formatDuration(seconds: any = 0) {
 }
 
 function Sparkline({ samples, field, fmt }: any) {
-  const [hovered, setHovered] = useState(null);
+  const [hovered, setHovered] = useState<any>(null);
   const values = samples.map((s: any) => Number(s[field])).filter((v: any) => Number.isFinite(v));
   if (values.length < 2) return <div className="h-10 rounded-[4px] bg-deep-slate" />;
   const min = Math.min(...values);
@@ -88,8 +88,8 @@ function Sparkline({ samples, field, fmt }: any) {
 }
 
 export default function TelemetryCard({ health }: any) {
-  const [samples, setSamples] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [samples, setSamples] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<any>(null);
 
   useEffect(() => {
     if (!health) return;

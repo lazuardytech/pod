@@ -32,7 +32,7 @@ export default function DatePicker({
   [key: string]: any;
 }) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<any>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function DatePicker({
       return undefined;
     }
     const handler = (e: any) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (containerRef.current && !containerRef.current!.contains(e.target)) {
         setOpen(false);
       }
     };

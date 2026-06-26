@@ -34,18 +34,18 @@ const CAVEMAN_LEVELS: any = [
   { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
 ];
 export default function APIPageClient({ machineId }: any) {
-  const [keys, setKeys]: any = useState([]);
+  const [keys, setKeys]: any = useState<any[]>([]);
   const [loading, setLoading]: any = useState(true);
   const [showAddModal, setShowAddModal]: any = useState(false);
   const [newKeyName, setNewKeyName]: any = useState("");
-  const [editingKey, setEditingKey]: any = useState(null);
+  const [editingKey, setEditingKey]: any = useState<any>(null);
   const [editKeyName, setEditKeyName]: any = useState("");
   const [keysPage, setKeysPage]: any = useState(1);
   const KEYS_PAGE_SIZE: any = 15;
   const [newKeyLimitType, setNewKeyLimitType]: any = useState("unlimited");
   const [newKeyRpm, setNewKeyRpm]: any = useState("60");
   const [newKeyConcurrent, setNewKeyConcurrent]: any = useState("5");
-  const [createdKey, setCreatedKey]: any = useState(null);
+  const [createdKey, setCreatedKey]: any = useState<any>(null);
 
   const [requireApiKey, setRequireApiKey]: any = useState(false);
   const [requireLogin, setRequireLogin]: any = useState(true);
@@ -61,7 +61,7 @@ export default function APIPageClient({ machineId }: any) {
   const [tunnelUrl, setTunnelUrl]: any = useState("");
   const [tunnelLoading, setTunnelLoading]: any = useState(false);
   const [tunnelProgress, setTunnelProgress]: any = useState("");
-  const [tunnelStatus, setTunnelStatus]: any = useState(null);
+  const [tunnelStatus, setTunnelStatus]: any = useState<any>(null);
   const [showEnableTunnelModal, setShowEnableTunnelModal]: any = useState(false);
   const [showDisableTunnelModal, setShowDisableTunnelModal]: any = useState(false);
 
@@ -70,7 +70,7 @@ export default function APIPageClient({ machineId }: any) {
   const [tsUrl, setTsUrl]: any = useState("");
   const [tsLoading, setTsLoading]: any = useState(false);
   const [tsProgress, setTsProgress]: any = useState("");
-  const [tsStatus, setTsStatus]: any = useState(null);
+  const [tsStatus, setTsStatus]: any = useState<any>(null);
   const setTsError: any = (msg: any) => {
     if (typeof msg === "string" && msg.includes("exited with code")) {
       toast.error("Failed to start Tailscale");
@@ -78,14 +78,14 @@ export default function APIPageClient({ machineId }: any) {
       setTsStatus({ type: "error", message: msg });
     }
   };
-  const [tsInstalled, setTsInstalled]: any = useState(null); // null=checking, true/false
+  const [tsInstalled, setTsInstalled]: any = useState<any>(null); // null=checking, true/false
   const [tsInstalling, setTsInstalling]: any = useState(false);
-  const [tsInstallLog, setTsInstallLog]: any = useState([]);
+  const [tsInstallLog, setTsInstallLog]: any = useState<any[]>([]);
   const [tsSudoPassword, setTsSudoPassword]: any = useState("");
   const [tsConnecting, setTsConnecting]: any = useState(false);
   const [showTsModal, setShowTsModal]: any = useState(false);
   const [showDisableTsModal, setShowDisableTsModal]: any = useState(false);
-  const tsLogRef: any = useRef(null);
+  const tsLogRef: any = useRef<any>(null);
   const tunnelStatusSigRef: any = useRef("");
   const offlineNoticeShownRef: any = useRef(false);
   const unmountRef: any = useRef(false);

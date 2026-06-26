@@ -39,7 +39,7 @@ MenuItem.propTypes = {
 
 export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]: any }) {
   const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef(null);
+  const menuRef = useRef<any>(null);
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {

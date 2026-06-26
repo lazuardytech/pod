@@ -31,18 +31,18 @@ export default function MemoryClient() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
+  const [deletingId, setDeletingId] = useState<any>(null);
   const [clearingAll, setClearingAll] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const [settings, setSettings] = useState({
     enabled: true,
@@ -51,7 +51,7 @@ export default function MemoryClient() {
     strategy: "hybrid",
   });
 
-  const [apiKeys, setApiKeys] = useState([]);
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     q: "",
     apiKeyId: "",

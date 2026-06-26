@@ -22,9 +22,9 @@ function MediaFlyout({
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0 });
-  const triggerRef = useRef(null);
-  const flyoutRef = useRef(null);
-  const timerRef = useRef(null);
+  const triggerRef = useRef<any>(null);
+  const flyoutRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
 
   const show = useCallback(() => {
     clearTimeout(timerRef.current);

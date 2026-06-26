@@ -230,12 +230,12 @@ export default function UsageStats({
   const sortBy = searchParams.get("sortBy") || "rawModel";
   const sortOrder = searchParams.get("sortOrder") || "asc";
 
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [tableView, setTableView] = useState("model");
   const [viewMode, setViewMode] = useState("costs");
-  const [providers, setProviders] = useState([]);
+  const [providers, setProviders] = useState<any[]>([]);
   const [periodLocal, setPeriodLocal] = useState("7d");
   const offlineNoticeShownRef = useRef(false);
   const hasLoadedStatsRef = useRef(false);

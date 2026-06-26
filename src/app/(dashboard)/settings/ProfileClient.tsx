@@ -74,14 +74,14 @@ export default function ProfilePage() {
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const _openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
   const [legacyInfo, setLegacyInfo] = useState({ hasLegacyData: false, legacyFilesFound: [] });
-  const importFileRef = useRef(null);
+  const importFileRef = useRef<any>(null);
   const [proxyForm, setProxyForm] = useState({
     outboundProxyEnabled: false,
     outboundProxyUrl: "",

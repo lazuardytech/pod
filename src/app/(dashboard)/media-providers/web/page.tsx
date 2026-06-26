@@ -192,8 +192,8 @@ function Section({ title, icon, kind, providers, connections, combos, onCreateCo
 
 export default function WebProvidersPage() {
   const router = useRouter();
-  const [connections, setConnections] = useState([]);
-  const [combos, setCombos] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const registerAction = useHeaderActionStore((s: any) => s.register);
   const unregisterAction = useHeaderActionStore((s: any) => s.unregister);
   const [showConnectedOnly, setShowConnectedOnly] = useState(() => {

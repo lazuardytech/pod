@@ -19,7 +19,7 @@ export default function ManualConfigModal({
   [key: string]: any;
 }) {
   const { copy } = useCopyToClipboard();
-  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [copiedIndex, setCopiedIndex] = useState<any>(null);
 
   const copyConfig = (text: any, index: any) => {
     copy(text, `manualconfig-${index}`);

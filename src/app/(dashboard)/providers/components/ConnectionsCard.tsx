@@ -50,7 +50,7 @@ function ConnectionRow({
   const [showProxyDropdown, setShowProxyDropdown] = useState(false);
   const [updatingProxy, setUpdatingProxy] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
-  const proxyDropdownRef = useRef(null);
+  const proxyDropdownRef = useRef<any>(null);
 
   const proxyPoolMap = new Map((proxyPools || []).map((p: any) => [p.id, p]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
@@ -280,7 +280,7 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
   const NONE = "__none__";
   const [formData, setFormData] = useState({ name: "", apiKey: "", priority: 1, proxyPoolId: NONE });
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
+  const [validationResult, setValidationResult] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
   const handleValidate = async () => {
@@ -414,25 +414,25 @@ AddApiKeyModal.propTypes = {
 // ── ConnectionsCard ────────────────────────────────────────────
 // Self-contained card: fetches, displays and manages all connections for a provider.
 export default function ConnectionsCard({ providerId, isOAuth }: any) {
-  const [connections, setConnections] = useState([]);
-  const [proxyPools, setProxyPools] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
+  const [proxyPools, setProxyPools] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedConnection, setSelectedConnection] = useState(null);
-  const [providerStrategy, setProviderStrategy] = useState(null);
+  const [selectedConnection, setSelectedConnection] = useState<any>(null);
+  const [providerStrategy, setProviderStrategy] = useState<any>(null);
   const [providerStickyLimit, setProviderStickyLimit] = useState("1");
 
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const fetch_ = useCallback(async () => {
     try {

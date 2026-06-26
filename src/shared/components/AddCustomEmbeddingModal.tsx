@@ -32,7 +32,7 @@ export default function AddCustomEmbeddingModal({
   const [checkKey, setCheckKey] = useState("");
   const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
+  const [validationResult, setValidationResult] = useState<any>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -108,7 +108,7 @@ export default function AddCustomEmbeddingModal({
 
   const renderValidationResult = () => {
     if (!validationResult) return null;
-    const { valid, error, dimensions } = validationResult;
+    const { valid, error, dimensions  } = validationResult ?? {} as any;
     if (valid) {
       return (
         <>

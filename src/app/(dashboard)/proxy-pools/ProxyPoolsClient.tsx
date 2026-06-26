@@ -38,20 +38,20 @@ function normalizeFormData(
 }
 
 export default function ProxyPoolsPage() {
-  const [proxyPools, setProxyPools]: any = useState([]);
+  const [proxyPools, setProxyPools]: any = useState<any[]>([]);
   const [loading, setLoading]: any = useState(true);
   const [showFormModal, setShowFormModal]: any = useState(false);
   const [showBatchImportModal, setShowBatchImportModal]: any = useState(false);
   const [showVercelModal, setShowVercelModal]: any = useState(false);
-  const [editingProxyPool, setEditingProxyPool]: any = useState(null);
+  const [editingProxyPool, setEditingProxyPool]: any = useState<any>(null);
   const [formData, setFormData]: any = useState(normalizeFormData());
   const [batchImportText, setBatchImportText]: any = useState("");
   const [vercelForm, setVercelForm]: any = useState({ vercelToken: "", projectName: "vercel-relay" });
   const [saving, setSaving]: any = useState(false);
   const [importing, setImporting]: any = useState(false);
   const [deploying, setDeploying]: any = useState(false);
-  const [testingId, setTestingId]: any = useState(null);
-  const [selectedIds, setSelectedIds]: any = useState([]);
+  const [testingId, setTestingId]: any = useState<any>(null);
+  const [selectedIds, setSelectedIds]: any = useState<any[]>([]);
   const [healthChecking, setHealthChecking]: any = useState(false);
   const [healthProgress, setHealthProgress]: any = useState({ current: 0, total: 0 });
   const [bulkBusy, setBulkBusy]: any = useState(false);

@@ -36,7 +36,7 @@ function markDismissedNow() {
 }
 
 export default function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [installing, setInstalling] = useState(false);
   const [canPromptInstall, setCanPromptInstall] = useState(false);
   const [showIosHint, setShowIosHint] = useState(false);

@@ -151,7 +151,7 @@ export default function Header({
   const pathname = usePathname();
   const router = useRouter();
   const pageInfo = useMemo(() => getPageInfo(pathname), [pathname]);
-  const { title, icon, breadcrumbs } = pageInfo;
+  const { title, icon, breadcrumbs  } = pageInfo ?? {} as any;
 
   const handleLogout = async () => {
     try {

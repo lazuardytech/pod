@@ -20,7 +20,7 @@ export default function IFlowCookieModal({
 }) {
   const [cookie, setCookie] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {

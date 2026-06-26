@@ -49,31 +49,31 @@ function getListingHref(kind: any): any {
 export default function ComboDetailPage(): any {
   const { id } = useParams();
   const router = useRouter();
-  const [combo, setCombo] = useState(null);
+  const [combo, setCombo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
-  const [providers, setProviders] = useState([]);
+  const [providers, setProviders] = useState<any[]>([]);
   const [roundRobin, setRoundRobin] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null);
+  const [testResult, setTestResult] = useState<any>(null);
   const [testError, setTestError] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [connections, setConnections] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
   const [modelAliases, setModelAliases] = useState({});
 
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const fetchAll = async (): Promise<any> => {
     try {

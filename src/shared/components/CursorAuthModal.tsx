@@ -21,7 +21,7 @@ export default function CursorAuthModal({
 }) {
   const [accessToken, setAccessToken] = useState("");
   const [machineId, setMachineId] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
   const [importing, setImporting] = useState(false);
   const [autoDetecting, setAutoDetecting] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);

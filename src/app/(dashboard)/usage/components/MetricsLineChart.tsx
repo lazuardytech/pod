@@ -42,7 +42,7 @@ function Sparkline({ data, field, color, fmt }: any) {
 
   const areaPoints = `${PAD},${H} ${points} ${W - PAD},${H}`;
 
-  const [hovered, setHovered] = useState(null);
+  const [hovered, setHovered] = useState<any>(null);
 
   return (
     <div className="relative w-full">
@@ -133,7 +133,7 @@ const METRICS = [
 ];
 
 export default function MetricsLineChart({ period = "7d" }: any) {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const offlineNoticeShownRef = useRef(false);
 

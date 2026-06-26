@@ -100,8 +100,8 @@ function getInputTokens(tokens: any) {
 }
 
 export default function RequestDetailsTab() {
-  const [details, setDetails]: any = useState([]);
-  const [fetchError, setFetchError]: any = useState(null);
+  const [details, setDetails]: any = useState<any[]>([]);
+  const [fetchError, setFetchError]: any = useState<any>(null);
   const [pagination, setPagination]: any = useState({
     page: 1,
     pageSize: 20,
@@ -109,10 +109,10 @@ export default function RequestDetailsTab() {
     totalPages: 0,
   });
   const [loading, setLoading]: any = useState(false);
-  const [selectedDetail, setSelectedDetail]: any = useState(null);
+  const [selectedDetail, setSelectedDetail]: any = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen]: any = useState(false);
-  const [providers, setProviders]: any = useState([]);
-  const [providerNameCache, setProviderNameCache]: any = useState(null);
+  const [providers, setProviders]: any = useState<any[]>([]);
+  const [providerNameCache, setProviderNameCache]: any = useState<any>(null);
   const [filters, setFilters]: any = useState({
     provider: "",
     startDate: null,
@@ -137,11 +137,11 @@ export default function RequestDetailsTab() {
           url: "/api/usage/providers",
           cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
-          onCacheData: (data: { providers?: unknown[] }) => {
-            setProviders(data?.providers || []);
+          onCacheData: (data: unknown) => {
+            setProviders((data as { providers?: unknown[] })?.providers || []);
           },
-          onFreshData: (data: { providers?: unknown[] }) => {
-            setProviders(data?.providers || []);
+          onFreshData: (data: unknown) => {
+            setProviders((data as { providers?: unknown[] })?.providers || []);
           },
         }),
         fetchProviderNames(),

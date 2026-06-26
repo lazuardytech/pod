@@ -17,7 +17,7 @@ export default function ConnectionRow({
 }: any) {
   const [showProxyDropdown, setShowProxyDropdown] = useState(false);
   const [updatingProxy, setUpdatingProxy] = useState(false);
-  const proxyDropdownRef = useRef(null);
+  const proxyDropdownRef = useRef<any>(null);
 
   const proxyPoolMap = new Map((proxyPools || []).map((pool: any) => [pool.id, pool]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;

@@ -20,14 +20,14 @@ import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
 export default function CombosPage() {
-  const [combos, setCombos] = useState([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingCombo, setEditingCombo] = useState(null);
-  const [activeProviders, setActiveProviders] = useState([]);
+  const [editingCombo, setEditingCombo] = useState<any>(null);
+  const [activeProviders, setActiveProviders] = useState<any[]>([]);
   const [comboStrategies, setComboStrategies] = useState<Record<string, any>>({});
   const { copied, copy } = useCopyToClipboard();
-  const [testingComboId, setTestingComboId] = useState(null);
+  const [testingComboId, setTestingComboId] = useState<any>(null);
   const [comboTestResults, setComboTestResults] = useState({});
   const [testingAll, setTestingAll] = useState(false);
 
@@ -35,12 +35,12 @@ export default function CombosPage() {
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   useEffect(() => {
     fetchData();
@@ -120,7 +120,7 @@ export default function CombosPage() {
   };
 
   const handleDragEnd = async (event: any) => {
-    const { active, over } = event;
+    const { active, over  } = event ?? {} as any;
     if (!over || active.id === over.id) return;
 
     const oldIndex = combos.findIndex((c: any) => c.id === active.id);

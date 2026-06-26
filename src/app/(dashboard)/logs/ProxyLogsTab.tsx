@@ -40,14 +40,14 @@ import { DetailRow, DetailSection, LogDrawer, LogDrawerBody, LogDrawerHeader } f
 
 export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefresh, onCountChange }: any) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [testing, setTesting] = useState(null);
+  const [error, setError] = useState<any>(null);
+  const [testing, setTesting] = useState<any>(null);
   const [testResults, setTestResults] = useState<Record<string, any>>({});
-  const [selectedPool, setSelectedPool] = useState(null);
-  const [internalPools, setInternalPools] = useState([]);
+  const [selectedPool, setSelectedPool] = useState<any>(null);
+  const [internalPools, setInternalPools] = useState<any[]>([]);
   const [_connected, setConnected] = useState(false);
 
-  const esRef = useRef(null);
+  const esRef = useRef<any>(null);
   const liveRef = useRef(live);
 
   useEffect(() => {

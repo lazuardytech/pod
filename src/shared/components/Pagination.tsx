@@ -25,7 +25,7 @@ export default function Pagination({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: number[] = [];
     const showMax = 5;
     let start = Math.max(1, currentPage - 2);
     const end = Math.min(totalPages, start + showMax - 1);

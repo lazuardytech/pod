@@ -119,7 +119,7 @@ export function DetailRow({
 }
 
 export function JsonBlock({ data }: { data?: any; [key: string]: any }) {
-  const ref = useRef(null);
+  const ref = useRef<any>(null);
   if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
   const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
   return (

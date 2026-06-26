@@ -379,7 +379,7 @@ export async function loadJsonStaleWhileRevalidate({
 }: LoadJsonStaleWhileRevalidateOptions = {}): Promise<LoadJsonStaleWhileRevalidateResult> {
   if (!url) return { data: null, source: "none", stale: false };
 
-  const cached = await readOfflineJsonCache(cacheKey, { maxStaleMs });
+  const cached = await readOfflineJsonCache(cacheKey ?? "", { maxStaleMs });
   const hasUsableCache = cached && !cached.expired;
 
   if (hasUsableCache && typeof onCacheData === "function") {

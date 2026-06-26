@@ -28,7 +28,7 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
   const [checkKey, setCheckKey] = useState("");
   const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState(null);
+  const [validationResult, setValidationResult] = useState<any>(null);
 
   useEffect(() => {
     if (node) {

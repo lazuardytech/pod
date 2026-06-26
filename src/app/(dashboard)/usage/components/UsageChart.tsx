@@ -15,7 +15,7 @@ const fmtTokens = (n: any) => {
 const fmtCost = (n: any) => `$${(n || 0).toFixed(2)}`;
 
 export default function UsageChart({ period = "7d" }: any) {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("tokens");
 

@@ -78,19 +78,19 @@ export default function RequestLogger({
   onProvidersChange?: any;
   [key: string]: any;
 }) {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [connected, setConnected] = useState(false);
 
   // Detail drawer state
-  const [selectedLog, setSelectedLog] = useState(null);
-  const [detailData, setDetailData] = useState(null);
+  const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [detailData, setDetailData] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const detailAbortRef = useRef(null);
+  const detailAbortRef = useRef<any>(null);
 
-  const esRef = useRef(null);
+  const esRef = useRef<any>(null);
   const recordingRef = useRef(recording);
 
   // Keep recordingRef in sync

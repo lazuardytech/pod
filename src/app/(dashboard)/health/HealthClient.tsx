@@ -62,12 +62,12 @@ function SectionHeader({ icon, title, children }: any) {
 }
 
 export default function HealthPage() {
-  const [data, setData]: any = useState(null);
-  const [error, setError]: any = useState(null);
-  const [lastRefresh, setLastRefresh]: any = useState(null);
+  const [data, setData]: any = useState<any>(null);
+  const [error, setError]: any = useState<any>(null);
+  const [lastRefresh, setLastRefresh]: any = useState<any>(null);
   const [refreshing, setRefreshing]: any = useState(false);
-  const [clearingLock, setClearingLock]: any = useState(null);
-  const esRef: any = useRef(null);
+  const [clearingLock, setClearingLock]: any = useState<any>(null);
+  const esRef: any = useRef<any>(null);
   const offlineNoticeShownRef: any = useRef(false);
 
   const notifyOfflineCache: any = useCallback(() => {
@@ -199,7 +199,7 @@ export default function HealthPage() {
     );
   }
 
-  const { system, database, providers, tunnel, semanticCache } = data;
+  const { system, database, providers, tunnel, semanticCache  } = data ?? {} as any;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">

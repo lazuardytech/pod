@@ -84,14 +84,14 @@ const LEVEL_FILTERS = [
 ];
 
 export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, live = true, refreshRef }: any) {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
   const [levelFilter, setLevelFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [copied, setCopied] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const scrollRef = useRef(null);
-  const esRef = useRef(null);
+  const [copied, setCopied] = useState<any>(null);
+  const [lastUpdated, setLastUpdated] = useState<any>(null);
+  const scrollRef = useRef<any>(null);
+  const esRef = useRef<any>(null);
   const liveRef = useRef(live);
 
   // Keep liveRef in sync

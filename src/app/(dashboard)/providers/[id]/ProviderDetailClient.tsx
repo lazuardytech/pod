@@ -59,10 +59,10 @@ export default function ProviderDetailPage() {
   const router = useRouter();
   // todo(ts): useParams id is string|string[]; route guarantees a single segment
   const providerId = params.id as string;
-  const [connections, setConnections] = useState([]);
+  const [connections, setConnections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [providerNode, setProviderNode] = useState(null);
-  const [proxyPools, setProxyPools] = useState([]);
+  const [providerNode, setProviderNode] = useState<any>(null);
+  const [proxyPools, setProxyPools] = useState<any[]>([]);
   const [showOAuthModal, setShowOAuthModal] = useState(false);
   const [showIFlowCookieModal, setShowIFlowCookieModal] = useState(false);
   const [showAddApiKeyModal, setShowAddApiKeyModal] = useState(false);
@@ -70,7 +70,7 @@ export default function ProviderDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditNodeModal, setShowEditNodeModal] = useState(false);
   const [showBulkProxyModal, setShowBulkProxyModal] = useState(false);
-  const [selectedConnection, setSelectedConnection] = useState(null);
+  const [selectedConnection, setSelectedConnection] = useState<any>(null);
   // todo(ts): model aliases come from an untyped API response; widen to any
   const [modelAliases, setModelAliases] = useState<any>({});
   const [headerImgError, setHeaderImgError] = useState(false);
@@ -78,16 +78,16 @@ export default function ProviderDetailPage() {
   const [modelsTestError, setModelsTestError] = useState("");
   const [testingModelIds, setTestingModelIds] = useState(new Set());
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
-  const [selectedConnectionIds, setSelectedConnectionIds] = useState([]);
+  const [selectedConnectionIds, setSelectedConnectionIds] = useState<any[]>([]);
   const [bulkProxyPoolId, setBulkProxyPoolId] = useState("__none__");
   const [bulkUpdatingProxy, setBulkUpdatingProxy] = useState(false);
-  const [providerStrategy, setProviderStrategy] = useState(null); // null = use global, "round-robin" = override
+  const [providerStrategy, setProviderStrategy] = useState<any>(null); // null = use global, "round-robin" = override
   const [providerStickyLimit, setProviderStickyLimit] = useState("");
   const [thinkingMode, setThinkingMode] = useState("auto");
   const [effortMode, setEffortMode] = useState("default");
-  const [suggestedModels, setSuggestedModels] = useState([]);
-  const [kiloFreeModels, setKiloFreeModels] = useState([]);
-  const [disabledModelIds, setDisabledModelIds] = useState([]);
+  const [suggestedModels, setSuggestedModels] = useState<any[]>([]);
+  const [kiloFreeModels, setKiloFreeModels] = useState<any[]>([]);
+  const [disabledModelIds, setDisabledModelIds] = useState<any[]>([]);
   const { copied, copy } = useCopyToClipboard();
   const thinkingEffortOptions = [
     { value: "default", label: "Default" },
@@ -103,12 +103,12 @@ export default function ProviderDetailPage() {
     open: false,
     title: "",
     message: "",
-    onConfirm: null,
+    onConfirm: null as (() => void) | null,
     variant: "default",
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   const providerInfo = (providerNode
     ? {
@@ -487,7 +487,7 @@ export default function ProviderDetailPage() {
         body: JSON.stringify({ provider: providerId, ...formData }),
       });
 
-      let data = null;
+      let data: any = null;
       try {
         data = await res.json();
       } catch {
@@ -618,10 +618,10 @@ export default function ProviderDetailPage() {
   const handleBulkApplyProxyPool = async () => {
     if (selectedConnectionIds.length === 0) return;
 
-    const proxyPoolId = bulkProxyPoolId === "__none__" ? null : bulkProxyPoolId;
+    const proxyPoolId: string | null = bulkProxyPoolId === "__none__" ? null : bulkProxyPoolId;
     setBulkUpdatingProxy(true);
     try {
-      const results = [];
+      const results: boolean[] = [];
       for (const connectionId of selectedConnectionIds) {
         try {
           const res = await fetch(`/api/providers/${connectionId}`, {
@@ -652,7 +652,7 @@ export default function ProviderDetailPage() {
   };
 
   const handleDragEnd = async (event: any) => {
-    const { active, over } = event;
+    const { active, over  } = event ?? {} as any;
     if (!over || active.id === over.id) return;
 
     const oldIndex = connections.findIndex((c: any) => c.id === active.id);

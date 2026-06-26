@@ -24,9 +24,9 @@ export default function KiroSocialOAuthModal({
 }) {
   const [step, setStep] = useState("loading"); // loading | input | success | error
   const [authUrl, setAuthUrl] = useState("");
-  const [authData, setAuthData] = useState(null);
+  const [authData, setAuthData] = useState<any>(null);
   const [callbackUrl, setCallbackUrl] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
   const { copied, copy } = useCopyToClipboard();
 
   // Initialize auth flow

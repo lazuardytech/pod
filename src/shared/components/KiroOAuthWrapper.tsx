@@ -22,9 +22,9 @@ export default function KiroOAuthWrapper({
   onClose?: any;
   [key: string]: any;
 }) {
-  const [authMethod, setAuthMethod] = useState(null); // null | "builder-id" | "idc" | "social" | "import"
-  const [socialProvider, setSocialProvider] = useState(null); // "google" | "github"
-  const [idcConfig, setIdcConfig] = useState(null);
+  const [authMethod, setAuthMethod] = useState<any>(null); // null | "builder-id" | "idc" | "social" | "import"
+  const [socialProvider, setSocialProvider] = useState<any>(null); // "google" | "github"
+  const [idcConfig, setIdcConfig] = useState<any>(null);
 
   const handleMethodSelect = useCallback(
     (method: any, config: any) => {
