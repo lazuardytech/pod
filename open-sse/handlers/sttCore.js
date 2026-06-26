@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { AI_PROVIDERS } from "../../src/shared/constants/providers.js";
+import { AI_PROVIDERS } from "../../src/shared/constants/providers";
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { createErrorResult } from "../utils/error.js";
 

@@ -15,7 +15,7 @@ import {
 } from "@/lib/oauth/constants/oauth";
 import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
-import { buildClineHeaders } from "@/shared/utils/clineAuth.mjs";
+import { buildClineHeaders } from "@/shared/utils/clineAuth.mts";
 import { sanitizeError } from "@/lib/sanitizeError";
 
 // OAuth provider test endpoints

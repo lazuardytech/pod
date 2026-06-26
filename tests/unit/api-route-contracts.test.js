@@ -306,7 +306,7 @@ describe("api route contracts", () => {
         isAnthropicCompatibleProvider: () => false,
         isCustomEmbeddingProvider: () => false,
       }));
-      vi.doMock("@/shared/constants/config.js", () => ({
+      vi.doMock("@/shared/constants/config", () => ({
         APIKEY_PROVIDERS: { openai: { name: "OpenAI" } },
       }));
       vi.doMock("@/lib/providerNormalization.js", () => ({
@@ -437,7 +437,7 @@ describe("usage route contracts", () => {
       vi.doMock("@/lib/requestDetailsDb.js", () => ({
         getRequestDetails: vi.fn().mockResolvedValue({ details: [], pagination: { totalItems: 0 } }),
       }));
-      vi.doMock("@/shared/constants/config.js", () => ({
+      vi.doMock("@/shared/constants/config", () => ({
         AI_PROVIDERS: {},
       }));
     });

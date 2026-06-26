@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { DEFAULT_API_KEY_SECRET, resolveApiKeySecret } from "@/lib/security/runtimeSecrets.mjs";
+import { DEFAULT_API_KEY_SECRET, resolveApiKeySecret } from "@/lib/security/runtimeSecrets.mts";
 
 function getApiKeySecret(): string {
   const secret = resolveApiKeySecret();

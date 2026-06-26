@@ -3,7 +3,7 @@ import { handleFetchCore } from "open-sse/handlers/fetch/index.js";
 import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getCombos, getSettings } from "@/lib/localDb";
-import { AI_PROVIDERS, resolveProviderId } from "@/shared/constants/providers.js";
+import { AI_PROVIDERS, resolveProviderId } from "@/shared/constants/providers";
 import {
   clearAccountError,
   extractApiKey,

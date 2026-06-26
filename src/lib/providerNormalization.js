@@ -1,4 +1,4 @@
-import { AI_PROVIDERS } from "../shared/constants/providers.js";
+import { AI_PROVIDERS } from "../shared/constants/providers";
 
 export function normalizeProviderId(provider) {
   if (typeof provider !== "string") return provider;

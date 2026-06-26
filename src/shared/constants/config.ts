@@ -54,9 +54,9 @@ export const PROVIDER_ENDPOINTS: Record<string, string> = {
   "ollama-local": "http://localhost:11434/api/chat",
 };
 
-// Re-export from models.js for backward compatibility
-export { AI_MODELS, PROVIDER_MODELS } from "./models.js";
-// Re-export from providers.js for backward compatibility
+// Re-export from models.ts for backward compatibility
+export { AI_MODELS, PROVIDER_MODELS } from "./models";
+// Re-export from providers.ts for backward compatibility
 export {
   AI_PROVIDERS,
   APIKEY_PROVIDERS,
@@ -64,4 +64,4 @@ export {
   FREE_PROVIDERS,
   OAUTH_PROVIDERS,
   WEB_COOKIE_PROVIDERS,
-} from "./providers.js";
+} from "./providers";

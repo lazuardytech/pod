@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { APP_CONFIG } from "@/shared/constants/config.js";
+import { APP_CONFIG } from "@/shared/constants/config";
 
 // ─── Helpers (duplicated from page/route for isolated testing) ────────────────
 

@@ -1607,7 +1607,7 @@ async function getRawPricing() {
 
 export async function getPricing() {
   const userPricing = await getRawPricing();
-  const { PROVIDER_PRICING } = await import("@/shared/constants/pricing.js");
+  const { PROVIDER_PRICING } = await import("@/shared/constants/pricing");
 
   const merged = {};
   for (const [provider, models] of Object.entries(PROVIDER_PRICING)) {
@@ -1649,7 +1649,7 @@ export async function getPricingForModel(provider, model) {
   const mdPricing = getModelsDevPricingForModel(provider, model);
   if (mdPricing) return mdPricing;
 
-  const { getPricingForModel: resolve } = await import("@/shared/constants/pricing.js");
+  const { getPricingForModel: resolve } = await import("@/shared/constants/pricing");
   return resolve(provider, model);
 }
 

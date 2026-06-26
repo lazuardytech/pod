@@ -85,7 +85,7 @@ vi.mock("@/lib/modelsDevSync.js", () => ({
   })),
 }));
 
-vi.mock("@/shared/services/cloudSyncScheduler.js", () => ({
+vi.mock("@/shared/services/cloudSyncScheduler", () => ({
   getCloudSyncStatus: vi.fn(() => ({
     enabled: false,
     isRunning: false,
@@ -93,7 +93,7 @@ vi.mock("@/shared/services/cloudSyncScheduler.js", () => ({
   })),
 }));
 
-vi.mock("@/shared/constants/config.js", () => ({
+vi.mock("@/shared/constants/config", () => ({
   APP_CONFIG: {
     displayVersion: "0.0.63",
   },

@@ -7,15 +7,15 @@ import { getCacheStats, getInFlightStats } from "@/lib/semanticCache.js";
 import { DATA_DIR, SQLITE_FILE, getDatabase } from "@/lib/sqlite/connection.js";
 import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/lib/usageDb.js";
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync.js";
-import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler.js";
-import { APP_CONFIG } from "@/shared/constants/config.js";
+import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler";
+import { APP_CONFIG } from "@/shared/constants/config";
 import { sanitizeError } from "@/lib/sanitizeError";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,
   isCustomEmbeddingProvider,
   isOpenAICompatibleProvider,
-} from "@/shared/constants/providers.js";
+} from "@/shared/constants/providers";
 
 // biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
 const START_TIME = globalThis.__pod_start_time ?? (globalThis.__pod_start_time = Date.now());

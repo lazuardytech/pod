@@ -1,4 +1,4 @@
-import initializeApp from "./shared/services/initializeApp.js";
+import initializeApp from "./shared/services/initializeApp";
 import { setupSignalHandlers, registerShutdownHook } from "./lib/shutdown.js";
 
 process.on("unhandledRejection", (reason, promise) => {

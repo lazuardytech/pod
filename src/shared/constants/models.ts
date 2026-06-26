@@ -14,7 +14,7 @@ export {
 } from "open-sse/config/providerModels.js";
 
 import { PROVIDER_MODELS as MODELS } from "open-sse/config/providerModels.js";
-import { AI_PROVIDERS, isOpenAICompatibleProvider } from "./providers.js";
+import { AI_PROVIDERS, isOpenAICompatibleProvider } from "./providers";
 
 // Providers that accept any model (passthrough)
 const PASSTHROUGH_PROVIDERS = new Set<string>(
