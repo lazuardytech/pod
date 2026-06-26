@@ -5,21 +5,24 @@ const TAG_INDEX_NAME = "cacheTags";
 
 const DEFAULT_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-let openDbPromise = null;
+let openDbPromise: Promise<IDBDatabase | null> | null = null;
 let idbDisabled = false;
 
-function supportsIndexedDb() {
+type IdbRequest = IDBRequest<unknown>;
+type IdbTx = IDBTransaction;
+
+function supportsIndexedDb(): boolean {
   return typeof window !== "undefined" && typeof window.indexedDB !== "undefined" && !idbDisabled;
 }
 
-function requestToPromise(request) {
+function requestToPromise<T = unknown>(request: IdbRequest): Promise<T> {
   return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => resolve(request.result as T);
     request.onerror = () => reject(request.error || new Error("IndexedDB request failed"));
   });
 }
 
-function transactionDone(transaction) {
+function transactionDone(transaction: IdbTx): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error || new Error("IndexedDB transaction failed"));
@@ -27,12 +30,23 @@ function transactionDone(transaction) {
   });
 }
 
-async function getDb() {
+type CacheRecord = {
+  cacheKey: string;
+  url?: string;
+  data: unknown;
+  updatedAt: number;
+  invalidatedAt?: number;
+  cacheTags?: string[];
+  etag?: string;
+  lastModified?: string;
+};
+
+async function getDb(): Promise<IDBDatabase | null> {
   if (!supportsIndexedDb()) return null;
   if (openDbPromise) return openDbPromise;
 
   openDbPromise = new Promise((resolve) => {
-    let req;
+    let req: IDBOpenDBRequest;
     try {
       req = window.indexedDB.open(DB_NAME, DB_VERSION);
     } catch {
@@ -75,22 +89,22 @@ async function getDb() {
   return openDbPromise;
 }
 
-function normalizeMaxStale(maxStaleMs) {
+function normalizeMaxStale(maxStaleMs: number): number {
   if (!Number.isFinite(maxStaleMs) || maxStaleMs <= 0) return DEFAULT_MAX_STALE_MS;
   return maxStaleMs;
 }
 
-function normalizeCacheTags(cacheTags = []) {
+function normalizeCacheTags(cacheTags: unknown = []): string[] {
   if (!Array.isArray(cacheTags)) return [];
   return [...new Set(cacheTags.map((tag) => String(tag || "").trim()).filter(Boolean))];
 }
 
-function normalizeCacheKeys(cacheKeys = []) {
+function normalizeCacheKeys(cacheKeys: unknown = []): string[] {
   if (!Array.isArray(cacheKeys)) return [];
   return [...new Set(cacheKeys.map((cacheKey) => String(cacheKey || "").trim()).filter(Boolean))];
 }
 
-function buildConditionalHeaders(existingHeaders, record) {
+function buildConditionalHeaders(existingHeaders: HeadersInit | undefined, record: CacheRecord | null): Headers {
   const headers = new Headers(existingHeaders || {});
 
   if (record?.etag && !headers.has("If-None-Match")) {
@@ -103,12 +117,12 @@ function buildConditionalHeaders(existingHeaders, record) {
   return headers;
 }
 
-function dispatchOfflineCacheEvent(type, detail = {}) {
+function dispatchOfflineCacheEvent(type: string, detail: Record<string, unknown> = {}): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(type, { detail }));
 }
 
-async function getCacheRecord(cacheKey) {
+async function getCacheRecord(cacheKey: string): Promise<CacheRecord | null> {
   if (!cacheKey) return null;
   const db = await getDb();
   if (!db) return null;
@@ -116,7 +130,7 @@ async function getCacheRecord(cacheKey) {
   try {
     const tx = db.transaction(STORE_NAME, "readonly");
     const store = tx.objectStore(STORE_NAME);
-    const record = await requestToPromise(store.get(cacheKey));
+    const record = (await requestToPromise(store.get(cacheKey))) as CacheRecord | undefined;
     await transactionDone(tx);
     return record || null;
   } catch {
@@ -124,11 +138,18 @@ async function getCacheRecord(cacheKey) {
   }
 }
 
+export type WriteOfflineJsonCacheOptions = {
+  url?: string;
+  cacheTags?: string[];
+  etag?: string;
+  lastModified?: string;
+};
+
 export async function writeOfflineJsonCache(
-  cacheKey,
-  data,
-  { url = "", cacheTags = [], etag = "", lastModified = "" } = {},
-) {
+  cacheKey: string,
+  data: unknown,
+  { url = "", cacheTags = [], etag = "", lastModified = "" }: WriteOfflineJsonCacheOptions = {},
+): Promise<boolean> {
   if (!cacheKey || data === undefined) return false;
   const db = await getDb();
   if (!db) return false;
@@ -153,7 +174,9 @@ export async function writeOfflineJsonCache(
   }
 }
 
-async function touchOfflineJsonCache(cacheKey, metadata = {}) {
+type TouchMetadata = { etag?: string; lastModified?: string };
+
+async function touchOfflineJsonCache(cacheKey: string, metadata: TouchMetadata = {}): Promise<boolean> {
   if (!cacheKey) return false;
   const db = await getDb();
   if (!db) return false;
@@ -161,7 +184,7 @@ async function touchOfflineJsonCache(cacheKey, metadata = {}) {
   try {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    const existing = await requestToPromise(store.get(cacheKey));
+    const existing = (await requestToPromise(store.get(cacheKey))) as CacheRecord | undefined;
     if (!existing) {
       await transactionDone(tx);
       return false;
@@ -182,7 +205,20 @@ async function touchOfflineJsonCache(cacheKey, metadata = {}) {
   }
 }
 
-export async function readOfflineJsonCache(cacheKey, { maxStaleMs = DEFAULT_MAX_STALE_MS } = {}) {
+export type ReadOfflineJsonCacheResult = {
+  data: unknown;
+  updatedAt: number;
+  ageMs: number;
+  expired: boolean;
+  invalidated: boolean;
+  invalidatedAt: number;
+  cacheTags: string[];
+};
+
+export async function readOfflineJsonCache(
+  cacheKey: string,
+  { maxStaleMs = DEFAULT_MAX_STALE_MS }: { maxStaleMs?: number } = {},
+): Promise<ReadOfflineJsonCacheResult | null> {
   const record = await getCacheRecord(cacheKey);
   if (!record) return null;
 
@@ -206,7 +242,15 @@ export async function readOfflineJsonCache(cacheKey, { maxStaleMs = DEFAULT_MAX_
   };
 }
 
-export async function invalidateOfflineJsonCache({ cacheKeys = [], cacheTags = [] } = {}) {
+export type InvalidateOfflineJsonCacheOptions = {
+  cacheKeys?: string[];
+  cacheTags?: string[];
+};
+
+export async function invalidateOfflineJsonCache({
+  cacheKeys = [],
+  cacheTags = [],
+}: InvalidateOfflineJsonCacheOptions = {}): Promise<{ invalidated: number }> {
   const normalizedKeys = normalizeCacheKeys(cacheKeys);
   const normalizedTags = normalizeCacheTags(cacheTags);
   if (normalizedKeys.length === 0 && normalizedTags.length === 0) return { invalidated: 0 };
@@ -223,7 +267,7 @@ export async function invalidateOfflineJsonCache({ cacheKeys = [], cacheTags = [
     const matchByKey = new Set(normalizedKeys);
     const matchByTag = new Set(normalizedTags);
 
-    await new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
       const req = store.openCursor();
       req.onsuccess = () => {
         const cursor = req.result;
@@ -232,7 +276,7 @@ export async function invalidateOfflineJsonCache({ cacheKeys = [], cacheTags = [
           return;
         }
 
-        const value = cursor.value;
+        const value = cursor.value as CacheRecord;
         const tags = normalizeCacheTags(value?.cacheTags);
         const shouldInvalidate =
           matchByKey.has(String(value?.cacheKey || "")) || tags.some((tag) => matchByTag.has(tag));
@@ -267,7 +311,16 @@ export async function invalidateOfflineJsonCache({ cacheKeys = [], cacheTags = [
   }
 }
 
-export async function fetchJsonAndCache(url, { cacheKey = url, fetchOptions, cacheTags = [] } = {}) {
+export type FetchJsonAndCacheOptions = {
+  cacheKey?: string;
+  fetchOptions?: RequestInit;
+  cacheTags?: string[];
+};
+
+export async function fetchJsonAndCache(
+  url: string,
+  { cacheKey = url, fetchOptions, cacheTags = [] }: FetchJsonAndCacheOptions = {},
+): Promise<unknown> {
   const existingRecord = await getCacheRecord(cacheKey);
   const headers = buildConditionalHeaders(fetchOptions?.headers, existingRecord);
   const response = await fetch(url, {
@@ -285,7 +338,7 @@ export async function fetchJsonAndCache(url, { cacheKey = url, fetchOptions, cac
 
   if (!response.ok) {
     const message = `Request failed with status ${response.status}`;
-    const error = new Error(message);
+    const error = new Error(message) as Error & { status?: number };
     error.status = response.status;
     throw error;
   }
@@ -300,6 +353,21 @@ export async function fetchJsonAndCache(url, { cacheKey = url, fetchOptions, cac
   return data;
 }
 
+export type LoadJsonStaleWhileRevalidateOptions = {
+  url?: string;
+  cacheKey?: string;
+  maxStaleMs?: number;
+  fetchOptions?: RequestInit;
+  cacheTags?: string[];
+  onCacheData?: (data: unknown, info: { stale: boolean; ageMs: number; updatedAt: number }) => void;
+  onFreshData?: (data: unknown, info: { stale: boolean; ageMs: number; updatedAt: number }) => void;
+};
+
+export type LoadJsonStaleWhileRevalidateResult =
+  | { data: unknown; source: "none"; stale: false }
+  | { data: unknown; source: "network"; stale: false }
+  | { data: unknown; source: "cache"; stale: true; invalidated: boolean; error: unknown };
+
 export async function loadJsonStaleWhileRevalidate({
   url,
   cacheKey = url,
@@ -308,7 +376,7 @@ export async function loadJsonStaleWhileRevalidate({
   cacheTags = [],
   onCacheData,
   onFreshData,
-} = {}) {
+}: LoadJsonStaleWhileRevalidateOptions = {}): Promise<LoadJsonStaleWhileRevalidateResult> {
   if (!url) return { data: null, source: "none", stale: false };
 
   const cached = await readOfflineJsonCache(cacheKey, { maxStaleMs });

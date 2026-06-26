@@ -7,22 +7,38 @@ const STORE_NAME = "mutations";
 const MAX_RETRY_DELAY_MS = 1000 * 60 * 15;
 const MAX_ATTEMPTS = 12;
 
-let openDbPromise = null;
-let idbDisabled = false;
-let drainingPromise = null;
+type IdbRequest = IDBRequest<unknown>;
+type IdbTx = IDBTransaction;
 
-function supportsIndexedDb() {
+let openDbPromise: Promise<IDBDatabase | null> | null = null;
+let idbDisabled = false;
+let drainingPromise: Promise<DrainResult> | null = null;
+
+type MutationRecord = {
+  id?: number;
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+  createdAt: number;
+  attempts: number;
+  nextAttemptAt: number;
+  lastError: string;
+  meta: Record<string, unknown>;
+};
+
+function supportsIndexedDb(): boolean {
   return typeof window !== "undefined" && typeof window.indexedDB !== "undefined" && !idbDisabled;
 }
 
-function requestToPromise(request) {
+function requestToPromise<T = unknown>(request: IdbRequest): Promise<T> {
   return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => resolve(request.result as T);
     request.onerror = () => reject(request.error || new Error("IndexedDB request failed"));
   });
 }
 
-function transactionDone(transaction) {
+function transactionDone(transaction: IdbTx): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error || new Error("IndexedDB transaction failed"));
@@ -30,12 +46,12 @@ function transactionDone(transaction) {
   });
 }
 
-async function getDb() {
+async function getDb(): Promise<IDBDatabase | null> {
   if (!supportsIndexedDb()) return null;
   if (openDbPromise) return openDbPromise;
 
   openDbPromise = new Promise((resolve) => {
-    let req;
+    let req: IDBOpenDBRequest;
     try {
       req = window.indexedDB.open(DB_NAME, DB_VERSION);
     } catch {
@@ -64,7 +80,8 @@ async function getDb() {
     };
 
     req.onblocked = () => {
-      // Another tab holds a higher DB version — not our problem, that tab\n      // will eventually close. Fail this open so next call retries.
+      // Another tab holds a higher DB version — not our problem, that tab
+      // will eventually close. Fail this open so next call retries.
       openDbPromise = null;
       resolve(null);
     };
@@ -73,24 +90,24 @@ async function getDb() {
   return openDbPromise;
 }
 
-function normalizeMethod(method) {
+function normalizeMethod(method: unknown): string {
   if (!method) return "POST";
   return String(method).toUpperCase();
 }
 
-function normalizeHeaders(headers = {}) {
+function normalizeHeaders(headers: Record<string, unknown> = {}): Record<string, string> {
   if (!headers || typeof headers !== "object") return {};
   return Object.fromEntries(
     Object.entries(headers).map(([k, v]) => [String(k), typeof v === "string" ? v : v == null ? "" : String(v)]),
   );
 }
 
-function buildBackoffMs(attempts) {
+function buildBackoffMs(attempts: number): number {
   const exp = Math.max(0, attempts - 1);
   return Math.min(MAX_RETRY_DELAY_MS, 1000 * 2 ** exp);
 }
 
-function safeSerializeBody(body) {
+function safeSerializeBody(body: unknown): string | null {
   if (body == null) return null;
   if (typeof body === "string") return body;
   if (
@@ -109,15 +126,15 @@ function safeSerializeBody(body) {
   return null; // unsupported type — caller gets { ok: false, reason: "unsupported_body_type" }
 }
 
-function canReplayNow(item, nowMs = Date.now()) {
+function canReplayNow(item: MutationRecord | null | undefined, nowMs: number = Date.now()): boolean {
   return Number(item?.nextAttemptAt || 0) <= nowMs;
 }
 
-function shouldRetryStatus(status) {
+function shouldRetryStatus(status: number): boolean {
   return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
-async function listQueueItems(limit = 50) {
+async function listQueueItems(limit: number = 50): Promise<MutationRecord[]> {
   const db = await getDb();
   if (!db) return [];
 
@@ -125,8 +142,8 @@ async function listQueueItems(limit = 50) {
   const tx = db.transaction(STORE_NAME, "readonly");
   const store = tx.objectStore(STORE_NAME);
 
-  const items = await new Promise((resolve) => {
-    const out = [];
+  const items = await new Promise<MutationRecord[]>((resolve) => {
+    const out: MutationRecord[] = [];
     const req = store.openCursor();
     req.onsuccess = () => {
       const cursor = req.result;
@@ -134,7 +151,7 @@ async function listQueueItems(limit = 50) {
         resolve(out);
         return;
       }
-      out.push(cursor.value);
+      out.push(cursor.value as MutationRecord);
       cursor.continue();
     };
     req.onerror = () => resolve(out);
@@ -144,7 +161,7 @@ async function listQueueItems(limit = 50) {
   return items;
 }
 
-async function deleteQueueItem(id) {
+async function deleteQueueItem(id: number): Promise<boolean> {
   const db = await getDb();
   if (!db || !Number.isFinite(Number(id))) return false;
 
@@ -158,19 +175,22 @@ async function deleteQueueItem(id) {
   }
 }
 
-async function updateQueueItem(id, updater) {
+async function updateQueueItem(
+  id: number,
+  updater: (existing: MutationRecord) => MutationRecord | null,
+): Promise<boolean> {
   const db = await getDb();
   if (!db || !Number.isFinite(Number(id))) return false;
 
   try {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    const existing = await requestToPromise(store.get(Number(id)));
+    const existing = (await requestToPromise(store.get(Number(id)))) as MutationRecord | undefined;
     if (!existing) {
       await transactionDone(tx);
       return false;
     }
-    const nextValue = typeof updater === "function" ? updater(existing) : updater;
+    const nextValue = updater(existing);
     if (!nextValue) {
       await transactionDone(tx);
       return false;
@@ -183,12 +203,12 @@ async function updateQueueItem(id, updater) {
   }
 }
 
-async function dispatchQueueEvent(type, detail = {}) {
+async function dispatchQueueEvent(type: string, detail: Record<string, unknown> = {}): Promise<void> {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(type, { detail }));
 }
 
-export async function getOfflineMutationQueueLength() {
+export async function getOfflineMutationQueueLength(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
 
@@ -202,7 +222,21 @@ export async function getOfflineMutationQueueLength() {
   }
 }
 
-export async function enqueueOfflineMutation({ url, method = "POST", headers = {}, body = undefined, meta = {} } = {}) {
+export type EnqueueOfflineMutationInput = {
+  url: string;
+  method?: string;
+  headers?: Record<string, unknown>;
+  body?: unknown;
+  meta?: Record<string, unknown>;
+};
+
+export type EnqueueOfflineMutationResult =
+  | { ok: true; id: number; queueLength: number }
+  | { ok: false; reason: "missing_url" | "idb_unavailable" | "write_failed" };
+
+export async function enqueueOfflineMutation(
+  { url, method = "POST", headers = {}, body = undefined, meta = {} }: EnqueueOfflineMutationInput = { url: "" },
+): Promise<EnqueueOfflineMutationResult> {
   if (!url) return { ok: false, reason: "missing_url" };
   const db = await getDb();
   if (!db) return { ok: false, reason: "idb_unavailable" };
@@ -211,7 +245,7 @@ export async function enqueueOfflineMutation({ url, method = "POST", headers = {
   const normalizedHeaders = normalizeHeaders(headers);
   const now = Date.now();
 
-  const record = {
+  const record: MutationRecord = {
     url,
     method: normalizedMethod,
     headers: normalizedHeaders,
@@ -225,7 +259,7 @@ export async function enqueueOfflineMutation({ url, method = "POST", headers = {
 
   try {
     const tx = db.transaction(STORE_NAME, "readwrite");
-    const id = await requestToPromise(tx.objectStore(STORE_NAME).add(record));
+    const id = await requestToPromise<number>(tx.objectStore(STORE_NAME).add(record));
     await transactionDone(tx);
     const queueLength = await getOfflineMutationQueueLength();
     await dispatchQueueEvent("pod:offline-mutation-enqueued", { id, queueLength, method: normalizedMethod, url });
@@ -235,9 +269,14 @@ export async function enqueueOfflineMutation({ url, method = "POST", headers = {
   }
 }
 
-async function replayMutation(item) {
+type ReplayOutcome =
+  | { status: "success"; code: number }
+  | { status: "retry"; code?: number; error: string }
+  | { status: "drop"; code: number; error: string };
+
+async function replayMutation(item: MutationRecord): Promise<ReplayOutcome> {
   const method = normalizeMethod(item?.method);
-  const init = {
+  const init: RequestInit = {
     method,
     headers: normalizeHeaders(item?.headers || {}),
   };
@@ -256,14 +295,22 @@ async function replayMutation(item) {
     }
     return { status: "drop", code: response.status, error: `HTTP ${response.status}` };
   } catch (error) {
-    return { status: "retry", error: error?.message || "Network error" };
+    return { status: "retry", error: (error as Error)?.message || "Network error" };
   }
 }
 
-export async function drainOfflineMutationQueue({ limit = 25 } = {}) {
+export type DrainResult = {
+  processed: number;
+  succeeded: number;
+  retried: number;
+  dropped: number;
+  remaining: number;
+};
+
+export async function drainOfflineMutationQueue({ limit = 25 }: { limit?: number } = {}): Promise<DrainResult> {
   if (drainingPromise) return drainingPromise;
 
-  drainingPromise = (async () => {
+  drainingPromise = (async (): Promise<DrainResult> => {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       return { processed: 0, succeeded: 0, retried: 0, dropped: 0, remaining: await getOfflineMutationQueueLength() };
     }
@@ -284,8 +331,8 @@ export async function drainOfflineMutationQueue({ limit = 25 } = {}) {
 
       if (outcome.status === "success") {
         await invalidateOfflineJsonCache({
-          cacheKeys: item?.meta?.invalidateCacheKeys,
-          cacheTags: item?.meta?.invalidateCacheTags,
+          cacheKeys: (item?.meta?.invalidateCacheKeys as string[] | undefined) ?? [],
+          cacheTags: (item?.meta?.invalidateCacheTags as string[] | undefined) ?? [],
         });
         await deleteQueueItem(item.id);
         succeeded += 1;

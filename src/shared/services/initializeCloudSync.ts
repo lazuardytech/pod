@@ -7,7 +7,7 @@ import { cleanupProviderConnections } from "@/lib/localDb";
  * Initialize cloud sync scheduler
  * This should be called when the application starts
  */
-export async function initializeCloudSync() {
+export async function initializeCloudSync(): Promise<null> {
   try {
     // Cleanup null fields from existing data
     await cleanupProviderConnections();
@@ -15,10 +15,10 @@ export async function initializeCloudSync() {
     /* ========== CLOUD SYNC — COMMENTED OUT (replaced by Tunnel) ==========
     // Create scheduler instance with default 15-minute interval
     const scheduler = await getCloudSyncScheduler(null, 15);
-    
+
     // Start the scheduler
     await scheduler.start();
-    
+
     return scheduler;
     ========== END CLOUD SYNC ========== */
     return null;
@@ -26,11 +26,6 @@ export async function initializeCloudSync() {
     console.error("[CloudSync] Error initializing scheduler:", error);
     throw error;
   }
-}
-
-// For development/testing purposes
-if (typeof require !== "undefined" && require.main === module) {
-  initializeCloudSync().catch(console.log);
 }
 
 export default initializeCloudSync;

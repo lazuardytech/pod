@@ -276,7 +276,19 @@ describe("provider smoke — defensive: no 9router/decolua references in runtime
 
   it("initializeApp has no 9router host", async () => {
     const fs = await import("node:fs/promises");
-    const src = await fs.readFile(path.resolve(__dirname, "../../src/shared/services/initializeApp.js"), "utf8");
+    const candidates = ["initializeApp.js", "initializeApp.ts"].map((f) =>
+      path.resolve(__dirname, `../../src/shared/services/${f}`),
+    );
+    let src = null;
+    for (const candidate of candidates) {
+      try {
+        src = await fs.readFile(candidate, "utf8");
+        break;
+      } catch (_) {
+        // try next extension
+      }
+    }
+    expect(src).not.toBeNull();
     expect(src).not.toMatch(/9router\.com/i);
   });
 });

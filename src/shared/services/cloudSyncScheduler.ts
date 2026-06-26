@@ -3,11 +3,18 @@ import { getConsistentMachineId } from "@/shared/utils/machineId";
 
 const INTERNAL_BASE_URL = process.env.BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:20128";
 
+type SyncResult = Record<string, unknown> | null;
+
 /**
  * Cloud sync scheduler
  */
 export class CloudSyncScheduler {
-  constructor(machineId = null, intervalMinutes = 15) {
+  machineId: string | null;
+  intervalMinutes: number;
+  intervalId: ReturnType<typeof setInterval> | null;
+  _lastSyncAt: string | null = null;
+
+  constructor(machineId: string | null = null, intervalMinutes: number = 15) {
     this.machineId = machineId;
     this.intervalMinutes = intervalMinutes;
     this.intervalId = null;
@@ -16,7 +23,7 @@ export class CloudSyncScheduler {
   /**
    * Initialize machine ID if not provided
    */
-  async initializeMachineId() {
+  async initializeMachineId(): Promise<void> {
     if (!this.machineId) {
       this.machineId = await getConsistentMachineId();
     }
@@ -25,7 +32,7 @@ export class CloudSyncScheduler {
   /**
    * Start periodic sync (delays first sync to allow server to be ready)
    */
-  async start() {
+  async start(): Promise<void> {
     if (this.intervalId) {
       return;
     }
@@ -49,7 +56,7 @@ export class CloudSyncScheduler {
   /**
    * Stop periodic sync
    */
-  stop() {
+  stop(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -59,12 +66,12 @@ export class CloudSyncScheduler {
   /**
    * Sync with retry logic (exponential backoff)
    */
-  async syncWithRetry(maxRetries = 1) {
+  async syncWithRetry(maxRetries: number = 1): Promise<SyncResult> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const result = await this.sync();
         return result;
-      } catch (_error) {
+      } catch {
         if (attempt === maxRetries) {
           return null;
         }
@@ -73,12 +80,13 @@ export class CloudSyncScheduler {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
+    return null;
   }
 
   /**
    * Perform sync via internal API route (handles token update to db.json)
    */
-  async sync() {
+  async sync(): Promise<SyncResult> {
     // Check if cloud is enabled
     const enabled = await isCloudEnabled();
     if (!enabled) {
@@ -95,11 +103,11 @@ export class CloudSyncScheduler {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = (await response.json().catch(() => ({}))) as { error?: string };
       throw new Error(errorData.error || "Sync failed");
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as SyncResult;
     this._lastSyncAt = new Date().toISOString();
     return result;
   }
@@ -107,25 +115,34 @@ export class CloudSyncScheduler {
   /**
    * Check if scheduler is running
    */
-  isRunning() {
+  isRunning(): boolean {
     return this.intervalId !== null;
   }
 }
 
 // Export a singleton instance if needed
-let cloudSyncScheduler = null;
+let cloudSyncScheduler: CloudSyncScheduler | null = null;
 
-export async function getCloudSyncScheduler(machineId = null, intervalMinutes = 15) {
+export async function getCloudSyncScheduler(
+  machineId: string | null = null,
+  intervalMinutes: number = 15,
+): Promise<CloudSyncScheduler> {
   if (!cloudSyncScheduler) {
     cloudSyncScheduler = new CloudSyncScheduler(machineId, intervalMinutes);
   }
   return cloudSyncScheduler;
 }
 
+export type CloudSyncStatus = {
+  enabled: boolean;
+  isRunning: boolean;
+  lastSyncAt: string | null;
+};
+
 /**
  * Returns cloud sync status for monitoring.
  */
-export function getCloudSyncStatus() {
+export function getCloudSyncStatus(): CloudSyncStatus {
   if (!cloudSyncScheduler) {
     return { enabled: false, isRunning: false, lastSyncAt: null };
   }

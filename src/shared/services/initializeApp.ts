@@ -1,7 +1,7 @@
 import os from "node:os";
 import { cleanupProviderConnections, getSettings } from "@/lib/localDb";
 import { initRateLimit } from "@/lib/rateLimit";
-import { validateStartupSecrets } from "@/lib/security/runtimeSecrets.mts";
+import { validateStartupSecrets } from "@/lib/security/runtimeSecrets.mjs";
 import { error as logError, info as logInfo } from "@/sse/utils/logger.js";
 
 import { ensureCloudflared, isCloudflaredRunning } from "@/lib/tunnel/cloudflared";
@@ -22,13 +22,13 @@ process.setMaxListeners(20);
 // biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
 const g = (global.__appSingleton ??= {
   signalHandlersRegistered: false,
-  watchdogInterval: null,
-  networkMonitorInterval: null,
-  lastNetworkFingerprint: null,
+  watchdogInterval: null as ReturnType<typeof setInterval> | null,
+  networkMonitorInterval: null as ReturnType<typeof setInterval> | null,
+  lastNetworkFingerprint: null as string | null,
   lastWatchdogTick: Date.now(),
 });
 
-export async function initializeApp() {
+export async function initializeApp(): Promise<void> {
   try {
     validateStartupSecrets();
 
@@ -84,11 +84,9 @@ export async function initializeApp() {
   }
 }
 
-// Removed bootstrap block
-
 // ─── Safe restart (4 guards: spawn / cooldown / alive / internet) ────────────
 
-async function safeRestartTunnel(reason) {
+async function safeRestartTunnel(reason: string): Promise<void> {
   const svc = getTunnelService();
   const settings = await getSettings();
   if (!settings.tunnelEnabled) return;
@@ -114,7 +112,7 @@ async function safeRestartTunnel(reason) {
   }
 }
 
-async function safeRestartTailscale(reason) {
+async function safeRestartTailscale(reason: string): Promise<void> {
   const svc = getTailscaleService();
   const settings = await getSettings();
   if (!settings.tailscaleEnabled) return;
@@ -140,7 +138,7 @@ async function safeRestartTailscale(reason) {
 
 // ─── Watchdog: 60s tick check both services ──────────────────────────────────
 
-function startWatchdog() {
+function startWatchdog(): void {
   if (g.watchdogInterval) return;
   g.watchdogInterval = setInterval(() => {
     safeRestartTunnel("watchdog").catch(() => {});
@@ -151,9 +149,9 @@ function startWatchdog() {
 
 // ─── Network monitor: detect IPv4 fingerprint change + sleep/wake ────────────
 
-function getNetworkFingerprint() {
+function getNetworkFingerprint(): string {
   const interfaces = os.networkInterfaces();
-  const active = [];
+  const active: string[] = [];
   for (const [name, addrs] of Object.entries(interfaces)) {
     if (!addrs) continue;
     for (const addr of addrs) {
@@ -165,7 +163,7 @@ function getNetworkFingerprint() {
   return active.sort().join("|");
 }
 
-function startNetworkMonitor() {
+function startNetworkMonitor(): void {
   if (g.networkMonitorInterval) return;
 
   g.lastNetworkFingerprint = getNetworkFingerprint();
