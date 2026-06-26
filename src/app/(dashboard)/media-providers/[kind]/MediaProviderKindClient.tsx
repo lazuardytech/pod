@@ -5,7 +5,12 @@ import { notFound, useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AddCustomEmbeddingModal, Badge, Button, Card } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
-import { AI_PROVIDERS, getProvidersByKind, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
+import {
+  AI_PROVIDERS,
+  getProvidersByKind,
+  MEDIA_PROVIDER_KINDS,
+  type ServiceKind,
+} from "@/shared/constants/providers";
 import { useHeaderActionStore } from "@/store/headerActionStore";
 import LucideIcon from "@/shared/components/LucideIcon";
 
@@ -16,7 +21,7 @@ const COMBO_BASE_NAMES = { image: "image-combo", tts: "tts-combo" };
 
 function getEffectiveStatus(conn) {
   const isCooldown = Object.entries(conn).some(
-    ([k, v]) => k.startsWith("modelLock_") && v && new Date(v).getTime() > Date.now(),
+    ([k, v]) => k.startsWith("modelLock_") && v && new Date(v as string | number | Date).getTime() > Date.now(),
   );
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
@@ -161,7 +166,8 @@ function ComboList({ combos }) {
 }
 
 export default function MediaProviderKindPage() {
-  const { kind } = useParams();
+  const { kind: kindParam } = useParams();
+  const kind = (Array.isArray(kindParam) ? kindParam[0] : kindParam) as ServiceKind;
   const router = useRouter();
   const [connections, setConnections] = useState([]);
   const [customNodes, setCustomNodes] = useState([]);
@@ -172,7 +178,7 @@ export default function MediaProviderKindPage() {
     return window.localStorage.getItem("media-providers:connectedOnly") === "true";
   });
 
-  const toggleConnectedOnly = (v) => {
+  const toggleConnectedOnly = (v?: boolean) => {
     const next = typeof v === "boolean" ? v : !showConnectedOnly;
     setShowConnectedOnly(next);
     window.localStorage.setItem("media-providers:connectedOnly", String(next));

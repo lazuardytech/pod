@@ -11,7 +11,7 @@ const FE_ACTIVE_TIMEOUT_MS = 60000;
 const FE_ACTIVE_TICK_MS = 1000;
 
 function getProviderConfig(providerId) {
-  return AI_PROVIDERS[providerId] || { color: "#6b7280", name: providerId };
+  return AI_PROVIDERS[providerId] || { color: "#6b7280", name: providerId, textIcon: undefined };
 }
 
 // Use local provider images from /public/providers/

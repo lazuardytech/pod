@@ -10,7 +10,7 @@ const fmtCost = (n) => `$${(n || 0).toFixed(2)}`;
 
 function fmtTime(iso) {
   if (!iso) return "Never";
-  const diffMins = Math.floor((Date.now() - new Date(iso)) / 60000);
+  const diffMins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (diffMins < 1) return "Just now";
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;

@@ -203,7 +203,7 @@ function EmbeddingExampleCard({ providerId, customAlias }) {
 
   // Build request body — include dimensions only if user provided a positive number
   const buildBody = () => {
-    const body = { model: modelFull, input: input.trim() };
+    const body: { model: string; input: string; dimensions?: number } = { model: modelFull, input: input.trim() };
     const dim = Number(dimensions);
     if (dimensions && Number.isFinite(dim) && dim > 0) body.dimensions = dim;
     return body;
@@ -543,7 +543,8 @@ function TtsExampleCard({ providerId }) {
         // Build languages/byLang from static providerModels data
         const voiceKey = config.voiceKey || providerId;
         const voices = getModelsByProviderId(voiceKey).filter((m) => m.type === "tts");
-        const byLangMap = {};
+        const byLangMap: Record<string, { code: string; name: string; voices: Array<{ id: string; name: string }> }> =
+          {};
         for (const v of voices) {
           if (!byLangMap[v.id]) byLangMap[v.id] = { code: v.id, name: v.name, voices: [{ id: v.id, name: v.name }] };
         }
@@ -604,7 +605,7 @@ function TtsExampleCard({ providerId }) {
   })();
 
   const ttsBody = (() => {
-    const b = { model: modelFull, input };
+    const b: { model: string; input: string; language?: string } = { model: modelFull, input };
     if (config.hasLanguageHint && languageHint) b.language = languageHint;
     return b;
   })();
@@ -1982,7 +1983,9 @@ function SttExampleCard({ providerId }) {
 
 // MediaProviderDetailPage
 export default function MediaProviderDetailPage() {
-  const { kind, id } = useParams();
+  const { kind: kindParam, id: idParam } = useParams();
+  const kind = Array.isArray(kindParam) ? kindParam[0] : kindParam;
+  const id = Array.isArray(idParam) ? idParam[0] : idParam;
   const router = useRouter();
   const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kind);
   const isCustom = isCustomEmbeddingProvider(id) && kind === "embedding";
@@ -2047,7 +2050,7 @@ export default function MediaProviderDetailPage() {
     return <div className="text-text-muted text-sm py-12 text-center">Loading...</div>;
   }
 
-  const kinds = isCustom ? ["embedding"] : (provider.serviceKinds ?? ["llm"]);
+  const kinds = isCustom ? ["embedding"] : (builtInProvider?.serviceKinds ?? ["llm"]);
   if (!isCustom && !kinds.includes(kind)) return notFound();
 
   return (
@@ -2070,9 +2073,9 @@ export default function MediaProviderDetailPage() {
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">{provider.name}</h1>
-            {!isCustom && provider.notice?.apiKeyUrl && (
+            {!isCustom && builtInProvider?.notice?.apiKeyUrl && (
               <a
-                href={provider.notice.apiKeyUrl}
+                href={builtInProvider.notice.apiKeyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary hover:underline inline-flex items-center gap-1"
@@ -2120,23 +2123,23 @@ export default function MediaProviderDetailPage() {
       </div>
 
       {/* Kind-specific notice (e.g. codex/image requires Plus) */}
-      {!isCustom && provider.kindNotice?.[kind] && (
+      {!isCustom && builtInProvider?.kindNotice?.[kind] && (
         <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
           <LucideIcon name="warning" className="text-[20px] mt-0.5" />
-          <p className="text-sm">{provider.kindNotice[kind]}</p>
+          <p className="text-sm">{builtInProvider.kindNotice[kind]}</p>
         </div>
       )}
 
       {/* Provider notice text (only when there's actual text content) */}
-      {!isCustom && provider.notice?.text && !provider.deprecated && (
+      {!isCustom && builtInProvider?.notice?.text && !builtInProvider?.deprecated && (
         <div className="flex flex-col gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 sm:flex-row sm:items-center">
           <LucideIcon name="info" className="text-[16px] text-blue-500 shrink-0" />
           <p className="min-w-0 flex-1 text-xs leading-relaxed text-blue-600 dark:text-blue-400">
-            {provider.notice.text}
+            {builtInProvider.notice.text}
           </p>
-          {provider.notice.apiKeyUrl && (
+          {builtInProvider.notice.apiKeyUrl && (
             <a
-              href={provider.notice.apiKeyUrl}
+              href={builtInProvider.notice.apiKeyUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex justify-center rounded bg-blue-500 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-600 sm:py-0.5"
@@ -2148,7 +2151,7 @@ export default function MediaProviderDetailPage() {
       )}
 
       {/* Connections */}
-      {!isCustom && provider.noAuth ? (
+      {!isCustom && builtInProvider?.noAuth ? (
         <NoAuthProxyCard providerId={id} />
       ) : (
         <ConnectionsCard providerId={id} isOAuth={false} />
@@ -2165,30 +2168,30 @@ export default function MediaProviderDetailPage() {
 
       {/* Provider Info — config-driven, supports searchConfig, fetchConfig, ttsConfig, embeddingConfig, searchViaChat */}
       {!isCustom &&
-        (provider.searchConfig ||
-          provider.fetchConfig ||
-          provider.ttsConfig ||
-          provider.sttConfig ||
-          provider.embeddingConfig ||
-          provider.searchViaChat) && (
+        (builtInProvider?.searchConfig ||
+          builtInProvider?.fetchConfig ||
+          builtInProvider?.ttsConfig ||
+          builtInProvider?.sttConfig ||
+          builtInProvider?.embeddingConfig ||
+          builtInProvider?.searchViaChat) && (
           <ProviderInfoCard
             config={
               kind === "webFetch"
-                ? provider.fetchConfig
+                ? builtInProvider?.fetchConfig
                 : kind === "tts"
-                  ? provider.ttsConfig
+                  ? builtInProvider?.ttsConfig
                   : kind === "stt"
-                    ? provider.sttConfig
+                    ? builtInProvider?.sttConfig
                     : kind === "embedding"
-                      ? provider.embeddingConfig
-                      : provider.searchConfig || {
+                      ? builtInProvider?.embeddingConfig
+                      : builtInProvider?.searchConfig || {
                           mode: "chat-completions",
-                          defaultModel: provider.searchViaChat?.defaultModel,
-                          pricingUrl: provider.searchViaChat?.pricingUrl,
-                          freeTier: provider.searchViaChat?.freeTier,
+                          defaultModel: builtInProvider?.searchViaChat?.defaultModel,
+                          pricingUrl: builtInProvider?.searchViaChat?.pricingUrl,
+                          freeTier: builtInProvider?.searchViaChat?.freeTier,
                         }
             }
-            provider={provider}
+            provider={builtInProvider}
             title={`${kindConfig.label} Config`}
           />
         )}

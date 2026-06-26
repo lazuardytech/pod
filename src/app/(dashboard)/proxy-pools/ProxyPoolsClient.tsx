@@ -19,7 +19,15 @@ function formatDateTime(value) {
   return date.toLocaleString();
 }
 
-function normalizeFormData(data = {}) {
+function normalizeFormData(
+  data: {
+    name?: string;
+    proxyUrl?: string;
+    noProxy?: string;
+    isActive?: boolean;
+    strictProxy?: boolean;
+  } = {},
+) {
   return {
     name: data.name || "",
     proxyUrl: data.proxyUrl || "",

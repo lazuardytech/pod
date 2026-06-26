@@ -22,15 +22,15 @@ const STEPS = [
 const EDITOR_OPTIONS = {
   minimap: { enabled: false },
   fontSize: 12,
-  lineNumbers: "on",
+  lineNumbers: "on" as const,
   scrollBeyondLastLine: false,
-  wordWrap: "on",
+  wordWrap: "on" as const,
   automaticLayout: true,
 };
 
 export default function TranslatorPage() {
   const [contents, setContents] = useState({});
-  const [expanded, setExpanded] = useState({ 1: true });
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({ 1: true });
   const [loading, setLoading] = useState({});
   // Detected from step 1: { provider, model, sourceFormat, targetFormat }
   const [meta, setMeta] = useState(null);
@@ -39,9 +39,9 @@ export default function TranslatorPage() {
   const setContent = (id, val) => setContents((prev) => ({ ...prev, [id]: val }));
   const toggle = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const openNext = (nextId) =>
+  const openNext = (nextId: number) =>
     setExpanded((prev) => {
-      const next = {};
+      const next: Record<number, boolean> = {};
       STEPS.forEach((s) => {
         next[s.id] = false;
       });

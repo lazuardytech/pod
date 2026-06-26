@@ -28,9 +28,24 @@ const readLocalBool = (key) => {
   return window.localStorage.getItem(key) === "true";
 };
 
+type QuotaItem = {
+  name?: string;
+  modelKey?: string;
+  used?: number;
+  total?: number;
+  resetAt?: string | null;
+  remainingPercentage?: number;
+  message?: string;
+};
+
+type QuotaConnectionData = {
+  quotas?: QuotaItem[];
+  message?: string;
+};
+
 export default function ProviderLimits() {
   const [connections, setConnections] = useState([]);
-  const [quotaData, setQuotaData] = useState(() => {
+  const [quotaData, setQuotaData] = useState<Record<string, QuotaConnectionData>>(() => {
     if (typeof window === "undefined") return {};
     const cached = window.localStorage.getItem(QUOTA_CACHE_KEY);
     if (cached) {
@@ -807,7 +822,7 @@ export default function ProviderLimits() {
         ) : (
           (() => {
             // Group connections by provider
-            const groupedByProvider = sortedConnections.reduce((acc, conn) => {
+            const groupedByProvider = sortedConnections.reduce<Record<string, typeof sortedConnections>>((acc, conn) => {
               if (!acc[conn.provider]) acc[conn.provider] = [];
               acc[conn.provider].push(conn);
               return acc;

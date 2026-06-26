@@ -123,9 +123,11 @@ export class AntigravityService {
     const data = await response.json();
 
     // Extract project ID
-    let projectId: string = data.cloudaicompanionProject;
-    if (typeof projectId === "object" && projectId !== null && projectId.id) {
-      projectId = projectId.id;
+    const rawProjectId = data.cloudaicompanionProject;
+    let projectId: string | null =
+      typeof rawProjectId === "string" ? rawProjectId : null;
+    if (typeof rawProjectId === "object" && rawProjectId !== null && rawProjectId.id) {
+      projectId = rawProjectId.id;
     }
 
     if (!projectId) {

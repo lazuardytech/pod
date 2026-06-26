@@ -5,13 +5,13 @@ import { getModelsByProviderId } from "open-sse/config/providerModels.js";
  * @param {string|Date} date - ISO date string or Date object
  * @returns {string} Formatted countdown (e.g., "2d 5h 30m", "4h 40m", "15m") or "-"
  */
-export function formatResetTime(date) {
+export function formatResetTime(date: string | Date | null | undefined) {
   if (!date) return "-";
 
   try {
     const resetDate = typeof date === "string" ? new Date(date) : date;
     const now = new Date();
-    const diffMs = resetDate - now;
+    const diffMs = resetDate.getTime() - now.getTime();
 
     if (diffMs <= 0) return "-";
 
@@ -84,13 +84,29 @@ export function calculatePercentage(used, total) {
 export function parseQuotaData(provider, data) {
   if (!data || typeof data !== "object") return [];
 
-  const normalizedQuotas = [];
+  const normalizedQuotas: Array<{
+    name: string;
+    modelKey?: string;
+    used: number;
+    total: number;
+    resetAt: string | null;
+    remainingPercentage?: number;
+    message?: string;
+  }> = [];
+
+  type RawQuota = {
+    used?: number;
+    total?: number;
+    resetAt?: string | null;
+    displayName?: string;
+    remainingPercentage?: number;
+  };
 
   try {
     switch (provider.toLowerCase()) {
       case "github":
         if (data.quotas) {
-          Object.entries(data.quotas).forEach(([name, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -103,7 +119,7 @@ export function parseQuotaData(provider, data) {
 
       case "antigravity":
         if (data.quotas) {
-          Object.entries(data.quotas).forEach(([modelKey, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([modelKey, quota]) => {
             normalizedQuotas.push({
               name: quota.displayName || modelKey,
               modelKey: modelKey, // Keep modelKey for sorting
@@ -118,7 +134,7 @@ export function parseQuotaData(provider, data) {
 
       case "codex":
         if (data.quotas) {
-          Object.entries(data.quotas).forEach(([quotaType, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]) => {
             normalizedQuotas.push({
               name: quotaType,
               used: quota.used || 0,
@@ -131,7 +147,7 @@ export function parseQuotaData(provider, data) {
 
       case "kiro":
         if (data.quotas) {
-          Object.entries(data.quotas).forEach(([quotaType, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]) => {
             normalizedQuotas.push({
               name: quotaType,
               used: quota.used || 0,
@@ -153,7 +169,7 @@ export function parseQuotaData(provider, data) {
             message: data.message,
           });
         } else if (data.quotas) {
-          Object.entries(data.quotas).forEach(([name, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -167,7 +183,7 @@ export function parseQuotaData(provider, data) {
       default:
         // Generic fallback for unknown providers
         if (data.quotas) {
-          Object.entries(data.quotas).forEach(([name, quota]) => {
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -185,7 +201,7 @@ export function parseQuotaData(provider, data) {
   // Sort quotas according to PROVIDER_MODELS order
   const modelOrder = getModelsByProviderId(provider);
   if (modelOrder.length > 0) {
-    const orderMap = new Map(modelOrder.map((m, i) => [m.id, i]));
+    const orderMap = new Map<string, number>(modelOrder.map((m, i) => [m.id, i]));
 
     normalizedQuotas.sort((a, b) => {
       // Use modelKey for antigravity, otherwise use name

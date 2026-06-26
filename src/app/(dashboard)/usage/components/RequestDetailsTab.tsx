@@ -137,10 +137,10 @@ export default function RequestDetailsTab() {
           url: "/api/usage/providers",
           cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
-          onCacheData: (data) => {
+          onCacheData: (data: { providers?: unknown[] }) => {
             setProviders(data?.providers || []);
           },
-          onFreshData: (data) => {
+          onFreshData: (data: { providers?: unknown[] }) => {
             setProviders(data?.providers || []);
           },
         }),
@@ -332,7 +332,7 @@ export default function RequestDetailsTab() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-text-muted">
+                  <td colSpan={7} className="p-8 text-center text-text-muted">
                     <div className="flex items-center justify-center gap-2">
                       <LucideIcon name="progress_activity" className="animate-spin text-[20px]" />
                       Loading...
@@ -341,7 +341,7 @@ export default function RequestDetailsTab() {
                 </tr>
               ) : fetchError ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-text-muted">
+                  <td colSpan={7} className="p-8 text-center text-text-muted">
                     <div className="flex items-center justify-center gap-2">
                       <LucideIcon name="error" className="text-[20px] text-warning-red" />
                       Failed to load request details: {fetchError}
@@ -350,7 +350,7 @@ export default function RequestDetailsTab() {
                 </tr>
               ) : details.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-text-muted">
+                  <td colSpan={7} className="p-8 text-center text-text-muted">
                     No request details found
                   </td>
                 </tr>
