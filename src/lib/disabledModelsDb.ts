@@ -2,20 +2,22 @@ import fs from "node:fs";
 import path from "node:path";
 import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
-import { DATA_DIR } from "@/lib/dataDir.js";
+import { DATA_DIR } from "@/lib/dataDir";
 
 const DB_FILE = path.join(DATA_DIR, "disabledModels.json");
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const defaultData = { disabled: {} };
+type DisabledModelsData = { disabled: Record<string, string[]> };
 
-let dbInstance = null;
+const defaultData: DisabledModelsData = { disabled: {} };
 
-async function getDb() {
+let dbInstance: Low<DisabledModelsData> | null = null;
+
+async function getDb(): Promise<Low<DisabledModelsData>> {
   if (!dbInstance) {
-    const adapter = new JSONFile(DB_FILE);
-    dbInstance = new Low(adapter, defaultData);
+    const adapter = new JSONFile<DisabledModelsData>(DB_FILE);
+    dbInstance = new Low<DisabledModelsData>(adapter, defaultData);
     try {
       await dbInstance.read();
     } catch (error) {
@@ -32,17 +34,17 @@ async function getDb() {
   return dbInstance;
 }
 
-export async function getDisabledModels() {
+export async function getDisabledModels(): Promise<Record<string, string[]>> {
   const db = await getDb();
   return db.data.disabled || {};
 }
 
-export async function getDisabledByProvider(providerAlias) {
+export async function getDisabledByProvider(providerAlias: string): Promise<string[]> {
   const all = await getDisabledModels();
   return all[providerAlias] || [];
 }
 
-export async function disableModels(providerAlias, ids) {
+export async function disableModels(providerAlias: string, ids: string[]): Promise<void> {
   if (!providerAlias || !Array.isArray(ids)) return;
   const db = await getDb();
   const current = new Set(db.data.disabled[providerAlias] || []);
@@ -51,7 +53,7 @@ export async function disableModels(providerAlias, ids) {
   await db.write();
 }
 
-export async function enableModels(providerAlias, ids) {
+export async function enableModels(providerAlias: string, ids: string[] | undefined | null): Promise<void> {
   if (!providerAlias) return;
   const db = await getDb();
   const current = db.data.disabled[providerAlias] || [];

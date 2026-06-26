@@ -1,10 +1,17 @@
 import initializeApp from "@/shared/services/initializeApp";
 
+type CloudSyncInitState = { initialized: boolean; inProgress: Promise<boolean> | null };
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __cloudSyncInit: CloudSyncInitState | undefined;
+}
+
 // Survive Next.js HMR — module-level flag resets on reload, globalThis persists
 // biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
-const g = (globalThis.__cloudSyncInit ??= { initialized: false, inProgress: null });
+const g: CloudSyncInitState = (globalThis.__cloudSyncInit ??= { initialized: false, inProgress: null });
 
-export async function ensureAppInitialized() {
+export async function ensureAppInitialized(): Promise<boolean> {
   if (g.initialized) return true;
   if (g.inProgress) return g.inProgress;
   g.inProgress = (async () => {

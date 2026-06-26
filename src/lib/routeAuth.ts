@@ -9,25 +9,27 @@ const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-s
 export const CLI_TOKEN_HEADER = "x-9r-cli-token";
 const CLI_TOKEN_SALT = "9r-cli-auth";
 
-let cachedCliToken = null;
+let cachedCliToken: string | null = null;
 
-async function getCliToken() {
+async function getCliToken(): Promise<string> {
   if (!cachedCliToken) cachedCliToken = await getConsistentMachineId(CLI_TOKEN_SALT);
   return cachedCliToken;
 }
 
-function unauthorized(message = "Unauthorized") {
+function unauthorized(message: string = "Unauthorized"): NextResponse {
   return NextResponse.json({ error: message }, { status: 401 });
 }
 
-export async function hasValidCliToken(request) {
+export async function hasValidCliToken(request: Request): Promise<boolean> {
   const token = request?.headers?.get?.(CLI_TOKEN_HEADER);
   if (!token) return false;
   return token === (await getCliToken());
 }
 
-export async function hasValidToken(request) {
-  const token = request?.cookies?.get?.("auth_token")?.value;
+type CookieReader = { cookies?: { get?: (name: string) => { value?: string } | undefined } };
+
+export async function hasValidToken(request: Request | (Request & CookieReader)): Promise<boolean> {
+  const token = (request as Request & CookieReader)?.cookies?.get?.("auth_token")?.value;
   if (!token) return false;
   try {
     await jwtVerify(token, SECRET);
@@ -37,7 +39,7 @@ export async function hasValidToken(request) {
   }
 }
 
-export async function loadSettingsSafe() {
+export async function loadSettingsSafe(): Promise<Awaited<ReturnType<typeof getSettings>> | null> {
   try {
     return await getSettings();
   } catch {
@@ -45,13 +47,16 @@ export async function loadSettingsSafe() {
   }
 }
 
-export async function checkStrictDashboardAuth(request) {
+export async function checkStrictDashboardAuth(request: Request): Promise<NextResponse | null> {
   if (!request || typeof request.headers?.get !== "function") return unauthorized();
   if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return null;
   return unauthorized();
 }
 
-export async function checkDashboardApiAuth(request, { allowWhenLoginDisabled = true } = {}) {
+export async function checkDashboardApiAuth(
+  request: Request,
+  { allowWhenLoginDisabled = true }: { allowWhenLoginDisabled?: boolean } = {},
+): Promise<NextResponse | null> {
   if (!request || typeof request.headers?.get !== "function") return unauthorized();
   if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return null;
 
@@ -63,7 +68,9 @@ export async function checkDashboardApiAuth(request, { allowWhenLoginDisabled = 
   return unauthorized();
 }
 
-export async function requireValidApiKey(request) {
+export type RequireValidApiKeyResult = { apiKey: string | null; response: NextResponse | null };
+
+export async function requireValidApiKey(request: Request): Promise<RequireValidApiKeyResult> {
   if (!request || typeof request.headers?.get !== "function") {
     return { apiKey: null, response: unauthorized() };
   }
