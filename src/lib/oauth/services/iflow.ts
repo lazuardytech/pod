@@ -1,28 +1,32 @@
 import crypto from "node:crypto";
 import open from "open";
 import { getServerCredentials } from "../config/index";
-import { QODER_CONFIG } from "../constants/oauth";
+import { IFLOW_CONFIG } from "../constants/oauth";
 import { startLocalServer } from "../utils/server";
 import { spinner as createSpinner } from "../utils/ui";
 
 /**
- * Qoder OAuth Service
+ * iFlow OAuth Service
  * Uses Authorization Code flow with Basic Auth
  */
-export class QoderService {
+export class IFlowService {
+  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
+  public config: any;
+
   constructor() {
-    this.config = QODER_CONFIG;
+    this.config = IFLOW_CONFIG;
   }
 
   /**
-   * Build Qoder authorization URL
+   * Build iFlow authorization URL
    */
-  buildAuthUrl(redirectUri, state) {
+  buildAuthUrl(redirectUri: string, state: string): string {
     const params = new URLSearchParams({
-      client_id: this.config.clientId,
-      response_type: "code",
-      redirect_uri: redirectUri,
+      loginMethod: this.config.extraParams.loginMethod,
+      type: this.config.extraParams.type,
+      redirect: redirectUri,
       state: state,
+      client_id: this.config.clientId,
     });
 
     return `${this.config.authorizeUrl}?${params.toString()}`;
@@ -31,11 +35,13 @@ export class QoderService {
   /**
    * Exchange authorization code for tokens
    */
-  async exchangeCode(code, redirectUri) {
-    if (!this.config.clientId || !this.config.clientSecret) {
-      throw new Error("Missing QODER OAuth client credentials");
+  // todo(ts): token response shape varies — keep loose.
+  async exchangeCode(code: string, redirectUri: string): Promise<any> {
+    if (!this.config.clientSecret) {
+      throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
     }
 
+    // Create Basic Auth header
     const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
 
     const response = await fetch(this.config.tokenUrl, {
@@ -63,44 +69,14 @@ export class QoderService {
   }
 
   /**
-   * Refresh access token using refresh token
+   * Get user info from iFlow
    */
-  async refreshToken(refreshToken) {
-    if (!this.config.clientId || !this.config.clientSecret) {
-      throw new Error("Missing QODER OAuth client credentials");
-    }
-
-    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
-
-    const response = await fetch(this.config.tokenUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-        Authorization: `Basic ${basicAuth}`,
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-        client_id: this.config.clientId,
-        client_secret: this.config.clientSecret,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Token refresh failed: ${error}`);
-    }
-
-    return await response.json();
-  }
-
-  /**
-   * Get user info from Qoder
-   */
-  async getUserInfo(accessToken) {
+  // todo(ts): iFlow user info shape — keep loose.
+  async getUserInfo(accessToken: string): Promise<any> {
     const response = await fetch(`${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`, {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+      },
     });
 
     if (!response.ok) {
@@ -118,12 +94,13 @@ export class QoderService {
   }
 
   /**
-   * Save Qoder tokens to server
+   * Save iFlow tokens to server
    */
-  async saveTokens(tokens, userInfo) {
+  // todo(ts): token/userInfo shapes are provider-specific — keep loose.
+  async saveTokens(tokens: any, userInfo: any): Promise<any> {
     const { server, token, userId } = getServerCredentials();
 
-    const response = await fetch(`${server}/api/cli/providers/qoder`, {
+    const response = await fetch(`${server}/api/cli/providers/iflow`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -148,33 +125,16 @@ export class QoderService {
   }
 
   /**
-   * Refresh and update tokens on server
+   * Complete iFlow OAuth flow
    */
-  async refreshAndSave(existingRefreshToken) {
-    const spinner = createSpinner("Refreshing Qoder token...").start();
-
-    try {
-      const tokens = await this.refreshToken(existingRefreshToken);
-      const userInfo = await this.getUserInfo(tokens.access_token);
-      await this.saveTokens(tokens, userInfo);
-      spinner.succeed("Qoder token refreshed successfully");
-      return tokens;
-    } catch (error) {
-      spinner.fail(`Token refresh failed: ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Complete Qoder OAuth flow
-   */
-  async connect() {
-    const spinner = createSpinner("Starting Qoder OAuth...").start();
+  async connect(): Promise<boolean> {
+    const spinner = createSpinner("Starting iFlow OAuth...").start();
 
     try {
       spinner.text = "Starting local server...";
 
-      let callbackParams = null;
+      // Start local server for callback
+      let callbackParams: Record<string, string> | null = null;
       const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       });
@@ -182,17 +142,22 @@ export class QoderService {
       const redirectUri = `http://localhost:${port}/callback`;
       spinner.succeed(`Local server started on port ${port}`);
 
+      // Generate state
       const state = crypto.randomBytes(32).toString("base64url");
+
+      // Build authorization URL
       const authUrl = this.buildAuthUrl(redirectUri, state);
 
-      console.log("\nOpening browser for Qoder authentication...");
+      console.log("\nOpening browser for iFlow authentication...");
       console.log(`If browser doesn't open, visit:\n${authUrl}\n`);
 
+      // Open browser
       await open(authUrl);
 
-      spinner.start("Waiting for Qoder authorization...");
+      // Wait for callback
+      spinner.start("Waiting for iFlow authorization...");
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error("Authentication timeout (5 minutes)"));
         }, 300000);
@@ -217,18 +182,24 @@ export class QoderService {
       }
 
       spinner.start("Exchanging code for tokens...");
+
+      // Exchange code for tokens
       const tokens = await this.exchangeCode(callbackParams.code, redirectUri);
 
       spinner.text = "Fetching user info...";
+
+      // Get user info (includes API key)
       const userInfo = await this.getUserInfo(tokens.access_token);
 
       spinner.text = "Saving tokens to server...";
+
+      // Save tokens to server
       await this.saveTokens(tokens, userInfo);
 
-      spinner.succeed(`Qoder connected successfully! (${userInfo.email || userInfo.phone})`);
+      spinner.succeed(`iFlow connected successfully! (${userInfo.email || userInfo.phone})`);
       return true;
     } catch (error) {
-      spinner.fail(`Failed: ${error.message}`);
+      spinner.fail(`Failed: ${(error as Error).message}`);
       throw error;
     }
   }

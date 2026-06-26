@@ -10,143 +10,143 @@ import { OAuthService } from "./oauth";
  * Codex (OpenAI) OAuth Service
  */
 export class CodexService extends OAuthService {
-	constructor() {
-		super(CODEX_CONFIG);
-	}
+  constructor() {
+    super(CODEX_CONFIG);
+  }
 
-	/**
-	 * Build Codex authorization URL
-	 */
-	buildCodexAuthUrl(redirectUri: string, state: string, codeChallenge: string): string {
-		// Build URL manually to ensure space encoding as %20 instead of +
-		const params: Record<string, string> = {
-			response_type: "code",
-			client_id: CODEX_CONFIG.clientId,
-			redirect_uri: redirectUri,
-			scope: CODEX_CONFIG.scope,
-			code_challenge: codeChallenge,
-			code_challenge_method: CODEX_CONFIG.codeChallengeMethod,
-			...CODEX_CONFIG.extraParams,
-			state: state,
-		};
+  /**
+   * Build Codex authorization URL
+   */
+  buildCodexAuthUrl(redirectUri: string, state: string, codeChallenge: string): string {
+    // Build URL manually to ensure space encoding as %20 instead of +
+    const params: Record<string, string> = {
+      response_type: "code",
+      client_id: CODEX_CONFIG.clientId,
+      redirect_uri: redirectUri,
+      scope: CODEX_CONFIG.scope,
+      code_challenge: codeChallenge,
+      code_challenge_method: CODEX_CONFIG.codeChallengeMethod,
+      ...CODEX_CONFIG.extraParams,
+      state: state,
+    };
 
-		const queryString = Object.entries(params)
-			.map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-			.join("&");
+    const queryString = Object.entries(params)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join("&");
 
-		return `${CODEX_CONFIG.authorizeUrl}?${queryString}`;
-	}
+    return `${CODEX_CONFIG.authorizeUrl}?${queryString}`;
+  }
 
-	/**
-	 * Save Codex tokens to server
-	 */
-	async saveTokens(tokens: any): Promise<any> {
-		const { server, token, userId } = getServerCredentials();
+  /**
+   * Save Codex tokens to server
+   */
+  async saveTokens(tokens: any): Promise<any> {
+    const { server, token, userId } = getServerCredentials();
 
-		const response = await fetch(`${server}/api/cli/providers/codex`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-				"X-User-Id": userId,
-			},
-			body: JSON.stringify({
-				accessToken: tokens.access_token,
-				refreshToken: tokens.refresh_token,
-				expiresIn: tokens.expires_in,
-			}),
-		});
+    const response = await fetch(`${server}/api/cli/providers/codex`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "X-User-Id": userId,
+      },
+      body: JSON.stringify({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresIn: tokens.expires_in,
+      }),
+    });
 
-		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.error || "Failed to save tokens");
-		}
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to save tokens");
+    }
 
-		return await response.json();
-	}
+    return await response.json();
+  }
 
-	/**
-	 * Complete Codex OAuth flow
-	 */
-	async connect(): Promise<boolean> {
-		const spinner = createSpinner("Starting Codex OAuth...").start();
+  /**
+   * Complete Codex OAuth flow
+   */
+  async connect(): Promise<boolean> {
+    const spinner = createSpinner("Starting Codex OAuth...").start();
 
-		try {
-			spinner.text = "Starting local server...";
+    try {
+      spinner.text = "Starting local server...";
 
-			// Start local server for callback (use fixed port 1455 like real Codex CLI)
-			const fixedPort = 1455;
-			let callbackParams: Record<string, string> | null = null;
-			const { port, close } = await startLocalServer((params) => {
-				callbackParams = params;
-			}, fixedPort);
+      // Start local server for callback (use fixed port 1455 like real Codex CLI)
+      const fixedPort = 1455;
+      let callbackParams: Record<string, string> | null = null;
+      const { port, close } = await startLocalServer((params) => {
+        callbackParams = params;
+      }, fixedPort);
 
-			const redirectUri = `http://localhost:${port}/auth/callback`;
-			spinner.succeed(`Local server started on port ${port}`);
+      const redirectUri = `http://localhost:${port}/auth/callback`;
+      spinner.succeed(`Local server started on port ${port}`);
 
-			// Generate PKCE
-			const { codeVerifier, codeChallenge, state } = generatePKCE();
+      // Generate PKCE
+      const { codeVerifier, codeChallenge, state } = generatePKCE();
 
-			// Build authorization URL
-			const authUrl = this.buildCodexAuthUrl(redirectUri, state, codeChallenge);
+      // Build authorization URL
+      const authUrl = this.buildCodexAuthUrl(redirectUri, state, codeChallenge);
 
-			console.log("\nOpening browser for OpenAI authentication...");
-			console.log(`If browser doesn't open, visit:\n${authUrl}\n`);
+      console.log("\nOpening browser for OpenAI authentication...");
+      console.log(`If browser doesn't open, visit:\n${authUrl}\n`);
 
-			// Open browser
-			await open(authUrl);
+      // Open browser
+      await open(authUrl);
 
-			// Wait for callback
-			spinner.start("Waiting for OpenAI authorization...");
+      // Wait for callback
+      spinner.start("Waiting for OpenAI authorization...");
 
-			await new Promise<void>((resolve, reject) => {
-				const timeout = setTimeout(() => {
-					reject(new Error("Authentication timeout (5 minutes)"));
-				}, 300000);
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("Authentication timeout (5 minutes)"));
+        }, 300000);
 
-				const checkInterval = setInterval(() => {
-					if (callbackParams) {
-						clearInterval(checkInterval);
-						clearTimeout(timeout);
-						resolve();
-					}
-				}, 100);
-			});
+        const checkInterval = setInterval(() => {
+          if (callbackParams) {
+            clearInterval(checkInterval);
+            clearTimeout(timeout);
+            resolve();
+          }
+        }, 100);
+      });
 
-			close();
+      close();
 
-			if (!callbackParams) {
-				throw new Error("No callback received");
-			}
+      if (!callbackParams) {
+        throw new Error("No callback received");
+      }
 
-			if (callbackParams.error) {
-				throw new Error(callbackParams.error_description || callbackParams.error);
-			}
+      if (callbackParams.error) {
+        throw new Error(callbackParams.error_description || callbackParams.error);
+      }
 
-			if (!callbackParams.code) {
-				throw new Error("No authorization code received");
-			}
+      if (!callbackParams.code) {
+        throw new Error("No authorization code received");
+      }
 
-			spinner.start("Exchanging code for tokens...");
+      spinner.start("Exchanging code for tokens...");
 
-			// Exchange code for tokens (Codex uses form-urlencoded)
-			const tokens = await this.exchangeCode(
-				callbackParams.code,
-				redirectUri,
-				codeVerifier,
-				"application/x-www-form-urlencoded",
-			);
+      // Exchange code for tokens (Codex uses form-urlencoded)
+      const tokens = await this.exchangeCode(
+        callbackParams.code,
+        redirectUri,
+        codeVerifier,
+        "application/x-www-form-urlencoded",
+      );
 
-			spinner.text = "Saving tokens to server...";
+      spinner.text = "Saving tokens to server...";
 
-			// Save tokens to server
-			await this.saveTokens(tokens);
+      // Save tokens to server
+      await this.saveTokens(tokens);
 
-			spinner.succeed("Codex connected successfully!");
-			return true;
-		} catch (error) {
-			spinner.fail(`Failed: ${(error as Error).message}`);
-			throw error;
-		}
-	}
+      spinner.succeed("Codex connected successfully!");
+      return true;
+    } catch (error) {
+      spinner.fail(`Failed: ${(error as Error).message}`);
+      throw error;
+    }
+  }
 }

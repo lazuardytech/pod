@@ -9,6 +9,9 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses Device Code Flow with PKCE
  */
 export class QwenService {
+  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
+  public config: any;
+
   constructor() {
     this.config = QWEN_CONFIG;
   }
@@ -16,7 +19,8 @@ export class QwenService {
   /**
    * Request device code
    */
-  async requestDeviceCode(codeChallenge) {
+  // todo(ts): device code response shape — keep loose.
+  async requestDeviceCode(codeChallenge: string): Promise<any> {
     const response = await fetch(this.config.deviceCodeUrl, {
       method: "POST",
       headers: {
@@ -42,7 +46,8 @@ export class QwenService {
   /**
    * Poll for token
    */
-  async pollForToken(deviceCode, codeVerifier, interval = 5) {
+  // todo(ts): token response shape — keep loose.
+  async pollForToken(deviceCode: string, codeVerifier: string, interval: number = 5): Promise<any> {
     const maxAttempts = 60; // 5 minutes
     const pollInterval = interval * 1000;
 
@@ -87,7 +92,8 @@ export class QwenService {
   /**
    * Save Qwen tokens to server
    */
-  async saveTokens(tokens) {
+  // todo(ts): token shape is provider-specific — keep loose.
+  async saveTokens(tokens: any): Promise<any> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/qwen`, {
@@ -116,7 +122,7 @@ export class QwenService {
   /**
    * Complete Qwen OAuth flow
    */
-  async connect() {
+  async connect(): Promise<boolean> {
     const spinner = createSpinner("Starting Qwen OAuth...").start();
 
     try {
@@ -156,7 +162,7 @@ export class QwenService {
       spinner.succeed("Qwen connected successfully!");
       return true;
     } catch (error) {
-      spinner.fail(`Failed: ${error.message}`);
+      spinner.fail(`Failed: ${(error as Error).message}`);
       throw error;
     }
   }

@@ -1,6 +1,6 @@
 import { GITHUB_CONFIG } from "../constants/oauth";
 import { spinner as createSpinner } from "../utils/ui";
-import { OAuthService } from "./oauth.js";
+import { OAuthService } from "./oauth";
 
 /**
  * GitHub Copilot OAuth Service
@@ -14,7 +14,8 @@ export class GitHubService extends OAuthService {
   /**
    * Get device code for GitHub authentication
    */
-  async getDeviceCode() {
+  // todo(ts): device code response shape from GitHub — keep loose.
+  async getDeviceCode(): Promise<any> {
     const response = await fetch(`${GITHUB_CONFIG.deviceCodeUrl}`, {
       method: "POST",
       headers: {
@@ -38,7 +39,12 @@ export class GitHubService extends OAuthService {
   /**
    * Poll for access token using device code
    */
-  async pollAccessToken(deviceCode, verificationUri, userCode, interval = 5000) {
+  async pollAccessToken(
+    deviceCode: string,
+    verificationUri: string,
+    userCode: string,
+    interval: number = 5000,
+  ): Promise<{ access_token: string; token_type: string; scope: string }> {
     const spinner = createSpinner("Waiting for GitHub authentication...").start();
 
     // Show user code and verification URL
@@ -99,10 +105,11 @@ export class GitHubService extends OAuthService {
   /**
    * Get Copilot token using GitHub access token
    */
-  async getCopilotToken(accessToken) {
+  // todo(ts): Copilot token response shape — keep loose.
+  async getCopilotToken(accessToken: string): Promise<any> {
     const response = await fetch(`${GITHUB_CONFIG.copilotTokenUrl}`, {
       headers: {
-        Authorization: `Bearer ${accessToken}`, // GitHub API typically uses Bearer
+        Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
         "X-GitHub-Api-Version": GITHUB_CONFIG.apiVersion,
         "User-Agent": GITHUB_CONFIG.userAgent,
@@ -120,10 +127,11 @@ export class GitHubService extends OAuthService {
   /**
    * Get user info using GitHub access token
    */
-  async getUserInfo(accessToken) {
+  // todo(ts): GitHub API user response — keep loose.
+  async getUserInfo(accessToken: string): Promise<any> {
     const response = await fetch(`${GITHUB_CONFIG.userInfoUrl}`, {
       headers: {
-        Authorization: `Bearer ${accessToken}`, // GitHub API typically uses Bearer
+        Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
         "X-GitHub-Api-Version": GITHUB_CONFIG.apiVersion,
         "User-Agent": GITHUB_CONFIG.userAgent,
@@ -140,8 +148,18 @@ export class GitHubService extends OAuthService {
 
   /**
    * Complete GitHub Copilot authentication flow
+   * GitHub uses Device Code flow; deliberately shadows OAuthService PKCE authenticate.
    */
-  async authenticate() {
+  // biome-ignore lint/suspicious/noExplicitAny: device-flow authenticate shadows PKCE parent — intentional.
+  // @ts-expect-error — device flow has no PKCE params, shadows parent authenticate.
+  async authenticate(): Promise<{
+    accessToken: string;
+    copilotToken: string;
+    refreshToken: null;
+    expiresIn: any;
+    userInfo: { id: string; login: string; name: string; email: string };
+    copilotTokenInfo: any;
+  }> {
     try {
       // Get device code
       const deviceResponse = await this.getDeviceCode();
@@ -175,14 +193,14 @@ export class GitHubService extends OAuthService {
         copilotTokenInfo: copilotToken,
       };
     } catch (error) {
-      throw new Error(`GitHub authentication failed: ${error.message}`);
+      throw new Error(`GitHub authentication failed: ${(error as Error).message}`);
     }
   }
 
   /**
    * Connect to server with GitHub credentials
    */
-  async connect() {
+  async connect(): Promise<void> {
     try {
       // Authenticate with GitHub
       const authResult = await this.authenticate();
@@ -215,7 +233,7 @@ export class GitHubService extends OAuthService {
       console.log(`\nConnected as: ${authResult.userInfo.login}`);
     } catch (error) {
       const { error: showError } = await import("../utils/ui");
-      showError(`GitHub connection failed: ${error.message}`);
+      showError(`GitHub connection failed: ${(error as Error).message}`);
       throw error;
     }
   }

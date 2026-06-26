@@ -1,7 +1,7 @@
 import { getServerCredentials } from "../config/index";
 import { OPENAI_CONFIG } from "../constants/oauth";
 import { spinner as createSpinner } from "../utils/ui";
-import { OAuthService } from "./oauth.js";
+import { OAuthService } from "./oauth";
 
 /**
  * OpenAI OAuth Service (Native)
@@ -15,7 +15,7 @@ export class OpenAIService extends OAuthService {
   /**
    * Build OpenAI authorization URL
    */
-  buildOpenAIAuthUrl(redirectUri, state, codeChallenge) {
+  buildOpenAIAuthUrl(redirectUri: string, state: string, codeChallenge: string): string {
     const params = new URLSearchParams({
       client_id: OPENAI_CONFIG.clientId,
       response_type: "code",
@@ -33,7 +33,8 @@ export class OpenAIService extends OAuthService {
   /**
    * Exchange OpenAI authorization code for tokens
    */
-  async exchangeOpenAICode(code, redirectUri, codeVerifier) {
+  // todo(ts): token response shape from OpenAI — keep loose.
+  async exchangeOpenAICode(code: string, redirectUri: string, codeVerifier: string): Promise<any> {
     const response = await fetch(OPENAI_CONFIG.tokenUrl, {
       method: "POST",
       headers: {
@@ -60,7 +61,8 @@ export class OpenAIService extends OAuthService {
   /**
    * Save OpenAI tokens to server
    */
-  async saveTokens(tokens) {
+  // todo(ts): token shape is provider-specific — keep loose.
+  async saveTokens(tokens: any): Promise<any> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/openai`, {
@@ -90,7 +92,7 @@ export class OpenAIService extends OAuthService {
   /**
    * Complete OpenAI OAuth flow
    */
-  async connect() {
+  async connect(): Promise<boolean> {
     const spinner = createSpinner("Starting OpenAI OAuth...").start();
 
     try {
@@ -112,7 +114,7 @@ export class OpenAIService extends OAuthService {
       spinner.succeed("OpenAI connected successfully!");
       return true;
     } catch (error) {
-      spinner.fail(`Failed: ${error.message}`);
+      spinner.fail(`Failed: ${(error as Error).message}`);
       throw error;
     }
   }

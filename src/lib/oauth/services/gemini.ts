@@ -10,6 +10,9 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses standard OAuth2 Authorization Code flow (no PKCE)
  */
 export class GeminiCLIService {
+  // biome-ignore lint/suspicious/noExplicitAny: provider config union is permissive — see providers.ts.
+  public config: any;
+
   constructor() {
     this.config = GEMINI_CONFIG;
   }
@@ -17,7 +20,7 @@ export class GeminiCLIService {
   /**
    * Build Gemini CLI authorization URL
    */
-  buildAuthUrl(redirectUri, state) {
+  buildAuthUrl(redirectUri: string, state: string): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: "code",
@@ -34,7 +37,8 @@ export class GeminiCLIService {
   /**
    * Exchange authorization code for tokens
    */
-  async exchangeCode(code, redirectUri) {
+  // todo(ts): token response shape varies per Google OAuth endpoint — keep loose.
+  async exchangeCode(code: string, redirectUri: string): Promise<any> {
     const response = await fetch(this.config.tokenUrl, {
       method: "POST",
       headers: {
@@ -61,7 +65,7 @@ export class GeminiCLIService {
   /**
    * Fetch project ID from Google Cloud Code Assist
    */
-  async fetchProjectId(accessToken) {
+  async fetchProjectId(accessToken: string): Promise<string> {
     const response = await fetch("https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist", {
       method: "POST",
       headers: {
@@ -102,7 +106,8 @@ export class GeminiCLIService {
   /**
    * Get user info from Google
    */
-  async getUserInfo(accessToken) {
+  // todo(ts): Google userinfo endpoint response varies — keep loose.
+  async getUserInfo(accessToken: string): Promise<any> {
     const response = await fetch(`${this.config.userInfoUrl}?alt=json`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -121,7 +126,8 @@ export class GeminiCLIService {
   /**
    * Save Gemini CLI tokens to server
    */
-  async saveTokens(tokens, userInfo, projectId) {
+  // todo(ts): token/userInfo shapes are provider-specific — keep loose.
+  async saveTokens(tokens: any, userInfo: any, projectId: string): Promise<any> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/gemini-cli`, {
@@ -152,14 +158,14 @@ export class GeminiCLIService {
   /**
    * Complete Gemini OAuth flow
    */
-  async connect() {
+  async connect(): Promise<boolean> {
     const spinner = createSpinner("Starting Gemini OAuth...").start();
 
     try {
       spinner.text = "Starting local server...";
 
       // Start local server for callback
-      let callbackParams = null;
+      let callbackParams: Record<string, string> | null = null;
       const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       });
@@ -182,7 +188,7 @@ export class GeminiCLIService {
       // Wait for callback
       spinner.start("Waiting for Google authorization...");
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error("Authentication timeout (5 minutes)"));
         }, 300000);
@@ -229,7 +235,7 @@ export class GeminiCLIService {
       spinner.succeed(`Gemini CLI connected successfully! (${userInfo.email}, Project: ${projectId})`);
       return true;
     } catch (error) {
-      spinner.fail(`Failed: ${error.message}`);
+      spinner.fail(`Failed: ${(error as Error).message}`);
       throw error;
     }
   }

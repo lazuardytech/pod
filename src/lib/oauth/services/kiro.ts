@@ -16,7 +16,9 @@ export class KiroService {
    * Register OIDC client with AWS SSO
    * Returns clientId and clientSecret for device code flow
    */
-  async registerClient(region = "us-east-1") {
+  async registerClient(
+    region: string = "us-east-1",
+  ): Promise<{ clientId: string; clientSecret: string; clientSecretExpiresAt: number }> {
     const endpoint = `https://oidc.${region}.amazonaws.com/client/register`;
 
     const response = await fetch(endpoint, {
@@ -49,7 +51,19 @@ export class KiroService {
   /**
    * Start device authorization for AWS Builder ID or IDC
    */
-  async startDeviceAuthorization(clientId, clientSecret, startUrl, region = "us-east-1") {
+  async startDeviceAuthorization(
+    clientId: string,
+    clientSecret: string,
+    startUrl: string,
+    region: string = "us-east-1",
+  ): Promise<{
+    deviceCode: string;
+    userCode: string;
+    verificationUri: string;
+    verificationUriComplete: string;
+    expiresIn: number;
+    interval: number;
+  }> {
     const endpoint = `https://oidc.${region}.amazonaws.com/device_authorization`;
 
     const response = await fetch(endpoint, {
@@ -83,7 +97,23 @@ export class KiroService {
   /**
    * Poll for token using device code (AWS Builder ID/IDC)
    */
-  async pollDeviceToken(clientId, clientSecret, deviceCode, region = "us-east-1") {
+  async pollDeviceToken(
+    clientId: string,
+    clientSecret: string,
+    deviceCode: string,
+    region: string = "us-east-1",
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    errorDescription?: string;
+    pending?: boolean;
+    tokens?: {
+      accessToken: string;
+      refreshToken: string;
+      expiresIn: number;
+      tokenType: string;
+    };
+  }> {
     const endpoint = `https://oidc.${region}.amazonaws.com/token`;
 
     const response = await fetch(endpoint, {
@@ -127,7 +157,7 @@ export class KiroService {
    * Returns authorization URL for manual callback flow
    * Uses kiro:// custom protocol as required by AWS Cognito whitelist
    */
-  buildSocialLoginUrl(provider, codeChallenge, state) {
+  buildSocialLoginUrl(provider: string, codeChallenge: string, state: string): string {
     const idp = provider === "google" ? "Google" : "Github";
     // AWS Cognito only whitelists kiro:// protocol, not localhost
     const redirectUri = "kiro://kiro.kiroAgent/authenticate-success";
@@ -138,7 +168,15 @@ export class KiroService {
    * Exchange authorization code for tokens (Social Login)
    * Must use same redirect_uri as authorization request
    */
-  async exchangeSocialCode(code, codeVerifier) {
+  async exchangeSocialCode(
+    code: string,
+    codeVerifier: string,
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    profileArn: string;
+    expiresIn: number;
+  }> {
     // Must match the redirect_uri used in buildSocialLoginUrl
     const redirectUri = "kiro://kiro.kiroAgent/authenticate-success";
 
@@ -171,7 +209,16 @@ export class KiroService {
   /**
    * Refresh token using refresh token
    */
-  async refreshToken(refreshToken, providerSpecificData = {}) {
+  // todo(ts): providerSpecificData shape varies by auth method — keep loose.
+  async refreshToken(
+    refreshToken: string,
+    providerSpecificData: Record<string, unknown> = {},
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    profileArn?: string;
+  }> {
     const { clientId, clientSecret, region } = providerSpecificData;
 
     // AWS SSO OIDC refresh (Builder ID or IDC)
@@ -232,7 +279,13 @@ export class KiroService {
   /**
    * Validate and import refresh token
    */
-  async validateImportToken(refreshToken) {
+  async validateImportToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    profileArn?: string;
+    expiresIn: number;
+    authMethod: string;
+  }> {
     // Validate token format
     if (!refreshToken.startsWith("aorAAAAAG")) {
       throw new Error("Invalid token format. Token should start with aorAAAAAG...");
@@ -249,14 +302,26 @@ export class KiroService {
         authMethod: "imported",
       };
     } catch (error) {
-      throw new Error(`Token validation failed: ${error.message}`);
+      throw new Error(`Token validation failed: ${(error as Error).message}`);
     }
   }
 
   /**
    * List available models from CodeWhisperer API
    */
-  async listAvailableModels(accessToken, profileArn) {
+  async listAvailableModels(
+    accessToken: string,
+    profileArn: string,
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      rateMultiplier: number;
+      rateUnit: string;
+      maxInputTokens: number;
+    }>
+  > {
     const endpoint = "https://codewhisperer.us-east-1.amazonaws.com";
     const target = "AmazonCodeWhispererService.ListAvailableModels";
 
@@ -280,20 +345,22 @@ export class KiroService {
     }
 
     const data = await response.json();
-    return (data.models || []).map((m) => ({
-      id: m.modelId,
-      name: m.modelName || m.modelId,
-      description: m.description,
-      rateMultiplier: m.rateMultiplier,
-      rateUnit: m.rateUnit,
-      maxInputTokens: m.tokenLimits?.maxInputTokens || 0,
-    }));
+    return (data.models || []).map(
+      (m: { modelId: string; modelName?: string; description: string; rateMultiplier: number; rateUnit: string; tokenLimits?: { maxInputTokens?: number } }) => ({
+        id: m.modelId,
+        name: m.modelName || m.modelId,
+        description: m.description,
+        rateMultiplier: m.rateMultiplier,
+        rateUnit: m.rateUnit,
+        maxInputTokens: m.tokenLimits?.maxInputTokens || 0,
+      }),
+    );
   }
 
   /**
    * Fetch user email from access token (optional, for display)
    */
-  extractEmailFromJWT(accessToken) {
+  extractEmailFromJWT(accessToken: string): string | null {
     try {
       const parts = accessToken.split(".");
       if (parts.length !== 3) return null;
