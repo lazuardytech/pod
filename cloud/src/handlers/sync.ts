@@ -1,7 +1,7 @@
 import * as log from "../utils/logger.js";
 import { getMachineData, saveMachineData, deleteMachineData } from "../services/storage.js";
 
-const CORS_HEADERS = {
+const CORS_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*"
 };
@@ -10,13 +10,13 @@ const CORS_HEADERS = {
 // The dashboard sends this as x-pod-cloud-secret header on every sync request.
 const HEADER = "x-pod-cloud-secret";
 
-function requireCloudSecret(request, env) {
+function requireCloudSecret(request: Request, env: Env): boolean {
   const secret = request.headers.get(HEADER);
   if (!secret || !env.CLOUD_SYNC_SECRET) return false;
   return secret === env.CLOUD_SYNC_SECRET;
 }
 
-export async function handleSync(request, env, ctx) {
+export async function handleSync(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   const machineId = url.pathname.split("/")[2]; // /sync/:machineId
 
@@ -58,7 +58,7 @@ export async function handleSync(request, env, ctx) {
 /**
  * GET /sync/:machineId - Return merged data for Web to update
  */
-async function handleGet(machineId, env) {
+async function handleGet(machineId: string, env: Env): Promise<Response> {
   const data = await getMachineData(machineId, env);
 
   if (!data) {
@@ -73,14 +73,21 @@ async function handleGet(machineId, env) {
   });
 }
 
+interface SyncBody {
+  providers?: Array<Record<string, unknown>>;
+  modelAliases?: Record<string, string>;
+  combos?: Array<unknown>;
+  apiKeys?: Array<unknown>;
+}
+
 /**
  * POST /sync/:machineId - Merge Web data with Worker data
  * providers stored by ID (supports multiple connections per provider)
  */
-async function handlePost(request, machineId, env) {
-  let body;
+async function handlePost(request: Request, machineId: string, env: Env): Promise<Response> {
+  let body: SyncBody;
   try {
-    body = await request.json();
+    body = await request.json() as SyncBody;
   } catch {
     log.warn("SYNC", "Invalid JSON body", { machineId });
     return jsonResponse({ error: "Invalid JSON body" }, 400);
@@ -95,21 +102,21 @@ async function handlePost(request, machineId, env) {
   const existingData = await getMachineData(machineId, env) || { providers: {}, modelAliases: {}, apiKeys: [] };
 
   // Merge providers by ID
-  const mergedProviders = {};
-  const changes = { updated: [], fromWorker: [] };
+  const mergedProviders: Record<string, unknown> = {};
+  const changes: { updated: string[]; fromWorker: string[] } = { updated: [], fromWorker: [] };
 
   for (const webProvider of body.providers) {
-    const providerId = webProvider.id;
+    const providerId = webProvider.id as string | undefined;
     if (!providerId) {
-      log.warn("SYNC", "Provider missing id", { provider: webProvider.provider });
+      log.warn("SYNC", "Provider missing id", { provider: webProvider.provider as string });
       continue;
     }
 
-    const workerProvider = existingData.providers[providerId];
+    const workerProvider = (existingData.providers as Record<string, unknown>)[providerId];
 
     if (workerProvider) {
       // Merge: token fields from Worker, config fields from Web
-      mergedProviders[providerId] = mergeProvider(webProvider, workerProvider, changes, providerId);
+      mergedProviders[providerId] = mergeProvider(webProvider, workerProvider as Record<string, unknown>, changes, providerId);
     } else {
       // New provider from Web
       mergedProviders[providerId] = formatProviderData(webProvider);
@@ -118,11 +125,11 @@ async function handlePost(request, machineId, env) {
   }
 
   // Prepare final data - modelAliases, apiKeys, combos always from Web
-  const finalData = {
+  const finalData: Record<string, unknown> = {
     providers: mergedProviders,
-    modelAliases: body.modelAliases || existingData.modelAliases || {},
-    combos: body.combos || existingData.combos || [],
-    apiKeys: body.apiKeys || existingData.apiKeys || [],
+    modelAliases: body.modelAliases || (existingData.modelAliases as Record<string, string>) || {},
+    combos: body.combos || (existingData.combos as Array<unknown>) || [],
+    apiKeys: body.apiKeys || (existingData.apiKeys as Array<unknown>) || [],
     updatedAt: new Date().toISOString()
   };
 
@@ -145,7 +152,7 @@ async function handlePost(request, machineId, env) {
 /**
  * DELETE /sync/:machineId - Clear cache when Worker is disabled
  */
-async function handleDelete(machineId, env) {
+async function handleDelete(machineId: string, env: Env): Promise<Response> {
   await deleteMachineData(machineId, env);
 
   log.info("SYNC", "Data deleted", { machineId });
@@ -159,12 +166,12 @@ async function handleDelete(machineId, env) {
  * Merge provider data: compare updatedAt to decide which source to use
  * Simple logic: newer wins (sync entire provider)
  */
-function mergeProvider(webProvider, workerProvider, changes, providerId) {
-  const webTime = new Date(webProvider.updatedAt || 0).getTime();
-  const workerTime = new Date(workerProvider.updatedAt || 0).getTime();
+function mergeProvider(webProvider: Record<string, unknown>, workerProvider: Record<string, unknown>, changes: { updated: string[]; fromWorker: string[] }, providerId: string): Record<string, unknown> {
+  const webTime = new Date((webProvider.updatedAt as string) || 0).getTime();
+  const workerTime = new Date((workerProvider.updatedAt as string) || 0).getTime();
 
-  let merged;
-  
+  let merged: Record<string, unknown>;
+
   if (workerTime > webTime) {
     // Cloud has newer data - use entire Cloud provider
     merged = formatProviderData(workerProvider);
@@ -183,7 +190,7 @@ function mergeProvider(webProvider, workerProvider, changes, providerId) {
 /**
  * Format provider data for storage
  */
-function formatProviderData(provider) {
+function formatProviderData(provider: Record<string, unknown>): Record<string, unknown> {
   return {
     id: provider.id,
     provider: provider.provider,
@@ -218,13 +225,14 @@ function formatProviderData(provider) {
 /**
  * Update provider status (called when token refresh fails or API errors)
  */
-export function updateProviderStatus(providers, providerId, status, error = null, errorCode = null) {
-  if (providers[providerId]) {
-    providers[providerId].status = status;
-    providers[providerId].lastError = error;
-    providers[providerId].lastErrorAt = error ? new Date().toISOString() : null;
-    providers[providerId].errorCode = errorCode;
-    providers[providerId].updatedAt = new Date().toISOString();
+export function updateProviderStatus(providers: Record<string, unknown>, providerId: string, status: string, error: string | null = null, errorCode: string | null = null): Record<string, unknown> {
+  const provider = providers[providerId] as Record<string, unknown> | undefined;
+  if (provider) {
+    provider.status = status;
+    provider.lastError = error;
+    provider.lastErrorAt = error ? new Date().toISOString() : null;
+    provider.errorCode = errorCode;
+    provider.updatedAt = new Date().toISOString();
   }
   return providers;
 }
@@ -232,7 +240,7 @@ export function updateProviderStatus(providers, providerId, status, error = null
 /**
  * Helper to create JSON response
  */
-function jsonResponse(data, status = 200) {
+function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: CORS_HEADERS

@@ -5,9 +5,8 @@
 
 /**
  * Create landing page response
- * @returns {Response} HTML response
  */
-export function createLandingPageResponse() {
+export function createLandingPageResponse(): Response {
   const html = `<!DOCTYPE html>
 <html><head><title>9Router Worker</title></head>
 <body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0a0a0a;color:#fff">

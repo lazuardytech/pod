@@ -31,7 +31,7 @@ const BLOCKED_HOST_PATTERNS = [
   /169\.254\.169\.254/,
 ];
 
-function isUrlAllowed(targetUrl) {
+function isUrlAllowed(targetUrl: string): boolean {
   try {
     const url = new URL(targetUrl);
     if (url.protocol !== "https:" && url.protocol !== "http:") return false;
@@ -49,7 +49,7 @@ function isUrlAllowed(targetUrl) {
 }
 
 // Forward request to any endpoint (authenticated)
-export async function handleForward(request) {
+export async function handleForward(request: Request): Promise<Response> {
   try {
     const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.js");
 
@@ -71,7 +71,7 @@ export async function handleForward(request) {
 
     const url = new URL(request.url);
     const clientIp = request.headers.get("CF-Connecting-IP") || "";
-    const { targetUrl, headers = {}, body } = await request.json();
+    const { targetUrl, headers = {}, body } = await request.json() as { targetUrl: string; headers: Record<string, string>; body: unknown };
 
     if (!targetUrl) {
       return new Response(JSON.stringify({ error: "targetUrl is required" }), {
@@ -89,7 +89,7 @@ export async function handleForward(request) {
     }
 
     // Filter out CF headers from input
-    const cleanHeaders = {};
+    const cleanHeaders: Record<string, string> = {};
     for (const [key, value] of Object.entries(headers)) {
       if (!CF_HEADERS.includes(key.toLowerCase())) {
         cleanHeaders[key] = value;
@@ -120,10 +120,10 @@ export async function handleForward(request) {
       cf: {
         // Disable automatic features that add headers
         scrapeShield: false,
-        minify: false,
+        minify: { javascript: false, css: false, html: false },
         mirage: false,
         polish: "off"
-      }
+      } as unknown as RequestInitCfProperties
     });
 
     if ([301, 302, 303, 307, 308].includes(response.status)) {

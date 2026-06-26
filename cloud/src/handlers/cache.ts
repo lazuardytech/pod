@@ -3,7 +3,7 @@ import { extractBearerToken, parseApiKey } from "../utils/apiKey.js";
 import { getMachineData } from "../services/storage.js";
 import * as log from "../utils/logger.js";
 
-export async function handleCacheClear(request, env) {
+export async function handleCacheClear(request: Request, env: Env): Promise<Response> {
   const apiKey = extractBearerToken(request);
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "Missing API key" }), {
@@ -13,13 +13,13 @@ export async function handleCacheClear(request, env) {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>;
 
     // Get machineId from API key or body
-    let machineId = body.machineId;
+    let machineId = body.machineId as string | undefined;
     if (!machineId) {
       const parsed = await parseApiKey(apiKey);
-      machineId = parsed?.machineId;
+      machineId = parsed?.machineId ?? undefined;
     }
 
     if (!machineId) {
@@ -31,7 +31,7 @@ export async function handleCacheClear(request, env) {
 
     // Validate that the API key exists for this machine
     const data = await getMachineData(machineId, env);
-    const validKeys = Array.isArray(data?.apiKeys) ? data.apiKeys : [];
+    const validKeys = Array.isArray(data?.apiKeys) ? data.apiKeys as Array<unknown> : [];
     const isValid = validKeys.some(k => typeof k === "string" && k === apiKey);
     if (!isValid) {
       return new Response(JSON.stringify({ error: "Invalid API key for this machine" }), {
@@ -49,7 +49,7 @@ export async function handleCacheClear(request, env) {
       }
     });
   } catch (error) {
-    log.error("CACHE", error?.message || "Unknown error");
+    log.error("CACHE", (error instanceof Error ? error.message : "Unknown error"));
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }

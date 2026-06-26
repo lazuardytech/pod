@@ -27,7 +27,7 @@ const BLOCKED_HOST_SUFFIXES = [
   ".sslip.io",
 ];
 
-function isUrlAllowed(targetUrl) {
+function isUrlAllowed(targetUrl: string): boolean {
   try {
     const url = new URL(targetUrl);
     if (url.protocol !== "https:" && url.protocol !== "http:") return false;
@@ -48,7 +48,7 @@ function isUrlAllowed(targetUrl) {
 const FORWARD_RAW_TIMEOUT_MS = 15000;
 
 // Forward request via raw TCP socket (bypasses CF auto headers) - authenticated
-export async function handleForwardRaw(request) {
+export async function handleForwardRaw(request: Request): Promise<Response> {
   try {
     const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.js");
 
@@ -68,7 +68,7 @@ export async function handleForwardRaw(request) {
       });
     }
 
-    const { targetUrl, headers = {}, body } = await request.json();
+    const { targetUrl, headers = {}, body } = await request.json() as { targetUrl: string; headers: Record<string, string>; body: unknown };
 
     if (!targetUrl) {
       return new Response(JSON.stringify({ error: "targetUrl is required" }), {
@@ -86,24 +86,24 @@ export async function handleForwardRaw(request) {
     }
 
     const url = new URL(targetUrl);
-    const host = url.hostname;
-    const port = url.port || (url.protocol === "https:" ? 443 : 80);
-    const path = url.pathname + url.search;
-    const isHttps = url.protocol === "https:";
+  const host = url.hostname;
+  const portStr = url.port || (url.protocol === "https:" ? "443" : "80");
+  const port = Number.parseInt(portStr, 10);
+  const path = url.pathname + url.search;
+  const isHttps = url.protocol === "https:";
 
-    console.log("[FORWARD_RAW] Opening outbound connection");
+  console.log("[FORWARD_RAW] Opening outbound connection");
 
-    // Connect to target server
-    let secureSocket;
-    if (isHttps) {
-      secureSocket = connect({
-        hostname: host,
-        port: Number.parseInt(port, 10),
-        secureTransport: "on"
-      });
-    } else {
-      secureSocket = connect({ hostname: host, port: Number.parseInt(port, 10) });
-    }
+  // Connect to target server
+  let secureSocket: Socket;
+  if (isHttps) {
+    secureSocket = connect(
+      { hostname: host, port },
+      { secureTransport: "starttls", allowHalfOpen: false }
+    );
+  } else {
+    secureSocket = connect({ hostname: host, port });
+  }
 
     try {
       await secureSocket.opened;
@@ -117,7 +117,7 @@ export async function handleForwardRaw(request) {
 
     // Build raw HTTP request
     const bodyStr = JSON.stringify(body);
-    const requestHeaders = {
+    const requestHeaders: Record<string, string> = {
       "Host": host,
       "Content-Type": "application/json",
       "Content-Length": new TextEncoder().encode(bodyStr).length.toString(),
@@ -196,7 +196,7 @@ export async function handleForwardRaw(request) {
     const statusMatch = statusLine.match(/HTTP\/[\d.]+ (\d+)/);
     const status = statusMatch ? parseInt(statusMatch[1]) : 200;
 
-    const responseHeaders = {};
+    const responseHeaders: Record<string, string> = {};
     const headerLines = headerPart.split("\r\n").slice(1);
     for (const line of headerLines) {
       const colonIndex = line.indexOf(":");

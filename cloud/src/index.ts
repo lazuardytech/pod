@@ -20,7 +20,7 @@ import { createLandingPageResponse } from "./services/landingPage.js";
 initTranslators();
 
 // Helper to add CORS headers to response
-function addCorsHeaders(response) {
+function addCorsHeaders(response: Response): Response {
   const newHeaders = new Headers(response.headers);
   newHeaders.set("Access-Control-Allow-Origin", "*");
   newHeaders.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
@@ -32,13 +32,13 @@ function addCorsHeaders(response) {
   });
 }
 
-const worker = {
-  async scheduled(event, env, ctx) {
+export default {
+  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
     const result = await handleCleanup(env);
-    log.info("SCHEDULED", "Cleanup completed", result);
+    log.info("SCHEDULED", "Cleanup completed", result as unknown as Record<string, unknown>);
   },
 
-  async fetch(request, env, ctx) {
+  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     // Inject API key secret from env binding
     if (env.API_KEY_SECRET) {
       initApiKeySecret(env.API_KEY_SECRET);
@@ -70,7 +70,7 @@ const worker = {
 
     try {
       // Routes
-      
+
       // Landing page
       if (path === "/" && request.method === "GET") {
         const response = createLandingPageResponse();
@@ -101,37 +101,37 @@ const worker = {
 
       // Sync provider data by machineId (GET, POST, DELETE)
       if (path.startsWith("/sync/") && ["GET", "POST", "DELETE"].includes(request.method)) {
-        const response = await handleSync(request, env, ctx);
+        const response = await handleSync(request, env, _ctx);
         log.response(response.status, Date.now() - startTime);
         return response;
       }
 
       // ========== NEW FORMAT: /v1/... (machineId in API key) ==========
-      
+
       // New format: /v1/chat/completions
       if (path === "/v1/chat/completions" && request.method === "POST") {
-        const response = await handleChat(request, env, ctx, null);
+        const response = await handleChat(request, env, _ctx, null);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
 
       // New format: /v1/messages (Claude format)
       if (path === "/v1/messages" && request.method === "POST") {
-        const response = await handleChat(request, env, ctx, null);
+        const response = await handleChat(request, env, _ctx, null);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
 
       // New format: /v1/embeddings
       if (path === "/v1/embeddings" && request.method === "POST") {
-        const response = await handleEmbeddings(request, env, ctx, null);
+        const response = await handleEmbeddings(request, env, _ctx, null);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
 
       // New format: /v1/responses (OpenAI Responses API - Codex CLI)
       if (path === "/v1/responses" && request.method === "POST") {
-        const response = await handleChat(request, env, ctx, null);
+        const response = await handleChat(request, env, _ctx, null);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
@@ -146,8 +146,8 @@ const worker = {
       // New format: /v1/api/chat (Ollama format)
       if (path === "/v1/api/chat" && request.method === "POST") {
         const clonedReq = request.clone();
-        const body = await clonedReq.json();
-        const response = await handleChat(request, env, ctx, null);
+        const body = await clonedReq.json() as { model?: string };
+        const response = await handleChat(request, env, _ctx, null);
         const ollamaResponse = transformToOllama(response, body.model || "llama3.2");
         log.response(200, Date.now() - startTime);
         return ollamaResponse;
@@ -157,34 +157,34 @@ const worker = {
 
       // Machine ID based chat endpoint
       if (path.match(/^\/[^\/]+\/v1\/chat\/completions$/) && request.method === "POST") {
-        const machineId = path.split("/")[1];
-        const response = await handleChat(request, env, ctx, machineId);
+        const machineId = path.split("/")[1]!;
+        const response = await handleChat(request, env, _ctx, machineId);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
 
       // Machine ID based embeddings endpoint
       if (path.match(/^\/[^\/]+\/v1\/embeddings$/) && request.method === "POST") {
-        const machineId = path.split("/")[1];
-        const response = await handleEmbeddings(request, env, ctx, machineId);
+        const machineId = path.split("/")[1]!;
+        const response = await handleEmbeddings(request, env, _ctx, machineId);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
 
       // Machine ID based messages endpoint (Claude format)
       if (path.match(/^\/[^\/]+\/v1\/messages$/) && request.method === "POST") {
-        const machineId = path.split("/")[1];
-        const response = await handleChat(request, env, ctx, machineId);
+        const machineId = path.split("/")[1]!;
+        const response = await handleChat(request, env, _ctx, machineId);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
       }
 
       // Machine ID based api/chat endpoint (Ollama format)
       if (path.match(/^\/[^\/]+\/v1\/api\/chat$/) && request.method === "POST") {
-        const machineId = path.split("/")[1];
+        const machineId = path.split("/")[1]!;
         const clonedReq = request.clone();
-        const body = await clonedReq.json();
-        const response = await handleChat(request, env, ctx, machineId);
+        const body = await clonedReq.json() as { model?: string };
+        const response = await handleChat(request, env, _ctx, machineId);
         const ollamaResponse = transformToOllama(response, body.model || "llama3.2");
         log.response(200, Date.now() - startTime);
         return ollamaResponse;
@@ -192,7 +192,7 @@ const worker = {
 
       // Machine ID based verify endpoint
       if (path.match(/^\/[^\/]+\/v1\/verify$/) && request.method === "GET") {
-        const machineId = path.split("/")[1];
+        const machineId = path.split("/")[1]!;
         const response = await handleVerify(request, env, machineId);
         log.response(response.status, Date.now() - startTime);
         return addCorsHeaders(response);
@@ -226,7 +226,9 @@ const worker = {
       });
 
     } catch (error) {
-      log.error("ROUTER", error.message, { stack: error.stack });
+      const msg = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      log.error("ROUTER", msg, { stack });
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -234,6 +236,3 @@ const worker = {
     }
   }
 };
-
-export default worker;
-

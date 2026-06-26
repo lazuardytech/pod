@@ -7,5 +7,5 @@ import {
 
 export const TOKEN_EXPIRY_BUFFER_MS = BUFFER_MS;
 
-export const refreshTokenByProvider = (provider, credentials) => 
+export const refreshTokenByProvider = (provider: string, credentials: Record<string, unknown>) =>
   _refreshTokenByProvider(provider, credentials, log);
