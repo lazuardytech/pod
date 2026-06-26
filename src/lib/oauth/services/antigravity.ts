@@ -293,18 +293,19 @@ export class AntigravityService {
         throw new Error("No callback received");
       }
 
-      if (callbackParams!.error) {
-        throw new Error(callbackParams!.error_description || callbackParams!.error);
+      const cp = callbackParams as Record<string, string>;
+      if (cp.error) {
+        throw new Error(cp.error_description || cp.error);
       }
 
-      if (!callbackParams!.code) {
+      if (!cp.code) {
         throw new Error("No authorization code received");
       }
 
       spinner.start("Exchanging code for tokens...");
 
       // Exchange code for tokens
-      const tokens = await this.exchangeCode(callbackParams!.code, redirectUri);
+      const tokens = await this.exchangeCode(cp.code, redirectUri);
 
       spinner.text = "Fetching user info...";
 

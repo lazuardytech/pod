@@ -245,7 +245,7 @@ async function handleSingleModelChat(
           });
         },
         onRequestSuccess: async (): Promise<any> => {
-          await clearAccountError(connectionId, credentials, model);
+          await clearAccountError(connectionId, credentials!, model);
         },
       });
       if (result.success === true) return result.response;

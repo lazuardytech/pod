@@ -9,7 +9,7 @@ export default function LoginClient() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [hasPassword, setHasPassword] = useState(null);
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const router = useRouter();
 

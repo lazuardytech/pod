@@ -88,7 +88,12 @@ export async function mutateJsonWithOfflineQueue(
     if (queued.ok) {
       await invalidateLinkedCaches();
     }
-    return { queued: queued.ok === true, queue: queued as { ok: boolean; reason?: string }, response: null, data: null };
+    return {
+      queued: true as const,
+      queue: queued as { ok: boolean; reason?: string },
+      response: null,
+      data: null,
+    } as MutateJsonWithOfflineQueueResult;
   };
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {

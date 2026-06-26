@@ -119,11 +119,12 @@ export class CodexService extends OAuthService {
         throw new Error("No callback received");
       }
 
-      if (callbackParams!.error) {
-        throw new Error(callbackParams!.error_description || callbackParams!.error);
+      const cp = callbackParams as Record<string, string>;
+      if (cp.error) {
+        throw new Error(cp.error_description || cp.error);
       }
 
-      if (!callbackParams!.code) {
+      if (!cp.code) {
         throw new Error("No authorization code received");
       }
 
@@ -131,7 +132,7 @@ export class CodexService extends OAuthService {
 
       // Exchange code for tokens (Codex uses form-urlencoded)
       const tokens = await this.exchangeCode(
-        callbackParams!.code,
+        cp.code,
         redirectUri,
         codeVerifier,
         "application/x-www-form-urlencoded",

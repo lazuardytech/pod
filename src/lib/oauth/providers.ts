@@ -1098,7 +1098,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: KILOCODE_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config) => {
-      const response = await fetch(config.initiateUrl!, {
+      const response = await fetch(String(config.initiateUrl), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -1294,7 +1294,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: CODEBUDDY_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config) => {
-      const response = await fetch(`${config.stateUrl}?platform=${config.platform}`, {
+      const response = await fetch(String(config.stateUrl) + "?platform=" + String(config.platform), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1326,12 +1326,12 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       };
     },
     pollToken: async (config, deviceCode) => {
-      const response = await fetch(config.tokenUrl!, {
+      const response = await fetch(String(config.tokenUrl), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "User-Agent": config.userAgent!,
+          "User-Agent": config.userAgent ?? "",
           "X-Requested-With": "XMLHttpRequest",
           "X-Domain": "copilot.tencent.com",
           "X-No-Authorization": "true",

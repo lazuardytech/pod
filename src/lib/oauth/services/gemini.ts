@@ -214,7 +214,7 @@ export class GeminiCLIService {
 
       spinner.start("Exchanging code for tokens...");
 
-      const tokens = await this.exchangeCode(callbackParams!.code, redirectUri);
+      const tokens = await this.exchangeCode(callbackParams.code, redirectUri);
 
       spinner.text = "Fetching user info...";
 

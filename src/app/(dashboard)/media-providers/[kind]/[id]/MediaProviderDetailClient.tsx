@@ -167,7 +167,9 @@ const KIND_EXAMPLE_CONFIG = {
 function EmbeddingExampleCard({ providerId, customAlias }: any): any {
   const isCustom = isCustomEmbeddingProvider(providerId);
   const providerAlias = isCustom ? customAlias || providerId : getProviderAlias(providerId);
-  const embeddingModels = isCustom ? [] : getModelsByProviderId(providerId).filter((m: any): any => m.type === "embedding");
+  const embeddingModels = isCustom
+    ? []
+    : getModelsByProviderId(providerId).filter((m: any): any => m.type === "embedding");
 
   const [selectedModel, setSelectedModel] = useState(embeddingModels[0]?.id ?? "");
   const [input, setInput] = useState("The quick brown fox jumps over the lazy dog");
@@ -298,7 +300,9 @@ function EmbeddingExampleCard({ providerId, customAlias }: any): any {
             <input
               aria-label="Endpoint"
               value={endpoint}
-              onChange={(e: any): any => (useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value))}
+              onChange={(e: any): any =>
+                useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value)
+              }
               className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               placeholder="http://localhost:3000"
               name="endpoint"
@@ -1515,7 +1519,10 @@ function GenericExampleCard({ providerId, kind }: any): any {
                   min={f.min}
                   max={f.max}
                   onChange={(e: any): any =>
-                    setExtraValues((s: any): any => ({ ...s, [f.key]: e.target.value === "" ? "" : Number(e.target.value) }))
+                    setExtraValues((s: any): any => ({
+                      ...s,
+                      [f.key]: e.target.value === "" ? "" : Number(e.target.value),
+                    }))
                   }
                   className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
@@ -2012,7 +2019,8 @@ export default function MediaProviderDetailPage(): any {
   });
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = (): any => setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+  const closeConfirm = (): any =>
+    setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
 
   // Fetch custom node info from API for custom embedding nodes
   useEffect((): any => {
@@ -2052,6 +2060,8 @@ export default function MediaProviderDetailPage(): any {
     return <div className="text-text-muted text-sm py-12 text-center">Loading...</div>;
   }
 
+  if (provider == null) return null;
+
   const kinds = isCustom ? ["embedding"] : (builtInProvider?.serviceKinds ?? ["llm"]);
   if (!isCustom && !kinds.includes(kind)) return notFound();
 
@@ -2068,7 +2078,7 @@ export default function MediaProviderDetailPage(): any {
             alt={provider.name}
             size={48}
             className="object-contain rounded-lg max-w-[48px] max-h-[48px]"
-            fallbackText={provider.textIcon || provider.id.slice(0, 2).toUpperCase()}
+            fallbackText={provider.textIcon || provider.id!.slice(0, 2).toUpperCase()}
             fallbackColor={provider.color}
           />
         </div>
@@ -2202,7 +2212,9 @@ export default function MediaProviderDetailPage(): any {
       {kind === "embedding" && <EmbeddingExampleCard providerId={id} customAlias={customNode?.prefix} />}
       {kind === "tts" && <TtsExampleCard providerId={id} />}
       {kind === "stt" && !isCustom && <SttExampleCard providerId={id} />}
-      {!isCustom && (KIND_EXAMPLE_CONFIG as Record<string, any>)[kind] && <GenericExampleCard providerId={id} kind={kind} />}
+      {!isCustom && (KIND_EXAMPLE_CONFIG as Record<string, any>)[kind] && (
+        <GenericExampleCard providerId={id} kind={kind} />
+      )}
 
       {isCustom && (
         <AddCustomEmbeddingModal
