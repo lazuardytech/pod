@@ -251,7 +251,7 @@ function isTokenExpired(connection) {
   return expiresAt <= Date.now() + buffer;
 }
 
-async function testOAuthConnection(connection, effectiveProxy = null) {
+async function testOAuthConnection(connection, effectiveProxy: any = null) {
   const config = OAUTH_TEST_CONFIG[connection.provider];
   if (!config) return { valid: false, error: "Provider test not supported", refreshed: false };
   if (!connection.accessToken) return { valid: false, error: "No access token", refreshed: false };
@@ -263,7 +263,7 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
 
   let accessToken = connection.accessToken;
   let refreshed = false;
-  let newTokens = null;
+  let newTokens: Record<string, unknown> | null = null;
 
   const tokenExpired = isTokenExpired(connection);
   if (config.refreshable && tokenExpired && connection.refreshToken) {
@@ -350,13 +350,13 @@ async function testOAuthConnection(connection, effectiveProxy = null) {
   }
 }
 
-async function fetchWithConnectionProxy(url, options = {}, effectiveProxy = null) {
+async function fetchWithConnectionProxy(url, options: any = {}, effectiveProxy: any = null) {
   // Vercel relay: forward via relay URL
   if (effectiveProxy?.vercelRelayUrl) {
     const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
     return proxyAwareFetch(url, options, {
       vercelRelayUrl: effectiveProxy.vercelRelayUrl,
-    });
+    } as any);
   }
 
   if (!effectiveProxy?.connectionProxyEnabled || !effectiveProxy?.connectionProxyUrl) {
@@ -368,10 +368,10 @@ async function fetchWithConnectionProxy(url, options = {}, effectiveProxy = null
     connectionProxyEnabled: true,
     connectionProxyUrl: effectiveProxy.connectionProxyUrl,
     connectionNoProxy: effectiveProxy.connectionNoProxy || "",
-  });
+  } as any);
 }
 
-async function testApiKeyConnection(connection, effectiveProxy = null) {
+async function testApiKeyConnection(connection, effectiveProxy: any = null) {
   if (isOpenAICompatibleProvider(connection.provider)) {
     const modelsBase = connection.providerSpecificData?.baseUrl;
     if (!modelsBase) return { valid: false, error: "Missing base URL" };

@@ -74,7 +74,7 @@ export function extractCodexAccountInfo(idToken: string | null | undefined): Cod
 }
 
 // Each provider has a different config shape. The provider handlers access
-// fields by name (e.g. `config.clientId`, `config.scopes`, `config.tokenUrl`).
+// fields by name (e.g. `config.clientId!`, `config.scopes!`, `config.tokenUrl!`).
 // We type the union so providers get exhaustive narrowing only where they
 // handle a specific config type. For functions that need to touch any
 // provider's config, `AnyConfig` exposes the common string fields.
@@ -228,15 +228,15 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     buildAuthUrl: (config, redirectUri, state, codeChallenge) => {
       const params = new URLSearchParams({
         code: "true",
-        client_id: config.clientId,
+        client_id: config.clientId!,
         response_type: "code",
         redirect_uri: redirectUri,
-        scope: Array.isArray(config.scopes) ? config.scopes.join(" ") : config.scopes,
+        scope: Array.isArray(config.scopes!) ? config.scopes!.join(" ") : config.scopes!,
         code_challenge: codeChallenge ?? "",
-        code_challenge_method: config.codeChallengeMethod,
+        code_challenge_method: config.codeChallengeMethod!,
         state: state,
       });
-      return `${config.authorizeUrl}?${params.toString()}`;
+      return `${config.authorizeUrl!}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri, codeVerifier, state) => {
       let authCode = code;
@@ -247,7 +247,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         codeState = parts[1] || "";
       }
 
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -257,7 +257,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
           code: authCode,
           state: codeState || state,
           grant_type: "authorization_code",
-          client_id: config.clientId,
+          client_id: config.clientId!,
           redirect_uri: redirectUri,
           code_verifier: codeVerifier,
         }),
@@ -286,21 +286,21 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     buildAuthUrl: (config, redirectUri, state, codeChallenge, meta) => {
       const params: Record<string, string> = {
         response_type: "code",
-        client_id: config.clientId,
+        client_id: config.clientId!,
         redirect_uri: redirectUri,
-        scope: config.scope,
+        scope: config.scope!,
         code_challenge: codeChallenge ?? "",
-        code_challenge_method: config.codeChallengeMethod,
+        code_challenge_method: config.codeChallengeMethod!,
         ...config.extraParams,
         state: state,
       };
       const queryString = Object.entries(params)
         .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
         .join("&");
-      return `${config.authorizeUrl}?${queryString}`;
+      return `${config.authorizeUrl!}?${queryString}`;
     },
     exchangeToken: async (config, code, redirectUri, codeVerifier) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -308,7 +308,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         },
         body: new URLSearchParams({
           grant_type: "authorization_code",
-          client_id: config.clientId,
+          client_id: config.clientId!,
           code: code,
           redirect_uri: redirectUri,
           code_verifier: codeVerifier,
@@ -345,18 +345,18 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     flowType: "authorization_code",
     buildAuthUrl: (config, redirectUri, state) => {
       const params = new URLSearchParams({
-        client_id: config.clientId,
+        client_id: config.clientId!,
         response_type: "code",
         redirect_uri: redirectUri,
-        scope: Array.isArray(config.scopes) ? config.scopes.join(" ") : config.scopes,
+        scope: Array.isArray(config.scopes!) ? config.scopes!.join(" ") : config.scopes!,
         state: state,
         access_type: "offline",
         prompt: "consent",
       });
-      return `${config.authorizeUrl}?${params.toString()}`;
+      return `${config.authorizeUrl!}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -364,8 +364,8 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         },
         body: new URLSearchParams({
           grant_type: "authorization_code",
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
+          client_id: config.clientId!,
+          client_secret: config.clientSecret!,
           code: code,
           redirect_uri: redirectUri,
         }),
@@ -428,18 +428,18 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     flowType: "authorization_code",
     buildAuthUrl: (config, redirectUri, state) => {
       const params = new URLSearchParams({
-        client_id: config.clientId,
+        client_id: config.clientId!,
         response_type: "code",
         redirect_uri: redirectUri,
-        scope: Array.isArray(config.scopes) ? config.scopes.join(" ") : config.scopes,
+        scope: Array.isArray(config.scopes!) ? config.scopes!.join(" ") : config.scopes!,
         state: state,
         access_type: "offline",
         prompt: "consent",
       });
-      return `${config.authorizeUrl}?${params.toString()}`;
+      return `${config.authorizeUrl!}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -447,8 +447,8 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         },
         body: new URLSearchParams({
           grant_type: "authorization_code",
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
+          client_id: config.clientId!,
+          client_secret: config.clientSecret!,
           code: code,
           redirect_uri: redirectUri,
         }),
@@ -545,30 +545,30 @@ const PROVIDERS: Record<string, ProviderHandler> = {
   },
 
   iflow: {
-    config: IFLOW_CONFIG,
+    config: IFLOW_CONFIG as unknown as AnyConfig,
     flowType: "authorization_code",
     buildAuthUrl: (config, redirectUri, state) => {
-      if (!config.clientSecret) {
+      if (!config.clientSecret!) {
         throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
       }
 
       const params = new URLSearchParams({
-        loginMethod: config.extraParams.loginMethod,
-        type: config.extraParams.type,
+        loginMethod: config.extraParams?.loginMethod as string,
+        type: config.extraParams?.type as string,
         redirect: redirectUri,
         state: state,
-        client_id: config.clientId,
+        client_id: config.clientId!,
       });
-      return `${config.authorizeUrl}?${params.toString()}`;
+      return `${config.authorizeUrl!}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
-      if (!config.clientSecret) {
+      if (!config.clientSecret!) {
         throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
       }
 
-      const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
+      const basicAuth = Buffer.from(`${config.clientId!}:${config.clientSecret!}`).toString("base64");
 
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -579,8 +579,8 @@ const PROVIDERS: Record<string, ProviderHandler> = {
           grant_type: "authorization_code",
           code: code,
           redirect_uri: redirectUri,
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
+          client_id: config.clientId!,
+          client_secret: config.clientSecret!,
         }),
       });
 
@@ -644,29 +644,29 @@ const PROVIDERS: Record<string, ProviderHandler> = {
   },
 
   qoder: {
-    config: QODER_CONFIG,
+    config: QODER_CONFIG as unknown as AnyConfig,
     flowType: "authorization_code",
     buildAuthUrl: (config, redirectUri, state) => {
-      if (!config.clientId || !config.clientSecret) {
+      if (!config.clientId! || !config.clientSecret!) {
         throw new Error("Missing QODER OAuth client credentials");
       }
 
       const params = new URLSearchParams({
-        client_id: config.clientId,
+        client_id: config.clientId!,
         response_type: "code",
         redirect_uri: redirectUri,
         state: state,
       });
-      return `${config.authorizeUrl}?${params.toString()}`;
+      return `${config.authorizeUrl!}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
-      if (!config.clientId || !config.clientSecret) {
+      if (!config.clientId! || !config.clientSecret!) {
         throw new Error("Missing QODER OAuth client credentials");
       }
 
-      const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
+      const basicAuth = Buffer.from(`${config.clientId!}:${config.clientSecret!}`).toString("base64");
 
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -677,8 +677,8 @@ const PROVIDERS: Record<string, ProviderHandler> = {
           grant_type: "authorization_code",
           code: code,
           redirect_uri: redirectUri,
-          client_id: config.clientId,
-          client_secret: config.clientSecret,
+          client_id: config.clientId!,
+          client_secret: config.clientSecret!,
         }),
       });
 
@@ -741,17 +741,17 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: QWEN_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config, codeChallenge) => {
-      const response = await fetch(config.deviceCodeUrl, {
+      const response = await fetch(config.deviceCodeUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           Accept: "application/json",
         },
         body: new URLSearchParams({
-          client_id: config.clientId,
-          scope: config.scope,
+          client_id: config.clientId!,
+          scope: config.scope!,
           code_challenge: codeChallenge ?? "",
-          code_challenge_method: config.codeChallengeMethod,
+          code_challenge_method: config.codeChallengeMethod!,
         }),
       });
 
@@ -763,7 +763,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       return (await response.json()) as DeviceCodeResponse;
     },
     pollToken: async (config, deviceCode, codeVerifier) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -771,7 +771,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         },
         body: new URLSearchParams({
           grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-          client_id: config.clientId,
+          client_id: config.clientId!,
           device_code: deviceCode,
           code_verifier: codeVerifier ?? "",
         }),
@@ -794,15 +794,15 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: GITHUB_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config) => {
-      const response = await fetch(config.deviceCodeUrl, {
+      const response = await fetch(config.deviceCodeUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           Accept: "application/json",
         },
         body: new URLSearchParams({
-          client_id: config.clientId ?? "",
-          scope: String(config.scopes),
+          client_id: config.clientId! ?? "",
+          scope: String(config.scopes!),
         }),
       });
 
@@ -814,14 +814,14 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       return (await response.json()) as DeviceCodeResponse;
     },
     pollToken: async (config, deviceCode) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           Accept: "application/json",
         },
         body: new URLSearchParams({
-          client_id: config.clientId,
+          client_id: config.clientId!,
           device_code: deviceCode,
           grant_type: "urn:ietf:params:oauth:grant-type:device_code",
         }),
@@ -896,7 +896,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         body: JSON.stringify({
           clientName: config.clientName,
           clientType: config.clientType,
-          scopes: config.scopes,
+          scopes: config.scopes!,
           grantTypes: config.grantTypes,
           issuerUrl: config.issuerUrl,
         }),
@@ -1041,10 +1041,10 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: KIMI_CODING_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config) => {
-      const response = await fetch(config.deviceCodeUrl, {
+      const response = await fetch(config.deviceCodeUrl!, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-        body: new URLSearchParams({ client_id: config.clientId }),
+        body: new URLSearchParams({ client_id: config.clientId! }),
       });
       if (!response.ok) {
         const error = await response.text();
@@ -1069,12 +1069,12 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       };
     },
     pollToken: async (config, deviceCode) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
         body: new URLSearchParams({
           grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-          client_id: config.clientId,
+          client_id: config.clientId!,
           device_code: deviceCode,
         }),
       });
@@ -1098,7 +1098,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: KILOCODE_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config) => {
-      const response = await fetch(config.initiateUrl, {
+      const response = await fetch(config.initiateUrl!, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -1170,7 +1170,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         callback_url: redirectUri,
         redirect_uri: redirectUri,
       });
-      return `${config.authorizeUrl}?${params.toString()}`;
+      return `${config.authorizeUrl!}?${params.toString()}`;
     },
     exchangeToken: async (config, code, redirectUri) => {
       try {
@@ -1238,9 +1238,9 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         redirect_uri: redirectUri,
         response_type: "code",
         state,
-        scope: config.scope,
+        scope: config.scope!,
         code_challenge: codeChallenge ?? "",
-        code_challenge_method: config.codeChallengeMethod,
+        code_challenge_method: config.codeChallengeMethod!,
       });
       return `${baseUrl}${config.authorizeUrlPath}?${params.toString()}`;
     },
@@ -1299,7 +1299,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "User-Agent": config.userAgent,
+          "User-Agent": config.userAgent!,
           "X-Requested-With": "XMLHttpRequest",
           "X-Domain": "copilot.tencent.com",
           "X-No-Authorization": "true",
@@ -1321,17 +1321,17 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         device_code: data.data.state,
         verification_uri: data.data.authUrl,
         user_code: "",
-        interval: config.pollInterval / 1000,
+        interval: (config.pollInterval ?? 5000) / 1000,
         _isCodeBuddy: true,
       };
     },
     pollToken: async (config, deviceCode) => {
-      const response = await fetch(config.tokenUrl, {
+      const response = await fetch(config.tokenUrl!, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "User-Agent": config.userAgent,
+          "User-Agent": config.userAgent!,
           "X-Requested-With": "XMLHttpRequest",
           "X-Domain": "copilot.tencent.com",
           "X-No-Authorization": "true",

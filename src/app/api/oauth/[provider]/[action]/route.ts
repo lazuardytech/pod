@@ -91,7 +91,7 @@ export async function GET(request, { params }) {
         return NextResponse.json({ error: "Provider does not support device code flow" }, { status: 400 });
       }
 
-      const authData = generateAuthData(provider, null);
+      const authData = generateAuthData(provider, null as unknown as string);
       const startUrl = searchParams.get("start_url");
       const region = searchParams.get("region");
       const authMethod = searchParams.get("auth_method");
@@ -145,7 +145,7 @@ export async function POST(request, { params }) {
     }
 
     if (action === "exchange") {
-      const { code, redirectUri, codeVerifier, state, meta } = body;
+      const { code, redirectUri, codeVerifier, state, meta } = body ?? ({} as any);
 
       // Cline uses authorization_code without PKCE
       const noPkceExchangeProviders = ["cline"];
@@ -177,7 +177,7 @@ export async function POST(request, { params }) {
     }
 
     if (action === "poll") {
-      const { deviceCode, codeVerifier, extraData } = body;
+      const { deviceCode, codeVerifier, extraData } = body ?? ({} as any);
 
       if (!deviceCode) {
         return NextResponse.json({ error: "Missing device code" }, { status: 400 });
@@ -190,7 +190,7 @@ export async function POST(request, { params }) {
         result = await pollForToken(provider, deviceCode, undefined);
       } else if (provider === "kiro") {
         // Kiro needs extraData (clientId, clientSecret) from device code response
-        result = await pollForToken(provider, deviceCode, null, extraData);
+        result = await pollForToken(provider, deviceCode, undefined, extraData);
       } else {
         // Qwen and other PKCE providers
         if (!codeVerifier) {

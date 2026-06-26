@@ -63,7 +63,7 @@ export type ValidateFetchUrlResult = { ok: true; url: URL } | { ok: false; error
  * non-http(s) protocols and private/internal IP ranges.
  */
 export function validateFetchUrl(url: unknown, options: ValidateFetchUrlOptions = {}): ValidateFetchUrlResult {
-  const { allowPrivate = false } = options;
+  const { allowPrivate = false } = options ?? ({} as any);
   if (!url || typeof url !== "string") {
     return { ok: false, error: "URL is required" };
   }

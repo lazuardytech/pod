@@ -23,7 +23,7 @@ type Connection = {
  * Get usage data for a provider connection
  */
 export async function getUsageForProvider(connection: Connection): Promise<UsageResult> {
-  const { provider, accessToken, providerSpecificData } = connection;
+  const { provider, accessToken, providerSpecificData } = connection ?? ({} as any);
 
   switch (provider) {
     case "github":

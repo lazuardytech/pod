@@ -32,7 +32,7 @@ function getActiveConnectionLock(connection) {
 
 export async function getModelAvailabilityPayload() {
   const connections = await getProviderConnections();
-  const models = [];
+  const models: Record<string, unknown>[] = [];
 
   for (const connection of connections) {
     const connLock = getActiveConnectionLock(connection);

@@ -241,7 +241,7 @@ function readTotalRequests(db: ReturnType<typeof getDatabase>): number {
   const r = db.prepare("SELECT value FROM meta WHERE key = 'totalRequestsLifetime'").get() as
     | { value?: string }
     | undefined;
-  return r ? parseInt(r.value, 10) || 0 : 0;
+  return r ? parseInt(r.value ?? "0", 10) || 0 : 0;
 }
 
 function flushSummaryQueue(): void {
@@ -264,7 +264,7 @@ function flushSummaryQueue(): void {
         };
         upsertSummary(db, dateKey, "day", "_", vals);
         if (entry.provider) upsertSummary(db, dateKey, "byProvider", entry.provider, vals);
-        const modelKey = entry.provider ? `${entry.model}|${entry.provider}` : entry.model;
+        const modelKey: string = entry.provider ? `${entry.model}|${entry.provider}` : (entry.model ?? "");
         upsertSummary(db, dateKey, "byModel", modelKey, vals, { rawModel: entry.model, provider: entry.provider });
         if (entry.connectionId) {
           upsertSummary(db, dateKey, "byAccount", entry.connectionId, vals, {
@@ -691,8 +691,8 @@ function historyRow(r: HistoryEntry): {
     provider: r.provider || "",
     model: r.model || "",
     connectionId: r.connection_id || null,
-    apiKey: r.api_key,
-    endpoint: r.endpoint,
+    apiKey: r.api_key ?? null,
+    endpoint: r.endpoint ?? null,
     status: r.status || "ok",
     tokens: blob.tokens || { prompt_tokens: r.prompt_tokens ?? null, completion_tokens: r.completion_tokens ?? null },
     cost: r.cost ?? null,
@@ -875,7 +875,7 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
   const db = getDatabase();
   const { getProviderConnections, getApiKeys, getProviderNodes } = await import("@/lib/localDb");
 
-  let allConnections: Array<{ id: string; name?: string; email?: string }> = [];
+  let allConnections: any[] = [];
   try {
     allConnections = await getProviderConnections();
   } catch {}

@@ -106,7 +106,7 @@ export async function POST(request) {
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
     const provider = normalizeProviderId(body.provider);
-    const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } = body;
+    const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } = body ?? ({} as any);
     const proxyConfig = normalizeProxyConfig(body);
     if (proxyConfig.error) {
       return NextResponse.json({ error: proxyConfig.error }, { status: 400 });

@@ -48,7 +48,7 @@ export async function GET(request) {
 
   try {
     // Collect all models from all providers
-    const models = [];
+    const models: any[] = [];
 
     for (const [provider, providerModels] of Object.entries(PROVIDER_MODELS)) {
       for (const model of providerModels) {

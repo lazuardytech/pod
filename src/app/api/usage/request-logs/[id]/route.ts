@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Log entry not found" }, { status: 404 });
     }
 
-    let detail = null;
+    let detail: any = null;
 
     try {
       // Strategy 1: direct details_id link (future-proof)
@@ -44,7 +44,7 @@ export async function GET(request, { params }) {
 
           // Strategy 2: match by model + timestamp
           const model = logRow.model && logRow.model !== "-" ? logRow.model : null;
-          let candidates = [];
+          let candidates: any[] = [];
 
           if (model) {
             candidates = db

@@ -49,7 +49,7 @@ function normalizeProxyPoolUpdate(body: Record<string, unknown> = {}) {
   return { updates };
 }
 
-function countBoundConnections(connections = [], proxyPoolId) {
+function countBoundConnections(connections: any[] = [], proxyPoolId) {
   return connections.filter((connection) => connection?.providerSpecificData?.proxyPoolId === proxyPoolId).length;
 }
 
@@ -89,7 +89,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: normalized.error }, { status: 400 });
     }
 
-    const updated = await updateProxyPool(id, normalized.updates);
+    const updated = await updateProxyPool(id, normalized.updates ?? {});
     return NextResponse.json({ proxyPool: sanitizeProxyPool(updated) });
   } catch (error) {
     console.log("Error updating proxy pool:", error);

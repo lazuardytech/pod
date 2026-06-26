@@ -196,7 +196,13 @@ export function startCodexProxy(appPort: number): Promise<{ success: true } | { 
           const { exchangeTokens } = await import("../providers");
           const { createProviderConnection } = await import("@/models");
 
-          const tokenData = (await exchangeTokens("codex", code, session.redirectUri, session.codeVerifier, state)) as {
+          const tokenData = (await exchangeTokens(
+            "codex",
+            code,
+            session.redirectUri,
+            session.codeVerifier,
+            state ?? undefined,
+          )) as {
             accessToken?: string;
             refreshToken?: string;
             expiresIn?: number;

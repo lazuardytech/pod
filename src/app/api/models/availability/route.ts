@@ -20,7 +20,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { action, provider, model } = body;
+    const { action, provider, model } = body ?? ({} as any);
     const providerStr = asString(provider);
     const modelStr = asString(model);
 
@@ -64,7 +64,7 @@ export async function POST(request) {
       })();
 
       // Get an active internal API key for auth
-      let apiKey = null;
+      let apiKey: string | null = null;
       try {
         const { getApiKeys } = await import("@/lib/localDb");
         const keys = await getApiKeys();

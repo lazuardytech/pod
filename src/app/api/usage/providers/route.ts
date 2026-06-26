@@ -12,10 +12,10 @@ export async function GET() {
     const { details } = await getRequestDetails({ pageSize: 9999 });
 
     // Extract unique providers
-    const providerIds = [...new Set(details.map((r) => r.provider).filter(Boolean))].sort();
+    const providerIds = [...new Set(details.map((r) => r.provider).filter((p): p is string => p != null))].sort();
 
     const providerNodes = await getProviderNodes();
-    const nodeMap = {};
+    const nodeMap: Record<string, string> = {};
     for (const node of providerNodes) {
       nodeMap[node.id] = node.name;
     }

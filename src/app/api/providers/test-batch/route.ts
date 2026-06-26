@@ -11,7 +11,7 @@ import {
 import { testSingleConnection } from "../[id]/test/testUtils";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 
-function getAuthGroup(providerId, connection = null) {
+function getAuthGroup(providerId, connection = null as any) {
   // Prioritize authType from connection if available
   if (connection?.authType) {
     if (connection.authType === "oauth") {
@@ -47,7 +47,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { mode, providerId } = body;
+    const { mode, providerId } = body ?? ({} as any);
 
     if (!mode) {
       return NextResponse.json({ error: "mode is required" }, { status: 400 });
@@ -55,7 +55,7 @@ export async function POST(request) {
 
     const allConnections = await getProviderConnections({ isActive: true });
 
-    let connectionsToTest = [];
+    let connectionsToTest: any[] = [];
     if (mode === "provider" && providerId) {
       connectionsToTest = allConnections.filter((c) => c.provider === providerId);
     } else if (mode === "oauth") {
@@ -85,7 +85,7 @@ export async function POST(request) {
       });
     }
 
-    const results = [];
+    const results: any[] = [];
     for (const conn of connectionsToTest) {
       try {
         const data = (await testSingleConnection(conn.id)) as Record<string, unknown>;

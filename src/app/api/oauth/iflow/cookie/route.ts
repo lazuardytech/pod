@@ -17,7 +17,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { cookie } = body;
+    const { cookie } = body ?? ({} as any);
 
     if (!cookie || typeof cookie !== "string") {
       return NextResponse.json({ error: "Cookie is required" }, { status: 400 });

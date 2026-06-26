@@ -310,7 +310,10 @@ export async function GET(request, { params }) {
             });
           } catch (error) {
             if (sanitizeError(error).includes("AccessDeniedException") && refreshToken) {
-              const refreshed = await refreshKiroToken(asString(refreshToken), connection.providerSpecificData);
+              const refreshed = await refreshKiroToken(
+                asString(refreshToken),
+                connection.providerSpecificData as Record<string, unknown>,
+              );
 
               if (refreshed?.accessToken) {
                 await updateProviderCredentials(connection.id, {
@@ -347,7 +350,7 @@ export async function GET(request, { params }) {
     }
 
     if (connection.provider === "gemini-cli") {
-      const { accessToken, refreshToken } = connection;
+      const { accessToken, refreshToken } = connection ?? ({} as any);
       if (!accessToken) {
         return NextResponse.json({ error: "No valid token found" }, { status: 401 });
       }

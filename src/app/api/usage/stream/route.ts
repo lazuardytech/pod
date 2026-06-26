@@ -4,7 +4,15 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   const encoder = new TextEncoder();
-  const state = {
+  const state: {
+    closed: boolean;
+    keepalive: ReturnType<typeof setInterval> | null;
+    send: (() => void) | null;
+    sendPending: (() => Promise<void>) | null;
+    cachedStats: Record<string, unknown> | null;
+    debounceTimer: ReturnType<typeof setTimeout> | null;
+    idleTimeout: ReturnType<typeof setTimeout> | null;
+  } = {
     closed: false,
     keepalive: null,
     send: null,
@@ -17,11 +25,11 @@ export async function GET(request) {
   const cleanup = () => {
     if (state.closed) return;
     state.closed = true;
-    clearTimeout(state.idleTimeout);
+    clearTimeout(state.idleTimeout ?? undefined);
     if (state.send) statsEmitter.off("update", state.send);
     if (state.sendPending) statsEmitter.off("pending", state.sendPending);
     if (state.keepalive) clearInterval(state.keepalive);
-    if (state.debounceTimer) clearTimeout(state.debounceTimer);
+    if (state.debounceTimer) clearTimeout(state.debounceTimer ?? undefined);
   };
 
   // Idle timeout — close connection if inactive for 5 minutes
@@ -33,7 +41,7 @@ export async function GET(request) {
   );
 
   request.signal.addEventListener("abort", () => {
-    clearTimeout(state.idleTimeout);
+    clearTimeout(state.idleTimeout ?? undefined);
     cleanup();
   });
 
@@ -90,7 +98,7 @@ export async function GET(request) {
 
       state.keepalive = setInterval(() => {
         if (state.closed) {
-          clearInterval(state.keepalive);
+          clearInterval(state.keepalive!);
           return;
         }
         try {

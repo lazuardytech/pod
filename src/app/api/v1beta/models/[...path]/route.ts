@@ -128,7 +128,7 @@ export async function POST(request, { params }) {
  * @param {boolean} stream     - whether to stream (from URL action)
  */
 function convertGeminiToInternal(geminiBody, model, stream) {
-  const messages = [];
+  const messages: any[] = [];
 
   // Convert system instruction
   if (geminiBody.systemInstruction) {
@@ -212,7 +212,7 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse, model) {
 
         const delta = choice.delta || {};
 
-        const parts = [];
+        const parts: any[] = [];
         if (delta.reasoning_content) {
           parts.push({ text: delta.reasoning_content, thought: true });
         }
@@ -300,9 +300,9 @@ async function convertOpenAIResponseToGemini(response, model) {
     });
   }
 
-  const { message, finish_reason } = choice;
+  const { message, finish_reason } = choice ?? ({} as any);
 
-  const parts = [];
+  const parts: any[] = [];
   if (message.reasoning_content) {
     parts.push({ text: message.reasoning_content, thought: true });
   }

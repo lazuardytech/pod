@@ -25,7 +25,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { providerAlias, ids } = body;
+    const { providerAlias, ids } = body ?? ({} as any);
     if (!providerAlias || !Array.isArray(ids)) {
       return NextResponse.json({ error: "providerAlias and ids[] required" }, { status: 400 });
     }

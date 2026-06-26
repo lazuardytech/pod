@@ -47,11 +47,13 @@ export async function PUT(request, { params }) {
 
     if ((limitType || existing.limitType) === "limited") {
       const rpm =
-        updateData.requestsPerMinute !== undefined ? Number(updateData.requestsPerMinute) : existing.requestsPerMinute;
+        updateData.requestsPerMinute !== undefined
+          ? Number(updateData.requestsPerMinute)
+          : (existing.requestsPerMinute ?? 0);
       const concurrent =
         updateData.concurrentRequests !== undefined
           ? Number(updateData.concurrentRequests)
-          : existing.concurrentRequests;
+          : (existing.concurrentRequests ?? 0);
       if (!Number.isFinite(rpm) || !Number.isInteger(rpm) || rpm <= 0) {
         return NextResponse.json({ error: "Request per Minute must be a positive integer" }, { status: 400 });
       }

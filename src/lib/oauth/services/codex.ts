@@ -76,7 +76,7 @@ export class CodexService extends OAuthService {
 
       // Start local server for callback (use fixed port 1455 like real Codex CLI)
       const fixedPort = 1455;
-      let callbackParams: Record<string, string> | null = null;
+      let callbackParams: any = null;
       const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       }, fixedPort);
@@ -119,11 +119,11 @@ export class CodexService extends OAuthService {
         throw new Error("No callback received");
       }
 
-      if (callbackParams.error) {
-        throw new Error(callbackParams.error_description || callbackParams.error);
+      if (callbackParams!.error) {
+        throw new Error(callbackParams!.error_description || callbackParams!.error);
       }
 
-      if (!callbackParams.code) {
+      if (!callbackParams!.code) {
         throw new Error("No authorization code received");
       }
 
@@ -131,7 +131,7 @@ export class CodexService extends OAuthService {
 
       // Exchange code for tokens (Codex uses form-urlencoded)
       const tokens = await this.exchangeCode(
-        callbackParams.code,
+        callbackParams!.code,
         redirectUri,
         codeVerifier,
         "application/x-www-form-urlencoded",

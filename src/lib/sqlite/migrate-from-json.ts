@@ -454,7 +454,7 @@ function importRequestDetails(db: SqliteDatabase, data: { records?: RequestDetai
     if (!r?.id) continue;
     const latency = typeof r.latency === "number" ? r.latency : (r.latency?.total ?? r.latency?.totalMs ?? null);
     const t = r.tokens || {};
-    const rest = { ...r };
+    const rest: Record<string, unknown> = { ...r };
     delete rest.id;
     delete rest.timestamp;
     delete rest.provider;
@@ -492,7 +492,7 @@ export function migrateFromJson(db: SqliteDatabase, dataDir: string): MigrationS
   const cfgPath = path.join(/*turbopackIgnore: true*/ dataDir, DB_JSON);
   const cfg = readJson(cfgPath) as ConfigDbData | null;
   if (cfg) {
-    const count = db.transaction(() => importConfigDb(db, cfg)).immediate();
+    const count = db.transaction(() => importConfigDb(db, cfg)).immediate?.() ?? 0;
     summary.imported += count;
     summary.files.push({ file: DB_JSON, rows: count });
     renameToBak(cfgPath);
@@ -501,7 +501,7 @@ export function migrateFromJson(db: SqliteDatabase, dataDir: string): MigrationS
   const usagePath = path.join(/*turbopackIgnore: true*/ dataDir, USAGE_JSON);
   const usage = readJson(usagePath) as UsageDbData | null;
   if (usage) {
-    const count = db.transaction(() => importUsageDb(db, usage)).immediate();
+    const count = db.transaction(() => importUsageDb(db, usage)).immediate?.() ?? 0;
     summary.imported += count;
     summary.files.push({ file: USAGE_JSON, rows: count });
     renameToBak(usagePath);
@@ -510,7 +510,7 @@ export function migrateFromJson(db: SqliteDatabase, dataDir: string): MigrationS
   const rdPath = path.join(/*turbopackIgnore: true*/ dataDir, REQUEST_DETAILS_JSON);
   const rd = readJson(rdPath) as { records?: RequestDetailRecord[] } | null;
   if (rd) {
-    const count = db.transaction(() => importRequestDetails(db, rd)).immediate();
+    const count = db.transaction(() => importRequestDetails(db, rd)).immediate?.() ?? 0;
     summary.imported += count;
     summary.files.push({ file: REQUEST_DETAILS_JSON, rows: count });
     renameToBak(rdPath);

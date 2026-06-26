@@ -43,7 +43,7 @@ async function runShutdown(): Promise<void> {
   } catch {}
 
   try {
-    await stopDaemon(null);
+    await stopDaemon(null as unknown as string);
   } catch {}
 
   console.log("[Shutdown] Cleanup complete, exiting");

@@ -25,9 +25,9 @@ export async function GET(request) {
   if (!slot.allowed) return slot.response;
 
   let closed = false;
-  let poll = null;
-  let heartbeat = null;
-  let idleTimeout = null;
+  let poll: ReturnType<typeof setInterval> | null = null;
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
+  let idleTimeout: ReturnType<typeof setTimeout> | null = null;
   let lastSig = "";
   const encoder = new TextEncoder();
 

@@ -17,7 +17,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { refreshToken } = body;
+    const { refreshToken } = body ?? ({} as any);
 
     if (!refreshToken || typeof refreshToken !== "string") {
       return NextResponse.json({ error: "Refresh token is required" }, { status: 400 });

@@ -42,7 +42,7 @@ export async function POST(request) {
 
     // Default: trigger immediate sync
     const result = await syncModelsDev();
-    return NextResponse.json({ success: result.success, action: "sync", ...result, ...getSyncStatus() });
+    return NextResponse.json({ action: "sync", ...result, ...getSyncStatus() });
   } catch (err) {
     return NextResponse.json({ success: false, error: sanitizeError(err) }, { status: 500 });
   }

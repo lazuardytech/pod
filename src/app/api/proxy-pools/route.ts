@@ -37,7 +37,7 @@ function normalizeProxyPoolInput(body: Record<string, unknown> = {}) {
   return { name, proxyUrl, noProxy, isActive, strictProxy, type };
 }
 
-function buildUsageMap(connections = []) {
+function buildUsageMap(connections: any[] = []) {
   const usageMap = new Map();
 
   for (const connection of connections) {

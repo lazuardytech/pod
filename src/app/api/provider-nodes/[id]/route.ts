@@ -85,13 +85,13 @@ export async function PUT(request, { params }) {
             prefix: prefix.trim(),
             apiType: node.type === "openai-compatible" ? apiType : undefined,
             baseUrl: sanitizedBaseUrl,
-            nodeName: updated.name,
+            nodeName: updated?.name,
           },
         }),
       ),
     );
 
-    return NextResponse.json({ node: updated });
+    return NextResponse.json({ node: updated ?? null });
   } catch (error) {
     console.log("Error updating provider node:", error);
     return NextResponse.json({ error: "Failed to update provider node" }, { status: 500 });

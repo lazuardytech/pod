@@ -180,7 +180,7 @@ export async function GET(request) {
     const platform = process.platform;
     const candidates = getCandidatePaths(platform);
 
-    let dbPath = null;
+    let dbPath: string | null = null;
     for (const candidate of candidates) {
       try {
         await access(candidate, constants.R_OK);

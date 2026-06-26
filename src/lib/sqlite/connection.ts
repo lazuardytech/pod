@@ -233,5 +233,6 @@ export function closeDatabase() {
 export function tx<R>(fn: (db: SqliteDatabase) => R): R {
   const db = getDatabase();
   const wrapped = db.transaction(fn);
-  return wrapped.immediate(db);
+  const immediate = wrapped.immediate ?? wrapped;
+  return immediate(db);
 }

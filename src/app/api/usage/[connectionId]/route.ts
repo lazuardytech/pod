@@ -135,7 +135,7 @@ export async function GET(request, { params }) {
     // Refresh credentials only for OAuth connections (apikey has no token refresh)
     if (isOAuth) {
       try {
-        const result = await refreshAndUpdateCredentials(connection, false, proxyOptions);
+        const result = await refreshAndUpdateCredentials(connection, false, proxyOptions as any);
         connection = result.connection;
       } catch (refreshError) {
         console.error("[Usage API] Credential refresh failed:", refreshError);
@@ -149,15 +149,15 @@ export async function GET(request, { params }) {
     }
 
     // Fetch usage from provider API
-    let usage = await getUsageForProvider(connection, proxyOptions);
+    let usage = await getUsageForProvider(connection, proxyOptions as any);
 
     // If provider returned an auth-expired message instead of throwing,
     // force-refresh token and retry once (OAuth only)
     if (isOAuth && isAuthExpiredMessage(usage) && connection.refreshToken) {
       try {
-        const retryResult = await refreshAndUpdateCredentials(connection, true, proxyOptions);
+        const retryResult = await refreshAndUpdateCredentials(connection, true, proxyOptions as any);
         connection = retryResult.connection;
-        usage = await getUsageForProvider(connection, proxyOptions);
+        usage = await getUsageForProvider(connection, proxyOptions as any);
       } catch {
         console.warn("[Usage] Force refresh failed");
       }

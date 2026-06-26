@@ -104,7 +104,7 @@ export async function PUT(request, { params }) {
       lastError,
       lastErrorAt,
       providerSpecificData,
-    } = body;
+    } = body ?? ({} as any);
 
     const existing = await getProviderConnectionById(id);
     if (!existing) {

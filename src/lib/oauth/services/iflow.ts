@@ -173,18 +173,18 @@ export class IFlowService {
 
       close();
 
-      if (callbackParams.error) {
-        throw new Error(callbackParams.error_description || callbackParams.error);
+      if (callbackParams!.error) {
+        throw new Error(callbackParams!.error_description || callbackParams!.error);
       }
 
-      if (!callbackParams.code) {
+      if (!callbackParams!.code) {
         throw new Error("No authorization code received");
       }
 
       spinner.start("Exchanging code for tokens...");
 
       // Exchange code for tokens
-      const tokens = await this.exchangeCode(callbackParams.code, redirectUri);
+      const tokens = await this.exchangeCode(callbackParams!.code, redirectUri);
 
       spinner.text = "Fetching user info...";
 

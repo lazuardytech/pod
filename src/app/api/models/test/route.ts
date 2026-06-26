@@ -10,7 +10,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { model, kind } = body;
+    const { model, kind } = body ?? ({} as any);
     if (!model) return NextResponse.json({ error: "Model required" }, { status: 400 });
 
     const envBase = process.env.BASE_URL;
@@ -28,7 +28,7 @@ export async function POST(request) {
     })();
 
     // Get an active internal API key for auth (if requireApiKey is enabled)
-    let apiKey = null;
+    let apiKey: string | null = null;
     try {
       const keys = await getApiKeys();
       apiKey = keys.find((k) => k.isActive !== false)?.key || null;
@@ -52,7 +52,7 @@ export async function POST(request) {
       });
       const latencyMs = Date.now() - start;
       const rawText = await res.text().catch(() => "");
-      let parsed = null;
+      let parsed: Record<string, any> | null = null;
       try {
         parsed = rawText ? JSON.parse(rawText) : null;
       } catch {}
@@ -96,7 +96,7 @@ export async function POST(request) {
     const latencyMs = Date.now() - start;
 
     const rawText = await res.text().catch(() => "");
-    let parsed = null;
+    let parsed: Record<string, any> | null = null;
     try {
       parsed = rawText ? JSON.parse(rawText) : null;
     } catch {}

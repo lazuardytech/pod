@@ -96,35 +96,40 @@ export async function createMemory(memory: CreateMemoryInput): Promise<MemoryRec
   if (!apiKeyId) throw new Error("apiKeyId is required");
   if (!memory?.content || typeof memory.content !== "string") throw new Error("content is required");
 
+  const content = memory.content;
+  const metadata = memory.metadata;
+  const sessionId = memory.sessionId;
+  const expiresAt = memory.expiresAt;
+
   // Run the SELECT-then-INSERT/UPDATE inside a transaction to prevent
   // duplicate memory entries from concurrent calls with the same key.
   return tx((db) => {
     const existing = key ? findExistingMemory(db, apiKeyId, key) : undefined;
     if (existing) {
-      const mergedMetadata = { ...parseJSON(existing.metadata), ...(memory.metadata || {}) };
+      const mergedMetadata = { ...parseJSON(existing.metadata), ...(metadata || {}) };
       db.prepare(
         "UPDATE memories SET content = ?, metadata = ?, updated_at = ?, session_id = ?, type = ?, expires_at = ? WHERE id = ?",
       ).run(
-        memory.content,
+        content,
         JSON.stringify(mergedMetadata),
         now,
-        memory.sessionId || null,
+        sessionId || null,
         type,
-        memory.expiresAt ? new Date(memory.expiresAt).toISOString() : null,
+        expiresAt ? new Date(expiresAt).toISOString() : null,
         existing.id,
       );
       memoryCache.delete(`id:${existing.id}`);
       return {
         id: String(existing.id),
         apiKeyId,
-        sessionId: memory.sessionId || "",
+        sessionId: sessionId || "",
         type,
         key,
-        content: memory.content,
+        content,
         metadata: mergedMetadata,
         createdAt: new Date(String(existing.created_at)),
         updatedAt: new Date(now),
-        expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
       };
     }
 
@@ -136,27 +141,27 @@ export async function createMemory(memory: CreateMemoryInput): Promise<MemoryRec
     ).run(
       id,
       apiKeyId,
-      memory.sessionId || null,
+      sessionId || null,
       type,
       key || null,
-      memory.content,
-      JSON.stringify(memory.metadata || {}),
+      content,
+      JSON.stringify(metadata || {}),
       now,
       now,
-      memory.expiresAt ? new Date(memory.expiresAt).toISOString() : null,
+      expiresAt ? new Date(expiresAt).toISOString() : null,
     );
 
     const created: MemoryRecord = {
       id,
       apiKeyId,
-      sessionId: memory.sessionId || "",
+      sessionId: sessionId || "",
       type,
       key,
-      content: memory.content,
-      metadata: memory.metadata || {},
+      content,
+      metadata: metadata || {},
       createdAt: new Date(now),
       updatedAt: new Date(now),
-      expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
     };
     setCache(`id:${id}`, created);
     return created;

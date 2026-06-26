@@ -21,7 +21,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { accessToken, machineId } = body;
+    const { accessToken, machineId } = body ?? ({} as any);
 
     if (!accessToken || typeof accessToken !== "string") {
       return NextResponse.json({ error: "Access token is required" }, { status: 400 });

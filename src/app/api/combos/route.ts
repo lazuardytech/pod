@@ -25,7 +25,7 @@ export async function PATCH(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { order } = body;
+    const { order } = body ?? ({} as any);
 
     if (!Array.isArray(order) || order.some((id) => typeof id !== "string")) {
       return NextResponse.json({ error: "order must be an array of string IDs" }, { status: 400 });
@@ -45,7 +45,7 @@ export async function POST(request) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { name, models, kind, systemPrompt, modelId, contentFilterMessage } = body;
+    const { name, models, kind, systemPrompt, modelId, contentFilterMessage } = body ?? ({} as any);
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });

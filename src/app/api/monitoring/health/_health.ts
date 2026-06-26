@@ -407,7 +407,7 @@ export async function buildHealthPayload() {
   const CONN_LOCK_REASON_KEY = "connectionLockReason";
 
   // — Connection-level lockout status —
-  const lockedAccounts = [];
+  const lockedAccounts: Record<string, unknown>[] = [];
   for (const c of conns) {
     const lockUntil = c[CONN_LOCK_UNTIL_KEY] as string | null;
     if (!lockUntil) continue;
@@ -458,7 +458,9 @@ export async function buildHealthPayload() {
     }
   }
 
-  const status = database.ok && database.integrity === "ok" ? "healthy" : "issues";
+  const isDatabaseOk = database.ok;
+  const dbIntegrity = (database as Record<string, unknown>).integrity ?? "";
+  const status = isDatabaseOk === true && dbIntegrity === "ok" ? "healthy" : "issues";
   const queueDepths = getQueueDepths();
 
   // — Data dir size —

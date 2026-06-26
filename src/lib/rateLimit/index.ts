@@ -56,7 +56,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
       const pump = async (): Promise<void> => {
         try {
           while (true) {
-            const { done, value } = await reader.read();
+            const { done, value } = await reader!.read();
             if (done) {
               safeRelease();
               controller.close();
@@ -164,7 +164,11 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
       return { ok: false, release: null, response: rateLimitResponse(concResult.type || "concurrent", 1) };
     }
 
-    return { ok: true, release: concResult.release ? (): any => void concResult.release?.() : null, response: undefined };
+    return {
+      ok: true,
+      release: concResult.release ? (): any => void concResult.release?.() : null,
+      response: undefined,
+    };
   }
 
   // MemoryBackend path
@@ -248,7 +252,7 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
       return rateLimitResponse(concResult.type || "concurrent", 1);
     }
 
-    let release: (() => void | Promise<void>) | null = concResult.release ? (): any => void concResult.release() : null;
+    let release: (() => void | Promise<void>) | null = concResult.release ? () => void concResult.release?.() : null;
     try {
       const response = await handler();
       const finalResponse = finalizeResponse(response, release);

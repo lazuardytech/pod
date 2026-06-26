@@ -132,7 +132,7 @@ function comboMatchesKinds(combo, kindFilter) {
  * @param {string[]} kindFilter - List of service kinds to include (e.g. ["llm"], ["webSearch","webFetch"]).
  */
 export async function buildModelsList(kindFilter) {
-  let connections = [];
+  let connections: any[] = [];
   try {
     connections = await getProviderConnections();
     connections = connections.filter((c) => c.isActive !== false);
@@ -140,21 +140,21 @@ export async function buildModelsList(kindFilter) {
     console.log("Could not fetch providers, returning all models");
   }
 
-  let combos = [];
+  let combos: any[] = [];
   try {
     combos = await getCombos();
   } catch (_e) {
     console.log("Could not fetch combos");
   }
 
-  let customModels = [];
+  let customModels: any[] = [];
   try {
     customModels = await getCustomModels();
   } catch (_e) {
     console.log("Could not fetch custom models");
   }
 
-  let modelAliases = {};
+  let modelAliases: Record<string, unknown> = {};
   try {
     modelAliases = await getModelAliases();
   } catch (_e) {
@@ -168,10 +168,8 @@ export async function buildModelsList(kindFilter) {
     }
   }
 
-  const models = [];
+  const models: Record<string, unknown>[] = [];
   const timestamp = Math.floor(Date.now() / 1000);
-
-  // Combos first (filtered by kind). Web combos expose `kind` so AI knows search vs fetch.
   for (const combo of combos) {
     if (!comboMatchesKinds(combo, kindFilter)) continue;
     const entry: Record<string, unknown> = {
@@ -309,7 +307,7 @@ export async function buildModelsList(kindFilter) {
 
       // Merge sub-config models (TTS / embedding) that live on AI_PROVIDERS, not PROVIDER_MODELS
       const providerInfo = AI_PROVIDERS[providerId];
-      const subConfigModels = [];
+      const subConfigModels: string[] = [];
       if (kindFilter.includes("tts") && Array.isArray(providerInfo?.ttsConfig?.models)) {
         for (const m of providerInfo.ttsConfig.models) {
           if (m?.id) subConfigModels.push(m.id);
@@ -351,7 +349,7 @@ export async function buildModelsList(kindFilter) {
     }
   }
 
-  const dedupedModels = [];
+  const dedupedModels: Record<string, unknown>[] = [];
   const seenModelIds = new Set();
   for (const model of models) {
     if (!model?.id || seenModelIds.has(model.id)) continue;

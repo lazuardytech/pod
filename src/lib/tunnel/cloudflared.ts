@@ -212,7 +212,7 @@ export function setUnexpectedExitHandler(handler: (() => void) | null) {
 export async function spawnCloudflared(tunnelToken: string): Promise<ChildProcess> {
   // Serialize spawns to prevent orphaned processes on concurrent calls
   while (spawnLock) await spawnLock;
-  let unlock: () => void;
+  let unlock!: () => void;
   spawnLock = new Promise<void>((r) => {
     unlock = r;
   });

@@ -32,7 +32,7 @@ export async function POST() {
 
     // Hide log files so migrateFromJson's fs.existsSync check skips them,
     // then restore so user can inspect/delete later.
-    const renamed = [];
+    const renamed: Array<{ tmp: string; original: string }> = [];
     for (const f of LOG_FILES) {
       const p = path.join(/*turbopackIgnore: true*/ DATA_DIR, f);
       if (fs.existsSync(/*turbopackIgnore: true*/ p)) {

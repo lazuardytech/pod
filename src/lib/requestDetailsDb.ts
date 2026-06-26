@@ -273,10 +273,12 @@ function rowToDetail(r: DetailRow): DetailItem {
     latency:
       (payload.latency as number | { total?: number; totalMs?: number } | undefined) ??
       (r.latency_ms != null ? { total: r.latency_ms } : {}),
-    tokens: (payload.tokens as DetailItem["tokens"]) ?? {
-      prompt_tokens: r.prompt_tokens,
-      completion_tokens: r.completion_tokens,
-    },
+    tokens:
+      (payload.tokens as DetailItem["tokens"]) ??
+      ({
+        prompt_tokens: r.prompt_tokens ?? undefined,
+        completion_tokens: r.completion_tokens ?? undefined,
+      } as DetailItem["tokens"]),
     request: (payload.request as DetailItem["request"]) ?? {},
     providerRequest: (payload.providerRequest as DetailItem["providerRequest"]) ?? {},
     providerResponse: (payload.providerResponse as DetailItem["providerResponse"]) ?? {},

@@ -35,7 +35,7 @@ async function pingModel(modelId, baseUrl, apiKey) {
     const latencyMs = Date.now() - start;
     // 200 = working; 400 = bad request but auth passed (model reachable)
     const ok = res.status === 200 || res.status === 400;
-    let error = null;
+    let error: string | null = null;
     if (!ok) {
       const text = await res.text().catch(() => "");
       error = `HTTP ${res.status}${text ? `: ${text.slice(0, 120)}` : ""}`;

@@ -175,7 +175,7 @@ export async function POST(request) {
     }
 
     let isValid = false;
-    let error = null;
+    let error: string | null = null;
 
     // Validate with each provider
     try {

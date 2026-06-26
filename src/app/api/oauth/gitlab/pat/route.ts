@@ -27,7 +27,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const { token, baseUrl } = body;
+    const { token, baseUrl } = body ?? ({} as any);
     if (!token?.trim()) {
       return NextResponse.json({ error: "Personal Access Token is required" }, { status: 400 });
     }
@@ -48,7 +48,9 @@ export async function POST(request) {
       // Allow self-hosted GitLab instances the user has already configured as a provider connection
       const existingConnections = await getProviderConnections({ provider: "gitlab" }).catch(() => []);
       const hasExisting = existingConnections.some((conn) => {
-        const connBase = conn.providerSpecificData?.baseUrl;
+        const connBase = (conn.providerSpecificData as Record<string, unknown> | undefined)?.baseUrl as
+          | string
+          | undefined;
         if (!connBase) return false;
         try {
           return new URL(connBase).hostname.toLowerCase() === parsedHost;

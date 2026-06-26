@@ -29,7 +29,7 @@ export async function GET(request) {
 
     // Look for kiro-auth-token.json or any .json file with refreshToken
     let refreshToken = null;
-    let foundFile = null;
+    let foundFile: string | null = null;
 
     // First try kiro-auth-token.json
     const kiroTokenFile = "kiro-auth-token.json";
