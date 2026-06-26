@@ -46,7 +46,11 @@ function fixLines(lines) {
     line = line.replace(/onChange=\{\((\w+)\)\s*=>/g, "onChange={($1: any) =>");
     line = line.replace(/onKeyDown=\{\((\w+)\)\s*=>/g, "onKeyDown={($1: any) =>");
     // Single-line destructured params
-    if (line.match(/(?:function |export default function )\w+\(\{/) && !line.includes(": any") && !line.includes(": {")) {
+    if (
+      line.match(/(?:function |export default function )\w+\(\{/) &&
+      !line.includes(": any") &&
+      !line.includes(": {")
+    ) {
       line = line.replace(/(function \w+)\(\{([^}\n]*)\}\)\s*\{/, "$1({$2}: any) {");
       line = line.replace(/(export default function \w+)\(\{([^}\n]*)\}\)\s*\{/, "$1({$2}: any) {");
     }
@@ -60,7 +64,11 @@ function fixMultiLineDestructured(lines) {
     const line = lines[i].trim();
     // Find function declarations with destructured params spanning multiple lines
     // Pattern: function Name({  at line i, then "})" at some later line j
-    if ((line.startsWith("function ") || line.startsWith("export default function ")) && line.includes("({") && !line.includes("})")) {
+    if (
+      (line.startsWith("function ") || line.startsWith("export default function ")) &&
+      line.includes("({") &&
+      !line.includes("})")
+    ) {
       // Multi-line destructured - find the closing
       let j = i + 1;
       while (j < lines.length) {
@@ -97,13 +105,13 @@ let fixed = 0;
 for (const [file, data] of Object.entries(byFile)) {
   const content = fs.readFileSync(file, "utf8");
   const lines = content.split("\n");
-  
+
   fixLines(lines);
-  
+
   if (data.ts7031.length > 0) {
     fixMultiLineDestructured(lines);
   }
-  
+
   const newContent = lines.join("\n");
   if (newContent !== content) {
     fs.writeFileSync(file, newContent, "utf8");

@@ -137,7 +137,7 @@ export class CursorService {
       // Try to decode as JWT
       const parts = accessToken.split(".");
       if (parts.length === 3) {
-        let payload = parts[1];
+        let payload = parts[1]!;
         while (payload.length % 4) {
           payload += "=";
         }

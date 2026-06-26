@@ -255,7 +255,7 @@ export function loadModelsDevPricingCache(): Record<string, Record<string, Model
   for (const r of rows) {
     if (!_pricingCache[r.provider]) _pricingCache[r.provider] = {};
     try {
-      _pricingCache[r.provider][r.model] = JSON.parse(r.data) as ModelPricingEntry;
+      _pricingCache[r.provider]![r.model] = JSON.parse(r.data) as ModelPricingEntry;
     } catch {
       // skip malformed rows
     }

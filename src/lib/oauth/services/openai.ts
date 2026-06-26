@@ -104,7 +104,7 @@ export class OpenAIService extends OAuthService {
       spinner.start("Exchanging code for tokens...");
 
       // Exchange code for tokens
-      const tokens = await this.exchangeOpenAICode(code, redirectUri, codeVerifier);
+      const tokens = await this.exchangeOpenAICode(code!, redirectUri, codeVerifier);
 
       spinner.text = "Saving tokens to server...";
 

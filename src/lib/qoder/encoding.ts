@@ -42,11 +42,11 @@ export function qoderEncodeBody(plaintext: Buffer | Uint8Array | string): string
 
   const out = Buffer.alloc(n);
   for (let i = 0; i < n; i++) {
-    const c = rearranged.charCodeAt(i);
-    if (c < 128 && QODER_S2C[c] >= 0) {
-      out[i] = QODER_S2C[c];
+    const c = rearranged.charCodeAt(i)!;
+    if (c < 128 && QODER_S2C[c]! >= 0) {
+      out[i]! = QODER_S2C[c]!;
     } else {
-      out[i] = c;
+      out[i]! = c;
     }
   }
   return out.toString("latin1");

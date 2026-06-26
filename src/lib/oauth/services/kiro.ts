@@ -373,7 +373,7 @@ export class KiroService {
       if (parts.length !== 3) return null;
 
       // Decode payload (add padding if needed)
-      let payload = parts[1];
+      let payload = parts[1]!;
       while (payload.length % 4) {
         payload += "=";
       }

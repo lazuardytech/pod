@@ -646,7 +646,7 @@ async function createProviderConnectionCloud(data: Record<string, unknown>): Pro
       ...data,
       updatedAt: now,
     } as ProviderConnection;
-    return d.data.providerConnections[idx];
+    return d.data.providerConnections[idx]!;
   }
   let name = (data.name as string) || undefined;
   if (!name && data.authType === "oauth") {
@@ -684,7 +684,7 @@ export async function updateProviderConnection(
     const d = await getCloudDb();
     const idx = d.data.providerConnections.findIndex((c) => c.id === id);
     if (idx === -1) return null;
-    const providerId = d.data.providerConnections[idx].provider;
+    const providerId = d.data.providerConnections[idx]!.provider;
     d.data.providerConnections[idx] = {
       ...d.data.providerConnections[idx],
       ...data,
@@ -705,7 +705,7 @@ export async function deleteProviderConnection(id: string): Promise<boolean> {
     const d = await getCloudDb();
     const idx = d.data.providerConnections.findIndex((c) => c.id === id);
     if (idx === -1) return false;
-    const providerId = d.data.providerConnections[idx].provider;
+    const providerId = d.data.providerConnections[idx]!.provider;
     d.data.providerConnections.splice(idx, 1);
     await reorderProviderConnections(providerId);
     return true;
@@ -864,7 +864,7 @@ export async function deleteProviderNode(id: string): Promise<ProviderNode | nul
     const idx = (d.data.providerNodes || []).findIndex((n) => n.id === id);
     if (idx === -1) return null;
     const [removed] = d.data.providerNodes.splice(idx, 1);
-    return removed;
+    return removed ?? null;
   }
   const current = await getProviderNodeById(id);
   if (!current) return null;
@@ -1166,7 +1166,7 @@ export async function deleteProxyPool(id: string): Promise<ProxyPool | null> {
     const idx = (d.data.proxyPools || []).findIndex((p) => p.id === id);
     if (idx === -1) return null;
     const [removed] = d.data.proxyPools.splice(idx, 1);
-    return removed;
+    return removed ?? null;
   }
   const current = await getProxyPoolById(id);
   if (!current) return null;
@@ -1846,7 +1846,7 @@ async function getRawPricing(): Promise<Record<string, Record<string, unknown>>>
   const out: Record<string, Record<string, unknown>> = {};
   for (const r of rows) {
     if (!out[r.provider]) out[r.provider] = {};
-    out[r.provider][r.model] = parseExtras(r.data);
+    out[r.provider]![r.model] = parseExtras(r.data);
   }
   return out;
 }

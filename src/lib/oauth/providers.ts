@@ -33,7 +33,7 @@ function decodeJwtPayload(jwt: string | null | undefined): Record<string, unknow
     if (!jwt || typeof jwt !== "string") return null;
     const parts = jwt.split(".");
     if (parts.length !== 3) return null;
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const base64 = parts[1]!.replace(/-/g, "+").replace(/_/g, "/");
     const missingPadding = (BASE64_BLOCK_SIZE - (base64.length % BASE64_BLOCK_SIZE)) % BASE64_BLOCK_SIZE;
     const padded = base64 + "=".repeat(missingPadding);
     return JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as Record<string, unknown>;

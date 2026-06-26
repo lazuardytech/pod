@@ -27,7 +27,7 @@ async function runShutdown(): Promise<void> {
   // Run hooks in reverse registration order (LIFO — most recent first)
   for (let i = hooks.length - 1; i >= 0; i--) {
     try {
-      await hooks[i]();
+      await hooks[i]!();
     } catch (err) {
       console.log("[Shutdown] Hook error:", (err as Error)?.message || err);
     }

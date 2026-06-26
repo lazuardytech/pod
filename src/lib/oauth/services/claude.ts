@@ -39,7 +39,7 @@ export class ClaudeService extends OAuthService {
     let codeState = "";
     if (authCode.includes("#")) {
       const parts = authCode.split("#");
-      authCode = parts[0];
+      authCode = parts[0]!;
       codeState = parts[1] || "";
     }
 
@@ -118,7 +118,7 @@ export class ClaudeService extends OAuthService {
       spinner.start("Exchanging code for tokens...");
 
       // Exchange code for tokens
-      const tokens = await this.exchangeClaudeCode(code, redirectUri, codeVerifier, state);
+      const tokens = await this.exchangeClaudeCode(code!, redirectUri, codeVerifier, state);
 
       spinner.text = "Saving tokens to server...";
 
