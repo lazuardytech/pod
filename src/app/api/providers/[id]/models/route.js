@@ -6,7 +6,7 @@ import { getProviderConnectionById } from "@/models";
 import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
 import { refreshGoogleToken, refreshKiroToken, updateProviderCredentials } from "@/sse/services/tokenRefresh";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
 const parseOpenAIStyleModels = (data) => {

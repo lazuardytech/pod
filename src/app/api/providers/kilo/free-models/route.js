@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 const KILO_MODELS_URL = "https://api.kilo.ai/api/gateway/models";
 
 // In-memory cache with TTL

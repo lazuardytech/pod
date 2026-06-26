@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { normalizeMemorySettings, toMemorySettingsUpdates } from "@/lib/memory/settings.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 function toBooleanOrNull(value) {
   if (typeof value === "boolean") return value;
   return null;

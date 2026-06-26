@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections, updateProviderConnection } from "@/models";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
 // Update provider credentials (for cloud token refresh)

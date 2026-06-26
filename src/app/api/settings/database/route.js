@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { exportDb, getSettings, importDb } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 export async function GET() {
   try {
     const payload = await exportDb();

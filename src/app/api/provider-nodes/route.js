@@ -6,7 +6,7 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { generateId } from "@/shared/utils";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 export const dynamic = "force-dynamic";
 

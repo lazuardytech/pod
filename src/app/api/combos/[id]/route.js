@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resetComboRotation } from "open-sse/services/combo.js";
 import { deleteCombo, getComboById, getComboByName, updateCombo } from "@/lib/localDb";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;

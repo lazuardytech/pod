@@ -2,7 +2,7 @@
  * OAuth Configuration Constants
  */
 import { arch, platform } from "node:os";
-import { getOAuthClientSecret } from "@/lib/security/runtimeSecrets.mjs";
+import { getOAuthClientSecret } from "@/lib/security/runtimeSecrets.mts";
 
 const IFLOW_CLIENT_SECRET = getOAuthClientSecret("IFLOW_OAUTH_CLIENT_SECRET");
 const QODER_CLIENT_ID = process.env.QODER_OAUTH_CLIENT_ID?.trim() || null;

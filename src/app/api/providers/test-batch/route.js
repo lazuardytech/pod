@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { getProviderConnections } from "@/models";
 import {
   ANTHROPIC_COMPATIBLE_PREFIX,
@@ -9,7 +9,7 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { testSingleConnection } from "../[id]/test/testUtils.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 function getAuthGroup(providerId, connection = null) {
   // Prioritize authType from connection if available

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSyncStatus, syncModelsDev, startPeriodicSync, stopPeriodicSync } from "@/lib/modelsDevSync.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 // GET — return current sync status
 export async function GET() {
   try {

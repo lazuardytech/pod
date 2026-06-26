@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 // Map locale code → country name
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });

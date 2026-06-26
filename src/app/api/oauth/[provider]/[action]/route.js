@@ -9,8 +9,8 @@ import {
 } from "@/lib/oauth/utils/server";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { createProviderConnection } from "@/models";
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 /**
  * Dynamic OAuth API Route

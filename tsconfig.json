@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
@@ -23,22 +19,11 @@
     "exactOptionalPropertyTypes": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "open-sse": [
-        "./open-sse"
-      ],
-      "open-sse/*": [
-        "./open-sse/*"
-      ]
+      "@/*": ["./src/*"],
+      "open-sse": ["./open-sse"],
+      "open-sse/*": ["./open-sse/*"]
     },
-    "types": [
-      "@types/node",
-      "@types/bun",
-      "@types/react",
-      "@types/react-dom"
-    ],
+    "types": ["@types/node", "@types/bun", "@types/react", "@types/react-dom"],
     "incremental": true,
     "jsx": "react-jsx",
     "plugins": [
@@ -56,12 +41,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "cloud",
-    "open-sse",
-    "coverage",
-    "tests"
-  ]
+  "exclude": ["node_modules", ".next", "cloud", "open-sse", "coverage", "tests"]
 }

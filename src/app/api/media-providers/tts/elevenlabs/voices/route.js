@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchElevenLabsVoices } from "open-sse/handlers/ttsCore.js";
 import { getProviderConnections } from "@/lib/localDb";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 /**

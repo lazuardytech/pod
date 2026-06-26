@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getModelAliases, validateApiKey } from "@/models";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 // Resolve model alias to provider/model
 export async function POST(request) {

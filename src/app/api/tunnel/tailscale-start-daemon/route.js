@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 export async function POST(request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);

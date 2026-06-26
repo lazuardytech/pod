@@ -3,8 +3,8 @@ import { CursorService } from "@/lib/oauth/services/cursor";
 import { createProviderConnection } from "@/models";
 
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 /**
  * POST /api/oauth/cursor/import
  * Import and validate access token from Cursor IDE's local SQLite database

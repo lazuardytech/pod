@@ -4,7 +4,7 @@ import {
   DEFAULT_JWT_SECRET,
   resolveApiKeySecret,
   validateStartupSecrets,
-} from "../../src/lib/security/runtimeSecrets.mjs";
+} from "../../src/lib/security/runtimeSecrets.mts";
 
 describe("runtime secret policy", () => {
   it("accepts strong JWT_SECRET and API_KEY_SECRET at runtime", () => {

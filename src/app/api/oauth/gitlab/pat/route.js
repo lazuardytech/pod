@@ -4,8 +4,8 @@ import { getProviderConnections } from "@/lib/localDb";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 const GITLAB_DEFAULT_BASE = "https://gitlab.com";
 
 /**

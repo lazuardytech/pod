@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDownloadStatus } from "@/lib/tunnel/downloadState.js";
 import { getTailscaleStatus, getTunnelStatus } from "@/lib/tunnel/tunnelManager";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 export async function GET() {
   try {
     const [tunnel, tailscale] = await Promise.all([getTunnelStatus(), getTailscaleStatus()]);

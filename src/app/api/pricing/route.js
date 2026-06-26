@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPricing, resetAllPricing, resetPricing, updatePricing } from "@/lib/localDb.js";
 import { getDefaultPricing } from "@/shared/constants/pricing.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 /**
  * GET /api/pricing

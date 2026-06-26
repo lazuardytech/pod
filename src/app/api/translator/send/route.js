@@ -1,8 +1,8 @@
 import { getExecutor, refreshTokenByProvider } from "open-sse/index.js";
 import { getProviderConnections } from "@/lib/localDb.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 function buildForwardHeaders(response, stream) {
   const headers = new Headers();

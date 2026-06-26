@@ -3,7 +3,7 @@ import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/cons
 import { parseQuotaData } from "@/app/(dashboard)/usage/components/ProviderLimits/utils";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/usage/provider-limits/stream";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { testProxyUrl } from "@/lib/network/proxyTest";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
 function buildRelayHeaders(proxyPool) {

@@ -6,8 +6,8 @@ import { FORMATS } from "open-sse/translator/formats.js";
 import { translateRequest } from "open-sse/translator/index.js";
 import { getProviderConnections } from "@/lib/localDb.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 export async function POST(request) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);

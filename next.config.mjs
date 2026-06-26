@@ -13,11 +13,11 @@ const nextConfig = {
   turbopack: {
     // Keep server-only node modules out of browser bundles.
     resolveAlias: {
-      fs: { browser: "./src/lib/empty-module.js" },
-      path: { browser: "./src/lib/empty-module.js" },
-      "node:fs": { browser: "./src/lib/empty-module.js" },
-      "node:path": { browser: "./src/lib/empty-module.js" },
-      "bun:sqlite": { browser: "./src/lib/empty-module.js" },
+      fs: { browser: "./src/lib/empty-module.ts" },
+      path: { browser: "./src/lib/empty-module.ts" },
+      "node:fs": { browser: "./src/lib/empty-module.ts" },
+      "node:path": { browser: "./src/lib/empty-module.ts" },
+      "bun:sqlite": { browser: "./src/lib/empty-module.ts" },
     },
   },
   async headers() {

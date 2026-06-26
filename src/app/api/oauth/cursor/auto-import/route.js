@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import { error as logError } from "@/sse/utils/logger.js";
 const execFileAsync = promisify(execFile);

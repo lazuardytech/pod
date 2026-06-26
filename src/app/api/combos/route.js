@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createCombo, getComboByName, getCombos, reorderCombos } from "@/lib/localDb";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 export const dynamic = "force-dynamic";
 

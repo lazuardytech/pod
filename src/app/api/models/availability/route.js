@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getProviderConnections, getSettings, updateProviderConnection } from "@/lib/localDb";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { getModelAvailabilityPayload, MODEL_LOCK_PREFIX } from "./_availability";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 export async function GET() {
   try {

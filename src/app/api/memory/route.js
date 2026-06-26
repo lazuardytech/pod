@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { clearMemories, createMemory, listMemories } from "@/lib/memory/store.js";
 import { MemoryType } from "@/lib/memory/types.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 function parsePositiveInt(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;

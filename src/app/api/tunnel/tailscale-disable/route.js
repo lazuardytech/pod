@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { disableTailscale } from "@/lib/tunnel/tunnelManager";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 export async function POST() {
   try {
     const result = await disableTailscale();

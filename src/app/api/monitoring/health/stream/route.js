@@ -2,7 +2,7 @@ import { checkMonitoringAuth } from "../_auth.js";
 import { buildHealthPayload } from "../_health.js";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../_sseConnectionCap.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/monitoring/health/stream";

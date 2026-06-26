@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 /**
  * iFlow Cookie-Based Authentication
  * POST /api/oauth/iflow/cookie

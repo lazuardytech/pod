@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { createProxyPool } from "@/models";
 import { validateFetchUrl } from "@/lib/validateUrl";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 const VERCEL_API = "https://api.vercel.com";
 

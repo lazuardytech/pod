@@ -3,9 +3,9 @@
 import { execSync } from "node:child_process";
 import os from "node:os";
 
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { error as logError } from "@/sse/utils/logger.js";
 // Removed initDbHooks call
 

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import {
   deleteProviderConnection,
   getProviderConnectionById,
   getProxyPoolById,
   updateProviderConnection,
 } from "@/models";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 function normalizeProxyConfig(body = {}) {
   const hasAnyProxyField =

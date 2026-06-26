@@ -4,9 +4,9 @@ import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
 import { normalizeProviderId } from "@/lib/providerNormalization";
 import { getProviderNodeById } from "@/models";
 import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { validateFetchUrl } from "@/lib/validateUrl";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
 import {
   AI_PROVIDERS,

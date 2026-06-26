@@ -15,7 +15,7 @@ import {
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
 import { extractApiKey } from "@/sse/services/auth.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 const parseOpenAIStyleModels = (data) => {
   if (Array.isArray(data)) return data;

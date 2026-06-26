@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 // Fetch with timeout wrapper
 const fetchWithTimeout = (url, options, timeout = 10000) => {
   return Promise.race([

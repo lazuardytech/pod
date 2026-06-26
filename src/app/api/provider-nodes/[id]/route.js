@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import {
   deleteProviderConnectionsByProvider,
   deleteProviderNode,

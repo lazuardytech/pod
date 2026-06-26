@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { checkMonitoringAuth } from "./_auth.js";
 import { buildHealthPayload } from "./_health.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 export const dynamic = "force-dynamic";
 
 // GET /api/monitoring/health — full snapshot

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteProxyPool, getProviderConnections, getProxyPoolById, updateProxyPool } from "@/models";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 function sanitizeProxyPool(pool) {
   if (!pool) return pool;

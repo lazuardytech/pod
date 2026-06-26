@@ -9,7 +9,7 @@ import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync.js";
 import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler.js";
 import { APP_CONFIG } from "@/shared/constants/config.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 import {
   AI_PROVIDERS,
   isAnthropicCompatibleProvider,

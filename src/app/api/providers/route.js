@@ -8,7 +8,7 @@ import {
   getProxyPoolById,
 } from "@/models";
 import { APIKEY_PROVIDERS } from "@/shared/constants/config";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 import {
   AI_PROVIDERS,
   FREE_TIER_PROVIDERS,
@@ -17,7 +17,7 @@ import {
   isOpenAICompatibleProvider,
   WEB_COOKIE_PROVIDERS,
 } from "@/shared/constants/providers";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 export const dynamic = "force-dynamic";
 

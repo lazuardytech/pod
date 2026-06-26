@@ -3,7 +3,7 @@ import { KiroService } from "@/lib/oauth/services/kiro";
 import { generatePKCE } from "@/lib/oauth/utils/pkce";
 
 import { checkStrictDashboardAuth } from "@/lib/routeAuth.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 /**
  * GET /api/oauth/kiro/social-authorize
  * Generate Google/GitHub social login URL for manual callback flow

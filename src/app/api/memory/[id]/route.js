@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { deleteMemory, getMemory, updateMemory } from "@/lib/memory/store.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 export async function GET(_request, { params }) {
   try {
     const { id } = await params;

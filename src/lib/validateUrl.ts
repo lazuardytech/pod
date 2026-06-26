@@ -1,6 +1,6 @@
 /**
- * URL validation utilities for SSRF prevention.
- * Used by API routes that accept user-supplied URLs and make server-side fetch calls.
+ * URL validation utilities for SSRF prevention. Used by API routes that accept
+ * user-supplied URLs and make server-side fetch calls.
  */
 
 // Private/internal IP ranges that should not be reachable from server-side fetch
@@ -38,10 +38,8 @@ const PRIVATE_HOST_SUFFIXES = [
  * Check if a hostname resolves to a private/internal address.
  * This is a static check on the hostname string — it cannot catch all cases
  * (e.g. DNS rebinding), but blocks the most common SSRF vectors.
- * @param {string} hostname
- * @returns {boolean}
  */
-function isPrivateHostname(hostname) {
+function isPrivateHostname(hostname: string): boolean {
   if (!hostname) return true;
   const h = hostname.toLowerCase().replace(/\.+$/, "");
   if (PRIVATE_HOSTNAMES.has(h)) return true;
@@ -54,20 +52,23 @@ function isPrivateHostname(hostname) {
   return false;
 }
 
+export type ValidateFetchUrlOptions = {
+  allowPrivate?: boolean;
+};
+
+export type ValidateFetchUrlResult = { ok: true; url: URL } | { ok: false; error: string };
+
 /**
- * Validate a user-supplied URL for use in server-side fetch calls.
- * Blocks non-http(s) protocols and private/internal IP ranges.
- *
- * @param {string} url - The URL to validate
- * @param {{ allowPrivate?: boolean }} [options]
- * @returns {{ ok: true, url: URL } | { ok: false, error: string }}
+ * Validate a user-supplied URL for use in server-side fetch calls. Blocks
+ * non-http(s) protocols and private/internal IP ranges.
  */
-export function validateFetchUrl(url, { allowPrivate = false } = {}) {
+export function validateFetchUrl(url: unknown, options: ValidateFetchUrlOptions = {}): ValidateFetchUrlResult {
+  const { allowPrivate = false } = options;
   if (!url || typeof url !== "string") {
     return { ok: false, error: "URL is required" };
   }
 
-  let parsed;
+  let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {

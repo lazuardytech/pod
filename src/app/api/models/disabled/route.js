@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { disableModels, enableModels, getDisabledModels } from "@/lib/disabledModelsDb";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 export const dynamic = "force-dynamic";
 

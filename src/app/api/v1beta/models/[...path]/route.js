@@ -3,8 +3,8 @@ import { getSettings, validateApiKey } from "@/lib/localDb";
 import { handleChat } from "@/sse/handlers/chat.js";
 import { extractApiKey } from "@/sse/services/auth.js";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 let initialized = false;
 
 /**

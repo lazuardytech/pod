@@ -3,7 +3,7 @@ import { getDisabledModels } from "@/lib/disabledModelsDb";
 import { getModelAliases, setModelAlias } from "@/models";
 import { AI_MODELS } from "@/shared/constants/config";
 import { getProviderAlias } from "@/shared/constants/providers";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 // GET /api/models - Get models with aliases
 export async function GET() {

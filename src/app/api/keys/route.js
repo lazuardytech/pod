@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createApiKey, getApiKeys } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 export const dynamic = "force-dynamic";
 
 // GET /api/keys - List API keys

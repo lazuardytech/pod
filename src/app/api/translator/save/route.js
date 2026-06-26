@@ -2,8 +2,8 @@ import fs from "fs";
 import { NextResponse } from "next/server";
 import path from "node:path";
 
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 export async function POST(request) {
   try {
     const [body, _parseErr] = await parseJsonBody(request);

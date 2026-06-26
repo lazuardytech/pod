@@ -3,8 +3,8 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
-import { sanitizeError } from "@/lib/sanitizeError.js";
-import { parseJsonBody } from "@/lib/parseJsonBody.js";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
 

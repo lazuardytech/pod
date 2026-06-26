@@ -1,7 +1,7 @@
 import os from "node:os";
 import { cleanupProviderConnections, getSettings } from "@/lib/localDb";
 import { initRateLimit } from "@/lib/rateLimit";
-import { validateStartupSecrets } from "@/lib/security/runtimeSecrets.mjs";
+import { validateStartupSecrets } from "@/lib/security/runtimeSecrets.mts";
 import { error as logError, info as logInfo } from "@/sse/utils/logger.js";
 
 import { ensureCloudflared, isCloudflaredRunning } from "@/lib/tunnel/cloudflared";

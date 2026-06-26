@@ -8,7 +8,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { DATA_DIR, getDatabase } from "@/lib/sqlite/connection.js";
 import { migrateFromJson } from "@/lib/sqlite/migrate-from-json.js";
-import { sanitizeError } from "@/lib/sanitizeError.js";
+import { sanitizeError } from "@/lib/sanitizeError";
 
 const CONFIG_FILE = "db.json";
 const LOG_FILES = ["usage.json", "request-details.json"];
