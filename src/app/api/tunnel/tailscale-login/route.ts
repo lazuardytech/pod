@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateShortId, loadState } from "@/lib/tunnel/state.js";
+import { generateShortId, loadState } from "@/lib/tunnel/state";
 import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 
 import { sanitizeError } from "@/lib/sanitizeError";

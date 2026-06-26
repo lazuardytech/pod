@@ -1514,7 +1514,7 @@ export async function backfillCodexEmails(): Promise<void> {
   if (codexBackfillDone) return;
   codexBackfillDone = true;
   try {
-    const { getProviderConnections, updateProviderConnection } = await import("@/lib/localDb.js");
+    const { getProviderConnections, updateProviderConnection } = await import("@/lib/localDb");
     const connections = (await getProviderConnections()) as Array<{
       id: string;
       provider: string;

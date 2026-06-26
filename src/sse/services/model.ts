@@ -1,5 +1,5 @@
 import { getModelInfoCore, parseModel, resolveModelAliasFromMap } from "open-sse/services/model.js";
-import { getComboByName, getModelAliases, getProviderNodes } from "@/lib/localDb.js";
+import { getComboByName, getModelAliases, getProviderNodes } from "@/lib/localDb";
 export { parseModel };
 export type ModelInfo = { provider: string | null; model: string };
 export type ComboInfo = {

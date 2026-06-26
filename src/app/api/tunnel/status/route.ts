@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDownloadStatus } from "@/lib/tunnel/downloadState.js";
+import { getDownloadStatus } from "@/lib/tunnel/downloadState";
 import { getTailscaleStatus, getTunnelStatus } from "@/lib/tunnel/tunnelManager";
 
 import { sanitizeError } from "@/lib/sanitizeError";

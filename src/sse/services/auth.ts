@@ -16,7 +16,7 @@ import {
   isModelLockActive,
   MODEL_LOCK_COUNT_PREFIX,
 } from "open-sse/services/accountFallback.js";
-import { getProviderConnections, getSettings, updateProviderConnection, validateApiKey } from "@/lib/localDb.js";
+import { getProviderConnections, getSettings, updateProviderConnection, validateApiKey } from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { FREE_PROVIDERS, resolveProviderId } from "@/shared/constants/providers";
 import * as log from "../utils/logger";

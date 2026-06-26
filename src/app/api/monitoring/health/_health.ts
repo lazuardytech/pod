@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import os from "node:os";
-import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings } from "@/lib/localDb.js";
+import { getApiKeys, getCombos, getProviderConnections, getProviderNodes, getSettings } from "@/lib/localDb";
 import { getPromptCache } from "@/lib/cacheLayer";
 import { getMemoryStoreStats } from "@/lib/memory/store";
 import { getCacheStats, getInFlightStats } from "@/lib/semanticCache";
-import { DATA_DIR, SQLITE_FILE, getDatabase } from "@/lib/sqlite/connection.js";
+import { DATA_DIR, SQLITE_FILE, getDatabase } from "@/lib/sqlite/connection";
 import { getConnectionNameCacheStats, getPendingStats, getQueueDepths } from "@/lib/usageDb";
 import { getSyncStatus as getModelsDevSyncStatus } from "@/lib/modelsDevSync";
 import { getCloudSyncStatus } from "@/shared/services/cloudSyncScheduler";

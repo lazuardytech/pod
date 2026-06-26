@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock all external modules before imports
-vi.mock("@/lib/localDb.js", () => ({
+vi.mock("@/lib/localDb", () => ({
   getProviderConnections: vi.fn(() => Promise.resolve([])),
   getCombos: vi.fn(() => Promise.resolve([])),
   getApiKeys: vi.fn(() => Promise.resolve([])),
@@ -115,7 +115,7 @@ vi.mock("node:fs", () => ({
 
 import { buildHealthPayload } from "@/app/api/monitoring/health/_health.js";
 import { GET } from "@/app/api/monitoring/health/route.js";
-import { getSettings, validateApiKey } from "@/lib/localDb.js";
+import { getSettings, validateApiKey } from "@/lib/localDb";
 
 describe("buildHealthPayload", () => {
   it("returns all expected top-level keys", async () => {

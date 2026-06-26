@@ -16,7 +16,7 @@ import {
   TOKEN_EXPIRY_BUFFER_MS as BUFFER_MS,
 } from "open-sse/services/tokenRefresh.js";
 import { getProjectIdForConnection, invalidateProjectId, removeConnection } from "open-sse/services/projectId.js";
-import { updateProviderConnection } from "@/lib/localDb.js";
+import { updateProviderConnection } from "@/lib/localDb";
 import * as log from "../utils/logger";
 
 export const TOKEN_EXPIRY_BUFFER_MS: number = BUFFER_MS;

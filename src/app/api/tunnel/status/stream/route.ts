@@ -1,4 +1,4 @@
-import { getDownloadStatus } from "@/lib/tunnel/downloadState.js";
+import { getDownloadStatus } from "@/lib/tunnel/downloadState";
 import { getTailscaleStatus, getTunnelStatus } from "@/lib/tunnel/tunnelManager";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap";
 

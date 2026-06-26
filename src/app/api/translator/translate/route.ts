@@ -5,7 +5,7 @@ import { parseModel } from "open-sse/services/model.js";
 import { detectFormat, getTargetFormat } from "open-sse/services/provider.js";
 import { FORMATS } from "open-sse/translator/formats.js";
 import { translateRequest } from "open-sse/translator/index.js";
-import { getProviderConnections } from "@/lib/localDb.js";
+import { getProviderConnections } from "@/lib/localDb";
 
 import { sanitizeError } from "@/lib/sanitizeError";
 import { parseJsonBody } from "@/lib/parseJsonBody";

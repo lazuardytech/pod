@@ -29,8 +29,8 @@ export async function POST(request) {
   if (parseErr) return parseErr;
 
   const [{ generateShortId, loadState }, { installTailscale }] = await Promise.all([
-    import("@/lib/tunnel/state.js"),
-    import("@/lib/tunnel/tailscale.js"),
+    import("@/lib/tunnel/state"),
+    import("@/lib/tunnel/tailscale"),
   ]);
   const platform = os.platform();
   const isWindows = platform === "win32";
