@@ -1,5 +1,5 @@
 # RWX Run Configuration - Format & Lint Check
-# biome format + biome lint + eslint
+# biome format + biome lint + oxlint
 # Usage: rwx run .rwx/format.yml --wait
 
 on:
@@ -46,5 +46,5 @@ tasks:
     run: |
       echo "================================================"
       echo "  FORMAT + LINT CHECK COMPLETE"
-      echo "  biome format + biome lint + eslint: OK"
+      echo "  biome format + biome lint + oxlint: OK"
       echo "================================================"

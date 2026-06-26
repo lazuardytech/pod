@@ -56,8 +56,6 @@
     "@tailwindcss/postcss": "^4.3.0",
     "@vitest/coverage-v8": "^4.1.8",
     "better-sqlite3": "^12.10.0",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.9",
     "oxlint": "^1.71.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",

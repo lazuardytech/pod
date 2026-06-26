@@ -84,7 +84,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#0a0a0a" />
         {/* Material Symbols Outlined — not available via next/font, loaded via CDN */}
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        {/* oxlint-disable-next-line nextjs/no-page-custom-font */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"

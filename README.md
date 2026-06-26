@@ -160,7 +160,7 @@ Canonical built-in provider definitions live in `src/shared/constants/providers.
 bun install          # install dependencies
 bun run dev          # start dev server on :20128
 bun run build        # production build
-bun run check        # biome format + lint + eslint
+bun run check        # biome format + lint + oxlint
 bun run test:run     # run vitest
 ```
 

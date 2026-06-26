@@ -37,7 +37,7 @@ Always use `bun` — never `npm` or `pnpm`.
 ```bash
 bun run dev          # dev server
 bun run build        # production build
-bun run check        # biome format + biome lint + eslint (run before every push)
+bun run check        # biome format + biome lint + oxlint (run before every push)
 bun run test:run     # vitest (run before every push)
 ```
 
