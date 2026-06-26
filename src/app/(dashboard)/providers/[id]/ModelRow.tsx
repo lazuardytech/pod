@@ -14,6 +14,21 @@ export default function ModelRow({
   onTest,
   isTesting,
   onDisable,
+  onSetAlias,
+}: {
+  model: any;
+  fullModel?: any;
+  alias?: any;
+  copied?: any;
+  onCopy?: any;
+  testStatus?: any;
+  isCustom?: any;
+  isFree?: any;
+  onDeleteAlias?: any;
+  onTest?: any;
+  isTesting?: any;
+  onDisable?: any;
+  onSetAlias?: any;
 }) {
   const borderColor = isTesting
     ? "border-border"

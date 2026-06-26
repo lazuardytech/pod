@@ -246,7 +246,8 @@ export default function MemoryClient() {
     });
   };
 
-  const typeStats = memoryData.stats?.byType || {};
+  // todo(ts): byType payload is untyped; cast through any until the API has a shared shape
+  const typeStats: any = memoryData.stats?.byType || {};
   const currentCount = memoryData.data.length;
 
   return (

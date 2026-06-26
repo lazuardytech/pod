@@ -26,7 +26,7 @@ function SectionHeader({ icon, title }) {
 }
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
-function Section({ children, className }) {
+function Section({ children, className }: { children: any; className?: any }) {
   return <div className={cn("rounded-[6px] border border-charcoal-grey bg-graphite p-5", className)}>{children}</div>;
 }
 
@@ -63,7 +63,7 @@ function FieldLabel({ children }) {
 
 export default function ProfilePage() {
   const { theme, setTheme } = useTheme();
-  const [settings, setSettings] = useState({ fallbackStrategy: "fill-first" });
+  const [settings, setSettings] = useState<any>({ fallbackStrategy: "fill-first" });
   const [loading, setLoading] = useState(true);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [passStatus, setPassStatus] = useState({ type: "", message: "" });
@@ -145,11 +145,11 @@ export default function ProfilePage() {
       cacheKey: OFFLINE_LEGACY_INFO_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
       cacheTags: ["settings-migration"],
-      onCacheData: (data) => {
+      onCacheData: (data: any) => {
         if (!mounted) return;
         if (data && !data.error) setLegacyInfo(data);
       },
-      onFreshData: (data) => {
+      onFreshData: (data: any) => {
         if (!mounted) return;
         if (data && !data.error) setLegacyInfo(data);
       },

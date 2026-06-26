@@ -20,6 +20,23 @@ export function ModelRow({
   onDeleteAlias,
   onTest,
   isTesting,
+  alias,
+  onSetAlias,
+  onDisable,
+}: {
+  model: any;
+  fullModel?: any;
+  copied?: any;
+  onCopy?: any;
+  testStatus?: any;
+  isCustom?: any;
+  isFree?: any;
+  onDeleteAlias?: any;
+  onTest?: any;
+  isTesting?: any;
+  alias?: any;
+  onSetAlias?: any;
+  onDisable?: any;
 }) {
   const borderColor =
     testStatus === "ok" ? "border-green-500/40" : testStatus === "error" ? "border-red-500/40" : "border-border";
