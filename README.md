@@ -1,6 +1,6 @@
 # Pod
 
-> **Self-hosted AI gateway** — unify 50+ LLM providers behind a single OpenAI-compatible endpoint.
+> **Self-hosted AI gateway and proxy** — unify 50+ LLM providers behind a single OpenAI-compatible endpoint.
 
 v0.0.79 — active development on `canary`, stable releases on `main`.
 
@@ -47,6 +47,8 @@ docker run -d --name pod -p 20128:20128 -v pod-data:/app/data --env-file .env la
 ### Local Development
 
 Requires [bun](https://bun.sh) v1.3.14+.
+
+> Production deploy on Zeabur uses **port 20140** (overridden via `PORT` env). Local dev and Docker default to **port 20128**.
 
 ```bash
 bun install

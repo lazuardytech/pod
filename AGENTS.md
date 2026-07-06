@@ -52,6 +52,7 @@ Operational rules for AI agents working on the **Pod** project.
 8. Keep the outer crash guard in open-sse/utils/stream.js.
 9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
 10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
+11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
 
 ## Rate Limiting
 
