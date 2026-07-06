@@ -30,6 +30,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 1. sanitizeError(error) required in API catch blocks returning client-facing JSON.
 2. Use parseJsonBody(request) for mutation routes instead of raw request.json().
+   Note: parseJsonBody throws on empty bodies (e.g. POST with no body). Routes accepting optional/no body should read via request.text() + guard instead.
 3. Never return raw upstream error bodies to clients.
 4. /v1/models, /v1/models/{model}, and /v1beta/models must respect requireApiKey.
 5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
@@ -94,6 +95,22 @@ Operational rules for AI agents working on the **Pod** project.
 - In-project Freebuff service (id `service-6a1ee2be8197c9aa0ae2f263`) — docker-network alias `FREEBUFF_HOST`, not referenced in source.
 - `POD_HOST` (canary only) = prod service id; `POD_CANARY_HOST` (pod only) = canary service id. Used for canary <-> prod cross-calls.
 - `PORT=20140` in production overrides the Dockerfile default of 20128.
+
+## API Compatibility Policy
+
+1. OpenAI-compatible routes (`/v1/*`) must follow official OpenAI API behavior — check docs before changes.
+2. Anthropic-compatible routes (`/v1/messages`) must follow official Anthropic API behavior — check docs before changes.
+3. Error shapes, auth headers, streaming format, model IDs, and tool calling must match official spec.
+4. Any regression in compatibility is a release blocker — fix on canary before any merge to main.
+
+## Reference-Checking Workflow
+
+Before planning, fixing, or deploying:
+
+1. Check current internet references for the task.
+2. Read official OpenAI/Anthropic API docs when working on compatible routes.
+3. Read relevant Context7 MCP docs and best practices when changing code/config/deployment.
+4. Check Ponytail reference (github.com/DietrichGebert/ponytail) before spawning subagents.
 
 ## Verification Before Push
 
