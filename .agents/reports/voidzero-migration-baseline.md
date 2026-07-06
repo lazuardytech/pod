@@ -4,11 +4,11 @@
 
 ## Times
 
-| Command | Wall clock | User | System |
-|---------|-----------|------|--------|
-| `bun run check` | 2.68s | 4.58s | 0.91s |
-| `bun run test:run` | 15.76s | 10.06s | 1.77s |
-| `bun run build` | 18.35s | 42.59s | 6.68s |
+| Command            | Wall clock | User   | System |
+| ------------------ | ---------- | ------ | ------ |
+| `bun run check`    | 2.68s      | 4.58s  | 0.91s  |
+| `bun run test:run` | 15.76s     | 10.06s | 1.77s  |
+| `bun run build`    | 18.35s     | 42.59s | 6.68s  |
 
 ## Pre-Migration Tooling
 

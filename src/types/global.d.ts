@@ -63,4 +63,16 @@ declare global {
   function removeAllDNSEntriesSync(): void;
 }
 
+// Augment React HTML attributes for Next.js styled-jsx support
+// The `jsx` and `global` attributes on <style> are custom attributes used
+// by Next.js built-in styled-jsx for scoped CSS.
+import "react";
+
+declare module "react" {
+  interface StyleHTMLAttributes<T> {
+    jsx?: boolean;
+    global?: boolean;
+  }
+}
+
 export {};
