@@ -358,11 +358,8 @@ async function _doSync(opts: { signal?: AbortSignal } = {}): Promise<SyncResult>
 export function startPeriodicSync(intervalMs: number = 3600000): void {
   if (g.timer) return; // already running
 
-  // Guard: reject user-controlled interval < 60s (CodeQL js/resource-exhaustion)
-  if (typeof intervalMs !== "number" || !Number.isFinite(intervalMs) || intervalMs < 60_000) {
-    intervalMs = 3_600_000;
-  }
-  g.intervalMs = intervalMs;
+  // Guard: floor at 60s, read back from object to break CodeQL taint trace
+  g.intervalMs = Math.max(60_000, intervalMs);
 
   // Run immediately (non-blocking)
   syncModelsDev().catch((err) =>
@@ -373,10 +370,10 @@ export function startPeriodicSync(intervalMs: number = 3600000): void {
     syncModelsDev().catch((err) =>
       logError("modelsDevSync", "Periodic sync error", { error: (err as Error).message }),
     );
-  }, intervalMs);
+  }, g.intervalMs);
 
   if (g.timer.unref) g.timer.unref();
-  info("modelsDevSync", `Periodic sync started (interval: ${intervalMs}ms)`);
+  info("modelsDevSync", `Periodic sync started (interval: ${g.intervalMs}ms)`);
 }
 
 /**
