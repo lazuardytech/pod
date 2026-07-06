@@ -2071,8 +2071,9 @@ export async function resetPricing(
     if (model) {
       if (isUnsafeKey(model)) return d.data.pricing;
       if (Object.hasOwn(d.data.pricing, provider)) {
-        delete d.data.pricing[provider][model];
-        if (Object.keys(d.data.pricing[provider]).length === 0) {
+        const pricingEntry = d.data.pricing[provider]!;
+        delete pricingEntry[model];
+        if (Object.keys(pricingEntry).length === 0) {
           delete d.data.pricing[provider];
         }
       }

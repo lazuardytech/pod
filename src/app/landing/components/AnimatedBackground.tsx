@@ -30,6 +30,7 @@ export default function AnimatedBackground() {
       </div>
 
       {/* CSS Animations */}
+      {/* @ts-ignore — jsx and global are Next.js styled-jsx custom attributes */}
       <style jsx global>{`
         @keyframes blob {
           0%,
