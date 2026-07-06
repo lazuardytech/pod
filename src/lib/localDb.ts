@@ -2063,7 +2063,7 @@ export async function resetPricing(
     const d = await getCloudDb();
     if (!d.data.pricing) d.data.pricing = {};
     if (model) {
-      if (d.data.pricing[provider]) {
+      if (Object.hasOwn(d.data.pricing, provider)) {
         delete d.data.pricing[provider][model];
         if (Object.keys(d.data.pricing[provider]).length === 0) {
           delete d.data.pricing[provider];
