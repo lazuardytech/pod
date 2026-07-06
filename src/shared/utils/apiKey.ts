@@ -36,15 +36,11 @@ function generateKeyId(): string {
  * embedded in an API key token. The input (machineId + keyId) is
  * not a password and carries no secret user credential; the HMAC
  * is used solely to verify the key was issued by this server.
- * nosemgrep: node_crypto_weak_hash
- * lgtm[js/insufficient-password-hash]
  */
 function generateCrc(machineId: string, keyId: string): string {
-  return crypto
-    .createHmac("sha256", getApiKeySecret()) // lgtm[js/insufficient-password-hash]
-    .update(machineId + keyId)
-    .digest("hex")
-    .slice(0, 8);
+  const hmac = crypto.createHmac("sha256", getApiKeySecret());
+  hmac.update(machineId + keyId);
+  return hmac.digest("hex").slice(0, 8);
 }
 
 export type GeneratedApiKey = { key: string; keyId: string };

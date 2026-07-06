@@ -38,9 +38,11 @@ export async function GET(request: any) {
     return NextResponse.json({ error: fetchUrlError(urlCheck) }, { status: 400 });
   }
 
+  // Use the validated URL object so CodeQL can trace the SSRF guard
+  const validatedUrl = urlCheck.url.href;
+
   try {
-    // url is validated by validateFetchUrl above. lgtm[js/request-forgery]
-    const res = await fetch(url); // lgtm[js/request-forgery]
+    const res = await fetch(validatedUrl);
     if (!res.ok) {
       return NextResponse.json({ data: [] });
     }

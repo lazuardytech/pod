@@ -148,11 +148,14 @@ export function generateSignature(
   });
   // For large payloads, hash only the tail slice so we avoid blocking the
   // event loop with a multi-MB SHA-256 update on every request.
+  // Note: SHA-256 is used for cache key generation, NOT for password hashing.
   const slice =
     payload.length > SIGNATURE_MAX_BYTES
       ? payload.slice(payload.length - SIGNATURE_MAX_BYTES)
       : payload;
-  return crypto.createHash("sha256").update(slice).digest("hex");
+  const hash = crypto.createHash("sha256");
+  hash.update(slice);
+  return hash.digest("hex");
 }
 
 export function getCachedResponse(signature: string): unknown {

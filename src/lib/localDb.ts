@@ -2059,10 +2059,17 @@ export async function resetPricing(
   provider: string,
   model?: string,
 ): Promise<Record<string, Record<string, unknown>>> {
+  // Guard against prototype pollution — provider and model come from URL params
+  const isUnsafeKey = (k: string) => k === "__proto__" || k === "constructor" || k === "prototype";
+  if (isUnsafeKey(provider)) {
+    return await getPricing();
+  }
+
   if (isCloud) {
     const d = await getCloudDb();
     if (!d.data.pricing) d.data.pricing = {};
     if (model) {
+      if (isUnsafeKey(model)) return d.data.pricing;
       if (Object.hasOwn(d.data.pricing, provider)) {
         delete d.data.pricing[provider][model];
         if (Object.keys(d.data.pricing[provider]).length === 0) {

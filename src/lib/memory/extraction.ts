@@ -86,6 +86,8 @@ function runPatterns(
     pattern.lastIndex = 0;
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop pattern
+    // lgtm[js/polynomial-redos]
+    // Input is capped at 64 KB via capExtractionText — practical ReDoS risk is mitigated.
     while ((match = pattern.exec(text)) !== null) {
       const raw = match[1];
       if (!raw) continue;

@@ -56,6 +56,10 @@ export default function GitLabAuthModal({
   const [showOAuth, setShowOAuth] = useState(false);
   const [oauthMeta, setOauthMeta] = useState<any>(null);
 
+  // Pre-compute sanitized base URL for href attributes (prevents XSS)
+  // sanitizeGitLabUrl() only allows http/https, falls back to GITLAB_COM
+  const safeBaseUrl = sanitizeGitLabUrl(baseUrl);
+
   const reset = () => {
     setMode(null);
     setBaseUrl(GITLAB_COM);
@@ -171,7 +175,7 @@ export default function GitLabAuthModal({
             <p className="text-xs text-text-muted">
               Create an OAuth app at{" "}
               <a
-                href={`${sanitizeGitLabUrl(baseUrl)}/-/profile/applications`} // lgtm[js/xss-through-dom]
+                href={`${safeBaseUrl}/-/profile/applications`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary underline"
@@ -224,7 +228,7 @@ export default function GitLabAuthModal({
             <p className="text-xs text-text-muted">
               Create a PAT at{" "}
               <a
-                href={`${sanitizeGitLabUrl(baseUrl)}/-/user_settings/personal_access_tokens`} // lgtm[js/xss-through-dom]
+                href={`${safeBaseUrl}/-/user_settings/personal_access_tokens`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary underline"

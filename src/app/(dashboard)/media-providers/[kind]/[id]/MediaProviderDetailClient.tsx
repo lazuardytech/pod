@@ -1515,7 +1515,8 @@ function GenericExampleCard({ providerId, kind }: any): any {
               </div>
               {refImagePreviewSrc && (
                 <img
-                  src={refImagePreviewSrc} // lgtm[js/xss-through-dom]
+                  // Only https:// or data:image/ allowed by toImagePreviewSrc()
+                  src={refImagePreviewSrc}
                   alt="Reference"
                   className="max-h-40 rounded-lg border border-border object-contain bg-sidebar"
                   onError={(e: any): any => {
@@ -1554,7 +1555,8 @@ function GenericExampleCard({ providerId, kind }: any): any {
               </div>
               {maskImagePreviewSrc && (
                 <img
-                  src={maskImagePreviewSrc} // lgtm[js/xss-through-dom]
+                  // Only https:// or data:image/ allowed by toImagePreviewSrc()
+                  src={maskImagePreviewSrc}
                   alt="Mask"
                   className="max-h-40 rounded-lg border border-border object-contain bg-sidebar"
                   onError={(e: any): any => {

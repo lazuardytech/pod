@@ -20,7 +20,13 @@ if (!isCloud && fs?.existsSync && !fs.existsSync(DATA_DIR)) {
 
 // ===== Global in-memory state (unchanged semantics) ======================
 
-if (!global._pendingRequests) global._pendingRequests = { byModel: Object.create(null), byAccount: Object.create(null) };
+if (!global._pendingRequests) {
+  global._pendingRequests = {
+    // Use null-prototype objects to prevent prototype pollution via bracket assignment
+    byModel: Object.create(null) as Record<string, number>,
+    byAccount: Object.create(null) as Record<string, Record<string, number>>,
+  };
+}
 const pendingRequests = global._pendingRequests as {
   byModel: Record<string, number>;
   byAccount: Record<string, Record<string, number>>;
