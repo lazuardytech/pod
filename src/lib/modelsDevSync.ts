@@ -358,8 +358,10 @@ async function _doSync(opts: { signal?: AbortSignal } = {}): Promise<SyncResult>
 export function startPeriodicSync(intervalMs: number = 3600000): void {
   if (g.timer) return; // already running
 
-  // ponytail: minimum 60s to prevent resource exhaustion from user-controlled timer
-  intervalMs = Math.max(60000, intervalMs);
+  // Guard: reject user-controlled interval < 60s (CodeQL js/resource-exhaustion)
+  if (typeof intervalMs !== "number" || !Number.isFinite(intervalMs) || intervalMs < 60_000) {
+    intervalMs = 3_600_000;
+  }
   g.intervalMs = intervalMs;
 
   // Run immediately (non-blocking)
