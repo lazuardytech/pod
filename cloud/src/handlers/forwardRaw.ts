@@ -35,7 +35,11 @@ function isUrlAllowed(targetUrl: string): boolean {
     for (const pattern of BLOCKED_HOST_PATTERNS) {
       if (pattern.test(hostname)) return false;
     }
-    if (BLOCKED_HOST_SUFFIXES.some((suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix))) {
+    if (
+      BLOCKED_HOST_SUFFIXES.some(
+        (suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix),
+      )
+    ) {
       return false;
     }
     if (url.username || url.password) return false;
@@ -57,23 +61,31 @@ export async function handleForwardRaw(request: Request): Promise<Response> {
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 401,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
     const parsed = await parseApiKey(apiKey);
     if (!parsed || !parsed.machineId) {
       return new Response(JSON.stringify({ error: "Invalid API key" }), {
         status: 401,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
 
-    const { targetUrl, headers = {}, body } = await request.json() as { targetUrl: string; headers: Record<string, string>; body: unknown };
+    const {
+      targetUrl,
+      headers = {},
+      body,
+    } = (await request.json()) as {
+      targetUrl: string;
+      headers: Record<string, string>;
+      body: unknown;
+    };
 
     if (!targetUrl) {
       return new Response(JSON.stringify({ error: "targetUrl is required" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -81,29 +93,29 @@ export async function handleForwardRaw(request: Request): Promise<Response> {
     if (!isUrlAllowed(targetUrl)) {
       return new Response(JSON.stringify({ error: "targetUrl is not allowed" }), {
         status: 403,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
 
     const url = new URL(targetUrl);
-  const host = url.hostname;
-  const portStr = url.port || (url.protocol === "https:" ? "443" : "80");
-  const port = Number.parseInt(portStr, 10);
-  const path = url.pathname + url.search;
-  const isHttps = url.protocol === "https:";
+    const host = url.hostname;
+    const portStr = url.port || (url.protocol === "https:" ? "443" : "80");
+    const port = Number.parseInt(portStr, 10);
+    const path = url.pathname + url.search;
+    const isHttps = url.protocol === "https:";
 
-  console.log("[FORWARD_RAW] Opening outbound connection");
+    console.log("[FORWARD_RAW] Opening outbound connection");
 
-  // Connect to target server
-  let secureSocket: Socket;
-  if (isHttps) {
-    secureSocket = connect(
-      { hostname: host, port },
-      { secureTransport: "starttls", allowHalfOpen: false }
-    );
-  } else {
-    secureSocket = connect({ hostname: host, port });
-  }
+    // Connect to target server
+    let secureSocket: Socket;
+    if (isHttps) {
+      secureSocket = connect(
+        { hostname: host, port },
+        { secureTransport: "starttls", allowHalfOpen: false },
+      );
+    } else {
+      secureSocket = connect({ hostname: host, port });
+    }
 
     try {
       await secureSocket.opened;
@@ -118,11 +130,11 @@ export async function handleForwardRaw(request: Request): Promise<Response> {
     // Build raw HTTP request
     const bodyStr = JSON.stringify(body);
     const requestHeaders: Record<string, string> = {
-      "Host": host,
+      Host: host,
       "Content-Type": "application/json",
       "Content-Length": new TextEncoder().encode(bodyStr).length.toString(),
-      "Connection": "close",
-      ...headers
+      Connection: "close",
+      ...headers,
     };
 
     let httpRequest = `POST ${path} HTTP/1.1\r\n`;
@@ -211,15 +223,14 @@ export async function handleForwardRaw(request: Request): Promise<Response> {
       status,
       headers: {
         "Content-Type": responseHeaders["content-type"] || "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
+        "Access-Control-Allow-Origin": "*",
+      },
     });
-
   } catch (error) {
     console.error("[FORWARD_RAW] Error occurred");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 }

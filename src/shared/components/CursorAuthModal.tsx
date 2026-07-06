@@ -136,8 +136,8 @@ export default function CursorAuthModal({
                   </p>
                 </div>
                 <p className="text-xs text-amber-700 dark:text-amber-300">
-                  Make sure Cursor IDE has been opened at least once, then click <strong>Retry</strong>. If the problem
-                  persists, paste your tokens manually below.
+                  Make sure Cursor IDE has been opened at least once, then click{" "}
+                  <strong>Retry</strong>. If the problem persists, paste your tokens manually below.
                 </p>
                 <Button onClick={runAutoDetect} variant="outline" fullWidth>
                   Retry

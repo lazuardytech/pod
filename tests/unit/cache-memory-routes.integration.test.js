@@ -40,7 +40,9 @@ describe("cache/memory routes integration", () => {
     const putJson = await putRes.json();
     expect(putJson.ok).toBe(true);
 
-    const getRes = await cacheConfigRoute.GET(new Request("http://localhost/api/settings/cache-config"));
+    const getRes = await cacheConfigRoute.GET(
+      new Request("http://localhost/api/settings/cache-config"),
+    );
     expect(getRes.status).toBe(200);
     const config = await getRes.json();
     expect(config.semanticCacheEnabled).toBe(true);
@@ -69,7 +71,9 @@ describe("cache/memory routes integration", () => {
     expect(putJson.retentionDays).toBe(20);
     expect(putJson.strategy).toBe("hybrid");
 
-    const getRes = await memorySettingsRoute.GET(new Request("http://localhost/api/settings/memory"));
+    const getRes = await memorySettingsRoute.GET(
+      new Request("http://localhost/api/settings/memory"),
+    );
     expect(getRes.status).toBe(200);
     const settings = await getRes.json();
     expect(settings.enabled).toBe(true);
@@ -97,14 +101,19 @@ describe("cache/memory routes integration", () => {
     expect(postJson.success).toBe(true);
     const memoryId = postJson.data.id;
 
-    const listRes = await memoryRoute.GET(new Request("http://localhost/api/memory?apiKeyId=route-key-1"));
+    const listRes = await memoryRoute.GET(
+      new Request("http://localhost/api/memory?apiKeyId=route-key-1"),
+    );
     expect(listRes.status).toBe(200);
     const listJson = await listRes.json();
     expect(listJson.total).toBeGreaterThanOrEqual(1);
 
-    const getByIdRes = await memoryByIdRoute.GET(new Request(`http://localhost/api/memory/${memoryId}`), {
-      params: { id: memoryId },
-    });
+    const getByIdRes = await memoryByIdRoute.GET(
+      new Request(`http://localhost/api/memory/${memoryId}`),
+      {
+        params: { id: memoryId },
+      },
+    );
     expect(getByIdRes.status).toBe(200);
     const fetched = await getByIdRes.json();
     expect(fetched.id).toBe(memoryId);
@@ -130,11 +139,22 @@ describe("cache/memory routes integration", () => {
     const cacheRoute = await import("@/app/api/cache/route.js");
     const { generateSignature, setCachedResponse } = await import("@/lib/semanticCache.js");
 
-    const signature = generateSignature("test/model", [{ role: "user", content: "hello cache" }], 0, 1);
+    const signature = generateSignature(
+      "test/model",
+      [{ role: "user", content: "hello cache" }],
+      0,
+      1,
+    );
     setCachedResponse(signature, "test/model", {
       id: "cmpl-cache",
       object: "chat.completion",
-      choices: [{ index: 0, message: { role: "assistant", content: "cached response" }, finish_reason: "stop" }],
+      choices: [
+        {
+          index: 0,
+          message: { role: "assistant", content: "cached response" },
+          finish_reason: "stop",
+        },
+      ],
       usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 },
     });
 

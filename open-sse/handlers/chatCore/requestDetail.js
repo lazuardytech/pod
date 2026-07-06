@@ -98,7 +98,15 @@ export function buildRequestDetail(base, overrides = {}) {
   };
 }
 
-export function saveUsageStats({ provider, model, tokens, connectionId, apiKey, endpoint, label = "USAGE" }) {
+export function saveUsageStats({
+  provider,
+  model,
+  tokens,
+  connectionId,
+  apiKey,
+  endpoint,
+  label = "USAGE",
+}) {
   if (!tokens || typeof tokens !== "object") return;
 
   const inTokens = tokens.input_tokens ?? tokens.prompt_tokens ?? 0;

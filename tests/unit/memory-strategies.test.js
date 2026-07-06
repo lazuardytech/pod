@@ -55,28 +55,53 @@ describe("normalizeMemorySettings", () => {
 
 describe("toMemoryRetrievalConfig", () => {
   it("maps 'recent' strategy → 'exact'", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 2000, strategy: "recent", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 2000,
+      strategy: "recent",
+      retentionDays: 30,
+    });
     expect(cfg.retrievalStrategy).toBe("exact");
   });
 
   it("maps 'semantic' strategy → 'semantic'", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 2000, strategy: "semantic", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 2000,
+      strategy: "semantic",
+      retentionDays: 30,
+    });
     expect(cfg.retrievalStrategy).toBe("semantic");
   });
 
   it("maps 'hybrid' strategy → 'hybrid'", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 2000, strategy: "hybrid", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 2000,
+      strategy: "hybrid",
+      retentionDays: 30,
+    });
     expect(cfg.retrievalStrategy).toBe("hybrid");
   });
 
   it("disabled when maxTokens=0", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 0, strategy: "hybrid", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 0,
+      strategy: "hybrid",
+      retentionDays: 30,
+    });
     expect(cfg.enabled).toBe(false);
     expect(cfg.maxTokens).toBe(0);
   });
 
   it("disabled when enabled=false", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: false, maxTokens: 2000, strategy: "hybrid", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: false,
+      maxTokens: 2000,
+      strategy: "hybrid",
+      retentionDays: 30,
+    });
     expect(cfg.enabled).toBe(false);
   });
 });
@@ -278,7 +303,8 @@ describe("shouldInjectMemory", () => {
 
 describe("providerSupportsSystemMessage", () => {
   it("returns true for openai", () => expect(providerSupportsSystemMessage("openai")).toBe(true));
-  it("returns true for anthropic", () => expect(providerSupportsSystemMessage("anthropic")).toBe(true));
+  it("returns true for anthropic", () =>
+    expect(providerSupportsSystemMessage("anthropic")).toBe(true));
   it("returns false for o1", () => expect(providerSupportsSystemMessage("o1")).toBe(false));
   it("returns false for glm", () => expect(providerSupportsSystemMessage("glm")).toBe(false));
   it("returns false for zai", () => expect(providerSupportsSystemMessage("zai")).toBe(false));
@@ -312,9 +338,10 @@ describe("retrieveMemories — strategy behavior", () => {
   it("returns [] when maxTokens=0 (effectively disabled)", async () => {
     const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const mockDb = {
-      prepare: vi
-        .fn()
-        .mockReturnValue({ all: vi.fn().mockReturnValue([]), get: vi.fn().mockReturnValue({ name: null }) }),
+      prepare: vi.fn().mockReturnValue({
+        all: vi.fn().mockReturnValue([]),
+        get: vi.fn().mockReturnValue({ name: null }),
+      }),
     };
     getDatabase.mockReturnValue(mockDb);
     const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");

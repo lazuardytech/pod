@@ -106,7 +106,11 @@ describe("Kiro OAuth Token Refresh", () => {
     it("returns null on network error for AWS OIDC path", async () => {
       fetchMock.mockRejectedValue(new Error("AWS OIDC timeout"));
 
-      const result = await refreshKiroToken("some-token", { clientId: "cid", clientSecret: "csecret" }, null);
+      const result = await refreshKiroToken(
+        "some-token",
+        { clientId: "cid", clientSecret: "csecret" },
+        null,
+      );
 
       expect(result).toBeNull();
     });
@@ -144,7 +148,11 @@ describe("Kiro OAuth Token Refresh", () => {
           }),
       });
 
-      await refreshKiroToken("rt-idc", { clientId: "cid", clientSecret: "csecret", authMethod: "idc" }, null);
+      await refreshKiroToken(
+        "rt-idc",
+        { clientId: "cid", clientSecret: "csecret", authMethod: "idc" },
+        null,
+      );
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const [url] = fetchMock.mock.calls[0];
@@ -185,7 +193,8 @@ describe("Kiro OAuth Token Refresh", () => {
 
   describe("getRefreshLeadMs", () => {
     it("returns default buffer for kiro (no custom lead)", async () => {
-      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
+        await import("../../open-sse/services/tokenRefresh.js");
 
       expect(getRefreshLeadMs("kiro")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });

@@ -1,7 +1,12 @@
 import crypto from "node:crypto";
 import { machineIdSync } from "node-machine-id";
 import { getSettings, updateSettings } from "@/lib/localDb";
-import { isCloudflaredRunning, killCloudflared, setUnexpectedExitHandler, spawnQuickTunnel } from "./cloudflared.ts";
+import {
+  isCloudflaredRunning,
+  killCloudflared,
+  setUnexpectedExitHandler,
+  spawnQuickTunnel,
+} from "./cloudflared.ts";
 import { probeUrlAlive } from "./networkProbe.ts";
 import { generateShortId, loadState, saveState } from "./state.ts";
 
@@ -138,7 +143,10 @@ export async function disableTunnel(): Promise<{ success: boolean }> {
 
   const state = loadState() as Record<string, unknown> | null;
   if (state)
-    saveState({ shortId: state.shortId, machineId: state.machineId, tunnelUrl: null } as Record<string, unknown>);
+    saveState({ shortId: state.shortId, machineId: state.machineId, tunnelUrl: null } as Record<
+      string,
+      unknown
+    >);
 
   await updateSettings({ tunnelEnabled: false, tunnelUrl: "" });
   return { success: true };
@@ -186,8 +194,14 @@ export async function enableTailscale(localPort: number = 20128): Promise<Tailsc
   const token = tailscaleSvc.cancelToken;
 
   try {
-    const { isTailscaleLoggedIn, isTailscaleRunning, startDaemonWithPassword, startFunnel, startLogin, stopFunnel } =
-      await getTailscaleModule();
+    const {
+      isTailscaleLoggedIn,
+      isTailscaleRunning,
+      startDaemonWithPassword,
+      startFunnel,
+      startLogin,
+      stopFunnel,
+    } = await getTailscaleModule();
     const sudoPass = "";
     await startDaemonWithPassword(sudoPass);
     throwIfCancelled(token, "tailscale");
@@ -198,7 +212,8 @@ export async function enableTailscale(localPort: number = 20128): Promise<Tailsc
 
     if (!isTailscaleLoggedIn()) {
       const loginResult = await startLogin(tsHostname);
-      if (loginResult.authUrl) return { success: false, needsLogin: true, authUrl: loginResult.authUrl };
+      if (loginResult.authUrl)
+        return { success: false, needsLogin: true, authUrl: loginResult.authUrl };
     }
     throwIfCancelled(token, "tailscale");
 
@@ -212,7 +227,10 @@ export async function enableTailscale(localPort: number = 20128): Promise<Tailsc
 
     if (!isTailscaleLoggedIn() || !isTailscaleRunning()) {
       stopFunnel();
-      return { success: false, error: "Tailscale not connected. Device may have been removed. Please re-login." };
+      return {
+        success: false,
+        error: "Tailscale not connected. Device may have been removed. Please re-login.",
+      };
     }
 
     await updateSettings({ tailscaleEnabled: true, tailscaleUrl: result.tunnelUrl });

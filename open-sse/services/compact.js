@@ -43,7 +43,10 @@ export async function handleComboChat({ body, models, handleSingleModel, log }) 
       result = await handleSingleModel(body, modelStr);
     } catch (e) {
       lastError = `${modelStr}: ${e.message}`;
-      log.warn("COMBO", `Model threw exception, trying next`, { model: modelStr, error: e.message });
+      log.warn("COMBO", `Model threw exception, trying next`, {
+        model: modelStr,
+        error: e.message,
+      });
       continue;
     }
 

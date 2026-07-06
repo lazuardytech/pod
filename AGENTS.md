@@ -6,7 +6,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 - Project name: pod, v0.0.79
 - Runtime: Bun + Next.js 16 (TS, strict mode)
-- Engine: open-sse/ (local fork, not npm, frozen as JS — see Phase 9 below)
+- Engine: open-sse/ (local fork, not npm, frozen as JS)
 - Data: SQLite at ~/.pod/pod.sqlite
 - Port: 20128
 - Health: GET /api/health (public)
@@ -29,10 +29,10 @@ Operational rules for AI agents working on the **Pod** project.
 1. sanitizeError(error) required in API catch blocks returning client-facing JSON.
 2. Use parseJsonBody(request) for mutation routes instead of raw request.json().
 3. Never return raw upstream error bodies to clients.
-4. /v1/models, /v1/models/[kind], and /v1beta/models must respect requireApiKey.
+4. /v1/models, /v1/models/{model}, and /v1beta/models must respect requireApiKey.
 5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
 6. /api/restart and /api/shutdown require SHUTDOWN_SECRET.
-7. Stateful internal APIs must stay covered by dashboardGuard.ts and src/proxy.ts.
+7. Stateful internal APIs must stay covered by dashboardGuard.ts and src/proxy.ts -- keep matchers in sync.
 8. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
 9. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
 10. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
@@ -44,11 +44,11 @@ Operational rules for AI agents working on the **Pod** project.
 3. Semantic cache signatures must include memoryOwnerId.
 4. SQLite cache TTL comparisons must use strftime('%Y-%m-%dT%H:%M:%SZ', 'now').
 5. Connection locking must stay transactional.
-6. Preserve modelLockCount_${model} semantics.
+6. Preserve modelLockCount\_${model} semantics.
 7. Keep the guarded fallback loop in src/sse/handlers/chat.ts.
 8. Keep the outer crash guard in open-sse/utils/stream.js.
 9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
-10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
+10. open-sse/ is frozen as JS -- do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
 
 ## Rate Limiting
 
@@ -105,10 +105,10 @@ bun run build
 
 - .agents/INDEX.md -- project index
 - .agents/PRD.md -- product requirements
-- .agents/architecture/* -- system design
-- .agents/knowledge/* -- working knowledge
-- .agents/issues/* -- historical audits
-- .agents/reports/* -- release & verification reports
+- .agents/architecture/\* -- system design
+- .agents/knowledge/\* -- working knowledge
+- .agents/issues/\* -- historical audits
+- .agents/reports/\* -- release & verification reports
 - DESIGN.md -- UI system reference
 - CHANGELOG.md -- release history
 - docs/API_INTERNAL.md -- internal API reference

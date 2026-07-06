@@ -1,7 +1,11 @@
 import "open-sse/index.js";
 import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import { handleChatCore } from "open-sse/handlers/chatCore.js";
-import { handleComboChat, injectComboSystemPrompt, overrideResponseModelId } from "open-sse/services/combo.js";
+import {
+  handleComboChat,
+  injectComboSystemPrompt,
+  overrideResponseModelId,
+} from "open-sse/services/combo.js";
 import { getProjectIdForConnection } from "open-sse/services/projectId.js";
 import { detectFormatByEndpoint } from "open-sse/translator/formats.js";
 import { handleBypassRequest } from "open-sse/utils/bypassHandler.js";
@@ -19,7 +23,14 @@ import { getComboInfo, getModelInfo } from "../services/model";
 import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh";
 import * as log from "../utils/logger";
 
-export async function handleChat(request: Request, clientRawRequest: unknown = null): Promise<Response> {
+// ponytail: module-level SSE connection cap, global counter; per-route counters if multi-instance matters
+let activeSseConnections = 0;
+const MAX_SSE_CONNECTIONS = 100;
+
+export async function handleChat(
+  request: Request,
+  clientRawRequest: unknown = null,
+): Promise<Response> {
   const text = await request.text();
   if (text.length > 10 * 1024 * 1024) {
     log.warn("CHAT", "Request body too large");
@@ -32,9 +43,19 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
     log.warn("CHAT", "Invalid JSON body");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
   }
+
+  // Check SSE connection cap before processing
+  if (body.stream && activeSseConnections >= MAX_SSE_CONNECTIONS) {
+    log.warn("CHAT", `SSE connection cap reached (${activeSseConnections}/${MAX_SSE_CONNECTIONS})`);
+    return errorResponse(429, "Too many streaming connections. Please retry later.");
+  }
   if (!clientRawRequest) {
     const url = new URL(request.url);
-    clientRawRequest = { endpoint: url.pathname, body, headers: Object.fromEntries(request.headers.entries()) };
+    clientRawRequest = {
+      endpoint: url.pathname,
+      body,
+      headers: Object.fromEntries(request.headers.entries()),
+    };
   }
   cacheClaudeHeaders((clientRawRequest as { headers: Record<string, string> }).headers);
   const url = new URL(request.url);
@@ -78,9 +99,15 @@ export async function handleChat(request: Request, clientRawRequest: unknown = n
   if (comboInfo) {
     if (comboInfo.systemPrompt) {
       injectComboSystemPrompt(body, comboInfo.systemPrompt);
-      log.info("CHAT", `Combo "${modelStr}" injecting system prompt (${comboInfo.systemPrompt.length} chars)`);
+      log.info(
+        "CHAT",
+        `Combo "${modelStr}" injecting system prompt (${comboInfo.systemPrompt.length} chars)`,
+      );
     }
-    const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+    const comboStrategies = (settings.comboStrategies || {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
     const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy as string | undefined;
     const comboStrategy = comboSpecificStrategy || (settings.comboStrategy as string) || "fallback";
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
@@ -130,11 +157,20 @@ async function handleSingleModelChat(
       const chatSettings = await getSettings();
       if (comboInfo.systemPrompt) {
         injectComboSystemPrompt(body, comboInfo.systemPrompt);
-        log.info("CHAT", `Combo "${modelStr}" injecting system prompt (${comboInfo.systemPrompt.length} chars)`);
+        log.info(
+          "CHAT",
+          `Combo "${modelStr}" injecting system prompt (${comboInfo.systemPrompt.length} chars)`,
+        );
       }
-      const comboStrategies = (chatSettings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
-      const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy as string | undefined;
-      const comboStrategy = comboSpecificStrategy || (chatSettings.comboStrategy as string) || "fallback";
+      const comboStrategies = (chatSettings.comboStrategies || {}) as Record<
+        string,
+        Record<string, unknown>
+      >;
+      const comboSpecificStrategy = comboStrategies[modelStr]?.fallbackStrategy as
+        | string
+        | undefined;
+      const comboStrategy =
+        comboSpecificStrategy || (chatSettings.comboStrategy as string) || "fallback";
       const comboStickyLimit = chatSettings.comboStickyRoundRobinLimit as number | undefined;
       log.info(
         "CHAT",
@@ -159,7 +195,8 @@ async function handleSingleModelChat(
         comboStrategy,
         comboStickyLimit,
       });
-      if (comboInfo.modelId) return await overrideResponseModelId(innerComboResponse, comboInfo.modelId);
+      if (comboInfo.modelId)
+        return await overrideResponseModelId(innerComboResponse, comboInfo.modelId);
       return innerComboResponse;
     }
     log.warn("CHAT", "Invalid model format", { model: modelStr });
@@ -167,7 +204,8 @@ async function handleSingleModelChat(
   }
   const provider = modelInfo.provider!;
   const model = modelInfo.model;
-  if (modelStr !== `${provider}/${model}`) log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
+  if (modelStr !== `${provider}/${model}`)
+    log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
   else log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
   const userAgent = request?.headers?.get("user-agent") || "";
   const excludeConnectionIds = new Set<string>();
@@ -176,7 +214,10 @@ async function handleSingleModelChat(
   const MAX_FALLBACK_ITERATIONS = 50;
   while (true) {
     if (excludeConnectionIds.size >= MAX_FALLBACK_ITERATIONS) {
-      log.error("CHAT", `Exceeded max fallback iterations (${MAX_FALLBACK_ITERATIONS}) for ${provider}/${model}`);
+      log.error(
+        "CHAT",
+        `Exceeded max fallback iterations (${MAX_FALLBACK_ITERATIONS}) for ${provider}/${model}`,
+      );
       return errorResponse(
         HTTP_STATUS.SERVICE_UNAVAILABLE,
         `All accounts exhausted after ${MAX_FALLBACK_ITERATIONS} attempts`,
@@ -188,7 +229,8 @@ async function handleSingleModelChat(
       if (!credentials || credentials.allRateLimited) {
         if (credentials?.allRateLimited) {
           const errorMsg = lastError || credentials.lastError || "Unavailable";
-          const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+          const status =
+            lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
           log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
           return unavailableResponse(
             status,
@@ -199,24 +241,37 @@ async function handleSingleModelChat(
         }
         if (excludeConnectionIds.size === 0) {
           log.warn("AUTH", `No active credentials for provider: ${provider}`);
-          return errorResponse(HTTP_STATUS.NOT_FOUND, `No active credentials for provider: ${provider}`);
+          return errorResponse(
+            HTTP_STATUS.NOT_FOUND,
+            `No active credentials for provider: ${provider}`,
+          );
         }
         log.warn("CHAT", "No more accounts available", { provider });
-        return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+        return errorResponse(
+          lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+          lastError || "All accounts unavailable",
+        );
       }
       const connectionId = credentials.connectionId!;
       const connName = credentials.connectionName;
       log.info("AUTH", `\x1b[32mUsing ${provider} account: ${connName}\x1b[0m`);
       const refreshedCredentials = await checkAndRefreshToken(provider, credentials);
-      if ((provider === "antigravity" || provider === "gemini-cli") && !refreshedCredentials.projectId) {
-        const pid = await getProjectIdForConnection(connectionId, refreshedCredentials.accessToken ?? "");
+      if (
+        (provider === "antigravity" || provider === "gemini-cli") &&
+        !refreshedCredentials.projectId
+      ) {
+        const pid = await getProjectIdForConnection(
+          connectionId,
+          refreshedCredentials.accessToken ?? "",
+        );
         if (pid) {
           refreshedCredentials.projectId = pid;
           updateProviderCredentials(connectionId, { projectId: pid }).catch((): any => {});
         }
       }
       const chatSettings = await getSettings();
-      const providerThinking = ((chatSettings.providerThinking || {}) as Record<string, any>)[provider] || null;
+      const providerThinking =
+        ((chatSettings.providerThinking || {}) as Record<string, any>)[provider] || null;
       const result = await handleChatCore({
         body: { ...body, model: `${provider}/${model}` },
         modelInfo: { provider, model },
@@ -235,12 +290,16 @@ async function handleSingleModelChat(
         chatSettings,
         memoryOwnerId: apiKeyId,
         comboName,
-        sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
+        sourceFormatOverride: request?.url
+          ? detectFormatByEndpoint(new URL(request.url).pathname, body)
+          : null,
         onCredentialsRefreshed: async (newCreds): Promise<any> => {
           await updateProviderCredentials(connectionId, {
             accessToken: newCreds.accessToken as string | undefined,
             refreshToken: newCreds.refreshToken as string | undefined,
-            providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
+            providerSpecificData: newCreds.providerSpecificData as
+              | Record<string, unknown>
+              | undefined,
             testStatus: "active",
           });
         },
@@ -248,7 +307,31 @@ async function handleSingleModelChat(
           await clearAccountError(connectionId, credentials!, model);
         },
       });
-      if (result.success === true) return result.response;
+      if (result.success === true) {
+        // Track SSE connection lifetime for connection cap
+        const resp = result.response;
+        if (resp?.body && body.stream) {
+          activeSseConnections++;
+          const reader = resp.body.getReader();
+          const newStream = new ReadableStream({
+            async pull(controller) {
+              const { done, value } = await reader.read();
+              if (done) {
+                activeSseConnections--;
+                controller.close();
+              } else {
+                controller.enqueue(value);
+              }
+            },
+            cancel() {
+              activeSseConnections--;
+              reader.cancel();
+            },
+          });
+          return new Response(newStream, { status: resp.status, headers: resp.headers });
+        }
+        return resp;
+      }
       const { shouldFallback } = await markAccountUnavailable(
         connectionId,
         result.status,

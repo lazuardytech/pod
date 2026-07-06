@@ -54,7 +54,8 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
   }
   const provider = modelInfo.provider!;
   const model = modelInfo.model;
-  if (modelStr !== `${provider}/${model}`) log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
+  if (modelStr !== `${provider}/${model}`)
+    log.info("ROUTING", `${modelStr} → ${provider}/${model}`);
   else log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
   const excludeConnectionIds = new Set<string>();
   let lastError: string | null = null;
@@ -64,8 +65,12 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
         const errorMsg = lastError || credentials.lastError || "Unavailable";
-        const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
-        log.warn("EMBEDDINGS", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
+        const status =
+          lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        log.warn(
+          "EMBEDDINGS",
+          `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`,
+        );
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${errorMsg}`,
@@ -78,7 +83,10 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
       }
       log.warn("EMBEDDINGS", "No more accounts available", { provider });
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+      return errorResponse(
+        lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        lastError || "All accounts unavailable",
+      );
     }
     const connectionId = credentials.connectionId!;
     const connName = credentials.connectionName;
@@ -93,7 +101,9 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
         await updateProviderCredentials(connectionId, {
           accessToken: newCreds.accessToken as string | undefined,
           refreshToken: newCreds.refreshToken as string | undefined,
-          providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
+          providerSpecificData: newCreds.providerSpecificData as
+            | Record<string, unknown>
+            | undefined,
           testStatus: "active",
         });
       },
@@ -102,7 +112,13 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
       },
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
+    const { shouldFallback } = await markAccountUnavailable(
+      connectionId,
+      result.status,
+      result.error,
+      provider,
+      model,
+    );
     if (shouldFallback) {
       log.warn("AUTH", `Account ${connName} unavailable (${result.status}), trying fallback`);
       excludeConnectionIds.add(connectionId);

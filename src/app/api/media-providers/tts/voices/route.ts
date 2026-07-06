@@ -39,11 +39,17 @@ export async function GET(request: any) {
 
     const fetcher = VOICE_FETCHERS[provider];
     if (!fetcher) {
-      return NextResponse.json({ error: `Provider '${provider}' does not support voice listing` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Provider '${provider}' does not support voice listing` },
+        { status: 400 },
+      );
     }
 
     // ElevenLabs requires API key
-    const raw = (await (provider === "elevenlabs" ? fetcher(apiKey || "") : fetcher(""))) as Record<string, unknown>[];
+    const raw = (await (provider === "elevenlabs" ? fetcher(apiKey || "") : fetcher(""))) as Record<
+      string,
+      unknown
+    >[];
     const useElevenShape = provider === "elevenlabs" || provider === "gemini";
     let voices;
 
@@ -118,6 +124,9 @@ export async function GET(request: any) {
 
     return NextResponse.json({ voices, languages, byLang });
   } catch (err) {
-    return NextResponse.json({ error: sanitizeError(err) || "Failed to fetch voices" }, { status: 502 });
+    return NextResponse.json(
+      { error: sanitizeError(err) || "Failed to fetch voices" },
+      { status: 502 },
+    );
   }
 }

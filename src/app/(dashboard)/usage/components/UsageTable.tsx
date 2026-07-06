@@ -53,7 +53,9 @@ function ValueCells({ item, viewMode, isSummary = false }: any) {
       <td className="px-6 py-3 text-right text-text-muted">
         {isSummary && item.outputCost === undefined ? "—" : fmtCost(item.outputCost)}
       </td>
-      <td className="px-6 py-3 text-right font-medium text-warning">{fmtCost(item.totalCost || item.cost)}</td>
+      <td className="px-6 py-3 text-right font-medium text-warning">
+        {fmtCost(item.totalCost || item.cost)}
+      </td>
     </>
   );
 }
@@ -157,7 +159,8 @@ export default function UsageTable({
                   className={`px-6 py-3 cursor-pointer hover:bg-bg-subtle/50 ${col.align === "right" ? "text-right" : ""}`}
                   onClick={() => onToggleSort(tableType, col.field)}
                 >
-                  {col.label} <SortIcon field={col.field} currentSort={sortBy} currentOrder={sortOrder} />
+                  {col.label}{" "}
+                  <SortIcon field={col.field} currentSort={sortBy} currentOrder={sortOrder} />
                 </th>
               ))}
               {valueColumns.map((col: any) => (
@@ -166,7 +169,8 @@ export default function UsageTable({
                   className="px-6 py-3 text-right cursor-pointer hover:bg-bg-subtle/50"
                   onClick={() => onToggleSort(tableType, col.field)}
                 >
-                  {col.label} <SortIcon field={col.field} currentSort={sortBy} currentOrder={sortOrder} />
+                  {col.label}{" "}
+                  <SortIcon field={col.field} currentSort={sortBy} currentOrder={sortOrder} />
                 </th>
               ))}
             </tr>
@@ -198,7 +202,10 @@ export default function UsageTable({
                 {/* Detail rows */}
                 {expanded.has(group.groupKey) &&
                   group.items.map((item: any) => (
-                    <tr key={`detail-${item.key}`} className="group-detail hover:bg-bg-subtle/20 transition-colors">
+                    <tr
+                      key={`detail-${item.key}`}
+                      className="group-detail hover:bg-bg-subtle/20 transition-colors"
+                    >
                       {renderDetailCells(item)}
                       <ValueCells item={item} viewMode={viewMode} />
                     </tr>

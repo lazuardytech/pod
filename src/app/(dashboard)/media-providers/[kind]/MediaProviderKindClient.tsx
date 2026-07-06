@@ -6,7 +6,12 @@ import { useEffect, useState } from "react";
 import { AddCustomEmbeddingModal, Badge, Button, Card } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
-import { AI_PROVIDERS, getProvidersByKind, MEDIA_PROVIDER_KINDS, type ServiceKind } from "@/shared/constants/providers";
+import {
+  AI_PROVIDERS,
+  getProvidersByKind,
+  MEDIA_PROVIDER_KINDS,
+  type ServiceKind,
+} from "@/shared/constants/providers";
 import { useHeaderActionStore } from "@/store/headerActionStore";
 
 // Kinds that support combos (currently disabled for image/tts — temporarily hidden).
@@ -16,7 +21,10 @@ const COMBO_BASE_NAMES: Record<string, any> = { image: "image-combo", tts: "tts-
 
 function getEffectiveStatus(conn: any) {
   const isCooldown = Object.entries(conn).some(
-    ([k, v]: any) => k.startsWith("modelLock_") && v && new Date(v as string | number | Date).getTime() > Date.now(),
+    ([k, v]: any) =>
+      k.startsWith("modelLock_") &&
+      v &&
+      new Date(v as string | number | Date).getTime() > Date.now(),
   );
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
@@ -147,7 +155,9 @@ function ComboList({ combos }: any) {
                   );
                 })}
                 {combo.models.length > 6 && (
-                  <span className="text-[10px] text-text-muted ml-1">+{combo.models.length - 6}</span>
+                  <span className="text-[10px] text-text-muted ml-1">
+                    +{combo.models.length - 6}
+                  </span>
                 )}
               </div>
               <span className="text-[11px] text-text-muted shrink-0">{combo.models.length}</span>
@@ -212,7 +222,9 @@ export default function MediaProviderKindPage() {
     if (isEmbedding) {
       fetch("/api/provider-nodes", { cache: "no-store" })
         .then((r: any) => r.json())
-        .then((d: any) => setCustomNodes((d.nodes || []).filter((n: any) => n.type === "custom-embedding")))
+        .then((d: any) =>
+          setCustomNodes((d.nodes || []).filter((n: any) => n.type === "custom-embedding")),
+        )
         .catch(() => {});
     }
     if (supportsCombo) {

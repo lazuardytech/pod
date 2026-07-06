@@ -1,5 +1,5 @@
 /**
- * fix-no-implicit-any-v4.ts  
+ * fix-no-implicit-any-v4.ts
  * More comprehensive: handles inline callbacks, JSX handlers, multi-line.
  */
 
@@ -15,16 +15,23 @@ interface TSError {
 }
 
 function parseErrors(): TSError[] {
-  const stdout = execSync(
-    `bun x tsc --noEmit 2>&1 | grep "error TS" | grep -v "open-sse/"`,
-    { cwd: "/Users/ezra/projects/lt/pod", encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 }
-  );
+  const stdout = execSync(`bun x tsc --noEmit 2>&1 | grep "error TS" | grep -v "open-sse/"`, {
+    cwd: "/Users/ezra/projects/lt/pod",
+    encoding: "utf-8",
+    maxBuffer: 100 * 1024 * 1024,
+  });
   const lines = stdout.trim().split("\n").filter(Boolean);
   const errors: TSError[] = [];
   for (const line of lines) {
     const m = line.match(/^(.+?)\((\d+),(\d+)\):\s+error\s+(TS\d+):\s+(.+)$/);
     if (!m) continue;
-    errors.push({ file: m[1], line: parseInt(m[2]), col: parseInt(m[3]), code: m[4], message: m[5] });
+    errors.push({
+      file: m[1],
+      line: parseInt(m[2]),
+      col: parseInt(m[3]),
+      code: m[4],
+      message: m[5],
+    });
   }
   return errors;
 }
@@ -67,12 +74,12 @@ function fixFile(filePath: string, errors: TSError[]): number {
       if (after.match(/^\w+\s*:/)) continue;
 
       // Attempt intelligent fix based on context
-      // Pattern 1: catch (e) -> catch (e: any) 
+      // Pattern 1: catch (e) -> catch (e: any)
       const catchRe = new RegExp(`catch\\s*\\(\\s*${pn}\\s*\\)`);
       if (catchRe.test(line)) {
         line = line.replace(new RegExp(`(catch\\s*\\(\\s*)(${pn})(\\s*\\))`), "$1$2: any$3");
       }
-      // Pattern 2: In a callback chain: .map/.filter/... 
+      // Pattern 2: In a callback chain: .map/.filter/...
       else {
         // Try general replacement: add : any after param, being careful about position
         // Use position-specific replacement
@@ -106,14 +113,17 @@ function fixFile(filePath: string, errors: TSError[]): number {
       if (destructured) {
         // Check if already has type annotation (}: { )
         if (/\}\s*:\s*\{/.test(line)) continue;
-        
+
         const inner = destructured[1].trim();
         // Handle default values: key = default
-        const keys = inner.split(",").map((k) => {
-          const eqIdx = k.indexOf("=");
-          return eqIdx >= 0 ? k.substring(0, eqIdx).trim() : k.trim();
-        }).filter(Boolean);
-        
+        const keys = inner
+          .split(",")
+          .map((k) => {
+            const eqIdx = k.indexOf("=");
+            return eqIdx >= 0 ? k.substring(0, eqIdx).trim() : k.trim();
+          })
+          .filter(Boolean);
+
         // Only add type if followed by ) or =>
         if (/\}\s*\)/.test(line) || /\}\s*=>/.test(line)) {
           const typeLiteral = "{ " + keys.map((k) => `${k}: any`).join("; ") + " }";
@@ -142,16 +152,27 @@ function fixFile(filePath: string, errors: TSError[]): number {
       const varName = vm[1];
 
       // Add : any or more specific type
-      if (line.match(new RegExp(`\\b${varName}\\s*=\\s*setInterval|\\b${varName}\\s*=\\s*setTimeout`))) {
-        line = line.replace(new RegExp(`\\b(${varName})\\s*=`), "$1: ReturnType<typeof setInterval> =");
+      if (
+        line.match(new RegExp(`\\b${varName}\\s*=\\s*setInterval|\\b${varName}\\s*=\\s*setTimeout`))
+      ) {
+        line = line.replace(
+          new RegExp(`\\b(${varName})\\s*=`),
+          "$1: ReturnType<typeof setInterval> =",
+        );
       } else if (line.match(new RegExp(`\\b${varName}\\s*=\\s*new\\s+`))) {
         line = line.replace(new RegExp(`\\b(${varName})\\s*=\\s*new`), "$1: any = new");
       } else {
         // Generic: let x; or let x, y;
-        line = line.replace(new RegExp(`\\b(let|var)\\s+${varName}\\b(?=\\s*[,;])`), `$1 ${varName}: any`);
+        line = line.replace(
+          new RegExp(`\\b(let|var)\\s+${varName}\\b(?=\\s*[,;])`),
+          `$1 ${varName}: any`,
+        );
         // const x = ...
         if (line === originalLine) {
-          line = line.replace(new RegExp(`\\b(const)\\s+${varName}\\b(?=\\s*=)`), `$1 ${varName}: any`);
+          line = line.replace(
+            new RegExp(`\\b(const)\\s+${varName}\\b(?=\\s*=)`),
+            `$1 ${varName}: any`,
+          );
         }
       }
 
@@ -198,7 +219,10 @@ function fixFile(filePath: string, errors: TSError[]): number {
       if (m) {
         const keyword = m[2];
         const varName = m[3];
-        line = line.replace(`${keyword} ${varName} = {`, `${keyword} ${varName}: Record<string, any> = {`);
+        line = line.replace(
+          `${keyword} ${varName} = {`,
+          `${keyword} ${varName}: Record<string, any> = {`,
+        );
       }
 
       if (line !== originalLine) {
@@ -275,10 +299,7 @@ function fixFile(filePath: string, errors: TSError[]): number {
       // const name = (...) => { -> const name = (...): any => {
       if (line.match(new RegExp(`(const|let|var)\\s+${funcName}\\s*=\\s*\\(`))) {
         // Add : any after the params, before the =>
-        line = line.replace(
-          new RegExp(`(${funcName}\\s*=\\s*\\([^)]*\\))`),
-          "$1: any"
-        );
+        line = line.replace(new RegExp(`(${funcName}\\s*=\\s*\\([^)]*\\))`), "$1: any");
       }
 
       if (line !== originalLine) {

@@ -119,42 +119,48 @@ export function parseQuotaData(provider: any, data: any) {
 
       case "antigravity":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([modelKey, quota]: any) => {
-            normalizedQuotas.push({
-              name: quota.displayName || modelKey,
-              modelKey: modelKey, // Keep modelKey for sorting
-              used: quota.used || 0,
-              total: quota.total || 0,
-              resetAt: quota.resetAt || null,
-              remainingPercentage: quota.remainingPercentage,
-            });
-          });
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(
+            ([modelKey, quota]: any) => {
+              normalizedQuotas.push({
+                name: quota.displayName || modelKey,
+                modelKey: modelKey, // Keep modelKey for sorting
+                used: quota.used || 0,
+                total: quota.total || 0,
+                resetAt: quota.resetAt || null,
+                remainingPercentage: quota.remainingPercentage,
+              });
+            },
+          );
         }
         break;
 
       case "codex":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]: any) => {
-            normalizedQuotas.push({
-              name: quotaType,
-              used: quota.used || 0,
-              total: quota.total || 0,
-              resetAt: quota.resetAt || null,
-            });
-          });
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(
+            ([quotaType, quota]: any) => {
+              normalizedQuotas.push({
+                name: quotaType,
+                used: quota.used || 0,
+                total: quota.total || 0,
+                resetAt: quota.resetAt || null,
+              });
+            },
+          );
         }
         break;
 
       case "kiro":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([quotaType, quota]: any) => {
-            normalizedQuotas.push({
-              name: quotaType,
-              used: quota.used || 0,
-              total: quota.total || 0,
-              resetAt: quota.resetAt || null,
-            });
-          });
+          Object.entries(data.quotas as Record<string, RawQuota>).forEach(
+            ([quotaType, quota]: any) => {
+              normalizedQuotas.push({
+                name: quotaType,
+                used: quota.used || 0,
+                total: quota.total || 0,
+                resetAt: quota.resetAt || null,
+              });
+            },
+          );
         }
         break;
 

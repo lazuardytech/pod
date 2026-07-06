@@ -155,14 +155,20 @@ describe("compatible provider connections API", () => {
     });
     cleanup = ctx.cleanup;
 
-    const firstResponse = await ctx.POST(makeRequest(ctx.node.id, { apiKey: "key-1", name: "Account 1" }));
-    const secondResponse = await ctx.POST(makeRequest(ctx.node.id, { apiKey: "key-2", name: "Account 2" }));
+    const firstResponse = await ctx.POST(
+      makeRequest(ctx.node.id, { apiKey: "key-1", name: "Account 1" }),
+    );
+    const secondResponse = await ctx.POST(
+      makeRequest(ctx.node.id, { apiKey: "key-2", name: "Account 2" }),
+    );
     const storedConnections = await ctx.getProviderConnections({ provider: ctx.node.id });
 
     expect(firstResponse.status).toBe(201);
     expect(secondResponse.status).toBe(201);
     expect(storedConnections).toHaveLength(2);
-    storedConnections.forEach((conn) => expectCompatibleConnection(conn, ctx.node, { apiType: "chat" }));
+    storedConnections.forEach((conn) =>
+      expectCompatibleConnection(conn, ctx.node, { apiType: "chat" }),
+    );
   });
 
   it("preserves compatible connection name in GET list while exposing providerName separately", async () => {

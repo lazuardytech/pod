@@ -28,7 +28,8 @@ function getAuthGroup(providerId: any, connection = null as any) {
   if (APIKEY_PROVIDERS[providerId]) return "apikey";
   if (
     typeof providerId === "string" &&
-    (providerId.startsWith(OPENAI_COMPATIBLE_PREFIX) || providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX))
+    (providerId.startsWith(OPENAI_COMPATIBLE_PREFIX) ||
+      providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX))
   )
     return "compatible";
   return "apikey";
@@ -37,7 +38,8 @@ function getAuthGroup(providerId: any, connection = null as any) {
 function isCompatibleProvider(providerId: any) {
   return (
     typeof providerId === "string" &&
-    (providerId.startsWith(OPENAI_COMPATIBLE_PREFIX) || providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX))
+    (providerId.startsWith(OPENAI_COMPATIBLE_PREFIX) ||
+      providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX))
   );
 }
 
@@ -59,11 +61,15 @@ export async function POST(request: any) {
     if (mode === "provider" && providerId) {
       connectionsToTest = allConnections.filter((c: any) => c.provider === providerId);
     } else if (mode === "oauth") {
-      connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "oauth");
+      connectionsToTest = allConnections.filter(
+        (c: any) => getAuthGroup(c.provider, c) === "oauth",
+      );
     } else if (mode === "free") {
       connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "free");
     } else if (mode === "apikey") {
-      connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "apikey");
+      connectionsToTest = allConnections.filter(
+        (c: any) => getAuthGroup(c.provider, c) === "apikey",
+      );
     } else if (mode === "compatible") {
       connectionsToTest = allConnections.filter((c: any) => isCompatibleProvider(c.provider));
     } else if (mode === "all") {
@@ -110,7 +116,12 @@ export async function POST(request: any) {
           valid: false,
           latencyMs: 0,
           error: sanitizeError(error),
-          diagnosis: { type: "network_error", source: "local", code: null, message: sanitizeError(error) },
+          diagnosis: {
+            type: "network_error",
+            source: "local",
+            code: null,
+            message: sanitizeError(error),
+          },
           statusCode: null,
           testedAt: new Date().toISOString(),
         });

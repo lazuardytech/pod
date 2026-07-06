@@ -34,7 +34,11 @@ export function checkFallbackError(status, errorText, backoffLevel = 0) {
   const resolveCooldown = (rule) => {
     if (rule.backoff) {
       const newLevel = Math.min(backoffLevel + 1, BACKOFF_CONFIG.maxLevel);
-      return { shouldFallback: true, cooldownMs: getQuotaCooldown(newLevel), newBackoffLevel: newLevel };
+      return {
+        shouldFallback: true,
+        cooldownMs: getQuotaCooldown(newLevel),
+        newBackoffLevel: newLevel,
+      };
     }
     if (rule.untilMidnightVN) {
       return { shouldFallback: true, cooldownMs: msUntilMidnightVN(), newBackoffLevel: 0 };
@@ -45,7 +49,11 @@ export function checkFallbackError(status, errorText, backoffLevel = 0) {
     return { shouldFallback: true, cooldownMs: rule.cooldownMs };
   };
 
-  const rawError = errorText ? (typeof errorText === "string" ? errorText : JSON.stringify(errorText)) : "";
+  const rawError = errorText
+    ? typeof errorText === "string"
+      ? errorText
+      : JSON.stringify(errorText)
+    : "";
 
   for (const rule of ERROR_RULES) {
     if (rule.text && lowerError && lowerError.includes(rule.text)) return resolveCooldown(rule);
@@ -180,7 +188,9 @@ export function getConnectionLockUntil(connection) {
  * Cooldown = base * lockCount (1h, 2h, 3h, ...)
  */
 export function buildConnectionLockUpdate(connection, reason) {
-  const prevCount = Number(connection?.[CONN_LOCK_COUNT_KEY] || connection?.data?.[CONN_LOCK_COUNT_KEY] || 0);
+  const prevCount = Number(
+    connection?.[CONN_LOCK_COUNT_KEY] || connection?.data?.[CONN_LOCK_COUNT_KEY] || 0,
+  );
   const newCount = prevCount + 1;
   const cooldownMs = CONN_LOCK_BASE_MS * newCount;
   const until = new Date(Date.now() + cooldownMs).toISOString();
@@ -188,7 +198,8 @@ export function buildConnectionLockUpdate(connection, reason) {
     update: {
       [CONN_LOCK_UNTIL_KEY]: until,
       [CONN_LOCK_COUNT_KEY]: newCount,
-      [CONN_LOCK_REASON_KEY]: typeof reason === "string" ? reason.slice(0, 200) : "Connection error",
+      [CONN_LOCK_REASON_KEY]:
+        typeof reason === "string" ? reason.slice(0, 200) : "Connection error",
       testStatus: "unavailable",
       lastError: typeof reason === "string" ? reason.slice(0, 100) : "Connection error",
       lastErrorAt: new Date().toISOString(),

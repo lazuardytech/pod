@@ -1,4 +1,8 @@
-import { getProjectIdForConnection, invalidateProjectId, removeConnection } from "open-sse/services/projectId.js";
+import {
+  getProjectIdForConnection,
+  invalidateProjectId,
+  removeConnection,
+} from "open-sse/services/projectId.js";
 import {
   formatProviderCredentials as _formatProviderCredentials,
   getAccessToken as _getAccessToken,
@@ -21,27 +25,44 @@ import * as log from "../utils/logger";
 
 export const TOKEN_EXPIRY_BUFFER_MS: number = BUFFER_MS;
 type AnyCreds = Record<string, any>;
-export const refreshAccessToken = (provider: string, refreshToken: string, credentials: AnyCreds): Promise<AnyCreds> =>
-  _refreshAccessToken(provider, refreshToken, credentials, log);
+export const refreshAccessToken = (
+  provider: string,
+  refreshToken: string,
+  credentials: AnyCreds,
+): Promise<AnyCreds> => _refreshAccessToken(provider, refreshToken, credentials, log);
 export const refreshClaudeOAuthToken = (refreshToken: string): Promise<AnyCreds> =>
   _refreshClaudeOAuthToken(refreshToken, log);
-export const refreshGoogleToken = (refreshToken: string, clientId: string, clientSecret: string): Promise<AnyCreds> =>
-  _refreshGoogleToken(refreshToken, clientId, clientSecret, log);
-export const refreshQwenToken = (refreshToken: string): Promise<AnyCreds> => _refreshQwenToken(refreshToken, log);
-export const refreshCodexToken = (refreshToken: string): Promise<AnyCreds> => _refreshCodexToken(refreshToken, log);
-export const refreshIflowToken = (refreshToken: string): Promise<AnyCreds> => _refreshIflowToken(refreshToken, log);
-export const refreshGitHubToken = (refreshToken: string): Promise<AnyCreds> => _refreshGitHubToken(refreshToken, log);
-export const refreshCopilotToken = (githubAccessToken: string): Promise<{ token: string; expiresAt: number } | null> =>
+export const refreshGoogleToken = (
+  refreshToken: string,
+  clientId: string,
+  clientSecret: string,
+): Promise<AnyCreds> => _refreshGoogleToken(refreshToken, clientId, clientSecret, log);
+export const refreshQwenToken = (refreshToken: string): Promise<AnyCreds> =>
+  _refreshQwenToken(refreshToken, log);
+export const refreshCodexToken = (refreshToken: string): Promise<AnyCreds> =>
+  _refreshCodexToken(refreshToken, log);
+export const refreshIflowToken = (refreshToken: string): Promise<AnyCreds> =>
+  _refreshIflowToken(refreshToken, log);
+export const refreshGitHubToken = (refreshToken: string): Promise<AnyCreds> =>
+  _refreshGitHubToken(refreshToken, log);
+export const refreshCopilotToken = (
+  githubAccessToken: string,
+): Promise<{ token: string; expiresAt: number } | null> =>
   _refreshCopilotToken(githubAccessToken, log);
-export const refreshKiroToken = (refreshToken: string, providerSpecificData: AnyCreds | undefined): Promise<AnyCreds> =>
-  _refreshKiroToken(refreshToken, providerSpecificData, log);
+export const refreshKiroToken = (
+  refreshToken: string,
+  providerSpecificData: AnyCreds | undefined,
+): Promise<AnyCreds> => _refreshKiroToken(refreshToken, providerSpecificData, log);
 export const getAccessToken = (provider: string, credentials: AnyCreds): Promise<AnyCreds> =>
   _getAccessToken(provider, credentials, log);
-export const refreshTokenByProvider = (provider: string, credentials: AnyCreds): Promise<AnyCreds> =>
-  _refreshTokenByProvider(provider, credentials, log);
+export const refreshTokenByProvider = (
+  provider: string,
+  credentials: AnyCreds,
+): Promise<AnyCreds> => _refreshTokenByProvider(provider, credentials, log);
 export const formatProviderCredentials = (provider: string, credentials: AnyCreds): string =>
   _formatProviderCredentials(provider, credentials, log);
-export const getAllAccessTokens = (userInfo: unknown): unknown => _getAllAccessTokens(userInfo, log);
+export const getAllAccessTokens = (userInfo: unknown): unknown =>
+  _getAllAccessTokens(userInfo, log);
 export function releaseConnection(connectionId: string): void {
   if (!connectionId) return;
   removeConnection(connectionId);
@@ -103,7 +124,10 @@ export async function updateProviderCredentials(
     if (newCredentials.projectId) updates.projectId = newCredentials.projectId;
     if (newCredentials.testStatus) updates.testStatus = newCredentials.testStatus;
     const result = await updateProviderConnection(connectionId, updates);
-    log.info("TOKEN_REFRESH", "Credentials updated in localDb", { connectionId, success: !!result });
+    log.info("TOKEN_REFRESH", "Credentials updated in localDb", {
+      connectionId,
+      success: !!result,
+    });
     return !!result;
   } catch (error) {
     log.error("TOKEN_REFRESH", "Error updating credentials in localDb", {
@@ -114,9 +138,13 @@ export async function updateProviderCredentials(
   }
 }
 const inflightRefresh = new Map<string, Promise<AnyCreds>>();
-export async function checkAndRefreshToken(provider: string, credentials: AnyCreds): Promise<AnyCreds> {
+export async function checkAndRefreshToken(
+  provider: string,
+  credentials: AnyCreds,
+): Promise<AnyCreds> {
   const connId = credentials?.connectionId;
-  if (connId && inflightRefresh.has(connId)) return inflightRefresh.get(connId) as Promise<AnyCreds>;
+  if (connId && inflightRefresh.has(connId))
+    return inflightRefresh.get(connId) as Promise<AnyCreds>;
   const work = _doCheckAndRefresh(provider, credentials);
   if (connId) {
     inflightRefresh.set(connId, work);
@@ -142,7 +170,10 @@ async function _doCheckAndRefresh(provider: string, credentials: AnyCreds): Prom
       });
       const newCreds = await getAccessToken(provider, creds);
       if (newCreds?.accessToken) {
-        const mergedCreds = { ...newCreds, existingProviderSpecificData: creds.providerSpecificData };
+        const mergedCreds = {
+          ...newCreds,
+          existingProviderSpecificData: creds.providerSpecificData,
+        };
         await updateProviderCredentials(creds.connectionId, mergedCreds);
         creds = {
           ...creds,
@@ -173,7 +204,9 @@ async function _doCheckAndRefresh(provider: string, credentials: AnyCreds): Prom
           copilotToken: copilotToken.token,
           copilotTokenExpiresAt: copilotToken.expiresAt,
         };
-        await updateProviderCredentials(creds.connectionId, { providerSpecificData: updatedSpecific });
+        await updateProviderCredentials(creds.connectionId, {
+          providerSpecificData: updatedSpecific,
+        });
         creds.providerSpecificData = updatedSpecific;
         creds.copilotToken = copilotToken.token;
       }

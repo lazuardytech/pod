@@ -40,7 +40,9 @@ export default function SegmentedControl({
           className={cn(
             "shrink-0 px-4 rounded-[8px] font-[510] transition-all flex items-center gap-1.5",
             sizes[size],
-            value === option.value ? "bg-surface text-text-main shadow-sm" : "text-text-muted hover:text-text-main",
+            value === option.value
+              ? "bg-surface text-text-main shadow-sm"
+              : "text-text-muted hover:text-text-main",
           )}
         >
           {option.icon && <LucideIcon name={option.icon} size={iconSize} />}

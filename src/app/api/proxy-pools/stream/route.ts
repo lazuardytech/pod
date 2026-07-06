@@ -24,7 +24,9 @@ export async function GET(request: any) {
       // Initial snapshot
       try {
         const pools = await getProxyPools();
-        lastSig = JSON.stringify(pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
+        lastSig = JSON.stringify(
+          pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`),
+        );
         send({ type: "init", pools });
       } catch {
         send({ type: "init", pools: [] });
@@ -38,7 +40,9 @@ export async function GET(request: any) {
         }
         try {
           const pools = await getProxyPools();
-          const sig = JSON.stringify(pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
+          const sig = JSON.stringify(
+            pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`),
+          );
           if (sig !== lastSig) {
             lastSig = sig;
             send({ type: "update", pools });

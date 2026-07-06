@@ -126,20 +126,30 @@ export default function DatePicker({
                 weekday: "w-9 text-center text-[11px] font-medium text-text-muted",
                 weeks: "mt-1 flex flex-col gap-1",
                 week: "flex w-full",
-                day: cn("h-9 w-9 p-0 text-center text-sm", "focus-within:relative focus-within:z-20"),
+                day: cn(
+                  "h-9 w-9 p-0 text-center text-sm",
+                  "focus-within:relative focus-within:z-20",
+                ),
                 day_button: cn(
                   "size-9 rounded-md text-sm font-normal",
                   "text-text-main hover:bg-surface-2 transition-colors cursor-pointer",
                   "focus:outline-none focus:ring-2 focus:ring-primary/20",
                 ),
-                selected: "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
+                selected:
+                  "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
                 today: "border border-primary/40 text-primary font-medium",
                 outside: "text-text-muted opacity-40",
                 disabled: "text-text-muted opacity-30",
                 hidden: "invisible",
               },
               components: {
-                Chevron: ({ orientation, className }: { orientation?: string; className?: string }) => (
+                Chevron: ({
+                  orientation,
+                  className,
+                }: {
+                  orientation?: string;
+                  className?: string;
+                }) => (
                   <LucideIcon
                     name={orientation === "left" ? "chevron_left" : "chevron_right"}
                     className={cn("text-[16px]", className)}

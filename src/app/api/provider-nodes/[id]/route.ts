@@ -36,7 +36,10 @@ export async function PUT(request: any, { params }: { params: any }) {
     }
 
     // Only validate apiType for OpenAI Compatible nodes
-    if (node.type === "openai-compatible" && (!apiType || !["chat", "responses"].includes(apiType))) {
+    if (
+      node.type === "openai-compatible" &&
+      (!apiType || !["chat", "responses"].includes(apiType))
+    ) {
       return NextResponse.json({ error: "Invalid OpenAI compatible API type" }, { status: 400 });
     }
 
@@ -79,7 +82,8 @@ export async function PUT(request: any, { params }: { params: any }) {
       connections.map((connection) =>
         updateProviderConnection(connection.id, {
           providerSpecificData: {
-            ...(typeof connection.providerSpecificData === "object" && connection.providerSpecificData !== null
+            ...(typeof connection.providerSpecificData === "object" &&
+            connection.providerSpecificData !== null
               ? (connection.providerSpecificData as Record<string, unknown>)
               : {}),
             prefix: prefix.trim(),

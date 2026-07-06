@@ -9,7 +9,9 @@ export type ComboInfo = {
   modelId: string | null;
   contentFilterMessage: string | null;
 } | null;
-export async function resolveModelAlias(alias: string): Promise<{ provider: string; model: string } | null> {
+export async function resolveModelAlias(
+  alias: string,
+): Promise<{ provider: string; model: string } | null> {
   const aliases = await getModelAliases();
   return resolveModelAliasFromMap(alias, aliases);
 }

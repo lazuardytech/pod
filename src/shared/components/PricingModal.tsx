@@ -27,7 +27,11 @@ export default function PricingModal({
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any) => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
 
   useEffect(() => {
     if (isOpen) {
@@ -118,7 +122,10 @@ export default function PricingModal({
         {/* Header */}
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="text-xl font-semibold">Pricing Configuration</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text text-2xl leading-none">
+          <button
+            onClick={onClose}
+            className="text-text-muted hover:text-text text-2xl leading-none"
+          >
             ×
           </button>
         </div>
@@ -133,8 +140,8 @@ export default function PricingModal({
               <div className="bg-bg-subtle border border-border rounded-lg p-3 text-sm">
                 <p className="font-medium mb-1">Pricing Rates Format</p>
                 <p className="text-text-muted">
-                  All rates are in <strong>dollars per million tokens</strong> ($/1M tokens). Example: Input rate of
-                  2.50 means $2.50 per 1,000,000 input tokens.
+                  All rates are in <strong>dollars per million tokens</strong> ($/1M tokens).
+                  Example: Input rate of 2.50 means $2.50 per 1,000,000 input tokens.
                 </p>
               </div>
 
@@ -143,7 +150,9 @@ export default function PricingModal({
                 const models = Object.keys(pricingData[provider]).sort();
                 return (
                   <div key={provider} className="border border-border rounded-lg overflow-hidden">
-                    <div className="bg-bg-subtle px-4 py-2 font-semibold text-sm">{provider.toUpperCase()}</div>
+                    <div className="bg-bg-subtle px-4 py-2 font-semibold text-sm">
+                      {provider.toUpperCase()}
+                    </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead className="bg-bg-hover text-text-muted uppercase text-xs">
@@ -168,7 +177,9 @@ export default function PricingModal({
                                     step="0.01"
                                     min="0"
                                     value={pricingData[provider][model][field] || 0}
-                                    onChange={(e: any) => handlePricingChange(provider, model, field, e.target.value)}
+                                    onChange={(e: any) =>
+                                      handlePricingChange(provider, model, field, e.target.value)
+                                    }
                                     className="w-20 px-2 py-1 text-right bg-bg-base border border-border rounded focus:outline-none focus:border-primary"
                                   />
                                 </td>

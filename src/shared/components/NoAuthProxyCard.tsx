@@ -70,7 +70,8 @@ export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key
         <div className="flex-1">
           <p className="text-sm font-medium">No authentication required</p>
           <p className="text-xs text-text-muted">
-            This provider is ready to use. Optionally route requests through a proxy pool to bypass IP-based limits.
+            This provider is ready to use. Optionally route requests through a proxy pool to bypass
+            IP-based limits.
           </p>
         </div>
         {savedFlash && (

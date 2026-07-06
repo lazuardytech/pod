@@ -31,16 +31,23 @@ interface TSError {
 }
 
 function parseErrors(): TSError[] {
-  const stdout = execSync(
-    `bun x tsc --noEmit 2>&1 | grep "error TS" | grep -v "open-sse/"`,
-    { cwd: "/Users/ezra/projects/lt/pod", encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 }
-  );
+  const stdout = execSync(`bun x tsc --noEmit 2>&1 | grep "error TS" | grep -v "open-sse/"`, {
+    cwd: "/Users/ezra/projects/lt/pod",
+    encoding: "utf-8",
+    maxBuffer: 100 * 1024 * 1024,
+  });
   const lines = stdout.trim().split("\n").filter(Boolean);
   const errors: TSError[] = [];
   for (const line of lines) {
     const m = line.match(/^(.+?)\((\d+),(\d+)\):\s+error\s+(TS\d+):\s+(.+)$/);
     if (!m) continue;
-    errors.push({ file: m[1], line: parseInt(m[2]), col: parseInt(m[3]), code: m[4], message: m[5] });
+    errors.push({
+      file: m[1],
+      line: parseInt(m[2]),
+      col: parseInt(m[3]),
+      code: m[4],
+      message: m[5],
+    });
   }
   return errors;
 }
@@ -73,75 +80,82 @@ function fixTS7006(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       // Extract param name
       const pm = error.message.match(/Parameter '(\w+)' implicitly has an 'any' type/);
-      if (!pm) { skipped++; continue; }
+      if (!pm) {
+        skipped++;
+        continue;
+      }
       const pn = pm[1];
-      
+
       // Pattern 1: catch (e) or catch (e)
       if (line.match(new RegExp(`catch\\s*\\(\\s*${pn}\\s*\\)`))) {
-        line = line.replace(
-          new RegExp(`(catch\\s*\\(\\s*)(${pn})(\\s*\\))`),
-          "$1$2: any$3"
-        );
+        line = line.replace(new RegExp(`(catch\\s*\\(\\s*)(${pn})(\\s*\\))`), "$1$2: any$3");
       }
       // Pattern 2: Single arrow param in callback: .map(x => , filter, forEach, then, catch
-      else if (line.match(new RegExp(`\\.(map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\(\\s*${pn}\\s*(,|=>)`))) {
+      else if (
+        line.match(
+          new RegExp(
+            `\\.(map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\(\\s*${pn}\\s*(,|=>)`,
+          ),
+        )
+      ) {
         line = line.replace(
-          new RegExp(`(\\.(?:map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\()(${pn})(\\s*(?:,|=>))`),
-          "$1$2: any$3"  
+          new RegExp(
+            `(\\.(?:map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\()(${pn})(\\s*(?:,|=>))`,
+          ),
+          "$1$2: any$3",
         );
       }
       // Pattern 3: Simple function keyword params
       // function name(param) or function name(p1, p2)
       else if (line.match(new RegExp(`\\bfunction\\s+\\w+\\s*\\([^)]*\\b${pn}\\b[^)]*\\)`))) {
         // Replace the specific param with type
-        line = line.replace(
-          new RegExp(`\\b${pn}\\b(?=\\s*[,)])`),
-          `${pn}: any`
-        );
+        line = line.replace(new RegExp(`\\b${pn}\\b(?=\\s*[,)])`), `${pn}: any`);
       }
       // Pattern 4: Arrow function params
       // (param) =>  or (p1, p2) =>
-      else if (line.includes(`(${pn})`) || line.includes(`(${pn},`) || line.includes(`, ${pn})`) || line.includes(`, ${pn},`)) {
-        line = line.replace(
-          new RegExp(`\\b${pn}\\b(?=\\s*[,)])`),
-          `${pn}: any`
-        );
+      else if (
+        line.includes(`(${pn})`) ||
+        line.includes(`(${pn},`) ||
+        line.includes(`, ${pn})`) ||
+        line.includes(`, ${pn},`)
+      ) {
+        line = line.replace(new RegExp(`\\b${pn}\\b(?=\\s*[,)])`), `${pn}: any`);
       }
       // Pattern 5: onChange={(e) => or similar event handlers
       else if (pn === "e" || pn === "event" || pn === "evt") {
         if (line.match(/onChange\s*=\s*\{/)) {
           line = line.replace(
             new RegExp(`\\b${pn}\\b(?=\\s*\\)\\s*=>)`),
-            `${pn}: React.ChangeEvent<HTMLInputElement>`
+            `${pn}: React.ChangeEvent<HTMLInputElement>`,
           );
         } else if (line.match(/onClick\s*=\s*\{/)) {
           line = line.replace(
             new RegExp(`\\b${pn}\\b(?=\\s*\\)\\s*=>)`),
-            `${pn}: React.MouseEvent`
+            `${pn}: React.MouseEvent`,
           );
         } else if (line.match(/onSubmit\s*=\s*\{/)) {
-          line = line.replace(
-            new RegExp(`\\b${pn}\\b(?=\\s*\\)\\s*=>)`),
-            `${pn}: React.FormEvent`
-          );
+          line = line.replace(new RegExp(`\\b${pn}\\b(?=\\s*\\)\\s*=>)`), `${pn}: React.FormEvent`);
         } else {
           // General event handler (e) =>
           line = line.replace(
             new RegExp(`\\b${pn}\\b(?=\\s*\\)\\s*=>)`),
-            `${pn}: any // todo(ts): tighten`
+            `${pn}: any // todo(ts): tighten`,
           );
         }
       }
@@ -150,16 +164,13 @@ function fixTS7006(errorsForFile: TSError[]): [number, number] {
         // Only fix if param appears as a standalone word followed by , or )
         // Avoid replacing inside strings, comments, etc.
         if (line.match(new RegExp(`\\b${pn}\\b(?=\\s*[,)])`))) {
-          line = line.replace(
-            new RegExp(`\\b${pn}\\b(?=\\s*[,)])`),
-            `${pn}: any`
-          );
+          line = line.replace(new RegExp(`\\b${pn}\\b(?=\\s*[,)])`), `${pn}: any`);
         } else {
           skipped++;
           continue;
         }
       }
-      
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -167,7 +178,7 @@ function fixTS7006(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -186,29 +197,32 @@ function fixTS7031(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       const bm = error.message.match(/Binding element '(\w+)' implicitly has an 'any' type/);
-      if (!bm) { skipped++; continue; }
-      
+      if (!bm) {
+        skipped++;
+        continue;
+      }
+
       // Look for { paramName } pattern
       if (line.match(/\{\s*\w+\s*\}/)) {
         const key = bm[1];
-        line = line.replace(
-          new RegExp(`(\\{\\s*)(${key})(\\s*\\})`),
-          `$1$2$3: { ${key}: any }`
-        );
+        line = line.replace(new RegExp(`(\\{\\s*)(${key})(\\s*\\})`), `$1$2$3: { ${key}: any }`);
       }
-      
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -216,7 +230,7 @@ function fixTS7031(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -228,24 +242,27 @@ function fixTS7031(errorsForFile: TSError[]): [number, number] {
 }
 
 /**
- * TS7053: string can't be used to index type. 
+ * TS7053: string can't be used to index type.
  * Add `as keyof typeof` cast or `as any` at point of use.
  */
 function fixTS7053(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       // Pattern: something[expression] where expression is a string/computed
       // e.g., sizeMap[size], variantStyles[variant], etc.
       // Look for bracket access with a variable
@@ -259,12 +276,12 @@ function fixTS7053(errorsForFile: TSError[]): [number, number] {
             // Add `as any` to the expression
             line = line.replace(
               new RegExp(`\\[${inner}\\]`),
-              `[${inner} as keyof typeof ${inner === "size" ? "sizeStyles" : inner === "variant" ? "variantStyles" : inner === "padding" ? "paddingStyles" : inner + "Styles"}]`
+              `[${inner} as keyof typeof ${inner === "size" ? "sizeStyles" : inner === "variant" ? "variantStyles" : inner === "padding" ? "paddingStyles" : inner + "Styles"}]`,
             );
           }
         }
       }
-      
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -272,7 +289,7 @@ function fixTS7053(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -291,34 +308,37 @@ function fixTS7018(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       // Pattern: const/let varName = { ... };
       const m = line.match(/^( *)(const|let|var)\s+(\w+)\s*=\s*\{/);
       if (m) {
         const indent = m[1];
         const keyword = m[2];
         const varName = m[3];
-        
+
         // Determine if the line is standalone or part of a larger expression
         // If it ends with ; or is just the opening brace, it's a standalone assignment
         if (line.trim().endsWith(";") || line.trim().endsWith("{")) {
           line = line.replace(
             `${keyword} ${varName} = {`,
-            `${keyword} ${varName}: Record<string, any> = {`
+            `${keyword} ${varName}: Record<string, any> = {`,
           );
         }
       }
-      
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -326,7 +346,7 @@ function fixTS7018(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -344,17 +364,20 @@ function fixTS7034(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       // new Set() -> new Set<any>()
       if (line.includes("new Set()")) {
         line = line.replace(/new Set\(\)/g, "new Set<any>()");
@@ -365,8 +388,8 @@ function fixTS7034(errorsForFile: TSError[]): [number, number] {
       }
       // = [] -> = [] as any[]  (but only for standalone declarations)
       // This is common for let/const declarations
-      let queue = []
-      
+      let queue = [];
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -374,7 +397,7 @@ function fixTS7034(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -392,21 +415,27 @@ function fixTS7005(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       const vm = error.message.match(/Variable '(\w+)' implicitly has an 'any' type/);
-      if (!vm) { skipped++; continue; }
+      if (!vm) {
+        skipped++;
+        continue;
+      }
       const varName = vm[1];
-      
+
       // Pattern: Variable is referenced somewhere and has no type
       // e.g., let poll, heartbeat, idleTimeout;
       //       const id = setInterval(...)
@@ -414,17 +443,14 @@ function fixTS7005(errorsForFile: TSError[]): [number, number] {
       if (line.includes("setInterval") || line.includes("setTimeout")) {
         line = line.replace(
           new RegExp(`(const|let|var)\\s+${varName}\\s*=`),
-          `$1 ${varName}: ReturnType<typeof setInterval> =`
+          `$1 ${varName}: ReturnType<typeof setInterval> =`,
         );
       }
       // For multi-declaration: let poll, heartbeat;
       else if (line.match(new RegExp(`let\\s+${varName}\\s*[,;]`))) {
-        line = line.replace(
-          new RegExp(`\\b${varName}\\b(?=\\s*[,;])`),
-          `${varName}: any`
-        );
+        line = line.replace(new RegExp(`\\b${varName}\\b(?=\\s*[,;])`), `${varName}: any`);
       }
-      
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -432,7 +458,7 @@ function fixTS7005(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -450,37 +476,40 @@ function fixTS7010(errorsForFile: TSError[]): [number, number] {
   let fixed = 0;
   let skipped = 0;
   const filePath = errorsForFile[0].file;
-  
+
   try {
     let source = readFileSync(filePath, "utf-8");
     const lines = source.split("\n");
-    
+
     for (const error of errorsForFile) {
       const lineIdx = error.line - 1;
-      if (lineIdx < 0 || lineIdx >= lines.length) { skipped++; continue; }
+      if (lineIdx < 0 || lineIdx >= lines.length) {
+        skipped++;
+        continue;
+      }
       let line = lines[lineIdx];
       const original = line;
-      
+
       const rm = error.message.match(/'(.*?)', which lacks return-type annotation/);
-      if (!rm) { skipped++; continue; }
+      if (!rm) {
+        skipped++;
+        continue;
+      }
       const funcName = rm[1];
-      
+
       // Add : any return type
       // For function declarations
       if (line.match(new RegExp(`function\\s+${funcName}\\s*\\(`))) {
-        line = line.replace(
-          new RegExp(`(function\\s+${funcName}\\s*\\([^)]*\\))`),
-          "$1: any"
-        );
+        line = line.replace(new RegExp(`(function\\s+${funcName}\\s*\\([^)]*\\))`), "$1: any");
       }
       // For arrow function assignments
       else if (line.match(new RegExp(`(const|let|var)\\s+${funcName}\\s*=`))) {
         line = line.replace(
           new RegExp(`((?:const|let|var)\\s+${funcName}\\s*=\\s*\\([^)]*\\)\\s*=>\\s*\\{)`),
-          "$1: any"
+          "$1: any",
         );
       }
-      
+
       if (line !== original) {
         lines[lineIdx] = line;
         fixed++;
@@ -488,7 +517,7 @@ function fixTS7010(errorsForFile: TSError[]): [number, number] {
         skipped++;
       }
     }
-    
+
     if (fixed > 0) {
       writeFileSync(filePath, lines.join("\n"), "utf-8");
     }
@@ -518,29 +547,45 @@ let totalFixed = 0;
 let totalSkipped = 0;
 
 for (const [file, errors] of byFile) {
-  const codes = [...new Set(errors.map(e => e.code))];
+  const codes = [...new Set(errors.map((e) => e.code))];
   let fileFixed = 0;
-  
+
   for (const code of codes) {
-    const codeErrors = errors.filter(e => e.code === code);
+    const codeErrors = errors.filter((e) => e.code === code);
     let [f, s] = [0, 0];
-    
+
     switch (code) {
-      case "TS7006": [f, s] = fixTS7006(codeErrors); break;
-      case "TS7031": [f, s] = fixTS7031(codeErrors); break;
-      case "TS7053": [f, s] = fixTS7053(codeErrors); break;
-      case "TS7018": [f, s] = fixTS7018(codeErrors); break;
-      case "TS7034": [f, s] = fixTS7034(codeErrors); break;
-      case "TS7005": [f, s] = fixTS7005(codeErrors); break;
-      case "TS7010": [f, s] = fixTS7010(codeErrors); break;
-      default: s = codeErrors.length; break;
+      case "TS7006":
+        [f, s] = fixTS7006(codeErrors);
+        break;
+      case "TS7031":
+        [f, s] = fixTS7031(codeErrors);
+        break;
+      case "TS7053":
+        [f, s] = fixTS7053(codeErrors);
+        break;
+      case "TS7018":
+        [f, s] = fixTS7018(codeErrors);
+        break;
+      case "TS7034":
+        [f, s] = fixTS7034(codeErrors);
+        break;
+      case "TS7005":
+        [f, s] = fixTS7005(codeErrors);
+        break;
+      case "TS7010":
+        [f, s] = fixTS7010(codeErrors);
+        break;
+      default:
+        s = codeErrors.length;
+        break;
     }
-    
+
     fileFixed += f;
     totalFixed += f;
     totalSkipped += s;
   }
-  
+
   if (fileFixed > 0) {
     console.log(`Fixed ${fileFixed} errors in ${file}`);
   }

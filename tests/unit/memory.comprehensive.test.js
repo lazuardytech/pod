@@ -248,7 +248,11 @@ describe("retrieveMemories", () => {
   it("exact strategy returns keyword-matching memories", async () => {
     const { createMemory } = await import("@/lib/memory/store.js");
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
-    await createMemory({ apiKeyId: KEY, type: "factual", content: "User prefers TypeScript for backend" });
+    await createMemory({
+      apiKeyId: KEY,
+      type: "factual",
+      content: "User prefers TypeScript for backend",
+    });
     await createMemory({ apiKeyId: KEY, type: "factual", content: "User uses SQLite for storage" });
 
     const result = await retrieveMemories(KEY, {
@@ -264,7 +268,11 @@ describe("retrieveMemories", () => {
   it("semantic strategy returns FTS-matched memories", async () => {
     const { createMemory } = await import("@/lib/memory/store.js");
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
-    await createMemory({ apiKeyId: KEY, type: "factual", content: "User prefers dark mode interface" });
+    await createMemory({
+      apiKeyId: KEY,
+      type: "factual",
+      content: "User prefers dark mode interface",
+    });
 
     const result = await retrieveMemories(KEY, {
       enabled: true,
@@ -281,7 +289,11 @@ describe("retrieveMemories", () => {
     const { createMemory } = await import("@/lib/memory/store.js");
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "User prefers vim editor" });
-    await createMemory({ apiKeyId: KEY, type: "episodic", content: "User decided to use bun runtime" });
+    await createMemory({
+      apiKeyId: KEY,
+      type: "episodic",
+      content: "User decided to use bun runtime",
+    });
 
     const result = await retrieveMemories(KEY, {
       enabled: true,
@@ -298,7 +310,11 @@ describe("retrieveMemories", () => {
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     // Create many large memories
     for (let i = 0; i < 10; i++) {
-      await createMemory({ apiKeyId: KEY, type: "factual", content: `${"word ".repeat(100)}item-${i}` });
+      await createMemory({
+        apiKeyId: KEY,
+        type: "factual",
+        content: `${"word ".repeat(100)}item-${i}`,
+      });
     }
     const result = await retrieveMemories(KEY, {
       enabled: true,
@@ -333,8 +349,18 @@ describe("retrieveMemories", () => {
   it("scopes to session when scope=session", async () => {
     const { createMemory } = await import("@/lib/memory/store.js");
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
-    await createMemory({ apiKeyId: KEY, sessionId: "sess-X", type: "factual", content: "session X memory" });
-    await createMemory({ apiKeyId: KEY, sessionId: "sess-Y", type: "factual", content: "session Y memory" });
+    await createMemory({
+      apiKeyId: KEY,
+      sessionId: "sess-X",
+      type: "factual",
+      content: "session X memory",
+    });
+    await createMemory({
+      apiKeyId: KEY,
+      sessionId: "sess-Y",
+      type: "factual",
+      content: "session Y memory",
+    });
 
     const result = await retrieveMemories(KEY, {
       enabled: true,
@@ -523,7 +549,12 @@ describe("GET /api/memory", () => {
       new Request("http://localhost/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: "mem-route", type: "factual", key: "pref:listed", content: "listed" }),
+        body: JSON.stringify({
+          apiKeyId: "mem-route",
+          type: "factual",
+          key: "pref:listed",
+          content: "listed",
+        }),
       }),
     );
     const res = await memRoute.GET(new Request("http://localhost/api/memory?apiKeyId=mem-route"));
@@ -541,18 +572,30 @@ describe("DELETE /api/memory", () => {
       new Request("http://localhost/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: "mem-route", type: "factual", key: "pref:clear-a", content: "a" }),
+        body: JSON.stringify({
+          apiKeyId: "mem-route",
+          type: "factual",
+          key: "pref:clear-a",
+          content: "a",
+        }),
       }),
     );
     await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: "mem-test-2", type: "factual", key: "pref:clear-b", content: "b" }),
+        body: JSON.stringify({
+          apiKeyId: "mem-test-2",
+          type: "factual",
+          key: "pref:clear-b",
+          content: "b",
+        }),
       }),
     );
 
-    const delRes = await memRoute.DELETE(new Request("http://localhost/api/memory", { method: "DELETE" }));
+    const delRes = await memRoute.DELETE(
+      new Request("http://localhost/api/memory", { method: "DELETE" }),
+    );
     expect(delRes.status).toBe(200);
     const delJson = await delRes.json();
     expect(delJson.success).toBe(true);
@@ -574,14 +617,21 @@ describe("GET /api/memory/[id]", () => {
       new Request("http://localhost/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: "mem-route", type: "factual", key: "pref:by-id", content: "by-id-test" }),
+        body: JSON.stringify({
+          apiKeyId: "mem-route",
+          type: "factual",
+          key: "pref:by-id",
+          content: "by-id-test",
+        }),
       }),
     );
     const {
       data: { id },
     } = await postRes.json();
 
-    const res = await memByIdRoute.GET(new Request(`http://localhost/api/memory/${id}`), { params: { id } });
+    const res = await memByIdRoute.GET(new Request(`http://localhost/api/memory/${id}`), {
+      params: { id },
+    });
     expect(res.status).toBe(200);
     const mem = await res.json();
     expect(mem.id).toBe(id);
@@ -590,7 +640,9 @@ describe("GET /api/memory/[id]", () => {
 
   it("returns 404 for unknown id", async () => {
     const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
-    const res = await memByIdRoute.GET(new Request("http://localhost/api/memory/nope"), { params: { id: "nope" } });
+    const res = await memByIdRoute.GET(new Request("http://localhost/api/memory/nope"), {
+      params: { id: "nope" },
+    });
     expect(res.status).toBe(404);
   });
 });
@@ -603,7 +655,12 @@ describe("PATCH /api/memory/[id]", () => {
       new Request("http://localhost/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: "mem-route", type: "factual", key: "pref:original", content: "original" }),
+        body: JSON.stringify({
+          apiKeyId: "mem-route",
+          type: "factual",
+          key: "pref:original",
+          content: "original",
+        }),
       }),
     );
     const {
@@ -633,29 +690,42 @@ describe("DELETE /api/memory/[id]", () => {
       new Request("http://localhost/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKeyId: "mem-route", type: "factual", key: "pref:to-delete", content: "to-delete" }),
+        body: JSON.stringify({
+          apiKeyId: "mem-route",
+          type: "factual",
+          key: "pref:to-delete",
+          content: "to-delete",
+        }),
       }),
     );
     const {
       data: { id },
     } = await postRes.json();
 
-    const delRes = await memByIdRoute.DELETE(new Request(`http://localhost/api/memory/${id}`, { method: "DELETE" }), {
-      params: { id },
-    });
+    const delRes = await memByIdRoute.DELETE(
+      new Request(`http://localhost/api/memory/${id}`, { method: "DELETE" }),
+      {
+        params: { id },
+      },
+    );
     expect(delRes.status).toBe(200);
     const data = await delRes.json();
     expect(data.success).toBe(true);
 
-    const getRes = await memByIdRoute.GET(new Request(`http://localhost/api/memory/${id}`), { params: { id } });
+    const getRes = await memByIdRoute.GET(new Request(`http://localhost/api/memory/${id}`), {
+      params: { id },
+    });
     expect(getRes.status).toBe(404);
   });
 
   it("returns 404 for unknown id", async () => {
     const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
-    const res = await memByIdRoute.DELETE(new Request("http://localhost/api/memory/nope", { method: "DELETE" }), {
-      params: { id: "nope" },
-    });
+    const res = await memByIdRoute.DELETE(
+      new Request("http://localhost/api/memory/nope", { method: "DELETE" }),
+      {
+        params: { id: "nope" },
+      },
+    );
     expect(res.status).toBe(404);
   });
 });

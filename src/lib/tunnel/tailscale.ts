@@ -8,11 +8,17 @@ const BIN_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "bin");
 const IS_MAC = os.platform() === "darwin";
 const _IS_LINUX = os.platform() === "linux";
 const IS_WINDOWS = os.platform() === "win32";
-const TAILSCALE_BIN = path.join(/*turbopackIgnore: true*/ BIN_DIR, IS_WINDOWS ? "tailscale.exe" : "tailscale");
+const TAILSCALE_BIN = path.join(
+  /*turbopackIgnore: true*/ BIN_DIR,
+  IS_WINDOWS ? "tailscale.exe" : "tailscale",
+);
 
 // Custom socket for userspace-networking mode (no root required)
 const TAILSCALE_DIR = path.join(/*turbopackIgnore: true*/ DATA_DIR, "tailscale");
-export const TAILSCALE_SOCKET = path.join(/*turbopackIgnore: true*/ TAILSCALE_DIR, "tailscaled.sock");
+export const TAILSCALE_SOCKET = path.join(
+  /*turbopackIgnore: true*/ TAILSCALE_DIR,
+  "tailscaled.sock",
+);
 const SOCKET_FLAG: string[] = IS_WINDOWS ? [] : ["--socket", TAILSCALE_SOCKET];
 const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.env.PATH || ""}`;
 
@@ -72,7 +78,8 @@ function getTailscaleBin(): string | null {
     /* not in PATH */
   }
   if (fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_BIN)) return TAILSCALE_BIN;
-  if (IS_WINDOWS && fs.existsSync(/*turbopackIgnore: true*/ WINDOWS_TAILSCALE_BIN)) return WINDOWS_TAILSCALE_BIN;
+  if (IS_WINDOWS && fs.existsSync(/*turbopackIgnore: true*/ WINDOWS_TAILSCALE_BIN))
+    return WINDOWS_TAILSCALE_BIN;
   return null;
 }
 
@@ -137,7 +144,11 @@ export async function installTailscale(
 
 function hasBrew(): boolean {
   try {
-    execSync("which brew", { stdio: "ignore", windowsHide: true, env: { ...process.env, PATH: EXTENDED_PATH } });
+    execSync("which brew", {
+      stdio: "ignore",
+      windowsHide: true,
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    });
     return true;
   } catch {
     return false;
@@ -295,7 +306,10 @@ async function installTailscaleLinux(sudoPassword: string, log: (msg: string) =>
     curlChild.on("exit", (code) => {
       if (code !== 0) return reject(new Error(`Failed to download install script: ${curlErr}`));
       log("Running install script...");
-      const child = spawn("sudo", ["-S", "sh"], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+      const child = spawn("sudo", ["-S", "sh"], {
+        stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true,
+      });
       let stderr = "";
       child.stdout.on("data", (d: Buffer) => {
         const line = d.toString().trim();
@@ -354,7 +368,12 @@ async function installTailscaleWindows(log: (msg: string) => void) {
     const args = `'/i','${msiPath}','TS_NOLAUNCH=true','/quiet','/norestart'`;
     const child = spawn(
       "powershell",
-      ["-NoProfile", "-NonInteractive", "-Command", `Start-Process msiexec -ArgumentList ${args} -Verb RunAs -Wait`],
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        `Start-Process msiexec -ArgumentList ${args} -Verb RunAs -Wait`,
+      ],
       { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
     );
     child.stderr.on("data", (d: Buffer) => {
@@ -540,7 +559,10 @@ export async function startFunnel(port: number): Promise<FunnelResult> {
 
   // Reset any existing funnel
   try {
-    execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} funnel --bg reset`, { stdio: "ignore", windowsHide: true });
+    execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} funnel --bg reset`, {
+      stdio: "ignore",
+      windowsHide: true,
+    });
   } catch (_e) {
     /* ignore */
   }
@@ -555,7 +577,10 @@ export async function startFunnel(port: number): Promise<FunnelResult> {
     let output = "";
 
     const parseFunnelUrl = (text: string): string | null =>
-      (text.match(/https:\/\/[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net[^\s]*/i) || [])[0]?.replace(/\/$/, "") || null;
+      (text.match(/https:\/\/[a-z0-9-]+\.[a-z0-9.-]+\.ts\.net[^\s]*/i) || [])[0]?.replace(
+        /\/$/,
+        "",
+      ) || null;
 
     const timeout = setTimeout(() => {
       if (resolved) return;
@@ -619,7 +644,10 @@ export function stopFunnel() {
   const bin = getTailscaleBin();
   if (!bin) return;
   try {
-    execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} funnel --bg reset`, { stdio: "ignore", windowsHide: true });
+    execSync(`"${bin}" ${SOCKET_FLAG.join(" ")} funnel --bg reset`, {
+      stdio: "ignore",
+      windowsHide: true,
+    });
   } catch (_e) {
     /* ignore */
   }

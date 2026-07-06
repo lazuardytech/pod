@@ -34,7 +34,10 @@ export default function ManualConfigModal({
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-text-main">{config.filename}</span>
               <Button variant="ghost" size="sm" onClick={() => copyConfig(config.content, index)}>
-                <LucideIcon name={copiedIndex === index ? "check" : "content_copy"} className="text-[14px] mr-1" />
+                <LucideIcon
+                  name={copiedIndex === index ? "check" : "content_copy"}
+                  className="text-[14px] mr-1"
+                />
                 {copiedIndex === index ? "Copied!" : "Copy"}
               </Button>
             </div>

@@ -5,7 +5,10 @@ import Badge from "@/shared/components/Badge";
 import Button from "@/shared/components/Button";
 import Input from "@/shared/components/Input";
 import Modal from "@/shared/components/Modal";
-import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
+import {
+  isAnthropicCompatibleProvider,
+  isOpenAICompatibleProvider,
+} from "@/shared/constants/providers";
 
 export default function EditConnectionModal({
   isOpen,
@@ -67,7 +70,8 @@ export default function EditConnectionModal({
   const isAzure = connection?.provider === "azure";
   const isCloudflareAi = connection?.provider === "cloudflare-ai";
   const isCompatible = connection
-    ? isOpenAICompatibleProvider(connection.provider) || isAnthropicCompatibleProvider(connection.provider)
+    ? isOpenAICompatibleProvider(connection.provider) ||
+      isAnthropicCompatibleProvider(connection.provider)
     : false;
 
   const handleTest = async () => {
@@ -190,7 +194,9 @@ export default function EditConnectionModal({
           label="Priority"
           type="number"
           value={formData.priority}
-          onChange={(e: any) => setFormData({ ...formData, priority: Number.parseInt(e.target.value, 10) || 1 })}
+          onChange={(e: any) =>
+            setFormData({ ...formData, priority: Number.parseInt(e.target.value, 10) || 1 })
+          }
         />
 
         {!isOAuth && (

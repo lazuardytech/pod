@@ -2,7 +2,15 @@
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
-export function Spinner({ size = "md", className, ...rest }: { size?: string; className?: any; [key: string]: any }) {
+export function Spinner({
+  size = "md",
+  className,
+  ...rest
+}: {
+  size?: string;
+  className?: any;
+  [key: string]: any;
+}) {
   const sizes: Record<string, string> = {
     sm: "text-[16px]",
     md: "text-[20px]",
@@ -11,7 +19,10 @@ export function Spinner({ size = "md", className, ...rest }: { size?: string; cl
   };
 
   return (
-    <LucideIcon name="progress_activity" className={cn("animate-spin text-storm-cloud", sizes[size], className)} />
+    <LucideIcon
+      name="progress_activity"
+      className={cn("animate-spin text-storm-cloud", sizes[size], className)}
+    />
   );
 }
 
@@ -41,7 +52,13 @@ export function CardSkeleton() {
   );
 }
 
-export default function Loading({ type = "spinner", ...props }: { type?: string; [key: string]: any }) {
+export default function Loading({
+  type = "spinner",
+  ...props
+}: {
+  type?: string;
+  [key: string]: any;
+}) {
   switch (type) {
     case "page":
       return <PageLoading {...props} />;

@@ -4,10 +4,10 @@
 
 Pod is currently in active development on the `v0.0.x` series. Only the latest release receives security fixes.
 
-| Version | Supported |
-|---|---|
-| latest (`v0.0.x`) | ✅ |
-| older tags | ❌ |
+| Version           | Supported |
+| ----------------- | --------- |
+| latest (`v0.0.x`) | ✅        |
+| older tags        | ❌        |
 
 ---
 

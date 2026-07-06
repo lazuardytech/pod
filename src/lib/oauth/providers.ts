@@ -34,7 +34,8 @@ function decodeJwtPayload(jwt: string | null | undefined): Record<string, unknow
     const parts = jwt.split(".");
     if (parts.length !== 3) return null;
     const base64 = parts[1]!.replace(/-/g, "+").replace(/_/g, "/");
-    const missingPadding = (BASE64_BLOCK_SIZE - (base64.length % BASE64_BLOCK_SIZE)) % BASE64_BLOCK_SIZE;
+    const missingPadding =
+      (BASE64_BLOCK_SIZE - (base64.length % BASE64_BLOCK_SIZE)) % BASE64_BLOCK_SIZE;
     const padded = base64 + "=".repeat(missingPadding);
     return JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as Record<string, unknown>;
   } catch {
@@ -65,11 +66,14 @@ export type CodexAccountInfo = {
 export function extractCodexAccountInfo(idToken: string | null | undefined): CodexAccountInfo {
   const payload = decodeJwtPayload(idToken);
   if (!payload) return {};
-  const chatgpt = (payload["https://api.openai.com/auth"] as Record<string, unknown> | undefined) || {};
+  const chatgpt =
+    (payload["https://api.openai.com/auth"] as Record<string, unknown> | undefined) || {};
   return {
     email: typeof payload.email === "string" ? payload.email : undefined,
-    chatgptAccountId: typeof chatgpt.chatgpt_account_id === "string" ? chatgpt.chatgpt_account_id : undefined,
-    chatgptPlanType: typeof chatgpt.chatgpt_plan_type === "string" ? chatgpt.chatgpt_plan_type : undefined,
+    chatgptAccountId:
+      typeof chatgpt.chatgpt_account_id === "string" ? chatgpt.chatgpt_account_id : undefined,
+    chatgptPlanType:
+      typeof chatgpt.chatgpt_plan_type === "string" ? chatgpt.chatgpt_plan_type : undefined,
   };
 }
 
@@ -382,21 +386,26 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       const userInfoRes = await fetch(`${GEMINI_CONFIG.userInfoUrl}?alt=json`, {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
-      const userInfo = userInfoRes.ok ? ((await userInfoRes.json()) as Record<string, unknown>) : {};
+      const userInfo = userInfoRes.ok
+        ? ((await userInfoRes.json()) as Record<string, unknown>)
+        : {};
 
       let projectId = "";
       try {
-        const projectRes = await fetch("https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${tokens.access_token}`,
-            "Content-Type": "application/json",
+        const projectRes = await fetch(
+          "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tokens.access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              metadata: getOAuthClientMetadata(),
+              mode: 1,
+            }),
           },
-          body: JSON.stringify({
-            metadata: getOAuthClientMetadata(),
-            mode: 1,
-          }),
-        });
+        );
         if (projectRes.ok) {
           const data = (await projectRes.json()) as {
             cloudaicompanionProject?: { id?: string } | string;
@@ -469,7 +478,11 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         "Client-Metadata": ANTIGRAVITY_CONFIG.loadCodeAssistClientMetadata,
         "x-request-source": "local",
       };
-      const metadata = { ideType: "IDE_UNSPECIFIED", platform: "PLATFORM_UNSPECIFIED", pluginType: "GEMINI" };
+      const metadata = {
+        ideType: "IDE_UNSPECIFIED",
+        platform: "PLATFORM_UNSPECIFIED",
+        pluginType: "GEMINI",
+      };
 
       const userInfoRes = await fetch(`${ANTIGRAVITY_CONFIG.userInfoUrl}?alt=json`, {
         headers: {
@@ -477,7 +490,9 @@ const PROVIDERS: Record<string, ProviderHandler> = {
           "x-request-source": "local",
         },
       });
-      const userInfo = userInfoRes.ok ? ((await userInfoRes.json()) as Record<string, unknown>) : {};
+      const userInfo = userInfoRes.ok
+        ? ((await userInfoRes.json()) as Record<string, unknown>)
+        : {};
 
       let projectId = "";
       let tierId = "legacy-tier";
@@ -565,7 +580,9 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
       }
 
-      const basicAuth = Buffer.from(`${config.clientId!}:${config.clientSecret!}`).toString("base64");
+      const basicAuth = Buffer.from(`${config.clientId!}:${config.clientSecret!}`).toString(
+        "base64",
+      );
 
       const response = await fetch(config.tokenUrl!, {
         method: "POST",
@@ -663,7 +680,9 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         throw new Error("Missing QODER OAuth client credentials");
       }
 
-      const basicAuth = Buffer.from(`${config.clientId!}:${config.clientSecret!}`).toString("base64");
+      const basicAuth = Buffer.from(`${config.clientId!}:${config.clientSecret!}`).toString(
+        "base64",
+      );
 
       const response = await fetch(config.tokenUrl!, {
         method: "POST",
@@ -845,7 +864,9 @@ const PROVIDERS: Record<string, ProviderHandler> = {
           "User-Agent": GITHUB_CONFIG.userAgent,
         },
       });
-      const copilotToken = copilotRes.ok ? ((await copilotRes.json()) as Record<string, unknown>) : {};
+      const copilotToken = copilotRes.ok
+        ? ((await copilotRes.json()) as Record<string, unknown>)
+        : {};
 
       const userRes = await fetch(GITHUB_CONFIG.userInfoUrl, {
         headers: {
@@ -865,7 +886,8 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       expiresIn: tokens.expires_in,
       providerSpecificData: {
         copilotToken: (extra?.copilotToken as { token?: string } | undefined)?.token,
-        copilotTokenExpiresAt: (extra?.copilotToken as { expires_at?: number } | undefined)?.expires_at,
+        copilotTokenExpiresAt: (extra?.copilotToken as { expires_at?: number } | undefined)
+          ?.expires_at,
         githubUserId: (extra?.userInfo as { id?: number } | undefined)?.id,
         githubLogin: (extra?.userInfo as { login?: string } | undefined)?.login,
         githubName: (extra?.userInfo as { name?: string } | undefined)?.name,
@@ -1042,7 +1064,10 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     requestDeviceCode: async (config) => {
       const response = await fetch(config.deviceCodeUrl!, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams({ client_id: config.clientId! }),
       });
       if (!response.ok) {
@@ -1062,7 +1087,8 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         user_code: data.user_code,
         verification_uri: data.verification_uri || "https://www.kimi.com/code/authorize_device",
         verification_uri_complete:
-          data.verification_uri_complete || `https://www.kimi.com/code/authorize_device?user_code=${data.user_code}`,
+          data.verification_uri_complete ||
+          `https://www.kimi.com/code/authorize_device?user_code=${data.user_code}`,
         expires_in: data.expires_in,
         interval: data.interval || 5,
       };
@@ -1070,7 +1096,10 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     pollToken: async (config, deviceCode) => {
       const response = await fetch(config.tokenUrl!, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams({
           grant_type: "urn:ietf:params:oauth:grant-type:device_code",
           client_id: config.clientId!,
@@ -1126,11 +1155,20 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       const response = await fetch(`${config.pollUrlBase}/${deviceCode}`);
       if (response.status === 202) return { ok: false, data: { error: "authorization_pending" } };
       if (response.status === 403)
-        return { ok: false, data: { error: "access_denied", error_description: "Authorization denied by user" } };
+        return {
+          ok: false,
+          data: { error: "access_denied", error_description: "Authorization denied by user" },
+        };
       if (response.status === 410)
-        return { ok: false, data: { error: "expired_token", error_description: "Authorization code expired" } };
+        return {
+          ok: false,
+          data: { error: "expired_token", error_description: "Authorization code expired" },
+        };
       if (!response.ok)
-        return { ok: false, data: { error: "poll_failed", error_description: `Poll failed: ${response.status}` } };
+        return {
+          ok: false,
+          data: { error: "poll_failed", error_description: `Poll failed: ${response.status}` },
+        };
       const data = (await response.json()) as {
         status?: string;
         token?: string;
@@ -1147,7 +1185,10 @@ const PROVIDERS: Record<string, ProviderHandler> = {
             orgId = profile.organizations?.[0]?.id || null;
           }
         } catch {}
-        return { ok: true, data: { access_token: data.token, _userEmail: data.userEmail, _orgId: orgId } };
+        return {
+          ok: true,
+          data: { access_token: data.token, _userEmail: data.userEmail, _orgId: orgId },
+        };
       }
       return { ok: false, data: { error: "authorization_pending" } };
     },
@@ -1179,10 +1220,15 @@ const PROVIDERS: Record<string, ProviderHandler> = {
         const decoded = Buffer.from(base64, "base64").toString("utf-8");
         const lastBrace = decoded.lastIndexOf("}");
         if (lastBrace === -1) throw new Error("No JSON found in decoded code");
-        const tokenData = JSON.parse(decoded.substring(0, lastBrace + 1)) as Record<string, unknown>;
+        const tokenData = JSON.parse(decoded.substring(0, lastBrace + 1)) as Record<
+          string,
+          unknown
+        >;
         return {
-          access_token: typeof tokenData.accessToken === "string" ? tokenData.accessToken : undefined,
-          refresh_token: typeof tokenData.refreshToken === "string" ? tokenData.refreshToken : undefined,
+          access_token:
+            typeof tokenData.accessToken === "string" ? tokenData.accessToken : undefined,
+          refresh_token:
+            typeof tokenData.refreshToken === "string" ? tokenData.refreshToken : undefined,
           email: typeof tokenData.email === "string" ? tokenData.email : undefined,
           firstName: typeof tokenData.firstName === "string" ? tokenData.firstName : undefined,
           lastName: typeof tokenData.lastName === "string" ? tokenData.lastName : undefined,
@@ -1204,7 +1250,12 @@ const PROVIDERS: Record<string, ProviderHandler> = {
           throw new Error(`Cline token exchange failed: ${error}`);
         }
         const data = (await response.json()) as {
-          data?: { accessToken?: string; refreshToken?: string; userInfo?: { email?: string }; expiresAt?: string };
+          data?: {
+            accessToken?: string;
+            refreshToken?: string;
+            userInfo?: { email?: string };
+            expiresAt?: string;
+          };
           accessToken?: string;
           refreshToken?: string;
           expiresAt?: string;
@@ -1220,7 +1271,9 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     mapTokens: (tokens) => ({
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
-      expiresIn: tokens.expires_at ? Math.floor((new Date(tokens.expires_at).getTime() - Date.now()) / 1000) : 3600,
+      expiresIn: tokens.expires_at
+        ? Math.floor((new Date(tokens.expires_at).getTime() - Date.now()) / 1000)
+        : 3600,
       email: tokens.email,
       providerSpecificData: { firstName: tokens.firstName, lastName: tokens.lastName },
     }),
@@ -1257,7 +1310,10 @@ const PROVIDERS: Record<string, ProviderHandler> = {
       if (clientSecret) body.set("client_secret", clientSecret);
       const response = await fetch(`${baseUrl}${config.tokenUrlPath}`, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: body.toString(),
       });
       if (!response.ok) throw new Error(`GitLab token exchange failed: ${await response.text()}`);
@@ -1293,20 +1349,23 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     config: CODEBUDDY_CONFIG,
     flowType: "device_code",
     requestDeviceCode: async (config) => {
-      const response = await fetch(String(config.stateUrl) + "?platform=" + String(config.platform), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "User-Agent": config.userAgent!,
-          "X-Requested-With": "XMLHttpRequest",
-          "X-Domain": "copilot.tencent.com",
-          "X-No-Authorization": "true",
-          "X-No-User-Id": "true",
-          "X-Product": "SaaS",
+      const response = await fetch(
+        String(config.stateUrl) + "?platform=" + String(config.platform),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "User-Agent": config.userAgent!,
+            "X-Requested-With": "XMLHttpRequest",
+            "X-Domain": "copilot.tencent.com",
+            "X-No-Authorization": "true",
+            "X-No-User-Id": "true",
+            "X-Product": "SaaS",
+          },
+          body: "{}",
         },
-        body: "{}",
-      });
+      );
       if (!response.ok) throw new Error(`CodeBuddy state request failed: ${await response.text()}`);
       const data = (await response.json()) as {
         code: number;
@@ -1400,9 +1459,12 @@ export function generateAuthData(
   if (provider.flowType === "device_code") {
     authUrl = null;
   } else if (provider.flowType === "authorization_code_pkce") {
-    authUrl = provider.buildAuthUrl?.(provider.config, redirectUri, state, codeChallenge, meta || {}) || null;
+    authUrl =
+      provider.buildAuthUrl?.(provider.config, redirectUri, state, codeChallenge, meta || {}) ||
+      null;
   } else {
-    authUrl = provider.buildAuthUrl?.(provider.config, redirectUri, state, undefined, meta || {}) || null;
+    authUrl =
+      provider.buildAuthUrl?.(provider.config, redirectUri, state, undefined, meta || {}) || null;
   }
 
   return {
@@ -1427,7 +1489,14 @@ export async function exchangeTokens(
 ): Promise<Record<string, unknown>> {
   const provider = getProvider(providerName);
 
-  const tokens = await provider.exchangeToken?.(provider.config, code, redirectUri, codeVerifier, state, meta || {});
+  const tokens = await provider.exchangeToken?.(
+    provider.config,
+    code,
+    redirectUri,
+    codeVerifier,
+    state,
+    meta || {},
+  );
 
   if (!tokens) {
     throw new Error(`Provider ${providerName} does not support exchangeToken`);
@@ -1482,13 +1551,17 @@ export async function pollForToken(
       if (provider.postExchange) {
         extra = await provider.postExchange(result.data as unknown as TokenResponse);
       }
-      return { success: true, tokens: provider.mapTokens(result.data as unknown as TokenResponse, extra) };
+      return {
+        success: true,
+        tokens: provider.mapTokens(result.data as unknown as TokenResponse, extra),
+      };
     }
     if (result.data.error === "authorization_pending" || result.data.error === "slow_down") {
       return {
         success: false,
         error: (result.data.error as string) || "authorization_pending",
-        errorDescription: (result.data.error_description as string) || (result.data.message as string),
+        errorDescription:
+          (result.data.error_description as string) || (result.data.message as string),
         pending: result.data.error === "authorization_pending",
       };
     }
@@ -1496,7 +1569,9 @@ export async function pollForToken(
       success: false,
       error: (result.data.error as string) || "no_access_token",
       errorDescription:
-        (result.data.error_description as string) || (result.data.message as string) || "No access token received",
+        (result.data.error_description as string) ||
+        (result.data.message as string) ||
+        "No access token received",
     };
   }
 

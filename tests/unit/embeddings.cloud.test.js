@@ -140,7 +140,10 @@ describe("handleEmbeddings — authentication", () => {
     vi.mocked(extractBearerToken).mockReturnValue(null);
     vi.mocked(parseApiKey).mockResolvedValue(null);
     vi.mocked(getMachineData).mockResolvedValue(makeMachineData());
-    vi.mocked(getModelInfoCore).mockResolvedValue({ provider: "openai", model: "text-embedding-ada-002" });
+    vi.mocked(getModelInfoCore).mockResolvedValue({
+      provider: "openai",
+      model: "text-embedding-ada-002",
+    });
   });
 
   afterEach(() => {
@@ -161,7 +164,11 @@ describe("handleEmbeddings — authentication", () => {
   it("Authorization header without Bearer scheme → 401", async () => {
     vi.mocked(extractBearerToken).mockReturnValue(null);
 
-    const req = makeRequest("POST", { model: "ag/gemini-embedding-001", input: "hello" }, "Token abc123");
+    const req = makeRequest(
+      "POST",
+      { model: "ag/gemini-embedding-001", input: "hello" },
+      "Token abc123",
+    );
     const res = await handleEmbeddings(req, makeEnv(), {});
 
     expect(res.status).toBe(401);
@@ -181,7 +188,11 @@ describe("handleEmbeddings — authentication", () => {
 
   it("old-format key (no machineId) → 400 asking to use machineId endpoint", async () => {
     vi.mocked(extractBearerToken).mockReturnValue("sk-oldfmt8");
-    vi.mocked(parseApiKey).mockResolvedValue({ machineId: null, keyId: "oldfmt8", isNewFormat: false });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      machineId: null,
+      keyId: "oldfmt8",
+      isNewFormat: false,
+    });
 
     const req = makeRequest("POST", { model: "ag/gemini-embedding-001", input: "hello" });
     const res = await handleEmbeddings(req, makeEnv(), {});
@@ -193,7 +204,11 @@ describe("handleEmbeddings — authentication", () => {
 
   it("valid key format but key value not in machine apiKeys → 401", async () => {
     vi.mocked(extractBearerToken).mockReturnValue("sk-mach01-key01-ab12cd34");
-    vi.mocked(parseApiKey).mockResolvedValue({ machineId: MACHINE_ID, keyId: "key01", isNewFormat: true });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      machineId: MACHINE_ID,
+      keyId: "key01",
+      isNewFormat: true,
+    });
     vi.mocked(getMachineData).mockResolvedValue(
       makeMachineData({
         apiKeys: [{ key: "sk-different-key" }], // key doesn't match
@@ -210,9 +225,16 @@ describe("handleEmbeddings — authentication", () => {
 
   it("valid key → passes auth (proceeds to body parsing)", async () => {
     vi.mocked(extractBearerToken).mockReturnValue(VALID_API_KEY);
-    vi.mocked(parseApiKey).mockResolvedValue({ machineId: MACHINE_ID, keyId: "key01", isNewFormat: true });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      machineId: MACHINE_ID,
+      keyId: "key01",
+      isNewFormat: true,
+    });
     vi.mocked(getMachineData).mockResolvedValue(makeMachineData());
-    vi.mocked(getModelInfoCore).mockResolvedValue({ provider: "openai", model: "text-embedding-ada-002" });
+    vi.mocked(getModelInfoCore).mockResolvedValue({
+      provider: "openai",
+      model: "text-embedding-ada-002",
+    });
     vi.mocked(handleEmbeddingsCore).mockResolvedValue({
       success: true,
       response: new Response(JSON.stringify(VALID_EMBEDDING_RESPONSE_BODY), {
@@ -235,7 +257,11 @@ describe("handleEmbeddings — authentication", () => {
 describe("handleEmbeddings — body validation", () => {
   beforeEach(() => {
     vi.mocked(extractBearerToken).mockReturnValue(VALID_API_KEY);
-    vi.mocked(parseApiKey).mockResolvedValue({ machineId: MACHINE_ID, keyId: "key01", isNewFormat: true });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      machineId: MACHINE_ID,
+      keyId: "key01",
+      isNewFormat: true,
+    });
     vi.mocked(getMachineData).mockResolvedValue(makeMachineData());
   });
 
@@ -294,9 +320,16 @@ describe("handleEmbeddings — body validation", () => {
 describe("handleEmbeddings — valid request (happy path)", () => {
   beforeEach(() => {
     vi.mocked(extractBearerToken).mockReturnValue(VALID_API_KEY);
-    vi.mocked(parseApiKey).mockResolvedValue({ machineId: MACHINE_ID, keyId: "key01", isNewFormat: true });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      machineId: MACHINE_ID,
+      keyId: "key01",
+      isNewFormat: true,
+    });
     vi.mocked(getMachineData).mockResolvedValue(makeMachineData());
-    vi.mocked(getModelInfoCore).mockResolvedValue({ provider: "openai", model: "text-embedding-ada-002" });
+    vi.mocked(getModelInfoCore).mockResolvedValue({
+      provider: "openai",
+      model: "text-embedding-ada-002",
+    });
     vi.mocked(handleEmbeddingsCore).mockResolvedValue({
       success: true,
       response: new Response(JSON.stringify(VALID_EMBEDDING_RESPONSE_BODY), {
@@ -382,8 +415,15 @@ describe("handleEmbeddings — valid request (happy path)", () => {
 describe("handleEmbeddings — rate limit fallback", () => {
   beforeEach(() => {
     vi.mocked(extractBearerToken).mockReturnValue(VALID_API_KEY);
-    vi.mocked(parseApiKey).mockResolvedValue({ machineId: MACHINE_ID, keyId: "key01", isNewFormat: true });
-    vi.mocked(getModelInfoCore).mockResolvedValue({ provider: "openai", model: "text-embedding-ada-002" });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      machineId: MACHINE_ID,
+      keyId: "key01",
+      isNewFormat: true,
+    });
+    vi.mocked(getModelInfoCore).mockResolvedValue({
+      provider: "openai",
+      model: "text-embedding-ada-002",
+    });
     vi.mocked(saveMachineData).mockResolvedValue(undefined);
   });
 
@@ -441,10 +481,13 @@ describe("handleEmbeddings — rate limit fallback", () => {
       success: false,
       status: 400,
       error: "input must be a string or array",
-      response: new Response(JSON.stringify({ error: { message: "input must be a string or array" } }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }),
+      response: new Response(
+        JSON.stringify({ error: { message: "input must be a string or array" } }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     });
 
     const req = makeRequest("POST", { model: "openai/text-embedding-ada-002", input: "hello" });
@@ -480,7 +523,10 @@ describe("handleEmbeddings — machineId override path", () => {
   beforeEach(() => {
     // When machineId is provided via URL, no apiKey parsing needed for machineId
     vi.mocked(getMachineData).mockResolvedValue(makeMachineData());
-    vi.mocked(getModelInfoCore).mockResolvedValue({ provider: "openai", model: "text-embedding-ada-002" });
+    vi.mocked(getModelInfoCore).mockResolvedValue({
+      provider: "openai",
+      model: "text-embedding-ada-002",
+    });
     vi.mocked(handleEmbeddingsCore).mockResolvedValue({
       success: true,
       response: new Response(JSON.stringify(VALID_EMBEDDING_RESPONSE_BODY), {

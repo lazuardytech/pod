@@ -179,11 +179,16 @@ export function geminiToOpenAIResponse(chunk, state) {
   // Usage metadata - extract before finish reason so we can include it
   const usageMeta = response.usageMetadata || chunk.usageMetadata;
   if (usageMeta && typeof usageMeta === "object") {
-    const cachedTokens = typeof usageMeta.cachedContentTokenCount === "number" ? usageMeta.cachedContentTokenCount : 0;
-    const promptTokenCountRaw = typeof usageMeta.promptTokenCount === "number" ? usageMeta.promptTokenCount : 0;
-    const thoughtsTokens = typeof usageMeta.thoughtsTokenCount === "number" ? usageMeta.thoughtsTokenCount : 0;
-    let candidatesTokens = typeof usageMeta.candidatesTokenCount === "number" ? usageMeta.candidatesTokenCount : 0;
-    const totalTokens = typeof usageMeta.totalTokenCount === "number" ? usageMeta.totalTokenCount : 0;
+    const cachedTokens =
+      typeof usageMeta.cachedContentTokenCount === "number" ? usageMeta.cachedContentTokenCount : 0;
+    const promptTokenCountRaw =
+      typeof usageMeta.promptTokenCount === "number" ? usageMeta.promptTokenCount : 0;
+    const thoughtsTokens =
+      typeof usageMeta.thoughtsTokenCount === "number" ? usageMeta.thoughtsTokenCount : 0;
+    let candidatesTokens =
+      typeof usageMeta.candidatesTokenCount === "number" ? usageMeta.candidatesTokenCount : 0;
+    const totalTokens =
+      typeof usageMeta.totalTokenCount === "number" ? usageMeta.totalTokenCount : 0;
 
     // prompt_tokens = promptTokenCount (includes cached tokens, matching claude-to-openai.js behavior)
     const promptTokens = promptTokenCountRaw;

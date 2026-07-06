@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { exchangeTokens, generateAuthData, getProvider, pollForToken, requestDeviceCode } from "@/lib/oauth/providers";
+import {
+  exchangeTokens,
+  generateAuthData,
+  getProvider,
+  pollForToken,
+  requestDeviceCode,
+} from "@/lib/oauth/providers";
 import {
   clearCodexSession,
   getCodexSessionStatus,
@@ -35,7 +41,11 @@ export async function GET(request: any, { params }: { params: any }) {
       searchParams.forEach((value, key) => {
         if (!reservedParams.has(key)) meta[key] = value;
       });
-      const authData = generateAuthData(provider, redirectUri, Object.keys(meta).length ? meta : undefined);
+      const authData = generateAuthData(
+        provider,
+        redirectUri,
+        Object.keys(meta).length ? meta : undefined,
+      );
       return NextResponse.json(authData);
     }
 
@@ -88,7 +98,10 @@ export async function GET(request: any, { params }: { params: any }) {
     if (action === "device-code") {
       const providerData = getProvider(provider);
       if (providerData.flowType !== "device_code") {
-        return NextResponse.json({ error: "Provider does not support device code flow" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Provider does not support device code flow" },
+          { status: 400 },
+        );
       }
 
       const authData = generateAuthData(provider, null as unknown as string);
@@ -154,14 +167,23 @@ export async function POST(request: any, { params }: { params: any }) {
       }
 
       // Exchange code for tokens (meta carries provider-specific params, e.g. gitlab clientId/baseUrl)
-      const tokenData = await exchangeTokens(provider, code, redirectUri, codeVerifier, state, meta);
+      const tokenData = await exchangeTokens(
+        provider,
+        code,
+        redirectUri,
+        codeVerifier,
+        state,
+        meta,
+      );
 
       // Save to database
       const connection = await createProviderConnection({
         provider,
         authType: "oauth",
         ...tokenData,
-        expiresAt: tokenData.expiresIn ? new Date(Date.now() + Number(tokenData.expiresIn) * 1000).toISOString() : null,
+        expiresAt: tokenData.expiresIn
+          ? new Date(Date.now() + Number(tokenData.expiresIn) * 1000).toISOString()
+          : null,
         testStatus: "active",
       });
 
@@ -221,7 +243,8 @@ export async function POST(request: any, { params }: { params: any }) {
       }
 
       // Still pending or error - don't create connection for pending states
-      const isPending = result.pending || result.error === "authorization_pending" || result.error === "slow_down";
+      const isPending =
+        result.pending || result.error === "authorization_pending" || result.error === "slow_down";
 
       return NextResponse.json({
         success: false,

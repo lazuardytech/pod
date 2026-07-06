@@ -25,7 +25,12 @@ function toPositiveInt(value: unknown): number | null {
 
 export type LimitConfig = { requestsPerMinute: number; concurrentRequests: number };
 
-export type ApiKeyRecord = { id: string; limitType?: string; requestsPerMinute?: number; concurrentRequests?: number };
+export type ApiKeyRecord = {
+  id: string;
+  limitType?: string;
+  requestsPerMinute?: number;
+  concurrentRequests?: number;
+};
 
 export type PermitResult =
   | { ok: true; release: (() => void) | null }

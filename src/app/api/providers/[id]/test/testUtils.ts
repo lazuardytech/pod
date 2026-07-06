@@ -16,7 +16,10 @@ import {
 } from "@/lib/oauth/constants/oauth";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { PROVIDER_ENDPOINTS } from "@/shared/constants/config";
-import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
+import {
+  isAnthropicCompatibleProvider,
+  isOpenAICompatibleProvider,
+} from "@/shared/constants/providers";
 import { buildClineHeaders } from "@/shared/utils/clineAuth.mts";
 
 // OAuth provider test endpoints
@@ -61,7 +64,8 @@ const OAUTH_TEST_CONFIG = {
   },
   iflow: {
     // iFlow getUserInfo requires accessToken as query param, not header
-    buildUrl: (token: any) => `https://iflow.cn/api/oauth/getUserInfo?accessToken=${encodeURIComponent(token)}`,
+    buildUrl: (token: any) =>
+      `https://iflow.cn/api/oauth/getUserInfo?accessToken=${encodeURIComponent(token)}`,
     method: "GET",
     noAuth: true,
   },
@@ -172,7 +176,12 @@ async function refreshOAuthToken(connection: any) {
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId, clientSecret, refreshToken, grantType: "refresh_token" }),
+          body: JSON.stringify({
+            clientId,
+            clientSecret,
+            refreshToken,
+            grantType: "refresh_token",
+          }),
         });
         if (!response.ok) return null;
         const data = await response.json();
@@ -199,7 +208,10 @@ async function refreshOAuthToken(connection: any) {
     if (provider === "qwen") {
       const response = await fetch(QWEN_CONFIG.tokenUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams({
           grant_type: "refresh_token",
           refresh_token: refreshToken,
@@ -309,7 +321,9 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
   }
 
   try {
-    const testUrl = (config as any).buildUrl ? (config as any).buildUrl(accessToken) : (config as any).url;
+    const testUrl = (config as any).buildUrl
+      ? (config as any).buildUrl(accessToken)
+      : (config as any).url;
     const headers = (config as any).noAuth
       ? { ...(config as any).extraHeaders }
       : {
@@ -323,13 +337,22 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
     if ((config as any).body) fetchOpts.body = (config as any).body;
     const res = await fetchWithConnectionProxy(testUrl, fetchOpts, effectiveProxy);
 
-    const accepted = res.ok || ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(res.status));
+    const accepted =
+      res.ok ||
+      ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(res.status));
     if (accepted) return { valid: true, error: null, refreshed, newTokens };
 
-    if (res.status === 401 && (config as any).refreshable && !refreshed && connection.refreshToken) {
+    if (
+      res.status === 401 &&
+      (config as any).refreshable &&
+      !refreshed &&
+      connection.refreshToken
+    ) {
       const tokens = await refreshOAuthToken(connection);
       if (tokens) {
-        const retryUrl = (config as any).buildUrl ? (config as any).buildUrl(tokens.accessToken) : testUrl;
+        const retryUrl = (config as any).buildUrl
+          ? (config as any).buildUrl(tokens.accessToken)
+          : testUrl;
         const retryHeaders = (config as any).noAuth
           ? { ...(config as any).extraHeaders }
           : {
@@ -343,7 +366,9 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
         if ((config as any).body) retryOpts.body = (config as any).body;
         const retryRes = await fetchWithConnectionProxy(retryUrl, retryOpts, effectiveProxy);
         const retryAccepted =
-          retryRes.ok || ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(retryRes.status));
+          retryRes.ok ||
+          ((config as any).acceptStatuses &&
+            (config as any).acceptStatuses.includes(retryRes.status));
         if (retryAccepted) return { valid: true, error: null, refreshed: true, newTokens: tokens };
       }
       return { valid: false, error: "Token invalid or revoked", refreshed: false };
@@ -430,7 +455,10 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
           url,
           {
             method: "POST",
-            headers: { Authorization: `Bearer ${connection.apiKey}`, "Content-Type": "application/json" },
+            headers: {
+              Authorization: `Bearer ${connection.apiKey}`,
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
               model: getDefaultModel("cloudflare-ai"),
               messages: [{ role: "user", content: "test" }],
@@ -448,14 +476,20 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
         const deployment = psd.deployment || "gpt-4";
         const apiVersion = psd.apiVersion || "2024-10-01-preview";
         const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
-        const headers: Record<string, string> = { "api-key": connection.apiKey, "Content-Type": "application/json" };
+        const headers: Record<string, string> = {
+          "api-key": connection.apiKey,
+          "Content-Type": "application/json",
+        };
         if (psd.organization) headers["OpenAI-Organization"] = psd.organization;
         const res = await fetchWithConnectionProxy(
           url,
           {
             method: "POST",
             headers,
-            body: JSON.stringify({ messages: [{ role: "user", content: "test" }], max_completion_tokens: 1 }),
+            body: JSON.stringify({
+              messages: [{ role: "user", content: "test" }],
+              max_completion_tokens: 1,
+            }),
           },
           effectiveProxy,
         );
@@ -517,7 +551,11 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
               "anthropic-version": "2023-06-01",
               "content-type": "application/json",
             },
-            body: JSON.stringify({ model: "glm-4.7", max_tokens: 1, messages: [{ role: "user", content: "test" }] }),
+            body: JSON.stringify({
+              model: "glm-4.7",
+              max_tokens: 1,
+              messages: [{ role: "user", content: "test" }],
+            }),
           },
           effectiveProxy,
         );
@@ -529,8 +567,15 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
           "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
           {
             method: "POST",
-            headers: { Authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
-            body: JSON.stringify({ model: "glm-4.7", max_tokens: 1, messages: [{ role: "user", content: "test" }] }),
+            headers: {
+              Authorization: `Bearer ${connection.apiKey}`,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "glm-4.7",
+              max_tokens: 1,
+              messages: [{ role: "user", content: "test" }],
+            }),
           },
           effectiveProxy,
         );
@@ -552,7 +597,11 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
               "anthropic-version": "2023-06-01",
               "content-type": "application/json",
             },
-            body: JSON.stringify({ model: "minimax-m2", max_tokens: 1, messages: [{ role: "user", content: "test" }] }),
+            body: JSON.stringify({
+              model: "minimax-m2",
+              max_tokens: 1,
+              messages: [{ role: "user", content: "test" }],
+            }),
           },
           effectiveProxy,
         );
@@ -591,7 +640,10 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
           aliBaseUrl,
           {
             method: "POST",
-            headers: { Authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
+            headers: {
+              Authorization: `Bearer ${connection.apiKey}`,
+              "content-type": "application/json",
+            },
             body: JSON.stringify({
               model: getDefaultModel(connection.provider),
               max_tokens: 1,
@@ -609,7 +661,10 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
           PROVIDER_ENDPOINTS[connection.provider],
           {
             method: "POST",
-            headers: { Authorization: `Bearer ${connection.apiKey}`, "content-type": "application/json" },
+            headers: {
+              Authorization: `Bearer ${connection.apiKey}`,
+              "content-type": "application/json",
+            },
             body: JSON.stringify({
               model: getDefaultModel(connection.provider),
               max_tokens: 1,
@@ -761,12 +816,16 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
       case "grok-web": {
-        const token = connection.apiKey.startsWith("sso=") ? connection.apiKey.slice(4) : connection.apiKey;
+        const token = connection.apiKey.startsWith("sso=")
+          ? connection.apiKey.slice(4)
+          : connection.apiKey;
         const randomHex = (n: any) =>
-          Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, "0")).join("");
-        const statsigId = Buffer.from("e:TypeError: Cannot read properties of null (reading 'children')").toString(
-          "base64",
-        );
+          Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) =>
+            b.toString(16).padStart(2, "0"),
+          ).join("");
+        const statsigId = Buffer.from(
+          "e:TypeError: Cannot read properties of null (reading 'children')",
+        ).toString("base64");
         const res = await fetchWithConnectionProxy(
           "https://grok.com/rest/app-chat/conversations/new",
           {
@@ -834,15 +893,25 @@ async function testApiKeyConnection(connection: any, effectiveProxy: any = null)
 export async function testSingleConnection(id: any) {
   const connection = await getProviderConnectionById(id);
   if (!connection)
-    return { valid: false, error: "Connection not found", latencyMs: 0, testedAt: new Date().toISOString() };
+    return {
+      valid: false,
+      error: "Connection not found",
+      latencyMs: 0,
+      testedAt: new Date().toISOString(),
+    };
 
   const effectiveProxy = await resolveConnectionProxyConfig(connection.providerSpecificData || {});
 
-  if (effectiveProxy.connectionProxyEnabled && effectiveProxy.connectionProxyUrl && !effectiveProxy.vercelRelayUrl) {
+  if (
+    effectiveProxy.connectionProxyEnabled &&
+    effectiveProxy.connectionProxyUrl &&
+    !effectiveProxy.vercelRelayUrl
+  ) {
     const proxyResult = await testProxyUrl({ proxyUrl: effectiveProxy.connectionProxyUrl });
     if (!proxyResult.ok) {
       const proxyError =
-        proxyTestError(proxyResult) || `Proxy test failed with status ${(proxyResult as { status?: number }).status}`;
+        proxyTestError(proxyResult) ||
+        `Proxy test failed with status ${(proxyResult as { status?: number }).status}`;
       await updateProviderConnection(id, {
         testStatus: "error",
         lastError: proxyError,
@@ -871,13 +940,21 @@ export async function testSingleConnection(id: any) {
 
   if ((result as any).refreshed && (result as any).newTokens) {
     updateData.accessToken = (result as any).newTokens.accessToken;
-    if ((result as any).newTokens.refreshToken) updateData.refreshToken = (result as any).newTokens.refreshToken;
+    if ((result as any).newTokens.refreshToken)
+      updateData.refreshToken = (result as any).newTokens.refreshToken;
     if ((result as any).newTokens.expiresIn) {
-      updateData.expiresAt = new Date(Date.now() + (result as any).newTokens.expiresIn * 1000).toISOString();
+      updateData.expiresAt = new Date(
+        Date.now() + (result as any).newTokens.expiresIn * 1000,
+      ).toISOString();
     }
   }
 
   await updateProviderConnection(id, updateData);
 
-  return { valid: result.valid, error: result.error, latencyMs, testedAt: new Date().toISOString() };
+  return {
+    valid: result.valid,
+    error: result.error,
+    latencyMs,
+    testedAt: new Date().toISOString(),
+  };
 }

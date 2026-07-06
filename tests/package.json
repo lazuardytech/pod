@@ -2,8 +2,8 @@
   "name": "pod-tests",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "description": "Unit tests for pod embeddings endpoint",
+  "type": "module",
   "scripts": {
     "test": "bun x vitest run --reporter=verbose",
     "test:watch": "bun x vitest --reporter=verbose"

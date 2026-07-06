@@ -90,6 +90,8 @@ describe("memory integration", () => {
 
     const listed = await listMemories({ apiKeyId, limit: 50, offset: 0 });
     expect(listed.total).toBeGreaterThan(0);
-    expect(listed.data.some((m) => String(m.content).toLowerCase().includes("dark mode"))).toBe(true);
+    expect(listed.data.some((m) => String(m.content).toLowerCase().includes("dark mode"))).toBe(
+      true,
+    );
   });
 });

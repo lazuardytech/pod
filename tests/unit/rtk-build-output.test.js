@@ -106,9 +106,12 @@ describe("buildOutput filter", () => {
 
 describe("autoDetectFilter routes build logs to buildOutput", () => {
   it("npm install log → buildOutput", () => {
-    const log = ["> pod@0.0.44 install", "> node-gyp", "npm WARN deprecated foo@1.0", "added 250 packages in 12s"].join(
-      "\n",
-    );
+    const log = [
+      "> pod@0.0.44 install",
+      "> node-gyp",
+      "npm WARN deprecated foo@1.0",
+      "added 250 packages in 12s",
+    ].join("\n");
     const f = autoDetectFilter(log);
     expect(f).toBe(buildOutput);
   });
@@ -124,14 +127,18 @@ describe("autoDetectFilter routes build logs to buildOutput", () => {
   });
 
   it("yarn output → buildOutput", () => {
-    const log = ["yarn install v1.22.22", "info Resolving packages...", "Done in 4.12s."].join("\n");
+    const log = ["yarn install v1.22.22", "info Resolving packages...", "Done in 4.12s."].join(
+      "\n",
+    );
     const f = autoDetectFilter(log);
     expect(f).toBe(buildOutput);
   });
 
   it("plain git diff still routes to gitDiff (build patterns don't false-positive)", async () => {
     const { gitDiff } = await import("../../open-sse/rtk/filters/gitDiff.js");
-    const log = ["diff --git a/foo.js b/foo.js", "@@ -1,3 +1,3 @@", "-old", "+new", "context"].join("\n");
+    const log = ["diff --git a/foo.js b/foo.js", "@@ -1,3 +1,3 @@", "-old", "+new", "context"].join(
+      "\n",
+    );
     const f = autoDetectFilter(log);
     expect(f).toBe(gitDiff);
   });

@@ -7,19 +7,43 @@ const GROK_USER_AGENT =
 
 const MODEL_MAP = {
   "grok-3": { grokModel: "grok-3", modelMode: "MODEL_MODE_GROK_3", isThinking: false },
-  "grok-3-mini": { grokModel: "grok-3", modelMode: "MODEL_MODE_GROK_3_MINI_THINKING", isThinking: true },
-  "grok-3-thinking": { grokModel: "grok-3", modelMode: "MODEL_MODE_GROK_3_THINKING", isThinking: true },
+  "grok-3-mini": {
+    grokModel: "grok-3",
+    modelMode: "MODEL_MODE_GROK_3_MINI_THINKING",
+    isThinking: true,
+  },
+  "grok-3-thinking": {
+    grokModel: "grok-3",
+    modelMode: "MODEL_MODE_GROK_3_THINKING",
+    isThinking: true,
+  },
   "grok-4": { grokModel: "grok-4", modelMode: "MODEL_MODE_GROK_4", isThinking: false },
-  "grok-4-mini": { grokModel: "grok-4-mini", modelMode: "MODEL_MODE_GROK_4_MINI_THINKING", isThinking: true },
-  "grok-4-thinking": { grokModel: "grok-4", modelMode: "MODEL_MODE_GROK_4_THINKING", isThinking: true },
+  "grok-4-mini": {
+    grokModel: "grok-4-mini",
+    modelMode: "MODEL_MODE_GROK_4_MINI_THINKING",
+    isThinking: true,
+  },
+  "grok-4-thinking": {
+    grokModel: "grok-4",
+    modelMode: "MODEL_MODE_GROK_4_THINKING",
+    isThinking: true,
+  },
   "grok-4-heavy": { grokModel: "grok-4", modelMode: "MODEL_MODE_HEAVY", isThinking: true },
   "grok-4.1-mini": {
     grokModel: "grok-4-1-thinking-1129",
     modelMode: "MODEL_MODE_GROK_4_1_MINI_THINKING",
     isThinking: true,
   },
-  "grok-4.1-fast": { grokModel: "grok-4-1-thinking-1129", modelMode: "MODEL_MODE_FAST", isThinking: false },
-  "grok-4.1-expert": { grokModel: "grok-4-1-thinking-1129", modelMode: "MODEL_MODE_EXPERT", isThinking: true },
+  "grok-4.1-fast": {
+    grokModel: "grok-4-1-thinking-1129",
+    modelMode: "MODEL_MODE_FAST",
+    isThinking: false,
+  },
+  "grok-4.1-expert": {
+    grokModel: "grok-4-1-thinking-1129",
+    modelMode: "MODEL_MODE_EXPERT",
+    isThinking: true,
+  },
   "grok-4.1-thinking": {
     grokModel: "grok-4-1-thinking-1129",
     modelMode: "MODEL_MODE_GROK_4_1_THINKING",
@@ -31,7 +55,9 @@ const MODEL_MAP = {
 };
 
 function randomString(length, alphanumeric = false) {
-  const chars = alphanumeric ? "abcdefghijklmnopqrstuvwxyz0123456789" : "abcdefghijklmnopqrstuvwxyz";
+  const chars = alphanumeric
+    ? "abcdefghijklmnopqrstuvwxyz0123456789"
+    : "abcdefghijklmnopqrstuvwxyz";
   let result = "";
   for (let i = 0; i < length; i++) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
@@ -171,7 +197,9 @@ function buildStreamingResponse(eventStream, model, cid, created, isThinkingMode
               created,
               model,
               system_fingerprint: null,
-              choices: [{ index: 0, delta: { role: "assistant" }, finish_reason: null, logprobs: null }],
+              choices: [
+                { index: 0, delta: { role: "assistant" }, finish_reason: null, logprobs: null },
+              ],
             }),
           ),
         );
@@ -190,7 +218,12 @@ function buildStreamingResponse(eventStream, model, cid, created, isThinkingMode
                   model,
                   system_fingerprint: fp || null,
                   choices: [
-                    { index: 0, delta: { content: `[Error: ${chunk.error}]` }, finish_reason: null, logprobs: null },
+                    {
+                      index: 0,
+                      delta: { content: `[Error: ${chunk.error}]` },
+                      finish_reason: null,
+                      logprobs: null,
+                    },
                   ],
                 }),
               ),
@@ -207,7 +240,12 @@ function buildStreamingResponse(eventStream, model, cid, created, isThinkingMode
                   model,
                   system_fingerprint: fp || null,
                   choices: [
-                    { index: 0, delta: { reasoning_content: chunk.thinking }, finish_reason: null, logprobs: null },
+                    {
+                      index: 0,
+                      delta: { reasoning_content: chunk.thinking },
+                      finish_reason: null,
+                      logprobs: null,
+                    },
                   ],
                 }),
               ),
@@ -224,7 +262,14 @@ function buildStreamingResponse(eventStream, model, cid, created, isThinkingMode
                   created,
                   model,
                   system_fingerprint: fp || null,
-                  choices: [{ index: 0, delta: { content: chunk.delta }, finish_reason: null, logprobs: null }],
+                  choices: [
+                    {
+                      index: 0,
+                      delta: { content: chunk.delta },
+                      finish_reason: null,
+                      logprobs: null,
+                    },
+                  ],
                 }),
               ),
             );
@@ -272,7 +317,14 @@ function buildStreamingResponse(eventStream, model, cid, created, isThinkingMode
   });
 }
 
-async function buildNonStreamingResponse(eventStream, model, cid, created, isThinkingModel, signal) {
+async function buildNonStreamingResponse(
+  eventStream,
+  model,
+  cid,
+  created,
+  isThinkingModel,
+  signal,
+) {
   let fullContent = "";
   let fingerprint = "";
   const thinkingParts = [];
@@ -417,7 +469,10 @@ export class GrokWebExecutor extends BaseExecutor {
       headers["Cookie"] = `sso=${token}`;
     }
 
-    log?.info?.("GROK-WEB", `Query to ${model} (grok=${grokModel}, mode=${modelMode}), len=${message.length}`);
+    log?.info?.(
+      "GROK-WEB",
+      `Query to ${model} (grok=${grokModel}, mode=${modelMode}), len=${message.length}`,
+    );
 
     let response;
     try {
@@ -431,7 +486,10 @@ export class GrokWebExecutor extends BaseExecutor {
       log?.error?.("GROK-WEB", `Fetch failed: ${err.message || String(err)}`);
       const errResp = new Response(
         JSON.stringify({
-          error: { message: `Grok connection failed: ${err.message || String(err)}`, type: "upstream_error" },
+          error: {
+            message: `Grok connection failed: ${err.message || String(err)}`,
+            type: "upstream_error",
+          },
         }),
         { status: 502, headers: { "Content-Type": "application/json" } },
       );
@@ -442,8 +500,10 @@ export class GrokWebExecutor extends BaseExecutor {
       const status = response.status;
       let errMsg = `Grok returned HTTP ${status}`;
       if (status === 401 || status === 403)
-        errMsg = "Grok auth failed — SSO cookie may be expired. Re-paste your sso cookie value from grok.com.";
-      else if (status === 429) errMsg = "Grok rate limited. Wait a moment and retry, or rotate cookies.";
+        errMsg =
+          "Grok auth failed — SSO cookie may be expired. Re-paste your sso cookie value from grok.com.";
+      else if (status === 429)
+        errMsg = "Grok rate limited. Wait a moment and retry, or rotate cookies.";
       log?.warn?.("GROK-WEB", errMsg);
       const errResp = new Response(
         JSON.stringify({
@@ -469,13 +529,31 @@ export class GrokWebExecutor extends BaseExecutor {
 
     let finalResponse;
     if (stream) {
-      const sseStream = buildStreamingResponse(response.body, model, cid, created, isThinking, signal);
+      const sseStream = buildStreamingResponse(
+        response.body,
+        model,
+        cid,
+        created,
+        isThinking,
+        signal,
+      );
       finalResponse = new Response(sseStream, {
         status: 200,
-        headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "X-Accel-Buffering": "no" },
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "X-Accel-Buffering": "no",
+        },
       });
     } else {
-      finalResponse = await buildNonStreamingResponse(response.body, model, cid, created, isThinking, signal);
+      finalResponse = await buildNonStreamingResponse(
+        response.body,
+        model,
+        cid,
+        created,
+        isThinking,
+        signal,
+      );
     }
     return { response: finalResponse, url: GROK_CHAT_API, headers, transformedBody: grokPayload };
   }

@@ -9,9 +9,15 @@ const LEVEL_RE = /\[(LOG|INFO|WARN|ERROR|DEBUG)\]/i;
 
 const LEVEL_STYLES: Record<string, any> = {
   LOG: { badge: "bg-emerald/10 text-emerald border-emerald/20", text: "text-emerald" },
-  INFO: { badge: "bg-aether-blue/10 text-aether-blue border-aether-blue/20", text: "text-aether-blue" },
+  INFO: {
+    badge: "bg-aether-blue/10 text-aether-blue border-aether-blue/20",
+    text: "text-aether-blue",
+  },
   WARN: { badge: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20", text: "text-[#f59e0b]" },
-  ERROR: { badge: "bg-warning-red/10 text-warning-red border-warning-red/20", text: "text-warning-red" },
+  ERROR: {
+    badge: "bg-warning-red/10 text-warning-red border-warning-red/20",
+    text: "text-warning-red",
+  },
   DEBUG: { badge: "bg-amethyst/10 text-amethyst border-amethyst/20", text: "text-amethyst" },
 };
 
@@ -63,7 +69,9 @@ function LogLine({ entry, idx, onCopy, copied }: any) {
       >
         {level}
       </span>
-      <span className={cn("flex-1 text-[11px] font-mono leading-[1.6] break-all", style.text)}>{text}</span>
+      <span className={cn("flex-1 text-[11px] font-mono leading-[1.6] break-all", style.text)}>
+        {text}
+      </span>
       <button
         onClick={() => onCopy(line, idx)}
         className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-deep-slate transition-all duration-100"
@@ -83,7 +91,13 @@ const LEVEL_FILTERS = [
   { key: "ERROR", label: "Error" },
 ];
 
-export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, live = true, refreshRef }: any) {
+export default function ConsoleLogClient({
+  autoScroll,
+  setAutoScroll,
+  clearRef,
+  live = true,
+  refreshRef,
+}: any) {
   const [logs, setLogs] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
   const [levelFilter, setLevelFilter] = useState("all");
@@ -156,7 +170,9 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         if (!liveRef.current) return;
         setLogs((prev: any) => {
           const next = [...prev, wrapLine(msg.line)];
-          return next.length > CONSOLE_LOG_CONFIG.maxLines ? next.slice(-CONSOLE_LOG_CONFIG.maxLines) : next;
+          return next.length > CONSOLE_LOG_CONFIG.maxLines
+            ? next.slice(-CONSOLE_LOG_CONFIG.maxLines)
+            : next;
         });
         setLastUpdated(new Date());
       } else if (msg.type === "clear") {
@@ -188,7 +204,8 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
 
   const counts = {
     total: logs.length,
-    error: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "ERROR").length,
+    error: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "ERROR")
+      .length,
     warn: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "WARN").length,
   };
 
@@ -199,7 +216,11 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         {/* Left: Search + filter pills */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <LucideIcon name="search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey" />
+            <LucideIcon
+              name="search"
+              size={16}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
+            />
             <input
               aria-label="Search console logs"
               type="text"
@@ -231,7 +252,12 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
         {/* Right: Connection status + Stats */}
         <div className="flex items-center gap-2 text-[11px] shrink-0">
           <div className="flex items-center gap-1.5">
-            <span className={cn("size-1.5 rounded-full", connected ? "bg-emerald animate-pulse" : "bg-warning-red")} />
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                connected ? "bg-emerald animate-pulse" : "bg-warning-red",
+              )}
+            />
             <span className={connected ? "text-emerald" : "text-warning-red"}>
               {connected ? "Connected" : "Disconnected"}
             </span>
@@ -240,7 +266,9 @@ export default function ConsoleLogClient({ autoScroll, setAutoScroll, clearRef, 
             <span>{counts.total} lines</span>
             {counts.error > 0 && <span className="text-warning-red">{counts.error} errors</span>}
             {counts.warn > 0 && <span className="text-[#f59e0b]">{counts.warn} warnings</span>}
-            {lastUpdated && <span className="text-fog-grey/60">{lastUpdated.toLocaleTimeString()}</span>}
+            {lastUpdated && (
+              <span className="text-fog-grey/60">{lastUpdated.toLocaleTimeString()}</span>
+            )}
           </div>
         </div>
       </div>

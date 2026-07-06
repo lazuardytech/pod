@@ -110,13 +110,15 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
 
   describe("getRefreshLeadMs", () => {
     it("returns default buffer for gemini (no custom lead)", async () => {
-      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
+        await import("../../open-sse/services/tokenRefresh.js");
 
       expect(getRefreshLeadMs("gemini")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });
 
     it("returns default buffer for gemini-cli (no custom lead)", async () => {
-      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
+        await import("../../open-sse/services/tokenRefresh.js");
 
       expect(getRefreshLeadMs("gemini-cli")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });

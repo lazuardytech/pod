@@ -106,7 +106,9 @@ export function extractFactsFromText(text: string | null | undefined): Extracted
   const cappedText = capExtractionText(text);
   const seen = new Set<string>();
   const facts: ExtractedFact[] = [];
-  facts.push(...runPatterns(cappedText, PREFERENCE_PATTERNS, "preference", MemoryType.FACTUAL, seen));
+  facts.push(
+    ...runPatterns(cappedText, PREFERENCE_PATTERNS, "preference", MemoryType.FACTUAL, seen),
+  );
   facts.push(...runPatterns(cappedText, DECISION_PATTERNS, "decision", MemoryType.EPISODIC, seen));
   facts.push(...runPatterns(cappedText, PATTERN_PATTERNS, "pattern", MemoryType.FACTUAL, seen));
   return facts;

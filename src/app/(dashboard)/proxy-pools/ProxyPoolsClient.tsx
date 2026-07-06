@@ -20,7 +20,13 @@ function formatDateTime(value: any) {
 }
 
 function normalizeFormData(
-  data: { name?: string; proxyUrl?: string; noProxy?: string; isActive?: boolean; strictProxy?: boolean } = {},
+  data: {
+    name?: string;
+    proxyUrl?: string;
+    noProxy?: string;
+    isActive?: boolean;
+    strictProxy?: boolean;
+  } = {},
 ) {
   return {
     name: data.name || "",
@@ -40,7 +46,10 @@ export default function ProxyPoolsPage() {
   const [editingProxyPool, setEditingProxyPool]: any = useState<any>(null);
   const [formData, setFormData]: any = useState(normalizeFormData());
   const [batchImportText, setBatchImportText]: any = useState("");
-  const [vercelForm, setVercelForm]: any = useState({ vercelToken: "", projectName: "vercel-relay" });
+  const [vercelForm, setVercelForm]: any = useState({
+    vercelToken: "",
+    projectName: "vercel-relay",
+  });
   const [saving, setSaving]: any = useState(false);
   const [importing, setImporting]: any = useState(false);
   const [deploying, setDeploying]: any = useState(false);
@@ -59,7 +68,8 @@ export default function ProxyPoolsPage() {
   });
   const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm: any = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const fetchProxyPools: any = useCallback(async () => {
     try {
@@ -114,11 +124,14 @@ export default function ProxyPoolsPage() {
     setSaving(true);
     try {
       const isEdit: any = !!editingProxyPool;
-      const res: any = await fetch(isEdit ? `/api/proxy-pools/${editingProxyPool.id}` : "/api/proxy-pools", {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res: any = await fetch(
+        isEdit ? `/api/proxy-pools/${editingProxyPool.id}` : "/api/proxy-pools",
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
       if (res.ok) {
         await fetchProxyPools();
@@ -146,7 +159,9 @@ export default function ProxyPoolsPage() {
 
       const data: any = await res.json();
       if (res.status === 409) {
-        toast.warning(`Cannot delete: ${data.boundConnectionCount || 0} connection(s) are still using this pool.`);
+        toast.warning(
+          `Cannot delete: ${data.boundConnectionCount || 0} connection(s) are still using this pool.`,
+        );
       } else {
         toast.error(data.error || "Failed to delete proxy pool");
       }
@@ -179,7 +194,9 @@ export default function ProxyPoolsPage() {
 
   const handleToggleActive: any = async (pool: any) => {
     const next: any = !pool.isActive;
-    setProxyPools((prev: any) => prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: next } : p)));
+    setProxyPools((prev: any) =>
+      prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: next } : p)),
+    );
     try {
       const res: any = await fetch(`/api/proxy-pools/${pool.id}`, {
         method: "PUT",
@@ -187,19 +204,26 @@ export default function ProxyPoolsPage() {
         body: JSON.stringify({ isActive: next }),
       });
       if (!res.ok) {
-        setProxyPools((prev: any) => prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
+        setProxyPools((prev: any) =>
+          prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)),
+        );
         toast.error("Failed to update active state");
       }
     } catch (error) {
       console.error("Error toggling active:", error);
-      setProxyPools((prev: any) => prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)));
+      setProxyPools((prev: any) =>
+        prev.map((p: any) => (p.id === pool.id ? { ...p, isActive: pool.isActive } : p)),
+      );
     }
   };
 
   const allSelected: any = proxyPools.length > 0 && selectedIds.length === proxyPools.length;
   const toggleSelect: any = (id: any) =>
-    setSelectedIds((prev: any) => (prev.includes(id) ? prev.filter((x: any) => x !== id) : [...prev, id]));
-  const toggleSelectAll: any = () => setSelectedIds(allSelected ? [] : proxyPools.map((p: any) => p.id));
+    setSelectedIds((prev: any) =>
+      prev.includes(id) ? prev.filter((x: any) => x !== id) : [...prev, id],
+    );
+  const toggleSelectAll: any = () =>
+    setSelectedIds(allSelected ? [] : proxyPools.map((p: any) => p.id));
   const clearSelection: any = () => setSelectedIds([]);
 
   const bulkSetActive: any = async (isActive: any) => {
@@ -223,7 +247,9 @@ export default function ProxyPoolsPage() {
         }
       }
       await fetchProxyPools();
-      toast.success(`${isActive ? "Activated" : "Deactivated"} ${ok}${failed ? `, failed ${failed}` : ""}`);
+      toast.success(
+        `${isActive ? "Activated" : "Deactivated"} ${ok}${failed ? `, failed ${failed}` : ""}`,
+      );
     } finally {
       setBulkBusy(false);
     }
@@ -248,7 +274,9 @@ export default function ProxyPoolsPage() {
       }
       await fetchProxyPools();
       clearSelection();
-      toast.success(`Deleted ${ok}${blocked ? `, ${blocked} bound` : ""}${failed ? `, ${failed} failed` : ""}`);
+      toast.success(
+        `Deleted ${ok}${blocked ? `, ${blocked} bound` : ""}${failed ? `, ${failed} failed` : ""}`,
+      );
     } finally {
       setBulkBusy(false);
     }
@@ -256,7 +284,9 @@ export default function ProxyPoolsPage() {
 
   const handleHealthCheck: any = async () => {
     const targets: any =
-      selectedIds.length > 0 ? proxyPools.filter((p: any) => selectedIds.includes(p.id)) : proxyPools;
+      selectedIds.length > 0
+        ? proxyPools.filter((p: any) => selectedIds.includes(p.id))
+        : proxyPools;
     if (targets.length === 0) return;
     setHealthChecking(true);
     setHealthProgress({ current: 0, total: targets.length });
@@ -320,7 +350,9 @@ export default function ProxyPoolsPage() {
 
   // Cleanup selectedIds when pools change
   useEffect(() => {
-    setSelectedIds((prev: any) => prev.filter((id: any) => proxyPools.some((p: any) => p.id === id)));
+    setSelectedIds((prev: any) =>
+      prev.filter((id: any) => proxyPools.some((p: any) => p.id === id)),
+    );
   }, [proxyPools]);
 
   const openBatchImportModal: any = () => {
@@ -435,7 +467,9 @@ export default function ProxyPoolsPage() {
     setImporting(true);
     try {
       const existingKeys: any = new Set<any>(
-        proxyPools.map((pool: any) => `${(pool.proxyUrl || "").trim()}|||${(pool.noProxy || "").trim()}`),
+        proxyPools.map(
+          (pool: any) => `${(pool.proxyUrl || "").trim()}|||${(pool.noProxy || "").trim()}`,
+        ),
       );
 
       let created: any = 0;
@@ -470,7 +504,9 @@ export default function ProxyPoolsPage() {
 
       await fetchProxyPools();
       setShowBatchImportModal(false);
-      toast.success(`Batch import completed: Created ${created}, Skipped ${skipped}, Failed ${failed}`);
+      toast.success(
+        `Batch import completed: Created ${created}, Skipped ${skipped}, Failed ${failed}`,
+      );
     } catch (error) {
       console.error("Error batch importing proxies:", error);
       toast.error("Batch import failed");
@@ -479,7 +515,10 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const activeCount: any = useMemo(() => proxyPools.filter((pool: any) => pool.isActive === true).length, [proxyPools]);
+  const activeCount: any = useMemo(
+    () => proxyPools.filter((pool: any) => pool.isActive === true).length,
+    [proxyPools],
+  );
 
   if (loading) {
     return (
@@ -544,7 +583,9 @@ export default function ProxyPoolsPage() {
                 onClick={handleHealthCheck}
                 disabled={healthChecking || bulkBusy || proxyPools.length === 0}
               >
-                {healthChecking ? `Checking ${healthProgress.current}/${healthProgress.total}` : "Health Check"}
+                {healthChecking
+                  ? `Checking ${healthProgress.current}/${healthProgress.total}`
+                  : "Health Check"}
               </Button>
               {selectedIds.length > 0 && (
                 <>
@@ -582,7 +623,12 @@ export default function ProxyPoolsPage() {
                   >
                     Delete
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={clearSelection} disabled={bulkBusy || healthChecking}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearSelection}
+                    disabled={bulkBusy || healthChecking}
+                  >
                     Clear
                   </Button>
                 </>
@@ -594,7 +640,9 @@ export default function ProxyPoolsPage() {
         {proxyPools.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-text-main font-medium mb-1">No proxy pool entries yet</p>
-            <p className="text-sm text-text-muted mb-4">Create a proxy pool entry, then assign it to connections.</p>
+            <p className="text-sm text-text-muted mb-4">
+              Create a proxy pool entry, then assign it to connections.
+            </p>
             <Button icon="add" onClick={openCreateModal}>
               Add Proxy Pool
             </Button>
@@ -602,7 +650,10 @@ export default function ProxyPoolsPage() {
         ) : (
           <div className="flex flex-col divide-y divide-black/[0.04] dark:divide-white/[0.05]">
             {proxyPools.map((pool: any) => (
-              <div key={pool.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={pool.id}
+                className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <input
                     aria-label="Select proxy pool"
@@ -614,7 +665,9 @@ export default function ProxyPoolsPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="min-w-0 max-w-full truncate text-sm font-medium sm:max-w-[18rem]">{pool.name}</p>
+                      <p className="min-w-0 max-w-full truncate text-sm font-medium sm:max-w-[18rem]">
+                        {pool.name}
+                      </p>
                       <Badge variant={getStatusVariant(pool.testStatus)} size="sm" dot>
                         {pool.testStatus || "unknown"}
                       </Badge>
@@ -631,7 +684,9 @@ export default function ProxyPoolsPage() {
                       </Badge>
                     </div>
                     <p className="text-xs text-text-muted truncate mt-1">{pool.proxyUrl}</p>
-                    {pool.noProxy ? <p className="text-xs text-text-muted truncate">No proxy: {pool.noProxy}</p> : null}
+                    {pool.noProxy ? (
+                      <p className="text-xs text-text-muted truncate">No proxy: {pool.noProxy}</p>
+                    ) : null}
                     <p className="text-[11px] text-text-muted mt-1">
                       Last tested: {formatDateTime(pool.lastTestedAt)}
                       {pool.lastError ? ` · ${pool.lastError}` : ""}
@@ -655,7 +710,9 @@ export default function ProxyPoolsPage() {
                     <LucideIcon
                       name={testingId === pool.id ? "progress_activity" : "science"}
                       className="text-[18px]"
-                      style={testingId === pool.id ? { animation: "spin 1s linear infinite" } : undefined}
+                      style={
+                        testingId === pool.id ? { animation: "spin 1s linear infinite" } : undefined
+                      }
                     />
                   </button>
                   <button
@@ -686,10 +743,16 @@ export default function ProxyPoolsPage() {
         )}
       </Card>
 
-      <Modal isOpen={showBatchImportModal} title="Batch Import Proxies" onClose={closeBatchImportModal}>
+      <Modal
+        isOpen={showBatchImportModal}
+        title="Batch Import Proxies"
+        onClose={closeBatchImportModal}
+      >
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-sm font-medium text-text-main mb-1 block">Paste Proxy List (One per line)</label>
+            <label className="text-sm font-medium text-text-main mb-1 block">
+              Paste Proxy List (One per line)
+            </label>
             <textarea
               aria-label="Proxy list"
               value={batchImportText}
@@ -704,7 +767,11 @@ export default function ProxyPoolsPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Button fullWidth onClick={handleBatchImport} disabled={!batchImportText.trim() || importing}>
+            <Button
+              fullWidth
+              onClick={handleBatchImport}
+              disabled={!batchImportText.trim() || importing}
+            >
               {importing ? "Importing..." : "Import"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeBatchImportModal} disabled={importing}>
@@ -719,14 +786,17 @@ export default function ProxyPoolsPage() {
           <div className="rounded-[6px] bg-deep-slate border border-charcoal-grey p-3 flex flex-col gap-1.5">
             <p className="text-sm text-text-main font-medium">What is Vercel Relay?</p>
             <p className="text-xs text-text-muted">
-              Deploys an edge relay function to Vercel. All AI provider requests will be forwarded through Vercel&apos;s
-              edge network, masking your real IP from providers.
+              Deploys an edge relay function to Vercel. All AI provider requests will be forwarded
+              through Vercel&apos;s edge network, masking your real IP from providers.
             </p>
             <ul className="text-xs text-text-muted list-disc pl-4 space-y-0.5">
-              <li>Your IP is replaced by Vercel&apos;s dynamic edge IPs (hundreds of IPs across 20+ global regions)</li>
               <li>
-                Vercel serves millions of apps — providers can&apos;t block Vercel IPs without affecting legitimate
-                traffic
+                Your IP is replaced by Vercel&apos;s dynamic edge IPs (hundreds of IPs across 20+
+                global regions)
+              </li>
+              <li>
+                Vercel serves millions of apps — providers can&apos;t block Vercel IPs without
+                affecting legitimate traffic
               </li>
               <li>Free tier: 100GB bandwidth/month, 500K edge invocations</li>
               <li>Deploy multiple relays on different accounts for more IP diversity</li>
@@ -735,7 +805,9 @@ export default function ProxyPoolsPage() {
           <Input
             label="Vercel API Token"
             value={vercelForm.vercelToken}
-            onChange={(e: any) => setVercelForm((prev: any) => ({ ...prev, vercelToken: e.target.value }))}
+            onChange={(e: any) =>
+              setVercelForm((prev: any) => ({ ...prev, vercelToken: e.target.value }))
+            }
             placeholder="your-vercel-api-token"
             hint={
               <>
@@ -755,12 +827,18 @@ export default function ProxyPoolsPage() {
           <Input
             label="Project Name"
             value={vercelForm.projectName}
-            onChange={(e: any) => setVercelForm((prev: any) => ({ ...prev, projectName: e.target.value }))}
+            onChange={(e: any) =>
+              setVercelForm((prev: any) => ({ ...prev, projectName: e.target.value }))
+            }
             placeholder="my-relay"
             hint="Unique name for your Vercel project. Leave empty for auto-generated name."
           />
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Button fullWidth onClick={handleVercelDeploy} disabled={!vercelForm.vercelToken.trim() || deploying}>
+            <Button
+              fullWidth
+              onClick={handleVercelDeploy}
+              disabled={!vercelForm.vercelToken.trim() || deploying}
+            >
               {deploying ? "Deploying... (may take ~1 min)" : "Deploy"}
             </Button>
             <Button fullWidth variant="ghost" onClick={closeVercelModal} disabled={deploying}>
@@ -785,13 +863,17 @@ export default function ProxyPoolsPage() {
           <Input
             label="Proxy URL"
             value={formData.proxyUrl}
-            onChange={(e: any) => setFormData((prev: any) => ({ ...prev, proxyUrl: e.target.value }))}
+            onChange={(e: any) =>
+              setFormData((prev: any) => ({ ...prev, proxyUrl: e.target.value }))
+            }
             placeholder="http://127.0.0.1:7897"
           />
           <Input
             label="No Proxy"
             value={formData.noProxy}
-            onChange={(e: any) => setFormData((prev: any) => ({ ...prev, noProxy: e.target.value }))}
+            onChange={(e: any) =>
+              setFormData((prev: any) => ({ ...prev, noProxy: e.target.value }))
+            }
             placeholder="localhost,127.0.0.1,.internal"
             hint="Comma-separated hosts/domains to bypass proxy"
           />
@@ -799,7 +881,9 @@ export default function ProxyPoolsPage() {
           <div className="flex flex-col gap-3 rounded-lg border border-border/50 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium text-sm">Active</p>
-              <p className="text-xs text-text-muted">Inactive pools are ignored by runtime resolution.</p>
+              <p className="text-xs text-text-muted">
+                Inactive pools are ignored by runtime resolution.
+              </p>
             </div>
             <Toggle
               checked={formData.isActive === true}
@@ -817,7 +901,9 @@ export default function ProxyPoolsPage() {
             </div>
             <Toggle
               checked={formData.strictProxy === true}
-              onChange={() => setFormData((prev: any) => ({ ...prev, strictProxy: !prev.strictProxy }))}
+              onChange={() =>
+                setFormData((prev: any) => ({ ...prev, strictProxy: !prev.strictProxy }))
+              }
               disabled={saving}
             />
           </div>

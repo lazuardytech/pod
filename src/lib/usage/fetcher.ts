@@ -4,7 +4,9 @@
 
 import { GITHUB_CONFIG } from "@/lib/oauth/constants/oauth";
 
-type UsageResult = { message: string } | { plan: string; resetDate?: string; quotas: Record<string, GitHubQuota> };
+type UsageResult =
+  | { message: string }
+  | { plan: string; resetDate?: string; quotas: Record<string, GitHubQuota> };
 
 type GitHubQuota = {
   used: number;
@@ -161,7 +163,9 @@ async function getGeminiUsage(_accessToken: string): Promise<UsageResult> {
 
     if (!response.ok) {
       // Quota API may not be accessible, return generic message
-      return { message: "Gemini CLI uses Google Cloud quotas. Check Google Cloud Console for details." };
+      return {
+        message: "Gemini CLI uses Google Cloud quotas. Check Google Cloud Console for details.",
+      };
     }
 
     return { message: "Gemini CLI connected. Usage tracked via Google Cloud Console." };

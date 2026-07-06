@@ -107,7 +107,9 @@ export class AntigravityService {
   /**
    * Fetch Project ID and Tier from loadCodeAssist API
    */
-  async loadCodeAssist(accessToken: string): Promise<{ projectId: string; tierId: string; raw: any }> {
+  async loadCodeAssist(
+    accessToken: string,
+  ): Promise<{ projectId: string; tierId: string; raw: any }> {
     const response = await fetch(this.config.loadCodeAssistEndpoint, {
       method: "POST",
       headers: this.getApiHeaders(accessToken),
@@ -333,7 +335,9 @@ export class AntigravityService {
       // Save tokens to server
       await this.saveTokens(tokens, userInfo, finalProjectId);
 
-      spinner.succeed(`Antigravity connected successfully! (${userInfo.email}, Project: ${finalProjectId})`);
+      spinner.succeed(
+        `Antigravity connected successfully! (${userInfo.email}, Project: ${finalProjectId})`,
+      );
       return true;
     } catch (error) {
       spinner.fail(`Failed: ${(error as Error).message}`);

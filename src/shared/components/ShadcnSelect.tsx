@@ -33,7 +33,10 @@ export default function ShadcnSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<any>(null);
 
-  const selectedOption = useMemo(() => options.find((option: any) => option.value === value) || null, [options, value]);
+  const selectedOption = useMemo(
+    () => options.find((option: any) => option.value === value) || null,
+    [options, value],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -118,7 +121,9 @@ export default function ShadcnSelect({
                 )}
               >
                 <span className="flex-1 truncate">{option.label}</span>
-                {isSelected && <LucideIcon name="check" className="shrink-0 text-[14px] text-porcelain" />}
+                {isSelected && (
+                  <LucideIcon name="check" className="shrink-0 text-[14px] text-porcelain" />
+                )}
               </button>
             );
           })}

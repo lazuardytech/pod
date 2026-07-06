@@ -61,13 +61,7 @@ Initial `tsconfig.json` for Phase 0–1:
     },
     "types": ["@types/node", "@types/bun", "@types/react", "@types/react-dom"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.js",
-    "src/**/*.jsx",
-    "next-env.d.ts"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx", "next-env.d.ts"],
   "exclude": ["node_modules", ".next", "cloud", "open-sse", "coverage", "tests"]
 }
 ```
@@ -125,18 +119,18 @@ These 5 files take ~1 hour total and prove the toolchain end-to-end. Phase 1 cov
 
 Strict ordering. Do not skip ahead; do not parallelize. Each phase is its own PR.
 
-| Phase | Scope | Why now |
-|------:|-------|---------|
-| 0 | Tooling: `tsconfig.json`, deps, scripts | Locks the baseline before code changes. |
-| 1 | Pure leaf utilities | Proves Bun + tsc + Next 16. No behavior change risk. |
-| 2 | Domain types in `src/shared/constants/`, `src/shared/utils/`, `src/shared/hooks/` | Defines vocabulary used by everything below. |
-| 3 | `src/lib/` backend services | Largest single source of type gain. |
-| 4 | `src/app/api/**/route.js` (26 route groups) | Locks HTTP request/response shapes. |
-| 5 | `src/sse/` orchestration | Bridges typed `lib/` to untyped `open-sse/`. |
-| 6 | `src/shared/components/**` + `src/shared/store/**` + `src/app/(dashboard)/**` | UI surface; biggest churn. |
-| 7 | Entry points: `src/proxy.js`, `src/dashboardGuard.js`, `src/server-init.js` | Top of the tree, depends on everything. |
-| 8 | `cloud/` (Cloudflare Worker) | Separate `tsconfig.json` + `wrangler deploy` pipeline. |
-| 9 | `open-sse/` decision | Either migrate, or freeze as JS — see Phase 9. |
+| Phase | Scope                                                                             | Why now                                                |
+| ----: | --------------------------------------------------------------------------------- | ------------------------------------------------------ |
+|     0 | Tooling: `tsconfig.json`, deps, scripts                                           | Locks the baseline before code changes.                |
+|     1 | Pure leaf utilities                                                               | Proves Bun + tsc + Next 16. No behavior change risk.   |
+|     2 | Domain types in `src/shared/constants/`, `src/shared/utils/`, `src/shared/hooks/` | Defines vocabulary used by everything below.           |
+|     3 | `src/lib/` backend services                                                       | Largest single source of type gain.                    |
+|     4 | `src/app/api/**/route.js` (26 route groups)                                       | Locks HTTP request/response shapes.                    |
+|     5 | `src/sse/` orchestration                                                          | Bridges typed `lib/` to untyped `open-sse/`.           |
+|     6 | `src/shared/components/**` + `src/shared/store/**` + `src/app/(dashboard)/**`     | UI surface; biggest churn.                             |
+|     7 | Entry points: `src/proxy.js`, `src/dashboardGuard.js`, `src/server-init.js`       | Top of the tree, depends on everything.                |
+|     8 | `cloud/` (Cloudflare Worker)                                                      | Separate `tsconfig.json` + `wrangler deploy` pipeline. |
+|     9 | `open-sse/` decision                                                              | Either migrate, or freeze as JS — see Phase 9.         |
 
 ## Per-Phase Procedure (apply to every phase)
 

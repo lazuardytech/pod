@@ -135,7 +135,12 @@ async function buildQoderRequestBody({ model, body, credentials, log, proxyOptio
   if (!modelConfig) {
     // Try a forced refresh once before giving up — the cache may simply
     // not be populated yet on first ever call for this credential.
-    const refreshed = await resolveQoderModels(credentials, { forceRefresh: true, log, proxyOptions, signal });
+    const refreshed = await resolveQoderModels(credentials, {
+      forceRefresh: true,
+      log,
+      proxyOptions,
+      signal,
+    });
     const retried = refreshed?.rawConfigs.get(qoderKey);
     if (!retried) {
       throw new Error(
@@ -374,7 +379,9 @@ export class QoderExecutor extends BaseExecutor {
       // No user id → no way to sign. Surface a 401 so the dashboard nudges
       // the user back to OAuth.
       const fakeResp = new Response(
-        JSON.stringify({ error: { message: "qoder credential is missing userId; reconnect the account" } }),
+        JSON.stringify({
+          error: { message: "qoder credential is missing userId; reconnect the account" },
+        }),
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
       return { response: fakeResp, url, headers: {}, transformedBody: body };
@@ -383,7 +390,9 @@ export class QoderExecutor extends BaseExecutor {
       // Same shape as the userId guard — clean 401 so chatCore reports
       // "reconnect" rather than bubbling cosy.js's synchronous throw as 500.
       const fakeResp = new Response(
-        JSON.stringify({ error: { message: "qoder credential is missing accessToken; reconnect the account" } }),
+        JSON.stringify({
+          error: { message: "qoder credential is missing accessToken; reconnect the account" },
+        }),
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
       return { response: fakeResp, url, headers: {}, transformedBody: body };
@@ -392,7 +401,14 @@ export class QoderExecutor extends BaseExecutor {
     let qoderKey;
     let payload;
     try {
-      ({ qoderKey, payload } = await buildQoderRequestBody({ model, body, credentials, log, proxyOptions, signal }));
+      ({ qoderKey, payload } = await buildQoderRequestBody({
+        model,
+        body,
+        credentials,
+        log,
+        proxyOptions,
+        signal,
+      }));
     } catch (err) {
       const fakeResp = new Response(JSON.stringify({ error: { message: err.message } }), {
         status: 400,
@@ -438,7 +454,11 @@ export class QoderExecutor extends BaseExecutor {
 
     let response;
     try {
-      response = await proxyAwareFetch(url, { method: "POST", headers, body: encodedBodyBuf, signal }, proxyOptions);
+      response = await proxyAwareFetch(
+        url,
+        { method: "POST", headers, body: encodedBodyBuf, signal },
+        proxyOptions,
+      );
     } catch (err) {
       throw err;
     }

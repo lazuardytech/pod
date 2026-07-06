@@ -28,9 +28,12 @@ export default function GetStarted() {
         <div className="flex flex-col lg:flex-row gap-12 items-start">
           {/* Left: Steps */}
           <div className="flex-1">
-            <h2 className="text-[32px] font-[590] text-porcelain tracking-[-0.22px] mb-3">Get Started in 30 Seconds</h2>
+            <h2 className="text-[32px] font-[590] text-porcelain tracking-[-0.22px] mb-3">
+              Get Started in 30 Seconds
+            </h2>
             <p className="text-[14px] text-storm-cloud leading-[1.6] tracking-[-0.13px] mb-8">
-              Install Pod, configure your providers via web dashboard, and start routing AI requests.
+              Install Pod, configure your providers via web dashboard, and start routing AI
+              requests.
             </p>
 
             <div className="flex flex-col gap-5">
@@ -40,8 +43,12 @@ export default function GetStarted() {
                     {step.number}
                   </div>
                   <div>
-                    <h4 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">{step.title}</h4>
-                    <p className="text-[12px] text-fog-grey mt-0.5 tracking-[-0.1px]">{step.desc}</p>
+                    <h4 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">
+                      {step.title}
+                    </h4>
+                    <p className="text-[12px] text-fog-grey mt-0.5 tracking-[-0.1px]">
+                      {step.desc}
+                    </p>
                   </div>
                 </div>
               ))}

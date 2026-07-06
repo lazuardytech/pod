@@ -64,7 +64,8 @@ describe("provider smoke — wiring", () => {
       // dynamically and intentionally have empty baseUrl in PROVIDERS.
       const exec = getExecutor(id);
       const hasCustomBuildUrl =
-        exec?.buildUrl !== getExecutor.__proto__.buildUrl && Object.getPrototypeOf(exec).hasOwnProperty("buildUrl");
+        exec?.buildUrl !== getExecutor.__proto__.buildUrl &&
+        Object.getPrototypeOf(exec).hasOwnProperty("buildUrl");
       expect(
         hasBase || isMultiModelDispatch || hasCustomBuildUrl,
         `provider ${id} has no baseUrl AND no custom buildUrl override`,
@@ -124,9 +125,10 @@ describe("provider smoke — buildUrl/buildHeaders/transformRequest don't throw"
       // We accept either: missing header, OR a hardcoded literal that doesn't echo
       // the stub credentials we passed in.
       if (cfg.noAuth && headers["Authorization"]) {
-        expect(headers["Authorization"], `${id} is noAuth but emitted credential-derived Authorization`).not.toContain(
-          creds.apiKey,
-        );
+        expect(
+          headers["Authorization"],
+          `${id} is noAuth but emitted credential-derived Authorization`,
+        ).not.toContain(creds.apiKey);
         expect(headers["Authorization"]).not.toContain(creds.accessToken);
       }
 
@@ -161,7 +163,9 @@ describe("provider smoke — URL builders accept multi-account placeholders", ()
 
     it("cloudflare-ai throws when accountId is missing", () => {
       const exec = getExecutor("cloudflare-ai");
-      expect(() => exec.buildUrl("@cf/meta/llama-3-8b", true, 0, { apiKey: "x", providerSpecificData: {} })).toThrow();
+      expect(() =>
+        exec.buildUrl("@cf/meta/llama-3-8b", true, 0, { apiKey: "x", providerSpecificData: {} }),
+      ).toThrow();
     });
   }
 });
@@ -269,7 +273,10 @@ describe("provider smoke — provider icons exist", () => {
 describe("provider smoke — defensive: no 9router/decolua references in runtime code", () => {
   it("tunnelManager has no 9router host", async () => {
     const fs = await import("node:fs/promises");
-    const src = await fs.readFile(path.resolve(__dirname, "../../src/lib/tunnel/tunnelManager.ts"), "utf8");
+    const src = await fs.readFile(
+      path.resolve(__dirname, "../../src/lib/tunnel/tunnelManager.ts"),
+      "utf8",
+    );
     expect(src).not.toMatch(/9router\.com/i);
     expect(src).not.toMatch(/registerTunnelUrl\s*\(/);
   });

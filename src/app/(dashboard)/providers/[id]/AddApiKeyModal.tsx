@@ -73,7 +73,11 @@ export default function AddApiKeyModal({
       const res = await fetch("/api/providers/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, apiKey: formData.apiKey, providerSpecificData: buildProviderSpecificData() }),
+        body: JSON.stringify({
+          provider,
+          apiKey: formData.apiKey,
+          providerSpecificData: buildProviderSpecificData(),
+        }),
       });
       const data = await res.json();
       setValidationResult(data.valid ? "success" : "failed");
@@ -131,7 +135,11 @@ export default function AddApiKeyModal({
   if (!provider) return null;
 
   return (
-    <Modal isOpen={isOpen} title={`Add ${providerName || provider} ${credentialLabel}`} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title={`Add ${providerName || provider} ${credentialLabel}`}
+      onClose={onClose}
+    >
       <div className="flex flex-col gap-4">
         <Input
           label="Name"
@@ -166,7 +174,11 @@ export default function AddApiKeyModal({
               className="flex-1"
             />
             <div className="pt-6">
-              <Button onClick={handleValidate} disabled={!formData.apiKey || validating || saving} variant="secondary">
+              <Button
+                onClick={handleValidate}
+                disabled={!formData.apiKey || validating || saving}
+                variant="secondary"
+              >
                 {validating ? "Checking..." : "Check"}
               </Button>
             </div>
@@ -178,7 +190,12 @@ export default function AddApiKeyModal({
             {website && (
               <>
                 {" "}
-                <a href={website} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                <a
+                  href={website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
                   Open {website.replace(/^https?:\/\//, "")}
                 </a>
               </>
@@ -187,8 +204,8 @@ export default function AddApiKeyModal({
         )}
         {isOllamaLocal && (
           <p className="text-xs text-text-muted">
-            Leave blank to use <code>http://localhost:11434</code>. For remote Ollama, enter the full host URL (e.g.{" "}
-            <code>http://192.168.1.10:11434</code>).
+            Leave blank to use <code>http://localhost:11434</code>. For remote Ollama, enter the
+            full host URL (e.g. <code>http://192.168.1.10:11434</code>).
           </p>
         )}
         {validationResult && (
@@ -203,7 +220,9 @@ export default function AddApiKeyModal({
             <Input
               label="Account ID"
               value={cloudflareData.accountId}
-              onChange={(e: any) => setCloudflareData({ ...cloudflareData, accountId: e.target.value })}
+              onChange={(e: any) =>
+                setCloudflareData({ ...cloudflareData, accountId: e.target.value })
+              }
               placeholder="abc123def456..."
             />
             <p className="text-xs text-text-muted mt-2">
@@ -255,7 +274,9 @@ export default function AddApiKeyModal({
           label="Priority"
           type="number"
           value={formData.priority}
-          onChange={(e: any) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })}
+          onChange={(e: any) =>
+            setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })
+          }
         />
 
         <Select
@@ -286,7 +307,8 @@ export default function AddApiKeyModal({
             disabled={
               saving ||
               (!isOllamaLocal && (!formData.name || !formData.apiKey)) ||
-              (isAzure && (!azureData.azureEndpoint || !azureData.deployment || !azureData.organization)) ||
+              (isAzure &&
+                (!azureData.azureEndpoint || !azureData.deployment || !azureData.organization)) ||
               (isCloudflareAi && !cloudflareData.accountId)
             }
           >

@@ -5,29 +5,52 @@ import { useState } from "react";
 import { Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }: any) {
+function CompatibleModelRow({
+  modelId,
+  fullModel,
+  copied,
+  onCopy,
+  onDeleteAlias,
+  onTest,
+  testStatus,
+  isTesting,
+}: any) {
   const borderColor =
-    testStatus === "ok" ? "border-green-500/40" : testStatus === "error" ? "border-red-500/40" : "border-border";
+    testStatus === "ok"
+      ? "border-green-500/40"
+      : testStatus === "error"
+        ? "border-red-500/40"
+        : "border-border";
 
-  const iconColor = testStatus === "ok" ? "#22c55e" : testStatus === "error" ? "#ef4444" : undefined;
+  const iconColor =
+    testStatus === "ok" ? "#22c55e" : testStatus === "error" ? "#ef4444" : undefined;
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg border ${borderColor} hover:bg-sidebar/50`}>
+    <div
+      className={`flex items-center gap-3 p-3 rounded-lg border ${borderColor} hover:bg-sidebar/50`}
+    >
       <LucideIcon
-        name={testStatus === "ok" ? "check_circle" : testStatus === "error" ? "cancel" : "smart_toy"}
+        name={
+          testStatus === "ok" ? "check_circle" : testStatus === "error" ? "cancel" : "smart_toy"
+        }
         className="text-base text-text-muted"
         style={iconColor ? { color: iconColor } : undefined}
       />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{modelId}</p>
         <div className="flex items-center gap-1 mt-1">
-          <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">{fullModel}</code>
+          <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">
+            {fullModel}
+          </code>
           <div className="relative group/btn">
             <button
               onClick={() => onCopy(fullModel, `model-${modelId}`)}
               className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
             >
-              <LucideIcon name={copied === `model-${modelId}` ? "check" : "content_copy"} className="text-sm" />
+              <LucideIcon
+                name={copied === `model-${modelId}` ? "check" : "content_copy"}
+                className="text-sm"
+              />
             </button>
             <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
               {copied === `model-${modelId}` ? "Copied!" : "Copy"}
@@ -53,7 +76,11 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
           )}
         </div>
       </div>
-      <button onClick={onDeleteAlias} className="p-1 hover:bg-red-50 rounded text-red-500" title="Remove model">
+      <button
+        onClick={onDeleteAlias}
+        className="p-1 hover:bg-red-50 rounded text-red-500"
+        title="Remove model"
+      >
         <LucideIcon name="delete" className="text-sm" />
       </button>
     </div>
@@ -129,7 +156,9 @@ export default function CompatibleModelsSection({
     const modelId = newModel.trim();
     const resolvedAlias = resolveAlias(modelId);
     if (!resolvedAlias) {
-      alert("All suggested aliases already exist. Please choose a different model or remove conflicting aliases.");
+      alert(
+        "All suggested aliases already exist. Please choose a different model or remove conflicting aliases.",
+      );
       return;
     }
 
@@ -186,12 +215,16 @@ export default function CompatibleModelsSection({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-text-muted">
-        Add {isAnthropic ? "Anthropic" : "OpenAI"}-compatible models manually or import them from the /models endpoint.
+        Add {isAnthropic ? "Anthropic" : "OpenAI"}-compatible models manually or import them from
+        the /models endpoint.
       </p>
 
       <div className="flex items-end gap-2 flex-wrap">
         <div className="flex-1 min-w-[240px]">
-          <label htmlFor="new-compatible-model-input" className="text-xs text-text-muted mb-1 block">
+          <label
+            htmlFor="new-compatible-model-input"
+            className="text-xs text-text-muted mb-1 block"
+          >
             Model ID
           </label>
           <input
@@ -207,12 +240,20 @@ export default function CompatibleModelsSection({
         <Button size="sm" icon="add" onClick={handleAdd} disabled={!newModel.trim() || adding}>
           {adding ? "Adding..." : "Add"}
         </Button>
-        <Button size="sm" variant="secondary" icon="download" onClick={handleImport} disabled={!canImport || importing}>
+        <Button
+          size="sm"
+          variant="secondary"
+          icon="download"
+          onClick={handleImport}
+          disabled={!canImport || importing}
+        >
           {importing ? "Importing..." : "Import from /models"}
         </Button>
       </div>
 
-      {!canImport && <p className="text-xs text-text-muted">Add a connection to enable importing models.</p>}
+      {!canImport && (
+        <p className="text-xs text-text-muted">Add a connection to enable importing models.</p>
+      )}
 
       {allModels.length > 0 && (
         <div className="flex flex-col gap-3">

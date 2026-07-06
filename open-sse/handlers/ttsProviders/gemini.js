@@ -68,10 +68,14 @@ export default {
       throw new Error(err?.error?.message || `Gemini TTS failed: ${res.status}`);
     }
     const data = await res.json();
-    const b64 = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+    const b64 = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData
+      ?.data;
     if (!b64) {
-      const reason = data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || "unknown";
-      throw new Error(`Gemini TTS returned no audio (finishReason: ${reason}, voice: ${voiceId}, model: ${modelId})`);
+      const reason =
+        data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || "unknown";
+      throw new Error(
+        `Gemini TTS returned no audio (finishReason: ${reason}, voice: ${voiceId}, model: ${modelId})`,
+      );
     }
     const wav = pcmToWav(Buffer.from(b64, "base64"));
     return { base64: wav.toString("base64"), format: "wav" };
@@ -113,5 +117,9 @@ const PREBUILT_VOICES = [
 ];
 
 export async function fetchGeminiVoices() {
-  return PREBUILT_VOICES.map((v) => ({ voice_id: v.id, name: v.id, labels: { language: v.lang, gender: v.gender } }));
+  return PREBUILT_VOICES.map((v) => ({
+    voice_id: v.id,
+    name: v.id,
+    labels: { language: v.lang, gender: v.gender },
+  }));
 }

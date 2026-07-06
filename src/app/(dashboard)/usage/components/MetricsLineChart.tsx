@@ -56,7 +56,13 @@ function Sparkline({ data, field, color, fmt }: any) {
         {/* Area fill */}
         <polygon points={areaPoints} fill={color} fillOpacity="0.08" />
         {/* Line */}
-        <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+        <polyline
+          points={points}
+          fill="none"
+          stroke={color}
+          strokeWidth="1.5"
+          vectorEffect="non-scaling-stroke"
+        />
         {/* Hover dots */}
         {values.map((v: any, i: any) => {
           const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
@@ -195,7 +201,9 @@ export default function MetricsLineChart({ period = "7d" }: any) {
           {/* Header */}
           <div className="flex items-center gap-1.5 px-3 pt-3 pb-1">
             <LucideIcon name={m.icon} className="text-[14px]" style={{ color: m.color }} />
-            <span className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">{m.label}</span>
+            <span className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">
+              {m.label}
+            </span>
           </div>
 
           {/* Value */}
@@ -210,7 +218,9 @@ export default function MetricsLineChart({ period = "7d" }: any) {
           {loading ? (
             <div className="h-10 bg-deep-slate animate-pulse mt-auto" />
           ) : data.length < 2 ? (
-            <div className="h-10 flex items-center justify-center text-[10px] text-fog-grey mt-auto">No data</div>
+            <div className="h-10 flex items-center justify-center text-[10px] text-fog-grey mt-auto">
+              No data
+            </div>
           ) : (
             <div className="mt-auto w-full">
               <Sparkline data={data} field={m.key} color={m.color} fmt={m.fmt} />

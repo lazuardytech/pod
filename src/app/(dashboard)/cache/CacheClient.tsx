@@ -63,7 +63,9 @@ export default function CacheClient() {
       setConfig({
         semanticCacheEnabled: cacheConfig.semanticCacheEnabled ?? false,
         semanticCacheMaxSize: String(cacheConfig.semanticCacheMaxSize ?? 100),
-        semanticCacheTTLMinutes: String(Math.max(1, Math.round((cacheConfig.semanticCacheTTL ?? 1800000) / 60000))),
+        semanticCacheTTLMinutes: String(
+          Math.max(1, Math.round((cacheConfig.semanticCacheTTL ?? 1800000) / 60000)),
+        ),
       });
     } catch (error) {
       toast.error((error as any)?.message || "Failed to load cache data");
@@ -164,7 +166,9 @@ export default function CacheClient() {
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Cache</h1>
-        <p className="text-sm text-text-muted">Configure semantic cache behavior and run cache maintenance.</p>
+        <p className="text-sm text-text-muted">
+          Configure semantic cache behavior and run cache maintenance.
+        </p>
       </div>
 
       <Card
@@ -190,7 +194,9 @@ export default function CacheClient() {
             type="number"
             min="1"
             value={config.semanticCacheMaxSize}
-            onChange={(event: any) => setConfig((prev: any) => ({ ...prev, semanticCacheMaxSize: event.target.value }))}
+            onChange={(event: any) =>
+              setConfig((prev: any) => ({ ...prev, semanticCacheMaxSize: event.target.value }))
+            }
           />
           <Input
             label="Cache TTL (minutes)"
@@ -209,7 +215,13 @@ export default function CacheClient() {
         subtitle="Live semantic cache counters"
         icon="monitoring"
         action={
-          <Button size="sm" variant="secondary" icon="refresh" onClick={() => loadData(false)} loading={refreshing}>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon="refresh"
+            onClick={() => loadData(false)}
+            loading={refreshing}
+          >
             Refresh
           </Button>
         }
@@ -230,14 +242,20 @@ export default function CacheClient() {
         </div>
       </Card>
 
-      <Card title="Maintenance" subtitle="Invalidate cache entries by scope" icon="cleaning_services">
+      <Card
+        title="Maintenance"
+        subtitle="Invalidate cache entries by scope"
+        icon="cleaning_services"
+      >
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_14rem] md:items-end">
             <Input
               label="Invalidate by Model"
               placeholder="example: melma/zen"
               value={maintenance.model}
-              onChange={(event: any) => setMaintenance((prev: any) => ({ ...prev, model: event.target.value }))}
+              onChange={(event: any) =>
+                setMaintenance((prev: any) => ({ ...prev, model: event.target.value }))
+              }
               className="flex-1"
             />
             <Button
@@ -247,7 +265,9 @@ export default function CacheClient() {
               loading={invalidating}
               disabled={!maintenance.model.trim()}
               className="w-full justify-center"
-              onClick={() => runInvalidation(`model=${encodeURIComponent(maintenance.model.trim())}`)}
+              onClick={() =>
+                runInvalidation(`model=${encodeURIComponent(maintenance.model.trim())}`)
+              }
             >
               Invalidate Model
             </Button>
@@ -258,7 +278,9 @@ export default function CacheClient() {
               label="Invalidate by Signature"
               placeholder="sha256 signature"
               value={maintenance.signature}
-              onChange={(event: any) => setMaintenance((prev: any) => ({ ...prev, signature: event.target.value }))}
+              onChange={(event: any) =>
+                setMaintenance((prev: any) => ({ ...prev, signature: event.target.value }))
+              }
               className="flex-1"
             />
             <Button
@@ -268,7 +290,9 @@ export default function CacheClient() {
               loading={invalidating}
               disabled={!maintenance.signature.trim()}
               className="w-full justify-center"
-              onClick={() => runInvalidation(`signature=${encodeURIComponent(maintenance.signature.trim())}`)}
+              onClick={() =>
+                runInvalidation(`signature=${encodeURIComponent(maintenance.signature.trim())}`)
+              }
             >
               Invalidate Signature
             </Button>
@@ -280,7 +304,9 @@ export default function CacheClient() {
               type="number"
               min="1"
               value={maintenance.staleMinutes}
-              onChange={(event: any) => setMaintenance((prev: any) => ({ ...prev, staleMinutes: event.target.value }))}
+              onChange={(event: any) =>
+                setMaintenance((prev: any) => ({ ...prev, staleMinutes: event.target.value }))
+              }
               className="flex-1"
             />
             <Button
@@ -290,7 +316,9 @@ export default function CacheClient() {
               loading={invalidating}
               className="w-full justify-center"
               onClick={() =>
-                runInvalidation(`staleMs=${encodeURIComponent(String(staleMinutesToMs(maintenance.staleMinutes)))}`)
+                runInvalidation(
+                  `staleMs=${encodeURIComponent(String(staleMinutesToMs(maintenance.staleMinutes)))}`,
+                )
               }
             >
               Invalidate Stale

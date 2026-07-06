@@ -22,7 +22,10 @@ function evictOldestIfNeeded(): void {
 /**
  * Get machine data from D1 (with request-scope caching)
  */
-export async function getMachineData(machineId: string, env: Env): Promise<Record<string, unknown> | null> {
+export async function getMachineData(
+  machineId: string,
+  env: Env,
+): Promise<Record<string, unknown> | null> {
   const cached = requestCache.get(machineId);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.data;
@@ -47,7 +50,11 @@ export async function getMachineData(machineId: string, env: Env): Promise<Recor
 /**
  * Save machine data to D1
  */
-export async function saveMachineData(machineId: string, data: Record<string, unknown>, env: Env): Promise<void> {
+export async function saveMachineData(
+  machineId: string,
+  data: Record<string, unknown>,
+  env: Env,
+): Promise<void> {
   const now = new Date().toISOString();
   data.updatedAt = now;
 
@@ -70,9 +77,7 @@ export async function saveMachineData(machineId: string, data: Record<string, un
  * Delete machine data from D1
  */
 export async function deleteMachineData(machineId: string, env: Env): Promise<void> {
-  await env.DB.prepare("DELETE FROM machines WHERE machineId = ?")
-    .bind(machineId)
-    .run();
+  await env.DB.prepare("DELETE FROM machines WHERE machineId = ?").bind(machineId).run();
 
   // Clear cache after delete
   requestCache.delete(machineId);
@@ -82,7 +87,12 @@ export async function deleteMachineData(machineId: string, env: Env): Promise<vo
 /**
  * Update specific fields in machine data (for token refresh, rate limit, etc.)
  */
-export async function updateMachineProvider(machineId: string, connectionId: string, updates: Record<string, unknown>, env: Env): Promise<void> {
+export async function updateMachineProvider(
+  machineId: string,
+  connectionId: string,
+  updates: Record<string, unknown>,
+  env: Env,
+): Promise<void> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
   if (!providers?.[connectionId]) return;

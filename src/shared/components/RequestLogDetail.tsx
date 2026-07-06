@@ -3,9 +3,25 @@ import { useEffect } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 import Badge from "./Badge";
-import { DetailRow, DetailSection, JsonBlock, LogDrawer, LogDrawerBody, LogDrawerHeader } from "./LogDrawer";
+import {
+  DetailRow,
+  DetailSection,
+  JsonBlock,
+  LogDrawer,
+  LogDrawerBody,
+  LogDrawerHeader,
+} from "./LogDrawer";
 
-function PayloadSection({ title, icon, data }: { title?: any; icon?: any; data?: any; [key: string]: any }) {
+function PayloadSection({
+  title,
+  icon,
+  data,
+}: {
+  title?: any;
+  icon?: any;
+  data?: any;
+  [key: string]: any;
+}) {
   if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
   return (
     <DetailSection title={title} icon={icon}>
@@ -14,10 +30,24 @@ function PayloadSection({ title, icon, data }: { title?: any; icon?: any; data?:
   );
 }
 
-function TokenPill({ label, value, color }: { label?: any; value?: any; color?: any; [key: string]: any }) {
+function TokenPill({
+  label,
+  value,
+  color,
+}: {
+  label?: any;
+  value?: any;
+  color?: any;
+  [key: string]: any;
+}) {
   if (value == null) return null;
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[10px] font-[590]", color)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[10px] font-[590]",
+        color,
+      )}
+    >
       <span className="text-[9px] uppercase tracking-wider opacity-70">{label}</span>
       {typeof value === "number" ? value.toLocaleString() : value}
     </span>
@@ -68,7 +98,9 @@ export default function RequestLogDetail({
         : "text-fog-grey";
 
   const latencyMs =
-    detail?.latency?.total ?? detail?.latency?.totalMs ?? (typeof detail?.latency === "number" ? detail.latency : null);
+    detail?.latency?.total ??
+    detail?.latency?.totalMs ??
+    (typeof detail?.latency === "number" ? detail.latency : null);
 
   const tokens = detail?.tokens ?? {};
   const promptTokens = tokens.prompt_tokens ?? tokens.input_tokens ?? log.promptTokens;
@@ -115,9 +147,15 @@ export default function RequestLogDetail({
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             <TokenPill label="In" value={promptTokens} color="bg-aether-blue/10 text-aether-blue" />
             <TokenPill label="Out" value={completionTokens} color="bg-emerald/10 text-emerald" />
-            {cacheRead != null && <TokenPill label="Cache Read" color="bg-sky-500/10 text-sky-400" value={cacheRead} />}
+            {cacheRead != null && (
+              <TokenPill label="Cache Read" color="bg-sky-500/10 text-sky-400" value={cacheRead} />
+            )}
             {cacheWrite != null && (
-              <TokenPill label="Cache Write" color="bg-amber-500/10 text-amber-400" value={cacheWrite} />
+              <TokenPill
+                label="Cache Write"
+                color="bg-amber-500/10 text-amber-400"
+                value={cacheWrite}
+              />
             )}
             {reasoning != null && (
               <TokenPill label="Reasoning" color="bg-amethyst/10 text-amethyst" value={reasoning} />
@@ -147,7 +185,11 @@ export default function RequestLogDetail({
           <>
             <PayloadSection title="Client Request" icon="upload" data={detail.request} />
             <PayloadSection title="Provider Request" icon="send" data={detail.providerRequest} />
-            <PayloadSection title="Provider Response" icon="download" data={detail.providerResponse} />
+            <PayloadSection
+              title="Provider Response"
+              icon="download"
+              data={detail.providerResponse}
+            />
             <PayloadSection title="Client Response" icon="output" data={detail.response} />
           </>
         )}
@@ -155,7 +197,9 @@ export default function RequestLogDetail({
         {!loading && !hasPayloads && (
           <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-4 text-center">
             <LucideIcon name="info" className="text-[20px] text-fog-grey mb-2 block" />
-            <p className="text-[12px] text-fog-grey">No detailed payload available for this request.</p>
+            <p className="text-[12px] text-fog-grey">
+              No detailed payload available for this request.
+            </p>
             <p className="text-[11px] text-fog-grey/60 mt-1">
               Enable observability in Settings to capture request/response payloads.
             </p>

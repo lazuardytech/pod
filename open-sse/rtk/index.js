@@ -10,7 +10,11 @@ export function compressMessages(body, enabled) {
   if (!enabled) return null;
   if (!body) return null;
   // Support both OpenAI/Claude "messages" and OpenAI Responses "input"
-  const items = Array.isArray(body.messages) ? body.messages : Array.isArray(body.input) ? body.input : null;
+  const items = Array.isArray(body.messages)
+    ? body.messages
+    : Array.isArray(body.input)
+      ? body.input
+      : null;
   if (!items) return null;
 
   const stats = { bytesBefore: 0, bytesAfter: 0, hits: [] };

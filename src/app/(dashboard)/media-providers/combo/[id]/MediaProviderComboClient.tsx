@@ -41,7 +41,12 @@ const EXAMPLE_BODIES: Record<string, any> = {
     max_results: 5,
   }),
   webFetch: (n: any): any => ({ model: n, url: "https://example.com", format: "markdown" }),
-  image: (n: any): any => ({ model: n, prompt: "A cute cat playing piano", n: 1, size: "1024x1024" }),
+  image: (n: any): any => ({
+    model: n,
+    prompt: "A cute cat playing piano",
+    n: 1,
+    size: "1024x1024",
+  }),
   tts: (n: any): any => ({ model: n, input: "Hello, this is a test.", voice: "alloy" }),
 };
 
@@ -79,7 +84,11 @@ export default function ComboDetailPage(): any {
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = (): any =>
-    setConfirmDialog((prev: any): any => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any): any => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
 
   const fetchAll = async (): Promise<any> => {
     try {
@@ -109,7 +118,9 @@ export default function ComboDetailPage(): any {
       const s = settingsRes.ok ? await settingsRes.json() : {};
       setRoundRobin(s.comboStrategies?.[c.name]?.fallbackStrategy === "round-robin");
       const allLogs = logsRes.ok ? await logsRes.json() : [];
-      setLogs(allLogs.filter((l: any): any => typeof l === "string" && l.includes(c.name)).slice(0, 50));
+      setLogs(
+        allLogs.filter((l: any): any => typeof l === "string" && l.includes(c.name)).slice(0, 50),
+      );
     } catch {
       /* noop */
     }
@@ -224,7 +235,11 @@ export default function ComboDetailPage(): any {
       const body = EXAMPLE_BODIES[combo.kind](combo.name);
       const headers: Record<string, any> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
-      const res = await fetch(`/api${path}`, { method: "POST", headers, body: JSON.stringify(body) });
+      const res = await fetch(`/api${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
       const latencyMs = Date.now() - start;
       if (!res.ok) {
         const d = await res.json().catch((): any => ({}));
@@ -248,7 +263,9 @@ export default function ComboDetailPage(): any {
       // JSON — could be image (data[0].b64_json/url) or generic
       const data = await res.json();
       const first = data?.data?.[0];
-      const imageUrl = first?.b64_json ? `data:image/png;base64,${first.b64_json}` : first?.url || "";
+      const imageUrl = first?.b64_json
+        ? `data:image/png;base64,${first.b64_json}`
+        : first?.url || "";
       setTestResult({ json: JSON.stringify(maskB64(data), null, 2), imageUrl, latencyMs });
     } catch (e) {
       setTestError((e as any).message || "Network error");
@@ -262,7 +279,10 @@ export default function ComboDetailPage(): any {
     if (Array.isArray(obj)) return obj.map(maskB64);
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(obj)) {
-      out[k] = k === "b64_json" && typeof v === "string" && v.length > 100 ? `<${v.length} chars base64>` : maskB64(v);
+      out[k] =
+        k === "b64_json" && typeof v === "string" && v.length > 100
+          ? `<${v.length} chars base64>`
+          : maskB64(v);
     }
     return out;
   }
@@ -271,9 +291,12 @@ export default function ComboDetailPage(): any {
   if (!combo) return notFound();
 
   const kindLabel =
-    KIND_LABELS[combo.kind] || MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === combo.kind)?.label || "Combo";
+    KIND_LABELS[combo.kind] ||
+    MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === combo.kind)?.label ||
+    "Combo";
   const examplePath = EXAMPLE_PATHS[combo.kind];
-  const exampleBody = combo.kind && EXAMPLE_BODIES[combo.kind] ? EXAMPLE_BODIES[combo.kind](combo.name) : null;
+  const exampleBody =
+    combo.kind && EXAMPLE_BODIES[combo.kind] ? EXAMPLE_BODIES[combo.kind](combo.name) : null;
   const curlExample = examplePath
     ? `curl -X POST http://localhost:20128${examplePath} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}" \\\n  -d '${JSON.stringify(exampleBody)}'`
     : "";
@@ -299,7 +322,12 @@ export default function ComboDetailPage(): any {
           variant="outline"
           icon="delete"
           onClick={(): any =>
-            openConfirm("Delete Combo", `Delete combo "${combo?.name}"? This cannot be undone.`, handleDelete, "danger")
+            openConfirm(
+              "Delete Combo",
+              `Delete combo "${combo?.name}"? This cannot be undone.`,
+              handleDelete,
+              "danger",
+            )
           }
           className="text-red-500 border-red-200 hover:bg-red-50"
         >
@@ -341,7 +369,9 @@ export default function ComboDetailPage(): any {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
           <div>
             <h2 className="text-lg font-semibold">Providers</h2>
-            <p className="text-xs text-text-muted">Tried in order (top-down) or rotated when round-robin is on.</p>
+            <p className="text-xs text-text-muted">
+              Tried in order (top-down) or rotated when round-robin is on.
+            </p>
           </div>
           <Button size="sm" icon="add" onClick={(): any => setShowPicker(true)}>
             Add Provider
@@ -372,7 +402,11 @@ export default function ComboDetailPage(): any {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium truncate">{p?.name || providerId}</div>
-                    {model && <code className="text-[10px] text-text-muted font-mono truncate block">{model}</code>}
+                    {model && (
+                      <code className="text-[10px] text-text-muted font-mono truncate block">
+                        {model}
+                      </code>
+                    )}
                   </div>
                   <div className="flex items-center gap-0.5">
                     <button

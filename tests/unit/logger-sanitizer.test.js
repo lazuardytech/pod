@@ -83,7 +83,10 @@ describe("logger sanitizer", () => {
       expect(out.provider.id).toBe("openai");
     });
     it("recurses into arrays", () => {
-      const out = sanitizeForLog([{ apiKey: "sk-abcdefgh-very-long-1" }, { apiKey: "sk-abcdefgh-very-long-2" }]);
+      const out = sanitizeForLog([
+        { apiKey: "sk-abcdefgh-very-long-1" },
+        { apiKey: "sk-abcdefgh-very-long-2" },
+      ]);
       expect(out[0].apiKey).toBe("sk-a...ng-1");
       expect(out[1].apiKey).toBe("sk-a...ng-2");
     });

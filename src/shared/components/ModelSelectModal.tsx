@@ -25,7 +25,9 @@ const PROVIDER_ORDER = [
 ];
 
 // Providers that need no auth — always show in model selector
-const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter((id: any) => FREE_PROVIDERS[id]?.noAuth);
+const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter(
+  (id: any) => FREE_PROVIDERS[id]?.noAuth,
+);
 
 export default function ModelSelectModal({
   isOpen,
@@ -174,7 +176,8 @@ export default function ModelSelectModal({
     // Filter a models[] array by kindFilter (keep only matching m.type)
     const filterByKind = (models: any) => {
       // No kindFilter → LLM context: keep only LLM models (no type or type === "llm")
-      if (!kindFilter) return models.filter((m: any) => m.isPlaceholder || !m.type || m.type === "llm");
+      if (!kindFilter)
+        return models.filter((m: any) => m.isPlaceholder || !m.type || m.type === "llm");
       if (!TYPED_KINDS.has(kindFilter)) return models;
       return models.filter((m: any) => m.isPlaceholder || m.type === kindFilter);
     };
@@ -184,7 +187,9 @@ export default function ModelSelectModal({
 
     // No-auth providers: filter by kindFilter as well
     const noAuthIds = kindFilter
-      ? NO_AUTH_PROVIDER_IDS.filter((id: any) => (AI_PROVIDERS[id]?.serviceKinds || ["llm"]).includes(kindFilter))
+      ? NO_AUTH_PROVIDER_IDS.filter((id: any) =>
+          (AI_PROVIDERS[id]?.serviceKinds || ["llm"]).includes(kindFilter),
+        )
       : NO_AUTH_PROVIDER_IDS;
 
     // Only show connected providers (including both standard and custom)
@@ -203,7 +208,8 @@ export default function ModelSelectModal({
     sortedProviderIds.forEach((providerId: any) => {
       const alias = getProviderAlias(providerId);
       const providerInfo: any = allProviders[providerId] || { name: providerId, color: "#666" };
-      const isCustomProvider = isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
+      const isCustomProvider =
+        isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
 
       // For provider-as-model kinds (webSearch/webFetch): emit a single entry where value === providerId
       if (kindFilter && PROVIDER_AS_MODEL_KINDS.has(kindFilter)) {
@@ -259,7 +265,8 @@ export default function ModelSelectModal({
         // Custom providers: prefer user-defined name (e.g. "Bonsai") over registry default.
         // Fall back to providerInfo.name for standard providers.
         const displayName = matchedNode?.name || providerInfo.name;
-        const nodePrefix = connection?.providerSpecificData?.prefix || matchedNode?.prefix || providerId;
+        const nodePrefix =
+          connection?.providerSpecificData?.prefix || matchedNode?.prefix || providerId;
 
         // Aliases are stored using the raw providerId as key (e.g. "openai-compatible-chat-<uuid>/glm-4.7"),
         // so we must filter by providerId, not by the display prefix.
@@ -315,11 +322,24 @@ export default function ModelSelectModal({
         // Custom models registered via /api/models/custom (provider "Add Model" button)
         const customAliasIds = new Set(customAliasModels.map((m: any) => m.id));
         const customRegisteredModels = customModels
-          .filter((m: any) => m.providerAlias === alias && !hardcodedIds.has(m.id) && !customAliasIds.has(m.id))
-          .map((m: any) => ({ id: m.id, name: m.name || m.id, value: `${alias}/${m.id}`, isCustom: true }));
+          .filter(
+            (m: any) =>
+              m.providerAlias === alias && !hardcodedIds.has(m.id) && !customAliasIds.has(m.id),
+          )
+          .map((m: any) => ({
+            id: m.id,
+            name: m.name || m.id,
+            value: `${alias}/${m.id}`,
+            isCustom: true,
+          }));
 
         const merged = [
-          ...hardcodedModels.map((m: any) => ({ id: m.id, name: m.name, value: `${alias}/${m.id}`, type: m.type })),
+          ...hardcodedModels.map((m: any) => ({
+            id: m.id,
+            name: m.name,
+            value: `${alias}/${m.id}`,
+            type: m.type,
+          })),
           ...customAliasModels,
           ...customRegisteredModels,
         ];
@@ -364,7 +384,10 @@ export default function ModelSelectModal({
     // Filter out disabled models per provider (disabled keyed by storage alias OR providerId)
     Object.entries(groups).forEach(([providerId, group]: [string, any]) => {
       const aliasKey = getProviderAlias(providerId);
-      const disabledIds = new Set([...(disabledModels[aliasKey] || []), ...(disabledModels[providerId] || [])]);
+      const disabledIds = new Set([
+        ...(disabledModels[aliasKey] || []),
+        ...(disabledModels[providerId] || []),
+      ]);
       if (disabledIds.size === 0) return;
       group.models = group.models.filter((m: any) => !disabledIds.has(m.id));
       if (group.models.length === 0) delete groups[providerId];
@@ -491,7 +514,9 @@ export default function ModelSelectModal({
                 return (
                   <button
                     key={combo.id}
-                    onClick={() => handleSelect({ id: combo.name, name: combo.name, value: combo.name })}
+                    onClick={() =>
+                      handleSelect({ id: combo.name, name: combo.name, value: combo.name })
+                    }
                     className={`
                       px-2 py-1 rounded-xl text-xs font-medium transition-all border hover:cursor-pointer flex items-center gap-1
                       ${
@@ -521,9 +546,14 @@ export default function ModelSelectModal({
             <div key={providerId}>
               {/* Provider header */}
               <div className="flex items-center gap-1.5 mb-1.5 sticky top-0 bg-surface py-0.5">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: g.color as string }} />
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: g.color as string }}
+                />
                 <span className="text-xs font-medium text-primary">{g.name as string}</span>
-                <span className="text-[10px] text-text-muted">({(g.models as Array<unknown>).length})</span>
+                <span className="text-[10px] text-text-muted">
+                  ({(g.models as Array<unknown>).length})
+                </span>
               </div>
 
               <div className="flex flex-wrap gap-1.5">
@@ -534,7 +564,11 @@ export default function ModelSelectModal({
                     <button
                       key={String(model.value)}
                       onClick={() => handleSelect(model)}
-                      title={isPlaceholder ? "Select to pre-fill, then edit model ID in the input" : undefined}
+                      title={
+                        isPlaceholder
+                          ? "Select to pre-fill, then edit model ID in the input"
+                          : undefined
+                      }
                       className={`
                       px-2 py-1 rounded-xl text-xs font-medium transition-all border hover:cursor-pointer
                       ${

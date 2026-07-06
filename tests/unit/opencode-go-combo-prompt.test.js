@@ -117,7 +117,9 @@ describe("OpenCode Go — buildUrl + buildHeaders honour route split", () => {
     const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.js");
     const exec = new OpenCodeGoExecutor();
 
-    expect(exec.buildUrl("grok-code-fast-1")).toBe("https://opencode.ai/zen/go/v1/chat/completions");
+    expect(exec.buildUrl("grok-code-fast-1")).toBe(
+      "https://opencode.ai/zen/go/v1/chat/completions",
+    );
     expect(exec.buildUrl("gpt-5")).toBe("https://opencode.ai/zen/go/v1/chat/completions");
     expect(exec.buildUrl("minimax-m2.5")).toBe("https://opencode.ai/zen/go/v1/messages");
     expect(exec.buildUrl("minimax-m2.7")).toBe("https://opencode.ai/zen/go/v1/messages");

@@ -15,7 +15,9 @@ export function transformToOllama(response, model) {
         const data = line.slice(5).trim();
 
         if (data === "[DONE]") {
-          const ollamaEnd = JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) + "\n";
+          const ollamaEnd =
+            JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) +
+            "\n";
           controller.enqueue(new TextEncoder().encode(ollamaEnd));
           return;
         }
@@ -33,12 +35,15 @@ export function transformToOllama(response, model) {
                 pendingToolCalls[idx] = { id: tc.id, function: { name: "", arguments: "" } };
               }
               if (tc.function?.name) pendingToolCalls[idx].function.name += tc.function.name;
-              if (tc.function?.arguments) pendingToolCalls[idx].function.arguments += tc.function.arguments;
+              if (tc.function?.arguments)
+                pendingToolCalls[idx].function.arguments += tc.function.arguments;
             }
           }
 
           if (content) {
-            const ollama = JSON.stringify({ model, message: { role: "assistant", content }, done: false }) + "\n";
+            const ollama =
+              JSON.stringify({ model, message: { role: "assistant", content }, done: false }) +
+              "\n";
             controller.enqueue(new TextEncoder().encode(ollama));
           }
 
@@ -68,7 +73,8 @@ export function transformToOllama(response, model) {
               pendingToolCalls = {};
             } else if (finishReason === "stop") {
               const ollamaEnd =
-                JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) + "\n";
+                JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) +
+                "\n";
               controller.enqueue(new TextEncoder().encode(ollamaEnd));
             }
           }
@@ -78,13 +84,17 @@ export function transformToOllama(response, model) {
       }
     },
     flush(controller) {
-      const ollamaEnd = JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) + "\n";
+      const ollamaEnd =
+        JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) + "\n";
       controller.enqueue(new TextEncoder().encode(ollamaEnd));
     },
   });
 
   if (!response.body) {
-    return new Response("", { status: response.status, headers: { "Content-Type": "application/x-ndjson" } });
+    return new Response("", {
+      status: response.status,
+      headers: { "Content-Type": "application/x-ndjson" },
+    });
   }
   return new Response(response.body.pipeThrough(transform), {
     headers: { "Content-Type": "application/x-ndjson", "Access-Control-Allow-Origin": "*" },

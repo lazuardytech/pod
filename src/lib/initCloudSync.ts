@@ -9,7 +9,10 @@ declare global {
 
 // Survive Next.js HMR — module-level flag resets on reload, globalThis persists
 // biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
-const g: CloudSyncInitState = (globalThis.__cloudSyncInit ??= { initialized: false, inProgress: null });
+const g: CloudSyncInitState = (globalThis.__cloudSyncInit ??= {
+  initialized: false,
+  inProgress: null,
+});
 
 export async function ensureAppInitialized(): Promise<boolean> {
   if (g.initialized) return true;

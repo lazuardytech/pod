@@ -13,7 +13,7 @@ function* walk(dir) {
   }
 }
 
-const files = Array.from(walk("src")).filter(f => /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts"));
+const files = Array.from(walk("src")).filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts"));
 
 let totalFixes = 0;
 
@@ -21,21 +21,15 @@ for (const file of files) {
   let content = readFileSync(file, "utf-8");
 
   // Fix TS7034: new Set() without type args
-  content = content.replace(
-    /new Set\s*\(\s*\)/g,
-    () => {
-      totalFixes++;
-      return "new Set<any>()";
-    }
-  );
+  content = content.replace(/new Set\s*\(\s*\)/g, () => {
+    totalFixes++;
+    return "new Set<any>()";
+  });
   // Fix new Map() without type args
-  content = content.replace(
-    /new Map\s*\(\s*\)/g,
-    () => {
-      totalFixes++;
-      return "new Map<any, any>()";
-    }
-  );
+  content = content.replace(/new Map\s*\(\s*\)/g, () => {
+    totalFixes++;
+    return "new Map<any, any>()";
+  });
 
   writeFileSync(file, content, "utf-8");
 }

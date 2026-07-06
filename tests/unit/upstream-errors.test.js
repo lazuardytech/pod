@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DEFAULT_ERROR_MESSAGES, TRANSIENT_COOLDOWN_MS } from "../../open-sse/config/errorConfig.js";
+import {
+  DEFAULT_ERROR_MESSAGES,
+  TRANSIENT_COOLDOWN_MS,
+} from "../../open-sse/config/errorConfig.js";
 import {
   errorResponse,
   formatProviderError,
@@ -59,7 +62,9 @@ describe("parseUpstreamError — extract error info from upstream responses", ()
         resetsAtMs: Date.now() + 3600_000, // 1 hour
       }),
     };
-    const response = new Response(JSON.stringify({ error: { message: "usage limit" } }), { status: 429 });
+    const response = new Response(JSON.stringify({ error: { message: "usage limit" } }), {
+      status: 429,
+    });
     const result = await parseUpstreamError(response, executor);
     expect(result.resetsAtMs).toBeDefined();
     expect(result.resetsAtMs).toBeGreaterThan(Date.now());
@@ -71,7 +76,9 @@ describe("parseUpstreamError — extract error info from upstream responses", ()
         throw new Error("parser crashed");
       },
     };
-    const response = new Response(JSON.stringify({ error: { message: "rate limited" } }), { status: 429 });
+    const response = new Response(JSON.stringify({ error: { message: "rate limited" } }), {
+      status: 429,
+    });
     const result = await parseUpstreamError(response, executor);
     // Falls through to default parsing
     expect(result.statusCode).toBe(429);
@@ -79,7 +86,9 @@ describe("parseUpstreamError — extract error info from upstream responses", ()
   });
 
   it("handles executor without parseError method", async () => {
-    const response = new Response(JSON.stringify({ error: { message: "overloaded" } }), { status: 503 });
+    const response = new Response(JSON.stringify({ error: { message: "overloaded" } }), {
+      status: 503,
+    });
     const result = await parseUpstreamError(response, {});
     expect(result.statusCode).toBe(503);
     expect(result.message).toContain("overloaded");
@@ -91,7 +100,12 @@ describe("parseUpstreamError — extract error info from upstream responses", ()
 describe("unavailableResponse — all-accounts-exhausted response", () => {
   it("returns response with correct status code", () => {
     const retryAfter = new Date(Date.now() + 30_000).toISOString();
-    const res = unavailableResponse(429, "All accounts rate limited", retryAfter, "reset after 30s");
+    const res = unavailableResponse(
+      429,
+      "All accounts rate limited",
+      retryAfter,
+      "reset after 30s",
+    );
     expect(res.status).toBe(429);
   });
 
@@ -111,7 +125,12 @@ describe("unavailableResponse — all-accounts-exhausted response", () => {
 
   it("appends human retry info to error message", async () => {
     const retryAfter = new Date(Date.now() + 30_000).toISOString();
-    const res = unavailableResponse(502, "Bad gateway from provider", retryAfter, "reset after 30s");
+    const res = unavailableResponse(
+      502,
+      "Bad gateway from provider",
+      retryAfter,
+      "reset after 30s",
+    );
     const body = await res.json();
     expect(body.error.message).toContain("Bad gateway from provider");
     expect(body.error.message).toContain("reset after 30s");
@@ -268,7 +287,13 @@ describe("markAccountUnavailable — 5xx error path", () => {
     const { getModelLockKey } = await import("open-sse/services/accountFallback.js");
 
     const before = Date.now();
-    await markAccountUnavailable(conn.id, 503, "Service temporarily unavailable", PROVIDER, "gpt-5");
+    await markAccountUnavailable(
+      conn.id,
+      503,
+      "Service temporarily unavailable",
+      PROVIDER,
+      "gpt-5",
+    );
     const updated = await readConn(conn.id);
     const lockExpiry = new Date(updated[getModelLockKey("gpt-5")]).getTime();
     expect(lockExpiry - before).toBeGreaterThan(TRANSIENT_COOLDOWN_MS - 1000);
@@ -295,7 +320,14 @@ describe("markAccountUnavailable — 5xx error path", () => {
 
     // Simulate codex providing resetsAtMs = 2 minutes from now
     const resetsAtMs = Date.now() + 120_000;
-    const result = await markAccountUnavailable(conn.id, 429, "usage_limit_reached", PROVIDER, "gpt-5", resetsAtMs);
+    const result = await markAccountUnavailable(
+      conn.id,
+      429,
+      "usage_limit_reached",
+      PROVIDER,
+      "gpt-5",
+      resetsAtMs,
+    );
     expect(result.shouldFallback).toBe(true);
     // resetsAtMs overrides backoff — cooldown should be ~120s (capped at MAX_RATE_LIMIT_COOLDOWN_MS)
     expect(result.cooldownMs).toBeGreaterThan(119_000);
@@ -333,9 +365,8 @@ describe("account fallback loop simulation", () => {
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
 
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     // Simulate 503 on connA
     await markAccountUnavailable(connA.id, 503, "Service unavailable", PROVIDER, "gpt-5");
@@ -349,9 +380,8 @@ describe("account fallback loop simulation", () => {
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
 
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     await markAccountUnavailable(connA.id, 503, "Unavailable", PROVIDER, "gpt-5");
     await markAccountUnavailable(connB.id, 502, "Bad gateway", PROVIDER, "gpt-5");

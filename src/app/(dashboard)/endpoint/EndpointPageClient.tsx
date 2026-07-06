@@ -3,7 +3,16 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, SegmentedControl, Toggle } from "@/shared/components";
+import {
+  Badge,
+  Button,
+  Card,
+  CardSkeleton,
+  Input,
+  Modal,
+  SegmentedControl,
+  Toggle,
+} from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
@@ -109,7 +118,8 @@ export default function APIPageClient({ machineId }: any) {
   });
   const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm: any = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const { copied, copy }: any = useCopyToClipboard();
 
@@ -327,7 +337,10 @@ export default function APIPageClient({ machineId }: any) {
   const handleRequireApiKey: any = async (value: any) => {
     const previous: any = requireApiKey;
     setRequireApiKey(value);
-    const result: any = await patchSetting({ requireApiKey: value }, { feature: "endpoint-require-api-key" });
+    const result: any = await patchSetting(
+      { requireApiKey: value },
+      { feature: "endpoint-require-api-key" },
+    );
     if ("error" in result && result.error) {
       setRequireApiKey(previous);
     }
@@ -336,7 +349,10 @@ export default function APIPageClient({ machineId }: any) {
   const handleRtkEnabled: any = async (value: any) => {
     const previous: any = rtkEnabled;
     setRtkEnabledState(value);
-    const result: any = await patchSetting({ rtkEnabled: value }, { feature: "endpoint-rtk-enabled" });
+    const result: any = await patchSetting(
+      { rtkEnabled: value },
+      { feature: "endpoint-rtk-enabled" },
+    );
     if ("error" in result && result.error) {
       setRtkEnabledState(previous);
     }
@@ -362,17 +378,21 @@ export default function APIPageClient({ machineId }: any) {
   const handleCavemanEnabled: any = (value: any) => {
     const previous: any = cavemanEnabled;
     setCavemanEnabled(value);
-    patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then((result: any) => {
-      if ("error" in result && result.error) setCavemanEnabled(previous);
-    });
+    patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then(
+      (result: any) => {
+        if ("error" in result && result.error) setCavemanEnabled(previous);
+      },
+    );
   };
 
   const handleCavemanLevel: any = (level: any) => {
     const previous: any = cavemanLevel;
     setCavemanLevel(level);
-    patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then((result: any) => {
-      if ("error" in result && result.error) setCavemanLevel(previous);
-    });
+    patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then(
+      (result: any) => {
+        if ("error" in result && result.error) setCavemanLevel(previous);
+      },
+    );
   };
 
   const fetchData: any = async () => {
@@ -469,7 +489,9 @@ export default function APIPageClient({ machineId }: any) {
         // Show download progress
         if (s.download?.downloading) {
           const pct: any = s.download.progress;
-          setTunnelProgress(pct < 100 ? `Downloading cloudflared... ${pct}%` : "Creating tunnel...");
+          setTunnelProgress(
+            pct < 100 ? `Downloading cloudflared... ${pct}%` : "Creating tunnel...",
+          );
         } else {
           setTunnelProgress("Creating tunnel...");
         }
@@ -510,7 +532,10 @@ export default function APIPageClient({ machineId }: any) {
       /* fall through */
     }
 
-    setTunnelStatus({ type: "error", message: "Tunnel creation timed out. Please check your network and try again." });
+    setTunnelStatus({
+      type: "error",
+      message: "Tunnel creation timed out. Please check your network and try again.",
+    });
     setTunnelLoading(false);
     setTunnelProgress("");
   };
@@ -844,7 +869,9 @@ export default function APIPageClient({ machineId }: any) {
         body: JSON.stringify({ name: editKeyName.trim() }),
       });
       if (res.ok) {
-        setKeys(keys.map((k: any) => (k.id === editingKey.id ? { ...k, name: editKeyName.trim() } : k)));
+        setKeys(
+          keys.map((k: any) => (k.id === editingKey.id ? { ...k, name: editKeyName.trim() } : k)),
+        );
         setEditingKey(null);
         setEditKeyName("");
       }
@@ -933,7 +960,8 @@ export default function APIPageClient({ machineId }: any) {
                   if (!requireApiKey) {
                     setTunnelStatus({
                       type: "error",
-                      message: 'Security required: Enable "Require API key" before activating the tunnel.',
+                      message:
+                        'Security required: Enable "Require API key" before activating the tunnel.',
                     });
                     return;
                   }
@@ -967,7 +995,11 @@ export default function APIPageClient({ machineId }: any) {
             ) : tunnelLoading ? (
               <div className="flex items-start gap-2">
                 <div className="flex flex-1 items-center gap-2 rounded-[6px] border border-charcoal-grey bg-pitch-black px-3 py-2 text-sm text-storm-cloud">
-                  <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
+                  <LucideIcon
+                    name="progress_activity"
+                    size={14}
+                    className="animate-spin shrink-0"
+                  />
                   <span>{tunnelProgress || "Creating tunnel..."}</span>
                 </div>
                 <button
@@ -989,15 +1021,25 @@ export default function APIPageClient({ machineId }: any) {
             ) : tunnelChecking ? (
               <div className="flex items-start gap-2">
                 <div className="flex flex-1 items-center gap-2 rounded-[6px] border border-charcoal-grey bg-pitch-black px-3 py-2 text-sm text-storm-cloud">
-                  <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
+                  <LucideIcon
+                    name="progress_activity"
+                    size={14}
+                    className="animate-spin shrink-0"
+                  />
                   <span>Checking...</span>
                 </div>
-                <button onClick={() => setTunnelChecking(false)} className={ENDPOINT_DANGER_BUTTON_CLASS} title="Stop">
+                <button
+                  onClick={() => setTunnelChecking(false)}
+                  className={ENDPOINT_DANGER_BUTTON_CLASS}
+                  title="Stop"
+                >
                   <LucideIcon name="power_settings_new" size={16} />
                 </button>
               </div>
             ) : (
-              <p className="text-sm text-storm-cloud">Expose your local Pod API with a secure public endpoint.</p>
+              <p className="text-sm text-storm-cloud">
+                Expose your local Pod API with a secure public endpoint.
+              </p>
             )}
           </div>
         </Card>
@@ -1035,7 +1077,11 @@ export default function APIPageClient({ machineId }: any) {
             ) : tsLoading || tsConnecting ? (
               <div className="flex items-start gap-2">
                 <div className="flex flex-1 items-center gap-2 rounded-[6px] border border-charcoal-grey bg-pitch-black px-3 py-2 text-sm text-storm-cloud">
-                  <LucideIcon name="progress_activity" size={14} className="animate-spin shrink-0" />
+                  <LucideIcon
+                    name="progress_activity"
+                    size={14}
+                    className="animate-spin shrink-0"
+                  />
                   <span>{tsProgress || "Connecting..."}</span>
                 </div>
                 <button
@@ -1056,7 +1102,9 @@ export default function APIPageClient({ machineId }: any) {
                 <span>{tsStatus.message}</span>
               </div>
             ) : (
-              <p className="text-sm text-storm-cloud">Make Pod reachable on your private Tailscale network.</p>
+              <p className="text-sm text-storm-cloud">
+                Make Pod reachable on your private Tailscale network.
+              </p>
             )}
           </div>
         </Card>
@@ -1122,7 +1170,9 @@ export default function APIPageClient({ machineId }: any) {
                 (RTK)
               </a>
             </p>
-            <p className="text-sm text-text-muted">git/grep/ls/tree/logs → 60-90% fewer input tokens</p>
+            <p className="text-sm text-text-muted">
+              git/grep/ls/tree/logs → 60-90% fewer input tokens
+            </p>
           </div>
           <Toggle checked={rtkEnabled} onChange={() => handleRtkEnabled(!rtkEnabled)} />
         </div>
@@ -1139,7 +1189,9 @@ export default function APIPageClient({ machineId }: any) {
                 (Caveman)
               </a>
             </p>
-            <p className="text-sm text-text-muted">Terse-style system prompt → ~65% fewer output tokens (up to 87%)</p>
+            <p className="text-sm text-text-muted">
+              Terse-style system prompt → ~65% fewer output tokens (up to 87%)
+            </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {cavemanEnabled && (
@@ -1160,7 +1212,10 @@ export default function APIPageClient({ machineId }: any) {
                 ))}
               </div>
             )}
-            <Toggle checked={cavemanEnabled} onChange={() => handleCavemanEnabled(!cavemanEnabled)} />
+            <Toggle
+              checked={cavemanEnabled}
+              onChange={() => handleCavemanEnabled(!cavemanEnabled)}
+            />
           </div>
         </div>
       </Card>
@@ -1232,129 +1287,137 @@ export default function APIPageClient({ machineId }: any) {
                   </tr>
                 </thead>
                 <tbody>
-                  {keys.slice((keysPage - 1) * KEYS_PAGE_SIZE, keysPage * KEYS_PAGE_SIZE).map((key: any) => (
-                    <tr
-                      key={key.id}
-                      className={`group border-b border-charcoal-grey/50 last:border-0 hover:bg-deep-slate transition-colors duration-100 ${
-                        key.isActive === false ? "opacity-60" : ""
-                      }`}
-                    >
-                      {/* Name */}
-                      <td className="px-3 py-2 border-r border-charcoal-grey/50">
-                        <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">{key.name}</span>
-                      </td>
-
-                      {/* Key */}
-                      <td className="px-3 py-2 border-r border-charcoal-grey/50">
-                        <div className="flex items-center gap-1.5">
-                          <code className="text-[11px] text-storm-cloud font-mono">
-                            {visibleKeys.has(key.id) ? key.key : maskKey(key.key)}
-                          </code>
-                          <button
-                            onClick={() => toggleKeyVisibility(key.id)}
-                            className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
-                            title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
-                          >
-                            <LucideIcon
-                              name={visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
-                              className="text-[12px]"
-                            />
-                          </button>
-                          <button
-                            onClick={() => copy(key.key, key.id)}
-                            className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
-                            title="Copy key"
-                          >
-                            <LucideIcon name={copied === key.id ? "check" : "content_copy"} className="text-[12px]" />
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Limit */}
-                      <td className="px-3 py-2 border-r border-charcoal-grey/50">
-                        {key.limitType === "limited" ? (
-                          <span className="text-[11px] text-aether-blue">
-                            {key.requestsPerMinute || 0} req/min · {key.concurrentRequests || 0} concurrent
+                  {keys
+                    .slice((keysPage - 1) * KEYS_PAGE_SIZE, keysPage * KEYS_PAGE_SIZE)
+                    .map((key: any) => (
+                      <tr
+                        key={key.id}
+                        className={`group border-b border-charcoal-grey/50 last:border-0 hover:bg-deep-slate transition-colors duration-100 ${
+                          key.isActive === false ? "opacity-60" : ""
+                        }`}
+                      >
+                        {/* Name */}
+                        <td className="px-3 py-2 border-r border-charcoal-grey/50">
+                          <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">
+                            {key.name}
                           </span>
-                        ) : (
-                          <span className="text-[11px] text-emerald">Unlimited</span>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Created At */}
-                      <td className="px-3 py-2 border-r border-charcoal-grey/50 text-fog-grey font-mono text-[11px]">
-                        {new Date(key.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
+                        {/* Key */}
+                        <td className="px-3 py-2 border-r border-charcoal-grey/50">
+                          <div className="flex items-center gap-1.5">
+                            <code className="text-[11px] text-storm-cloud font-mono">
+                              {visibleKeys.has(key.id) ? key.key : maskKey(key.key)}
+                            </code>
+                            <button
+                              onClick={() => toggleKeyVisibility(key.id)}
+                              className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
+                              title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
+                            >
+                              <LucideIcon
+                                name={visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
+                                className="text-[12px]"
+                              />
+                            </button>
+                            <button
+                              onClick={() => copy(key.key, key.id)}
+                              className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
+                              title="Copy key"
+                            >
+                              <LucideIcon
+                                name={copied === key.id ? "check" : "content_copy"}
+                                className="text-[12px]"
+                              />
+                            </button>
+                          </div>
+                        </td>
 
-                      {/* Last Access At */}
-                      <td className="px-3 py-2 border-r border-charcoal-grey/50 text-fog-grey font-mono text-[11px]">
-                        {key.lastAccessAt
-                          ? new Date(key.lastAccessAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })
-                          : "—"}
-                      </td>
+                        {/* Limit */}
+                        <td className="px-3 py-2 border-r border-charcoal-grey/50">
+                          {key.limitType === "limited" ? (
+                            <span className="text-[11px] text-aether-blue">
+                              {key.requestsPerMinute || 0} req/min · {key.concurrentRequests || 0}{" "}
+                              concurrent
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-emerald">Unlimited</span>
+                          )}
+                        </td>
 
-                      {/* Status */}
-                      <td className="px-3 py-2 border-r border-charcoal-grey/50">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={key.isActive !== false ? "success" : "error"} size="sm">
-                            {key.isActive !== false ? "Enabled" : "Disabled"}
-                          </Badge>
-                          <Toggle
-                            size="sm"
-                            checked={key.isActive ?? true}
-                            onChange={(checked: any) => {
-                              if (key.isActive && !checked) {
+                        {/* Created At */}
+                        <td className="px-3 py-2 border-r border-charcoal-grey/50 text-fog-grey font-mono text-[11px]">
+                          {new Date(key.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </td>
+
+                        {/* Last Access At */}
+                        <td className="px-3 py-2 border-r border-charcoal-grey/50 text-fog-grey font-mono text-[11px]">
+                          {key.lastAccessAt
+                            ? new Date(key.lastAccessAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : "—"}
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-3 py-2 border-r border-charcoal-grey/50">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={key.isActive !== false ? "success" : "error"} size="sm">
+                              {key.isActive !== false ? "Enabled" : "Disabled"}
+                            </Badge>
+                            <Toggle
+                              size="sm"
+                              checked={key.isActive ?? true}
+                              onChange={(checked: any) => {
+                                if (key.isActive && !checked) {
+                                  openConfirm(
+                                    "Pause API Key",
+                                    `Pause API key "${key.name}"? This key will stop working immediately but can be resumed later.`,
+                                    () => handleToggleKey(key.id, checked),
+                                    "danger",
+                                  );
+                                } else {
+                                  handleToggleKey(key.id, checked);
+                                }
+                              }}
+                              title={key.isActive ? "Pause key" : "Resume key"}
+                            />
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-3 py-2 w-[72px]">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleEditKey(key)}
+                              className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
+                              title="Edit key"
+                            >
+                              <LucideIcon name="edit" className="text-[14px]" />
+                            </button>
+                            <button
+                              onClick={() =>
                                 openConfirm(
-                                  "Pause API Key",
-                                  `Pause API key "${key.name}"? This key will stop working immediately but can be resumed later.`,
-                                  () => handleToggleKey(key.id, checked),
+                                  "Delete API Key",
+                                  "Are you sure you want to delete this API key? This action cannot be undone.",
+                                  () => handleDeleteKey(key.id),
                                   "danger",
-                                );
-                              } else {
-                                handleToggleKey(key.id, checked);
+                                )
                               }
-                            }}
-                            title={key.isActive ? "Pause key" : "Resume key"}
-                          />
-                        </div>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-3 py-2 w-[72px]">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleEditKey(key)}
-                            className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
-                            title="Edit key"
-                          >
-                            <LucideIcon name="edit" className="text-[14px]" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              openConfirm(
-                                "Delete API Key",
-                                "Are you sure you want to delete this API key? This action cannot be undone.",
-                                () => handleDeleteKey(key.id),
-                                "danger",
-                              )
-                            }
-                            className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red transition-colors duration-100"
-                            title="Delete key"
-                          >
-                            <LucideIcon name="delete" className="text-[14px]" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                              className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red transition-colors duration-100"
+                              title="Delete key"
+                            >
+                              <LucideIcon name="delete" className="text-[14px]" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -1362,8 +1425,8 @@ export default function APIPageClient({ machineId }: any) {
             {keys.length > KEYS_PAGE_SIZE && (
               <div className="flex items-center justify-between px-3 py-2 border-t border-charcoal-grey">
                 <span className="text-[11px] text-fog-grey">
-                  {(keysPage - 1) * KEYS_PAGE_SIZE + 1}–{Math.min(keysPage * KEYS_PAGE_SIZE, keys.length)} of{" "}
-                  {keys.length}
+                  {(keysPage - 1) * KEYS_PAGE_SIZE + 1}–
+                  {Math.min(keysPage * KEYS_PAGE_SIZE, keys.length)} of {keys.length}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
@@ -1373,23 +1436,28 @@ export default function APIPageClient({ machineId }: any) {
                   >
                     <LucideIcon name="chevron_left" className="text-[14px]" />
                   </button>
-                  {Array.from({ length: Math.ceil(keys.length / KEYS_PAGE_SIZE) }, (_: any, i: any) => i + 1).map(
-                    (p: any) => (
-                      <button
-                        key={p}
-                        onClick={() => setKeysPage(p)}
-                        className={`flex items-center justify-center size-6 rounded-[4px] text-[11px] font-[510] transition-colors duration-100 ${
-                          p === keysPage
-                            ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
-                            : "text-fog-grey hover:bg-deep-slate hover:text-porcelain border border-transparent"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ),
-                  )}
+                  {Array.from(
+                    { length: Math.ceil(keys.length / KEYS_PAGE_SIZE) },
+                    (_: any, i: any) => i + 1,
+                  ).map((p: any) => (
+                    <button
+                      key={p}
+                      onClick={() => setKeysPage(p)}
+                      className={`flex items-center justify-center size-6 rounded-[4px] text-[11px] font-[510] transition-colors duration-100 ${
+                        p === keysPage
+                          ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
+                          : "text-fog-grey hover:bg-deep-slate hover:text-porcelain border border-transparent"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
                   <button
-                    onClick={() => setKeysPage((p: any) => Math.min(Math.ceil(keys.length / KEYS_PAGE_SIZE), p + 1))}
+                    onClick={() =>
+                      setKeysPage((p: any) =>
+                        Math.min(Math.ceil(keys.length / KEYS_PAGE_SIZE), p + 1),
+                      )
+                    }
                     disabled={keysPage === Math.ceil(keys.length / KEYS_PAGE_SIZE)}
                     className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
                   >
@@ -1467,7 +1535,11 @@ export default function APIPageClient({ machineId }: any) {
             </div>
           )}
           <div className="flex gap-2">
-            <Button onClick={handleCreateKey} fullWidth disabled={!newKeyName.trim() || !hasValidCreateRateLimitInputs}>
+            <Button
+              onClick={handleCreateKey}
+              fullWidth
+              disabled={!newKeyName.trim() || !hasValidCreateRateLimitInputs}
+            >
               Create
             </Button>
             <Button onClick={resetCreateKeyForm} variant="ghost" fullWidth>
@@ -1517,13 +1589,20 @@ export default function APIPageClient({ machineId }: any) {
       <Modal isOpen={!!createdKey} title="API Key Created" onClose={() => setCreatedKey(null)}>
         <div className="flex flex-col gap-4">
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2 font-medium">Save this key now!</p>
+            <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2 font-medium">
+              Save this key now!
+            </p>
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
               This is the only time you will see this key. Store it securely.
             </p>
           </div>
           <div className="flex gap-2 items-end">
-            <Input value={createdKey || ""} readOnly className="flex-1" inputClassName="font-mono text-sm" />
+            <Input
+              value={createdKey || ""}
+              readOnly
+              className="flex-1"
+              inputClassName="font-mono text-sm"
+            />
             <Button
               size="lg"
               variant="secondary"
@@ -1540,7 +1619,11 @@ export default function APIPageClient({ machineId }: any) {
       </Modal>
 
       {/* Enable Tunnel Modal */}
-      <Modal isOpen={showEnableTunnelModal} title="Enable Tunnel" onClose={() => setShowEnableTunnelModal(false)}>
+      <Modal
+        isOpen={showEnableTunnelModal}
+        title="Enable Tunnel"
+        onClose={() => setShowEnableTunnelModal(false)}
+      >
         <div className="flex flex-col gap-4">
           <div className="bg-surface-2 border border-border-subtle rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -1548,8 +1631,9 @@ export default function APIPageClient({ machineId }: any) {
               <div>
                 <p className="text-sm text-text-main font-medium mb-1">Cloudflare Tunnel</p>
                 <p className="text-sm text-text-muted">
-                  Expose your local Pod to the internet. No port forwarding, no static IP needed. Share endpoint URL
-                  with your team or use it in Cursor, Cline, and other AI tools from anywhere.
+                  Expose your local Pod to the internet. No port forwarding, no static IP needed.
+                  Share endpoint URL with your team or use it in Cursor, Cline, and other AI tools
+                  from anywhere.
                 </p>
               </div>
             </div>
@@ -1557,7 +1641,10 @@ export default function APIPageClient({ machineId }: any) {
 
           <div className="grid grid-cols-2 gap-3">
             {TUNNEL_BENEFITS.map((benefit: any) => (
-              <div key={benefit.title} className="flex flex-col items-center text-center p-3 rounded-lg bg-sidebar/50">
+              <div
+                key={benefit.title}
+                className="flex flex-col items-center text-center p-3 rounded-lg bg-sidebar/50"
+              >
                 <LucideIcon name={benefit.icon} className="text-xl text-primary mb-1" />
                 <p className="text-xs font-semibold">{benefit.title}</p>
                 <p className="text-xs text-text-muted">{benefit.desc}</p>
@@ -1565,7 +1652,9 @@ export default function APIPageClient({ machineId }: any) {
             ))}
           </div>
 
-          <p className="text-xs text-text-muted">Requires outbound port 7844 (TCP/UDP). Connection may take 10-30s.</p>
+          <p className="text-xs text-text-muted">
+            Requires outbound port 7844 (TCP/UDP). Connection may take 10-30s.
+          </p>
 
           <div className="flex gap-2">
             <Button onClick={handleEnableTunnel} fullWidth>
@@ -1586,13 +1675,24 @@ export default function APIPageClient({ machineId }: any) {
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-text-muted">
-            The Cloudflare tunnel will be disconnected. Remote access via tunnel URL will stop working.
+            The Cloudflare tunnel will be disconnected. Remote access via tunnel URL will stop
+            working.
           </p>
           <div className="flex gap-2">
-            <Button onClick={handleDisableTunnel} fullWidth disabled={tunnelLoading} variant="danger">
+            <Button
+              onClick={handleDisableTunnel}
+              fullWidth
+              disabled={tunnelLoading}
+              variant="danger"
+            >
               {tunnelLoading ? "Disabling..." : "Disable"}
             </Button>
-            <Button onClick={() => setShowDisableTunnelModal(false)} variant="ghost" fullWidth disabled={tunnelLoading}>
+            <Button
+              onClick={() => setShowDisableTunnelModal(false)}
+              variant="ghost"
+              fullWidth
+              disabled={tunnelLoading}
+            >
               Cancel
             </Button>
           </div>
@@ -1623,7 +1723,9 @@ export default function APIPageClient({ machineId }: any) {
           {/* Not installed */}
           {tsInstalled === false && !tsInstalling && (
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-text-muted">Tailscale is not installed. Install it to enable Funnel.</p>
+              <p className="text-sm text-text-muted">
+                Tailscale is not installed. Install it to enable Funnel.
+              </p>
               <div className="flex gap-2">
                 <Button onClick={handleInstallTailscale} fullWidth>
                   Install Tailscale
@@ -1674,7 +1776,8 @@ export default function APIPageClient({ machineId }: any) {
                       }
                       body.replaceChildren();
                       const message: any = doc.createElement("p");
-                      message.style.cssText = "font-family:sans-serif;text-align:center;margin-top:40px";
+                      message.style.cssText =
+                        "font-family:sans-serif;text-align:center;margin-top:40px";
                       message.textContent = "Connecting to Tailscale...";
                       body.appendChild(message);
                     }
@@ -1706,10 +1809,20 @@ export default function APIPageClient({ machineId }: any) {
             Tailscale Funnel will be stopped. Remote access via Tailscale URL will stop working.
           </p>
           <div className="flex gap-2">
-            <Button onClick={handleDisableTailscale} fullWidth disabled={tsLoading} variant="danger">
+            <Button
+              onClick={handleDisableTailscale}
+              fullWidth
+              disabled={tsLoading}
+              variant="danger"
+            >
               {tsLoading ? "Disabling..." : "Disable"}
             </Button>
-            <Button onClick={() => setShowDisableTsModal(false)} variant="ghost" fullWidth disabled={tsLoading}>
+            <Button
+              onClick={() => setShowDisableTsModal(false)}
+              variant="ghost"
+              fullWidth
+              disabled={tsLoading}
+            >
               Cancel
             </Button>
           </div>
@@ -1725,7 +1838,11 @@ function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }: any) {
     <Card title={title} icon={icon} className="h-full">
       <div className="flex items-center gap-2">
         <Input value={url} readOnly className="flex-1 font-mono text-sm" />
-        <button onClick={() => onCopy(url, copyId)} className={ENDPOINT_ICON_BUTTON_CLASS} title={`Copy ${title} URL`}>
+        <button
+          onClick={() => onCopy(url, copyId)}
+          className={ENDPOINT_ICON_BUTTON_CLASS}
+          title={`Copy ${title} URL`}
+        >
           <LucideIcon name={copied === copyId ? "check" : "content_copy"} size={16} />
         </button>
       </div>
@@ -1792,7 +1909,9 @@ function SecurityWarning({ message, action }: any) {
             action.href.startsWith("#")
               ? (e: any) => {
                   e.preventDefault();
-                  document.getElementById(action.href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+                  document
+                    .getElementById(action.href.slice(1))
+                    ?.scrollIntoView({ behavior: "smooth" });
                 }
               : undefined
           }

@@ -103,7 +103,9 @@ export default function QuotaTable({ quotas = [], compact = false }: any) {
                 <td className={`${cellPad} w-[30%]`}>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-[10px] shrink-0">{colors.emoji}</span>
-                    <span className={`${nameText} font-medium text-text-primary truncate`}>{quota.name}</span>
+                    <span className={`${nameText} font-medium text-text-primary truncate`}>
+                      {quota.name}
+                    </span>
                   </div>
                 </td>
 
@@ -113,7 +115,9 @@ export default function QuotaTable({ quotas = [], compact = false }: any) {
                     {/* Progress bar - always show with border for visibility */}
                     <div
                       className={`h-1.5 rounded-full overflow-hidden border ${colors.bgLight} ${
-                        remaining === 0 ? "border-black/10 dark:border-white/10" : "border-transparent"
+                        remaining === 0
+                          ? "border-black/10 dark:border-white/10"
+                          : "border-transparent"
                       }`}
                     >
                       <div
@@ -123,9 +127,12 @@ export default function QuotaTable({ quotas = [], compact = false }: any) {
                     </div>
 
                     {/* Numbers */}
-                    <div className={`flex items-center justify-between ${compact ? "text-[10px]" : "text-xs"}`}>
+                    <div
+                      className={`flex items-center justify-between ${compact ? "text-[10px]" : "text-xs"}`}
+                    >
                       <span className="text-text-muted">
-                        {quota.used.toLocaleString()} / {quota.total > 0 ? quota.total.toLocaleString() : "∞"}
+                        {quota.used.toLocaleString()} /{" "}
+                        {quota.total > 0 ? quota.total.toLocaleString() : "∞"}
                       </span>
                       <span className={`font-medium ${colors.text}`}>{remaining}%</span>
                     </div>
@@ -145,9 +152,13 @@ export default function QuotaTable({ quotas = [], compact = false }: any) {
                     ) : (
                       <div className="space-y-0.5">
                         {countdown !== "-" && (
-                          <div className={`${resetPrimary} text-text-primary font-medium`}>in {countdown}</div>
+                          <div className={`${resetPrimary} text-text-primary font-medium`}>
+                            in {countdown}
+                          </div>
                         )}
-                        {resetDisplay && <div className={`${resetSecondary} text-text-muted`}>{resetDisplay}</div>}
+                        {resetDisplay && (
+                          <div className={`${resetSecondary} text-text-muted`}>{resetDisplay}</div>
+                        )}
                       </div>
                     )
                   ) : (

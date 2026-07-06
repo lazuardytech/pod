@@ -2,7 +2,15 @@
 
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, EditConnectionModal, Modal, Select, Toggle } from "@/shared/components";
+import {
+  Badge,
+  Button,
+  Card,
+  EditConnectionModal,
+  Modal,
+  Select,
+  Toggle,
+} from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 
@@ -78,7 +86,8 @@ function ConnectionRow({
         : "";
 
   let maskedProxyUrl = "";
-  const rawProxyUrl = boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl;
+  const rawProxyUrl =
+    boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl;
   if (rawProxyUrl) {
     try {
       const p = new URL(rawProxyUrl);
@@ -88,9 +97,14 @@ function ConnectionRow({
     }
   }
 
-  const noProxyText = boundProxyPool?.noProxy || connection.providerSpecificData?.connectionNoProxy || "";
+  const noProxyText =
+    boundProxyPool?.noProxy || connection.providerSpecificData?.connectionNoProxy || "";
   const proxyBadgeVariant =
-    boundProxyPool?.isActive === true ? "success" : boundProxyPoolId || hasLegacyProxy ? "error" : "default";
+    boundProxyPool?.isActive === true
+      ? "success"
+      : boundProxyPoolId || hasLegacyProxy
+        ? "error"
+        : "default";
 
   const modelLockUntil =
     Object.entries(connection)
@@ -121,18 +135,24 @@ function ConnectionRow({
       return undefined;
     }
     const handler = (e: any) => {
-      if (proxyDropdownRef.current && !proxyDropdownRef.current.contains(e.target)) setShowProxyDropdown(false);
+      if (proxyDropdownRef.current && !proxyDropdownRef.current.contains(e.target))
+        setShowProxyDropdown(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showProxyDropdown]);
 
-  const effectiveStatus = connection.testStatus === "unavailable" && !isCooldown ? "active" : connection.testStatus;
+  const effectiveStatus =
+    connection.testStatus === "unavailable" && !isCooldown ? "active" : connection.testStatus;
 
   const getStatusVariant = () => {
     if (connection.isActive === false) return "default";
     if (effectiveStatus === "active" || effectiveStatus === "success") return "success";
-    if (effectiveStatus === "error" || effectiveStatus === "expired" || effectiveStatus === "unavailable")
+    if (
+      effectiveStatus === "error" ||
+      effectiveStatus === "expired" ||
+      effectiveStatus === "unavailable"
+    )
       return "error";
     return "default";
   };
@@ -168,9 +188,14 @@ function ConnectionRow({
                 Proxy
               </Badge>
             )}
-            {isCooldown && connection.isActive !== false && <CooldownTimer until={modelLockUntil} />}
+            {isCooldown && connection.isActive !== false && (
+              <CooldownTimer until={modelLockUntil} />
+            )}
             {connection.lastError && connection.isActive !== false && (
-              <span className="text-xs text-red-500 truncate max-w-[300px]" title={connection.lastError}>
+              <span
+                className="text-xs text-red-500 truncate max-w-[300px]"
+                title={connection.lastError}
+              >
                 {connection.lastError}
               </span>
             )}
@@ -178,7 +203,10 @@ function ConnectionRow({
           </div>
           {hasAnyProxy && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-text-muted truncate max-w-[420px]" title={proxyDisplayText}>
+              <span
+                className="text-[11px] text-text-muted truncate max-w-[420px]"
+                title={proxyDisplayText}
+              >
                 {proxyDisplayText}
               </span>
               {maskedProxyUrl && (
@@ -187,7 +215,10 @@ function ConnectionRow({
                 </code>
               )}
               {noProxyText && (
-                <span className="text-[11px] text-text-muted truncate max-w-[320px]" title={noProxyText}>
+                <span
+                  className="text-[11px] text-text-muted truncate max-w-[320px]"
+                  title={noProxyText}
+                >
                   no_proxy: {noProxyText}
                 </span>
               )}
@@ -204,7 +235,10 @@ function ConnectionRow({
                 className={`flex flex-col items-center px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
               >
-                <LucideIcon name={updatingProxy ? "progress_activity" : "lan"} className="text-[18px]" />
+                <LucideIcon
+                  name={updatingProxy ? "progress_activity" : "lan"}
+                  className="text-[18px]"
+                />
                 <span className="text-[10px] leading-tight">Proxy</span>
               </button>
               {showProxyDropdown && (
@@ -280,7 +314,12 @@ ConnectionRow.propTypes = {
 // ── AddApiKeyModal ─────────────────────────────────────────────
 function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, onClose }: any) {
   const NONE = "__none__";
-  const [formData, setFormData] = useState({ name: "", apiKey: "", priority: 1, proxyPoolId: NONE });
+  const [formData, setFormData] = useState({
+    name: "",
+    apiKey: "",
+    priority: 1,
+    proxyPoolId: NONE,
+  });
   const [validating, setValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -364,7 +403,11 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
             />
           </div>
           <div className="pt-6">
-            <Button onClick={handleValidate} disabled={!formData.apiKey || validating || saving} variant="secondary">
+            <Button
+              onClick={handleValidate}
+              disabled={!formData.apiKey || validating || saving}
+              variant="secondary"
+            >
               {validating ? "Checking..." : "Check"}
             </Button>
           </div>
@@ -381,7 +424,9 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
             type="number"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             value={formData.priority}
-            onChange={(e: any) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })}
+            onChange={(e: any) =>
+              setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })
+            }
             name="priority"
           />
         </div>
@@ -395,7 +440,11 @@ function AddApiKeyModal({ isOpen, provider, providerName, proxyPools, onSave, on
           ]}
         />
         <div className="flex gap-2">
-          <Button onClick={handleSubmit} fullWidth disabled={!formData.name || !formData.apiKey || saving}>
+          <Button
+            onClick={handleSubmit}
+            fullWidth
+            disabled={!formData.name || !formData.apiKey || saving}
+          >
             {saving ? "Saving..." : "Save"}
           </Button>
           <Button onClick={onClose} variant="ghost" fullWidth>
@@ -438,7 +487,11 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any) => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
 
   const fetch_ = useCallback(async () => {
     try {
@@ -450,11 +503,14 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
       const connData = await connRes.json();
       const proxyData = await proxyRes.json();
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-      if (connRes.ok) setConnections((connData.connections || []).filter((c: any) => c.provider === providerId));
+      if (connRes.ok)
+        setConnections((connData.connections || []).filter((c: any) => c.provider === providerId));
       if (proxyRes.ok) setProxyPools(proxyData.proxyPools || []);
       const override = (settingsData.providerStrategies || {})[providerId] || {};
       setProviderStrategy(override.fallbackStrategy || null);
-      setProviderStickyLimit(override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1");
+      setProviderStickyLimit(
+        override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1",
+      );
     } catch (e) {
       console.error("ConnectionsCard fetch error:", e);
     } finally {
@@ -475,7 +531,8 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
       const current = data.providerStrategies || {};
       const override: Record<string, unknown> = {};
       if (strategy) override.fallbackStrategy = strategy;
-      if (strategy === "round-robin" && stickyLimit !== "") override.stickyRoundRobinLimit = Number(stickyLimit) || 3;
+      if (strategy === "round-robin" && stickyLimit !== "")
+        override.stickyRoundRobinLimit = Number(stickyLimit) || 3;
       const updated = { ...current };
       if (Object.keys(override).length === 0) delete updated[providerId];
       else updated[providerId] = override;
@@ -528,7 +585,8 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
-      if (res.ok) setConnections((prev: any) => prev.map((c: any) => (c.id === id ? { ...c, isActive } : c)));
+      if (res.ok)
+        setConnections((prev: any) => prev.map((c: any) => (c.id === id ? { ...c, isActive } : c)));
     } catch (e) {
       console.error("toggle error:", e);
     }
@@ -545,7 +603,13 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
         setConnections((prev: any) =>
           prev.map((c: any) =>
             c.id === connId
-              ? { ...c, providerSpecificData: { ...c.providerSpecificData, proxyPoolId: proxyPoolId || null } }
+              ? {
+                  ...c,
+                  providerSpecificData: {
+                    ...c.providerSpecificData,
+                    proxyPoolId: proxyPoolId || null,
+                  },
+                }
               : c,
           ),
         );

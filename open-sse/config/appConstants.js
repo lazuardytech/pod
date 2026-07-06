@@ -44,7 +44,8 @@ export const PLUGIN_TYPE = {
 export function getPlatformEnum() {
   const os = platform();
   const architecture = arch();
-  if (os === "darwin") return architecture === "arm64" ? PLATFORM.DARWIN_ARM64 : PLATFORM.DARWIN_AMD64;
+  if (os === "darwin")
+    return architecture === "arm64" ? PLATFORM.DARWIN_ARM64 : PLATFORM.DARWIN_AMD64;
   if (os === "linux") return architecture === "arm64" ? PLATFORM.LINUX_ARM64 : PLATFORM.LINUX_AMD64;
   if (os === "win32") return PLATFORM.WINDOWS_AMD64;
   return PLATFORM.UNSPECIFIED;
@@ -196,7 +197,8 @@ export function buildKimiHeaders() {
   return {
     "X-Msh-Platform": "pod",
     "X-Msh-Version": "2.1.2",
-    "X-Msh-Device-Model": typeof process !== "undefined" ? `${process.platform} ${process.arch}` : "unknown",
+    "X-Msh-Device-Model":
+      typeof process !== "undefined" ? `${process.platform} ${process.arch}` : "unknown",
     "X-Msh-Device-Id": `kimi-${Date.now()}`,
   };
 }

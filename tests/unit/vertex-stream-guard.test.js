@@ -25,12 +25,22 @@ describe("openaiToVertexRequest — stream field guard", () => {
   };
 
   it("never includes stream field when stream=true", () => {
-    const result = openaiToVertexRequest("gemini-2.0-flash", { ...baseBody, stream: true }, true, null);
+    const result = openaiToVertexRequest(
+      "gemini-2.0-flash",
+      { ...baseBody, stream: true },
+      true,
+      null,
+    );
     expect(result).not.toHaveProperty("stream");
   });
 
   it("never includes stream field when stream=false", () => {
-    const result = openaiToVertexRequest("gemini-2.0-flash", { ...baseBody, stream: false }, false, null);
+    const result = openaiToVertexRequest(
+      "gemini-2.0-flash",
+      { ...baseBody, stream: false },
+      false,
+      null,
+    );
     expect(result).not.toHaveProperty("stream");
   });
 
@@ -141,7 +151,13 @@ describe("translateRequest OPENAI→VERTEX — stream field guard", () => {
   };
 
   it("translated body has no stream field for VERTEX target (stream=true)", () => {
-    const result = translateRequest(FORMATS.OPENAI, FORMATS.VERTEX, "gemini-2.0-flash", baseBody, true);
+    const result = translateRequest(
+      FORMATS.OPENAI,
+      FORMATS.VERTEX,
+      "gemini-2.0-flash",
+      baseBody,
+      true,
+    );
     expect(result).not.toHaveProperty("stream");
   });
 
@@ -163,7 +179,13 @@ describe("translateRequest OPENAI→VERTEX — stream field guard", () => {
   });
 
   it("translated body has stream field for OPENAI target (stream=false)", () => {
-    const result = translateRequest(FORMATS.OPENAI, FORMATS.OPENAI, "gpt-4o", { ...baseBody, stream: false }, false);
+    const result = translateRequest(
+      FORMATS.OPENAI,
+      FORMATS.OPENAI,
+      "gpt-4o",
+      { ...baseBody, stream: false },
+      false,
+    );
     expect(result).toHaveProperty("stream", false);
   });
 });
@@ -273,7 +295,8 @@ describe("VertexExecutor.buildUrl — streaming via URL not body", () => {
       type: "service_account",
       project_id: "my-project",
       private_key_id: "key-id",
-      private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----\n",
+      private_key:
+        "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----\n",
       client_email: "test@my-project.iam.gserviceaccount.com",
     });
     const url = executor.buildUrl("gemini-2.0-flash", true, 0, {
@@ -305,7 +328,13 @@ describe("full translate pipeline — no stream in Vertex body", () => {
       stream: true,
     };
 
-    const result = translateRequest(FORMATS.OPENAI, FORMATS.VERTEX, "gemini-2.0-flash", complexBody, true);
+    const result = translateRequest(
+      FORMATS.OPENAI,
+      FORMATS.VERTEX,
+      "gemini-2.0-flash",
+      complexBody,
+      true,
+    );
 
     expect(result).not.toHaveProperty("stream");
     expect(result).toHaveProperty("contents");
@@ -321,7 +350,13 @@ describe("full translate pipeline — no stream in Vertex body", () => {
       stream: false,
     };
 
-    const result = translateRequest(FORMATS.OPENAI, FORMATS.VERTEX, "gemini-2.0-flash", body, false);
+    const result = translateRequest(
+      FORMATS.OPENAI,
+      FORMATS.VERTEX,
+      "gemini-2.0-flash",
+      body,
+      false,
+    );
 
     expect(result).not.toHaveProperty("stream");
   });

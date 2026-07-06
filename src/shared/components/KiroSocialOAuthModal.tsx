@@ -172,7 +172,9 @@ export default function KiroSocialOAuthModal({
               <LucideIcon name="check_circle" className="text-3xl text-green-600" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Connected Successfully!</h3>
-            <p className="text-sm text-text-muted mb-4">Your Kiro account via {providerName} has been connected.</p>
+            <p className="text-sm text-text-muted mb-4">
+              Your Kiro account via {providerName} has been connected.
+            </p>
             <Button onClick={onClose} fullWidth>
               Done
             </Button>

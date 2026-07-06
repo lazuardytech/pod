@@ -60,7 +60,10 @@ describe("injectComboSystemPrompt — OpenAI Chat Completions", () => {
 
 describe("injectComboSystemPrompt — Claude / Anthropic", () => {
   it("sets `system` (string) when none exists", () => {
-    const body = { messages: [{ role: "user", content: "hi" }], anthropic_version: "vertex-2023-10-16" };
+    const body = {
+      messages: [{ role: "user", content: "hi" }],
+      anthropic_version: "vertex-2023-10-16",
+    };
     injectComboSystemPrompt(body, PROMPT);
     expect(body.system).toBe(PROMPT);
   });
@@ -210,7 +213,11 @@ describe("getComboEntryFromData — surfaces models + systemPrompt together", ()
   it("returns models and systemPrompt for a combo with prompt", () => {
     const entry = getComboEntryFromData("research-trio", combos);
     expect(entry).not.toBeNull();
-    expect(entry.models).toEqual(["openai/gpt-4o", "anthropic/claude-sonnet-4", "google/gemini-2.5-pro"]);
+    expect(entry.models).toEqual([
+      "openai/gpt-4o",
+      "anthropic/claude-sonnet-4",
+      "google/gemini-2.5-pro",
+    ]);
     expect(entry.systemPrompt).toBe("Always cite sources. Be concise.");
   });
 

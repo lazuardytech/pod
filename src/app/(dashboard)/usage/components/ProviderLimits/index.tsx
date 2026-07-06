@@ -97,7 +97,8 @@ export default function ProviderLimits() {
   });
   const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm: any = () => setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const closeConfirm: any = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const countdownRef: any = useRef<any>(null);
   const refreshingAllRef: any = useRef(false);
@@ -119,7 +120,10 @@ export default function ProviderLimits() {
   // Sync cache
   useEffect(() => {
     if (Object.keys(quotaData).length > 0) {
-      window.localStorage.setItem(QUOTA_CACHE_KEY, JSON.stringify({ data: quotaData, timestamp: Date.now() }));
+      window.localStorage.setItem(
+        QUOTA_CACHE_KEY,
+        JSON.stringify({ data: quotaData, timestamp: Date.now() }),
+      );
     }
   }, [quotaData]);
 
@@ -467,7 +471,9 @@ export default function ProviderLimits() {
 
   const getEarliestResetTime: any = (conn: any) => {
     const resetTimes: any = (quotaData[conn.id]?.quotas || [])
-      .map((quota: any) => (quota.resetAt ? new Date(quota.resetAt).getTime() : Number.POSITIVE_INFINITY))
+      .map((quota: any) =>
+        quota.resetAt ? new Date(quota.resetAt).getTime() : Number.POSITIVE_INFINITY,
+      )
       .filter((time: any) => Number.isFinite(time));
     return resetTimes.length > 0 ? Math.min(...resetTimes) : Number.POSITIVE_INFINITY;
   };
@@ -512,7 +518,9 @@ export default function ProviderLimits() {
             }),
           ),
         );
-        setConnections((prev: any) => prev.map((c: any) => (targetIds.includes(c.id) ? { ...c, isActive } : c)));
+        setConnections((prev: any) =>
+          prev.map((c: any) => (targetIds.includes(c.id) ? { ...c, isActive } : c)),
+        );
       } catch (error) {
         console.error("Error bulk toggling connections:", error);
       } finally {
@@ -536,12 +544,16 @@ export default function ProviderLimits() {
     bulkSetActive(ids, true);
   };
 
-  const providerOptions: any = Array.from(new Set<any>(filteredConnections.map((conn: any) => conn.provider))).sort();
+  const providerOptions: any = Array.from(
+    new Set<any>(filteredConnections.map((conn: any) => conn.provider)),
+  ).sort();
   const selectedProviderLabel: any = providerFilter === "all" ? "All providers" : providerFilter;
 
   // Calculate summary stats
   const _totalProviders: any = sortedConnections.length;
-  const _activeWithLimits: any = Object.values(quotaData).filter((data: any) => data?.quotas?.length > 0).length;
+  const _activeWithLimits: any = Object.values(quotaData).filter(
+    (data: any) => data?.quotas?.length > 0,
+  ).length;
 
   // Count low quotas (remaining < 30%)
   const _lowQuotasCount: any = Object.values(quotaData).reduce((count: any, data: any) => {
@@ -572,8 +584,10 @@ export default function ProviderLimits() {
 
   // Color classes from status color name
   const colorClasses: any = (color: any) => {
-    if (color === "green") return { bar: "bg-green-500", track: "bg-green-500/15", text: "text-green-400" };
-    if (color === "yellow") return { bar: "bg-yellow-500", track: "bg-yellow-500/15", text: "text-yellow-400" };
+    if (color === "green")
+      return { bar: "bg-green-500", track: "bg-green-500/15", text: "text-green-400" };
+    if (color === "yellow")
+      return { bar: "bg-yellow-500", track: "bg-yellow-500/15", text: "text-yellow-400" };
     return { bar: "bg-red-500", track: "bg-red-500/15", text: "text-red-400" };
   };
 
@@ -644,7 +658,9 @@ export default function ProviderLimits() {
                 >
                   <LucideIcon name="apps" className="text-[14px]" />
                   <span>All providers</span>
-                  {providerFilter === "all" && <LucideIcon name="check" className="ml-auto text-[13px]" />}
+                  {providerFilter === "all" && (
+                    <LucideIcon name="check" className="ml-auto text-[13px]" />
+                  )}
                 </button>
                 <div className="my-1 h-px bg-charcoal-grey" />
                 <div className="max-h-60 overflow-y-auto">
@@ -670,7 +686,9 @@ export default function ProviderLimits() {
                         fallbackText={provider.slice(0, 2).toUpperCase()}
                       />
                       <span className="capitalize">{provider}</span>
-                      {providerFilter === provider && <LucideIcon name="check" className="ml-auto text-[13px]" />}
+                      {providerFilter === provider && (
+                        <LucideIcon name="check" className="ml-auto text-[13px]" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -771,7 +789,10 @@ export default function ProviderLimits() {
           className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Refresh all"
         >
-          <LucideIcon name="refresh" className={`text-[15px] ${refreshingAll ? "animate-spin" : ""}`} />
+          <LucideIcon
+            name="refresh"
+            className={`text-[15px] ${refreshingAll ? "animate-spin" : ""}`}
+          />
         </button>
 
         {/* Live toggle */}
@@ -786,7 +807,12 @@ export default function ProviderLimits() {
           )}
           title={autoRefresh ? `Live — refreshes every ${countdown}s` : "Enable live auto-refresh"}
         >
-          <span className={cn("size-1.5 rounded-full", autoRefresh ? "bg-emerald animate-pulse" : "bg-fog-grey")} />
+          <span
+            className={cn(
+              "size-1.5 rounded-full",
+              autoRefresh ? "bg-emerald animate-pulse" : "bg-fog-grey",
+            )}
+          />
           {autoRefresh ? "Live" : "Paused"}
         </button>
       </div>
@@ -795,17 +821,30 @@ export default function ProviderLimits() {
       <div className="rounded-[6px] border border-charcoal-grey overflow-hidden">
         {/* Table header */}
         <div className="grid grid-cols-[1fr_200px_140px_64px_120px] bg-pitch-black/40 border-b border-charcoal-grey px-3 py-2">
-          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">Provider</div>
-          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">Quota</div>
-          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">Last Request At</div>
-          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey text-right">%</div>
-          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey text-right">Actions</div>
+          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">
+            Provider
+          </div>
+          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">
+            Quota
+          </div>
+          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey">
+            Last Request At
+          </div>
+          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey text-right">
+            %
+          </div>
+          <div className="text-[10px] font-[590] uppercase tracking-[0.05em] text-fog-grey text-right">
+            Actions
+          </div>
         </div>
 
         {connectionsLoading ? (
           <div className="divide-y divide-charcoal-grey/40">
             {[1, 2, 3].map((i: any) => (
-              <div key={i} className="grid grid-cols-[1fr_200px_140px_64px_120px] items-center px-3 py-2.5 bg-graphite">
+              <div
+                key={i}
+                className="grid grid-cols-[1fr_200px_140px_64px_120px] items-center px-3 py-2.5 bg-graphite"
+              >
                 <div className="flex items-center gap-2.5">
                   <div className="size-4 rounded bg-charcoal-grey/40 animate-pulse" />
                   <div className="size-5 rounded-[4px] bg-charcoal-grey/40 animate-pulse" />
@@ -819,7 +858,10 @@ export default function ProviderLimits() {
                 </div>
                 <div className="flex justify-end gap-1">
                   {[1, 2, 3].map((j: any) => (
-                    <div key={j} className="size-6 rounded-[4px] bg-charcoal-grey/40 animate-pulse" />
+                    <div
+                      key={j}
+                      className="size-6 rounded-[4px] bg-charcoal-grey/40 animate-pulse"
+                    />
                   ))}
                 </div>
               </div>
@@ -828,14 +870,18 @@ export default function ProviderLimits() {
         ) : (
           (() => {
             // Group connections by provider
-            const groupedByProvider: any = (sortedConnections as any).reduce((acc: any, conn: any) => {
-              if (!acc[conn.provider]) acc[conn.provider] = [];
-              acc[conn.provider].push(conn);
-              return acc;
-            }, {});
+            const groupedByProvider: any = (sortedConnections as any).reduce(
+              (acc: any, conn: any) => {
+                if (!acc[conn.provider]) acc[conn.provider] = [];
+                acc[conn.provider].push(conn);
+                return acc;
+              },
+              {},
+            );
             const providerGroups: any = Object.entries(groupedByProvider);
 
-            const isEmail: any = (v: any) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            const isEmail: any = (v: any) =>
+              typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
             return providerGroups.map(([provider, conns]: any) => {
               const providerExpanded: any = collapseAll
@@ -922,7 +968,9 @@ export default function ProviderLimits() {
                     {/* Last Request At */}
                     <div onClick={(e: any) => e.stopPropagation()}>
                       {providerLastUsedStr ? (
-                        <span className="text-[11px] text-storm-cloud tabular-nums">{providerLastUsedStr}</span>
+                        <span className="text-[11px] text-storm-cloud tabular-nums">
+                          {providerLastUsedStr}
+                        </span>
                       ) : (
                         <span className="text-[11px] text-storm-cloud/40">—</span>
                       )}
@@ -931,7 +979,9 @@ export default function ProviderLimits() {
                     {/* Percentage badge */}
                     <div className="text-right" onClick={(e: any) => e.stopPropagation()}>
                       {providerTotalLimit > 0 ? (
-                        <span className={`text-[11px] font-[510] tabular-nums ${providerCc.text}`}>{providerPct}%</span>
+                        <span className={`text-[11px] font-[510] tabular-nums ${providerCc.text}`}>
+                          {providerPct}%
+                        </span>
                       ) : (
                         <span className="text-[11px] text-storm-cloud">—</span>
                       )}
@@ -955,7 +1005,9 @@ export default function ProviderLimits() {
                       const { totalLimit, pct }: any = getAccumulatedProgress(conn);
                       const color: any = getStatusColor(pct);
                       const cc: any = colorClasses(color);
-                      const accountLabel: any = isEmail(conn.email) ? conn.email : conn.name || conn.id.slice(0, 8);
+                      const accountLabel: any = isEmail(conn.email)
+                        ? conn.email
+                        : conn.name || conn.id.slice(0, 8);
 
                       return (
                         <div
@@ -983,7 +1035,9 @@ export default function ProviderLimits() {
                                   isInactive ? "bg-storm-cloud" : "bg-emerald-400"
                                 }`}
                               />
-                              <span className="text-[12px] text-porcelain/80 truncate">{accountLabel}</span>
+                              <span className="text-[12px] text-porcelain/80 truncate">
+                                {accountLabel}
+                              </span>
                             </div>
 
                             {/* Accumulated progress bar */}
@@ -1018,7 +1072,9 @@ export default function ProviderLimits() {
                             {/* Percentage badge */}
                             <div className="text-right" onClick={(e: any) => e.stopPropagation()}>
                               {totalLimit > 0 ? (
-                                <span className={`text-[11px] font-[510] tabular-nums ${cc.text}`}>{pct}%</span>
+                                <span className={`text-[11px] font-[510] tabular-nums ${cc.text}`}>
+                                  {pct}%
+                                </span>
                               ) : (
                                 <span className="text-[11px] text-storm-cloud">—</span>
                               )}
@@ -1077,7 +1133,9 @@ export default function ProviderLimits() {
                                   size="sm"
                                   checked={conn.isActive ?? true}
                                   disabled={rowBusy}
-                                  onChange={(nextActive: any) => handleToggleConnectionActive(conn.id, nextActive)}
+                                  onChange={(nextActive: any) =>
+                                    handleToggleConnectionActive(conn.id, nextActive)
+                                  }
                                 />
                               </div>
                             </div>
@@ -1095,11 +1153,15 @@ export default function ProviderLimits() {
                                 </div>
                               ) : quota?.message ? (
                                 <div className="px-14 py-3">
-                                  <span className="text-[11px] text-storm-cloud">{quota.message}</span>
+                                  <span className="text-[11px] text-storm-cloud">
+                                    {quota.message}
+                                  </span>
                                 </div>
                               ) : !quota?.quotas?.length ? (
                                 <div className="px-14 py-3">
-                                  <span className="text-[11px] text-storm-cloud">No quota data</span>
+                                  <span className="text-[11px] text-storm-cloud">
+                                    No quota data
+                                  </span>
                                 </div>
                               ) : (
                                 quota.quotas.map((q: any, idx: any) => {
@@ -1119,12 +1181,16 @@ export default function ProviderLimits() {
                                       {/* Model name — indented */}
                                       <div className="flex items-center gap-2 pl-14 min-w-0">
                                         <span className={`text-[9px] shrink-0 ${qcc.text}`}>●</span>
-                                        <span className="text-[12px] text-storm-cloud truncate">{q.name}</span>
+                                        <span className="text-[12px] text-storm-cloud truncate">
+                                          {q.name}
+                                        </span>
                                       </div>
 
                                       {/* Progress bar */}
                                       <div className="pr-3">
-                                        <div className={`h-1.5 rounded-full overflow-hidden ${qcc.track}`}>
+                                        <div
+                                          className={`h-1.5 rounded-full overflow-hidden ${qcc.track}`}
+                                        >
                                           <div
                                             className={`h-full rounded-full transition-all duration-300 ${qcc.bar}`}
                                             style={{ width: `${Math.min(remaining, 100)}%` }}
@@ -1132,7 +1198,8 @@ export default function ProviderLimits() {
                                         </div>
                                         <div className="flex items-center justify-between mt-0.5">
                                           <span className="text-[10px] text-storm-cloud tabular-nums">
-                                            {q.used.toLocaleString()} / {q.total > 0 ? q.total.toLocaleString() : "∞"}
+                                            {q.used.toLocaleString()} /{" "}
+                                            {q.total > 0 ? q.total.toLocaleString() : "∞"}
                                           </span>
                                         </div>
                                       </div>
@@ -1142,7 +1209,9 @@ export default function ProviderLimits() {
 
                                       {/* Remaining % */}
                                       <div className="text-right">
-                                        <span className={`text-[11px] font-[510] tabular-nums ${qcc.text}`}>
+                                        <span
+                                          className={`text-[11px] font-[510] tabular-nums ${qcc.text}`}
+                                        >
                                           {remaining}%
                                         </span>
                                       </div>

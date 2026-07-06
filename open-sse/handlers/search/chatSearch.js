@@ -43,7 +43,8 @@ function normalizeCitation(c) {
  */
 const CHAT_SEARCH_CONFIG = {
   gemini: {
-    endpoint: (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    endpoint: (model) =>
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     defaultModel: "gemini-2.5-flash",
     buildBody: (query) => ({
       contents: [{ role: "user", parts: [{ text: query }] }],
@@ -97,7 +98,9 @@ const CHAT_SEARCH_CONFIG = {
         .map((a) => a?.url_citation)
         .filter(Boolean)
         .map((u) => ({ url: u.url, title: u.title || "" }));
-      const fromTop = Array.isArray(data?.citations) ? data.citations.map(normalizeCitation).filter(Boolean) : [];
+      const fromTop = Array.isArray(data?.citations)
+        ? data.citations.map(normalizeCitation).filter(Boolean)
+        : [];
       const citations = fromAnn.length ? fromAnn : fromTop;
       const tokens = data?.usage?.total_tokens || 0;
       return { text, citations, tokens };
@@ -282,7 +285,8 @@ export async function handleChatSearch({ provider, query, maxResults, model, cre
     };
   }
 
-  const limit = Number.isFinite(maxResults) && maxResults > 0 ? Math.floor(maxResults) : DEFAULT_MAX_RESULTS;
+  const limit =
+    Number.isFinite(maxResults) && maxResults > 0 ? Math.floor(maxResults) : DEFAULT_MAX_RESULTS;
   const useModel = model || cfg.defaultModel;
   const url = cfg.endpoint(useModel);
   const body = cfg.buildBody(query, useModel);
@@ -328,7 +332,8 @@ export async function handleChatSearch({ provider, query, maxResults, model, cre
   }
 
   if (!resp.ok) {
-    const errMsg = data?.error?.message || data?.error || data?.message || `Upstream HTTP ${resp.status}`;
+    const errMsg =
+      data?.error?.message || data?.error || data?.message || `Upstream HTTP ${resp.status}`;
     log?.warn?.(`[chatSearch] upstream error provider=${provider} status=${resp.status}`);
     return {
       success: false,

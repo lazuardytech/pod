@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/providerModels.js";
 import { getApiKeys, getProviderConnectionById } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
-import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
+import {
+  isAnthropicCompatibleProvider,
+  isOpenAICompatibleProvider,
+} from "@/shared/constants/providers";
 
 /**
  * Get an active API key to pass through auth when requireApiKey is enabled.
@@ -60,7 +63,8 @@ export async function POST(request: any, { params }: { params: any }) {
     }
 
     const providerId = connection.provider;
-    const isCompatible = isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
+    const isCompatible =
+      isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
     const alias = PROVIDER_ID_TO_ALIAS[providerId] || providerId;
 
     let models = getProviderModels(alias);
@@ -71,7 +75,10 @@ export async function POST(request: any, { params }: { params: any }) {
         const modelsRes = await fetch(`${getBaseUrl(request)}/api/providers/${id}/models`);
         if (modelsRes.ok) {
           const data = await modelsRes.json();
-          models = (data.models || []).map((m: any) => ({ id: m.id || (m as any).name, name: m.name || m.id }));
+          models = (data.models || []).map((m: any) => ({
+            id: m.id || (m as any).name,
+            name: m.name || m.id,
+          }));
         }
       } catch {
         /* fallback to empty */
@@ -79,7 +86,10 @@ export async function POST(request: any, { params }: { params: any }) {
     }
 
     if (models.length === 0) {
-      return NextResponse.json({ error: "No models configured for this provider" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No models configured for this provider" },
+        { status: 400 },
+      );
     }
 
     const baseUrl = getBaseUrl(request);

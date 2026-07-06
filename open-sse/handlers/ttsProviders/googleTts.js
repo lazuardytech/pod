@@ -24,7 +24,9 @@ export default {
   async synthesize(text, model) {
     const lang = model || "en";
     const token = await getToken();
-    const cleanText = text.replace(/[@^*()\\/\-_+=><"'\u201c\u201d\u3010\u3011]/g, " ").replaceAll(", ", ". ");
+    const cleanText = text
+      .replace(/[@^*()\\/\-_+=><"'\u201c\u201d\u3010\u3011]/g, " ")
+      .replaceAll(", ", ". ");
     const rpcId = "jQ1olc";
     const reqId = ++_idx * 100000 + Math.floor(1000 + Math.random() * 9000);
     const query = new URLSearchParams({
@@ -41,11 +43,17 @@ export default {
     const payload = [cleanText, lang, null, "undefined", [0]];
     const body = new URLSearchParams();
     body.append("f.req", JSON.stringify([[[rpcId, JSON.stringify(payload), null, "generic"]]]));
-    const res = await fetch(`https://translate.google.com/_/TranslateWebserverUi/data/batchexecute?${query}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: "https://translate.google.com/" },
-      body: body.toString(),
-    });
+    const res = await fetch(
+      `https://translate.google.com/_/TranslateWebserverUi/data/batchexecute?${query}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Referer: "https://translate.google.com/",
+        },
+        body: body.toString(),
+      },
+    );
     if (!res.ok) throw new Error(`Google TTS failed: ${res.status}`);
     const data = await res.text();
     const split = JSON.parse(data.split("\n")[3]);

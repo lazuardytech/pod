@@ -26,7 +26,9 @@ const ID_REGEX = /^[a-zA-Z0-9_.-]+$/;
 function isCustomNode(node: any) {
   if (!node) return false;
   return (
-    isOpenAICompatibleProvider(node.id) || isAnthropicCompatibleProvider(node.id) || isCustomEmbeddingProvider(node.id)
+    isOpenAICompatibleProvider(node.id) ||
+    isAnthropicCompatibleProvider(node.id) ||
+    isCustomEmbeddingProvider(node.id)
   );
 }
 
@@ -43,10 +45,16 @@ export async function PATCH(request: any, { params }: { params: any }) {
       return NextResponse.json({ error: "newId is required" }, { status: 400 });
     }
     if (newId === oldId) {
-      return NextResponse.json({ error: "newId must differ from current identifier" }, { status: 400 });
+      return NextResponse.json(
+        { error: "newId must differ from current identifier" },
+        { status: 400 },
+      );
     }
     if (!ID_REGEX.test(newId)) {
-      return NextResponse.json({ error: "Identifier can only contain letters, numbers, -, _ and ." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Identifier can only contain letters, numbers, -, _ and ." },
+        { status: 400 },
+      );
     }
 
     const current = await getProviderNodeById(oldId);
@@ -65,18 +73,27 @@ export async function PATCH(request: any, { params }: { params: any }) {
     // etc. continue to classify the node correctly.
     const requiredPrefix = PREFIX_BY_TYPE[current.type as keyof typeof PREFIX_BY_TYPE];
     if (requiredPrefix && !newId.startsWith(requiredPrefix)) {
-      return NextResponse.json({ error: `Identifier must start with "${requiredPrefix}"` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Identifier must start with "${requiredPrefix}"` },
+        { status: 400 },
+      );
     }
 
     // Reject collisions with built-in providers as well as existing custom
     // nodes (the DB layer catches custom-node collisions, but checking here
     // returns a friendlier error before opening the transaction).
     if (AI_PROVIDERS[newId]) {
-      return NextResponse.json({ error: "Identifier conflicts with a built-in provider" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Identifier conflicts with a built-in provider" },
+        { status: 400 },
+      );
     }
     const nodes = await getProviderNodes();
     if (nodes.some((n) => n.id === newId)) {
-      return NextResponse.json({ error: "Identifier already in use by another node" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Identifier already in use by another node" },
+        { status: 400 },
+      );
     }
 
     const updated = await renameProviderNode(oldId, newId);
@@ -90,7 +107,9 @@ export async function PATCH(request: any, { params }: { params: any }) {
     return NextResponse.json({ node: updated });
   } catch (error) {
     const message =
-      typeof (error as any)?.message === "string" ? sanitizeError(error) : "Failed to rename provider node";
+      typeof (error as any)?.message === "string"
+        ? sanitizeError(error)
+        : "Failed to rename provider node";
     console.log("Error renaming provider node:", message);
     const status = /not found/i.test(message)
       ? 404

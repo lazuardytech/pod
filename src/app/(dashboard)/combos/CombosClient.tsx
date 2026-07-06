@@ -1,6 +1,13 @@
 "use client";
 
-import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
@@ -11,7 +18,15 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button, Card, CardSkeleton, Input, Modal, ModelSelectModal, Toggle } from "@/shared/components";
+import {
+  Button,
+  Card,
+  CardSkeleton,
+  Input,
+  Modal,
+  ModelSelectModal,
+  Toggle,
+} from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
@@ -41,7 +56,11 @@ export default function CombosPage() {
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any) => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
 
   useEffect(() => {
     fetchData();
@@ -259,8 +278,14 @@ export default function CombosPage() {
               <LucideIcon name="layers" className="text-[32px]" />
             </div>
             <p className="text-text-main font-medium mb-1">No combos yet</p>
-            <p className="text-sm text-text-muted mb-4">Create model combos with fallback support</p>
-            <Button icon="add" onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
+            <p className="text-sm text-text-muted mb-4">
+              Create model combos with fallback support
+            </p>
+            <Button
+              icon="add"
+              onClick={() => setShowCreateModal(true)}
+              className="w-full sm:w-auto"
+            >
               Create Combo
             </Button>
           </div>
@@ -272,7 +297,12 @@ export default function CombosPage() {
           onCopy={copy}
           onEdit={(combo: any) => setEditingCombo(combo)}
           onDelete={(id: any) =>
-            openConfirm("Delete Combo", "Are you sure you want to delete this combo?", () => handleDelete(id), "danger")
+            openConfirm(
+              "Delete Combo",
+              "Are you sure you want to delete this combo?",
+              () => handleDelete(id),
+              "danger",
+            )
           }
           comboStrategies={comboStrategies}
           onToggleRoundRobin={handleToggleRoundRobin}
@@ -364,7 +394,15 @@ function SortableComboList({
 }
 
 function SortableComboCard(props: any) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: props.combo.id,
   });
 
@@ -377,7 +415,10 @@ function SortableComboCard(props: any) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <ComboCard {...props} dragHandleProps={{ ref: setActivatorNodeRef, ...attributes, ...listeners }} />
+      <ComboCard
+        {...props}
+        dragHandleProps={{ ref: setActivatorNodeRef, ...attributes, ...listeners }}
+      />
     </div>
   );
 }
@@ -479,7 +520,10 @@ function ComboCard({
               className="flex flex-col items-center rounded px-2 py-1 text-text-muted transition-colors hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
               title="Copy combo name"
             >
-              <LucideIcon name={copied === `combo-${combo.id}` ? "check" : "content_copy"} className="text-[18px]" />
+              <LucideIcon
+                name={copied === `combo-${combo.id}` ? "check" : "content_copy"}
+                className="text-[18px]"
+              />
               <span className="text-[10px] leading-tight">Copy</span>
             </button>
             <button
@@ -528,7 +572,9 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
   return (
     <div className="group flex min-w-0 items-center gap-1.5 rounded-md bg-black/[0.02] px-2 py-1 transition-colors hover:bg-black/[0.04] dark:bg-white/[0.02] dark:hover:bg-white/[0.04]">
       {/* Index badge */}
-      <span className="text-[10px] font-medium text-text-muted w-3 text-center shrink-0">{index + 1}</span>
+      <span className="text-[10px] font-medium text-text-muted w-3 text-center shrink-0">
+        {index + 1}
+      </span>
 
       {/* Inline editable model value */}
       {editing ? (
@@ -586,13 +632,22 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
 
 const SYSTEM_PROMPT_MAX = 50000;
 
-function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindFilter = null }: any) {
+function ComboFormModal({
+  isOpen,
+  combo,
+  onClose,
+  onSave,
+  activeProviders,
+  kindFilter = null,
+}: any) {
   // Initialize state with combo values - key prop on parent handles reset on remount
   const [name, setName] = useState(combo?.name || "");
   const [models, setModels] = useState(combo?.models || []);
   const [systemPrompt, setSystemPrompt] = useState(combo?.systemPrompt || "");
   const [modelId, setModelId] = useState(combo?.modelId || "");
-  const [contentFilterMessage, setContentFilterMessage] = useState(combo?.contentFilterMessage || "");
+  const [contentFilterMessage, setContentFilterMessage] = useState(
+    combo?.contentFilterMessage || "",
+  );
   const [showModelSelect, setShowModelSelect] = useState(false);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState("");
@@ -690,7 +745,9 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               placeholder="my-combo"
               error={nameError}
             />
-            <p className="text-[10px] text-text-muted mt-0.5">Only letters, numbers, -, _ and . allowed</p>
+            <p className="text-[10px] text-text-muted mt-0.5">
+              Only letters, numbers, -, _ and . allowed
+            </p>
           </div>
 
           {/* Models */}
@@ -756,7 +813,8 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
             <Input
               label={
                 <>
-                  Content Filter Message <span className="text-text-muted font-normal">(optional)</span>
+                  Content Filter Message{" "}
+                  <span className="text-text-muted font-normal">(optional)</span>
                 </>
               }
               value={contentFilterMessage}
@@ -764,15 +822,18 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               placeholder="e.g. I'm sorry, I can't help with that."
             />
             <p className="text-[10px] text-text-muted mt-0.5">
-              Humanistic reply shown to clients when upstream content filter is triggered. Defaults to a programmatic
-              error if not set.
+              Humanistic reply shown to clients when upstream content filter is triggered. Defaults
+              to a programmatic error if not set.
             </p>
           </div>
 
           {/* System Prompt */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]" htmlFor="combo-system-prompt">
+              <label
+                className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]"
+                htmlFor="combo-system-prompt"
+              >
                 System Prompt <span className="text-fog-grey font-[400]">(optional)</span>
               </label>
               <span
@@ -803,7 +864,9 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, kindF
               onClick={handleSave}
               fullWidth
               size="sm"
-              disabled={!name.trim() || !!nameError || saving || systemPrompt.length > SYSTEM_PROMPT_MAX}
+              disabled={
+                !name.trim() || !!nameError || saving || systemPrompt.length > SYSTEM_PROMPT_MAX
+              }
             >
               {saving ? "Saving..." : isEdit ? "Save" : "Create"}
             </Button>

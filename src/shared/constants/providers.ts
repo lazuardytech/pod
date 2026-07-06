@@ -166,7 +166,8 @@ export const FREE_PROVIDERS: Record<string, ProviderDefinition> = {
     color: "#10B981",
     mediaPriority: 999,
     deprecated: true,
-    deprecationNotice: "Qwen OAuth free tier was discontinued by Alibaba on 2026-04-15. New connections will not work.",
+    deprecationNotice:
+      "Qwen OAuth free tier was discontinued by Alibaba on 2026-04-15. New connections will not work.",
     website: "https://chat.qwen.ai",
     notice: { signupUrl: "https://chat.qwen.ai" },
     serviceKinds: ["llm", "tts"],
@@ -237,9 +238,21 @@ export const FREE_TIER_PROVIDERS: Record<string, ProviderDefinition> = {
       authType: "apikey",
       authHeader: "bearer",
       models: [
-        { id: "openai/text-embedding-3-small", name: "Text Embedding 3 Small (OpenRouter)", dimensions: 1536 },
-        { id: "openai/text-embedding-3-large", name: "Text Embedding 3 Large (OpenRouter)", dimensions: 3072 },
-        { id: "openai/text-embedding-ada-002", name: "Text Embedding Ada 002 (OpenRouter)", dimensions: 1536 },
+        {
+          id: "openai/text-embedding-3-small",
+          name: "Text Embedding 3 Small (OpenRouter)",
+          dimensions: 1536,
+        },
+        {
+          id: "openai/text-embedding-3-large",
+          name: "Text Embedding 3 Large (OpenRouter)",
+          dimensions: 3072,
+        },
+        {
+          id: "openai/text-embedding-ada-002",
+          name: "Text Embedding Ada 002 (OpenRouter)",
+          dimensions: 1536,
+        },
       ],
     },
   },
@@ -427,7 +440,8 @@ export const OAUTH_PROVIDERS: Record<string, ProviderDefinition> = {
     thinkingConfig: THINKING_CONFIG.effort,
     serviceKinds: ["llm", "image"],
     kindNotice: {
-      image: "Requires a ChatGPT Plus (or higher) account. Free accounts are not supported for image generation.",
+      image:
+        "Requires a ChatGPT Plus (or higher) account. Free accounts are not supported for image generation.",
     },
     website: "https://chatgpt.com/codex",
     notice: { signupUrl: "https://chatgpt.com/codex" },
@@ -515,7 +529,10 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     website: "https://kimi.moonshot.cn",
     notice: { apiKeyUrl: "https://platform.moonshot.ai/console/api-keys" },
     serviceKinds: ["llm", "webSearch"],
-    searchViaChat: { defaultModel: "kimi-k2.5", pricingUrl: "https://platform.moonshot.ai/docs/pricing/chat" },
+    searchViaChat: {
+      defaultModel: "kimi-k2.5",
+      pricingUrl: "https://platform.moonshot.ai/docs/pricing/chat",
+    },
   },
   minimax: {
     id: "minimax",
@@ -525,9 +542,14 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     color: "#7C3AED",
     textIcon: "MM",
     website: "https://www.minimaxi.com",
-    notice: { apiKeyUrl: "https://platform.minimaxi.com/user-center/basic-information/interface-key" },
+    notice: {
+      apiKeyUrl: "https://platform.minimaxi.com/user-center/basic-information/interface-key",
+    },
     serviceKinds: ["llm", "image", "imageToText", "webSearch", "tts"],
-    searchViaChat: { defaultModel: "MiniMax-M2.7", pricingUrl: "https://www.minimaxi.com/document/price" },
+    searchViaChat: {
+      defaultModel: "MiniMax-M2.7",
+      pricingUrl: "https://www.minimaxi.com/document/price",
+    },
     ttsConfig: {
       baseUrl: "https://api.minimax.io/v1/t2a_v2",
       authType: "apikey",
@@ -549,7 +571,9 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     color: "#DC2626",
     textIcon: "MC",
     website: "https://www.minimaxi.com",
-    notice: { apiKeyUrl: "https://platform.minimaxi.com/user-center/basic-information/interface-key" },
+    notice: {
+      apiKeyUrl: "https://platform.minimaxi.com/user-center/basic-information/interface-key",
+    },
   },
   alicode: {
     id: "alicode",
@@ -668,7 +692,10 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     color: "#0078D4",
     textIcon: "AZ",
     website: "https://azure.microsoft.com/en-us/products/ai-services/openai-service",
-    notice: { apiKeyUrl: "https://portal.azure.com/#view/Microsoft_Azure_ProjectOxford/CognitiveServicesHub/~/OpenAI" },
+    notice: {
+      apiKeyUrl:
+        "https://portal.azure.com/#view/Microsoft_Azure_ProjectOxford/CognitiveServicesHub/~/OpenAI",
+    },
     hasProviderSpecificData: true,
   },
 
@@ -749,7 +776,11 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
       authHeader: "bearer",
       models: [
         { id: "BAAI/bge-large-en-v1.5", name: "BGE Large EN v1.5", dimensions: 1024 },
-        { id: "togethercomputer/m2-bert-80M-8k-retrieval", name: "M2 BERT 80M 8K", dimensions: 768 },
+        {
+          id: "togethercomputer/m2-bert-80M-8k-retrieval",
+          name: "M2 BERT 80M 8K",
+          dimensions: 768,
+        },
       ],
     },
   },
@@ -767,7 +798,9 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
       baseUrl: "https://api.fireworks.ai/inference/v1/embeddings",
       authType: "apikey",
       authHeader: "bearer",
-      models: [{ id: "nomic-ai/nomic-embed-text-v1.5", name: "Nomic Embed Text v1.5", dimensions: 768 }],
+      models: [
+        { id: "nomic-ai/nomic-embed-text-v1.5", name: "Nomic Embed Text v1.5", dimensions: 768 },
+      ],
     },
   },
   cerebras: {
@@ -978,7 +1011,13 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     mediaPriority: 5,
     serviceKinds: ["tts"],
     noAuth: true,
-    ttsConfig: { baseUrl: "local-device", authType: "none", authHeader: "none", format: "local-device", models: [] },
+    ttsConfig: {
+      baseUrl: "local-device",
+      authType: "none",
+      authHeader: "none",
+      format: "local-device",
+      models: [],
+    },
   },
   "google-tts": {
     id: "google-tts",
@@ -990,7 +1029,13 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     mediaPriority: 5,
     serviceKinds: ["tts"],
     noAuth: true,
-    ttsConfig: { baseUrl: "google-tts", authType: "none", authHeader: "none", format: "google-tts", models: [] },
+    ttsConfig: {
+      baseUrl: "google-tts",
+      authType: "none",
+      authHeader: "none",
+      format: "google-tts",
+      models: [],
+    },
   },
   "edge-tts": {
     id: "edge-tts",
@@ -1002,7 +1047,13 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     mediaPriority: 5,
     serviceKinds: ["tts"],
     noAuth: true,
-    ttsConfig: { baseUrl: "edge-tts", authType: "none", authHeader: "none", format: "edge-tts", models: [] },
+    ttsConfig: {
+      baseUrl: "edge-tts",
+      authType: "none",
+      authHeader: "none",
+      format: "edge-tts",
+      models: [],
+    },
   },
   coqui: {
     id: "coqui",
@@ -1180,7 +1231,8 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
     icon: "cloud",
     color: "#34A853",
     textIcon: "VP",
-    website: "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-partner-models",
+    website:
+      "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-partner-models",
     notice: { apiKeyUrl: "https://console.cloud.google.com/iam-admin/serviceaccounts" },
   },
   tavily: {
@@ -1587,7 +1639,11 @@ export const APIKEY_PROVIDERS: Record<string, ProviderDefinition> = {
       models: [
         { id: "jina-embeddings-v3", name: "Jina Embeddings v3", dimensions: 1024 },
         { id: "jina-embeddings-v2-base-en", name: "Jina Embeddings v2 Base EN", dimensions: 768 },
-        { id: "jina-embeddings-v2-base-code", name: "Jina Embeddings v2 Base Code", dimensions: 768 },
+        {
+          id: "jina-embeddings-v2-base-code",
+          name: "Jina Embeddings v2 Base Code",
+          dimensions: 768,
+        },
       ],
     },
   },
@@ -1653,8 +1709,18 @@ export type MediaProviderKind = {
 
 // Media provider kinds — each kind maps to a route and endpoint config
 export const MEDIA_PROVIDER_KINDS: MediaProviderKind[] = [
-  { id: "embedding", label: "Embedding", icon: "data_array", endpoint: { method: "POST", path: "/v1/embeddings" } },
-  { id: "image", label: "Text to Image", icon: "brush", endpoint: { method: "POST", path: "/v1/images/generations" } },
+  {
+    id: "embedding",
+    label: "Embedding",
+    icon: "data_array",
+    endpoint: { method: "POST", path: "/v1/embeddings" },
+  },
+  {
+    id: "image",
+    label: "Text to Image",
+    icon: "brush",
+    endpoint: { method: "POST", path: "/v1/images/generations" },
+  },
   {
     id: "imageToText",
     label: "Image to Text",
@@ -1667,11 +1733,36 @@ export const MEDIA_PROVIDER_KINDS: MediaProviderKind[] = [
     icon: "record_voice_over",
     endpoint: { method: "POST", path: "/v1/audio/speech" },
   },
-  { id: "stt", label: "Speech To Text", icon: "mic", endpoint: { method: "POST", path: "/v1/audio/transcriptions" } },
-  { id: "webSearch", label: "Web Search", icon: "travel_explore", endpoint: { method: "POST", path: "/v1/search" } },
-  { id: "webFetch", label: "Web Fetch", icon: "language", endpoint: { method: "POST", path: "/v1/web/fetch" } },
-  { id: "video", label: "Video", icon: "movie", endpoint: { method: "POST", path: "/v1/video/generations" } },
-  { id: "music", label: "Music", icon: "music_note", endpoint: { method: "POST", path: "/v1/audio/music" } },
+  {
+    id: "stt",
+    label: "Speech To Text",
+    icon: "mic",
+    endpoint: { method: "POST", path: "/v1/audio/transcriptions" },
+  },
+  {
+    id: "webSearch",
+    label: "Web Search",
+    icon: "travel_explore",
+    endpoint: { method: "POST", path: "/v1/search" },
+  },
+  {
+    id: "webFetch",
+    label: "Web Fetch",
+    icon: "language",
+    endpoint: { method: "POST", path: "/v1/web/fetch" },
+  },
+  {
+    id: "video",
+    label: "Video",
+    icon: "movie",
+    endpoint: { method: "POST", path: "/v1/video/generations" },
+  },
+  {
+    id: "music",
+    label: "Music",
+    icon: "music_note",
+    endpoint: { method: "POST", path: "/v1/audio/music" },
+  },
 ];
 
 export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";

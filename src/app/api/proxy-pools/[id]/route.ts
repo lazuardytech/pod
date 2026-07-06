@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
-import { deleteProxyPool, getProviderConnections, getProxyPoolById, updateProxyPool } from "@/models";
+import {
+  deleteProxyPool,
+  getProviderConnections,
+  getProxyPoolById,
+  updateProxyPool,
+} from "@/models";
 
 function sanitizeProxyPool(pool: any) {
   if (!pool) return pool;
@@ -50,7 +55,9 @@ function normalizeProxyPoolUpdate(body: Record<string, unknown> = {}) {
 }
 
 function countBoundConnections(connections: any[] = [], proxyPoolId: any) {
-  return connections.filter((connection: any) => connection?.providerSpecificData?.proxyPoolId === proxyPoolId).length;
+  return connections.filter(
+    (connection: any) => connection?.providerSpecificData?.proxyPoolId === proxyPoolId,
+  ).length;
 }
 
 // GET /api/proxy-pools/[id] - Get proxy pool

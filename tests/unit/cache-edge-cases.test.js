@@ -33,7 +33,13 @@ afterEach(() => {
 
 describe("invalidateStale", () => {
   it("removes entries older than maxAgeMs", async () => {
-    const sig = generateSignature("gpt-4o", [{ role: "user", content: "stale test" }], null, null, null);
+    const sig = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "stale test" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "s1", choices: [{ message: { role: "assistant", content: "ok" } }] };
     setCachedResponse(sig, "gpt-4o", resp, 0, 3600000);
 
@@ -44,7 +50,13 @@ describe("invalidateStale", () => {
   });
 
   it("does not remove fresh entries", () => {
-    const sig = generateSignature("gpt-4o", [{ role: "user", content: "fresh test" }], null, null, null);
+    const sig = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "fresh test" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "f1", choices: [{ message: { role: "assistant", content: "ok" } }] };
     setCachedResponse(sig, "gpt-4o", resp, 0, 3600000);
 
@@ -62,8 +74,20 @@ describe("invalidateStale", () => {
 
 describe("invalidateByModel", () => {
   it("removes only entries for the specified model", () => {
-    const sig1 = generateSignature("gpt-4o", [{ role: "user", content: "model test 1" }], null, null, null);
-    const sig2 = generateSignature("claude-3", [{ role: "user", content: "model test 2" }], null, null, null);
+    const sig1 = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "model test 1" }],
+      null,
+      null,
+      null,
+    );
+    const sig2 = generateSignature(
+      "claude-3",
+      [{ role: "user", content: "model test 2" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "m1", choices: [{ message: { role: "assistant", content: "ok" } }] };
 
     setCachedResponse(sig1, "gpt-4o", resp, 0, 3600000);
@@ -82,8 +106,20 @@ describe("invalidateByModel", () => {
 
 describe("invalidateBySignature", () => {
   it("removes only the specific signature", () => {
-    const sig1 = generateSignature("gpt-4o", [{ role: "user", content: "inv sig 1" }], null, null, null);
-    const sig2 = generateSignature("gpt-4o", [{ role: "user", content: "inv sig 2" }], null, null, null);
+    const sig1 = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "inv sig 1" }],
+      null,
+      null,
+      null,
+    );
+    const sig2 = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "inv sig 2" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "i1", choices: [{ message: { role: "assistant", content: "ok" } }] };
 
     setCachedResponse(sig1, "gpt-4o", resp, 0, 3600000);
@@ -176,7 +212,13 @@ describe("generateSignature — large payload truncation", () => {
   });
 
   it("returns 64-char hex string for any input", () => {
-    const sig = generateSignature("gpt-4o", [{ role: "user", content: "hi" }], 0.7, 0.9, "user-123");
+    const sig = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "hi" }],
+      0.7,
+      0.9,
+      "user-123",
+    );
     expect(sig).toMatch(/^[a-f0-9]{64}$/);
   });
 });
@@ -185,7 +227,13 @@ describe("generateSignature — large payload truncation", () => {
 
 describe("setCachedResponse — custom TTL", () => {
   it("stores entry with custom TTL and reads it back", () => {
-    const sig = generateSignature("gpt-4o", [{ role: "user", content: "custom ttl" }], null, null, null);
+    const sig = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "custom ttl" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "ttl1", choices: [{ message: { role: "assistant", content: "ok" } }] };
 
     setCachedResponse(sig, "gpt-4o", resp, 0, 7200000); // 2 hour TTL
@@ -195,7 +243,13 @@ describe("setCachedResponse — custom TTL", () => {
   });
 
   it("very short TTL entry is still readable immediately", () => {
-    const sig = generateSignature("gpt-4o", [{ role: "user", content: "short ttl" }], null, null, null);
+    const sig = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "short ttl" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "ttl2", choices: [{ message: { role: "assistant", content: "ok" } }] };
 
     setCachedResponse(sig, "gpt-4o", resp, 0, 60000); // 1 minute TTL
@@ -262,7 +316,13 @@ describe("getCacheStats", () => {
   });
 
   it("increments hits after a cache hit", () => {
-    const sig = generateSignature("gpt-4o", [{ role: "user", content: "stats test" }], null, null, null);
+    const sig = generateSignature(
+      "gpt-4o",
+      [{ role: "user", content: "stats test" }],
+      null,
+      null,
+      null,
+    );
     const resp = { id: "st1", choices: [{ message: { role: "assistant", content: "ok" } }] };
     setCachedResponse(sig, "gpt-4o", resp, 10, 3600000);
 

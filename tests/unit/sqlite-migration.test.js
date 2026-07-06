@@ -126,7 +126,10 @@ beforeAll(() => {
   process.env.DATA_DIR = tempDir;
   fs.writeFileSync(path.join(tempDir, "db.json"), JSON.stringify(SEED_DB));
   fs.writeFileSync(path.join(tempDir, "usage.json"), JSON.stringify(SEED_USAGE));
-  fs.writeFileSync(path.join(tempDir, "request-details.json"), JSON.stringify(SEED_REQUEST_DETAILS));
+  fs.writeFileSync(
+    path.join(tempDir, "request-details.json"),
+    JSON.stringify(SEED_REQUEST_DETAILS),
+  );
 });
 
 afterAll(async () => {

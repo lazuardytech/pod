@@ -87,7 +87,8 @@ describe("generateSignature", () => {
 
 describe("setCachedResponse / getCachedResponse", () => {
   it("stores and retrieves a response", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const sig = generateSignature("m/a", [{ role: "user", content: "test" }], 0, 1);
     const resp = makeResponse("cached answer");
     setCachedResponse(sig, "m/a", resp, 8);
@@ -102,7 +103,8 @@ describe("setCachedResponse / getCachedResponse", () => {
   });
 
   it("respects TTL — expired entry returns null", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const sig = generateSignature("m/ttl", [{ role: "user", content: "ttl-test" }], 0, 1);
     // Set with 1ms TTL — will expire immediately
     setCachedResponse(sig, "m/ttl", makeResponse("ttl"), 0, 1);
@@ -115,7 +117,8 @@ describe("setCachedResponse / getCachedResponse", () => {
   });
 
   it("does not cache responses larger than 256KB", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const sig = generateSignature("m/big", [{ role: "user", content: "big" }], 0, 1);
     const bigContent = "x".repeat(300 * 1024); // 300KB
     const bigResp = makeResponse(bigContent);
@@ -133,9 +136,8 @@ describe("setCachedResponse / getCachedResponse", () => {
 
 describe("getCacheStats", () => {
   it("increments hits and misses correctly", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse, getCacheStats } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, setCachedResponse, getCachedResponse, getCacheStats } =
+      await import("@/lib/semanticCache.js");
     const sig = generateSignature("m/stats", [{ role: "user", content: "stats" }], 0, 1);
 
     // miss
@@ -153,7 +155,8 @@ describe("getCacheStats", () => {
   });
 
   it("reports dbEntries count", async () => {
-    const { generateSignature, setCachedResponse, getCacheStats } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCacheStats } =
+      await import("@/lib/semanticCache.js");
     const sig = generateSignature("m/db", [{ role: "user", content: "db-count" }], 0, 1);
     setCachedResponse(sig, "m/db", makeResponse("db"), 3);
     const stats = getCacheStats();
@@ -163,9 +166,8 @@ describe("getCacheStats", () => {
   });
 
   it("clearCache resets metrics and entries", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse, clearCache, getCacheStats } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, setCachedResponse, getCachedResponse, clearCache, getCacheStats } =
+      await import("@/lib/semanticCache.js");
     const sig = generateSignature("m/clear", [{ role: "user", content: "clear" }], 0, 1);
     setCachedResponse(sig, "m/clear", makeResponse("clear"), 3);
     getCachedResponse(sig); // hit
@@ -184,9 +186,8 @@ describe("getCacheStats", () => {
 
 describe("cache invalidation", () => {
   it("invalidateBySignature removes only that entry", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse, invalidateBySignature } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, setCachedResponse, getCachedResponse, invalidateBySignature } =
+      await import("@/lib/semanticCache.js");
     const sigA = generateSignature("m/inv", [{ role: "user", content: "A" }], 0, 1);
     const sigB = generateSignature("m/inv", [{ role: "user", content: "B" }], 0, 1);
     setCachedResponse(sigA, "m/inv", makeResponse("A"), 0);
@@ -203,9 +204,8 @@ describe("cache invalidation", () => {
   });
 
   it("invalidateByModel removes all entries for that model", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse, invalidateByModel } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, setCachedResponse, getCachedResponse, invalidateByModel } =
+      await import("@/lib/semanticCache.js");
     const sigA = generateSignature("m/model-a", [{ role: "user", content: "A" }], 0, 1);
     const sigB = generateSignature("m/model-a", [{ role: "user", content: "B" }], 0, 1);
     const sigC = generateSignature("m/model-b", [{ role: "user", content: "C" }], 0, 1);
@@ -221,9 +221,8 @@ describe("cache invalidation", () => {
   });
 
   it("invalidateStale removes entries older than maxAgeMs", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse, invalidateStale } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, setCachedResponse, getCachedResponse, invalidateStale } =
+      await import("@/lib/semanticCache.js");
     const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const db = getDatabase();
 
@@ -305,7 +304,8 @@ describe("isCacheableForRead / isCacheableForWrite", () => {
 
 describe("GET /api/cache", () => {
   it("returns semanticCache stats and config shape", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const cacheRoute = await import("@/app/api/cache/route.js");
 
     const sig = generateSignature("m/api", [{ role: "user", content: "api-test" }], 0, 1);
@@ -334,13 +334,16 @@ describe("GET /api/cache", () => {
 
 describe("DELETE /api/cache", () => {
   it("clears all entries", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const cacheRoute = await import("@/app/api/cache/route.js");
 
     const sig = generateSignature("m/del", [{ role: "user", content: "del-all" }], 0, 1);
     setCachedResponse(sig, "m/del", makeResponse("del"), 0);
 
-    const res = await cacheRoute.DELETE(new Request("http://localhost/api/cache", { method: "DELETE" }));
+    const res = await cacheRoute.DELETE(
+      new Request("http://localhost/api/cache", { method: "DELETE" }),
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.ok).toBe(true);
@@ -349,7 +352,8 @@ describe("DELETE /api/cache", () => {
   });
 
   it("invalidates by model", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const cacheRoute = await import("@/app/api/cache/route.js");
 
     const sig = generateSignature("m/del-model", [{ role: "user", content: "x" }], 0, 1);
@@ -366,7 +370,8 @@ describe("DELETE /api/cache", () => {
   });
 
   it("invalidates by signature", async () => {
-    const { generateSignature, setCachedResponse, getCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, getCachedResponse } =
+      await import("@/lib/semanticCache.js");
     const cacheRoute = await import("@/app/api/cache/route.js");
 
     const sig = generateSignature("m/del-sig", [{ role: "user", content: "sig-del" }], 0, 1);
@@ -413,7 +418,9 @@ describe("DELETE /api/cache", () => {
 
   it("rejects invalid staleMs", async () => {
     const cacheRoute = await import("@/app/api/cache/route.js");
-    const res = await cacheRoute.DELETE(new Request("http://localhost/api/cache?staleMs=-1", { method: "DELETE" }));
+    const res = await cacheRoute.DELETE(
+      new Request("http://localhost/api/cache?staleMs=-1", { method: "DELETE" }),
+    );
     expect(res.status).toBe(400);
   });
 });

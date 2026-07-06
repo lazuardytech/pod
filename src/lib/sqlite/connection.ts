@@ -85,7 +85,9 @@ let schemaReady = false;
 function applyPragmas(db: SqliteDatabase) {
   // bun:sqlite has no `.pragma()` shorthand — fall back to exec.
   const setPragma =
-    typeof db.pragma === "function" ? (s: string) => db.pragma!(s) : (s: string) => db.exec(`PRAGMA ${s}`);
+    typeof db.pragma === "function"
+      ? (s: string) => db.pragma!(s)
+      : (s: string) => db.exec(`PRAGMA ${s}`);
   setPragma("journal_mode = WAL");
   setPragma("synchronous = NORMAL");
   setPragma("foreign_keys = ON");
@@ -129,7 +131,9 @@ function ensureSchemaPatches(db: SqliteDatabase) {
     }
   }
 
-  db.exec("UPDATE api_keys SET limit_type = 'unlimited' WHERE limit_type IS NULL OR trim(limit_type) = ''");
+  db.exec(
+    "UPDATE api_keys SET limit_type = 'unlimited' WHERE limit_type IS NULL OR trim(limit_type) = ''",
+  );
 
   // Add combo column to request_log if missing
   if (!hasColumn(db, "request_log", "combo")) {
@@ -173,15 +177,16 @@ function ensureSchemaPatches(db: SqliteDatabase) {
 }
 
 function readMeta(db: SqliteDatabase, key: string): string | null {
-  const row = db.prepare("SELECT value FROM meta WHERE key = ?").get(key) as { value: string } | undefined;
+  const row = db.prepare("SELECT value FROM meta WHERE key = ?").get(key) as
+    | { value: string }
+    | undefined;
   return row ? row.value : null;
 }
 
 function writeMeta(db: SqliteDatabase, key: string, value: string) {
-  db.prepare("INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(
-    key,
-    String(value),
-  );
+  db.prepare(
+    "INSERT INTO meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+  ).run(key, String(value));
 }
 
 function runInitialMigration(db: SqliteDatabase) {

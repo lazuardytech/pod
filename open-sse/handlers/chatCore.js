@@ -1,5 +1,9 @@
 import { appendRequestLog, saveRequestDetail, trackPendingRequest } from "@/lib/usageDb";
-import { getModelStrip, getModelTargetFormat, PROVIDER_ID_TO_ALIAS } from "../config/providerModels.js";
+import {
+  getModelStrip,
+  getModelTargetFormat,
+  PROVIDER_ID_TO_ALIAS,
+} from "../config/providerModels.js";
 import { HTTP_STATUS, LOCAL_UPSTREAM_TIMEOUT_MS } from "../config/runtimeConfig.js";
 import { getExecutor } from "../executors/index.js";
 import { detectFormat, getTargetFormat } from "../services/provider.js";
@@ -143,7 +147,8 @@ function extractMemoryTextFromRequestBody(body) {
         const text = msg.content
           .map((part) => {
             if (typeof part?.text === "string") return part.text.trim();
-            if (part?.type === "input_text" && typeof part?.text === "string") return part.text.trim();
+            if (part?.type === "input_text" && typeof part?.text === "string")
+              return part.text.trim();
             return "";
           })
           .filter(Boolean)
@@ -161,12 +166,14 @@ function extractMemoryTextFromRequestBody(body) {
       const itemType = typeof item?.type === "string" ? item.type.trim().toLowerCase() : "";
       if (role && role !== "user") continue;
       if (itemType && itemType !== "message") continue;
-      if (typeof item?.content === "string" && item.content.trim()) return toLimitedText(item.content);
+      if (typeof item?.content === "string" && item.content.trim())
+        return toLimitedText(item.content);
       if (Array.isArray(item?.content)) {
         const text = item.content
           .map((part) => {
             if (typeof part?.text === "string") return part.text.trim();
-            if (part?.type === "input_text" && typeof part?.text === "string") return part.text.trim();
+            if (part?.type === "input_text" && typeof part?.text === "string")
+              return part.text.trim();
             return "";
           })
           .filter(Boolean)
@@ -218,7 +225,8 @@ export async function handleChatCore({
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
   const pipelineSessionId =
-    connectionId || `req-${Date.now().toString(36)}-${crypto.randomUUID().replace(/-/g, "").slice(0, 9)}`;
+    connectionId ||
+    `req-${Date.now().toString(36)}-${crypto.randomUUID().replace(/-/g, "").slice(0, 9)}`;
   const settings = chatSettings || {};
   const semanticCacheEnabled = settings.semanticCacheEnabled !== false;
   const memorySettings = normalizeMemorySettings(settings);
@@ -249,7 +257,11 @@ export async function handleChatCore({
   }
 
   // Inject provider-level effort override (only if client hasn't set reasoning_effort)
-  if (providerThinking?.effortMode && providerThinking.effortMode !== "default" && !body.reasoning_effort) {
+  if (
+    providerThinking?.effortMode &&
+    providerThinking.effortMode !== "default" &&
+    !body.reasoning_effort
+  ) {
     body = { ...body, reasoning_effort: providerThinking.effortMode };
   }
 
@@ -277,7 +289,11 @@ export async function handleChatCore({
 
   const reqLogger = await createRequestLogger(sourceFormat, targetFormat, model);
   if (clientRawRequest)
-    reqLogger.logClientRawRequest(clientRawRequest.endpoint, clientRawRequest.body, clientRawRequest.headers);
+    reqLogger.logClientRawRequest(
+      clientRawRequest.endpoint,
+      clientRawRequest.body,
+      clientRawRequest.headers,
+    );
   reqLogger.logRawRequest(body);
   log?.debug?.("FORMAT", `${sourceFormat} → ${targetFormat} | stream=${stream}`);
 
@@ -288,8 +304,18 @@ export async function handleChatCore({
   // generateSignature already handles large payloads by hashing only the last
   // 64KB tail (SIGNATURE_MAX_BYTES), so no need to skip cache for large bodies.
   const requestTooLargeForCache = false;
-  if (semanticCacheEnabled && !requestTooLargeForCache && isCacheableForRead(body, clientRawRequest?.headers)) {
-    cacheSignature = generateSignature(model, messages, body.temperature, body.top_p, memoryOwnerId || null);
+  if (
+    semanticCacheEnabled &&
+    !requestTooLargeForCache &&
+    isCacheableForRead(body, clientRawRequest?.headers)
+  ) {
+    cacheSignature = generateSignature(
+      model,
+      messages,
+      body.temperature,
+      body.top_p,
+      memoryOwnerId || null,
+    );
     const cached = getCachedResponse(cacheSignature);
     if (cached) {
       reqLogger.logConvertedResponse(cached);
@@ -299,7 +325,11 @@ export async function handleChatCore({
       return {
         success: true,
         response: new Response(JSON.stringify(cached), {
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "X-9Router-Cache": "HIT" },
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "X-9Router-Cache": "HIT",
+          },
         }),
       };
     }
@@ -336,7 +366,10 @@ export async function handleChatCore({
     }
   }
 
-  if (memoryOwnerId && shouldInjectMemory(body, { enabled: memorySettings.enabled && memorySettings.maxTokens > 0 })) {
+  if (
+    memoryOwnerId &&
+    shouldInjectMemory(body, { enabled: memorySettings.enabled && memorySettings.maxTokens > 0 })
+  ) {
     try {
       const memoryQuery = extractMemoryTextFromRequestBody(body);
       const memories = await retrieveMemories(memoryOwnerId, {
@@ -423,7 +456,9 @@ export async function handleChatCore({
 
   const executor = getExecutor(provider);
   trackPendingRequest(model, provider, connectionId, true);
-  appendRequestLog({ model, provider, connectionId, combo: comboName, status: "PENDING" }).catch(() => {});
+  appendRequestLog({ model, provider, connectionId, combo: comboName, status: "PENDING" }).catch(
+    () => {},
+  );
 
   const msgCount =
     translatedBody.messages?.length ||
@@ -488,13 +523,17 @@ export async function handleChatCore({
 
   // Upstream timeout: combined AbortController for client disconnect + upstream deadline
   const upstreamTimeoutMs =
-    Number(process.env.API_TIMEOUT_MS) > 0 ? Number(process.env.API_TIMEOUT_MS) : LOCAL_UPSTREAM_TIMEOUT_MS;
+    Number(process.env.API_TIMEOUT_MS) > 0
+      ? Number(process.env.API_TIMEOUT_MS)
+      : LOCAL_UPSTREAM_TIMEOUT_MS;
 
   // Pass timeout to proxy layer so Vercel relay can enforce its own AbortController
   proxyOptions.upstreamTimeoutMs = upstreamTimeoutMs;
 
-  const isUpstreamTimeoutError = (error) => error?.name === "TimeoutError" || error?.cause?.name === "TimeoutError";
-  const buildAbortStatus = (error) => (isUpstreamTimeoutError(error) ? HTTP_STATUS.REQUEST_TIMEOUT : 499);
+  const isUpstreamTimeoutError = (error) =>
+    error?.name === "TimeoutError" || error?.cause?.name === "TimeoutError";
+  const buildAbortStatus = (error) =>
+    isUpstreamTimeoutError(error) ? HTTP_STATUS.REQUEST_TIMEOUT : 499;
   const createUpstreamSignal = () => {
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -506,7 +545,8 @@ export async function handleChatCore({
 
     const combinedController = new AbortController();
     const forwardAbort = (event) => {
-      const reason = event?.target?.reason || timeoutController.signal.reason || streamController.signal.reason;
+      const reason =
+        event?.target?.reason || timeoutController.signal.reason || streamController.signal.reason;
       combinedController.abort(reason);
     };
 
@@ -554,7 +594,10 @@ export async function handleChatCore({
     // Fix 4: One-shot retry on Vercel relay 502/504 (cold start mitigation).
     // Vercel free-tier often returns 502/504 on first request after deploy or idle.
     // Retrying once with a brief delay resolves most cold starts transparently.
-    if (proxyOptions.vercelRelayUrl && (providerResponse.status === 502 || providerResponse.status === 504)) {
+    if (
+      proxyOptions.vercelRelayUrl &&
+      (providerResponse.status === 502 || providerResponse.status === 504)
+    ) {
       console.error("[VERCEL-RELAY-RETRY] Retrying upstream request after relay 502/504");
       await new Promise((r) => setTimeout(r, 2000));
       const retryResult = await executeUpstream();
@@ -601,7 +644,9 @@ export async function handleChatCore({
       streamController.handleError(error);
       return createErrorResult(
         abortStatus,
-        isUpstreamTimeoutError(error) ? `Upstream request timed out after ${upstreamTimeoutMs}ms` : "Request aborted",
+        isUpstreamTimeoutError(error)
+          ? `Upstream request timed out after ${upstreamTimeoutMs}ms`
+          : "Request aborted",
       );
     }
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
@@ -615,16 +660,24 @@ export async function handleChatCore({
   // upstream provider failure.
   if (providerResponse && providerResponse.status === 504 && proxyOptions.vercelRelayUrl) {
     console.error("[VERCEL-RELAY-TIMEOUT] Relay request exceeded platform limit");
-    return createErrorResult(HTTP_STATUS.GATEWAY_TIMEOUT, "Vercel relay timeout — function exceeded platform limit");
+    return createErrorResult(
+      HTTP_STATUS.GATEWAY_TIMEOUT,
+      "Vercel relay timeout — function exceeded platform limit",
+    );
   }
 
   // Handle 401/403 - try token refresh (skip for noAuth providers)
   if (
     !executor.noAuth &&
-    (providerResponse.status === HTTP_STATUS.UNAUTHORIZED || providerResponse.status === HTTP_STATUS.FORBIDDEN)
+    (providerResponse.status === HTTP_STATUS.UNAUTHORIZED ||
+      providerResponse.status === HTTP_STATUS.FORBIDDEN)
   ) {
     try {
-      const newCredentials = await refreshWithRetry(() => executor.refreshCredentials(credentials, log), 3, log);
+      const newCredentials = await refreshWithRetry(
+        () => executor.refreshCredentials(credentials, log),
+        3,
+        log,
+      );
       if (newCredentials?.accessToken || newCredentials?.copilotToken) {
         log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed`);
         Object.assign(credentials, newCredentials);
@@ -655,9 +708,14 @@ export async function handleChatCore({
   // Provider returned error
   if (!providerResponse.ok) {
     trackPendingRequest(model, provider, connectionId, false, true);
-    const { statusCode, message, resetsAtMs } = await parseUpstreamError(providerResponse, executor);
+    const { statusCode, message, resetsAtMs } = await parseUpstreamError(
+      providerResponse,
+      executor,
+    );
     console.error(`[UPSTREAM ${statusCode}] Upstream provider returned an error`);
-    appendRequestLog({ model, provider, connectionId, status: `FAILED ${statusCode}` }).catch(() => {});
+    appendRequestLog({ model, provider, connectionId, status: `FAILED ${statusCode}` }).catch(
+      () => {},
+    );
     saveRequestDetail(
       buildRequestDetail({
         provider,
@@ -721,7 +779,8 @@ export async function handleChatCore({
           const requestMemoryText = extractMemoryTextFromRequestBody(body);
           if (requestMemoryText) extractFacts(requestMemoryText, memoryOwnerId, pipelineSessionId);
           const responseMemoryText = extractMemoryTextFromResponse(finalResponse);
-          if (responseMemoryText) extractFacts(responseMemoryText, memoryOwnerId, pipelineSessionId);
+          if (responseMemoryText)
+            extractFacts(responseMemoryText, memoryOwnerId, pipelineSessionId);
         }
       },
     });
@@ -761,7 +820,8 @@ export async function handleChatCore({
           const requestMemoryText = extractMemoryTextFromRequestBody(body);
           if (requestMemoryText) extractFacts(requestMemoryText, memoryOwnerId, pipelineSessionId);
           const responseMemoryText = extractMemoryTextFromResponse(translatedResponse);
-          if (responseMemoryText) extractFacts(responseMemoryText, memoryOwnerId, pipelineSessionId);
+          if (responseMemoryText)
+            extractFacts(responseMemoryText, memoryOwnerId, pipelineSessionId);
         }
       },
     });
@@ -782,7 +842,10 @@ export async function handleChatCore({
       return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to read provider stream");
     }
     const peekResult = await reader.read().catch((e) => {
-      log?.error?.("CHAT_CORE", `Failed to peek first chunk from ${provider}/${model}: ${e.message}`);
+      log?.error?.(
+        "CHAT_CORE",
+        `Failed to peek first chunk from ${provider}/${model}: ${e.message}`,
+      );
       return { value: null, done: true };
     });
     const { value: firstChunk, done } = peekResult;
@@ -870,7 +933,9 @@ export async function handleChatCore({
     }
   }
 
-  const { onStreamComplete: baseOnStreamComplete, streamDetailId } = buildOnStreamComplete({ ...sharedCtx });
+  const { onStreamComplete: baseOnStreamComplete, streamDetailId } = buildOnStreamComplete({
+    ...sharedCtx,
+  });
   const onStreamComplete = (contentObj, usage, ttftAt) => {
     baseOnStreamComplete?.(contentObj, usage, ttftAt);
     appendLog({ tokens: usage, status: "SUCCESS", detailsId: streamDetailId });
@@ -907,7 +972,8 @@ export async function handleChatCore({
           ? {
               prompt_tokens: usage.prompt_tokens ?? 0,
               completion_tokens: usage.completion_tokens ?? 0,
-              total_tokens: usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
+              total_tokens:
+                usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
             }
           : { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
       };

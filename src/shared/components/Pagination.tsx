@@ -36,7 +36,13 @@ export default function Pagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3", className)} {...rest}>
+    <div
+      className={cn(
+        "flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3",
+        className,
+      )}
+      {...rest}
+    >
       {/* Info */}
       {totalItems > 0 && (
         <p className="text-[12px] text-fog-grey tracking-[-0.1px]">

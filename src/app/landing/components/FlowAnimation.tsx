@@ -49,7 +49,10 @@ export default function FlowAnimation() {
       </div>
 
       {/* SVG Lines from Pod to Providers */}
-      <svg className="absolute inset-0 w-full h-full z-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        className="absolute inset-0 w-full h-full z-10 pointer-events-none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <path
           d="M 440 180 C 550 180, 550 50, 740 50"
           fill="none"

@@ -57,7 +57,12 @@ async function probeWebProvider(provider: any, apiKey: any) {
     body = JSON.stringify({ query: "ping", q: "ping", url: "https://example.com" });
   }
 
-  const res = await fetch(url, { method: cfg.method, headers, body, signal: AbortSignal.timeout(8000) });
+  const res = await fetch(url, {
+    method: cfg.method,
+    headers,
+    body,
+    signal: AbortSignal.timeout(8000),
+  });
   return res.status !== 401 && res.status !== 403;
 }
 
@@ -66,7 +71,15 @@ async function probeWebProvider(provider: any, apiKey: any) {
 async function probeMediaProvider(provider: any, apiKey: any) {
   const p = AI_PROVIDERS[provider];
   if (!p) return null;
-  const MEDIA_KINDS = new Set(["tts", "embedding", "stt", "image", "video", "music", "imageToText"]);
+  const MEDIA_KINDS = new Set([
+    "tts",
+    "embedding",
+    "stt",
+    "image",
+    "video",
+    "music",
+    "imageToText",
+  ]);
   const kinds = p.serviceKinds || ["llm"];
   const isMediaOnly = kinds.every((k) => MEDIA_KINDS.has(k));
   if (!isMediaOnly) return null;
@@ -244,7 +257,10 @@ export async function POST(request: any) {
       if (isAnthropicCompatibleProvider(provider)) {
         const node = await getProviderNodeById(provider);
         if (!node) {
-          return NextResponse.json({ error: "Anthropic Compatible node not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "Anthropic Compatible node not found" },
+            { status: 404 },
+          );
         }
 
         let normalizedBase = node.baseUrl?.trim().replace(/\/$/, "") || "";
@@ -307,7 +323,10 @@ export async function POST(request: any) {
         // Validate the user-supplied Azure endpoint before fetching (SSRF prevention)
         const azureUrlCheck = validateFetchUrl(endpoint);
         if (!azureUrlCheck.ok) {
-          return NextResponse.json({ valid: false, error: `Invalid Azure endpoint: ${fetchUrlError(azureUrlCheck)}` });
+          return NextResponse.json({
+            valid: false,
+            error: `Invalid Azure endpoint: ${fetchUrlError(azureUrlCheck)}`,
+          });
         }
 
         const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
@@ -380,7 +399,9 @@ export async function POST(request: any) {
         }
 
         case "gemini": {
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`,
+          );
           isValid = geminiRes.ok;
           break;
         }
@@ -614,9 +635,9 @@ export async function POST(request: any) {
             crypto.getRandomValues(a);
             return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
           };
-          const statsigId = Buffer.from("e:TypeError: Cannot read properties of null (reading 'children')").toString(
-            "base64",
-          );
+          const statsigId = Buffer.from(
+            "e:TypeError: Cannot read properties of null (reading 'children')",
+          ).toString("base64");
           const traceId = randomHex(16);
           const spanId = randomHex(8);
           const res = await fetch("https://grok.com/rest/app-chat/conversations/new", {
@@ -683,7 +704,8 @@ export async function POST(request: any) {
           if (sessionToken.startsWith("__Secure-next-auth.session-token=")) {
             sessionToken = sessionToken.slice("__Secure-next-auth.session-token=".length);
           }
-          const tz = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
+          const tz =
+            typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
           const res = await fetch("https://www.perplexity.ai/rest/sse/perplexity_ask", {
             method: "POST",
             headers: {
@@ -720,7 +742,8 @@ export async function POST(request: any) {
           });
           if (res.status === 401 || res.status === 403) {
             isValid = false;
-            error = "Invalid session cookie — re-paste __Secure-next-auth.session-token from perplexity.ai";
+            error =
+              "Invalid session cookie — re-paste __Secure-next-auth.session-token from perplexity.ai";
           } else {
             isValid = true;
           }

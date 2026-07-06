@@ -40,13 +40,22 @@ export class LRUCache<V = unknown> {
   #stats = { hits: 0, misses: 0, evictions: 0 };
 
   constructor(options: LRUCacheOptions = {}) {
-    this.#maxSize = Number.isFinite(options.maxSize) ? (options.maxSize as number) : DEFAULT_MAX_ENTRIES;
-    this.#maxBytes = Number.isFinite(options.maxBytes) ? (options.maxBytes as number) : DEFAULT_MAX_BYTES;
-    this.#defaultTTL = Number.isFinite(options.defaultTTL) ? (options.defaultTTL as number) : DEFAULT_TTL_MS;
+    this.#maxSize = Number.isFinite(options.maxSize)
+      ? (options.maxSize as number)
+      : DEFAULT_MAX_ENTRIES;
+    this.#maxBytes = Number.isFinite(options.maxBytes)
+      ? (options.maxBytes as number)
+      : DEFAULT_MAX_BYTES;
+    this.#defaultTTL = Number.isFinite(options.defaultTTL)
+      ? (options.defaultTTL as number)
+      : DEFAULT_TTL_MS;
   }
 
   static generateKey(params: unknown): string {
-    const normalized = JSON.stringify(params, Object.keys((params as Record<string, unknown>) || {}).sort());
+    const normalized = JSON.stringify(
+      params,
+      Object.keys((params as Record<string, unknown>) || {}).sort(),
+    );
     return crypto.createHash("sha256").update(normalized).digest("hex").slice(0, 16);
   }
 

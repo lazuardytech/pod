@@ -72,6 +72,10 @@ export function ollamaToOpenAI(chunk, state) {
   }
 
   const delta = {};
+  if (!state.ollama.sentRole) {
+    delta.role = "assistant";
+    state.ollama.sentRole = true;
+  }
   if (content) delta.content = content;
   if (thinking) delta.reasoning_content = thinking;
 

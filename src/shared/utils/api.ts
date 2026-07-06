@@ -46,7 +46,11 @@ export async function get<T = unknown>(url: string, options: RequestOptions = {}
   return handleResponse<T>(response);
 }
 
-export async function post<T = unknown>(url: string, data: unknown, options: RequestOptions = {}): Promise<T> {
+export async function post<T = unknown>(
+  url: string,
+  data: unknown,
+  options: RequestOptions = {},
+): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
     headers: { ...DEFAULT_HEADERS, ...options.headers },
@@ -56,7 +60,11 @@ export async function post<T = unknown>(url: string, data: unknown, options: Req
   return handleResponse<T>(response);
 }
 
-export async function put<T = unknown>(url: string, data: unknown, options: RequestOptions = {}): Promise<T> {
+export async function put<T = unknown>(
+  url: string,
+  data: unknown,
+  options: RequestOptions = {},
+): Promise<T> {
   const response = await fetch(url, {
     method: "PUT",
     headers: { ...DEFAULT_HEADERS, ...options.headers },

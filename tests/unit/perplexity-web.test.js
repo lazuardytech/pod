@@ -199,7 +199,12 @@ describe("PerplexityWebExecutor.execute", () => {
       capturedBody = JSON.parse(opts.body);
       return mockPplxStream([
         {
-          blocks: [{ intended_usage: "markdown", markdown_block: { chunks: ["answer"], progress: "DONE" } }],
+          blocks: [
+            {
+              intended_usage: "markdown",
+              markdown_block: { chunks: ["answer"], progress: "DONE" },
+            },
+          ],
           status: "COMPLETED",
           backend_uuid: "resp-uuid-1",
         },
@@ -227,7 +232,11 @@ describe("PerplexityWebExecutor.execute", () => {
     const exec = new PerplexityWebExecutor();
     await exec.execute({
       model: "pplx-opus",
-      body: { messages: [{ role: "user", content: "hi" }], stream: false, reasoning_effort: "high" },
+      body: {
+        messages: [{ role: "user", content: "hi" }],
+        stream: false,
+        reasoning_effort: "high",
+      },
       stream: false,
       credentials: { apiKey: "cookie-abc" },
     });
@@ -287,7 +296,9 @@ describe("PerplexityWebExecutor.execute", () => {
   });
 
   it("surfaces upstream 401 with friendly auth message", async () => {
-    global.fetch = vi.fn(async () => new Response(JSON.stringify({ error: "bad" }), { status: 401 }));
+    global.fetch = vi.fn(
+      async () => new Response(JSON.stringify({ error: "bad" }), { status: 401 }),
+    );
     const exec = new PerplexityWebExecutor();
     const { response } = await exec.execute({
       model: "pplx-auto",
@@ -392,7 +403,9 @@ describe("cookie format variants", () => {
       stream: false,
       credentials: { apiKey: "my-session-token-value" },
     });
-    expect(capturedHeaders["Cookie"]).toBe("__Secure-next-auth.session-token=my-session-token-value");
+    expect(capturedHeaders["Cookie"]).toBe(
+      "__Secure-next-auth.session-token=my-session-token-value",
+    );
     expect(capturedHeaders["Authorization"]).toBeUndefined();
   });
 
@@ -585,7 +598,9 @@ describe("streaming edge cases", () => {
       credentials: { apiKey: "c" },
     });
     const text = await response.text();
-    const dataLines = text.split("\n").filter((l) => l.startsWith("data: ") && l !== "data: [DONE]");
+    const dataLines = text
+      .split("\n")
+      .filter((l) => l.startsWith("data: ") && l !== "data: [DONE]");
     const contents = dataLines
       .map((l) => JSON.parse(l.slice(6)))
       .flatMap((d) => (d.choices[0].delta.content ? [d.choices[0].delta.content] : []))
@@ -826,7 +841,9 @@ describe("concurrent requests", () => {
 
   it("buildPplxRequestBody includes frontend_uuid and context_uuid", () => {
     const body = buildPplxRequestBody("test", "copilot", "gpt54", null);
-    expect(body.params.frontend_uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(body.params.frontend_uuid).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
     expect(body.params.frontend_context_uuid).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     );

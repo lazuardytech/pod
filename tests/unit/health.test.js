@@ -275,7 +275,8 @@ describe("GET /api/monitoring/health — degraded DB", () => {
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
-            if (sql.includes("integrity_check")) return { integrity_check: "corruption found in page 42" };
+            if (sql.includes("integrity_check"))
+              return { integrity_check: "corruption found in page 42" };
             if (sql.includes("schema_version")) return { value: "1" };
             if (sql.includes("page_count")) return { page_count: 50 };
             if (sql.includes("page_size")) return { page_size: 4096 };

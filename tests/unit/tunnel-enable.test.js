@@ -151,7 +151,9 @@ describe("fetchData non-fatal after tunnel enable", () => {
       userVisibleError = sanitizeTunnelError(error?.message);
     }
 
-    expect(userVisibleError).toBe("cloudflared exited with code 1. Ensure your tunnel token is valid.");
+    expect(userVisibleError).toBe(
+      "cloudflared exited with code 1. Ensure your tunnel token is valid.",
+    );
   });
 });
 

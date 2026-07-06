@@ -1,7 +1,10 @@
 import { saveRequestDetail } from "@/lib/usageDb";
 import { FORMATS } from "../../translator/formats.js";
 import { needsTranslation } from "../../translator/index.js";
-import { createPassthroughStreamWithLogger, createSSETransformStreamWithLogger } from "../../utils/stream.js";
+import {
+  createPassthroughStreamWithLogger,
+  createSSETransformStreamWithLogger,
+} from "../../utils/stream.js";
 import { pipeWithDisconnect } from "../../utils/streamHandler.js";
 import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.js";
 
@@ -28,8 +31,10 @@ function buildTransformStream({
   onStreamComplete,
   apiKey,
 }) {
-  const isDroidCLI = userAgent?.toLowerCase().includes("droid") || userAgent?.toLowerCase().includes("codex-cli");
-  const needsCodexTranslation = provider === "codex" && targetFormat === FORMATS.OPENAI_RESPONSES && !isDroidCLI;
+  const isDroidCLI =
+    userAgent?.toLowerCase().includes("droid") || userAgent?.toLowerCase().includes("codex-cli");
+  const needsCodexTranslation =
+    provider === "codex" && targetFormat === FORMATS.OPENAI_RESPONSES && !isDroidCLI;
 
   if (needsCodexTranslation) {
     // Codex returns Responses API SSE → translate to client format

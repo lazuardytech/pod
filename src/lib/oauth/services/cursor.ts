@@ -44,7 +44,11 @@ export class CursorService {
   /**
    * Build request headers for Cursor API
    */
-  buildHeaders(accessToken: string, machineId: string, ghostMode: boolean = false): Record<string, string> {
+  buildHeaders(
+    accessToken: string,
+    machineId: string,
+    ghostMode: boolean = false,
+  ): Record<string, string> {
     const checksum = this.generateChecksum(machineId);
 
     return {
@@ -140,7 +144,9 @@ export class CursorService {
         while (payload.length % 4) {
           payload += "=";
         }
-        const decoded = JSON.parse(Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
+        const decoded = JSON.parse(
+          Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
+        );
         return {
           email: decoded.email || decoded.sub,
           userId: decoded.sub || decoded.user_id,

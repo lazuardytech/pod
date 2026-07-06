@@ -9,7 +9,9 @@ export function hasValidContent(msg) {
   if (Array.isArray(msg.content)) {
     return msg.content.some(
       (block) =>
-        (block.type === "text" && block.text?.trim()) || block.type === "tool_use" || block.type === "tool_result",
+        (block.type === "text" && block.text?.trim()) ||
+        block.type === "tool_use" ||
+        block.type === "tool_result",
     );
   }
   return false;
@@ -56,8 +58,12 @@ export function fixToolUseOrdering(messages) {
 
     if (last && last.role === msg.role) {
       // Merge content arrays
-      const lastContent = Array.isArray(last.content) ? last.content : [{ type: "text", text: last.content }];
-      const msgContent = Array.isArray(msg.content) ? msg.content : [{ type: "text", text: msg.content }];
+      const lastContent = Array.isArray(last.content)
+        ? last.content
+        : [{ type: "text", text: last.content }];
+      const msgContent = Array.isArray(msg.content)
+        ? msg.content
+        : [{ type: "text", text: msg.content }];
 
       // Put tool_result first, then other content
       const toolResults = [
@@ -72,7 +78,9 @@ export function fixToolUseOrdering(messages) {
       last.content = [...toolResults, ...otherContent];
     } else {
       // Ensure content is array
-      const content = Array.isArray(msg.content) ? msg.content : [{ type: "text", text: msg.content }];
+      const content = Array.isArray(msg.content)
+        ? msg.content
+        : [{ type: "text", text: msg.content }];
       merged.push({ role: msg.role, content: [...content] });
     }
   }

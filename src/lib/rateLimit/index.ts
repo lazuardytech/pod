@@ -119,7 +119,9 @@ type RateLimitCheckResult =
 /**
  * Standalone rate limit check for routes that already handle auth themselves.
  */
-export async function checkRateLimitByKey(apiKey: string | null | undefined): Promise<RateLimitCheckResult> {
+export async function checkRateLimitByKey(
+  apiKey: string | null | undefined,
+): Promise<RateLimitCheckResult> {
   if (!apiKey) return { ok: true, release: null, response: undefined };
   const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): any => null);
   if (!apiKeyRecord) return { ok: true, release: null, response: undefined };
@@ -135,7 +137,12 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
     acquireConc: (
       keyId: string,
       max: number,
-    ) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
+    ) => Promise<{
+      ok: boolean;
+      release?: () => Promise<void>;
+      type?: string;
+      retryAfterSeconds?: number;
+    }>;
     releaseRpm?: (keyId: string, member: string | undefined) => Promise<void>;
   };
   const redisBackend = backend as unknown as Partial<RedisLike>;
@@ -161,7 +168,11 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
       try {
         await redisBackend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
       } catch {}
-      return { ok: false, release: null, response: rateLimitResponse(concResult.type || "concurrent", 1) };
+      return {
+        ok: false,
+        release: null,
+        response: rateLimitResponse(concResult.type || "concurrent", 1),
+      };
     }
 
     return {
@@ -188,13 +199,21 @@ export async function checkRateLimitByKey(apiKey: string | null | undefined): Pr
   const memBackend = backend as unknown as MemoryLike;
   const permit = memBackend.acquirePermit(apiKeyRecord);
   if (!permit.ok) {
-    return { ok: false, release: null, response: rateLimitResponse(permit.reason || "rpm", permit.retryAfterSeconds) };
+    return {
+      ok: false,
+      release: null,
+      response: rateLimitResponse(permit.reason || "rpm", permit.retryAfterSeconds),
+    };
   }
   return { ok: true, release: permit.release ?? null, response: undefined };
 }
 
 function getLimitConfigFromRecord(
-  apiKeyRecord: { limitType?: string; requestsPerMinute?: number; concurrentRequests?: number } | null,
+  apiKeyRecord: {
+    limitType?: string;
+    requestsPerMinute?: number;
+    concurrentRequests?: number;
+  } | null,
 ): { requestsPerMinute: number; concurrentRequests: number } | null {
   if (!apiKeyRecord || apiKeyRecord.limitType !== "limited") return null;
   const toPositiveInt = (v: unknown): number | null => {
@@ -211,7 +230,10 @@ function getLimitConfigFromRecord(
 /**
  * Wraps an API handler with rate limit enforcement.
  */
-export async function withApiKeyRateLimit(request: Request, handler: () => Promise<unknown>): Promise<unknown> {
+export async function withApiKeyRateLimit(
+  request: Request,
+  handler: () => Promise<unknown>,
+): Promise<unknown> {
   const apiKey = extractApiKey(request);
   if (!apiKey) return await handler();
 
@@ -228,7 +250,12 @@ export async function withApiKeyRateLimit(request: Request, handler: () => Promi
     acquireConc: (
       keyId: string,
       max: number,
-    ) => Promise<{ ok: boolean; release?: () => Promise<void>; type?: string; retryAfterSeconds?: number }>;
+    ) => Promise<{
+      ok: boolean;
+      release?: () => Promise<void>;
+      type?: string;
+      retryAfterSeconds?: number;
+    }>;
     releaseRpm?: (keyId: string, member: string | undefined) => Promise<void>;
   };
   const redisBackend = backend as unknown as Partial<RedisLike>;

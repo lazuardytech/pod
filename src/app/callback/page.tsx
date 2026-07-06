@@ -65,7 +65,10 @@ function CallbackContent() {
 
     // Method 3: localStorage event (fallback)
     try {
-      localStorage.setItem("oauth_callback", JSON.stringify({ ...callbackData, timestamp: Date.now() }));
+      localStorage.setItem(
+        "oauth_callback",
+        JSON.stringify({ ...callbackData, timestamp: Date.now() }),
+      );
       _relayed = true;
     } catch (e) {
       console.error("localStorage failed:", e);
@@ -103,7 +106,9 @@ function CallbackContent() {
             </div>
             <h1 className="text-xl font-semibold mb-2">Authorization Successful!</h1>
             <p className="text-text-muted">
-              {status === "success" ? "This window will close automatically..." : "You can close this tab now."}
+              {status === "success"
+                ? "This window will close automatically..."
+                : "You can close this tab now."}
             </p>
           </>
         )}
@@ -118,7 +123,9 @@ function CallbackContent() {
               Please copy the URL from the address bar and paste it in the application.
             </p>
             <div className="bg-surface border border-border rounded-lg p-3 text-left">
-              <code className="text-xs break-all">{typeof window !== "undefined" ? window.location.href : ""}</code>
+              <code className="text-xs break-all">
+                {typeof window !== "undefined" ? window.location.href : ""}
+              </code>
             </div>
           </>
         )}

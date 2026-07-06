@@ -17,7 +17,9 @@ describe("logging audit regressions", () => {
   it("does not log raw Antigravity error messages", () => {
     const source = read("open-sse/services/usage.js");
     expect(source).not.toContain('console.error("[Antigravity Usage] Error:", error.message);');
-    expect(source).not.toContain('console.error("[Antigravity Subscription] Error:", error.message);');
+    expect(source).not.toContain(
+      'console.error("[Antigravity Subscription] Error:", error.message);',
+    );
   });
 
   it("does not log raw worker forwarder error messages", () => {
@@ -26,8 +28,12 @@ describe("logging audit regressions", () => {
 
     expect(forwardSource).not.toContain('console.error("[FORWARD] Error:", error.message);');
     expect(forwardRawSource).not.toContain('console.error("[FORWARD_RAW] Error:", error.message);');
-    expect(forwardRawSource).not.toContain('console.error("[FORWARD_RAW] Socket open error:", openError.message);');
-    expect(forwardRawSource).not.toContain('console.error("[FORWARD_RAW] Write error:", writeError.message);');
+    expect(forwardRawSource).not.toContain(
+      'console.error("[FORWARD_RAW] Socket open error:", openError.message);',
+    );
+    expect(forwardRawSource).not.toContain(
+      'console.error("[FORWARD_RAW] Write error:", writeError.message);',
+    );
   });
 
   it("does not log provider or model identifiers in audited chatCore error lines", () => {
@@ -55,8 +61,12 @@ describe("logging audit regressions", () => {
     const proxyFetchSource = read("open-sse/utils/proxyFetch.js");
     const nonStreamingSource = read("open-sse/handlers/chatCore/nonStreamingHandler.js");
     const streamHandlerSource = read("open-sse/utils/streamHandler.js");
-    const providerLimitUtilsSource = read("src/app/(dashboard)/usage/components/ProviderLimits/utils.tsx");
-    const providerLimitIndexSource = read("src/app/(dashboard)/usage/components/ProviderLimits/index.tsx");
+    const providerLimitUtilsSource = read(
+      "src/app/(dashboard)/usage/components/ProviderLimits/utils.tsx",
+    );
+    const providerLimitIndexSource = read(
+      "src/app/(dashboard)/usage/components/ProviderLimits/index.tsx",
+    );
     const authSource = read("src/sse/services/auth.ts");
     const usageRouteSource = read("src/app/api/usage/[connectionId]/route.ts");
 
@@ -91,6 +101,8 @@ describe("logging audit regressions", () => {
     expect(usageRouteSource).not.toContain(
       "console.warn(`[Usage] ${connection.provider}: force refresh failed: ${retryError.message}`);",
     );
-    expect(usageRouteSource).not.toContain("console.warn(`[Usage] ${provider}: ${sanitizeError(error)}`);");
+    expect(usageRouteSource).not.toContain(
+      "console.warn(`[Usage] ${provider}: ${sanitizeError(error)}`);",
+    );
   });
 });

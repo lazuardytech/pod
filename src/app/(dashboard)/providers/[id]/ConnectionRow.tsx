@@ -45,7 +45,8 @@ export default function ConnectionRow({
 
   let maskedProxyUrl = "";
   if (boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl) {
-    const rawProxyUrl = boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl;
+    const rawProxyUrl =
+      boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl;
     try {
       const parsed = new URL(rawProxyUrl);
       maskedProxyUrl = `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
@@ -54,7 +55,8 @@ export default function ConnectionRow({
     }
   }
 
-  const noProxyText = boundProxyPool?.noProxy || connection.providerSpecificData?.connectionNoProxy || "";
+  const noProxyText =
+    boundProxyPool?.noProxy || connection.providerSpecificData?.connectionNoProxy || "";
 
   let proxyBadgeVariant = "default";
   if (boundProxyPool?.isActive === true) {
@@ -134,7 +136,11 @@ export default function ConnectionRow({
   const getStatusVariant = () => {
     if (connection.isActive === false) return "default";
     if (effectiveStatus === "active" || effectiveStatus === "success") return "success";
-    if (effectiveStatus === "error" || effectiveStatus === "expired" || effectiveStatus === "unavailable")
+    if (
+      effectiveStatus === "error" ||
+      effectiveStatus === "expired" ||
+      effectiveStatus === "unavailable"
+    )
       return "error";
     return "default";
   };
@@ -144,7 +150,10 @@ export default function ConnectionRow({
       className={`group flex min-w-0 flex-col gap-3 rounded-lg p-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between ${connection.isActive === false ? "opacity-60" : ""}`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center sm:gap-3">
-        <LucideIcon name={isOAuth ? "lock" : "key"} className="shrink-0 text-base text-text-muted" />
+        <LucideIcon
+          name={isOAuth ? "lock" : "key"}
+          className="shrink-0 text-base text-text-muted"
+        />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{displayName}</p>
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
@@ -156,9 +165,14 @@ export default function ConnectionRow({
                 Proxy
               </Badge>
             )}
-            {isCooldown && connection.isActive !== false && <CooldownTimer until={modelLockUntil} />}
+            {isCooldown && connection.isActive !== false && (
+              <CooldownTimer until={modelLockUntil} />
+            )}
             {connection.lastError && connection.isActive !== false && (
-              <span className="max-w-full truncate text-xs text-red-500 sm:max-w-[300px]" title={connection.lastError}>
+              <span
+                className="max-w-full truncate text-xs text-red-500 sm:max-w-[300px]"
+                title={connection.lastError}
+              >
                 {connection.lastError}
               </span>
             )}
@@ -181,7 +195,10 @@ export default function ConnectionRow({
                 </code>
               )}
               {noProxyText && (
-                <span className="max-w-full truncate text-[11px] text-text-muted sm:max-w-[320px]" title={noProxyText}>
+                <span
+                  className="max-w-full truncate text-[11px] text-text-muted sm:max-w-[320px]"
+                  title={noProxyText}
+                >
                   no_proxy: {noProxyText}
                 </span>
               )}
@@ -199,7 +216,10 @@ export default function ConnectionRow({
                 className={`flex w-full flex-col items-center rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
               >
-                <LucideIcon name={updatingProxy ? "progress_activity" : "lan"} className="text-[18px]" />
+                <LucideIcon
+                  name={updatingProxy ? "progress_activity" : "lan"}
+                  className="text-[18px]"
+                />
                 <span className="text-[10px] leading-tight">Proxy</span>
               </button>
               {showProxyDropdown && (

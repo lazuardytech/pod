@@ -18,6 +18,7 @@ Thank you for your interest in contributing. This document covers how to get sta
 ## Getting Started
 
 **Requirements:**
+
 - [bun](https://bun.sh) v1.3.14+
 - Node.js is not required for running the app, but vitest uses it for tests
 
@@ -82,6 +83,7 @@ Use the [Conventional Commits](https://www.conventionalcommits.org/) format:
 Common types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`.
 
 Examples:
+
 ```
 feat(cache): add TTL config via env vars
 fix(sse): attach abort listener to prevent timer leak

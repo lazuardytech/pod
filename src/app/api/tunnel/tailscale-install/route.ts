@@ -15,7 +15,11 @@ const EXTENDED_PATH = `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:${process.
 
 function hasBrew() {
   try {
-    execSync("which brew", { stdio: "ignore", windowsHide: true, env: { ...process.env, PATH: EXTENDED_PATH } });
+    execSync("which brew", {
+      stdio: "ignore",
+      windowsHide: true,
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    });
     return true;
   } catch {
     return false;
@@ -63,9 +67,12 @@ export async function POST(request: any) {
         });
         send("done", { success: true, authUrl: result?.authUrl || null });
       } catch (error) {
-        logError("TailscaleInstall", "Tailscale install error", { error: (error as any)?.message || error });
+        logError("TailscaleInstall", "Tailscale install error", {
+          error: (error as any)?.message || error,
+        });
         const msg =
-          sanitizeError(error)?.includes("incorrect password") || sanitizeError(error)?.includes("Sorry")
+          sanitizeError(error)?.includes("incorrect password") ||
+          sanitizeError(error)?.includes("Sorry")
             ? "Wrong sudo password"
             : sanitizeError(error);
         send("error", { error: msg });

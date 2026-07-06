@@ -11,7 +11,8 @@ import { useHeaderActionStore } from "@/store/headerActionStore";
 
 function getEffectiveStatus(conn: any) {
   const isCooldown = Object.entries(conn).some(
-    ([k, v]: any) => k.startsWith("modelLock_") && v && (new Date(String(v)) as Date).getTime() > Date.now(),
+    ([k, v]: any) =>
+      k.startsWith("modelLock_") && v && (new Date(String(v)) as Date).getTime() > Date.now(),
   );
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
@@ -137,7 +138,9 @@ function ComboList({ combos }: any) {
                   );
                 })}
                 {combo.models.length > 6 && (
-                  <span className="text-[10px] text-text-muted ml-1">+{combo.models.length - 6}</span>
+                  <span className="text-[10px] text-text-muted ml-1">
+                    +{combo.models.length - 6}
+                  </span>
                 )}
               </div>
               <span className="text-[11px] text-text-muted shrink-0">{combo.models.length}</span>

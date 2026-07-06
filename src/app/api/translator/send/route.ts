@@ -46,7 +46,10 @@ export async function POST(request: any) {
     const requestBody = body.body;
 
     if (!provider || !model || !requestBody) {
-      return Response.json({ success: false, error: "provider, model, and body required" }, { status: 400 });
+      return Response.json(
+        { success: false, error: "provider, model, and body required" },
+        { status: 400 },
+      );
     }
 
     const connections = await getProviderConnections({ provider });
@@ -77,7 +80,10 @@ export async function POST(request: any) {
 
     // Auto-refresh token on 401/403 and retry (same as chatCore.js)
     if (response.status === 401 || response.status === 403) {
-      const newCredentials = (await refreshTokenByProvider(provider, credentials)) as Record<string, unknown> | null;
+      const newCredentials = (await refreshTokenByProvider(provider, credentials)) as Record<
+        string,
+        unknown
+      > | null;
       if (newCredentials?.accessToken || newCredentials?.copilotToken) {
         Object.assign(credentials, newCredentials);
         ({ response } = await executor.execute({ model, body: requestBody, stream, credentials }));
@@ -94,7 +100,10 @@ export async function POST(request: any) {
     }
 
     if (!response.body) {
-      return Response.json({ success: false, error: "Provider returned empty response body" }, { status: 502 });
+      return Response.json(
+        { success: false, error: "Provider returned empty response body" },
+        { status: 502 },
+      );
     }
 
     return new Response(response.body, {

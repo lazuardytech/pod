@@ -27,7 +27,8 @@ export async function GET() {
     // - AND INITIAL_PASSWORD env is not set (custom password via env)
     const isDefaultPassword = !password && !hasCustomInitialPassword;
 
-    const runtime = typeof Bun !== "undefined" ? `Bun ${Bun.version}` : `Node.js ${process.version}`;
+    const runtime =
+      typeof Bun !== "undefined" ? `Bun ${Bun.version}` : `Node.js ${process.version}`;
     const platform = `${process.platform} ${process.arch}`;
 
     return NextResponse.json(

@@ -43,7 +43,11 @@ export default function MemoryClient() {
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any) => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
 
   const [settings, setSettings] = useState({
     enabled: true,
@@ -227,7 +231,9 @@ export default function MemoryClient() {
       const payload = await res.json().catch(() => ({}));
       const removed = Number(payload?.removed || 0);
       toast.success(
-        removed > 0 ? `Cleared ${removed} memory ${removed === 1 ? "entry" : "entries"}` : "No memory entries to clear",
+        removed > 0
+          ? `Cleared ${removed} memory ${removed === 1 ? "entry" : "entries"}`
+          : "No memory entries to clear",
       );
       setPage(1);
       await loadData(false);
@@ -255,7 +261,9 @@ export default function MemoryClient() {
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Memory</h1>
-        <p className="text-sm text-text-muted">Manage memory retrieval settings and stored memories per API key.</p>
+        <p className="text-sm text-text-muted">
+          Manage memory retrieval settings and stored memories per API key.
+        </p>
       </div>
 
       <Card
@@ -281,7 +289,9 @@ export default function MemoryClient() {
             label="Strategy"
             value={settings.strategy}
             options={STRATEGY_OPTIONS}
-            onChange={(event: any) => setSettings((prev: any) => ({ ...prev, strategy: event.target.value }))}
+            onChange={(event: any) =>
+              setSettings((prev: any) => ({ ...prev, strategy: event.target.value }))
+            }
           />
 
           <Input
@@ -290,7 +300,9 @@ export default function MemoryClient() {
             min="0"
             max="16000"
             value={settings.maxTokens}
-            onChange={(event: any) => setSettings((prev: any) => ({ ...prev, maxTokens: event.target.value }))}
+            onChange={(event: any) =>
+              setSettings((prev: any) => ({ ...prev, maxTokens: event.target.value }))
+            }
           />
 
           <Input
@@ -299,7 +311,9 @@ export default function MemoryClient() {
             min="1"
             max="365"
             value={settings.retentionDays}
-            onChange={(event: any) => setSettings((prev: any) => ({ ...prev, retentionDays: event.target.value }))}
+            onChange={(event: any) =>
+              setSettings((prev: any) => ({ ...prev, retentionDays: event.target.value }))
+            }
           />
         </div>
       </Card>
@@ -309,7 +323,13 @@ export default function MemoryClient() {
         subtitle={`Showing ${currentCount} of ${memoryData.total} entries`}
         icon="database"
         action={
-          <Button size="sm" variant="secondary" icon="refresh" onClick={() => loadData(false)} loading={refreshing}>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon="refresh"
+            onClick={() => loadData(false)}
+            loading={refreshing}
+          >
             Refresh
           </Button>
         }
@@ -318,7 +338,9 @@ export default function MemoryClient() {
           <Input
             label="Search"
             value={draftFilters.q}
-            onChange={(event: any) => setDraftFilters((prev: any) => ({ ...prev, q: event.target.value }))}
+            onChange={(event: any) =>
+              setDraftFilters((prev: any) => ({ ...prev, q: event.target.value }))
+            }
             placeholder="Search memory content..."
             icon="search"
           />
@@ -327,14 +349,18 @@ export default function MemoryClient() {
             placeholder="All API Keys"
             value={draftFilters.apiKeyId}
             options={apiKeys.map((key: any) => ({ value: key.id, label: key.name || key.id }))}
-            onChange={(event: any) => setDraftFilters((prev: any) => ({ ...prev, apiKeyId: event.target.value }))}
+            onChange={(event: any) =>
+              setDraftFilters((prev: any) => ({ ...prev, apiKeyId: event.target.value }))
+            }
           />
           <Select
             label="Type"
             placeholder="All Types"
             value={draftFilters.type}
             options={MEMORY_TYPE_OPTIONS}
-            onChange={(event: any) => setDraftFilters((prev: any) => ({ ...prev, type: event.target.value }))}
+            onChange={(event: any) =>
+              setDraftFilters((prev: any) => ({ ...prev, type: event.target.value }))
+            }
           />
           <div className="flex items-end">
             <Button icon="filter_alt" onClick={handleApplyFilters} className="w-full">
@@ -382,12 +408,18 @@ export default function MemoryClient() {
                         {entry.type}
                       </Badge>
                     </td>
-                    <td className="px-3 py-2 text-sm font-mono text-text-main">{entry.key || "-"}</td>
+                    <td className="px-3 py-2 text-sm font-mono text-text-main">
+                      {entry.key || "-"}
+                    </td>
                     <td className="px-3 py-2 text-sm text-text-main">
-                      <div className="max-w-[420px] whitespace-pre-wrap break-words line-clamp-3">{entry.content}</div>
+                      <div className="max-w-[420px] whitespace-pre-wrap break-words line-clamp-3">
+                        {entry.content}
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-text-muted">{entry.apiKeyId}</td>
-                    <td className="px-3 py-2 text-xs text-text-muted">{toDateLabel(entry.createdAt)}</td>
+                    <td className="px-3 py-2 text-xs text-text-muted">
+                      {toDateLabel(entry.createdAt)}
+                    </td>
                     <td className="px-3 py-2">
                       <Button
                         size="sm"
@@ -416,7 +448,12 @@ export default function MemoryClient() {
             Page {page} of {memoryData.totalPages}
           </p>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage((prev: any) => prev - 1)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={page <= 1}
+              onClick={() => setPage((prev: any) => prev - 1)}
+            >
               Prev
             </Button>
             <Button

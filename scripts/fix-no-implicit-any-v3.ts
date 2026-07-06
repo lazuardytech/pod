@@ -16,16 +16,23 @@ interface TSError {
 }
 
 function parseErrors(): TSError[] {
-  const stdout = execSync(
-    `bun x tsc --noEmit 2>&1 | grep "error TS" | grep -v "open-sse/"`,
-    { cwd: "/Users/ezra/projects/lt/pod", encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 }
-  );
+  const stdout = execSync(`bun x tsc --noEmit 2>&1 | grep "error TS" | grep -v "open-sse/"`, {
+    cwd: "/Users/ezra/projects/lt/pod",
+    encoding: "utf-8",
+    maxBuffer: 100 * 1024 * 1024,
+  });
   const lines = stdout.trim().split("\n").filter(Boolean);
   const errors: TSError[] = [];
   for (const line of lines) {
     const m = line.match(/^(.+?)\((\d+),(\d+)\):\s+error\s+(TS\d+):\s+(.+)$/);
     if (!m) continue;
-    errors.push({ file: m[1], line: parseInt(m[2]), col: parseInt(m[3]), code: m[4], message: m[5] });
+    errors.push({
+      file: m[1],
+      line: parseInt(m[2]),
+      col: parseInt(m[3]),
+      code: m[4],
+      message: m[5],
+    });
   }
   return errors;
 }
@@ -36,7 +43,7 @@ function parseErrors(): TSError[] {
 function fixFile(filePath: string, errors: TSError[]): number {
   let source = readFileSync(filePath, "utf-8");
   const lines = source.split("\n");
-  
+
   // Track which lines we've already modified
   const modifiedLines = new Set<number>();
   let fixed = 0;
@@ -45,7 +52,7 @@ function fixFile(filePath: string, errors: TSError[]): number {
     const lineIdx = error.line - 1;
     if (lineIdx < 0 || lineIdx >= lines.length) continue;
     if (modifiedLines.has(lineIdx)) continue; // skip already-modified lines
-    
+
     const original = lines[lineIdx];
     let line = original;
 
@@ -60,8 +67,19 @@ function fixFile(filePath: string, errors: TSError[]): number {
         line = line.replace(new RegExp(`(catch\\s*\\(\\s*)(${pn})(\\s*\\))`), "$1$2: any$3");
       }
       // .map/.filter/.forEach/.then/.catch callback args
-      else if (line.match(new RegExp(`\\.(map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\(\\s*${pn}\\s*(,|=>)`))) {
-        line = line.replace(new RegExp(`(\\.(?:map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\()(${pn})(\\s*(?:,|=>))`), "$1$2: any$3");
+      else if (
+        line.match(
+          new RegExp(
+            `\\.(map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\(\\s*${pn}\\s*(,|=>)`,
+          ),
+        )
+      ) {
+        line = line.replace(
+          new RegExp(
+            `(\\.(?:map|filter|forEach|then|catch|reduce|some|every|find|findIndex|flatMap|sort|toSorted)\\s*\\()(${pn})(\\s*(?:,|=>))`,
+          ),
+          "$1$2: any$3",
+        );
       }
       // General: param followed by , ) or =>
       else {
@@ -82,25 +100,26 @@ function fixFile(filePath: string, errors: TSError[]): number {
         }
         if (!replaced) continue;
       }
-    }
-    else if (error.code === "TS7031") {
+    } else if (error.code === "TS7031") {
       // Binding element implicitly has 'any' type.
       // Pattern: ({ key })  or  ({ key1, key2 })
       // Only fix if there's no existing : after the closing brace
       const destructured = line.match(/\{\s*([^}]+)\s*\}/);
       if (!destructured) continue;
-      
+
       // Only fix if this is followed by ) or => without a type annotation already
       if (!(/\}\s*\)/.test(line) || /\}\s*=>/.test(line))) continue;
       // Check if already typed (closing brace followed by :)
       if (/\}\s*:\s*\{/.test(line)) continue;
-      
+
       const inner = destructured[1].trim();
-      const keys = inner.split(",").map((k) => k.trim()).filter(Boolean);
+      const keys = inner
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
       const typeLiteral = "{ " + keys.map((k) => `${k}: any`).join("; ") + " }";
       line = line.replace(destructured[0], `{ ${inner} }: ${typeLiteral}`);
-    }
-    else if (error.code === "TS7053") {
+    } else if (error.code === "TS7053") {
       // string index into typed object
       const bracketMatches = Array.from(line.matchAll(/(\w+)\[([^\]]+)\]/g));
       for (const bm of bracketMatches) {
@@ -113,46 +132,48 @@ function fixFile(filePath: string, errors: TSError[]): number {
           line = line.replace(fullMatch, replacement);
         }
       }
-    }
-    else if (error.code === "TS7018") {
+    } else if (error.code === "TS7018") {
       const m = line.match(/^( *)(const|let|var)\s+(\w+)\s*=\s*\{/);
       if (m) {
         const keyword = m[2];
         const varName = m[3];
-        line = line.replace(`${keyword} ${varName} = {`, `${keyword} ${varName}: Record<string, any> = {`);
+        line = line.replace(
+          `${keyword} ${varName} = {`,
+          `${keyword} ${varName}: Record<string, any> = {`,
+        );
       }
-    }
-    else if (error.code === "TS7034") {
+    } else if (error.code === "TS7034") {
       if (line.includes("new Set()")) line = line.replace(/new Set\(\)/g, "new Set<any>()");
       if (line.includes("new Map()")) line = line.replace(/new Map\(\)/g, "new Map<any, any>()");
-    }
-    else if (error.code === "TS7005") {
+    } else if (error.code === "TS7005") {
       const vm = error.message.match(/Variable '(\w+)' implicitly has an 'any' type/);
       if (!vm) continue;
       const varName = vm[1];
-      if (line.match(new RegExp(`\\b${varName}\\s*=\\s*setInterval|\\b${varName}\\s*=\\s*setTimeout`))) {
-        line = line.replace(new RegExp(`(${varName})\\s*=`), "$1: ReturnType<typeof setInterval> =");
+      if (
+        line.match(new RegExp(`\\b${varName}\\s*=\\s*setInterval|\\b${varName}\\s*=\\s*setTimeout`))
+      ) {
+        line = line.replace(
+          new RegExp(`(${varName})\\s*=`),
+          "$1: ReturnType<typeof setInterval> =",
+        );
       } else if (line.match(new RegExp(`(let|var)\\s+${varName}[,;\\s]`))) {
         line = line.replace(new RegExp(`\\b${varName}\\b(?=[,;\\s])`), `${varName}: any`);
       }
-    }
-    else if (error.code === "TS7010") {
+    } else if (error.code === "TS7010") {
       const rm = error.message.match(/'(.+?)', which lacks return-type annotation/);
       if (!rm) continue;
       const funcName = rm[1];
       if (line.match(new RegExp(`function\\s+${funcName}\\s*\\([^)]*\\)\\s*\\{`))) {
         line = line.replace(new RegExp(`(function\\s+${funcName}\\s*\\([^)]*\\))`), "$1: any");
       }
-    }
-    else if (error.code === "TS7023") {
+    } else if (error.code === "TS7023") {
       const nm = error.message.match(/'(\w+)' implicitly has return type/);
       if (!nm) continue;
       const funcName = nm[1];
       if (line.match(new RegExp(`(const|let|var)\\s+${funcName}\\s*=\\s*\\(`))) {
         line = line.replace(new RegExp(`(${funcName}\\s*=)\\s*(\\([^)]*\\)\\s*=>)`), "$1 $2: any");
       }
-    }
-    else if (error.code === "TS2538") {
+    } else if (error.code === "TS2538") {
       // unknown cannot be used as index type
       // Object.entries(obj).map(([key, val]) => key is unknown
       // Fix: add as string

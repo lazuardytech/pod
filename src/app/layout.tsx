@@ -31,7 +31,8 @@ const dmSans = DM_Sans({
 export const metadata = {
   applicationName: "Pod",
   title: "Pod",
-  description: "One endpoint for all your AI providers. Manage keys, monitor usage, and scale effortlessly.",
+  description:
+    "One endpoint for all your AI providers. Manage keys, monitor usage, and scale effortlessly.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     title: "Pod",

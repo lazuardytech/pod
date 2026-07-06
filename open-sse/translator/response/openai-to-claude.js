@@ -35,8 +35,10 @@ export function openaiToClaudeResponse(chunk, state) {
 
   // Track usage from OpenAI chunk if available
   if (chunk.usage && typeof chunk.usage === "object") {
-    const promptTokens = typeof chunk.usage.prompt_tokens === "number" ? chunk.usage.prompt_tokens : 0;
-    const outputTokens = typeof chunk.usage.completion_tokens === "number" ? chunk.usage.completion_tokens : 0;
+    const promptTokens =
+      typeof chunk.usage.prompt_tokens === "number" ? chunk.usage.prompt_tokens : 0;
+    const outputTokens =
+      typeof chunk.usage.completion_tokens === "number" ? chunk.usage.completion_tokens : 0;
 
     // Extract cache tokens from prompt_tokens_details
     const cachedTokens = chunk.usage.prompt_tokens_details?.cached_tokens;
@@ -72,7 +74,8 @@ export function openaiToClaudeResponse(chunk, state) {
     state.messageStartSent = true;
     state.messageId = chunk.id?.replace("chatcmpl-", "") || `msg_${Date.now()}`;
     if (!state.messageId || state.messageId === "chat" || state.messageId.length < 8) {
-      state.messageId = chunk.extend_fields?.requestId || chunk.extend_fields?.traceId || `msg_${Date.now()}`;
+      state.messageId =
+        chunk.extend_fields?.requestId || chunk.extend_fields?.traceId || `msg_${Date.now()}`;
     }
     state.model = chunk.model || "unknown";
     state.nextBlockIndex = 0;
@@ -145,7 +148,11 @@ export function openaiToClaudeResponse(chunk, state) {
         stopTextBlock(state, results);
 
         const toolBlockIndex = state.nextBlockIndex++;
-        state.toolCalls.set(idx, { id: tc.id, name: tc.function?.name || "", blockIndex: toolBlockIndex });
+        state.toolCalls.set(idx, {
+          id: tc.id,
+          name: tc.function?.name || "",
+          blockIndex: toolBlockIndex,
+        });
 
         // Strip prefix from tool name for response
         let toolName = tc.function?.name || "";

@@ -83,9 +83,14 @@ export async function POST(request: any) {
     if (nodeType === "custom-embedding") {
       const customId = identifier?.trim();
       if (customId && !customId.startsWith(CUSTOM_EMBEDDING_PREFIX)) {
-        return NextResponse.json({ error: `Identifier must start with "${CUSTOM_EMBEDDING_PREFIX}"` }, { status: 400 });
+        return NextResponse.json(
+          { error: `Identifier must start with "${CUSTOM_EMBEDDING_PREFIX}"` },
+          { status: 400 },
+        );
       }
-      let sanitizedBaseUrl = (baseUrl || CUSTOM_EMBEDDING_DEFAULTS.baseUrl).trim().replace(/\/$/, "");
+      let sanitizedBaseUrl = (baseUrl || CUSTOM_EMBEDDING_DEFAULTS.baseUrl)
+        .trim()
+        .replace(/\/$/, "");
       if (sanitizedBaseUrl.endsWith("/embeddings")) {
         sanitizedBaseUrl = sanitizedBaseUrl.slice(0, -"/embeddings".length);
       }
@@ -107,7 +112,9 @@ export async function POST(request: any) {
           { status: 400 },
         );
       }
-      let sanitizedBaseUrl = (baseUrl || ANTHROPIC_COMPATIBLE_DEFAULTS.baseUrl).trim().replace(/\/$/, "");
+      let sanitizedBaseUrl = (baseUrl || ANTHROPIC_COMPATIBLE_DEFAULTS.baseUrl)
+        .trim()
+        .replace(/\/$/, "");
       if (sanitizedBaseUrl.endsWith("/messages")) {
         sanitizedBaseUrl = sanitizedBaseUrl.slice(0, -9);
       }

@@ -26,7 +26,10 @@ const getPageInfo = (pathname: any) => {
       breadcrumbs: [
         {
           label: kindConfig?.label || kindId,
-          href: kindId === "webSearch" || kindId === "webFetch" ? "/media-providers/web" : `/media-providers/${kindId}`,
+          href:
+            kindId === "webSearch" || kindId === "webFetch"
+              ? "/media-providers/web"
+              : `/media-providers/${kindId}`,
           icon: kindConfig?.icon || "perm_media",
         },
         { label: provider?.name || providerId, image: `/providers/${providerId}.png` },
@@ -57,7 +60,8 @@ const getPageInfo = (pathname: any) => {
   const providerMatch = pathname.match(/\/providers\/([^/]+)$/);
   if (providerMatch) {
     const providerId = providerMatch[1];
-    const providerInfo = OAUTH_PROVIDERS[providerId] || APIKEY_PROVIDERS[providerId] || AI_PROVIDERS[providerId];
+    const providerInfo =
+      OAUTH_PROVIDERS[providerId] || APIKEY_PROVIDERS[providerId] || AI_PROVIDERS[providerId];
     if (providerInfo) {
       return {
         title: providerInfo.name,
@@ -72,7 +76,10 @@ const getPageInfo = (pathname: any) => {
     return {
       title: providerId,
       description: "",
-      breadcrumbs: [{ label: "LLM Providers", href: "/providers", icon: "dns" }, { label: providerId }],
+      breadcrumbs: [
+        { label: "LLM Providers", href: "/providers", icon: "dns" },
+        { label: providerId },
+      ],
     };
   }
 
@@ -83,9 +90,19 @@ const getPageInfo = (pathname: any) => {
       breadcrumbs: [{ label: "LLM Providers", href: "/providers", icon: "dns" }, { label: "New" }],
     };
   if (pathname.includes("/providers") && !pathname.includes("/media-providers"))
-    return { title: "LLM Providers", description: "Manage your AI provider connections", icon: "dns", breadcrumbs: [] };
+    return {
+      title: "LLM Providers",
+      description: "Manage your AI provider connections",
+      icon: "dns",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/combos"))
-    return { title: "Combos", description: "Model combos with fallback", icon: "layers", breadcrumbs: [] };
+    return {
+      title: "Combos",
+      description: "Model combos with fallback",
+      icon: "layers",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/usage"))
     return {
       title: "Usage",
@@ -101,11 +118,26 @@ const getPageInfo = (pathname: any) => {
       breadcrumbs: [],
     };
   if (pathname.includes("/proxy-pools"))
-    return { title: "Proxy Pools", description: "Manage your proxy pool configurations", icon: "lan", breadcrumbs: [] };
+    return {
+      title: "Proxy Pools",
+      description: "Manage your proxy pool configurations",
+      icon: "lan",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/endpoint") || pathname === "/endpoint")
-    return { title: "Endpoint", description: "API endpoint configuration", icon: "api", breadcrumbs: [] };
+    return {
+      title: "Endpoint",
+      description: "API endpoint configuration",
+      icon: "api",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/settings"))
-    return { title: "Settings", description: "Manage your preferences", icon: "settings", breadcrumbs: [] };
+    return {
+      title: "Settings",
+      description: "Manage your preferences",
+      icon: "settings",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/translator"))
     return {
       title: "Translator",
@@ -121,7 +153,12 @@ const getPageInfo = (pathname: any) => {
       breadcrumbs: [],
     };
   if (pathname.includes("/memory"))
-    return { title: "Memory", description: "Manage memory entries", icon: "memory_alt", breadcrumbs: [] };
+    return {
+      title: "Memory",
+      description: "Manage memory entries",
+      icon: "memory_alt",
+      breadcrumbs: [],
+    };
   if (pathname.includes("/health"))
     return {
       title: "Health",
@@ -130,7 +167,12 @@ const getPageInfo = (pathname: any) => {
       breadcrumbs: [],
     };
   if (pathname.includes("/cache"))
-    return { title: "Cache", description: "Semantic cache configuration", icon: "cached", breadcrumbs: [] };
+    return {
+      title: "Cache",
+      description: "Semantic cache configuration",
+      icon: "cached",
+      breadcrumbs: [],
+    };
 
   return { title: "", description: "", breadcrumbs: [] };
 };
@@ -185,8 +227,13 @@ export default function Header({
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {breadcrumbs.length > 0 ? (
           breadcrumbs.map((crumb: any, index: any) => (
-            <div key={`${crumb.label}-${crumb.href || "current"}`} className="flex items-center gap-1.5">
-              {index > 0 && <LucideIcon name="chevron_right" className="text-fog-grey text-[14px]" />}
+            <div
+              key={`${crumb.label}-${crumb.href || "current"}`}
+              className="flex items-center gap-1.5"
+            >
+              {index > 0 && (
+                <LucideIcon name="chevron_right" className="text-fog-grey text-[14px]" />
+              )}
               {crumb.href ? (
                 <Link
                   href={crumb.href}
@@ -218,7 +265,9 @@ export default function Header({
         ) : title ? (
           <div className="flex items-center gap-2">
             {icon && <LucideIcon name={icon} className="text-storm-cloud text-[16px]" />}
-            <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] truncate mt-0.5">{title}</span>
+            <span className="text-[13px] font-[510] text-porcelain tracking-[-0.12px] truncate mt-0.5">
+              {title}
+            </span>
           </div>
         ) : null}
       </div>

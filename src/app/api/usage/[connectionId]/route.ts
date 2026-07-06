@@ -71,7 +71,9 @@ async function refreshAndUpdateCredentials(connection: any, force = false, proxy
 
   // Update token expiry
   if (refreshResult.expiresIn) {
-    updateData.expiresAt = new Date(Date.now() + Number((refreshResult as any).expiresIn) * 1000).toISOString();
+    updateData.expiresAt = new Date(
+      Date.now() + Number((refreshResult as any).expiresIn) * 1000,
+    ).toISOString();
   } else if (refreshResult.expiresAt) {
     updateData.expiresAt = refreshResult.expiresAt;
   }
@@ -116,14 +118,17 @@ export async function GET(request: any, { params }: { params: any }) {
 
     // Allow OAuth connections, plus whitelisted apikey providers (glm/minimax/...)
     const isOAuth = connection.authType === "oauth";
-    const isApikeyEligible = connection.authType === "apikey" && USAGE_APIKEY_PROVIDERS.includes(connection.provider);
+    const isApikeyEligible =
+      connection.authType === "apikey" && USAGE_APIKEY_PROVIDERS.includes(connection.provider);
 
     if (!isOAuth && !isApikeyEligible) {
       return Response.json({ message: "Usage not available for this connection" });
     }
 
     // Resolve connection proxy config; force strictProxy=false so quota/refresh fall back to direct on failure
-    const proxyConfig = await resolveConnectionProxyConfig((connection as any).providerSpecificData);
+    const proxyConfig = await resolveConnectionProxyConfig(
+      (connection as any).providerSpecificData,
+    );
     const proxyOptions = {
       connectionProxyEnabled: proxyConfig.connectionProxyEnabled === true,
       connectionProxyUrl: proxyConfig.connectionProxyUrl || "",
@@ -155,7 +160,11 @@ export async function GET(request: any, { params }: { params: any }) {
     // force-refresh token and retry once (OAuth only)
     if (isOAuth && isAuthExpiredMessage(usage) && connection.refreshToken) {
       try {
-        const retryResult = await refreshAndUpdateCredentials(connection, true, proxyOptions as any);
+        const retryResult = await refreshAndUpdateCredentials(
+          connection,
+          true,
+          proxyOptions as any,
+        );
         connection = retryResult.connection;
         usage = await getUsageForProvider(connection, proxyOptions as any);
       } catch {

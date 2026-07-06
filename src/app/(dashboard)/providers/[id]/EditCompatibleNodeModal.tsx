@@ -14,7 +14,14 @@ function requiredIdPrefix(node: any, isAnthropic: any) {
   return "";
 }
 
-export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename, onClose, isAnthropic }: any) {
+export default function EditCompatibleNodeModal({
+  isOpen,
+  node,
+  onSave,
+  onRename,
+  onClose,
+  isAnthropic,
+}: any) {
   const [formData, setFormData] = useState({
     identifier: "",
     name: "",
@@ -37,7 +44,9 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
         name: node.name || "",
         prefix: node.prefix || "",
         apiType: node.apiType || "chat",
-        baseUrl: node.baseUrl || (isAnthropic ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1"),
+        baseUrl:
+          node.baseUrl ||
+          (isAnthropic ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1"),
       });
       setRenameError("");
     }
@@ -94,7 +103,9 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
   const trimmedId = formData.identifier.trim();
   const idChanged = trimmedId && trimmedId !== node.id;
   const idLooksValid =
-    trimmedId && /^[a-zA-Z0-9_.-]+$/.test(trimmedId) && (!idPrefix || trimmedId.startsWith(idPrefix));
+    trimmedId &&
+    /^[a-zA-Z0-9_.-]+$/.test(trimmedId) &&
+    (!idPrefix || trimmedId.startsWith(idPrefix));
 
   const handleRename = async () => {
     if (!onRename || !idChanged || !idLooksValid) return;
@@ -110,7 +121,11 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
   };
 
   return (
-    <Modal isOpen={isOpen} title={`Edit ${isAnthropic ? "Anthropic" : "OpenAI"} Compatible`} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title={`Edit ${isAnthropic ? "Anthropic" : "OpenAI"} Compatible`}
+      onClose={onClose}
+    >
       <div className="flex flex-col gap-4">
         <Input
           label="Name"
@@ -144,7 +159,9 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
             </span>
           )}
           {!renameError && !idChanged && idPrefix && (
-            <span className="text-[11px] text-text-subtle">Must start with &quot;{idPrefix}&quot;</span>
+            <span className="text-[11px] text-text-subtle">
+              Must start with &quot;{idPrefix}&quot;
+            </span>
           )}
         </div>
         <Input
@@ -203,7 +220,9 @@ export default function EditCompatibleNodeModal({ isOpen, node, onSave, onRename
           <Button
             onClick={handleSubmit}
             fullWidth
-            disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || saving}
+            disabled={
+              !formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || saving
+            }
           >
             {saving ? "Saving..." : "Save"}
           </Button>

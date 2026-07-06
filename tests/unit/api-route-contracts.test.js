@@ -131,7 +131,10 @@ describe("v1 route contracts", () => {
 
     it("returns 200", async () => {
       const { POST } = await import("@/app/api/v1/messages/route.js");
-      const req = makeJsonRequest("/v1/messages", { model: "claude-3", messages: [{ role: "user", content: "hi" }] });
+      const req = makeJsonRequest("/v1/messages", {
+        model: "claude-3",
+        messages: [{ role: "user", content: "hi" }],
+      });
       const res = await POST(req);
       expect(res.status).toBe(200);
     });
@@ -195,7 +198,10 @@ describe("v1 route contracts", () => {
 
     it("returns 200", async () => {
       const { POST } = await import("@/app/api/v1/embeddings/route.js");
-      const req = makeJsonRequest("/v1/embeddings", { model: "text-embedding-3-small", input: "hello" });
+      const req = makeJsonRequest("/v1/embeddings", {
+        model: "text-embedding-3-small",
+        input: "hello",
+      });
       const res = await POST(req);
       expect(res.status).toBe(200);
     });
@@ -240,9 +246,9 @@ describe("v1 route contracts", () => {
     });
 
     it("returns 200 for valid kind", async () => {
-      const { GET } = await import("@/app/api/v1/models/[kind]/route.js");
+      const { GET } = await import("@/app/api/v1/models/[slug]/route.js");
       const req = makeRequest("/v1/models/image");
-      const params = Promise.resolve({ kind: "image" });
+      const params = Promise.resolve({ slug: "image" });
       const res = await GET(req, { params });
       expect(res.status).toBe(200);
       const json = await readJson(res);
@@ -379,7 +385,9 @@ describe("usage route contracts", () => {
   describe("GET /api/usage/stats", () => {
     beforeEach(() => {
       vi.doMock("@/lib/usageDb.js", () => ({
-        getUsageStats: vi.fn().mockResolvedValue({ totalRequests: 42, totalCost: 1.5, pendingRequests: 0 }),
+        getUsageStats: vi
+          .fn()
+          .mockResolvedValue({ totalRequests: 42, totalCost: 1.5, pendingRequests: 0 }),
         getComboUsageStats: vi.fn().mockResolvedValue({}),
       }));
     });
@@ -435,7 +443,9 @@ describe("usage route contracts", () => {
         getProviderNodes: vi.fn().mockResolvedValue([]),
       }));
       vi.doMock("@/lib/requestDetailsDb.js", () => ({
-        getRequestDetails: vi.fn().mockResolvedValue({ details: [], pagination: { totalItems: 0 } }),
+        getRequestDetails: vi
+          .fn()
+          .mockResolvedValue({ details: [], pagination: { totalItems: 0 } }),
       }));
       vi.doMock("@/shared/constants/config", () => ({
         AI_PROVIDERS: {},

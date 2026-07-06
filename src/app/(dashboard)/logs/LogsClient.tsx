@@ -82,7 +82,12 @@ function RequestLogsToolbar({
             : "border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
         )}
       >
-        <span className={cn("size-1.5 rounded-full", recording ? "bg-emerald animate-pulse" : "bg-fog-grey")} />
+        <span
+          className={cn(
+            "size-1.5 rounded-full",
+            recording ? "bg-emerald animate-pulse" : "bg-fog-grey",
+          )}
+        />
         {recording ? "Live" : "Paused"}
       </button>
     </div>
@@ -121,14 +126,24 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
             : "border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
         )}
       >
-        <span className={cn("size-1.5 rounded-full", live ? "bg-emerald animate-pulse" : "bg-fog-grey")} />
+        <span
+          className={cn("size-1.5 rounded-full", live ? "bg-emerald animate-pulse" : "bg-fog-grey")}
+        />
         {live ? "Live" : "Paused"}
       </button>
     </div>
   );
 }
 
-function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refreshing, live, setLive }: any) {
+function ConsoleToolbar({
+  autoScroll,
+  setAutoScroll,
+  onClear,
+  onRefresh,
+  refreshing,
+  live,
+  setLive,
+}: any) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -149,7 +164,9 @@ function ConsoleToolbar({ autoScroll, setAutoScroll, onClear, onRefresh, refresh
             : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain",
         )}
       >
-        <span className={cn("size-1.5 rounded-full", live ? "bg-emerald animate-pulse" : "bg-fog-grey")} />
+        <span
+          className={cn("size-1.5 rounded-full", live ? "bg-emerald animate-pulse" : "bg-fog-grey")}
+        />
         {live ? "Live" : "Paused"}
       </button>
       <button
@@ -215,11 +232,13 @@ function LogsInner() {
 
   // Persist live toggle states
   useEffect(() => {
-    if (typeof window !== "undefined") window.sessionStorage.setItem("logsProxyLive", String(proxyLive));
+    if (typeof window !== "undefined")
+      window.sessionStorage.setItem("logsProxyLive", String(proxyLive));
   }, [proxyLive]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") window.sessionStorage.setItem("logsConsoleLive", String(consoleLive));
+    if (typeof window !== "undefined")
+      window.sessionStorage.setItem("logsConsoleLive", String(consoleLive));
   }, [consoleLive]);
 
   const handleRequestRefresh = async () => {

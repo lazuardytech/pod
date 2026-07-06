@@ -67,7 +67,12 @@ export async function GET(request: any) {
             .then((result: any) => {
               if (state.closed) return;
               const { activeRequests, recentRequests, errorProvider } = result || {};
-              const quickStats = { ...state.cachedStats, activeRequests, recentRequests, errorProvider };
+              const quickStats = {
+                ...state.cachedStats,
+                activeRequests,
+                recentRequests,
+                errorProvider,
+              };
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(quickStats)}\n\n`));
             })
             .catch(() => {});

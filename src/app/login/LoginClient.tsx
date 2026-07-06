@@ -68,7 +68,10 @@ export default function LoginClient() {
   if (hasPassword === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-pitch-black">
-        <LucideIcon name="progress_activity" className="animate-spin text-storm-cloud text-[28px]" />
+        <LucideIcon
+          name="progress_activity"
+          className="animate-spin text-storm-cloud text-[28px]"
+        />
       </div>
     );
   }
@@ -84,8 +87,12 @@ export default function LoginClient() {
           <div className="flex items-center justify-center size-10 mb-4">
             <img src="/logo.svg" alt="Pod" className="size-10 dark:invert" />
           </div>
-          <h1 className="font-brand text-[20px] font-[510] text-porcelain tracking-[-0.22px]">Pod</h1>
-          <p className="text-[13px] text-storm-cloud mt-1 tracking-[-0.12px]">Enter your password to continue</p>
+          <h1 className="font-brand text-[20px] font-[510] text-porcelain tracking-[-0.22px]">
+            Pod
+          </h1>
+          <p className="text-[13px] text-storm-cloud mt-1 tracking-[-0.12px]">
+            Enter your password to continue
+          </p>
         </div>
 
         {/* Card */}
@@ -104,14 +111,23 @@ export default function LoginClient() {
               inputClassName="pl-10"
             />
 
-            <Button type="submit" variant="primary" fullWidth loading={loading} disabled={loading} size="md">
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              loading={loading}
+              disabled={loading}
+              size="md"
+            >
               {loading ? "Signing in..." : "Sign in"}
             </Button>
 
             {isDefaultPassword && (
               <p className="text-[11px] text-center text-fog-grey mt-1">
                 Default password is{" "}
-                <code className="bg-gunmetal px-1.5 py-0.5 rounded-[4px] text-storm-cloud font-mono">123456</code>
+                <code className="bg-gunmetal px-1.5 py-0.5 rounded-[4px] text-storm-cloud font-mono">
+                  123456
+                </code>
               </p>
             )}
           </form>

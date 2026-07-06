@@ -1,6 +1,13 @@
 "use client";
 
-import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
@@ -109,7 +116,11 @@ export default function ProviderDetailPage() {
   const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any) => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
 
   const providerInfo = (
     providerNode
@@ -117,7 +128,9 @@ export default function ProviderDetailPage() {
           id: providerNode.id,
           name:
             providerNode.name ||
-            (providerNode.type === "anthropic-compatible" ? "Anthropic Compatible" : "OpenAI Compatible"),
+            (providerNode.type === "anthropic-compatible"
+              ? "Anthropic Compatible"
+              : "OpenAI Compatible"),
           color: providerNode.type === "anthropic-compatible" ? "#D97757" : "#10A37F",
           textIcon: providerNode.type === "anthropic-compatible" ? "AC" : "OC",
           apiType: providerNode.apiType,
@@ -146,9 +159,12 @@ export default function ProviderDetailPage() {
 
   const fetchDisabledModels = useCallback(async () => {
     try {
-      const res = await fetch(`/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}`,
+        {
+          cache: "no-store",
+        },
+      );
       const data = await res.json();
       if (res.ok) setDisabledModelIds(data.ids || []);
     } catch (error) {
@@ -197,9 +213,12 @@ export default function ProviderDetailPage() {
 
   const handleEnableAll = async () => {
     try {
-      const res = await fetch(`/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/models/disabled?providerAlias=${encodeURIComponent(providerStorageAlias)}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (res.ok) await fetchDisabledModels();
     } catch (error) {
       console.error("Error enabling all models:", error);
@@ -243,7 +262,9 @@ export default function ProviderDetailPage() {
       const proxyPoolsData = await proxyPoolsRes.json();
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
       if (connectionsRes.ok) {
-        const filtered = (connectionsData.connections || []).filter((c: any) => c.provider === providerId);
+        const filtered = (connectionsData.connections || []).filter(
+          (c: any) => c.provider === providerId,
+        );
         setConnections(filtered);
       }
       if (proxyPoolsRes.ok) {
@@ -252,7 +273,9 @@ export default function ProviderDetailPage() {
       // Load per-provider strategy override
       const override = (settingsData.providerStrategies || {})[providerId] || {};
       setProviderStrategy(override.fallbackStrategy || null);
-      setProviderStickyLimit(override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1");
+      setProviderStickyLimit(
+        override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1",
+      );
       // Load per-provider thinking config
       const thinkingCfg = (settingsData.providerThinking || {})[providerId] || {};
       setThinkingMode(thinkingCfg.mode || "auto");
@@ -279,7 +302,8 @@ export default function ProviderDetailPage() {
         // old id in its `previousIds` list — redirect to its current id.
         if (!node) {
           const renamed = (nodesData.nodes || []).find(
-            (entry: any) => Array.isArray(entry.previousIds) && entry.previousIds.includes(providerId),
+            (entry: any) =>
+              Array.isArray(entry.previousIds) && entry.previousIds.includes(providerId),
           );
           if (renamed) {
             router.replace(`/providers/${renamed.id}`);
@@ -428,7 +452,11 @@ export default function ProviderDetailPage() {
     fetchSuggestedModels(fetcher).then(setSuggestedModels);
   }, [providerId]);
 
-  const handleSetAlias = async (modelId: any, alias: any, providerAliasOverride: any = providerAlias) => {
+  const handleSetAlias = async (
+    modelId: any,
+    alias: any,
+    providerAliasOverride: any = providerAlias,
+  ) => {
     const fullModel = `${providerAliasOverride}/${modelId}`;
     try {
       const res = await fetch("/api/models/alias", {
@@ -544,7 +572,10 @@ export default function ProviderDetailPage() {
   const _handleSwapPriority = async (index1: any, index2: any) => {
     // Optimistic update state
     const newConnections = [...connections];
-    [newConnections[index1], newConnections[index2]] = [newConnections[index2], newConnections[index1]];
+    [newConnections[index1], newConnections[index2]] = [
+      newConnections[index2],
+      newConnections[index1],
+    ];
     setConnections(newConnections);
 
     try {
@@ -566,12 +597,16 @@ export default function ProviderDetailPage() {
     }
   };
 
-  const selectedConnections = connections.filter((conn: any) => selectedConnectionIds.includes(conn.id));
+  const selectedConnections = connections.filter((conn: any) =>
+    selectedConnectionIds.includes(conn.id),
+  );
   const allSelected = connections.length > 0 && selectedConnectionIds.length === connections.length;
 
   const _toggleSelectConnection = (connectionId: any) => {
     setSelectedConnectionIds((prev: any) =>
-      prev.includes(connectionId) ? prev.filter((id: any) => id !== connectionId) : [...prev, connectionId],
+      prev.includes(connectionId)
+        ? prev.filter((id: any) => id !== connectionId)
+        : [...prev, connectionId],
     );
   };
 
@@ -589,7 +624,9 @@ export default function ProviderDetailPage() {
   };
 
   useEffect(() => {
-    setSelectedConnectionIds((prev: any) => prev.filter((id: any) => connections.some((conn: any) => conn.id === id)));
+    setSelectedConnectionIds((prev: any) =>
+      prev.filter((id: any) => connections.some((conn: any) => conn.id === id)),
+    );
   }, [connections]);
 
   const selectedProxySummary = (() => {
@@ -609,7 +646,11 @@ export default function ProviderDetailPage() {
   const _openBulkProxyModal = () => {
     if (selectedConnections.length === 0) return;
     const uniquePoolIds = [
-      ...new Set(selectedConnections.map((conn: any) => conn.providerSpecificData?.proxyPoolId || "__none__")),
+      ...new Set(
+        selectedConnections.map(
+          (conn: any) => conn.providerSpecificData?.proxyPoolId || "__none__",
+        ),
+      ),
     ];
     setBulkProxyPoolId(uniquePoolIds.length === 1 ? uniquePoolIds[0] : "__none__");
     setShowBulkProxyModal(true);
@@ -690,7 +731,10 @@ export default function ProviderDetailPage() {
 
   const connectionsList = (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={connections.map((c: any) => c.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={connections.map((c: any) => c.id)}
+        strategy={verticalListSortingStrategy}
+      >
         <div className="flex min-w-0 flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
           {connections.map((conn: any, index: any) => (
             <SortableConnectionRow
@@ -712,7 +756,10 @@ export default function ProviderDetailPage() {
                         c.id === conn.id
                           ? {
                               ...c,
-                              providerSpecificData: { ...c.providerSpecificData, proxyPoolId: proxyPoolId || null },
+                              providerSpecificData: {
+                                ...c.providerSpecificData,
+                                proxyPoolId: proxyPoolId || null,
+                              },
                             }
                           : c,
                       ),
@@ -769,13 +816,20 @@ export default function ProviderDetailPage() {
         />
 
         <p className="text-xs text-text-muted">{bulkHint}</p>
-        <p className="text-xs text-text-muted">Selecting None will unbind selected connections from proxy pool.</p>
+        <p className="text-xs text-text-muted">
+          Selecting None will unbind selected connections from proxy pool.
+        </p>
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button onClick={handleBulkApplyProxyPool} fullWidth disabled={!canApplyBulkProxy}>
             {bulkUpdatingProxy ? "Applying..." : "Apply"}
           </Button>
-          <Button onClick={closeBulkProxyModal} variant="ghost" fullWidth disabled={bulkUpdatingProxy}>
+          <Button
+            onClick={closeBulkProxyModal}
+            variant="ghost"
+            fullWidth
+            disabled={bulkUpdatingProxy}
+          >
             Cancel
           </Button>
         </div>
@@ -863,7 +917,9 @@ export default function ProviderDetailPage() {
             onSetAlias={() => {}}
             onDeleteAlias={() => handleDeleteAlias(model.alias)}
             testStatus={modelTestResults[model.id]}
-            onTest={connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined}
+            onTest={
+              connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined
+            }
             isTesting={testingModelIds.has(model.id)}
             isCustom
             isFree={false}
@@ -887,7 +943,9 @@ export default function ProviderDetailPage() {
               onSetAlias={(alias: any) => handleSetAlias(model.id, alias, providerStorageAlias)}
               onDeleteAlias={() => handleDeleteAlias(existingAlias)}
               testStatus={modelTestResults[model.id]}
-              onTest={connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined}
+              onTest={
+                connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined
+              }
               isTesting={testingModelIds.has(model.id)}
               isFree={model.isFree}
               onDisable={() => handleDisableModel(model.id)}
@@ -910,12 +968,15 @@ export default function ProviderDetailPage() {
             const addedFullModels = new Set(Object.values(modelAliases));
             const hardcodedIds = new Set(models.map((m: any) => m.id));
             const notAdded = suggestedModels.filter(
-              (m: any) => !addedFullModels.has(`${providerStorageAlias}/${m.id}`) && !hardcodedIds.has(m.id),
+              (m: any) =>
+                !addedFullModels.has(`${providerStorageAlias}/${m.id}`) && !hardcodedIds.has(m.id),
             );
             if (notAdded.length === 0) return null;
             return (
               <div className="w-full mt-2">
-                <p className="text-xs text-text-muted mb-2">Suggested free models (≥200k context):</p>
+                <p className="text-xs text-text-muted mb-2">
+                  Suggested free models (≥200k context):
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {notAdded.map((m: any) => (
                     <button
@@ -939,7 +1000,9 @@ export default function ProviderDetailPage() {
         {/* Disabled models — restorable */}
         {disabledDisplayModels.length > 0 && (
           <div className="w-full mt-2">
-            <p className="text-xs text-text-muted mb-2">Disabled models ({disabledDisplayModels.length}):</p>
+            <p className="text-xs text-text-muted mb-2">
+              Disabled models ({disabledDisplayModels.length}):
+            </p>
             <div className="flex flex-wrap gap-2">
               {disabledDisplayModels.map((m: any) => (
                 <button
@@ -982,7 +1045,9 @@ export default function ProviderDetailPage() {
   // Determine icon path: OpenAI Compatible providers use specialized icons
   const getHeaderIconPath = () => {
     if (isOpenAICompatible && providerInfo.apiType) {
-      return providerInfo.apiType === "responses" ? "/providers/oai-r.png" : "/providers/oai-cc.png";
+      return providerInfo.apiType === "responses"
+        ? "/providers/oai-r.png"
+        : "/providers/oai-cc.png";
     }
     if (isAnthropicCompatible) {
       return "/providers/anthropic-m.png";
@@ -1014,10 +1079,18 @@ export default function ProviderDetailPage() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">{providerInfo.name}</h1>
-              {(providerInfo.notice?.apiKeyUrl || providerInfo.notice?.signupUrl || providerInfo.website) && (
+              <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
+                {providerInfo.name}
+              </h1>
+              {(providerInfo.notice?.apiKeyUrl ||
+                providerInfo.notice?.signupUrl ||
+                providerInfo.website) && (
                 <a
-                  href={providerInfo.notice?.apiKeyUrl || providerInfo.notice?.signupUrl || providerInfo.website}
+                  href={
+                    providerInfo.notice?.apiKeyUrl ||
+                    providerInfo.notice?.signupUrl ||
+                    providerInfo.website
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline inline-flex items-center gap-1"
@@ -1037,7 +1110,9 @@ export default function ProviderDetailPage() {
       {providerInfo.deprecated && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
           <LucideIcon name="warning" className="text-[16px] text-yellow-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-red-600 dark:text-yellow-400 leading-relaxed">{providerInfo.deprecationNotice}</p>
+          <p className="text-xs text-red-600 dark:text-yellow-400 leading-relaxed">
+            {providerInfo.deprecationNotice}
+          </p>
         </div>
       )}
 
@@ -1065,7 +1140,9 @@ export default function ProviderDetailPage() {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-lg font-semibold">
-                {isAnthropicCompatible ? "Anthropic Compatible Details" : "OpenAI Compatible Details"}
+                {isAnthropicCompatible
+                  ? "Anthropic Compatible Details"
+                  : "OpenAI Compatible Details"}
               </h2>
               <p className="break-all text-sm text-text-muted">
                 {isAnthropicCompatible
@@ -1101,7 +1178,9 @@ export default function ProviderDetailPage() {
                     `Delete this ${isAnthropicCompatible ? "Anthropic" : "OpenAI"} Compatible node? This cannot be undone.`,
                     async () => {
                       try {
-                        const res = await fetch(`/api/provider-nodes/${providerId}`, { method: "DELETE" });
+                        const res = await fetch(`/api/provider-nodes/${providerId}`, {
+                          method: "DELETE",
+                        });
                         if (res.ok) router.push("/providers");
                       } catch (error) {
                         console.error("Error deleting provider node:", error);
@@ -1117,7 +1196,9 @@ export default function ProviderDetailPage() {
             </div>
           </div>
           {connections.length > 0 && isCompatible && (
-            <p className="text-sm text-text-muted">Each connection uses the same base URL but a different API key.</p>
+            <p className="text-sm text-text-muted">
+              Each connection uses the same base URL but a different API key.
+            </p>
           )}
         </Card>
       )}
@@ -1133,7 +1214,10 @@ export default function ProviderDetailPage() {
               {/* Round Robin toggle */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-text-muted font-medium">Round Robin</span>
-                <Toggle checked={providerStrategy === "round-robin"} onChange={handleRoundRobinToggle} />
+                <Toggle
+                  checked={providerStrategy === "round-robin"}
+                  onChange={handleRoundRobinToggle}
+                />
                 {providerStrategy === "round-robin" && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-text-muted">Sticky:</span>
@@ -1165,7 +1249,12 @@ export default function ProviderDetailPage() {
               </div>
               <div className="flex gap-2">
                 {!isCompatible && providerId === "iflow" && (
-                  <Button size="sm" icon="cookie" variant="secondary" onClick={() => setShowIFlowCookieModal(true)}>
+                  <Button
+                    size="sm"
+                    icon="cookie"
+                    variant="secondary"
+                    onClick={() => setShowIFlowCookieModal(true)}
+                  >
                     Cookie
                   </Button>
                 )}
@@ -1181,7 +1270,11 @@ export default function ProviderDetailPage() {
                     setShowAddApiKeyModal(true);
                   }}
                 >
-                  {isCompatible ? "Add API Key" : providerId === "iflow" ? "OAuth" : "Add Connection"}
+                  {isCompatible
+                    ? "Add API Key"
+                    : providerId === "iflow"
+                      ? "OAuth"
+                      : "Add Connection"}
                 </Button>
               </div>
             </div>
@@ -1249,7 +1342,12 @@ export default function ProviderDetailPage() {
               return (
                 <div className="flex gap-2">
                   {disabledModelIds.length > 0 && (
-                    <Button size="sm" variant="secondary" icon="restart_alt" onClick={handleEnableAll}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon="restart_alt"
+                      onClick={handleEnableAll}
+                    >
                       Active All
                     </Button>
                   )}
@@ -1274,7 +1372,9 @@ export default function ProviderDetailPage() {
               );
             })()}
         </div>
-        {!!modelsTestError && <p className="text-xs text-red-500 mb-3 break-words">{modelsTestError}</p>}
+        {!!modelsTestError && (
+          <p className="text-xs text-red-500 mb-3 break-words">{modelsTestError}</p>
+        )}
         {renderModelsSection()}
       </Card>
 
@@ -1385,8 +1485,24 @@ export default function ProviderDetailPage() {
   );
 }
 
-function SortableConnectionRow({ conn, proxyPools, isOAuth, onToggleActive, onUpdateProxy, onEdit, onDelete }: any) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+function SortableConnectionRow({
+  conn,
+  proxyPools,
+  isOAuth,
+  onToggleActive,
+  onUpdateProxy,
+  onEdit,
+  onDelete,
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: conn.id,
   });
 

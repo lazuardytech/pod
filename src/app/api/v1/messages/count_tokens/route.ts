@@ -1,4 +1,5 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
+import { parseJsonBody } from "@/lib/parseJsonBody";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +21,9 @@ export async function POST(request: any) {
   return await withApiKeyRateLimit(request, async () => {
     let body;
     try {
-      body = await request.json();
+      const [parsed, parseErr] = await parseJsonBody(request);
+      if (parseErr) return parseErr;
+      body = parsed;
     } catch {
       return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
         status: 400,
@@ -29,7 +32,7 @@ export async function POST(request: any) {
     }
 
     // Estimate token count based on content length
-    const messages = body.messages || [];
+    const messages = (body as any).messages || [];
     let totalChars = 0;
     for (const msg of messages) {
       if (typeof msg.content === "string") {

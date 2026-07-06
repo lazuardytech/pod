@@ -36,7 +36,10 @@ export async function PUT(request: any, { params }: { params: any }) {
     if (body.name) {
       const name = asString(body.name);
       if (!VALID_NAME_REGEX.test(name)) {
-        return NextResponse.json({ error: "Name can only contain letters, numbers, -, _ and ." }, { status: 400 });
+        return NextResponse.json(
+          { error: "Name can only contain letters, numbers, -, _ and ." },
+          { status: 400 },
+        );
       }
 
       // Check if name already exists (exclude current combo)
@@ -51,24 +54,40 @@ export async function PUT(request: any, { params }: { params: any }) {
         return NextResponse.json({ error: "systemPrompt must be a string" }, { status: 400 });
       }
       if (typeof body.systemPrompt === "string" && body.systemPrompt.length > 50000) {
-        return NextResponse.json({ error: "systemPrompt exceeds 50000 characters" }, { status: 400 });
+        return NextResponse.json(
+          { error: "systemPrompt exceeds 50000 characters" },
+          { status: 400 },
+        );
       }
-      body.systemPrompt = typeof body.systemPrompt === "string" && body.systemPrompt.trim() ? body.systemPrompt : null;
+      body.systemPrompt =
+        typeof body.systemPrompt === "string" && body.systemPrompt.trim()
+          ? body.systemPrompt
+          : null;
     }
 
     if ("modelId" in body) {
       if (body.modelId != null && typeof body.modelId !== "string") {
         return NextResponse.json({ error: "modelId must be a string" }, { status: 400 });
       }
-      body.modelId = typeof body.modelId === "string" && body.modelId.trim() ? body.modelId.trim() : null;
+      body.modelId =
+        typeof body.modelId === "string" && body.modelId.trim() ? body.modelId.trim() : null;
     }
 
     if ("contentFilterMessage" in body) {
       if (body.contentFilterMessage != null && typeof body.contentFilterMessage !== "string") {
-        return NextResponse.json({ error: "contentFilterMessage must be a string" }, { status: 400 });
+        return NextResponse.json(
+          { error: "contentFilterMessage must be a string" },
+          { status: 400 },
+        );
       }
-      if (typeof body.contentFilterMessage === "string" && body.contentFilterMessage.length > 2000) {
-        return NextResponse.json({ error: "contentFilterMessage exceeds 2000 characters" }, { status: 400 });
+      if (
+        typeof body.contentFilterMessage === "string" &&
+        body.contentFilterMessage.length > 2000
+      ) {
+        return NextResponse.json(
+          { error: "contentFilterMessage exceeds 2000 characters" },
+          { status: 400 },
+        );
       }
       body.contentFilterMessage =
         typeof body.contentFilterMessage === "string" && body.contentFilterMessage.trim()

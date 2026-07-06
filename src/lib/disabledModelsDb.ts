@@ -28,7 +28,8 @@ async function getDb(): Promise<Low<DisabledModelsData>> {
         throw error;
       }
     }
-    if (!dbInstance.data || typeof dbInstance.data !== "object") dbInstance.data = { ...defaultData };
+    if (!dbInstance.data || typeof dbInstance.data !== "object")
+      dbInstance.data = { ...defaultData };
     if (!dbInstance.data.disabled) dbInstance.data.disabled = {};
   }
   return dbInstance;
@@ -53,7 +54,10 @@ export async function disableModels(providerAlias: string, ids: string[]): Promi
   await db.write();
 }
 
-export async function enableModels(providerAlias: string, ids: string[] | undefined | null): Promise<void> {
+export async function enableModels(
+  providerAlias: string,
+  ids: string[] | undefined | null,
+): Promise<void> {
   if (!providerAlias) return;
   const db = await getDb();
   const current = db.data.disabled[providerAlias] || [];

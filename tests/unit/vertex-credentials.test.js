@@ -61,7 +61,9 @@ describe("parseVertexSaJson", () => {
     expect(result).not.toBeNull();
     expect(result.type).toBe("service_account");
     expect(result.project_id).toBe("my-gcp-project-123");
-    expect(result.client_email).toMatch(/^vertex-sa-\d+@my-gcp-project-123\.iam\.gserviceaccount\.com$/);
+    expect(result.client_email).toMatch(
+      /^vertex-sa-\d+@my-gcp-project-123\.iam\.gserviceaccount\.com$/,
+    );
     expect(result.private_key).toContain("-----BEGIN PRIVATE KEY-----");
   });
 
@@ -118,7 +120,8 @@ describe("parseVertexSaJson", () => {
 
   it("accepts private_key with \\n escape sequences (as received from GCP console copy)", () => {
     const sa = generateSAJson({
-      private_key: "-----BEGIN RSA PRIVATE KEY-----\\nMIIEpAIBAAKCAQEA\\n-----END RSA PRIVATE KEY-----\\n",
+      private_key:
+        "-----BEGIN RSA PRIVATE KEY-----\\nMIIEpAIBAAKCAQEA\\n-----END RSA PRIVATE KEY-----\\n",
     });
     const result = parseVertexSaJson(JSON.stringify(sa));
     expect(result).not.toBeNull();

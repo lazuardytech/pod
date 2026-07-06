@@ -16,7 +16,9 @@ export default {
   }),
   normalize: (responseBody, prompt) => {
     const parts = responseBody.candidates?.[0]?.content?.parts || [];
-    const images = parts.filter((p) => p.inlineData?.data).map((p) => ({ b64_json: p.inlineData.data }));
+    const images = parts
+      .filter((p) => p.inlineData?.data)
+      .map((p) => ({ b64_json: p.inlineData.data }));
     return {
       created: nowSec(),
       data: images.length > 0 ? images : [{ b64_json: "", revised_prompt: prompt }],

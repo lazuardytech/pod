@@ -41,7 +41,9 @@ function StatCard({ icon, label, value, sub = null, tone = "bg-deep-slate" }: an
     <div className={`rounded-[6px] border border-charcoal-grey p-4 ${tone}`}>
       <div className="flex items-center gap-2 mb-2">
         <LucideIcon name={icon} className="text-[16px] text-fog-grey" />
-        <span className="text-[11px] font-[590] uppercase tracking-[0.05em] text-fog-grey">{label}</span>
+        <span className="text-[11px] font-[590] uppercase tracking-[0.05em] text-fog-grey">
+          {label}
+        </span>
       </div>
       <p className="text-[20px] font-[510] text-porcelain tracking-[-0.2px]">{value}</p>
       {sub && <p className="text-[11px] text-storm-cloud mt-0.5">{sub}</p>}
@@ -227,7 +229,10 @@ export default function HealthPage() {
             className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh"
           >
-            <LucideIcon name="refresh" className={`text-[15px] ${refreshing ? "animate-spin" : ""}`} />
+            <LucideIcon
+              name="refresh"
+              className={`text-[15px] ${refreshing ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
       </div>
@@ -235,17 +240,23 @@ export default function HealthPage() {
       {/* Status Banner */}
       <div
         className={`rounded-[6px] border px-4 py-3 flex items-center gap-3 ${
-          data.status === "healthy" ? "border-emerald/30 bg-emerald/8" : "border-warning-red/30 bg-warning-red/8"
+          data.status === "healthy"
+            ? "border-emerald/30 bg-emerald/8"
+            : "border-warning-red/30 bg-warning-red/8"
         }`}
       >
         <LucideIcon
           name={data.status === "healthy" ? "check_circle" : "error"}
           className={`text-[20px] ${data.status === "healthy" ? "text-emerald" : "text-warning-red"}`}
         />
-        <span className={`text-[13px] font-[510] ${data.status === "healthy" ? "text-emerald" : "text-warning-red"}`}>
+        <span
+          className={`text-[13px] font-[510] ${data.status === "healthy" ? "text-emerald" : "text-warning-red"}`}
+        >
           {data.status === "healthy" ? "All systems operational" : "Issues detected"}
         </span>
-        <span className="ml-auto text-[11px] text-fog-grey">{new Date(data.timestamp).toLocaleTimeString()}</span>
+        <span className="ml-auto text-[11px] text-fog-grey">
+          {new Date(data.timestamp).toLocaleTimeString()}
+        </span>
       </div>
 
       {/* Telemetry */}
@@ -253,7 +264,13 @@ export default function HealthPage() {
 
       {/* System + DB */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon="timer" label="Uptime" value={formatUptime(system.uptime)} tone="bg-graphite" sub={null} />
+        <StatCard
+          icon="timer"
+          label="Uptime"
+          value={formatUptime(system.uptime)}
+          tone="bg-graphite"
+          sub={null}
+        />
         <StatCard
           icon="code"
           label="Node.js"
@@ -280,7 +297,10 @@ export default function HealthPage() {
       {/* Database */}
       <div className="rounded-[6px] border border-charcoal-grey bg-graphite p-5">
         <SectionHeader icon="database" title="Database">
-          <Badge variant={database.ok && database.integrity === "ok" ? "success" : "error"} size="sm">
+          <Badge
+            variant={database.ok && database.integrity === "ok" ? "success" : "error"}
+            size="sm"
+          >
             {database.ok && database.integrity === "ok" ? "Healthy" : "Issues"}
           </Badge>
         </SectionHeader>
@@ -291,7 +311,9 @@ export default function HealthPage() {
               <p className="text-[13px] font-[510] text-porcelain">v{database.schemaVersion}</p>
             </div>
             <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-3">
-              <p className="text-[10px] text-fog-grey uppercase tracking-[0.05em] mb-1">Integrity</p>
+              <p className="text-[10px] text-fog-grey uppercase tracking-[0.05em] mb-1">
+                Integrity
+              </p>
               <p
                 className={`text-[13px] font-[510] ${database.integrity === "ok" ? "text-emerald" : "text-warning-red"}`}
               >
@@ -300,11 +322,15 @@ export default function HealthPage() {
             </div>
             <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-3">
               <p className="text-[10px] text-fog-grey uppercase tracking-[0.05em] mb-1">Size</p>
-              <p className="text-[13px] font-[510] text-porcelain">{formatBytes(database.sizeBytes ?? 0)}</p>
+              <p className="text-[13px] font-[510] text-porcelain">
+                {formatBytes(database.sizeBytes ?? 0)}
+              </p>
             </div>
             <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-3">
               <p className="text-[10px] text-fog-grey uppercase tracking-[0.05em] mb-1">Journal</p>
-              <p className="text-[13px] font-[510] text-porcelain uppercase">{database.journalMode}</p>
+              <p className="text-[13px] font-[510] text-porcelain uppercase">
+                {database.journalMode}
+              </p>
             </div>
           </div>
         ) : (
@@ -365,7 +391,9 @@ export default function HealthPage() {
                     {t.active ? "Active" : "Inactive"}
                   </Badge>
                   {t.active && t.url && (
-                    <p className="text-[10px] text-fog-grey font-mono mt-0.5 truncate max-w-[140px]">{t.url}</p>
+                    <p className="text-[10px] text-fog-grey font-mono mt-0.5 truncate max-w-[140px]">
+                      {t.url}
+                    </p>
                   )}
                 </div>
               </div>
@@ -390,7 +418,10 @@ export default function HealthPage() {
               { label: "Entries", value: semanticCache.size ?? "—" },
               {
                 label: "Hit rate",
-                value: typeof semanticCache.hitRate === "number" ? `${semanticCache.hitRate.toFixed(1)}%` : "—",
+                value:
+                  typeof semanticCache.hitRate === "number"
+                    ? `${semanticCache.hitRate.toFixed(1)}%`
+                    : "—",
               },
             ].map((row: any) => (
               <div
@@ -421,7 +452,9 @@ export default function HealthPage() {
           </div>
         </SectionHeader>
         {!data.providerHealth?.length ? (
-          <p className="text-[12px] text-fog-grey text-center py-4">No provider connections configured.</p>
+          <p className="text-[12px] text-fog-grey text-center py-4">
+            No provider connections configured.
+          </p>
         ) : (
           (() => {
             const unhealthy: any = data.providerHealth.filter((p: any) => p.state !== "CLOSED");
@@ -430,7 +463,9 @@ export default function HealthPage() {
               <div className="space-y-3">
                 {unhealthy.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-[590] text-warning-red uppercase tracking-[0.05em]">Issues</p>
+                    <p className="text-[10px] font-[590] text-warning-red uppercase tracking-[0.05em]">
+                      Issues
+                    </p>
                     {unhealthy.map((p: any) => (
                       <div
                         key={p.provider}
@@ -455,12 +490,16 @@ export default function HealthPage() {
                                 fallbackText={p.providerName?.slice(0, 2).toUpperCase()}
                               />
                             </div>
-                            <span className="text-[13px] font-[510] text-porcelain">{p.providerName}</span>
+                            <span className="text-[13px] font-[510] text-porcelain">
+                              {p.providerName}
+                            </span>
                             <Badge variant={p.state === "OPEN" ? "error" : "warning"} size="sm">
                               {p.state === "OPEN" ? "Rate Limited" : "Error"}
                             </Badge>
                             {p.connectionCount > 1 && (
-                              <span className="text-[10px] text-fog-grey">{p.connectionCount} accounts</span>
+                              <span className="text-[10px] text-fog-grey">
+                                {p.connectionCount} accounts
+                              </span>
                             )}
                           </div>
                           {p.rateLimitedUntil && (
@@ -495,7 +534,10 @@ export default function HealthPage() {
                               fallbackText={p.providerName?.slice(0, 2).toUpperCase()}
                             />
                           </div>
-                          <span className="text-[12px] text-porcelain truncate" title={p.providerName}>
+                          <span
+                            className="text-[12px] text-porcelain truncate"
+                            title={p.providerName}
+                          >
                             {p.providerName}
                           </span>
                         </div>
@@ -514,16 +556,22 @@ export default function HealthPage() {
         <SectionHeader icon="lock" title="Model Lockout Status">
           {data.rateLimitStatus?.length > 0 && (
             <span className="text-[11px] text-fog-grey">
-              {data.rateLimitStatus.length} provider{data.rateLimitStatus.length !== 1 ? "s" : ""} affected
+              {data.rateLimitStatus.length} provider{data.rateLimitStatus.length !== 1 ? "s" : ""}{" "}
+              affected
             </span>
           )}
         </SectionHeader>
         {!data.rateLimitStatus?.length ? (
-          <p className="text-[12px] text-fog-grey text-center py-4">No rate limited requests available.</p>
+          <p className="text-[12px] text-fog-grey text-center py-4">
+            No rate limited requests available.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {data.rateLimitStatus.map((rl: any) => (
-              <div key={rl.provider} className="rounded-[6px] border border-[#f59e0b]/20 bg-[#f59e0b]/5 p-3">
+              <div
+                key={rl.provider}
+                className="rounded-[6px] border border-[#f59e0b]/20 bg-[#f59e0b]/5 p-3"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[13px] font-[510] text-porcelain">{rl.providerName}</span>
                   <Badge variant="warning" size="sm">
@@ -532,8 +580,13 @@ export default function HealthPage() {
                 </div>
                 <div className="space-y-1">
                   {rl.connections.map((c: any) => (
-                    <div key={c.connectionId} className="flex items-center justify-between text-[11px]">
-                      <span className="text-storm-cloud truncate max-w-[140px]">{c.connectionName}</span>
+                    <div
+                      key={c.connectionId}
+                      className="flex items-center justify-between text-[11px]"
+                    >
+                      <span className="text-storm-cloud truncate max-w-[140px]">
+                        {c.connectionName}
+                      </span>
                       <span className="text-fog-grey shrink-0">
                         retry in {Math.max(0, Math.round(c.retryAfterMs / 1000))}s
                       </span>
@@ -552,7 +605,8 @@ export default function HealthPage() {
           {data.blockedModelStatus?.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-fog-grey">
-                {data.blockedModelStatus.length} model{data.blockedModelStatus.length !== 1 ? "s" : ""} locked
+                {data.blockedModelStatus.length} model
+                {data.blockedModelStatus.length !== 1 ? "s" : ""} locked
               </span>
               <button
                 onClick={async () => {
@@ -564,7 +618,10 @@ export default function HealthPage() {
                 className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Refresh lockout status"
               >
-                <LucideIcon name="refresh" className={`text-[15px] ${refreshing ? "animate-spin" : ""}`} />
+                <LucideIcon
+                  name="refresh"
+                  className={`text-[15px] ${refreshing ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
           )}
@@ -574,7 +631,10 @@ export default function HealthPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {data.blockedModelStatus.map((bm: any) => (
-              <div key={bm.model} className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3">
+              <div
+                key={bm.model}
+                className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <span
                     className="text-[12px] font-[510] text-porcelain font-mono truncate max-w-[160px]"
@@ -629,9 +689,14 @@ export default function HealthPage() {
                 </div>
                 <div className="space-y-1">
                   {bm.connections.map((c: any) => (
-                    <div key={c.connectionId} className="flex items-center justify-between text-[11px]">
+                    <div
+                      key={c.connectionId}
+                      className="flex items-center justify-between text-[11px]"
+                    >
                       <div className="flex flex-col min-w-0">
-                        <span className="text-storm-cloud truncate max-w-[140px]">{c.connectionName}</span>
+                        <span className="text-storm-cloud truncate max-w-[140px]">
+                          {c.connectionName}
+                        </span>
                         <span className="text-fog-grey/70 text-[10px]">{c.providerName}</span>
                       </div>
                       <span className="text-fog-grey shrink-0">
@@ -663,7 +728,8 @@ export default function HealthPage() {
           {data.connectionLockStatus?.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-fog-grey">
-                {data.connectionLockStatus.length} account{data.connectionLockStatus.length !== 1 ? "s" : ""} locked
+                {data.connectionLockStatus.length} account
+                {data.connectionLockStatus.length !== 1 ? "s" : ""} locked
               </span>
               <button
                 onClick={async () => {
@@ -675,7 +741,10 @@ export default function HealthPage() {
                 className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Refresh account lockout status"
               >
-                <LucideIcon name="refresh" className={`text-[15px] ${refreshing ? "animate-spin" : ""}`} />
+                <LucideIcon
+                  name="refresh"
+                  className={`text-[15px] ${refreshing ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
           )}
@@ -685,7 +754,10 @@ export default function HealthPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {data.connectionLockStatus.map((acc: any) => (
-              <div key={acc.connectionId} className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3">
+              <div
+                key={acc.connectionId}
+                className="rounded-[6px] border border-warning-red/20 bg-warning-red/5 p-3"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex flex-col min-w-0">
                     <span className="text-[13px] font-[510] text-porcelain truncate max-w-[160px]">
@@ -702,9 +774,12 @@ export default function HealthPage() {
                         const key: any = `conn-${acc.connectionId}`;
                         setClearingLock(key);
                         try {
-                          await fetch(`/api/provider-nodes/${acc.connectionId}/clear-connection-lock`, {
-                            method: "POST",
-                          });
+                          await fetch(
+                            `/api/provider-nodes/${acc.connectionId}/clear-connection-lock`,
+                            {
+                              method: "POST",
+                            },
+                          );
                           toast.success(`Account lock cleared for ${acc.connectionName}`);
                           await fetchHealth();
                         } catch {
@@ -718,14 +793,21 @@ export default function HealthPage() {
                       title="Clear account lock"
                     >
                       <LucideIcon
-                        name={clearingLock === `conn-${acc.connectionId}` ? "progress_activity" : "lock_open"}
+                        name={
+                          clearingLock === `conn-${acc.connectionId}`
+                            ? "progress_activity"
+                            : "lock_open"
+                        }
                         className={`text-[15px] ${clearingLock === `conn-${acc.connectionId}` ? "animate-spin" : ""}`}
                       />
                     </button>
                   </div>
                 </div>
                 {acc.lockReason && (
-                  <p className="text-[10px] text-fog-grey/80 mb-2 line-clamp-2" title={acc.lockReason}>
+                  <p
+                    className="text-[10px] text-fog-grey/80 mb-2 line-clamp-2"
+                    title={acc.lockReason}
+                  >
                     {acc.lockReason.slice(0, 120)}
                   </p>
                 )}
@@ -739,7 +821,9 @@ export default function HealthPage() {
                       return `unlocks in ${secs}s`;
                     })()}
                   </span>
-                  <span className="text-fog-grey/70 text-[10px]">{new Date(acc.lockedUntil).toLocaleTimeString()}</span>
+                  <span className="text-fog-grey/70 text-[10px]">
+                    {new Date(acc.lockedUntil).toLocaleTimeString()}
+                  </span>
                 </div>
               </div>
             ))}

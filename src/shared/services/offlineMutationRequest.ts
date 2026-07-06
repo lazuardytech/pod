@@ -105,7 +105,10 @@ export async function mutateJsonWithOfflineQueue(
     const data = await readJsonIfAny(response);
     if (!response.ok) {
       const errorMessage =
-        data && typeof data === "object" && "error" in data && typeof (data as { error: unknown }).error === "string"
+        data &&
+        typeof data === "object" &&
+        "error" in data &&
+        typeof (data as { error: unknown }).error === "string"
           ? (data as { error: string }).error
           : `HTTP ${response.status}`;
       const error = new Error(errorMessage) as Error & { status?: number; data?: unknown };

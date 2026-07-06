@@ -5,8 +5,15 @@ import { GEMINI_CONFIG } from "@/lib/oauth/constants/oauth";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProviderConnectionById } from "@/models";
-import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
-import { refreshGoogleToken, refreshKiroToken, updateProviderCredentials } from "@/sse/services/tokenRefresh";
+import {
+  isAnthropicCompatibleProvider,
+  isOpenAICompatibleProvider,
+} from "@/shared/constants/providers";
+import {
+  refreshGoogleToken,
+  refreshKiroToken,
+  updateProviderCredentials,
+} from "@/sse/services/tokenRefresh";
 
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
@@ -184,8 +191,12 @@ const PROVIDER_MODELS_CONFIG = {
     authPrefix: "Bearer ",
     parseResponse: (data: any) => data.data || [],
   },
-  "volcengine-ark": createOpenAIModelsConfig("https://ark.cn-beijing.volces.com/api/coding/v3/models"),
-  byteplus: createOpenAIModelsConfig("https://ark.ap-southeast.bytepluses.com/api/coding/v3/models"),
+  "volcengine-ark": createOpenAIModelsConfig(
+    "https://ark.cn-beijing.volces.com/api/coding/v3/models",
+  ),
+  byteplus: createOpenAIModelsConfig(
+    "https://ark.ap-southeast.bytepluses.com/api/coding/v3/models",
+  ),
 
   // OpenAI-compatible API key providers
   deepseek: createOpenAIModelsConfig("https://api.deepseek.com/models"),
@@ -223,7 +234,10 @@ export async function GET(request: any, { params }: { params: any }) {
       const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
       const baseUrl = asString(psd.baseUrl);
       if (!baseUrl) {
-        return NextResponse.json({ error: "No base URL configured for OpenAI compatible provider" }, { status: 400 });
+        return NextResponse.json(
+          { error: "No base URL configured for OpenAI compatible provider" },
+          { status: 400 },
+        );
       }
       const url = `${baseUrl.replace(/\/$/, "")}/models`;
       const response = await fetch(url, {
@@ -236,7 +250,10 @@ export async function GET(request: any, { params }: { params: any }) {
 
       if (!response.ok) {
         await response.text().catch(() => "");
-        return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
+        return NextResponse.json(
+          { error: `Failed to fetch models: ${response.status}` },
+          { status: response.status },
+        );
       }
 
       const data = await response.json();
@@ -277,7 +294,10 @@ export async function GET(request: any, { params }: { params: any }) {
 
       if (!response.ok) {
         await response.text().catch(() => "");
-        return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
+        return NextResponse.json(
+          { error: `Failed to fetch models: ${response.status}` },
+          { status: response.status },
+        );
       }
 
       const data = await response.json();
@@ -302,7 +322,10 @@ export async function GET(request: any, { params }: { params: any }) {
 
         if (accessToken && profileArn) {
           try {
-            const models = await kiroService.listAvailableModels(asString(accessToken), asString(profileArn));
+            const models = await kiroService.listAvailableModels(
+              asString(accessToken),
+              asString(profileArn),
+            );
             return NextResponse.json({
               provider: connection.provider,
               connectionId: connection.id,
@@ -429,7 +452,10 @@ export async function GET(request: any, { params }: { params: any }) {
       });
       if (!response.ok) {
         await response.text().catch(() => "");
-        return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
+        return NextResponse.json(
+          { error: `Failed to fetch models: ${response.status}` },
+          { status: response.status },
+        );
       }
       const data = await response.json();
       const models = parseOpenAIStyleModels(data);
@@ -440,7 +466,8 @@ export async function GET(request: any, { params }: { params: any }) {
       });
     }
 
-    const config = PROVIDER_MODELS_CONFIG[connection.provider as keyof typeof PROVIDER_MODELS_CONFIG];
+    const config =
+      PROVIDER_MODELS_CONFIG[connection.provider as keyof typeof PROVIDER_MODELS_CONFIG];
     if (!config) {
       return NextResponse.json(
         { error: `Provider ${connection.provider} does not support models listing` },
@@ -471,7 +498,10 @@ export async function GET(request: any, { params }: { params: any }) {
     }
 
     // Make request
-    const fetchOptions: Record<string, unknown> & { method?: string; headers?: Record<string, string> } = {
+    const fetchOptions: Record<string, unknown> & {
+      method?: string;
+      headers?: Record<string, string>;
+    } = {
       method: (config as any).method,
       headers,
     };
@@ -484,7 +514,10 @@ export async function GET(request: any, { params }: { params: any }) {
 
     if (!response.ok) {
       await response.text().catch(() => "");
-      return NextResponse.json({ error: `Failed to fetch models: ${response.status}` }, { status: response.status });
+      return NextResponse.json(
+        { error: `Failed to fetch models: ${response.status}` },
+        { status: response.status },
+      );
     }
 
     const data = await response.json();

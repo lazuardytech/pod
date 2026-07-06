@@ -106,7 +106,10 @@ function convertMessages(messages = []) {
           });
         }
       }
-      out.push({ role: "assistant", content: blocks.length ? blocks : [{ type: "text", text: "" }] });
+      out.push({
+        role: "assistant",
+        content: blocks.length ? blocks : [{ type: "text", text: "" }],
+      });
       continue;
     }
 

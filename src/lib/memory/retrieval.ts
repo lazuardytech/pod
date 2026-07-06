@@ -87,9 +87,9 @@ function keywordScore(memory: RetrievedMemory, query: string): number {
 
 function hasTable(tableName: string): boolean {
   const db = getDatabase();
-  const row = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(tableName) as
-    | { name?: string }
-    | undefined;
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(tableName) as { name?: string } | undefined;
   return row?.name === tableName;
 }
 
@@ -103,16 +103,22 @@ export type RetrievalConfig = {
   sessionId?: string;
 };
 
-export async function retrieveMemories(apiKeyId: string, config: RetrievalConfig = {}): Promise<RetrievedMemory[]> {
+export async function retrieveMemories(
+  apiKeyId: string,
+  config: RetrievalConfig = {},
+): Promise<RetrievedMemory[]> {
   if (!apiKeyId) return [];
   const enabled = config.enabled !== false;
   if (!enabled) return [];
 
   const db = getDatabase();
   const maxTokens = Math.min(Math.max(Number(config.maxTokens || 2000), 1), 8000);
-  const resolvedStrategy = config.retrievalStrategy === "recent" ? "exact" : config.retrievalStrategy || "exact";
+  const resolvedStrategy =
+    config.retrievalStrategy === "recent" ? "exact" : config.retrievalStrategy || "exact";
   const strategy = resolvedStrategy;
-  const retentionDays = Number.isFinite(config.retentionDays) ? (config.retentionDays as number) : 30;
+  const retentionDays = Number.isFinite(config.retentionDays)
+    ? (config.retentionDays as number)
+    : 30;
   const queryText = typeof config.query === "string" ? config.query.trim() : "";
 
   let baseQuery =
@@ -150,7 +156,9 @@ export async function retrieveMemories(apiKeyId: string, config: RetrievalConfig
   }
 
   if (rows.length === 0 || strategy === "exact" || strategy === "hybrid") {
-    const keywordRows = db.prepare(`${baseQuery} ORDER BY created_at DESC LIMIT 100`).all(...baseParams) as MemoryRow[];
+    const keywordRows = db
+      .prepare(`${baseQuery} ORDER BY created_at DESC LIMIT 100`)
+      .all(...baseParams) as MemoryRow[];
     if (strategy === "hybrid" && rows.length > 0) {
       const seen = new Set(rows.map((r) => String(r.id)));
       for (const row of keywordRows) {

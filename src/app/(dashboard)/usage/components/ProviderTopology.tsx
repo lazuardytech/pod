@@ -11,7 +11,9 @@ const FE_ACTIVE_TIMEOUT_MS: any = 60000;
 const FE_ACTIVE_TICK_MS: any = 1000;
 
 function getProviderConfig(providerId: any) {
-  return AI_PROVIDERS[providerId] || ({ color: "#6b7280", name: providerId, textIcon: undefined } as any);
+  return (
+    AI_PROVIDERS[providerId] || ({ color: "#6b7280", name: providerId, textIcon: undefined } as any)
+  );
 }
 
 // Use local provider images from /public/providers/
@@ -37,10 +39,30 @@ function ProviderNode({ data }: any) {
         minWidth: "150px",
       }}
     >
-      <Handle type="target" position={Position.Top} id="top" className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="target" position={Position.Bottom} id="bottom" className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="target" position={Position.Left} id="left" className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="target" position={Position.Right} id="right" className="!bg-transparent !border-0 !w-0 !h-0" />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="right"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
 
       {/* Provider icon */}
       <div
@@ -75,7 +97,10 @@ function ProviderNode({ data }: any) {
               style={{ backgroundColor: dotColor }}
             />
           )}
-          <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: dotColor }} />
+          <span
+            className="relative inline-flex rounded-full h-2 w-2"
+            style={{ backgroundColor: dotColor }}
+          />
         </span>
       )}
     </div>
@@ -90,10 +115,30 @@ ProviderNode.propTypes = {
 function RouterNode({ data }: any) {
   return (
     <div className="flex items-center justify-center px-5 py-3 rounded-xl border-2 border-primary bg-primary/5 shadow-md min-w-[130px]">
-      <Handle type="source" position={Position.Top} id="top" className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="source" position={Position.Bottom} id="bottom" className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="source" position={Position.Left} id="left" className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="source" position={Position.Right} id="right" className="!bg-transparent !border-0 !w-0 !h-0" />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!bg-transparent !border-0 !w-0 !h-0"
+      />
 
       <img src="/logo.svg" alt="Pod" className="w-6 h-6 mr-2 dark:invert" />
       <span className="text-sm font-bold text-primary">Pod</span>
@@ -128,7 +173,15 @@ function buildLayout(providers: any, activeSet: any, lastSet: any, errorSet: any
   const ry: any = Math.max(200, rx * 0.55); // ellipse ratio ~0.55
   if (count === 0) {
     return {
-      nodes: [{ id: "router", type: "router", position: { x: 0, y: 0 }, data: { activeCount: 0 }, draggable: false }],
+      nodes: [
+        {
+          id: "router",
+          type: "router",
+          position: { x: 0, y: 0 },
+          data: { activeCount: 0 },
+          draggable: false,
+        },
+      ],
       edges: [],
     };
   }
@@ -173,7 +226,10 @@ function buildLayout(providers: any, activeSet: any, lastSet: any, errorSet: any
 
     // Pick router handle closest to the node direction
     let sourceHandle: any, targetHandle: any;
-    if (Math.abs(angle + Math.PI / 2) < Math.PI / 4 || Math.abs(angle - (3 * Math.PI) / 2) < Math.PI / 4) {
+    if (
+      Math.abs(angle + Math.PI / 2) < Math.PI / 4 ||
+      Math.abs(angle - (3 * Math.PI) / 2) < Math.PI / 4
+    ) {
       sourceHandle = "top";
       targetHandle = "bottom";
     } else if (Math.abs(angle - Math.PI / 2) < Math.PI / 4) {
@@ -244,7 +300,10 @@ export default function ProviderTopology({
   const lastKey: any = lastProvider?.toLowerCase() || "";
   const errorKey: any = errorProvider?.toLowerCase() || "";
 
-  const rawActiveSet: any = useMemo(() => new Set<any>(activeKey ? activeKey.split(",") : []), [activeKey]);
+  const rawActiveSet: any = useMemo(
+    () => new Set<any>(activeKey ? activeKey.split(",") : []),
+    [activeKey],
+  );
   const lastSet: any = useMemo(() => new Set<any>(lastKey ? [lastKey] : []), [lastKey]);
   const errorSet: any = useMemo(() => new Set<any>(errorKey ? [errorKey] : []), [errorKey]);
 
@@ -346,7 +405,9 @@ export default function ProviderTopology({
       className="h-[320px] w-full min-w-0 rounded-lg border border-border bg-bg-subtle/30 sm:h-[480px]"
     >
       {providers.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-text-muted text-sm">No providers connected</div>
+        <div className="h-full flex items-center justify-center text-text-muted text-sm">
+          No providers connected
+        </div>
       ) : (
         <ReactFlow
           key={providersKey}

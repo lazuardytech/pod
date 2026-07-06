@@ -10,9 +10,7 @@ function* walk(dir) {
   }
 }
 
-const files = Array.from(walk("src")).filter(
-  (f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts")
-);
+const files = Array.from(walk("src")).filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts"));
 
 let totalFixes = 0;
 
@@ -33,7 +31,7 @@ for (const file of files) {
       if (destr.includes(": any") || match.includes("??") || match.includes("||")) return match;
       // Add ?. accessor and ?? {} fallback
       return `const { ${destr} } = ${src} ?? {} as any;`;
-    }
+    },
   );
 
   // Fix 3: function return type with possibly-null returns
@@ -43,15 +41,12 @@ for (const file of files) {
   // Fix 4: add ! to .current accesses on useRef when assigned in onInit/useEffect
   // Pattern: xxxx.current.xxxxx -> xxxx.current!.xxxxx
   // (only for refs that are guaranteed non-null by useEffect)
-  content = content.replace(
-    /(\w+)Ref\.current\./g,
-    (match, ref) => {
-      if (ref === "container" || ref === "rfInstance" || ref.endsWith("Ref") || ref.endsWith("ref")) {
-        return `${ref}Ref.current!.`;
-      }
-      return match;
+  content = content.replace(/(\w+)Ref\.current\./g, (match, ref) => {
+    if (ref === "container" || ref === "rfInstance" || ref.endsWith("Ref") || ref.endsWith("ref")) {
+      return `${ref}Ref.current!.`;
     }
-  );
+    return match;
+  });
 
   // Fix 5: simple `if (x) { x.y }` doesn't narrow properly in some TS versions
   // For common patterns: add `!` after function calls that return T | undefined but context guarantees non-null

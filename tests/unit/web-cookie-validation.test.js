@@ -20,7 +20,9 @@ async function validateGrokWeb(apiKey) {
     crypto.getRandomValues(a);
     return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
   };
-  const statsigId = Buffer.from("e:TypeError: Cannot read properties of null (reading 'children')").toString("base64");
+  const statsigId = Buffer.from(
+    "e:TypeError: Cannot read properties of null (reading 'children')",
+  ).toString("base64");
   const traceId = randomHex(16);
   const spanId = randomHex(8);
   const res = await fetch("https://grok.com/rest/app-chat/conversations/new", {
@@ -40,7 +42,10 @@ async function validateGrokWeb(apiKey) {
     body: JSON.stringify({ temporary: true, modelName: "grok-4", message: "ping" }),
   });
   if (res.status === 401 || res.status === 403) {
-    return { valid: false, error: "Invalid SSO cookie — re-paste from grok.com DevTools → Cookies → sso" };
+    return {
+      valid: false,
+      error: "Invalid SSO cookie — re-paste from grok.com DevTools → Cookies → sso",
+    };
   }
   return { valid: true, error: null };
 }
@@ -64,7 +69,8 @@ async function validatePerplexityWeb(apiKey) {
   if (res.status === 401 || res.status === 403) {
     return {
       valid: false,
-      error: "Invalid session cookie — re-paste __Secure-next-auth.session-token from perplexity.ai",
+      error:
+        "Invalid session cookie — re-paste __Secure-next-auth.session-token from perplexity.ai",
     };
   }
   return { valid: true, error: null };

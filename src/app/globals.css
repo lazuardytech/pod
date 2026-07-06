@@ -50,10 +50,13 @@
 
   /* ── Typography ── */
   --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  --font-mono:
+    var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-brand:
-    var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
 
   /* ── Border Radius ── */
   --radius-tags: 2px;
@@ -76,8 +79,9 @@
   --shadow-subtle-4: rgba(0, 0, 0, 0.1) 0px 0px 0px 2px;
   --shadow-subtle-5: rgba(0, 0, 0, 0.33) 0px 0px 0px 1px;
   --shadow-subtle-6:
-    rgba(255, 255, 255, 0.03) 0px 0px 0px 1px inset, rgba(255, 255, 255, 0.04) 0px 1px 0px 0px inset,
-    rgba(0, 0, 0, 0.6) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 4px 4px 0px;
+    rgba(255, 255, 255, 0.03) 0px 0px 0px 1px inset,
+    rgba(255, 255, 255, 0.04) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.6) 0px 0px 0px 1px,
+    rgba(0, 0, 0, 0.1) 0px 4px 4px 0px;
 
   /* legacy aliases */
   --shadow-soft: rgba(0, 0, 0, 0.4) 0px 2px 4px 0px;

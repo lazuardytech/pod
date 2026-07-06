@@ -12,7 +12,9 @@ const cache = new Map<string, CacheEntry>(); // key: fetcher.url → { data, exp
  * Fetch suggested models for a provider using its modelsFetcher config.
  * Results are cached in-memory for CACHE_TTL_MS.
  */
-export async function fetchSuggestedModels(fetcher: Fetcher | null | undefined): Promise<SuggestedModel[]> {
+export async function fetchSuggestedModels(
+  fetcher: Fetcher | null | undefined,
+): Promise<SuggestedModel[]> {
   if (!fetcher?.url || !fetcher?.type) return [];
 
   const cached = cache.get(fetcher.url);

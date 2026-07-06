@@ -16,20 +16,28 @@ export async function GET(request: any) {
 
     const connections = await getProviderConnections({ provider: "inworld", isActive: true });
     const apiKey = connections[0]?.apiKey;
-    if (!apiKey) return NextResponse.json({ error: "No Inworld connection found" }, { status: 400 });
+    if (!apiKey)
+      return NextResponse.json({ error: "No Inworld connection found" }, { status: 400 });
 
     const res = await fetch("https://api.inworld.ai/tts/v1/voices", {
       headers: { Authorization: `Basic ${apiKey}` },
     });
     if (!res.ok) {
-      return NextResponse.json({ error: `Inworld API returned status ${res.status}` }, { status: 502 });
+      return NextResponse.json(
+        { error: `Inworld API returned status ${res.status}` },
+        { status: 502 },
+      );
     }
     const data = await res.json();
     const voices = data.voices || [];
 
     const byLang: Record<
       string,
-      { code: string; name: string; voices: { id: string; name: string; gender: string; lang: string }[] }
+      {
+        code: string;
+        name: string;
+        voices: { id: string; name: string; gender: string; lang: string }[];
+      }
     > = {};
     for (const v of voices) {
       // Each voice has `languages: ["en", "es", ...]`
@@ -68,6 +76,9 @@ export async function GET(request: any) {
     }
     return NextResponse.json({ languages, byLang });
   } catch (err) {
-    return NextResponse.json({ error: sanitizeError(err) || "Failed to fetch voices" }, { status: 502 });
+    return NextResponse.json(
+      { error: sanitizeError(err) || "Failed to fetch voices" },
+      { status: 502 },
+    );
   }
 }

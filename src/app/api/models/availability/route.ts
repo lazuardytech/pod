@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
-import { getProviderConnections, getSettings, type Settings, updateProviderConnection } from "@/lib/localDb";
+import {
+  getProviderConnections,
+  getSettings,
+  type Settings,
+  updateProviderConnection,
+} from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { getModelAvailabilityPayload, MODEL_LOCK_PREFIX } from "./_availability";
@@ -71,7 +76,10 @@ export async function POST(request: any) {
         apiKey = keys.find((k) => k.isActive !== false)?.key || null;
       } catch {}
 
-      const headers: Record<string, string> = { "Content-Type": "application/json", "x-pod-no-cache": "true" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "x-pod-no-cache": "true",
+      };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
       // Test the model

@@ -26,14 +26,14 @@ export async function GET(request: any) {
     const apiKey = extractApiKey(request);
     if (!apiKey) {
       return Response.json(
-        { error: { message: "Missing API key", code: 401 } },
+        { error: { message: "Missing API key", type: "authentication_error", param: null } },
         { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
       );
     }
     const valid = await validateApiKey(apiKey);
     if (!valid) {
       return Response.json(
-        { error: { message: "Invalid API key", code: 401 } },
+        { error: { message: "Invalid API key", type: "authentication_error", param: null } },
         { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
       );
     }
@@ -65,6 +65,9 @@ export async function GET(request: any) {
     return Response.json({ models });
   } catch (error) {
     console.log("Error fetching models:", error);
-    return Response.json({ error: { message: sanitizeError(error) } }, { status: 500 });
+    return Response.json(
+      { error: { message: sanitizeError(error), type: "server_error", param: null } },
+      { status: 500 },
+    );
   }
 }

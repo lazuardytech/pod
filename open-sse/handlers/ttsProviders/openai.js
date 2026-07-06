@@ -17,7 +17,10 @@ export default {
     const baseUrl = (credentials.baseUrl || "https://api.openai.com").replace(/\/+$/, "");
     const res = await fetch(`${baseUrl}/v1/audio/speech`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${credentials.apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${credentials.apiKey}`,
+      },
       body: JSON.stringify({ model: ttsModel, voice, input: text }),
     });
     if (!res.ok) {

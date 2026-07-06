@@ -76,7 +76,11 @@ export function startLocalServer(
     server.on("error", (err) => {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === "EADDRINUSE" && fixedPort) {
-        reject(new Error(`Port ${fixedPort} is already in use. Please close other applications using this port.`));
+        reject(
+          new Error(
+            `Port ${fixedPort} is already in use. Please close other applications using this port.`,
+          ),
+        );
       } else {
         reject(err);
       }
@@ -100,7 +104,9 @@ export function waitForCallback(timeoutMs: number = 300000): Promise<Record<stri
       reject(new Error("Authentication timeout"));
     }, timeoutMs);
     // Caller wires the resolve into startLocalServer's onCallback.
-    (resolve as unknown as { __onCallback?: (p: Record<string, string>) => void }).__onCallback = (params) => {
+    (resolve as unknown as { __onCallback?: (p: Record<string, string>) => void }).__onCallback = (
+      params,
+    ) => {
       clearTimeout(timeout);
       resolve(params);
     };
@@ -165,7 +171,9 @@ function renderCodexResultPage(success: boolean, message: string): string {
 </div></body></html>`;
 }
 
-export function startCodexProxy(appPort: number): Promise<{ success: true } | { success: false; reason: string }> {
+export function startCodexProxy(
+  appPort: number,
+): Promise<{ success: true } | { success: false; reason: string }> {
   return new Promise((resolve) => {
     if (codexProxyServer) {
       resolve({ success: true });
@@ -212,7 +220,9 @@ export function startCodexProxy(appPort: number): Promise<{ success: true } | { 
             provider: "codex",
             authType: "oauth",
             ...tokenData,
-            expiresAt: tokenData.expiresIn ? new Date(Date.now() + tokenData.expiresIn * 1000).toISOString() : null,
+            expiresAt: tokenData.expiresIn
+              ? new Date(Date.now() + tokenData.expiresIn * 1000).toISOString()
+              : null,
             testStatus: "active",
           })) as { id: string; email?: string };
 

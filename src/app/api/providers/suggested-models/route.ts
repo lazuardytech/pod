@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 const FILTERS = {
   "openrouter-free": (models: any) =>
     models
-      .filter((m: any) => m.pricing?.prompt === "0" && m.pricing?.completion === "0" && m.context_length >= 200000)
+      .filter(
+        (m: any) =>
+          m.pricing?.prompt === "0" && m.pricing?.completion === "0" && m.context_length >= 200000,
+      )
       .map((m: any) => ({ id: m.id, name: (m as any).name, contextLength: m.context_length }))
       .sort((a: any, b: any) => b.contextLength - a.contextLength),
 

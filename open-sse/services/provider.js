@@ -49,7 +49,11 @@ function buildQwenBaseUrl(resourceUrl, fallbackBaseUrl) {
 export function detectFormat(body) {
   // OpenAI Responses API: has input (array or string) instead of messages[]
   // The Responses API accepts both input as array and input as a plain string
-  if (body.input && (Array.isArray(body.input) || typeof body.input === "string") && !body.messages) {
+  if (
+    body.input &&
+    (Array.isArray(body.input) || typeof body.input === "string") &&
+    !body.messages
+  ) {
     return "openai-responses";
   }
 
@@ -97,13 +101,19 @@ export function detectFormat(body) {
           return "claude";
         }
         // Check if image format is Claude (source.type) vs OpenAI (image_url.url)
-        const hasClaudeImage = firstMsg.content.some((c) => c.type === "image" && c.source?.type === "base64");
-        const hasOpenAIImage = firstMsg.content.some((c) => c.type === "image_url" && c.image_url?.url);
+        const hasClaudeImage = firstMsg.content.some(
+          (c) => c.type === "image" && c.source?.type === "base64",
+        );
+        const hasOpenAIImage = firstMsg.content.some(
+          (c) => c.type === "image_url" && c.image_url?.url,
+        );
         if (hasClaudeImage) return "claude";
         if (hasOpenAIImage) return "openai";
 
         // If still unclear, check for tool format
-        const hasClaudeTool = firstMsg.content.some((c) => c.type === "tool_use" || c.type === "tool_result");
+        const hasClaudeTool = firstMsg.content.some(
+          (c) => c.type === "tool_use" || c.type === "tool_result",
+        );
         if (hasClaudeTool) return "claude";
       }
     }
@@ -176,7 +186,9 @@ export function buildProviderUrl(provider, model, stream = true, options = {}) {
       // Use baseUrlIndex from options or default to 0
       const urlIndex = options?.baseUrlIndex || 0;
       const baseUrl = config.baseUrls[urlIndex] || config.baseUrls[0];
-      const path = stream ? "/v1internal:streamGenerateContent?alt=sse" : "/v1internal:generateContent";
+      const path = stream
+        ? "/v1internal:streamGenerateContent?alt=sse"
+        : "/v1internal:generateContent";
       return `${baseUrl}${path}`;
     }
 

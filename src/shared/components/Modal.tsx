@@ -78,7 +78,11 @@ export default function Modal({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-grey">
             <div className="flex items-center gap-3">
-              {title && <h2 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">{title}</h2>}
+              {title && (
+                <h2 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">
+                  {title}
+                </h2>
+              )}
             </div>
             {showCloseButton && (
               <button
@@ -92,11 +96,15 @@ export default function Modal({
         )}
 
         {/* Body */}
-        <div className="p-4 max-h-[calc(85vh-100px)] overflow-y-auto custom-scrollbar">{children}</div>
+        <div className="p-4 max-h-[calc(85vh-100px)] overflow-y-auto custom-scrollbar">
+          {children}
+        </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-charcoal-grey">{footer}</div>
+          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-charcoal-grey">
+            {footer}
+          </div>
         )}
       </div>
     </div>

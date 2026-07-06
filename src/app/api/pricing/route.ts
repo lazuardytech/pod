@@ -37,12 +37,18 @@ export async function PATCH(request: any) {
     // Validate pricing structure
     for (const [provider, models] of Object.entries(body)) {
       if (typeof models !== "object" || models === null) {
-        return NextResponse.json({ error: `Invalid pricing for provider: ${provider}` }, { status: 400 });
+        return NextResponse.json(
+          { error: `Invalid pricing for provider: ${provider}` },
+          { status: 400 },
+        );
       }
 
       for (const [model, pricing] of Object.entries(models)) {
         if (typeof pricing !== "object" || pricing === null) {
-          return NextResponse.json({ error: `Invalid pricing for model: ${provider}/${model}` }, { status: 400 });
+          return NextResponse.json(
+            { error: `Invalid pricing for model: ${provider}/${model}` },
+            { status: 400 },
+          );
         }
 
         // Validate pricing fields
@@ -56,7 +62,9 @@ export async function PATCH(request: any) {
           }
           if (typeof value !== "number" || Number.isNaN(value) || value < 0) {
             return NextResponse.json(
-              { error: `Invalid pricing value for ${key} in ${provider}/${model}: must be non-negative number` },
+              {
+                error: `Invalid pricing value for ${key} in ${provider}/${model}: must be non-negative number`,
+              },
               { status: 400 },
             );
           }

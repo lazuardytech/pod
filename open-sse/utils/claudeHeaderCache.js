@@ -56,7 +56,9 @@ export function cacheClaudeHeaders(headers) {
 
   if (Object.keys(captured).length > 0) {
     cachedHeaders = captured;
-    console.log(`[ClaudeHeaders] Cached ${Object.keys(captured).length} identity headers from Claude Code client`);
+    console.log(
+      `[ClaudeHeaders] Cached ${Object.keys(captured).length} identity headers from Claude Code client`,
+    );
   }
 }
 

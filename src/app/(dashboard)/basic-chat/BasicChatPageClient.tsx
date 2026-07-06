@@ -4,7 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
-import { isAnthropicCompatibleProvider, isOpenAICompatibleProvider } from "@/shared/constants/providers";
+import {
+  isAnthropicCompatibleProvider,
+  isOpenAICompatibleProvider,
+} from "@/shared/constants/providers";
 
 const STORAGE_KEYS: any = {
   sessions: "basic-chat.sessions",
@@ -108,12 +111,18 @@ async function fileToDataUrl(file: any): Promise<any> {
 function cloneSession(session: any): any {
   return {
     ...session,
-    messages: Array.isArray(session.messages) ? session.messages.map((message: any): any => ({ ...message })) : [],
+    messages: Array.isArray(session.messages)
+      ? session.messages.map((message: any): any => ({ ...message }))
+      : [],
   };
 }
 
 function getProviderLabel(connection: any): any {
-  return connection?.providerName || connection?.name || humanize(connection?.provider || connection?.id || "provider");
+  return (
+    connection?.providerName ||
+    connection?.name ||
+    humanize(connection?.provider || connection?.id || "provider")
+  );
 }
 
 function normalizeStaticModel(model: any, connection: any): any {
@@ -132,11 +141,13 @@ function normalizeLiveModel(model: any, connection: any): any {
   const rawId = typeof model === "string" ? model : model?.id || model?.name || model?.model || "";
   if (!rawId) return null;
 
-  const displayName = typeof model === "string" ? model : model?.name || model?.displayName || rawId;
+  const displayName =
+    typeof model === "string" ? model : model?.name || model?.displayName || rawId;
 
   let requestModel = rawId;
   const isCompatible =
-    isOpenAICompatibleProvider(connection.provider) || isAnthropicCompatibleProvider(connection.provider);
+    isOpenAICompatibleProvider(connection.provider) ||
+    isAnthropicCompatibleProvider(connection.provider);
   if (isCompatible && !rawId.includes("/")) {
     requestModel = `${connection.provider}/${rawId}`;
   }
@@ -227,7 +238,9 @@ export default function BasicChatPageClient(): any {
         const providersRes = await fetch("/api/providers", { cache: "no-store" });
         const providersData = await providersRes.json().catch((): any => ({}));
         const connections = Array.isArray(providersData.connections)
-          ? providersData.connections.filter((connection: any): any => connection?.isActive !== false)
+          ? providersData.connections.filter(
+              (connection: any): any => connection?.isActive !== false,
+            )
           : [];
 
         if (connections.length === 0) {
@@ -273,7 +286,9 @@ export default function BasicChatPageClient(): any {
         const liveResults = await Promise.all(
           connections.map(async (connection: any): Promise<any> => {
             try {
-              const response = await fetch(`/api/providers/${connection.id}/models`, { cache: "no-store" });
+              const response = await fetch(`/api/providers/${connection.id}/models`, {
+                cache: "no-store",
+              });
               const data = await response.json().catch((): any => ({}));
               if (!response.ok) return { connection, models: [] };
               const models = parseProviderModelsPayload(data)
@@ -296,7 +311,9 @@ export default function BasicChatPageClient(): any {
         const normalized = Array.from(providerMap.values())
           .map((group: any): any => ({
             ...group,
-            models: dedupeModels(group.models).sort((a: any, b: any): any => a.name.localeCompare(b.name)),
+            models: dedupeModels(group.models).sort((a: any, b: any): any =>
+              a.name.localeCompare(b.name),
+            ),
           }))
           .filter((group: any): any => group.models.length > 0)
           .sort((a: any, b: any): any => a.providerName.localeCompare(b.providerName));
@@ -309,7 +326,9 @@ export default function BasicChatPageClient(): any {
         }
       } catch (error) {
         if (!cancelled) {
-          setLoadError(textValue((error as any)?.message) || "Không thể tải danh sách provider/model.");
+          setLoadError(
+            textValue((error as any)?.message) || "Không thể tải danh sách provider/model.",
+          );
           setProviderGroups([]);
         }
       } finally {
@@ -352,14 +371,19 @@ export default function BasicChatPageClient(): any {
   }, [providerGroups]);
 
   const activeProviderGroup = useMemo((): any => {
-    return providerGroups.find((group: any): any => group.providerId === activeProviderId) || providerGroups[0] || null;
+    return (
+      providerGroups.find((group: any): any => group.providerId === activeProviderId) ||
+      providerGroups[0] ||
+      null
+    );
   }, [providerGroups, activeProviderId]);
 
   const activeModel = useMemo((): any => {
     if (activeModelId && modelIndex.has(activeModelId)) return modelIndex.get(activeModelId);
     if (activeSessionId) {
       const session = sessions.find((item: any): any => item.id === activeSessionId);
-      if (session?.modelId && modelIndex.has(session.modelId)) return modelIndex.get(session.modelId);
+      if (session?.modelId && modelIndex.has(session.modelId))
+        return modelIndex.get(session.modelId);
     }
     return activeProviderGroup?.models?.[0] || null;
   }, [activeModelId, modelIndex, activeProviderGroup, sessions, activeSessionId]);
@@ -371,10 +395,13 @@ export default function BasicChatPageClient(): any {
   const currentMessages = currentSession?.messages || [];
   const sessionItems = useMemo(
     (): any =>
-      [...sessions].sort((a: any, b: any): any => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+      [...sessions].sort(
+        (a: any, b: any): any => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      ),
     [sessions],
   );
-  const canSend = !isSending && !!activeModel && (draft.trim().length > 0 || attachments.length > 0);
+  const canSend =
+    !isSending && !!activeModel && (draft.trim().length > 0 || attachments.length > 0);
 
   useEffect((): any => {
     if (!isHydrated) return;
@@ -393,14 +420,19 @@ export default function BasicChatPageClient(): any {
     if (providerGroups.length === 0) return;
 
     const savedProvider =
-      providerGroups.find((group: any): any => group.providerId === activeProviderId) || providerGroups[0];
+      providerGroups.find((group: any): any => group.providerId === activeProviderId) ||
+      providerGroups[0];
     const savedModel =
-      activeModelId && modelIndex.has(activeModelId) ? modelIndex.get(activeModelId) : savedProvider.models[0];
+      activeModelId && modelIndex.has(activeModelId)
+        ? modelIndex.get(activeModelId)
+        : savedProvider.models[0];
 
     if (sessions.length > 0) {
       const session = sessions.find((item: any): any => item.id === activeSessionId) || sessions[0];
       const sessionModel =
-        session?.modelId && modelIndex.has(session.modelId) ? modelIndex.get(session.modelId) : savedModel;
+        session?.modelId && modelIndex.has(session.modelId)
+          ? modelIndex.get(session.modelId)
+          : savedModel;
       initializedRef.current = true;
       setActiveSessionId(session.id);
       setActiveProviderId(sessionModel?.providerId || savedProvider.providerId);
@@ -425,11 +457,22 @@ export default function BasicChatPageClient(): any {
     setActiveSessionId(session.id);
     setActiveProviderId(savedProvider.providerId);
     setActiveModelId(savedModel.id);
-  }, [isHydrated, loadingData, providerGroups, modelIndex, sessions, activeSessionId, activeProviderId, activeModelId]);
+  }, [
+    isHydrated,
+    loadingData,
+    providerGroups,
+    modelIndex,
+    sessions,
+    activeSessionId,
+    activeProviderId,
+    activeModelId,
+  ]);
 
   const updateSession = (sessionId: any, updater: any): any => {
     setSessions((prev: any): any =>
-      prev.map((session: any): any => (session.id === sessionId ? updater(cloneSession(session)) : session)),
+      prev.map((session: any): any =>
+        session.id === sessionId ? updater(cloneSession(session)) : session,
+      ),
     );
   };
 
@@ -584,7 +627,9 @@ export default function BasicChatPageClient(): any {
   };
 
   const removeAttachment = (attachmentId: any): any => {
-    setAttachments((prev: any): any => prev.filter((attachment: any): any => attachment.id !== attachmentId));
+    setAttachments((prev: any): any =>
+      prev.filter((attachment: any): any => attachment.id !== attachmentId),
+    );
   };
 
   const handleStop = (): any => {
@@ -665,7 +710,9 @@ export default function BasicChatPageClient(): any {
     abortRef.current = new AbortController();
 
     const requestMessages = nextMessages
-      .filter((message: any): any => !(message.role === "assistant" && message.id === assistantMessageId))
+      .filter(
+        (message: any): any => !(message.role === "assistant" && message.id === assistantMessageId),
+      )
       .map((message: any): any => ({
         role: message.role,
         content: message.role === "user" ? buildUserContent(message) : message.content,
@@ -688,19 +735,27 @@ export default function BasicChatPageClient(): any {
 
       if (!response.ok) {
         const errorData = await response.json().catch((): any => ({}));
-        throw new Error(textValue(errorData.error || errorData.message || `Request failed (${response.status})`));
+        throw new Error(
+          textValue(errorData.error || errorData.message || `Request failed (${response.status})`),
+        );
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
         const data = await response.json().catch((): any => ({}));
         const fallbackText = textValue(
-          data?.choices?.[0]?.message?.content || data?.output_text || data?.error || data?.message || "",
+          data?.choices?.[0]?.message?.content ||
+            data?.output_text ||
+            data?.error ||
+            data?.message ||
+            "",
         );
         updateSession(sessionId, (currentSession: any): any => ({
           ...currentSession,
           messages: currentSession.messages.map((message: any): any =>
-            message.id === assistantMessageId ? { ...message, content: fallbackText, status: "done" } : message,
+            message.id === assistantMessageId
+              ? { ...message, content: fallbackText, status: "done" }
+              : message,
           ),
           updatedAt: new Date().toISOString(),
         }));
@@ -817,7 +872,10 @@ export default function BasicChatPageClient(): any {
                 </div>
                 <div className="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
                   {providerGroups.map((group: any): any => (
-                    <div key={group.providerId} className="mb-2 rounded-[16px] border border-white/10 bg-black/20 p-2">
+                    <div
+                      key={group.providerId}
+                      className="mb-2 rounded-[16px] border border-white/10 bg-black/20 p-2"
+                    >
                       <div className="flex items-center justify-between px-2 py-2">
                         <p className="text-sm font-semibold text-white">{group.providerName}</p>
                         <Badge size="sm" variant="default">
@@ -836,11 +894,18 @@ export default function BasicChatPageClient(): any {
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm font-medium text-white">{model.name}</p>
-                                  <p className="truncate text-[11px] text-white/45">{model.requestModel}</p>
+                                  <p className="truncate text-sm font-medium text-white">
+                                    {model.name}
+                                  </p>
+                                  <p className="truncate text-[11px] text-white/45">
+                                    {model.requestModel}
+                                  </p>
                                 </div>
                                 {isActive ? (
-                                  <LucideIcon name="check_circle" className="text-[18px] text-blue-300" />
+                                  <LucideIcon
+                                    name="check_circle"
+                                    className="text-[18px] text-blue-300"
+                                  />
                                 ) : null}
                               </div>
                             </button>
@@ -891,7 +956,9 @@ export default function BasicChatPageClient(): any {
                 sessionItems.map((session: any): any => {
                   const isActive = session.id === activeSessionId;
                   const latestMessage =
-                    [...(session.messages || [])].reverse().find((message: any): any => message.role === "user") ||
+                    [...(session.messages || [])]
+                      .reverse()
+                      .find((message: any): any => message.role === "user") ||
                     session.messages?.[0];
                   return (
                     <button
@@ -939,8 +1006,8 @@ export default function BasicChatPageClient(): any {
                   <div className="space-y-2">
                     <h2 className="text-2xl font-semibold text-white">Start a conversation</h2>
                     <p className="text-sm leading-6 text-white/60">
-                      Simple chat interface to interact with any AI model from connected providers. Select a model and
-                      start chatting!
+                      Simple chat interface to interact with any AI model from connected providers.
+                      Select a model and start chatting!
                     </p>
                   </div>
                 </div>
@@ -951,11 +1018,17 @@ export default function BasicChatPageClient(): any {
               {currentMessages.map((message: any): any => {
                 const isUser = message.role === "user";
                 const isAssistant = message.role === "assistant";
-                const isStreaming = isAssistant && message.id === streamingMessageId && message.status === "streaming";
+                const isStreaming =
+                  isAssistant &&
+                  message.id === streamingMessageId &&
+                  message.status === "streaming";
                 const content = textValue(message.content) || (isAssistant ? streamingText : "");
 
                 return (
-                  <div key={message.id} className={`flex w-full ${isUser ? "justify-end" : "justify-start"} mb-6`}>
+                  <div
+                    key={message.id}
+                    className={`flex w-full ${isUser ? "justify-end" : "justify-start"} mb-6`}
+                  >
                     <div
                       className={`max-w-[min(88%,42rem)] ${isUser ? "rounded-3xl bg-[#2f2f2f] px-5 py-3.5 text-white" : "text-white/90"}`}
                     >
@@ -1006,7 +1079,9 @@ export default function BasicChatPageClient(): any {
                     key={attachment.id}
                     className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2"
                   >
-                    <span className="text-xs text-white/80 max-w-[12rem] truncate">{attachment.name}</span>
+                    <span className="text-xs text-white/80 max-w-[12rem] truncate">
+                      {attachment.name}
+                    </span>
                     <button
                       type="button"
                       onClick={(): any => removeAttachment(attachment.id)}

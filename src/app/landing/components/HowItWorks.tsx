@@ -28,9 +28,12 @@ export default function HowItWorks() {
     <section className="py-20 px-6 border-y border-charcoal-grey bg-graphite" id="how-it-works">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
-          <h2 className="text-[32px] font-[590] text-porcelain tracking-[-0.22px] mb-3">How Pod Works</h2>
+          <h2 className="text-[32px] font-[590] text-porcelain tracking-[-0.22px] mb-3">
+            How Pod Works
+          </h2>
           <p className="text-[14px] text-storm-cloud max-w-md leading-[1.6] tracking-[-0.13px]">
-            Data flows seamlessly from your application through our intelligent routing layer to the best provider.
+            Data flows seamlessly from your application through our intelligent routing layer to the
+            best provider.
           </p>
         </div>
 
@@ -58,7 +61,9 @@ export default function HowItWorks() {
                     className={`text-[18px] ${step.accent ? "text-pitch-black" : "text-storm-cloud"}`}
                   />
                 </div>
-                <span className="text-[11px] font-[590] text-fog-grey tracking-[0.04em]">{step.number}</span>
+                <span className="text-[11px] font-[590] text-fog-grey tracking-[0.04em]">
+                  {step.number}
+                </span>
               </div>
               <h3
                 className={`text-[14px] font-[510] tracking-[-0.13px] mb-2 ${
@@ -67,7 +72,9 @@ export default function HowItWorks() {
               >
                 {step.title}
               </h3>
-              <p className="text-[12px] text-fog-grey leading-[1.6] tracking-[-0.1px]">{step.desc}</p>
+              <p className="text-[12px] text-fog-grey leading-[1.6] tracking-[-0.1px]">
+                {step.desc}
+              </p>
             </div>
           ))}
         </div>

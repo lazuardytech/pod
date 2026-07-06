@@ -73,7 +73,9 @@ export default function AddCustomEmbeddingModal({
         else onCreated?.(data.node);
         toast.success(isEdit ? "Embedding node saved" : "Embedding node created");
       } else {
-        toast.error(data?.error || `Failed to ${isEdit ? "save" : "create"} node (HTTP ${res.status})`);
+        toast.error(
+          data?.error || `Failed to ${isEdit ? "save" : "create"} node (HTTP ${res.status})`,
+        );
       }
     } catch (error) {
       console.error("Error saving custom embedding node:", error);
@@ -125,7 +127,11 @@ export default function AddCustomEmbeddingModal({
   };
 
   return (
-    <Modal isOpen={isOpen} title={isEdit ? "Edit Custom Embedding" : "Add Custom Embedding"} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title={isEdit ? "Edit Custom Embedding" : "Add Custom Embedding"}
+      onClose={onClose}
+    >
       <div className="flex flex-col gap-4">
         <Input
           label="Name"
@@ -175,7 +181,12 @@ export default function AddCustomEmbeddingModal({
           <Button
             onClick={handleSubmit}
             fullWidth
-            disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || submitting}
+            disabled={
+              !formData.name.trim() ||
+              !formData.prefix.trim() ||
+              !formData.baseUrl.trim() ||
+              submitting
+            }
           >
             {submitting ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save" : "Create"}
           </Button>

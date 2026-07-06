@@ -14,7 +14,10 @@ export function getClineAuthorizationHeader(token: unknown): string {
   return accessToken ? `Bearer ${accessToken}` : "";
 }
 
-export function buildClineHeaders(token: unknown, extraHeaders: Record<string, string> = {}): Record<string, string> {
+export function buildClineHeaders(
+  token: unknown,
+  extraHeaders: Record<string, string> = {},
+): Record<string, string> {
   const authorization = getClineAuthorizationHeader(token);
   const headers: Record<string, string> = {
     "HTTP-Referer": "https://cline.bot",

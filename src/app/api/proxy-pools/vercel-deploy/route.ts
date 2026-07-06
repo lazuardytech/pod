@@ -145,7 +145,10 @@ export async function POST(request: any) {
     });
 
     if (!deployRes.ok) {
-      return NextResponse.json({ error: "Failed to create Vercel deployment" }, { status: deployRes.status });
+      return NextResponse.json(
+        { error: "Failed to create Vercel deployment" },
+        { status: deployRes.status },
+      );
     }
 
     const deployment = await deployRes.json();
@@ -185,7 +188,10 @@ export async function POST(request: any) {
       relayAuthToken,
     });
 
-    return NextResponse.json({ proxyPool: sanitizeProxyPool(proxyPool), deployUrl }, { status: 201 });
+    return NextResponse.json(
+      { proxyPool: sanitizeProxyPool(proxyPool), deployUrl },
+      { status: 201 },
+    );
   } catch (error) {
     console.log("Error deploying Vercel relay:", error);
     return NextResponse.json({ error: sanitizeError(error) || "Deploy failed" }, { status: 500 });

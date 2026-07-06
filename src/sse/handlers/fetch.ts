@@ -3,7 +3,11 @@ import { handleFetchCore } from "open-sse/handlers/fetch/index.js";
 import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getCombos, getSettings } from "@/lib/localDb";
-import { AI_PROVIDERS, type ProviderDefinition, resolveProviderId } from "@/shared/constants/providers";
+import {
+  AI_PROVIDERS,
+  type ProviderDefinition,
+  resolveProviderId,
+} from "@/shared/constants/providers";
 import {
   clearAccountError,
   extractApiKey,
@@ -58,11 +62,19 @@ export async function handleFetch(request: Request): Promise<Response> {
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid URL format");
   }
   const combos = await getCombos();
-  const comboModels = getComboModelsFromData(providerInput, combos as unknown as { name: string; models: string[] }[]);
+  const comboModels = getComboModelsFromData(
+    providerInput,
+    combos as unknown as { name: string; models: string[] }[],
+  );
   if (comboModels) {
-    const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+    const comboStrategies = (settings.comboStrategies || {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
     const comboStrategy =
-      (comboStrategies[providerInput]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
+      (comboStrategies[providerInput]?.fallbackStrategy as string) ||
+      (settings.comboStrategy as string) ||
+      "fallback";
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "FETCH",
@@ -100,7 +112,10 @@ async function handleSingleProviderFetch(
   const providerConfig = resolvedProvider.fetchConfig;
   if (!providerConfig) {
     log.warn("FETCH", "Provider does not support web fetch", { provider: providerId });
-    return errorResponse(HTTP_STATUS.BAD_REQUEST, `Provider ${providerId} does not support web fetch`);
+    return errorResponse(
+      HTTP_STATUS.BAD_REQUEST,
+      `Provider ${providerId} does not support web fetch`,
+    );
   }
   if (providerInput !== providerId) log.info("ROUTING", `${providerInput} → ${providerId}`);
   else log.info("ROUTING", `Provider: ${providerId}`);
@@ -130,7 +145,8 @@ async function handleSingleProviderFetch(
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
         const errorMsg = lastError || credentials.lastError || "Unavailable";
-        const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        const status =
+          lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("FETCH", `[${providerId}] ${errorMsg} (${credentials.retryAfterHuman})`);
         return unavailableResponse(
           status,
@@ -144,7 +160,10 @@ async function handleSingleProviderFetch(
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${providerId}`);
       }
       log.warn("FETCH", "No more accounts available", { provider: providerId });
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+      return errorResponse(
+        lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        lastError || "All accounts unavailable",
+      );
     }
     const connectionId = credentials.connectionId!;
     const connName = credentials.connectionName;
@@ -162,7 +181,9 @@ async function handleSingleProviderFetch(
         await updateProviderCredentials(connectionId, {
           accessToken: newCreds.accessToken as string | undefined,
           refreshToken: newCreds.refreshToken as string | undefined,
-          providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
+          providerSpecificData: newCreds.providerSpecificData as
+            | Record<string, unknown>
+            | undefined,
           testStatus: "active",
         });
       },
@@ -175,7 +196,12 @@ async function handleSingleProviderFetch(
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
-    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, providerId);
+    const { shouldFallback } = await markAccountUnavailable(
+      connectionId,
+      result.status,
+      result.error,
+      providerId,
+    );
     if (shouldFallback) {
       log.warn("AUTH", `Account ${connName} unavailable (${result.status}), trying fallback`);
       excludeConnectionIds.add(connectionId);

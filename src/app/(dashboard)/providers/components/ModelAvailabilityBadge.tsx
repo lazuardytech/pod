@@ -111,7 +111,8 @@ export default function ModelAvailabilityBadge() {
   if (loading) return null;
 
   const models: any = data?.models || [];
-  const unavailableCount: any = data?.unavailableCount || models.filter((m: any) => m.status !== "available").length;
+  const unavailableCount: any =
+    data?.unavailableCount || models.filter((m: any) => m.status !== "available").length;
   const isHealthy: any = unavailableCount === 0;
 
   // Group unhealthy models by provider
@@ -162,14 +163,20 @@ export default function ModelAvailabilityBadge() {
 
           <div className="px-4 py-3 max-h-60 overflow-y-auto">
             {isHealthy ? (
-              <p className="text-sm text-text-muted text-center py-2">All models are responding normally.</p>
+              <p className="text-sm text-text-muted text-center py-2">
+                All models are responding normally.
+              </p>
             ) : (
               <div className="flex flex-col gap-2.5">
                 {Object.entries(byProvider).map(([provider, provModels]: any) => (
                   <div key={provider}>
-                    <p className="text-xs font-semibold text-text-main mb-1.5 capitalize">{provider}</p>
+                    <p className="text-xs font-semibold text-text-main mb-1.5 capitalize">
+                      {provider}
+                    </p>
                     <div className="flex flex-col gap-1">
-                      {(provModels as Array<{ provider: string; model: string; status: string }>).map((m: any) => {
+                      {(
+                        provModels as Array<{ provider: string; model: string; status: string }>
+                      ).map((m: any) => {
                         const status: any = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;
                         const isClearing: any = clearing === `${m.provider}:${m.model}`;
                         return (
@@ -183,7 +190,9 @@ export default function ModelAvailabilityBadge() {
                                 className="text-[14px] shrink-0"
                                 style={{ color: status.color }}
                               />
-                              <span className="font-mono text-xs text-text-main truncate">{m.model}</span>
+                              <span className="font-mono text-xs text-text-main truncate">
+                                {m.model}
+                              </span>
                             </div>
                             {m.status === "cooldown" && (
                               <Button

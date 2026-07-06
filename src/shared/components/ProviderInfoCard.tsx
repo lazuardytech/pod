@@ -7,7 +7,10 @@ const FIELD_SCHEMA = {
   mode: { label: "Mode", format: (v: any) => v },
   defaultModel: { label: "Model", format: (v: any) => v, mono: true },
   baseUrl: { label: "Endpoint", format: (v: any) => v, isLink: true, mono: true },
-  costPerQuery: { label: "Cost / call", format: (v: any) => (v === 0 ? "Free" : `$${v.toFixed(4)}`) },
+  costPerQuery: {
+    label: "Cost / call",
+    format: (v: any) => (v === 0 ? "Free" : `$${v.toFixed(4)}`),
+  },
   pricingUrl: { label: "Pricing", format: () => "View pricing", isLink: true },
   freeTier: { label: "Free tier", format: (v: any) => v },
   freeMonthlyQuota: {
@@ -76,7 +79,9 @@ export default function ProviderInfoCard({
                 {r.value}
               </a>
             ) : (
-              <span className={`text-sm text-text-main truncate ${r.mono ? "font-mono" : ""}`}>{r.value}</span>
+              <span className={`text-sm text-text-main truncate ${r.mono ? "font-mono" : ""}`}>
+                {r.value}
+              </span>
             )}
           </div>
         ))}

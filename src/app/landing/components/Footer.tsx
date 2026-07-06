@@ -15,7 +15,8 @@ export default function Footer() {
               <span className="text-[14px] font-[510] text-porcelain tracking-[-0.13px]">Pod</span>
             </div>
             <p className="text-[12px] text-fog-grey max-w-xs leading-[1.6] mb-5 tracking-[-0.1px]">
-              The unified endpoint for AI generation. Connect, route, and manage your AI providers with ease.
+              The unified endpoint for AI generation. Connect, route, and manage your AI providers
+              with ease.
             </p>
             <a
               href="https://github.com/lazuardytech/pod"
@@ -29,7 +30,9 @@ export default function Footer() {
 
           {/* Product */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-[11px] font-[590] text-fog-grey uppercase tracking-[0.06em]">Product</h4>
+            <h4 className="text-[11px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
+              Product
+            </h4>
             {[
               { label: "Features", href: "#features" },
               { label: "Dashboard", href: "/dashboard" },
@@ -49,9 +52,15 @@ export default function Footer() {
 
           {/* Resources */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-[11px] font-[590] text-fog-grey uppercase tracking-[0.06em]">Resources</h4>
+            <h4 className="text-[11px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
+              Resources
+            </h4>
             {[
-              { label: "Documentation", href: "https://github.com/lazuardytech/pod#readme", external: true },
+              {
+                label: "Documentation",
+                href: "https://github.com/lazuardytech/pod#readme",
+                external: true,
+              },
               { label: "GitHub", href: "https://github.com/lazuardytech/pod", external: true },
               { label: "NPM", href: "https://www.npmjs.com/package/pod", external: true },
             ].map((item) => (
@@ -69,7 +78,9 @@ export default function Footer() {
 
           {/* Legal */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-[11px] font-[590] text-fog-grey uppercase tracking-[0.06em]">Legal</h4>
+            <h4 className="text-[11px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
+              Legal
+            </h4>
             <a
               href="https://github.com/lazuardytech/pod/blob/main/LICENSE"
               target="_blank"
@@ -83,7 +94,9 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-charcoal-grey pt-5 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="text-[11px] text-fog-grey tracking-[-0.1px]">© 2025 Pod. All rights reserved.</p>
+          <p className="text-[11px] text-fog-grey tracking-[-0.1px]">
+            © 2025 Pod. All rights reserved.
+          </p>
           <div className="flex gap-5">
             {[
               { label: "GitHub", href: "https://github.com/lazuardytech/pod" },

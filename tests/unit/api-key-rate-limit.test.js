@@ -77,7 +77,10 @@ describe("api key limit config + enforcement", () => {
     });
 
     const okHandler = async () =>
-      new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
 
     const r1 = await withApiKeyRateLimit(req, okHandler);
     const r2 = await withApiKeyRateLimit(req, okHandler);

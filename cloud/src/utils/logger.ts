@@ -4,7 +4,7 @@ const LOG_LEVELS = {
   DEBUG: 0,
   INFO: 1,
   WARN: 2,
-  ERROR: 3
+  ERROR: 3,
 } as const;
 
 const LEVEL = LOG_LEVELS.INFO;
@@ -16,11 +16,15 @@ const COLORS = {
   green: "\x1b[32m",
   yellow: "\x1b[33m",
   blue: "\x1b[34m",
-  cyan: "\x1b[36m"
+  cyan: "\x1b[36m",
 } as const;
 
 function formatTime(): string {
-  return new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
+  return new Date().toLocaleTimeString("en-US", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatInline(data: unknown): string {
@@ -28,7 +32,9 @@ function formatInline(data: unknown): string {
   if (typeof data === "string") return data;
   try {
     if (typeof data === "object" && data !== null) {
-      return Object.entries(data).map(([k, v]) => `${k}=${v}`).join(" | ");
+      return Object.entries(data)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(" | ");
     }
     return String(data);
   } catch {
@@ -53,7 +59,9 @@ export function info(tag: string, message: string, data?: unknown): void {
 export function warn(tag: string, message: string, data?: unknown): void {
   if (LEVEL <= LOG_LEVELS.WARN) {
     const extra = data ? ` | ${formatInline(data)}` : "";
-    console.warn(`${COLORS.yellow}[${formatTime()}] ⚠️  [${tag}] ${message}${extra}${COLORS.reset}`);
+    console.warn(
+      `${COLORS.yellow}[${formatTime()}] ⚠️  [${tag}] ${message}${extra}${COLORS.reset}`,
+    );
   }
 }
 

@@ -116,7 +116,9 @@ async function fetchCompatibleModelIds(connection: any) {
 function providerMatchesKinds(providerId: any, kindFilter: any) {
   const provider = AI_PROVIDERS[providerId];
   const kinds =
-    Array.isArray(provider?.serviceKinds) && provider.serviceKinds.length > 0 ? provider.serviceKinds : [LLM_KIND];
+    Array.isArray(provider?.serviceKinds) && provider.serviceKinds.length > 0
+      ? provider.serviceKinds
+      : [LLM_KIND];
   return kindFilter.some((k: any) => kinds.includes(k));
 }
 
@@ -225,22 +227,35 @@ export async function buildModelsList(kindFilter: any) {
       if (!providerMatchesKinds(providerId, kindFilter)) continue;
 
       const staticAlias = PROVIDER_ID_TO_ALIAS[providerId] || providerId;
-      const outputAlias = (conn?.providerSpecificData?.prefix || getProviderAlias(providerId) || staticAlias).trim();
+      const outputAlias = (
+        conn?.providerSpecificData?.prefix ||
+        getProviderAlias(providerId) ||
+        staticAlias
+      ).trim();
       const providerModels = PROVIDER_MODELS[staticAlias as keyof typeof PROVIDER_MODELS] || [];
       const enabledModels = conn?.providerSpecificData?.enabledModels;
       const hasExplicitEnabledModels = Array.isArray(enabledModels) && enabledModels.length > 0;
-      const isCompatibleProvider = isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
+      const isCompatibleProvider =
+        isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
 
       // Build kind lookup for static models so we can filter even when only IDs are exposed
       const staticModelKindById = new Map(providerModels.map((m: any) => [m.id, modelKind(m)]));
 
       let rawModelIds = hasExplicitEnabledModels
         ? Array.from(
-            new Set(enabledModels.filter((modelId: any) => typeof modelId === "string" && modelId.trim() !== "")),
+            new Set(
+              enabledModels.filter(
+                (modelId: any) => typeof modelId === "string" && modelId.trim() !== "",
+              ),
+            ),
           )
         : providerModels.map((model: any) => model.id);
 
-      if (isCompatibleProvider && rawModelIds.length === 0 && !UPSTREAM_CONNECTION_RE.test(providerId)) {
+      if (
+        isCompatibleProvider &&
+        rawModelIds.length === 0 &&
+        !UPSTREAM_CONNECTION_RE.test(providerId)
+      ) {
         rawModelIds = await fetchCompatibleModelIds(conn);
       }
 
@@ -292,7 +307,9 @@ export async function buildModelsList(kindFilter: any) {
         })
         .filter((modelId: any) => typeof modelId === "string" && modelId.trim() !== "");
 
-      const mergedModelIds = Array.from(new Set([...modelIds, ...customModelIds, ...aliasModelIds]));
+      const mergedModelIds = Array.from(
+        new Set([...modelIds, ...customModelIds, ...aliasModelIds]),
+      );
 
       for (const modelId of mergedModelIds) {
         // Resolve kind: prefer static metadata, otherwise infer from ID heuristics
@@ -315,7 +332,10 @@ export async function buildModelsList(kindFilter: any) {
           if (m?.id) subConfigModels.push(m.id);
         }
       }
-      if (kindFilter.includes("embedding") && Array.isArray(providerInfo?.embeddingConfig?.models)) {
+      if (
+        kindFilter.includes("embedding") &&
+        Array.isArray(providerInfo?.embeddingConfig?.models)
+      ) {
         for (const m of providerInfo.embeddingConfig.models) {
           if (m?.id) subConfigModels.push(m.id);
         }
@@ -386,14 +406,14 @@ export async function GET(request: any) {
       const apiKey = extractApiKey(request);
       if (!apiKey) {
         return Response.json(
-          { error: { message: "Missing API key", type: "authentication_error" } },
+          { error: { message: "Missing API key", type: "authentication_error", param: null } },
           { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
         );
       }
       const valid = await validateApiKey(apiKey);
       if (!valid) {
         return Response.json(
-          { error: { message: "Invalid API key", type: "authentication_error" } },
+          { error: { message: "Invalid API key", type: "authentication_error", param: null } },
           { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
         );
       }
@@ -414,6 +434,9 @@ export async function GET(request: any) {
     );
   } catch (error) {
     console.log("Error fetching models:", error);
-    return Response.json({ error: { message: sanitizeError(error), type: "server_error" } }, { status: 500 });
+    return Response.json(
+      { error: { message: sanitizeError(error), type: "server_error", param: null } },
+      { status: 500 },
+    );
   }
 }

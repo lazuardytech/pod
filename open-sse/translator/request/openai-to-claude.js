@@ -30,7 +30,9 @@ export function openaiToClaudeRequest(model, body, stream) {
     // Extract system messages
     for (const msg of body.messages) {
       if (msg.role === "system") {
-        systemParts.push(typeof msg.content === "string" ? msg.content : extractTextContent(msg.content));
+        systemParts.push(
+          typeof msg.content === "string" ? msg.content : extractTextContent(msg.content),
+        );
       }
     }
 
@@ -90,7 +92,11 @@ export function openaiToClaudeRequest(model, body, stream) {
     // Add cache_control to last assistant message
     for (let i = result.messages.length - 1; i >= 0; i--) {
       const message = result.messages[i];
-      if (message.role === "assistant" && Array.isArray(message.content) && message.content.length > 0) {
+      if (
+        message.role === "assistant" &&
+        Array.isArray(message.content) &&
+        message.content.length > 0
+      ) {
         // Find the last block that can have cache_control (not thinking blocks)
         const validBlockTypes = ["text", "tool_use", "tool_result", "image"];
         for (let j = message.content.length - 1; j >= 0; j--) {
@@ -116,7 +122,9 @@ ${schemaJson}
 \`\`\`
 Respond ONLY with the JSON object, no other text.`);
     } else if (responseFormat.type === "json_object") {
-      systemParts.push("You must respond with valid JSON. Respond ONLY with a JSON object, no other text.");
+      systemParts.push(
+        "You must respond with valid JSON. Respond ONLY with a JSON object, no other text.",
+      );
     }
   }
 
@@ -156,7 +164,8 @@ Respond ONLY with the JSON object, no other text.`);
       result.tools.push({
         name: toolName,
         description: toolData.description || "",
-        input_schema: toolData.parameters || toolData.input_schema || { type: "object", properties: {}, required: [] },
+        input_schema: toolData.parameters ||
+          toolData.input_schema || { type: "object", properties: {}, required: [] },
       });
     }
 
@@ -365,7 +374,9 @@ function openaiToClaudeRequestForAntigravity(model, body, stream) {
 
   // Remove Claude Code system prompt, keep only user's system messages
   if (result.system && Array.isArray(result.system)) {
-    result.system = result.system.filter((block) => !block.text || !block.text.includes("You are Claude Code"));
+    result.system = result.system.filter(
+      (block) => !block.text || !block.text.includes("You are Claude Code"),
+    );
     if (result.system.length === 0) {
       delete result.system;
     }
@@ -392,7 +403,11 @@ function openaiToClaudeRequestForAntigravity(model, body, stream) {
       }
 
       const updatedContent = msg.content.map((block) => {
-        if (block.type === "tool_use" && block.name && block.name.startsWith(CLAUDE_OAUTH_TOOL_PREFIX)) {
+        if (
+          block.type === "tool_use" &&
+          block.name &&
+          block.name.startsWith(CLAUDE_OAUTH_TOOL_PREFIX)
+        ) {
           return {
             ...block,
             name: block.name.slice(CLAUDE_OAUTH_TOOL_PREFIX.length),

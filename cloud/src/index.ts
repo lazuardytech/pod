@@ -28,7 +28,7 @@ function addCorsHeaders(response: Response): Response {
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers: newHeaders
+    headers: newHeaders,
   });
 }
 
@@ -63,8 +63,8 @@ export default {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "*"
-        }
+          "Access-Control-Allow-Headers": "*",
+        },
       });
     }
 
@@ -81,7 +81,7 @@ export default {
       if (path === "/health" && request.method === "GET") {
         log.response(200, Date.now() - startTime);
         return new Response(JSON.stringify({ status: "ok" }), {
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         });
       }
 
@@ -89,7 +89,7 @@ export default {
       if (path === "/api/tags" && request.method === "GET") {
         log.response(200, Date.now() - startTime);
         return new Response(JSON.stringify(ollamaModels), {
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         });
       }
 
@@ -146,7 +146,7 @@ export default {
       // New format: /v1/api/chat (Ollama format)
       if (path === "/v1/api/chat" && request.method === "POST") {
         const clonedReq = request.clone();
-        const body = await clonedReq.json() as { model?: string };
+        const body = (await clonedReq.json()) as { model?: string };
         const response = await handleChat(request, env, _ctx, null);
         const ollamaResponse = transformToOllama(response, body.model || "llama3.2");
         log.response(200, Date.now() - startTime);
@@ -183,7 +183,7 @@ export default {
       if (path.match(/^\/[^\/]+\/v1\/api\/chat$/) && request.method === "POST") {
         const machineId = path.split("/")[1]!;
         const clonedReq = request.clone();
-        const body = await clonedReq.json() as { model?: string };
+        const body = (await clonedReq.json()) as { model?: string };
         const response = await handleChat(request, env, _ctx, machineId);
         const ollamaResponse = transformToOllama(response, body.model || "llama3.2");
         log.response(200, Date.now() - startTime);
@@ -222,17 +222,16 @@ export default {
       log.warn("ROUTER", "Not found", { path });
       return new Response(JSON.stringify({ error: "Not Found" }), {
         status: 404,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
-
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       const stack = error instanceof Error ? error.stack : undefined;
       log.error("ROUTER", msg, { stack });
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
-  }
+  },
 };

@@ -3,7 +3,10 @@ const DEFAULT_TIMEOUT_MS = 8000;
 
 type UndiciProxyApi = {
   ProxyAgent: new (opts: { uri: string }) => { close?: () => void | Promise<void> };
-  undiciFetch: (input: string, init?: Record<string, unknown> & { dispatcher?: unknown }) => Promise<Response>;
+  undiciFetch: (
+    input: string,
+    init?: Record<string, unknown> & { dispatcher?: unknown },
+  ) => Promise<Response>;
 };
 
 let undiciProxyApiPromise: Promise<UndiciProxyApi> | null = null;
@@ -74,7 +77,9 @@ export async function testProxyUrl({
   const normalizedTestUrl = normalizeString(testUrl) || DEFAULT_TEST_URL;
   const timeoutMsRaw = Number(timeoutMs);
   const normalizedTimeoutMs =
-    Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 0 ? Math.min(timeoutMsRaw, 30000) : DEFAULT_TIMEOUT_MS;
+    Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 0
+      ? Math.min(timeoutMsRaw, 30000)
+      : DEFAULT_TIMEOUT_MS;
 
   let dispatcher: ProxyAgentLike | null = null;
 
@@ -119,7 +124,10 @@ export async function testProxyUrl({
             error: `HTTP ${res.status} ${res.statusText || ""}`.trim(),
           };
     } catch (err) {
-      const message = (err as { name?: string })?.name === "AbortError" ? "Proxy test timed out" : getErrorMessage(err);
+      const message =
+        (err as { name?: string })?.name === "AbortError"
+          ? "Proxy test timed out"
+          : getErrorMessage(err);
       return { ok: false, status: 500, error: message };
     } finally {
       clearTimeout(timer);

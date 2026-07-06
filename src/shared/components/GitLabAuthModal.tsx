@@ -178,7 +178,8 @@ export default function GitLabAuthModal({
               >
                 GitLab Applications
               </a>{" "}
-              with redirect URI <code className="bg-sidebar px-1 rounded text-xs">{getRedirectUri()}</code>
+              with redirect URI{" "}
+              <code className="bg-sidebar px-1 rounded text-xs">{getRedirectUri()}</code>
             </p>
             <Input
               label="GitLab Base URL"
@@ -249,7 +250,12 @@ export default function GitLabAuthModal({
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex gap-2">
-              <Button onClick={handlePATSubmit} fullWidth disabled={!pat.trim() || loading} loading={loading}>
+              <Button
+                onClick={handlePATSubmit}
+                fullWidth
+                disabled={!pat.trim() || loading}
+                loading={loading}
+              >
                 Connect
               </Button>
               <Button

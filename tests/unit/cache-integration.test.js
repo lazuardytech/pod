@@ -51,7 +51,8 @@ function makeResponse(content = "hello") {
 
 describe("write → read cycle (memory + SQLite)", () => {
   it("returns the cached response immediately after setCachedResponse", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o-mini";
     const messages = [{ role: "user", content: "What is 2+2?" }];
@@ -71,7 +72,8 @@ describe("write → read cycle (memory + SQLite)", () => {
   });
 
   it("survives a memory-cache eviction and still hits SQLite", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const messages = [{ role: "user", content: "persist me" }];
@@ -111,7 +113,8 @@ describe("write → read cycle (memory + SQLite)", () => {
 
 describe("memoryOwnerId isolation", () => {
   it("same messages + different memoryOwnerId → different signatures → no cross-user bleed", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const messages = [{ role: "user", content: "What is my name?" }];
@@ -132,7 +135,8 @@ describe("memoryOwnerId isolation", () => {
   });
 
   it("same memoryOwnerId + same messages → same signature → cache hit", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const messages = [{ role: "user", content: "Remember me" }];
@@ -166,7 +170,8 @@ describe("memoryOwnerId isolation", () => {
 
 describe("temperature default consistency", () => {
   it("temperature=null and temperature=1 hit the same cache entry", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "anthropic/claude-3-5-sonnet";
     const messages = [{ role: "user", content: "temp test" }];
@@ -183,7 +188,8 @@ describe("temperature default consistency", () => {
   });
 
   it("temperature=undefined and temperature=1 hit the same cache entry", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "anthropic/claude-3-5-sonnet";
     const messages = [{ role: "user", content: "undef temp test" }];
@@ -197,7 +203,8 @@ describe("temperature default consistency", () => {
   });
 
   it("temperature=0 and temperature=1 do NOT share a cache entry", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const { generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const messages = [{ role: "user", content: "zero vs one" }];
@@ -217,9 +224,8 @@ describe("temperature default consistency", () => {
 
 describe("clearCache", () => {
   it("removes all entries from memory and SQLite", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse, clearCache, getCacheStats } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, getCachedResponse, setCachedResponse, clearCache, getCacheStats } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const sig1 = generateSignature(model, [{ role: "user", content: "a" }], 1, 1);
@@ -239,11 +245,22 @@ describe("clearCache", () => {
   });
 
   it("returns the number of SQLite rows deleted", async () => {
-    const { generateSignature, setCachedResponse, clearCache } = await import("@/lib/semanticCache.js");
+    const { generateSignature, setCachedResponse, clearCache } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
-    setCachedResponse(generateSignature(model, [{ role: "user", content: "x" }], 1, 1), model, makeResponse("x"), 5);
-    setCachedResponse(generateSignature(model, [{ role: "user", content: "y" }], 1, 1), model, makeResponse("y"), 5);
+    setCachedResponse(
+      generateSignature(model, [{ role: "user", content: "x" }], 1, 1),
+      model,
+      makeResponse("x"),
+      5,
+    );
+    setCachedResponse(
+      generateSignature(model, [{ role: "user", content: "y" }], 1, 1),
+      model,
+      makeResponse("y"),
+      5,
+    );
 
     const removed = clearCache();
     expect(removed).toBeGreaterThanOrEqual(2);
@@ -293,7 +310,16 @@ describe("TTL expiry", () => {
       `INSERT OR REPLACE INTO semantic_cache
       (id, signature, model, prompt_hash, response, tokens_saved, hit_count, created_at, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-    ).run(id, sig, model, sig.slice(0, 16), JSON.stringify(makeResponse("stale")), 0, now, expiredAt);
+    ).run(
+      id,
+      sig,
+      model,
+      sig.slice(0, 16),
+      JSON.stringify(makeResponse("stale")),
+      0,
+      now,
+      expiredAt,
+    );
 
     // Should be null — row exists but is expired
     expect(getCachedResponse(sig)).toBeNull();
@@ -306,9 +332,8 @@ describe("TTL expiry", () => {
 
 describe("invalidation", () => {
   it("invalidateBySignature removes only the targeted entry", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse, invalidateBySignature } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, getCachedResponse, setCachedResponse, invalidateBySignature } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const sigA = generateSignature(model, [{ role: "user", content: "A" }], 1, 1);
@@ -323,9 +348,8 @@ describe("invalidation", () => {
   });
 
   it("invalidateByModel removes all entries for that model", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse, invalidateByModel } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, getCachedResponse, setCachedResponse, invalidateByModel } =
+      await import("@/lib/semanticCache.js");
 
     const modelA = "openai/gpt-4o";
     const modelB = "anthropic/claude-3-5-sonnet";
@@ -354,9 +378,8 @@ describe("invalidation", () => {
 
 describe("getCacheStats", () => {
   it("tracks hits and misses correctly", async () => {
-    const { generateSignature, getCachedResponse, setCachedResponse, getCacheStats } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { generateSignature, getCachedResponse, setCachedResponse, getCacheStats } =
+      await import("@/lib/semanticCache.js");
 
     const model = "openai/gpt-4o";
     const sig = generateSignature(model, [{ role: "user", content: "stats test" }], 1, 1);

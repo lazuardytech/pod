@@ -216,7 +216,8 @@ export async function GET(request: any) {
       if (!cursorInstalled) {
         return NextResponse.json({
           found: false,
-          error: "Cursor config files found but Cursor IDE does not appear to be installed. Skipping auto-import.",
+          error:
+            "Cursor config files found but Cursor IDE does not appear to be installed. Skipping auto-import.",
         });
       }
     }
@@ -252,7 +253,9 @@ export async function GET(request: any) {
     // Strategy 3: ask user to paste manually
     return NextResponse.json({ found: false, windowsManual: true, dbPath });
   } catch (error) {
-    logError("CursorAutoImport", "Cursor auto-import failed", { error: (error as any)?.message || error });
+    logError("CursorAutoImport", "Cursor auto-import failed", {
+      error: (error as any)?.message || error,
+    });
     return NextResponse.json({ found: false, error: sanitizeError(error) }, { status: 500 });
   }
 }

@@ -47,7 +47,10 @@ export interface CancelToken {
 }
 
 // Poll until tunnel responds /api/health, or timeout. Cancellable via token.
-export async function waitForHealth(url: string, cancelToken: CancelToken = { cancelled: false }): Promise<boolean> {
+export async function waitForHealth(
+  url: string,
+  cancelToken: CancelToken = { cancelled: false },
+): Promise<boolean> {
   const start = Date.now();
   while (Date.now() - start < HEALTH_CHECK.timeoutMs) {
     if (cancelToken.cancelled) throw new Error("cancelled");

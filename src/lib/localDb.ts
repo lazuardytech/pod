@@ -267,8 +267,25 @@ const CONN_COLS = new Set<string>([
   "createdAt",
   "updatedAt",
 ]);
-const NODE_COLS = new Set<string>(["id", "type", "name", "prefix", "apiType", "baseUrl", "createdAt", "updatedAt"]);
-const POOL_COLS = new Set<string>(["id", "name", "proxyUrl", "type", "isActive", "createdAt", "updatedAt"]);
+const NODE_COLS = new Set<string>([
+  "id",
+  "type",
+  "name",
+  "prefix",
+  "apiType",
+  "baseUrl",
+  "createdAt",
+  "updatedAt",
+]);
+const POOL_COLS = new Set<string>([
+  "id",
+  "name",
+  "proxyUrl",
+  "type",
+  "isActive",
+  "createdAt",
+  "updatedAt",
+]);
 const COMBO_COLS = new Set<string>(["id", "name", "createdAt", "updatedAt"]);
 
 function splitExtras(obj: Record<string, unknown>, cols: Set<string>): Record<string, unknown> {
@@ -381,7 +398,11 @@ function toPositiveInteger(value: unknown): number | null {
 function normalizeApiKeyRateLimitInput(
   input: Record<string, unknown> = {},
   fallback: Record<string, unknown> = {},
-): { limitType: "limited" | "unlimited"; requestsPerMinute: number | null; concurrentRequests: number | null } {
+): {
+  limitType: "limited" | "unlimited";
+  requestsPerMinute: number | null;
+  concurrentRequests: number | null;
+} {
   const requestedType = input.limitType ?? fallback.limitType;
   const limitType: "limited" | "unlimited" = requestedType === "limited" ? "limited" : "unlimited";
 
@@ -418,13 +439,17 @@ function nowIso(): string {
 
 // ===== Provider Connections ==============================================
 
-export async function getProviderConnections(filter: ProviderConnectionFilter = {}): Promise<ProviderConnection[]> {
+export async function getProviderConnections(
+  filter: ProviderConnectionFilter = {},
+): Promise<ProviderConnection[]> {
   if (isCloud) {
     const d = await getCloudDb();
     let list = d.data.providerConnections || [];
     if (filter.provider) list = list.filter((c) => c.provider === filter.provider);
     if (filter.isActive !== undefined) list = list.filter((c) => c.isActive === filter.isActive);
-    return [...list].sort((a, b) => ((a.priority as number) || 999) - ((b.priority as number) || 999));
+    return [...list].sort(
+      (a, b) => ((a.priority as number) || 999) - ((b.priority as number) || 999),
+    );
   }
 
   const clauses: string[] = [];
@@ -439,7 +464,9 @@ export async function getProviderConnections(filter: ProviderConnectionFilter = 
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const rows = db()
-    .prepare(`SELECT * FROM provider_connections ${where} ORDER BY COALESCE(priority, 999), updated_at DESC`)
+    .prepare(
+      `SELECT * FROM provider_connections ${where} ORDER BY COALESCE(priority, 999), updated_at DESC`,
+    )
     .all(...params) as ProviderConnectionRow[];
   return rows.map(rowToConnection);
 }
@@ -476,7 +503,10 @@ function insertConnectionRowInTx(database: SqliteDatabase, conn: ProviderConnect
     );
 }
 
-function updateConnectionRow(id: string, patch: Record<string, unknown>): ProviderConnection | null {
+function updateConnectionRow(
+  id: string,
+  patch: Record<string, unknown>,
+): ProviderConnection | null {
   return tx((db) => {
     const row = db.prepare("SELECT * FROM provider_connections WHERE id = ?").get(id) as
       | ProviderConnectionRow
@@ -504,7 +534,9 @@ function updateConnectionRow(id: string, patch: Record<string, unknown>): Provid
   });
 }
 
-export async function createProviderConnection(data: Record<string, unknown>): Promise<ProviderConnection> {
+export async function createProviderConnection(
+  data: Record<string, unknown>,
+): Promise<ProviderConnection> {
   if (isCloud) return createProviderConnectionCloud(data);
 
   // Wrap SELECT + INSERT/UPDATE in transaction to prevent duplicate rows
@@ -569,7 +601,9 @@ export async function createProviderConnection(data: Record<string, unknown>): P
     let priority = data.priority as number | undefined;
     if (!priority) {
       const row = db
-        .prepare("SELECT COALESCE(MAX(priority), 0) as m FROM provider_connections WHERE provider = ?")
+        .prepare(
+          "SELECT COALESCE(MAX(priority), 0) as m FROM provider_connections WHERE provider = ?",
+        )
         .get(data.provider) as { m: number } | undefined;
       priority = (row?.m || 0) + 1;
     }
@@ -608,9 +642,13 @@ export async function createProviderConnection(data: Record<string, unknown>): P
       "consecutiveUseCount",
     ];
     for (const f of optionalFields) {
-      if (data[f] !== undefined && data[f] !== null) (connection as Record<string, unknown>)[f] = data[f];
+      if (data[f] !== undefined && data[f] !== null)
+        (connection as Record<string, unknown>)[f] = data[f];
     }
-    if (data.providerSpecificData && Object.keys(data.providerSpecificData as Record<string, unknown>).length) {
+    if (
+      data.providerSpecificData &&
+      Object.keys(data.providerSpecificData as Record<string, unknown>).length
+    ) {
       (connection as Record<string, unknown>).providerSpecificData = data.providerSpecificData;
     }
 
@@ -627,7 +665,9 @@ export async function createProviderConnection(data: Record<string, unknown>): P
 
 // Cloud copy of createProviderConnection — kept isolated so the SQLite
 // path stays readable.
-async function createProviderConnectionCloud(data: Record<string, unknown>): Promise<ProviderConnection> {
+async function createProviderConnectionCloud(
+  data: Record<string, unknown>,
+): Promise<ProviderConnection> {
   const d = await getCloudDb();
   const now = nowIso();
   let idx = -1;
@@ -721,10 +761,14 @@ export async function deleteProviderConnectionsByProvider(providerId: string): P
   if (isCloud) {
     const d = await getCloudDb();
     const before = d.data.providerConnections.length;
-    d.data.providerConnections = d.data.providerConnections.filter((c) => c.provider !== providerId);
+    d.data.providerConnections = d.data.providerConnections.filter(
+      (c) => c.provider !== providerId,
+    );
     return before - d.data.providerConnections.length;
   }
-  const r = db().prepare("DELETE FROM provider_connections WHERE provider = ?").run(providerId) as { changes: number };
+  const r = db().prepare("DELETE FROM provider_connections WHERE provider = ?").run(providerId) as {
+    changes: number;
+  };
   return r.changes;
 }
 
@@ -735,7 +779,9 @@ export async function reorderProviderConnections(providerId: string): Promise<vo
       .filter((c) => c.provider === providerId)
       .sort((a, b) => {
         const p = ((a.priority as number) || 0) - ((b.priority as number) || 0);
-        return p !== 0 ? p : new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+        return p !== 0
+          ? p
+          : new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
       });
     list.forEach((c, i) => {
       c.priority = i + 1;
@@ -783,7 +829,9 @@ export async function getProviderNodeById(id: string): Promise<ProviderNode | nu
     const d = await getCloudDb();
     return d.data.providerNodes.find((n) => n.id === id) || null;
   }
-  const r = db().prepare("SELECT * FROM provider_nodes WHERE id = ?").get(id) as ProviderNodeRow | undefined;
+  const r = db().prepare("SELECT * FROM provider_nodes WHERE id = ?").get(id) as
+    | ProviderNodeRow
+    | undefined;
   return r ? rowToNode(r) : null;
 }
 
@@ -826,12 +874,19 @@ export async function createProviderNode(data: Record<string, unknown>): Promise
   return node;
 }
 
-export async function updateProviderNode(id: string, data: Record<string, unknown>): Promise<ProviderNode | null> {
+export async function updateProviderNode(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<ProviderNode | null> {
   if (isCloud) {
     const d = await getCloudDb();
     const idx = (d.data.providerNodes || []).findIndex((n) => n.id === id);
     if (idx === -1) return null;
-    d.data.providerNodes[idx] = { ...d.data.providerNodes[idx], ...data, updatedAt: nowIso() } as ProviderNode;
+    d.data.providerNodes[idx] = {
+      ...d.data.providerNodes[idx],
+      ...data,
+      updatedAt: nowIso(),
+    } as ProviderNode;
     return d.data.providerNodes[idx];
   }
   const current = await getProviderNodeById(id);
@@ -957,11 +1012,16 @@ export async function renameProviderNode(oldId: string, newId: string): Promise<
 
   const current = await getProviderNodeById(oldId);
   if (!current) throw new Error("Provider node not found");
-  const conflict = db().prepare("SELECT id FROM provider_nodes WHERE id = ?").get(newId) as { id: string } | undefined;
+  const conflict = db().prepare("SELECT id FROM provider_nodes WHERE id = ?").get(newId) as
+    | { id: string }
+    | undefined;
   if (conflict) throw new Error("Identifier already in use");
 
   // Pre-compute JSON rewrites outside the transaction (read-only work).
-  const comboRows = db().prepare("SELECT id, data FROM combos").all() as { id: string; data: string | null }[];
+  const comboRows = db().prepare("SELECT id, data FROM combos").all() as {
+    id: string;
+    data: string | null;
+  }[];
   const comboUpdates: { id: string; data: string }[] = [];
   for (const row of comboRows) {
     let parsed: Record<string, unknown>;
@@ -1032,13 +1092,19 @@ export async function renameProviderNode(oldId: string, newId: string): Promise<
         oldId,
       );
 
-    db().prepare("UPDATE provider_connections SET provider = ? WHERE provider = ?").run(newId, oldId);
-    db().prepare("UPDATE custom_models SET provider_alias = ? WHERE provider_alias = ?").run(newId, oldId);
+    db()
+      .prepare("UPDATE provider_connections SET provider = ? WHERE provider = ?")
+      .run(newId, oldId);
+    db()
+      .prepare("UPDATE custom_models SET provider_alias = ? WHERE provider_alias = ?")
+      .run(newId, oldId);
     db().prepare("UPDATE pricing SET provider = ? WHERE provider = ?").run(newId, oldId);
     db().prepare("UPDATE usage_history SET provider = ? WHERE provider = ?").run(newId, oldId);
     db().prepare("UPDATE request_details SET provider = ? WHERE provider = ?").run(newId, oldId);
     db().prepare("UPDATE request_log SET provider = ? WHERE provider = ?").run(newId, oldId);
-    db().prepare("UPDATE daily_summary SET key = ? WHERE bucket = 'byProvider' AND key = ?").run(newId, oldId);
+    db()
+      .prepare("UPDATE daily_summary SET key = ? WHERE bucket = 'byProvider' AND key = ?")
+      .run(newId, oldId);
 
     const comboStmt = db().prepare("UPDATE combos SET data = ?, updated_at = ? WHERE id = ?");
     for (const u of comboUpdates) comboStmt.run(u.data, nowIso(), u.id);
@@ -1062,7 +1128,9 @@ export async function getProxyPools(filter: ProxyPoolFilter = {}): Promise<Proxy
     let list = d.data.proxyPools || [];
     if (filter.isActive !== undefined) list = list.filter((p) => p.isActive === filter.isActive);
     if (filter.testStatus) list = list.filter((p) => p.testStatus === filter.testStatus);
-    return [...list].sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+    return [...list].sort(
+      (a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime(),
+    );
   }
   const clauses: string[] = [];
   const params: unknown[] = [];
@@ -1084,7 +1152,9 @@ export async function getProxyPoolById(id: string): Promise<ProxyPool | null> {
     const d = await getCloudDb();
     return (d.data.proxyPools || []).find((p) => p.id === id) || null;
   }
-  const r = db().prepare("SELECT * FROM proxy_pools WHERE id = ?").get(id) as ProxyPoolRow | undefined;
+  const r = db().prepare("SELECT * FROM proxy_pools WHERE id = ?").get(id) as
+    | ProxyPoolRow
+    | undefined;
   return r ? rowToPool(r) : null;
 }
 
@@ -1130,12 +1200,19 @@ export async function createProxyPool(data: Record<string, unknown>): Promise<Pr
   return pool;
 }
 
-export async function updateProxyPool(id: string, data: Record<string, unknown>): Promise<ProxyPool | null> {
+export async function updateProxyPool(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<ProxyPool | null> {
   if (isCloud) {
     const d = await getCloudDb();
     const idx = (d.data.proxyPools || []).findIndex((p) => p.id === id);
     if (idx === -1) return null;
-    d.data.proxyPools[idx] = { ...d.data.proxyPools[idx], ...data, updatedAt: nowIso() } as ProxyPool;
+    d.data.proxyPools[idx] = {
+      ...d.data.proxyPools[idx],
+      ...data,
+      updatedAt: nowIso(),
+    } as ProxyPool;
     return d.data.proxyPools[idx];
   }
   const current = await getProxyPoolById(id);
@@ -1193,7 +1270,9 @@ export async function setModelAlias(alias: string, model: string): Promise<void>
     d.data.modelAliases[alias] = model;
     return;
   }
-  db().prepare("INSERT OR REPLACE INTO model_aliases (alias, target) VALUES (?, ?)").run(alias, model);
+  db()
+    .prepare("INSERT OR REPLACE INTO model_aliases (alias, target) VALUES (?, ?)")
+    .run(alias, model);
 }
 
 export async function deleteModelAlias(alias: string): Promise<void> {
@@ -1212,7 +1291,9 @@ export async function getCustomModels(): Promise<CustomModel[]> {
     const d = await getCloudDb();
     return d.data.customModels || [];
   }
-  const rows = db().prepare("SELECT provider_alias, id, type, name FROM custom_models").all() as CustomModelRow[];
+  const rows = db()
+    .prepare("SELECT provider_alias, id, type, name FROM custom_models")
+    .all() as CustomModelRow[];
   return rows.map((r) => ({
     providerAlias: r.provider_alias,
     id: r.id,
@@ -1243,7 +1324,9 @@ export async function addCustomModel({
     return true;
   }
   const info = db()
-    .prepare("INSERT OR IGNORE INTO custom_models (provider_alias, id, type, name) VALUES (?, ?, ?, ?)")
+    .prepare(
+      "INSERT OR IGNORE INTO custom_models (provider_alias, id, type, name) VALUES (?, ?, ?, ?)",
+    )
     .run(providerAlias, id, type, name || id) as { changes: number };
   return info.changes > 0;
 }
@@ -1277,7 +1360,9 @@ export async function getCombos(): Promise<Combo[]> {
     const d = await getCloudDb();
     return d.data.combos || [];
   }
-  const rows = db().prepare("SELECT * FROM combos ORDER BY COALESCE(sort_order, rowid)").all() as ComboRow[];
+  const rows = db()
+    .prepare("SELECT * FROM combos ORDER BY COALESCE(sort_order, rowid)")
+    .all() as ComboRow[];
   return rows.map(rowToCombo);
 }
 
@@ -1328,7 +1413,10 @@ export async function createCombo(data: Record<string, unknown>): Promise<Combo>
   return combo;
 }
 
-export async function updateCombo(id: string, data: Record<string, unknown>): Promise<Combo | null> {
+export async function updateCombo(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<Combo | null> {
   if (isCloud) {
     const d = await getCloudDb();
     const idx = (d.data.combos || []).findIndex((c) => c.id === id);
@@ -1364,7 +1452,9 @@ export async function reorderCombos(orderedIds: string[]): Promise<boolean> {
   if (isCloud) {
     const d = await getCloudDb();
     const map = new Map((d.data.combos || []).map((c) => [c.id, c]));
-    d.data.combos = orderedIds.map((id, i) => ({ ...(map.get(id) as Combo), sortOrder: i })).filter(Boolean) as Combo[];
+    d.data.combos = orderedIds
+      .map((id, i) => ({ ...(map.get(id) as Combo), sortOrder: i }))
+      .filter(Boolean) as Combo[];
     return true;
   }
   const stmt = db().prepare("UPDATE combos SET sort_order = ? WHERE id = ?");
@@ -1459,7 +1549,10 @@ export async function getApiKeyById(id: string): Promise<ApiKey | null> {
   return r ? rowToApiKey(r) : null;
 }
 
-export async function updateApiKey(id: string, data: Record<string, unknown>): Promise<ApiKey | null> {
+export async function updateApiKey(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<ApiKey | null> {
   if (isCloud) {
     const d = await getCloudDb();
     const idx = (d.data.apiKeys || []).findIndex((k) => k.id === id);
@@ -1533,7 +1626,9 @@ export async function validateApiKey(key: string): Promise<boolean> {
     return found;
   }
   // Fetch the stored key by a non-secret lookup (id/active), then compare in constant time
-  const r = db().prepare("SELECT key FROM api_keys WHERE is_active != 0").all() as { key: string }[];
+  const r = db().prepare("SELECT key FROM api_keys WHERE is_active != 0").all() as {
+    key: string;
+  }[];
   let found = false;
   for (const row of r) {
     if (safeCompare(row.key, key)) found = true;
@@ -1549,9 +1644,9 @@ export async function getApiKeyByKey(key: string): Promise<ApiKey | null> {
     if (found) found.lastAccessAt = nowIso();
     return found;
   }
-  const r = db().prepare("SELECT * FROM api_keys WHERE key = ? AND is_active != 0 LIMIT 1").get(key) as
-    | ApiKeyRow
-    | undefined;
+  const r = db()
+    .prepare("SELECT * FROM api_keys WHERE key = ? AND is_active != 0 LIMIT 1")
+    .get(key) as ApiKeyRow | undefined;
   if (!r) return null;
   const now = nowIso();
   db().prepare("UPDATE api_keys SET last_access_at = ? WHERE id = ?").run(now, r.id);
@@ -1565,7 +1660,10 @@ export async function getSettings(): Promise<Settings> {
     const d = await getCloudDb();
     return (d.data.settings as Settings) || ({ cloudEnabled: false } as Settings);
   }
-  const rows = db().prepare("SELECT key, value FROM settings").all() as { key: string; value: string }[];
+  const rows = db().prepare("SELECT key, value FROM settings").all() as {
+    key: string;
+    value: string;
+  }[];
   const out = { ...DEFAULT_SETTINGS } as Settings;
   for (const r of rows) {
     try {
@@ -1628,7 +1726,10 @@ export async function cleanupProviderConnections(): Promise<number> {
         cleaned++;
       }
     }
-    if (conn.providerSpecificData && Object.keys(conn.providerSpecificData as Record<string, unknown>).length === 0) {
+    if (
+      conn.providerSpecificData &&
+      Object.keys(conn.providerSpecificData as Record<string, unknown>).length === 0
+    ) {
       delete conn.providerSpecificData;
       dirty = true;
       cleaned++;
@@ -1673,7 +1774,9 @@ export async function importDb(payload: Record<string, unknown>): Promise<CloudD
     ...payload,
     settings: {
       ...cloneDefaultData().settings,
-      ...(payload.settings && typeof payload.settings === "object" && !Array.isArray(payload.settings)
+      ...(payload.settings &&
+      typeof payload.settings === "object" &&
+      !Array.isArray(payload.settings)
         ? (payload.settings as Record<string, unknown>)
         : {}),
     },
@@ -1832,7 +1935,12 @@ export async function isCloudEnabled(): Promise<boolean> {
 
 export async function getCloudUrl(): Promise<string> {
   const settings = await getSettings();
-  return (settings.cloudUrl as string) || process.env.CLOUD_URL || process.env.NEXT_PUBLIC_CLOUD_URL || "";
+  return (
+    (settings.cloudUrl as string) ||
+    process.env.CLOUD_URL ||
+    process.env.NEXT_PUBLIC_CLOUD_URL ||
+    ""
+  );
 }
 
 // ===== Pricing ===========================================================
@@ -1863,7 +1971,10 @@ export async function getPricing(): Promise<Record<string, Record<string, unknow
     if (userPricing[provider]) {
       for (const [model, pricing] of Object.entries(userPricing[provider])) {
         merged[provider][model] = merged[provider][model]
-          ? { ...(merged[provider][model] as Record<string, unknown>), ...(pricing as Record<string, unknown>) }
+          ? {
+              ...(merged[provider][model] as Record<string, unknown>),
+              ...(pricing as Record<string, unknown>),
+            }
           : (pricing as Record<string, unknown>);
       }
     }
@@ -1880,25 +1991,32 @@ export async function getPricing(): Promise<Record<string, Record<string, unknow
   return merged;
 }
 
-export async function getPricingForModel(provider: string, model: string): Promise<Record<string, unknown> | null> {
+export async function getPricingForModel(
+  provider: string,
+  model: string,
+): Promise<Record<string, unknown> | null> {
   if (!model) return null;
 
   if (isCloud) {
     const d = await getCloudDb();
     const userPricing = d.data.pricing || {};
-    if (provider && userPricing[provider]?.[model]) return userPricing[provider][model] as Record<string, unknown>;
+    if (provider && userPricing[provider]?.[model])
+      return userPricing[provider][model] as Record<string, unknown>;
   } else {
     if (provider) {
-      const r = db().prepare("SELECT data FROM pricing WHERE provider = ? AND model = ?").get(provider, model) as
-        | PricingRow
-        | undefined;
+      const r = db()
+        .prepare("SELECT data FROM pricing WHERE provider = ? AND model = ?")
+        .get(provider, model) as PricingRow | undefined;
       if (r) return parseExtras(r.data);
     }
   }
 
   // Check models.dev synced pricing
   const { getModelsDevPricingForModel } = (await import("@/lib/modelsDevSync")) as {
-    getModelsDevPricingForModel: (provider: string, model: string) => Record<string, unknown> | null;
+    getModelsDevPricingForModel: (
+      provider: string,
+      model: string,
+    ) => Record<string, unknown> | null;
   };
   const mdPricing = getModelsDevPricingForModel(provider, model);
   if (mdPricing) return mdPricing;
@@ -1923,7 +2041,9 @@ export async function updatePricing(
     }
     return d.data.pricing;
   }
-  const stmt = db().prepare("INSERT OR REPLACE INTO pricing (provider, model, data) VALUES (?, ?, ?)");
+  const stmt = db().prepare(
+    "INSERT OR REPLACE INTO pricing (provider, model, data) VALUES (?, ?, ?)",
+  );
   const run = db().transaction((patch: Record<string, Record<string, unknown>>) => {
     for (const [provider, models] of Object.entries(patch)) {
       for (const [model, p] of Object.entries(models)) {
@@ -1935,7 +2055,10 @@ export async function updatePricing(
   return await getRawPricing();
 }
 
-export async function resetPricing(provider: string, model?: string): Promise<Record<string, Record<string, unknown>>> {
+export async function resetPricing(
+  provider: string,
+  model?: string,
+): Promise<Record<string, Record<string, unknown>>> {
   if (isCloud) {
     const d = await getCloudDb();
     if (!d.data.pricing) d.data.pricing = {};

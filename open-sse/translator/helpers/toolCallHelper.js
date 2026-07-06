@@ -55,7 +55,11 @@ export function ensureToolCallIds(body) {
           block.id = sanitized || generateToolCallId(i, k, block.name);
         }
         // Validate tool_use_id in tool_result blocks
-        if (block.type === "tool_result" && block.tool_use_id && !TOOL_ID_PATTERN.test(block.tool_use_id)) {
+        if (
+          block.type === "tool_result" &&
+          block.tool_use_id &&
+          !TOOL_ID_PATTERN.test(block.tool_use_id)
+        ) {
           const sanitized = sanitizeToolId(block.tool_use_id);
           block.tool_use_id = sanitized || generateToolCallId(i, k);
         }

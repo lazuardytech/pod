@@ -77,7 +77,10 @@ export async function requireValidApiKey(request: Request): Promise<RequireValid
 
   const apiKey = extractApiKey(request);
   if (!apiKey) {
-    return { apiKey: null, response: NextResponse.json({ error: "Missing API key" }, { status: 401 }) };
+    return {
+      apiKey: null,
+      response: NextResponse.json({ error: "Missing API key" }, { status: 401 }),
+    };
   }
 
   try {
@@ -87,5 +90,8 @@ export async function requireValidApiKey(request: Request): Promise<RequireValid
     // Fall through to a generic invalid-key response.
   }
 
-  return { apiKey: null, response: NextResponse.json({ error: "Invalid API key" }, { status: 401 }) };
+  return {
+    apiKey: null,
+    response: NextResponse.json({ error: "Invalid API key" }, { status: 401 }),
+  };
 }

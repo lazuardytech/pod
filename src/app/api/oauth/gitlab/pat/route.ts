@@ -37,20 +37,26 @@ export async function POST(request: any) {
     // Validate the GitLab base URL — must be http/https and not a private address
     const urlCheck = validateFetchUrl(base);
     if (!urlCheck.ok) {
-      return NextResponse.json({ error: `Invalid GitLab base URL: ${fetchUrlError(urlCheck)}` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Invalid GitLab base URL: ${fetchUrlError(urlCheck)}` },
+        { status: 400 },
+      );
     }
 
     // Hostname allowlist: gitlab.com + its subdomains, or an existing provider connection.
     const parsedHost = urlCheck.url.hostname.toLowerCase();
     const isGitLabHosted =
-      parsedHost === "gitlab.com" || parsedHost === "www.gitlab.com" || parsedHost.endsWith(".gitlab.com");
+      parsedHost === "gitlab.com" ||
+      parsedHost === "www.gitlab.com" ||
+      parsedHost.endsWith(".gitlab.com");
     if (!isGitLabHosted) {
       // Allow self-hosted GitLab instances the user has already configured as a provider connection
-      const existingConnections = await getProviderConnections({ provider: "gitlab" }).catch(() => []);
+      const existingConnections = await getProviderConnections({ provider: "gitlab" }).catch(
+        () => [],
+      );
       const hasExisting = existingConnections.some((conn) => {
-        const connBase = (conn.providerSpecificData as Record<string, unknown> | undefined)?.baseUrl as
-          | string
-          | undefined;
+        const connBase = (conn.providerSpecificData as Record<string, unknown> | undefined)
+          ?.baseUrl as string | undefined;
         if (!connBase) return false;
         try {
           return new URL(connBase).hostname.toLowerCase() === parsedHost;
@@ -60,7 +66,10 @@ export async function POST(request: any) {
       });
       if (!hasExisting) {
         return NextResponse.json(
-          { error: "GitLab base URL must be gitlab.com or match an existing GitLab provider connection" },
+          {
+            error:
+              "GitLab base URL must be gitlab.com or match an existing GitLab provider connection",
+          },
           { status: 400 },
         );
       }
@@ -77,7 +86,10 @@ export async function POST(request: any) {
     });
 
     if (!userRes.ok) {
-      return NextResponse.json({ error: `GitLab token verification failed (${userRes.status})` }, { status: 401 });
+      return NextResponse.json(
+        { error: `GitLab token verification failed (${userRes.status})` },
+        { status: 401 },
+      );
     }
 
     const user = await userRes.json();

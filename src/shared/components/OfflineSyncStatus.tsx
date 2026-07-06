@@ -2,20 +2,27 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Button from "@/shared/components/Button";
 import LucideIcon from "@/shared/components/LucideIcon";
-import { drainOfflineMutationQueue, getOfflineMutationQueueLength } from "@/shared/services/offlineMutationQueue";
+import {
+  drainOfflineMutationQueue,
+  getOfflineMutationQueueLength,
+} from "@/shared/services/offlineMutationQueue";
 
 function formatStatusText({ isOnline, pendingCount, syncing }: any) {
   if (syncing) return "Syncing queued changes...";
   if (!isOnline) {
-    if (pendingCount > 0) return `Offline. ${pendingCount} pending ${pendingCount > 1 ? "changes" : "change"}.`;
+    if (pendingCount > 0)
+      return `Offline. ${pendingCount} pending ${pendingCount > 1 ? "changes" : "change"}.`;
     return "Offline. Changes will be queued automatically.";
   }
-  if (pendingCount > 0) return `${pendingCount} pending ${pendingCount > 1 ? "changes" : "change"} ready to sync.`;
+  if (pendingCount > 0)
+    return `${pendingCount} pending ${pendingCount > 1 ? "changes" : "change"} ready to sync.`;
   return "All changes synced.";
 }
 
 export default function OfflineSyncStatus() {
-  const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -85,7 +92,10 @@ export default function OfflineSyncStatus() {
     };
   }, [refreshPendingCount, runSync]);
 
-  const shouldShow = useMemo(() => !isOnline || pendingCount > 0 || syncing, [isOnline, pendingCount, syncing]);
+  const shouldShow = useMemo(
+    () => !isOnline || pendingCount > 0 || syncing,
+    [isOnline, pendingCount, syncing],
+  );
   if (!mounted || !shouldShow) return null;
 
   const statusText = formatStatusText({ isOnline, pendingCount, syncing });
@@ -122,7 +132,12 @@ export default function OfflineSyncStatus() {
         >
           Sync now
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => refreshPendingCount().catch(() => {})}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => refreshPendingCount().catch(() => {})}
+        >
           Refresh
         </Button>
       </div>

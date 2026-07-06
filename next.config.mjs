@@ -8,7 +8,14 @@ const nextConfig = {
   env: {},
   outputFileTracingExcludes: {
     "/*": ["./next.config.mjs"],
-    "/api/tunnel/**": ["./.agents/**/*", "./cloud/**/*", "./coverage/**/*", "./tests/**/*", "./*.md", "./Dockerfile"],
+    "/api/tunnel/**": [
+      "./.agents/**/*",
+      "./cloud/**/*",
+      "./coverage/**/*",
+      "./tests/**/*",
+      "./*.md",
+      "./Dockerfile",
+    ],
   },
   turbopack: {
     // Keep server-only node modules out of browser bundles.
@@ -45,8 +52,16 @@ const nextConfig = {
   async redirects() {
     return [
       // kebab-case URL aliases for camelCase kind IDs
-      { source: "/media-providers/web-search/:id*", destination: "/media-providers/webSearch/:id*", permanent: false },
-      { source: "/media-providers/web-fetch/:id*", destination: "/media-providers/webFetch/:id*", permanent: false },
+      {
+        source: "/media-providers/web-search/:id*",
+        destination: "/media-providers/webSearch/:id*",
+        permanent: false,
+      },
+      {
+        source: "/media-providers/web-fetch/:id*",
+        destination: "/media-providers/webFetch/:id*",
+        permanent: false,
+      },
     ];
   },
   async rewrites() {

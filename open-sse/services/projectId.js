@@ -7,7 +7,11 @@
  * This significantly reduces the risk of being flagged by Google's anti-abuse systems.
  */
 
-import { CLOUD_CODE_API, LOAD_CODE_ASSIST_HEADERS, LOAD_CODE_ASSIST_METADATA } from "../config/appConstants.js";
+import {
+  CLOUD_CODE_API,
+  LOAD_CODE_ASSIST_HEADERS,
+  LOAD_CODE_ASSIST_METADATA,
+} from "../config/appConstants.js";
 
 function redactConnectionId(connectionId) {
   return connectionId ? `${String(connectionId).slice(0, 4)}...` : "unknown";
@@ -117,7 +121,10 @@ export async function getProjectIdForConnection(connectionId, accessToken) {
         projectIdCache.set(connectionId, { projectId, fetchedAt: Date.now() });
         return projectId;
       }
-      console.warn("[ProjectId] could not fetch projectId for connection", redactConnectionId(connectionId));
+      console.warn(
+        "[ProjectId] could not fetch projectId for connection",
+        redactConnectionId(connectionId),
+      );
       return null;
     } catch (_error) {
       console.warn("[ProjectId] Error fetching project ID");

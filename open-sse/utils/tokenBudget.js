@@ -7,12 +7,17 @@ function configuredMinimum() {
 }
 
 function shouldReserveReasoningBudget(provider, targetFormat) {
-  return targetFormat === "openai" && typeof provider === "string" && provider.startsWith("openai-compatible-");
+  return (
+    targetFormat === "openai" &&
+    typeof provider === "string" &&
+    provider.startsWith("openai-compatible-")
+  );
 }
 
 function raiseTokenField(body, field, minimum, log, provider, model) {
   const value = body[field];
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 || value >= minimum) return;
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 || value >= minimum)
+    return;
 
   body[field] = minimum;
   log?.debug?.(

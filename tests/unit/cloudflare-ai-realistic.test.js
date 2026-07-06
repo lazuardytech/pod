@@ -113,7 +113,10 @@ describe("cloudflare-ai — auth header", () => {
   });
 
   it("prefers apiKey over accessToken", () => {
-    const headers = exec.buildHeaders({ apiKey: "key-from-api", accessToken: "tok-from-oauth" }, false);
+    const headers = exec.buildHeaders(
+      { apiKey: "key-from-api", accessToken: "tok-from-oauth" },
+      false,
+    );
     expect(headers["Authorization"]).toBe("Bearer key-from-api");
   });
 
@@ -132,7 +135,9 @@ describe("cloudflare-ai — chat completions URL", () => {
 
   it("uses baseUrl from PROVIDERS with accountId substituted", () => {
     const url = exec.buildUrl(model, true, 0, creds);
-    expect(url).toBe("https://api.cloudflare.com/client/v4/accounts/test-account/ai/v1/chat/completions");
+    expect(url).toBe(
+      "https://api.cloudflare.com/client/v4/accounts/test-account/ai/v1/chat/completions",
+    );
   });
 
   it("returns same URL for streaming and non-streaming (streaming via body, not URL)", () => {
@@ -185,6 +190,8 @@ describe("cloudflare-ai — run endpoint pattern", () => {
     const accountId = "my-account";
     const model = "@cf/leonardo/lucid-origin";
     const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
-    expect(url).toBe("https://api.cloudflare.com/client/v4/accounts/my-account/ai/run/@cf/leonardo/lucid-origin");
+    expect(url).toBe(
+      "https://api.cloudflare.com/client/v4/accounts/my-account/ai/run/@cf/leonardo/lucid-origin",
+    );
   });
 });

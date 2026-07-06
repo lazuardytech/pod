@@ -79,7 +79,8 @@ export async function resolveConnectionProxyConfig(
       const proxyUrl = normalizeString((proxyPool as { proxyUrl?: unknown })?.proxyUrl);
       const noProxy = normalizeString((proxyPool as { noProxy?: unknown })?.noProxy);
 
-      const isValidPool = proxyPool && (proxyPool as { isActive?: unknown }).isActive === true && proxyUrl;
+      const isValidPool =
+        proxyPool && (proxyPool as { isActive?: unknown }).isActive === true && proxyUrl;
 
       if (isValidPool) {
         const pool = proxyPool as {

@@ -24,12 +24,15 @@ afterAll(async () => {
 
 describe("semantic cache", () => {
   it("stores and retrieves cached response by signature", async () => {
-    const { clearCache, generateSignature, getCachedResponse, setCachedResponse } = await import(
-      "@/lib/semanticCache.js"
-    );
+    const { clearCache, generateSignature, getCachedResponse, setCachedResponse } =
+      await import("@/lib/semanticCache.js");
     clearCache();
 
-    const payload = { model: "openai/gpt-4o-mini", messages: [{ role: "user", content: "hello" }], temperature: 0 };
+    const payload = {
+      model: "openai/gpt-4o-mini",
+      messages: [{ role: "user", content: "hello" }],
+      temperature: 0,
+    };
     const signature = generateSignature(payload.model, payload.messages, payload.temperature, 1);
 
     const response = {

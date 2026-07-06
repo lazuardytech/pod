@@ -108,7 +108,9 @@ maybe("RTK end-to-end", () => {
     if (!LOG_FILE) return;
     await new Promise((r) => setTimeout(r, 500));
     const { text } = readLogSince(offset);
-    const matches = [...text.matchAll(/\[RTK\] saved (\d+)B \/ (\d+)B \([\d.]+%\) via \[([\w,-]+)\] hits=(\d+)/g)];
+    const matches = [
+      ...text.matchAll(/\[RTK\] saved (\d+)B \/ (\d+)B \([\d.]+%\) via \[([\w,-]+)\] hits=(\d+)/g),
+    ];
     // Find the log line that corresponds to OUR request (total ≥ diff.length and contains git-diff)
     const mine = matches.find((m) => Number(m[2]) >= diff.length && m[3].includes("git-diff"));
     expect(
@@ -123,7 +125,9 @@ maybe("RTK end-to-end", () => {
   it("compresses grep-style tool_result", async () => {
     const lines = [];
     for (let i = 1; i <= 30; i++)
-      lines.push(`src/lib/foo.js:${i}:const v${i} = "matching content with enough padding to exceed threshold";`);
+      lines.push(
+        `src/lib/foo.js:${i}:const v${i} = "matching content with enough padding to exceed threshold";`,
+      );
     const grepOut = lines.join("\n");
     expect(grepOut.length).toBeGreaterThan(500);
 
@@ -148,7 +152,9 @@ maybe("RTK end-to-end", () => {
     if (!LOG_FILE) return;
     await new Promise((r) => setTimeout(r, 500));
     const { text } = readLogSince(offset);
-    const matches = [...text.matchAll(/\[RTK\] saved (\d+)B \/ (\d+)B \([\d.]+%\) via \[([\w,-]+)\] hits=(\d+)/g)];
+    const matches = [
+      ...text.matchAll(/\[RTK\] saved (\d+)B \/ (\d+)B \([\d.]+%\) via \[([\w,-]+)\] hits=(\d+)/g),
+    ];
     const mine = matches.find((m) => Number(m[2]) >= grepOut.length && m[3].includes("grep"));
     expect(mine, `no matching [RTK] line for grep payload`).toBeTruthy();
   });

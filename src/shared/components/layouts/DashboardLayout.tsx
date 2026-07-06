@@ -34,12 +34,23 @@ export default function DashboardLayout({ children }: { children?: any; [key: st
 
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar — Desktop */}
-      <div className={cn("hidden lg:flex transition-all duration-200", sidebarCollapsed ? "w-14" : "w-60")}>
-        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((v) => !v)} />
+      <div
+        className={cn(
+          "hidden lg:flex transition-all duration-200",
+          sidebarCollapsed ? "w-14" : "w-60",
+        )}
+      >
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+        />
       </div>
 
       {/* Sidebar — Mobile */}
@@ -66,7 +77,9 @@ export default function DashboardLayout({ children }: { children?: any; [key: st
             isChat ? "flex flex-col overflow-hidden" : "p-4 lg:p-6",
           )}
         >
-          <div className={cn(isChat ? "flex-1 w-full h-full flex flex-col" : "max-w-7xl mx-auto")}>{children}</div>
+          <div className={cn(isChat ? "flex-1 w-full h-full flex flex-col" : "max-w-7xl mx-auto")}>
+            {children}
+          </div>
         </div>
       </main>
     </div>

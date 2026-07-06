@@ -40,7 +40,8 @@ const formatResetTimeDisplay = (resetTime: any) => {
     const resetDate = new Date(resetTime);
     const now = new Date();
     const isToday = resetDate.toDateString() === now.toDateString();
-    const isTomorrow = resetDate.toDateString() === new Date(now.getTime() + 86400000).toDateString();
+    const isTomorrow =
+      resetDate.toDateString() === new Date(now.getTime() + 86400000).toDateString();
 
     const timeStr = resetDate.toLocaleTimeString(undefined, {
       hour: "2-digit",

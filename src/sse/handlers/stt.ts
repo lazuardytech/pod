@@ -3,13 +3,20 @@ import { handleSttCore } from "open-sse/handlers/sttCore.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
-import { extractApiKey, getProviderCredentials, isValidApiKey, markAccountUnavailable } from "../services/auth";
+import {
+  extractApiKey,
+  getProviderCredentials,
+  isValidApiKey,
+  markAccountUnavailable,
+} from "../services/auth";
 import { getModelInfo } from "../services/model";
 import * as log from "../utils/logger";
 
 const CREDENTIALED_PROVIDERS = new Set(
   Object.entries(AI_PROVIDERS)
-    .filter(([, p]) => p.serviceKinds?.includes("stt") && !p.noAuth && p.sttConfig?.authType !== "none")
+    .filter(
+      ([, p]) => p.serviceKinds?.includes("stt") && !p.noAuth && p.sttConfig?.authType !== "none",
+    )
     .map(([id]) => id),
 );
 
@@ -30,7 +37,8 @@ export async function handleStt(request: Request): Promise<Response> {
     if (!valid) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");
   }
   if (!modelStr) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing model");
-  if (!formData.get("file")) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: file");
+  if (!formData.get("file"))
+    return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: file");
   const modelInfo = await getModelInfo(modelStr);
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
   const provider = modelInfo.provider!;
@@ -49,7 +57,8 @@ export async function handleStt(request: Request): Promise<Response> {
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
         const msg = lastError || credentials.lastError || "Unavailable";
-        const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        const status =
+          lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${msg}`,
@@ -59,7 +68,10 @@ export async function handleStt(request: Request): Promise<Response> {
       }
       if (excludeConnectionIds.size === 0)
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+      return errorResponse(
+        lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        lastError || "All accounts unavailable",
+      );
     }
     log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
     const connectionId = credentials.connectionId!;
@@ -70,7 +82,13 @@ export async function handleStt(request: Request): Promise<Response> {
       credentials: credentials as Record<string, unknown>,
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
+    const { shouldFallback } = await markAccountUnavailable(
+      connectionId,
+      result.status,
+      result.error,
+      provider,
+      model,
+    );
     if (shouldFallback) {
       excludeConnectionIds.add(connectionId);
       lastError = result.error;

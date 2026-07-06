@@ -84,7 +84,9 @@ declare module "open-sse/handlers/imageGenerationCore.js" {
   export function handleImageGenerationCore(params: ImageGenCoreParams): Promise<ImageGenResult>;
 }
 declare module "open-sse/handlers/sttCore.js" {
-  export type SttResult = { success: true; response: Response } | { success: false; status: number; error: string };
+  export type SttResult =
+    | { success: true; response: Response }
+    | { success: false; status: number; error: string };
   export function handleSttCore(params: {
     provider: string;
     model: string;
@@ -93,7 +95,9 @@ declare module "open-sse/handlers/sttCore.js" {
   }): Promise<SttResult>;
 }
 declare module "open-sse/handlers/ttsCore.js" {
-  export type TtsResult = { success: true; response: Response } | { success: false; status: number; error: string };
+  export type TtsResult =
+    | { success: true; response: Response }
+    | { success: false; status: number; error: string };
   export function handleTtsCore(params: {
     provider: string;
     model: string;
@@ -121,7 +125,9 @@ declare module "open-sse/handlers/fetch/index.js" {
   export function handleFetchCore(params: FetchCoreParams): Promise<FetchResult>;
 }
 declare module "open-sse/handlers/search/index.js" {
-  export type SearchResult = { success: true; response: Response } | { success: false; status: number; error: string };
+  export type SearchResult =
+    | { success: true; response: Response }
+    | { success: false; status: number; error: string };
   export interface SearchCoreParams {
     body: Record<string, unknown>;
     provider: unknown;
@@ -160,7 +166,10 @@ declare module "open-sse/services/accountFallback.js" {
     conn: Record<string, unknown> | undefined,
     errorText: string,
   ): { update: Record<string, unknown>; cooldownMs: number; newCount: number; until: string };
-  export function buildModelLockUpdate(model: string | null, cooldownMs: number): Record<string, string>;
+  export function buildModelLockUpdate(
+    model: string | null,
+    cooldownMs: number,
+  ): Record<string, string>;
   export function checkFallbackError(
     status: number,
     errorText: string,
@@ -169,7 +178,10 @@ declare module "open-sse/services/accountFallback.js" {
   export function formatRetryAfter(iso: string): string;
   export function getConnectionLockUntil(conn: Record<string, unknown>): string | null;
   export function getEarliestModelLockUntil(conn: Record<string, unknown>): string | null;
-  export function getModelLockCount(conn: Record<string, unknown> | undefined, model: string | null): number;
+  export function getModelLockCount(
+    conn: Record<string, unknown> | undefined,
+    model: string | null,
+  ): number;
   export function getModelLockCountKey(model: string | null): string;
   export function isConnectionLevelError(status: number, errorText: string): boolean;
   export function isConnectionLockActive(conn: Record<string, unknown>): boolean;
@@ -193,7 +205,10 @@ declare module "open-sse/services/model.js" {
   ): { provider: string; model: string } | null;
 }
 declare module "open-sse/services/projectId.js" {
-  export function getProjectIdForConnection(connectionId: string, accessToken: string): Promise<string | null>;
+  export function getProjectIdForConnection(
+    connectionId: string,
+    accessToken: string,
+  ): Promise<string | null>;
   export function invalidateProjectId(connectionId: string): void;
   export function removeConnection(connectionId: string): void;
 }
@@ -217,26 +232,41 @@ declare module "open-sse/services/tokenRefresh.js" {
     credentials: Record<string, unknown>,
     log: unknown,
   ): Promise<Record<string, unknown>>;
-  export function refreshClaudeOAuthToken(refreshToken: string, log: unknown): Promise<Record<string, unknown>>;
-  export function refreshCodexToken(refreshToken: string, log: unknown): Promise<Record<string, unknown>>;
+  export function refreshClaudeOAuthToken(
+    refreshToken: string,
+    log: unknown,
+  ): Promise<Record<string, unknown>>;
+  export function refreshCodexToken(
+    refreshToken: string,
+    log: unknown,
+  ): Promise<Record<string, unknown>>;
   export function refreshCopilotToken(
     githubAccessToken: string,
     log?: unknown,
   ): Promise<{ token: string; expiresAt: number } | null>;
-  export function refreshGitHubToken(refreshToken: string, log: unknown): Promise<Record<string, unknown>>;
+  export function refreshGitHubToken(
+    refreshToken: string,
+    log: unknown,
+  ): Promise<Record<string, unknown>>;
   export function refreshGoogleToken(
     refreshToken: string,
     clientId: string,
     clientSecret: string,
     log: unknown,
   ): Promise<Record<string, unknown>>;
-  export function refreshIflowToken(refreshToken: string, log: unknown): Promise<Record<string, unknown>>;
+  export function refreshIflowToken(
+    refreshToken: string,
+    log: unknown,
+  ): Promise<Record<string, unknown>>;
   export function refreshKiroToken(
     refreshToken: string,
     providerSpecificData: Record<string, unknown> | undefined,
     log: unknown,
   ): Promise<Record<string, unknown>>;
-  export function refreshQwenToken(refreshToken: string, log: unknown): Promise<Record<string, unknown>>;
+  export function refreshQwenToken(
+    refreshToken: string,
+    log: unknown,
+  ): Promise<Record<string, unknown>>;
   export function refreshTokenByProvider(
     provider: string,
     credentials: Record<string, unknown>,
@@ -261,7 +291,11 @@ declare module "open-sse/utils/claudeHeaderCache.js" {
   export function cacheClaudeHeaders(headers: Record<string, string>): void;
 }
 declare module "open-sse/utils/error.js" {
-  export function errorResponse(status: number, message: string, headers?: Record<string, string>): Response;
+  export function errorResponse(
+    status: number,
+    message: string,
+    headers?: Record<string, string>,
+  ): Response;
   export function unavailableResponse(
     status: number,
     message: string,

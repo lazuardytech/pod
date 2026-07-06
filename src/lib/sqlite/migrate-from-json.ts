@@ -52,7 +52,15 @@ const STRUCTURED_NODE_FIELDS = new Set([
   "updatedAt",
 ]);
 
-const STRUCTURED_POOL_FIELDS = new Set(["id", "name", "proxyUrl", "type", "isActive", "createdAt", "updatedAt"]);
+const STRUCTURED_POOL_FIELDS = new Set([
+  "id",
+  "name",
+  "proxyUrl",
+  "type",
+  "isActive",
+  "createdAt",
+  "updatedAt",
+]);
 
 const STRUCTURED_COMBO_FIELDS = new Set(["id", "name", "createdAt", "updatedAt"]);
 
@@ -282,7 +290,9 @@ function importConfigDb(db: SqliteDatabase, data: ConfigDbData): number {
           ? k.requestsPerMinute
           : null;
       const concurrentRequests =
-        limitType === "limited" && Number.isInteger(k.concurrentRequests) && k.concurrentRequests! > 0
+        limitType === "limited" &&
+        Number.isInteger(k.concurrentRequests) &&
+        k.concurrentRequests! > 0
           ? k.concurrentRequests
           : null;
       stmt.run(
@@ -310,7 +320,9 @@ function importConfigDb(db: SqliteDatabase, data: ConfigDbData): number {
   }
 
   if (Array.isArray(data.customModels)) {
-    const stmt = db.prepare("INSERT OR IGNORE INTO custom_models (provider_alias, id, type, name) VALUES (?, ?, ?, ?)");
+    const stmt = db.prepare(
+      "INSERT OR IGNORE INTO custom_models (provider_alias, id, type, name) VALUES (?, ?, ?, ?)",
+    );
     for (const m of data.customModels as Record<string, string>[]) {
       if (!m?.providerAlias || !m?.id) continue;
       stmt.run(m.providerAlias, m.id, m.type || "llm", m.name || m.id);
@@ -327,7 +339,9 @@ function importConfigDb(db: SqliteDatabase, data: ConfigDbData): number {
   }
 
   if (data.pricing && typeof data.pricing === "object") {
-    const stmt = db.prepare("INSERT OR REPLACE INTO pricing (provider, model, data) VALUES (?, ?, ?)");
+    const stmt = db.prepare(
+      "INSERT OR REPLACE INTO pricing (provider, model, data) VALUES (?, ?, ?)",
+    );
     for (const [provider, models] of Object.entries(data.pricing)) {
       if (!models || typeof models !== "object") continue;
       for (const [model, priceObj] of Object.entries(models)) {
@@ -440,7 +454,10 @@ function importUsageDb(db: SqliteDatabase, data: UsageDbData): number {
   return imported;
 }
 
-function importRequestDetails(db: SqliteDatabase, data: { records?: RequestDetailRecord[] }): number {
+function importRequestDetails(
+  db: SqliteDatabase,
+  data: { records?: RequestDetailRecord[] },
+): number {
   if (!Array.isArray(data.records)) return 0;
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO request_details
@@ -452,7 +469,8 @@ function importRequestDetails(db: SqliteDatabase, data: { records?: RequestDetai
   let imported = 0;
   for (const r of data.records) {
     if (!r?.id) continue;
-    const latency = typeof r.latency === "number" ? r.latency : (r.latency?.total ?? r.latency?.totalMs ?? null);
+    const latency =
+      typeof r.latency === "number" ? r.latency : (r.latency?.total ?? r.latency?.totalMs ?? null);
     const t = r.tokens || {};
     const rest: Record<string, unknown> = { ...r };
     delete rest.id;

@@ -9,7 +9,10 @@ export async function GET(request: any) {
     const file = searchParams.get("file");
 
     if (!file) {
-      return NextResponse.json({ success: false, error: "File parameter required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "File parameter required" },
+        { status: 400 },
+      );
     }
 
     // Security: only allow specific filenames

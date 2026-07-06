@@ -142,7 +142,9 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
 
   // models.dev api.json shape: { [providerId]: { models: { [modelId]: { pricing?: { input, output, ... } } } } }
   // or flat array — handle both shapes defensively
-  const entries: unknown[] = Array.isArray(raw) ? raw : Object.entries(raw as Record<string, unknown>);
+  const entries: unknown[] = Array.isArray(raw)
+    ? raw
+    : Object.entries(raw as Record<string, unknown>);
 
   for (const entry of entries) {
     let providerId: string | undefined;
@@ -153,7 +155,12 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
       providerData = data;
     } else if (entry && typeof entry === "object") {
       const obj = entry as { id?: unknown; provider?: unknown };
-      providerId = typeof obj.id === "string" ? obj.id : typeof obj.provider === "string" ? obj.provider : undefined;
+      providerId =
+        typeof obj.id === "string"
+          ? obj.id
+          : typeof obj.provider === "string"
+            ? obj.provider
+            : undefined;
       providerData = entry as Record<string, unknown>;
     } else {
       continue;
@@ -161,7 +168,8 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
 
     if (!providerId || typeof providerData !== "object") continue;
 
-    const podProvider = MODELS_DEV_PROVIDER_MAP[String(providerId).toLowerCase()] ?? String(providerId).toLowerCase();
+    const podProvider =
+      MODELS_DEV_PROVIDER_MAP[String(providerId).toLowerCase()] ?? String(providerId).toLowerCase();
 
     // models can be under .models (object or array)
     const modelsRaw = providerData.models;
@@ -225,7 +233,9 @@ function toMillionTokenRate(val: unknown): number | null {
  */
 export function saveModelsDevPricing(data: ModelsDevPricingData): void {
   const db = getDatabase();
-  const stmt = db.prepare("INSERT OR REPLACE INTO models_dev_pricing (provider, model, data) VALUES (?, ?, ?)");
+  const stmt = db.prepare(
+    "INSERT OR REPLACE INTO models_dev_pricing (provider, model, data) VALUES (?, ?, ?)",
+  );
   const run = db.transaction((pricing: ModelsDevPricingData) => {
     for (const [provider, models] of Object.entries(pricing)) {
       for (const [model, p] of Object.entries(models)) {
@@ -267,7 +277,10 @@ export function loadModelsDevPricingCache(): Record<string, Record<string, Model
  * Look up pricing for a specific provider+model from the in-memory cache.
  * Loads from DB on first call.
  */
-export function getModelsDevPricingForModel(provider: string, model: string): ModelPricingEntry | null {
+export function getModelsDevPricingForModel(
+  provider: string,
+  model: string,
+): ModelPricingEntry | null {
   if (!_pricingCache) loadModelsDevPricingCache();
   if (!provider || !model) return null;
   return _pricingCache?.[provider]?.[model] ?? null;
@@ -313,7 +326,9 @@ async function _doSync(opts: { signal?: AbortSignal } = {}): Promise<SyncResult>
     // Persist sync metadata
     try {
       const db = getDatabase();
-      const metaStmt = db.prepare("INSERT OR REPLACE INTO models_dev_sync_meta (key, value) VALUES (?, ?)");
+      const metaStmt = db.prepare(
+        "INSERT OR REPLACE INTO models_dev_sync_meta (key, value) VALUES (?, ?)",
+      );
       const now = new Date().toISOString();
       db.transaction(() => {
         metaStmt.run("lastSync", now);
@@ -346,10 +361,14 @@ export function startPeriodicSync(intervalMs: number = 3600000): void {
   g.intervalMs = intervalMs;
 
   // Run immediately (non-blocking)
-  syncModelsDev().catch((err) => logError("modelsDevSync", "Initial sync error", { error: (err as Error).message }));
+  syncModelsDev().catch((err) =>
+    logError("modelsDevSync", "Initial sync error", { error: (err as Error).message }),
+  );
 
   g.timer = setInterval(() => {
-    syncModelsDev().catch((err) => logError("modelsDevSync", "Periodic sync error", { error: (err as Error).message }));
+    syncModelsDev().catch((err) =>
+      logError("modelsDevSync", "Periodic sync error", { error: (err as Error).message }),
+    );
   }, intervalMs);
 
   if (g.timer.unref) g.timer.unref();
@@ -378,7 +397,10 @@ export type SyncStatus = {
  * Return current sync status.
  */
 export function getSyncStatus(): SyncStatus {
-  const nextSync = g.lastSync && g.timer ? new Date(new Date(g.lastSync).getTime() + g.intervalMs).toISOString() : null;
+  const nextSync =
+    g.lastSync && g.timer
+      ? new Date(new Date(g.lastSync).getTime() + g.intervalMs).toISOString()
+      : null;
   return {
     lastSync: g.lastSync,
     lastSyncModelCount: g.lastSyncModelCount,

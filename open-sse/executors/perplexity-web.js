@@ -71,7 +71,11 @@ function sessionLookup(history) {
 
 function sessionStore(history, currentMsg, responseText, backendUuid) {
   if (!backendUuid) return;
-  const full = [...history, { role: "user", content: currentMsg }, { role: "assistant", content: responseText }];
+  const full = [
+    ...history,
+    { role: "user", content: currentMsg },
+    { role: "assistant", content: responseText },
+  ];
   const key = sessionKey(full);
   if (sessionCache.size >= SESSION_MAX_ENTRIES) {
     const firstKey = sessionCache.keys().next().value;
@@ -308,7 +312,16 @@ function sseChunk(data) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
-function buildStreamingResponse(eventStream, model, cid, created, history, currentMsg, signal, opts = {}) {
+function buildStreamingResponse(
+  eventStream,
+  model,
+  cid,
+  created,
+  history,
+  currentMsg,
+  signal,
+  opts = {},
+) {
   const skipReasoning = opts.skipReasoning === true;
   const encoder = new TextEncoder();
   return new ReadableStream({
@@ -322,7 +335,9 @@ function buildStreamingResponse(eventStream, model, cid, created, history, curre
               created,
               model,
               system_fingerprint: null,
-              choices: [{ index: 0, delta: { role: "assistant" }, finish_reason: null, logprobs: null }],
+              choices: [
+                { index: 0, delta: { role: "assistant" }, finish_reason: null, logprobs: null },
+              ],
             }),
           ),
         );
@@ -342,7 +357,12 @@ function buildStreamingResponse(eventStream, model, cid, created, history, curre
                   model,
                   system_fingerprint: null,
                   choices: [
-                    { index: 0, delta: { content: `[Error: ${chunk.error}]` }, finish_reason: null, logprobs: null },
+                    {
+                      index: 0,
+                      delta: { content: `[Error: ${chunk.error}]` },
+                      finish_reason: null,
+                      logprobs: null,
+                    },
                   ],
                 }),
               ),
@@ -388,7 +408,9 @@ function buildStreamingResponse(eventStream, model, cid, created, history, curre
                     created,
                     model,
                     system_fingerprint: null,
-                    choices: [{ index: 0, delta: { content: dt }, finish_reason: null, logprobs: null }],
+                    choices: [
+                      { index: 0, delta: { content: dt }, finish_reason: null, logprobs: null },
+                    ],
                   }),
                 ),
               );
@@ -440,7 +462,16 @@ function buildStreamingResponse(eventStream, model, cid, created, history, curre
   });
 }
 
-async function buildNonStreamingResponse(eventStream, model, cid, created, history, currentMsg, signal, opts = {}) {
+async function buildNonStreamingResponse(
+  eventStream,
+  model,
+  cid,
+  created,
+  history,
+  currentMsg,
+  signal,
+  opts = {},
+) {
   const skipReasoning = opts.skipReasoning === true;
   let fullAnswer = "";
   let respBackendUuid = null;
@@ -512,7 +543,9 @@ export class PerplexityWebExecutor extends BaseExecutor {
       return { response: errResp, url: PPLX_SSE_ENDPOINT, headers: {}, transformedBody: body };
     }
 
-    const thinking = body?.thinking === true || (body?.reasoning_effort != null && body.reasoning_effort !== "none");
+    const thinking =
+      body?.thinking === true ||
+      (body?.reasoning_effort != null && body.reasoning_effort !== "none");
 
     let pplxMode;
     let modelPref;
@@ -561,7 +594,10 @@ export class PerplexityWebExecutor extends BaseExecutor {
       headers["Cookie"] = `__Secure-next-auth.session-token=${credentials.apiKey}`;
     }
 
-    log?.info?.("PPLX-WEB", `Query to ${model} (pref=${modelPref}, mode=${pplxMode}), len=${query.length}`);
+    log?.info?.(
+      "PPLX-WEB",
+      `Query to ${model} (pref=${modelPref}, mode=${pplxMode}), len=${query.length}`,
+    );
 
     const fetchOptions = { method: "POST", headers, body: JSON.stringify(pplxBody) };
     if (signal) fetchOptions.signal = signal;
@@ -573,7 +609,10 @@ export class PerplexityWebExecutor extends BaseExecutor {
       log?.error?.("PPLX-WEB", `Fetch failed: ${err.message || String(err)}`);
       const errResp = new Response(
         JSON.stringify({
-          error: { message: `Perplexity connection failed: ${err.message || String(err)}`, type: "upstream_error" },
+          error: {
+            message: `Perplexity connection failed: ${err.message || String(err)}`,
+            type: "upstream_error",
+          },
         }),
         { status: 502, headers: { "Content-Type": "application/json" } },
       );
@@ -642,7 +681,11 @@ export class PerplexityWebExecutor extends BaseExecutor {
       );
       finalResponse = new Response(sseStream, {
         status: 200,
-        headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "X-Accel-Buffering": "no" },
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "X-Accel-Buffering": "no",
+        },
       });
     } else {
       finalResponse = await buildNonStreamingResponse(

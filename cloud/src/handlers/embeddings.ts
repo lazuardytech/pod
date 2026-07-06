@@ -6,7 +6,7 @@ import {
   isAccountUnavailable,
   getEarliestRateLimitedUntil,
   getUnavailableUntil,
-  formatRetryAfter
+  formatRetryAfter,
 } from "open-sse/services/accountFallback.js";
 import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import * as log from "../utils/logger.js";
@@ -53,15 +53,15 @@ export async function handleEmbeddings(
   request: Request,
   env: Env,
   _ctx: ExecutionContext,
-  machineIdOverride: string | null = null
+  machineIdOverride: string | null = null,
 ): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "*"
-      }
+        "Access-Control-Allow-Headers": "*",
+      },
     });
   }
 
@@ -78,7 +78,7 @@ export async function handleEmbeddings(
     if (!parsed.isNewFormat || !parsed.machineId) {
       return errorResponse(
         HTTP_STATUS.BAD_REQUEST,
-        "API key does not contain machineId. Use /{machineId}/v1/... endpoint for old format keys."
+        "API key does not contain machineId. Use /{machineId}/v1/... endpoint for old format keys.",
       );
     }
     machineId = parsed.machineId;
@@ -96,7 +96,7 @@ export async function handleEmbeddings(
   // Parse body
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
   }
@@ -110,7 +110,10 @@ export async function handleEmbeddings(
 
   // Resolve model info
   const data = await getMachineData(machineId, env);
-  const modelInfo = await getModelInfoCore(modelStr, (data?.modelAliases as Record<string, string>) || {});
+  const modelInfo = await getModelInfoCore(
+    modelStr,
+    (data?.modelAliases as Record<string, string>) || {},
+  );
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
 
   const { provider, model } = modelInfo as { provider: string; model: string };
@@ -130,47 +133,47 @@ export async function handleEmbeddings(
     iterations++;
     if (iterations > maxIterations || Date.now() - loopStartTime > CPU_DEADLINE_MS) {
       log.warn("EMBEDDINGS", `${provider.toUpperCase()} | fallback loop exhausted`);
-      return new Response(
-        JSON.stringify({ error: lastError || "All accounts unavailable" }),
-        { status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
+      return new Response(JSON.stringify({ error: lastError || "All accounts unavailable" }), {
+        status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      });
     }
 
-    const credentials: CredentialsResponse = await getProviderCredentials(machineId, provider, env, excludeConnectionId);
+    const credentials: CredentialsResponse = await getProviderCredentials(
+      machineId,
+      provider,
+      env,
+      excludeConnectionId,
+    );
 
     if (!credentials || (credentials as CredentialsError).allRateLimited) {
       const errCreds = credentials as CredentialsError | null;
       if (errCreds?.allRateLimited) {
         const retryAfterSec = Math.ceil(
-          (new Date(errCreds.retryAfter).getTime() - Date.now()) / 1000
+          (new Date(errCreds.retryAfter).getTime() - Date.now()) / 1000,
         );
         const errorMsg = lastError || errCreds.lastError || "Unavailable";
         const msg = `[${provider}/${model}] ${errorMsg} (${errCreds.retryAfterHuman})`;
-        const status = lastStatus || Number(errCreds.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        const status =
+          lastStatus || Number(errCreds.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("EMBEDDINGS", `${provider.toUpperCase()} | ${msg}`);
-        return new Response(
-          JSON.stringify({ error: { message: msg } }),
-          {
-            status,
-            headers: {
-              "Content-Type": "application/json",
-              "Retry-After": String(Math.max(retryAfterSec, 1)),
-              "Access-Control-Allow-Origin": "*"
-            }
-          }
-        );
+        return new Response(JSON.stringify({ error: { message: msg } }), {
+          status,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(Math.max(retryAfterSec, 1)),
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
       }
       if (!excludeConnectionId) {
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
       }
       log.warn("EMBEDDINGS", `${provider.toUpperCase()} | no more accounts`);
-      return new Response(
-        JSON.stringify({ error: lastError || "All accounts unavailable" }),
-        {
-          status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
+      return new Response(JSON.stringify({ error: lastError || "All accounts unavailable" }), {
+        status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const credResult = credentials as CredentialsResult;
@@ -186,7 +189,7 @@ export async function handleEmbeddings(
       },
       onRequestSuccess: async () => {
         await clearAccountError(machineId!, credResult.id, credResult, env);
-      }
+      },
     });
 
     if (result.success) return result.response;
@@ -194,7 +197,10 @@ export async function handleEmbeddings(
     const { shouldFallback } = checkFallbackError(result.status!, result.error!);
 
     if (shouldFallback) {
-      log.warn("EMBEDDINGS_FALLBACK", `${provider.toUpperCase()} | ${credResult.id} | ${result.status}`);
+      log.warn(
+        "EMBEDDINGS_FALLBACK",
+        `${provider.toUpperCase()} | ${credResult.id} | ${result.status}`,
+      );
       await markAccountUnavailable(machineId!, credResult.id, result.status!, result.error!, env);
       excludeConnectionId = credResult.id;
       lastError = result.error ?? null;
@@ -214,14 +220,14 @@ async function validateApiKey(request: Request, machineId: string, env: Env): Pr
 
   const apiKey = authHeader.slice(7);
   const data = await getMachineData(machineId, env);
-  return (data?.apiKeys as Array<{ key: string }>)?.some(k => k.key === apiKey) || false;
+  return (data?.apiKeys as Array<{ key: string }>)?.some((k) => k.key === apiKey) || false;
 }
 
 async function getProviderCredentials(
   machineId: string,
   provider: string,
   env: Env,
-  excludeConnectionId: string | null = null
+  excludeConnectionId: string | null = null,
 ): Promise<CredentialsResponse> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
@@ -243,17 +249,19 @@ async function getProviderCredentials(
     const earliest = getEarliestRateLimitedUntil(allConnections);
     if (earliest) {
       const rateLimitedConns = allConnections.filter(
-        c => c.rateLimitedUntil && new Date(c.rateLimitedUntil as string).getTime() > Date.now()
+        (c) => c.rateLimitedUntil && new Date(c.rateLimitedUntil as string).getTime() > Date.now(),
       );
       const earliestConn = rateLimitedConns.sort(
-        (a, b) => new Date(a.rateLimitedUntil as string).getTime() - new Date(b.rateLimitedUntil as string).getTime()
+        (a, b) =>
+          new Date(a.rateLimitedUntil as string).getTime() -
+          new Date(b.rateLimitedUntil as string).getTime(),
       )[0];
       return {
         allRateLimited: true,
         retryAfter: earliest,
         retryAfterHuman: formatRetryAfter(earliest),
         lastError: (earliestConn?.lastError as string) || null,
-        lastErrorCode: (earliestConn?.errorCode as string) || null
+        lastErrorCode: (earliestConn?.errorCode as string) || null,
       };
     }
     return null;
@@ -270,7 +278,7 @@ async function getProviderCredentials(
     providerSpecificData: connection.providerSpecificData as Record<string, unknown> | undefined,
     status: connection.status as string | undefined,
     lastError: connection.lastError as string | null | undefined,
-    rateLimitedUntil: connection.rateLimitedUntil as string | null | undefined
+    rateLimitedUntil: connection.rateLimitedUntil as string | null | undefined,
   };
 }
 
@@ -279,7 +287,7 @@ async function markAccountUnavailable(
   connectionId: string,
   status: number | string,
   errorText: string,
-  env: Env
+  env: Env,
 ): Promise<void> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
@@ -287,7 +295,11 @@ async function markAccountUnavailable(
 
   const conn = providers[connectionId];
   const backoffLevel = (conn.backoffLevel as number) || 0;
-  const { cooldownMs, newBackoffLevel } = checkFallbackError(status as number, errorText, backoffLevel);
+  const { cooldownMs, newBackoffLevel } = checkFallbackError(
+    status as number,
+    errorText,
+    backoffLevel,
+  );
   const rateLimitedUntil = getUnavailableUntil(cooldownMs);
   const reason = typeof errorText === "string" ? errorText.slice(0, 100) : "Provider error";
 
@@ -307,7 +319,7 @@ async function clearAccountError(
   machineId: string,
   connectionId: string,
   currentCredentials: CredentialsResult,
-  env: Env
+  env: Env,
 ): Promise<void> {
   const hasError =
     currentCredentials.status === "unavailable" ||
@@ -336,7 +348,7 @@ async function updateCredentials(
   machineId: string,
   connectionId: string,
   newCredentials: Record<string, unknown>,
-  env: Env
+  env: Env,
 ): Promise<void> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
@@ -344,11 +356,10 @@ async function updateCredentials(
 
   const conn = providers[connectionId];
   conn.accessToken = newCredentials.accessToken;
-  if (newCredentials.refreshToken)
-    conn.refreshToken = newCredentials.refreshToken;
+  if (newCredentials.refreshToken) conn.refreshToken = newCredentials.refreshToken;
   if (newCredentials.expiresIn) {
     conn.expiresAt = new Date(
-      Date.now() + (newCredentials.expiresIn as number) * 1000
+      Date.now() + (newCredentials.expiresIn as number) * 1000,
     ).toISOString();
     conn.expiresIn = newCredentials.expiresIn;
   }

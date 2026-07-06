@@ -31,7 +31,8 @@ function shouldInject(message, scope) {
   if (message?.role !== "assistant") return false;
   const rc = message.reasoning_content;
   if (typeof rc === "string" && rc.length > 0) return false;
-  if (scope === "toolCalls") return Array.isArray(message.tool_calls) && message.tool_calls.length > 0;
+  if (scope === "toolCalls")
+    return Array.isArray(message.tool_calls) && message.tool_calls.length > 0;
   return true;
 }
 

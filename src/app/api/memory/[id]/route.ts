@@ -29,7 +29,11 @@ export async function PATCH(request: any, { params }: { params: any }) {
     if (body.sessionId !== undefined) updates.sessionId = body.sessionId;
 
     const updated = await updateMemory(id, updates);
-    if (!updated) return NextResponse.json({ error: "Memory not found or no changes applied" }, { status: 404 });
+    if (!updated)
+      return NextResponse.json(
+        { error: "Memory not found or no changes applied" },
+        { status: 404 },
+      );
 
     const memory = await getMemory(id);
     return NextResponse.json({ success: true, data: memory });

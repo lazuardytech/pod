@@ -8,7 +8,10 @@ const DISMISS_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
 
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
-  return window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true
+  );
 }
 
 function isIOS() {
@@ -16,7 +19,8 @@ function isIOS() {
 
   const ua = window.navigator.userAgent.toLowerCase();
   const iOSByUA = /iphone|ipad|ipod/.test(ua);
-  const iPadByPlatform = window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+  const iPadByPlatform =
+    window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
 
   return iOSByUA || iPadByPlatform;
 }
@@ -105,7 +109,11 @@ export default function PWAInstallPrompt() {
   return (
     <aside className="fixed bottom-4 left-1/2 z-[120] w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-lg border border-white/10 bg-[#0f1013]/95 p-3 shadow-[var(--shadow-lg)] backdrop-blur">
       <div className="flex items-start gap-2">
-        <LucideIcon name={canPromptInstall ? "download" : "apps"} className="mt-0.5 text-porcelain" size={16} />
+        <LucideIcon
+          name={canPromptInstall ? "download" : "apps"}
+          className="mt-0.5 text-porcelain"
+          size={16}
+        />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-porcelain">Install Pod</p>
           {canPromptInstall ? (
@@ -130,11 +138,22 @@ export default function PWAInstallPrompt() {
 
       <div className="mt-3 flex gap-2">
         {canPromptInstall ? (
-          <Button type="button" size="sm" icon="download" loading={installing} onClick={handleInstall}>
+          <Button
+            type="button"
+            size="sm"
+            icon="download"
+            loading={installing}
+            onClick={handleInstall}
+          >
             Install
           </Button>
         ) : null}
-        <Button type="button" size="sm" variant={canPromptInstall ? "secondary" : "primary"} onClick={dismiss}>
+        <Button
+          type="button"
+          size="sm"
+          variant={canPromptInstall ? "secondary" : "primary"}
+          onClick={dismiss}
+        >
           {canPromptInstall ? "Not now" : "Got it"}
         </Button>
       </div>

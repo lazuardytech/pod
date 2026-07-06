@@ -36,24 +36,32 @@ export async function PUT(request: any) {
 
     if (body.enabled !== undefined) {
       const value = toBooleanOrNull(body.enabled);
-      if (value === null) return NextResponse.json({ error: "enabled must be boolean" }, { status: 400 });
+      if (value === null)
+        return NextResponse.json({ error: "enabled must be boolean" }, { status: 400 });
       patch.enabled = value;
     }
     if (body.maxTokens !== undefined) {
       const value = toBoundedIntOrNull(body.maxTokens, 0, 16000);
-      if (value === null) return NextResponse.json({ error: "maxTokens must be integer 0..16000" }, { status: 400 });
+      if (value === null)
+        return NextResponse.json({ error: "maxTokens must be integer 0..16000" }, { status: 400 });
       patch.maxTokens = value;
     }
     if (body.retentionDays !== undefined) {
       const value = toBoundedIntOrNull(body.retentionDays, 1, 365);
       if (value === null) {
-        return NextResponse.json({ error: "retentionDays must be integer 1..365" }, { status: 400 });
+        return NextResponse.json(
+          { error: "retentionDays must be integer 1..365" },
+          { status: 400 },
+        );
       }
       patch.retentionDays = value;
     }
     if (body.strategy !== undefined) {
       if (!["recent", "semantic", "hybrid"].includes(asString(body.strategy))) {
-        return NextResponse.json({ error: "strategy must be one of: recent, semantic, hybrid" }, { status: 400 });
+        return NextResponse.json(
+          { error: "strategy must be one of: recent, semantic, hybrid" },
+          { status: 400 },
+        );
       }
       patch.strategy = body.strategy;
     }

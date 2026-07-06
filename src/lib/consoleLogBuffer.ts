@@ -71,7 +71,9 @@ export function initConsoleLogCapture(): void {
   for (const level of consoleLevels) {
     const original = console[level].bind(console) as (...args: unknown[]) => void;
     state.originals[level] = original;
-    (console as unknown as Record<ConsoleLevel, (...args: unknown[]) => void>)[level] = (...args: unknown[]) => {
+    (console as unknown as Record<ConsoleLevel, (...args: unknown[]) => void>)[level] = (
+      ...args: unknown[]
+    ) => {
       appendLine(toLogLine(level, args));
       original(...args);
     };

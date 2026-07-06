@@ -13,7 +13,10 @@ export async function POST(request: any) {
     const content = body.content;
 
     if (!file || content === undefined) {
-      return NextResponse.json({ success: false, error: "File and content required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "File and content required" },
+        { status: 400 },
+      );
     }
 
     // Security: only allow specific filenames
@@ -40,7 +43,11 @@ export async function POST(request: any) {
     }
 
     const filePath = path.join(logsDir, file);
-    fs.writeFileSync(filePath, typeof content === "string" ? content : JSON.stringify(content), "utf-8");
+    fs.writeFileSync(
+      filePath,
+      typeof content === "string" ? content : JSON.stringify(content),
+      "utf-8",
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

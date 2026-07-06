@@ -39,7 +39,12 @@ function normalizeProxyConfig(body: Record<string, unknown> = {}) {
 }
 
 async function normalizeProxyPoolId(proxyPoolId: any) {
-  if (proxyPoolId === undefined || proxyPoolId === null || proxyPoolId === "" || proxyPoolId === "__none__") {
+  if (
+    proxyPoolId === undefined ||
+    proxyPoolId === null ||
+    proxyPoolId === "" ||
+    proxyPoolId === "__none__"
+  ) {
     return { proxyPoolId: null };
   }
 
@@ -106,7 +111,8 @@ export async function POST(request: any) {
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
     const provider = normalizeProviderId(body.provider);
-    const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } = body ?? ({} as any);
+    const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } =
+      body ?? ({} as any);
     const proxyConfig = normalizeProxyConfig(body);
     if (proxyConfig.error) {
       return NextResponse.json({ error: proxyConfig.error }, { status: 400 });
@@ -142,7 +148,11 @@ export async function POST(request: any) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    let providerSpecificData = normalizeProviderSpecificData(provider, body, asApiRecord(body.providerSpecificData));
+    let providerSpecificData = normalizeProviderSpecificData(
+      provider,
+      body,
+      asApiRecord(body.providerSpecificData),
+    );
 
     if (isOpenAICompatibleProvider(provider)) {
       const node = await getProviderNodeById(provider);

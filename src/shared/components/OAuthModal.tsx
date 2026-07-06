@@ -47,7 +47,9 @@ export default function OAuthModal({
   // Detect if running on localhost (client-side only)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setIsLocalhost(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+      setIsLocalhost(
+        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1",
+      );
       setPlaceholderUrl(`${window.location.origin}/callback?code=...`);
     }
   }, []);
@@ -152,12 +154,22 @@ export default function OAuthModal({
       setError(null);
 
       // Device code flow providers
-      const deviceCodeProviders: any = ["github", "qwen", "kiro", "kimi-coding", "kilocode", "codebuddy"];
+      const deviceCodeProviders: any = [
+        "github",
+        "qwen",
+        "kiro",
+        "kimi-coding",
+        "kilocode",
+        "codebuddy",
+      ];
       if (deviceCodeProviders.includes(provider)) {
         setIsDeviceCode(true);
         setStep("waiting");
 
-        const deviceCodeUrl: any = new URL(`/api/oauth/${provider}/device-code`, window.location.origin);
+        const deviceCodeUrl: any = new URL(
+          `/api/oauth/${provider}/device-code`,
+          window.location.origin,
+        );
         if (provider === "kiro" && idcConfig?.startUrl) {
           deviceCodeUrl.searchParams.set("start_url", idcConfig.startUrl);
           if (idcConfig.region) {
@@ -191,7 +203,8 @@ export default function OAuthModal({
       }
 
       // Authorization code flow - build redirect URI (some providers require fixed ports)
-      const appPort: any = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
+      const appPort: any =
+        window.location.port || (window.location.protocol === "https:" ? "443" : "80");
       let redirectUri: any;
       if (provider === "codex") {
         // Codex CLI OAuth only accepts http://localhost:1455/auth/callback as redirect URI.
@@ -293,7 +306,9 @@ export default function OAuthModal({
       if (cancelled || callbackProcessedRef.current) return;
       attempts += 1;
       try {
-        const res: any = await fetch(`/api/oauth/codex/poll-status?state=${encodeURIComponent(authData.state)}`);
+        const res: any = await fetch(
+          `/api/oauth/codex/poll-status?state=${encodeURIComponent(authData.state)}`,
+        );
         const data: any = await res.json();
         if (cancelled || callbackProcessedRef.current) return;
         if (data.status === "done") {
@@ -354,7 +369,8 @@ export default function OAuthModal({
     // Method 1: postMessage from popup
     const handleMessage: any = (event: any) => {
       // Allow messages from same origin or localhost (any port)
-      const isLocalhost: any = event.origin.includes("localhost") || event.origin.includes("127.0.0.1");
+      const isLocalhost: any =
+        event.origin.includes("localhost") || event.origin.includes("127.0.0.1");
       const isSameOrigin: any = event.origin === window.location.origin;
       if (!isLocalhost && !isSameOrigin) return;
 
@@ -441,7 +457,8 @@ export default function OAuthModal({
   }, [onClose, provider]);
 
   if (!provider || !providerInfo) return null;
-  const deviceLoginUrl: any = deviceData?.verification_uri_complete || deviceData?.verification_uri || "";
+  const deviceLoginUrl: any =
+    deviceData?.verification_uri_complete || deviceData?.verification_uri || "";
 
   return (
     <Modal isOpen={isOpen} title={`Connect ${providerInfo.name}`} onClose={handleClose} size="lg">
@@ -451,14 +468,19 @@ export default function OAuthModal({
           <>
             {/* Option A: Auto via popup */}
             <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg bg-sidebar/50">
-              <LucideIcon name="progress_activity" className="text-base text-primary animate-spin" />
+              <LucideIcon
+                name="progress_activity"
+                className="text-base text-primary animate-spin"
+              />
               <span className="text-sm">Waiting for popup authorization…</span>
             </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3 my-1">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-text-muted uppercase tracking-wider">Or paste callback URL manually</span>
+              <span className="text-xs text-text-muted uppercase tracking-wider">
+                Or paste callback URL manually
+              </span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -467,7 +489,11 @@ export default function OAuthModal({
               <div>
                 <p className="text-sm font-medium mb-2">Step 1: Open this URL in your browser</p>
                 <div className="flex gap-2">
-                  <Input value={authData?.authUrl || ""} readOnly className="flex-1 font-mono text-xs" />
+                  <Input
+                    value={authData?.authUrl || ""}
+                    readOnly
+                    className="flex-1 font-mono text-xs"
+                  />
                   <Button
                     variant="secondary"
                     icon={copied === "auth_url" ? "check" : "content_copy"}
@@ -508,7 +534,9 @@ export default function OAuthModal({
         {step === "waiting" && isDeviceCode && deviceData && (
           <>
             <div className="text-center py-4">
-              <p className="text-sm text-text-muted mb-4">Visit the login URL below and authorize:</p>
+              <p className="text-sm text-text-muted mb-4">
+                Visit the login URL below and authorize:
+              </p>
               <div className="bg-sidebar p-4 rounded-lg mb-4">
                 <p className="text-xs text-text-muted mb-1">Login URL</p>
                 <div className="flex items-center gap-2">
@@ -534,7 +562,9 @@ export default function OAuthModal({
               <div className="bg-primary/10 p-4 rounded-lg">
                 <p className="text-xs text-text-muted mb-1">Your Code</p>
                 <div className="flex items-center justify-center gap-2">
-                  <p className="text-2xl font-mono font-bold text-primary">{deviceData.user_code}</p>
+                  <p className="text-2xl font-mono font-bold text-primary">
+                    {deviceData.user_code}
+                  </p>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -560,7 +590,9 @@ export default function OAuthModal({
               <LucideIcon name="check_circle" className="text-3xl text-green-600" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Connected Successfully!</h3>
-            <p className="text-sm text-text-muted mb-4">Your {providerInfo.name} account has been connected.</p>
+            <p className="text-sm text-text-muted mb-4">
+              Your {providerInfo.name} account has been connected.
+            </p>
             <Button onClick={handleClose} fullWidth>
               Done
             </Button>

@@ -27,7 +27,11 @@ function SectionHeader({ icon, title }: any) {
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
 function Section({ children, className }: { children: any; className?: any }) {
-  return <div className={cn("rounded-[6px] border border-charcoal-grey bg-graphite p-5", className)}>{children}</div>;
+  return (
+    <div className={cn("rounded-[6px] border border-charcoal-grey bg-graphite p-5", className)}>
+      {children}
+    </div>
+  );
 }
 
 // ─── Row: label + description + right slot ────────────────────────────────────
@@ -52,7 +56,9 @@ function SettingRow({ label, description, children, border = false }: any) {
 function StatusMsg({ status }: any) {
   if (!status?.message) return null;
   return (
-    <p className={cn("text-[12px]", status.type === "error" ? "text-warning-red" : "text-emerald")}>{status.message}</p>
+    <p className={cn("text-[12px]", status.type === "error" ? "text-warning-red" : "text-emerald")}>
+      {status.message}
+    </p>
   );
 }
 
@@ -80,7 +86,11 @@ export default function ProfilePage() {
   const _openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
     setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null as (() => void) | null }));
+    setConfirmDialog((prev: any) => ({
+      ...prev,
+      open: false,
+      onConfirm: null as (() => void) | null,
+    }));
   const [legacyInfo, setLegacyInfo] = useState({ hasLegacyData: false, legacyFilesFound: [] });
   const importFileRef = useRef<any>(null);
   const [proxyForm, setProxyForm] = useState({
@@ -114,29 +124,32 @@ export default function ProfilePage() {
     });
   }, []);
 
-  const patchSettings = useCallback(async (patch: any, { feature = "profile-settings" }: any = {}) => {
-    try {
-      const result = await mutateJsonWithOfflineQueue({
-        url: "/api/settings",
-        method: "PATCH",
-        body: patch,
-        queueMeta: { feature, patch },
-        invalidateCacheTags: ["settings"],
-      });
+  const patchSettings = useCallback(
+    async (patch: any, { feature = "profile-settings" }: any = {}) => {
+      try {
+        const result = await mutateJsonWithOfflineQueue({
+          url: "/api/settings",
+          method: "PATCH",
+          body: patch,
+          queueMeta: { feature, patch },
+          invalidateCacheTags: ["settings"],
+        });
 
-      if (result.queued) {
-        setSettings((prev: any) => ({ ...prev, ...patch }));
-        return { ok: true, queued: true, data: patch };
+        if (result.queued) {
+          setSettings((prev: any) => ({ ...prev, ...patch }));
+          return { ok: true, queued: true, data: patch };
+        }
+
+        const nextData = result.data && typeof result.data === "object" ? result.data : patch;
+        setSettings((prev: any) => ({ ...prev, ...nextData }));
+        return { ok: true, queued: false, data: nextData };
+      } catch (error) {
+        console.error("Failed to update settings:", error);
+        return { ok: false, queued: false, error };
       }
-
-      const nextData = result.data && typeof result.data === "object" ? result.data : patch;
-      setSettings((prev: any) => ({ ...prev, ...nextData }));
-      return { ok: true, queued: false, data: nextData };
-    } catch (error) {
-      console.error("Failed to update settings:", error);
-      return { ok: false, queued: false, error };
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -261,11 +274,15 @@ export default function ProfilePage() {
     setProxyLoading(true);
     setProxyStatus({ type: "", message: "" });
     try {
-      const result = await patchSettings({ outboundProxyEnabled }, { feature: "profile-outbound-proxy-enabled" });
+      const result = await patchSettings(
+        { outboundProxyEnabled },
+        { feature: "profile-outbound-proxy-enabled" },
+      );
       if (result.ok) {
         setProxyForm((prev: any) => ({
           ...prev,
-          outboundProxyEnabled: (result.data?.outboundProxyEnabled ?? outboundProxyEnabled) === true,
+          outboundProxyEnabled:
+            (result.data?.outboundProxyEnabled ?? outboundProxyEnabled) === true,
         }));
         setProxyStatus({
           type: "success",
@@ -333,7 +350,10 @@ export default function ProfilePage() {
   const updateComboStickyLimit = async (limit: any) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
-    await patchSettings({ comboStickyRoundRobinLimit: numLimit }, { feature: "profile-combo-sticky-limit" });
+    await patchSettings(
+      { comboStickyRoundRobinLimit: numLimit },
+      { feature: "profile-combo-sticky-limit" },
+    );
   };
 
   const updateMinimumLockout = async (minutes: any) => {
@@ -347,7 +367,10 @@ export default function ProfilePage() {
 
   const updateModelCostSyncInterval = async (val: any) => {
     const hours = Math.max(1, parseInt(val) || 1);
-    await patchSettings({ modelCostSyncIntervalHours: hours }, { feature: "profile-model-cost-sync-interval" });
+    await patchSettings(
+      { modelCostSyncIntervalHours: hours },
+      { feature: "profile-model-cost-sync-interval" },
+    );
   };
 
   const handleSyncNow = async () => {
@@ -448,7 +471,8 @@ export default function ProfilePage() {
     }
   };
 
-  const observabilityEnabled = settings.enableObservability === true || settings.observabilityEnabled === true;
+  const observabilityEnabled =
+    settings.enableObservability === true || settings.observabilityEnabled === true;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -478,11 +502,19 @@ export default function ProfilePage() {
                   onClick={() => setTheme(option)}
                   className={cn(
                     "flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-[12px] font-[510] transition-colors duration-100 capitalize",
-                    theme === option ? "bg-deep-slate text-porcelain" : "text-fog-grey hover:text-storm-cloud",
+                    theme === option
+                      ? "bg-deep-slate text-porcelain"
+                      : "text-fog-grey hover:text-storm-cloud",
                   )}
                 >
                   <LucideIcon
-                    name={option === "light" ? "light_mode" : option === "dark" ? "dark_mode" : "contrast"}
+                    name={
+                      option === "light"
+                        ? "light_mode"
+                        : option === "dark"
+                          ? "dark_mode"
+                          : "contrast"
+                    }
                     className="text-[14px]"
                   />
                   {option}
@@ -504,7 +536,12 @@ export default function ProfilePage() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" icon="download" onClick={handleExportDatabase} loading={dbLoading}>
+              <Button
+                variant="secondary"
+                icon="download"
+                onClick={handleExportDatabase}
+                loading={dbLoading}
+              >
                 Download Backup
               </Button>
               <Button
@@ -527,7 +564,8 @@ export default function ProfilePage() {
 
             {legacyInfo.hasLegacyData && (
               <p className="text-[12px] text-storm-cloud">
-                Legacy files detected: <span className="font-mono">{legacyInfo.legacyFilesFound.join(", ")}</span>
+                Legacy files detected:{" "}
+                <span className="font-mono">{legacyInfo.legacyFilesFound.join(", ")}</span>
               </p>
             )}
 
@@ -551,7 +589,10 @@ export default function ProfilePage() {
             </SettingRow>
 
             {settings.requireLogin === true && (
-              <form onSubmit={handlePasswordChange} className="flex flex-col gap-4 pt-4 border-t border-charcoal-grey">
+              <form
+                onSubmit={handlePasswordChange}
+                className="flex flex-col gap-4 pt-4 border-t border-charcoal-grey"
+              >
                 {settings.hasPassword && (
                   <div className="flex flex-col gap-1.5">
                     <FieldLabel>Current Password</FieldLabel>
@@ -605,14 +646,20 @@ export default function ProfilePage() {
               <Toggle
                 checked={settings.fallbackStrategy === "round-robin"}
                 onChange={() =>
-                  updateFallbackStrategy(settings.fallbackStrategy === "round-robin" ? "fill-first" : "round-robin")
+                  updateFallbackStrategy(
+                    settings.fallbackStrategy === "round-robin" ? "fill-first" : "round-robin",
+                  )
                 }
                 disabled={loading}
               />
             </SettingRow>
 
             {settings.fallbackStrategy === "round-robin" && (
-              <SettingRow label="Sticky Limit" description="Calls per account before switching" border>
+              <SettingRow
+                label="Sticky Limit"
+                description="Calls per account before switching"
+                border
+              >
                 <Input
                   type="number"
                   min="1"
@@ -633,14 +680,20 @@ export default function ProfilePage() {
               <Toggle
                 checked={settings.comboStrategy === "round-robin"}
                 onChange={() =>
-                  updateComboStrategy(settings.comboStrategy === "round-robin" ? "fallback" : "round-robin")
+                  updateComboStrategy(
+                    settings.comboStrategy === "round-robin" ? "fallback" : "round-robin",
+                  )
                 }
                 disabled={loading}
               />
             </SettingRow>
 
             {settings.comboStrategy === "round-robin" && (
-              <SettingRow label="Combo Sticky Limit" description="Calls per combo model before switching" border>
+              <SettingRow
+                label="Combo Sticky Limit"
+                description="Calls per combo model before switching"
+                border
+              >
                 <Input
                   type="number"
                   min="1"
@@ -653,7 +706,11 @@ export default function ProfilePage() {
               </SettingRow>
             )}
 
-            <SettingRow label="Minimum Lockout Time" description="Minimum lockout duration per error (minutes)." border>
+            <SettingRow
+              label="Minimum Lockout Time"
+              description="Minimum lockout duration per error (minutes)."
+              border
+            >
               <Input
                 type="number"
                 min="1"
@@ -679,25 +736,37 @@ export default function ProfilePage() {
         <Section>
           <SectionHeader icon="wifi" title="Network" />
           <div className="flex flex-col gap-4">
-            <SettingRow label="Outbound Proxy" description="Enable proxy for OAuth + provider outbound requests.">
+            <SettingRow
+              label="Outbound Proxy"
+              description="Enable proxy for OAuth + provider outbound requests."
+            >
               <Toggle
                 checked={settings.outboundProxyEnabled === true}
-                onChange={() => updateOutboundProxyEnabled(!(settings.outboundProxyEnabled === true))}
+                onChange={() =>
+                  updateOutboundProxyEnabled(!(settings.outboundProxyEnabled === true))
+                }
                 disabled={loading || proxyLoading}
               />
             </SettingRow>
 
             {settings.outboundProxyEnabled === true && (
-              <form onSubmit={updateOutboundProxy} className="flex flex-col gap-4 pt-4 border-t border-charcoal-grey">
+              <form
+                onSubmit={updateOutboundProxy}
+                className="flex flex-col gap-4 pt-4 border-t border-charcoal-grey"
+              >
                 <div className="flex flex-col gap-1.5">
                   <FieldLabel>Proxy URL</FieldLabel>
                   <Input
                     placeholder="http://127.0.0.1:7897"
                     value={proxyForm.outboundProxyUrl}
-                    onChange={(e: any) => setProxyForm((prev: any) => ({ ...prev, outboundProxyUrl: e.target.value }))}
+                    onChange={(e: any) =>
+                      setProxyForm((prev: any) => ({ ...prev, outboundProxyUrl: e.target.value }))
+                    }
                     disabled={loading || proxyLoading}
                   />
-                  <p className="text-[12px] text-storm-cloud">Leave empty to inherit existing env proxy (if any).</p>
+                  <p className="text-[12px] text-storm-cloud">
+                    Leave empty to inherit existing env proxy (if any).
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-1.5 pt-4 border-t border-charcoal-grey">
@@ -705,10 +774,14 @@ export default function ProfilePage() {
                   <Input
                     placeholder="localhost,127.0.0.1"
                     value={proxyForm.outboundNoProxy}
-                    onChange={(e: any) => setProxyForm((prev: any) => ({ ...prev, outboundNoProxy: e.target.value }))}
+                    onChange={(e: any) =>
+                      setProxyForm((prev: any) => ({ ...prev, outboundNoProxy: e.target.value }))
+                    }
                     disabled={loading || proxyLoading}
                   />
-                  <p className="text-[12px] text-storm-cloud">Comma-separated hostnames/domains to bypass the proxy.</p>
+                  <p className="text-[12px] text-storm-cloud">
+                    Comma-separated hostnames/domains to bypass the proxy.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 pt-4 border-t border-charcoal-grey">
@@ -735,8 +808,15 @@ export default function ProfilePage() {
         {/* ── Observability ───────────────────────────────────────────────── */}
         <Section>
           <SectionHeader icon="monitoring" title="Observability" />
-          <SettingRow label="Enable Observability" description="Record request details for inspection in the logs view">
-            <Toggle checked={observabilityEnabled} onChange={updateObservabilityEnabled} disabled={loading} />
+          <SettingRow
+            label="Enable Observability"
+            description="Record request details for inspection in the logs view"
+          >
+            <Toggle
+              checked={observabilityEnabled}
+              onChange={updateObservabilityEnabled}
+              disabled={loading}
+            />
           </SettingRow>
         </Section>
 
@@ -760,7 +840,10 @@ export default function ProfilePage() {
                 className="shrink-0"
               />
             </SettingRow>
-            <SettingRow label="Sync Now" description="Immediately sync model pricing from models.dev.">
+            <SettingRow
+              label="Sync Now"
+              description="Immediately sync model pricing from models.dev."
+            >
               <Button
                 size="sm"
                 variant="secondary"

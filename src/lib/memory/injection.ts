@@ -39,7 +39,11 @@ export function shouldInjectMemory(request: unknown, config: MemoryConfig = {}):
   );
 }
 
-export function injectMemory<T extends RequestWithMessages>(request: T, memories: unknown, provider: string): T {
+export function injectMemory<T extends RequestWithMessages>(
+  request: T,
+  memories: unknown,
+  provider: string,
+): T {
   if (!Array.isArray(memories) || memories.length === 0) return request;
   const memoryText = formatMemoryContext(memories);
   if (!memoryText) return request;

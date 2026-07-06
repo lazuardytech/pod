@@ -15,7 +15,11 @@ import { checkAndRefreshToken, updateProviderCredentials } from "../services/tok
 import * as log from "../utils/logger";
 
 const NO_AUTH_PROVIDERS = new Set(["sdwebui", "comfyui"]);
-type ImageGenOptions = { wantsStream: boolean; binaryOutput: boolean; preferredConnectionId: string | null };
+type ImageGenOptions = {
+  wantsStream: boolean;
+  binaryOutput: boolean;
+  preferredConnectionId: string | null;
+};
 
 export async function handleImageGeneration(request: Request): Promise<Response> {
   let body: Record<string, any>;
@@ -40,9 +44,14 @@ export async function handleImageGeneration(request: Request): Promise<Response>
   if (!body.prompt) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: prompt");
   const comboModels = await getComboModels(modelStr);
   if (comboModels) {
-    const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+    const comboStrategies = (settings.comboStrategies || {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
     const comboStrategy =
-      (comboStrategies[modelStr]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
+      (comboStrategies[modelStr]?.fallbackStrategy as string) ||
+      (settings.comboStrategy as string) ||
+      "fallback";
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "IMAGE",
@@ -51,14 +60,19 @@ export async function handleImageGeneration(request: Request): Promise<Response>
     return handleComboChat({
       body,
       models: comboModels,
-      handleSingleModel: (b, m) => handleSingleModelImage(b, m, { wantsStream, binaryOutput, preferredConnectionId }),
+      handleSingleModel: (b, m) =>
+        handleSingleModelImage(b, m, { wantsStream, binaryOutput, preferredConnectionId }),
       log,
       comboName: modelStr,
       comboStrategy,
       comboStickyLimit,
     });
   }
-  return handleSingleModelImage(body, modelStr, { wantsStream, binaryOutput, preferredConnectionId });
+  return handleSingleModelImage(body, modelStr, {
+    wantsStream,
+    binaryOutput,
+    preferredConnectionId,
+  });
 }
 
 async function handleSingleModelImage(
@@ -82,7 +96,10 @@ async function handleSingleModelImage(
       binaryOutput,
     });
     if (result.success === true) return result.response;
-    return errorResponse(result.status || HTTP_STATUS.BAD_GATEWAY, result.error || "Image generation failed");
+    return errorResponse(
+      result.status || HTTP_STATUS.BAD_GATEWAY,
+      result.error || "Image generation failed",
+    );
   }
   const excludeConnectionIds = new Set<string>();
   let lastError: string | null = null;
@@ -94,7 +111,8 @@ async function handleSingleModelImage(
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
         const errorMsg = lastError || credentials.lastError || "Unavailable";
-        const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        const status =
+          lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${errorMsg}`,
@@ -105,7 +123,10 @@ async function handleSingleModelImage(
       if (excludeConnectionIds.size === 0) {
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
       }
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+      return errorResponse(
+        lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        lastError || "All accounts unavailable",
+      );
     }
     const connectionId = credentials.connectionId!;
     const connName = credentials.connectionName;
@@ -120,7 +141,9 @@ async function handleSingleModelImage(
         await updateProviderCredentials(connectionId, {
           accessToken: newCreds.accessToken as string | undefined,
           refreshToken: newCreds.refreshToken as string | undefined,
-          providerSpecificData: newCreds.providerSpecificData as Record<string, unknown> | undefined,
+          providerSpecificData: newCreds.providerSpecificData as
+            | Record<string, unknown>
+            | undefined,
           testStatus: "active",
         });
       },
@@ -129,7 +152,13 @@ async function handleSingleModelImage(
       },
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
+    const { shouldFallback } = await markAccountUnavailable(
+      connectionId,
+      result.status,
+      result.error,
+      provider,
+      model,
+    );
     if (shouldFallback) {
       log.warn("AUTH", `Account ${connName} unavailable (${result.status}), trying fallback`);
       excludeConnectionIds.add(connectionId);

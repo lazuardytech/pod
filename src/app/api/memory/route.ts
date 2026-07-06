@@ -52,7 +52,9 @@ export async function POST(request: any) {
     const key = typeof body.key === "string" ? body.key.trim() : "";
     const apiKeyId = typeof body.apiKeyId === "string" ? body.apiKeyId.trim() : "";
     const sessionId = typeof body.sessionId === "string" ? body.sessionId : "";
-    const type = Object.values(MemoryType).includes(body.type as (typeof MemoryType)[keyof typeof MemoryType])
+    const type = Object.values(MemoryType).includes(
+      body.type as (typeof MemoryType)[keyof typeof MemoryType],
+    )
       ? (body.type as (typeof MemoryType)[keyof typeof MemoryType])
       : MemoryType.FACTUAL;
 

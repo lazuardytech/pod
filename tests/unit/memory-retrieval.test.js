@@ -45,10 +45,20 @@ describe('strategy: "exact" / "recent"', () => {
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     const apiKeyId = uid();
 
-    const m1 = await createMemory({ apiKeyId, content: "oldest memory", key: `k-${uid()}`, type: "factual" });
+    const m1 = await createMemory({
+      apiKeyId,
+      content: "oldest memory",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
     // small delay so created_at differs
     await new Promise((r) => setTimeout(r, 5));
-    const m2 = await createMemory({ apiKeyId, content: "newest memory", key: `k-${uid()}`, type: "factual" });
+    const m2 = await createMemory({
+      apiKeyId,
+      content: "newest memory",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
 
     const results = await retrieveMemories(apiKeyId, {
       enabled: true,
@@ -71,7 +81,12 @@ describe('strategy: "exact" / "recent"', () => {
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     const apiKeyId = uid();
 
-    const m = await createMemory({ apiKeyId, content: "some memory", key: `k-${uid()}`, type: "factual" });
+    const m = await createMemory({
+      apiKeyId,
+      content: "some memory",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
 
     const exact = await retrieveMemories(apiKeyId, {
       enabled: true,
@@ -243,8 +258,18 @@ describe('strategy: "hybrid"', () => {
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     const apiKeyId = uid();
 
-    const m1 = await createMemory({ apiKeyId, content: "memory alpha", key: `k-${uid()}`, type: "factual" });
-    const m2 = await createMemory({ apiKeyId, content: "memory beta", key: `k-${uid()}`, type: "factual" });
+    const m1 = await createMemory({
+      apiKeyId,
+      content: "memory alpha",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
+    const m2 = await createMemory({
+      apiKeyId,
+      content: "memory beta",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
 
     const results = await retrieveMemories(apiKeyId, {
       enabled: true,
@@ -340,7 +365,12 @@ describe('strategy: "semantic"', () => {
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     const apiKeyId = uid();
 
-    const m = await createMemory({ apiKeyId, content: "user likes coffee", key: `k-${uid()}`, type: "factual" });
+    const m = await createMemory({
+      apiKeyId,
+      content: "user likes coffee",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
 
     const results = await retrieveMemories(apiKeyId, {
       enabled: true,
@@ -360,7 +390,12 @@ describe('strategy: "semantic"', () => {
     const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
     const apiKeyId = uid();
 
-    const m = await createMemory({ apiKeyId, content: "some memory content", key: `k-${uid()}`, type: "factual" });
+    const m = await createMemory({
+      apiKeyId,
+      content: "some memory content",
+      key: `k-${uid()}`,
+      type: "factual",
+    });
 
     // semantic with no query — FTS path skipped, recency fallback runs.
     // With no queryText, the score filter is bypassed (!queryText is true),

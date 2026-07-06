@@ -51,14 +51,14 @@ export async function POST(request: any, { params }: { params: any }) {
       const apiKey = extractApiKey(request);
       if (!apiKey) {
         return Response.json(
-          { error: { message: "Missing API key", code: 401 } },
+          { error: { message: "Missing API key", type: "authentication_error", param: null } },
           { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
         );
       }
       const valid = await validateApiKey(apiKey);
       if (!valid) {
         return Response.json(
-          { error: { message: "Invalid API key", code: 401 } },
+          { error: { message: "Invalid API key", type: "authentication_error", param: null } },
           { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
         );
       }
@@ -74,13 +74,19 @@ export async function POST(request: any, { params }: { params: any }) {
       // Format: /v1beta/models/provider/model:generateContent
       const provider = path[0];
       const modelAction = path[1];
-      action = modelAction.includes(":streamGenerateContent") ? ":streamGenerateContent" : ":generateContent";
-      const modelName = modelAction.replace(":streamGenerateContent", "").replace(":generateContent", "");
+      action = modelAction.includes(":streamGenerateContent")
+        ? ":streamGenerateContent"
+        : ":generateContent";
+      const modelName = modelAction
+        .replace(":streamGenerateContent", "")
+        .replace(":generateContent", "");
       model = provider + "/" + modelName;
     } else {
       // Format: /v1beta/models/model:generateContent
       const modelAction = path[0];
-      action = modelAction.includes(":streamGenerateContent") ? ":streamGenerateContent" : ":generateContent";
+      action = modelAction.includes(":streamGenerateContent")
+        ? ":streamGenerateContent"
+        : ":generateContent";
       model = modelAction.replace(":streamGenerateContent", "").replace(":generateContent", "");
     }
 
@@ -116,7 +122,10 @@ export async function POST(request: any, { params }: { params: any }) {
     }
   } catch (error) {
     console.log("Error handling Gemini request:", error);
-    return Response.json({ error: { message: sanitizeError(error), code: 500 } }, { status: 500 });
+    return Response.json(
+      { error: { message: sanitizeError(error), type: "server_error", param: null } },
+      { status: 500 },
+    );
   }
 }
 
@@ -232,7 +241,8 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse: any, model: any) {
         };
 
         if (choice.finish_reason) {
-          candidate.finishReason = FINISH_REASON_MAP[choice.finish_reason as keyof typeof FINISH_REASON_MAP] || "STOP";
+          candidate.finishReason =
+            FINISH_REASON_MAP[choice.finish_reason as keyof typeof FINISH_REASON_MAP] || "STOP";
         }
 
         const geminiChunk: Record<string, unknown> = { candidates: [candidate] };
@@ -244,7 +254,9 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse: any, model: any) {
             candidatesTokenCount: parsed.usage.completion_tokens || 0,
             totalTokenCount: parsed.usage.total_tokens || 0,
           };
-          const reasoningTokens = (parsed.usage.completion_tokens_details as Record<string, unknown>)?.reasoning_tokens;
+          const reasoningTokens = (
+            parsed.usage.completion_tokens_details as Record<string, unknown>
+          )?.reasoning_tokens;
           if (reasoningTokens) {
             usageMetadata.thoughtsTokenCount = reasoningTokens;
           }
@@ -327,9 +339,11 @@ async function convertOpenAIResponseToGemini(response: any, model: any) {
       candidatesTokenCount: body.usage.completion_tokens || 0,
       totalTokenCount: body.usage.total_tokens || 0,
     };
-    const reasoningTokens = (body.usage.completion_tokens_details as Record<string, unknown>)?.reasoning_tokens;
+    const reasoningTokens = (body.usage.completion_tokens_details as Record<string, unknown>)
+      ?.reasoning_tokens;
     if (reasoningTokens) {
-      (geminiResponse.usageMetadata as Record<string, unknown>).thoughtsTokenCount = reasoningTokens;
+      (geminiResponse.usageMetadata as Record<string, unknown>).thoughtsTokenCount =
+        reasoningTokens;
     }
   }
 

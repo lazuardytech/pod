@@ -38,7 +38,10 @@ export default function ThemeToggle({
     >
       <LucideIcon
         name={isDark ? "light_mode" : "dark_mode"}
-        className={cn("text-[22px]", variant === "card" && "transition-transform duration-300 group-hover:rotate-12")}
+        className={cn(
+          "text-[22px]",
+          variant === "card" && "transition-transform duration-300 group-hover:rotate-12",
+        )}
       />
     </button>
   );

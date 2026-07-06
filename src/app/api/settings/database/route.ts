@@ -30,6 +30,9 @@ export async function POST(request: any) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.log("Error importing database:", error);
-    return NextResponse.json({ error: sanitizeError(error) || "Failed to import database" }, { status: 400 });
+    return NextResponse.json(
+      { error: sanitizeError(error) || "Failed to import database" },
+      { status: 400 },
+    );
   }
 }

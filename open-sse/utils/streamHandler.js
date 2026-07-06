@@ -18,7 +18,13 @@ function getTimeString() {
  * @param {string} options.provider - Provider name
  * @param {string} options.model - Model name
  */
-export function createStreamController({ onDisconnect, onError, log, provider: _provider, model: _model } = {}) {
+export function createStreamController({
+  onDisconnect,
+  onError,
+  log,
+  provider: _provider,
+  model: _model,
+} = {}) {
   const abortController = new AbortController();
   const startTime = Date.now();
   let disconnected = false;
@@ -135,7 +141,10 @@ export function createDisconnectAwareStream(transformStream, streamController) {
 export function pipeWithDisconnect(providerResponse, transformStream, streamController) {
   const transformedBody = providerResponse.body.pipeThrough(transformStream);
   return createDisconnectAwareStream(
-    { readable: transformedBody, writable: { getWriter: () => ({ abort: () => Promise.resolve() }) } },
+    {
+      readable: transformedBody,
+      writable: { getWriter: () => ({ abort: () => Promise.resolve() }) },
+    },
     streamController,
   );
 }

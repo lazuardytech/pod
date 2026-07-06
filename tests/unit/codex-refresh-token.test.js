@@ -70,14 +70,16 @@ describe("Codex Refresh Token", () => {
     });
 
     it("should fallback to default buffer for unknown providers", async () => {
-      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
+        await import("../../open-sse/services/tokenRefresh.js");
 
       expect(getRefreshLeadMs("unknown-provider")).toBe(TOKEN_EXPIRY_BUFFER_MS);
       expect(getRefreshLeadMs("openai")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });
 
     it("codex lead should be greater than default buffer", async () => {
-      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
+        await import("../../open-sse/services/tokenRefresh.js");
 
       expect(getRefreshLeadMs("codex")).toBeGreaterThan(TOKEN_EXPIRY_BUFFER_MS);
     });

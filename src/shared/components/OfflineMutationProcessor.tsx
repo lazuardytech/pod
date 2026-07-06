@@ -50,7 +50,9 @@ export default function OfflineMutationProcessor(): any {
 
       const queueLength = Number(event?.detail?.queueLength || 0);
       if (queueLength > 0) {
-        toast.info(`Offline: queued ${queueLength} pending ${queueLength > 1 ? "changes" : "change"}.`);
+        toast.info(
+          `Offline: queued ${queueLength} pending ${queueLength > 1 ? "changes" : "change"}.`,
+        );
       } else {
         toast.info("Offline: change queued and will sync when online.");
       }

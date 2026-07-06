@@ -33,7 +33,12 @@ export class ClaudeService extends OAuthService {
   /**
    * Exchange Claude authorization code (with special handling)
    */
-  async exchangeClaudeCode(code: string, redirectUri: string, codeVerifier: string, state: string): Promise<any> {
+  async exchangeClaudeCode(
+    code: string,
+    redirectUri: string,
+    codeVerifier: string,
+    state: string,
+  ): Promise<any> {
     // Parse code - may contain state after #
     let authCode = code;
     let codeState = "";

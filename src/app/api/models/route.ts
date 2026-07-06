@@ -47,7 +47,9 @@ export async function PUT(request: any) {
     const modelAliases = await getModelAliases();
 
     // Check if alias already exists for different model
-    const existingModel = Object.entries(modelAliases).find(([key, val]) => val === alias && key !== model);
+    const existingModel = Object.entries(modelAliases).find(
+      ([key, val]) => val === alias && key !== model,
+    );
 
     if (existingModel) {
       return NextResponse.json({ error: "Alias already in use" }, { status: 400 });

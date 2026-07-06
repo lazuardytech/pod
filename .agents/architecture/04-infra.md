@@ -2,14 +2,14 @@
 
 ## Runtime Stack
 
-| Component | Choice |
-|-----------|--------|
-| Runtime | Bun + Next.js 16 (standalone mode, Turbopack) |
-| Language | JavaScript only (no TypeScript) |
-| Primary DB | SQLite at `~/.pod/pod.sqlite` |
-| Cache DB | Optional Redis (when `REDIS_URL` is set) |
-| Tunnel | Optional Cloudflared |
-| Mesh | Optional Tailscale |
+| Component  | Choice                                        |
+| ---------- | --------------------------------------------- |
+| Runtime    | Bun + Next.js 16 (standalone mode, Turbopack) |
+| Language   | JavaScript only (no TypeScript)               |
+| Primary DB | SQLite at `~/.pod/pod.sqlite`                 |
+| Cache DB   | Optional Redis (when `REDIS_URL` is set)      |
+| Tunnel     | Optional Cloudflared                          |
+| Mesh       | Optional Tailscale                            |
 
 ## Deployment
 
@@ -44,30 +44,30 @@ bun install && bun run dev  # http://localhost:20128
 
 ## Networking
 
-| Record | Target |
-|--------|--------|
+| Record            | Target                        |
+| ----------------- | ----------------------------- |
 | pod.lazuardy.tech | Cloudflare proxied (A record) |
 
 Cloudflare handles TLS termination, DDoS protection, and edge caching.
 
 ## Key Files
 
-| File | Role |
-|------|------|
-| `src/server-init.js` | Global process handlers, shutdown hooks, app initialization |
+| File                  | Role                                                            |
+| --------------------- | --------------------------------------------------------------- |
+| `src/server-init.js`  | Global process handlers, shutdown hooks, app initialization     |
 | `src/lib/shutdown.js` | Graceful shutdown: signal handlers, queue flush, tunnel cleanup |
-| `src/lib/tunnel/` | Cloudflared tunnel management |
-| `src/lib/network/` | Network utilities |
-| `docker/` | Dockerfile and docker-compose.yml |
-| `cloud/` | Cloudflare Worker backend |
+| `src/lib/tunnel/`     | Cloudflared tunnel management                                   |
+| `src/lib/network/`    | Network utilities                                               |
+| `docker/`             | Dockerfile and docker-compose.yml                               |
+| `cloud/`              | Cloudflare Worker backend                                       |
 
 ## Rules
 
-| Rule | Why |
-|------|-----|
-| SIGTERM forwarding | Docker entrypoint must forward SIGTERM so cleanup handlers run |
-| Serialized tunnel spawn | Cloudflared tunnels must start one at a time |
-| Non-fatal fetchData | Tunnel startup treats fetchData() failures as non-fatal |
+| Rule                    | Why                                                                    |
+| ----------------------- | ---------------------------------------------------------------------- |
+| SIGTERM forwarding      | Docker entrypoint must forward SIGTERM so cleanup handlers run         |
+| Serialized tunnel spawn | Cloudflared tunnels must start one at a time                           |
+| Non-fatal fetchData     | Tunnel startup treats fetchData() failures as non-fatal                |
 | Simple health semantics | `GET /api/health` is public; `/api/monitoring/health` requires API key |
 
 ## Watchlist

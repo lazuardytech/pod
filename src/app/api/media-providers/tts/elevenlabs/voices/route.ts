@@ -32,7 +32,13 @@ export async function GET(request: any) {
       {
         code: string;
         name: string;
-        voices: { id: string; name: string; gender: string; lang: string; free_users_allowed?: boolean }[];
+        voices: {
+          id: string;
+          name: string;
+          gender: string;
+          lang: string;
+          free_users_allowed?: boolean;
+        }[];
       }
     > = {};
     const addToLang = (code: any, voice: any) => {
@@ -80,11 +86,16 @@ export async function GET(request: any) {
 
     // If lang filter requested, return only that group's voices
     if (langFilter) {
-      return NextResponse.json({ voices: (byLang as Record<string, any>)[langFilter]?.voices || [] });
+      return NextResponse.json({
+        voices: (byLang as Record<string, any>)[langFilter]?.voices || [],
+      });
     }
 
     return NextResponse.json({ languages, byLang });
   } catch (err) {
-    return NextResponse.json({ error: sanitizeError(err) || "Failed to fetch voices" }, { status: 502 });
+    return NextResponse.json(
+      { error: sanitizeError(err) || "Failed to fetch voices" },
+      { status: 502 },
+    );
   }
 }

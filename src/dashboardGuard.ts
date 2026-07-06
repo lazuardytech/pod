@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 
-const SECRET: any = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
+const SECRET: any = new TextEncoder().encode(
+  process.env.JWT_SECRET || "pod-default-secret-change-me",
+);
 
 const CLI_TOKEN_HEADER: any = "x-9r-cli-token";
 const CLI_TOKEN_SALT: any = "9r-cli-auth";
@@ -51,7 +53,13 @@ const STRICT_PROTECTED_API_PATHS: any = [
 ];
 
 // Require auth, but allow through if requireLogin is disabled.
-const PROTECTED_API_PATHS: any = ["/api/settings", "/api/keys", "/api/cache", "/api/models", "/api/translator"];
+const PROTECTED_API_PATHS: any = [
+  "/api/settings",
+  "/api/keys",
+  "/api/cache",
+  "/api/models",
+  "/api/translator",
+];
 
 async function hasValidToken(request: any) {
   const token: any = request.cookies.get("auth_token")?.value;
@@ -85,20 +93,23 @@ export async function proxy(request: any) {
 
   // Always protected - require valid JWT or local CLI token (machineId-based)
   if (ALWAYS_PROTECTED.some((p: any) => pathname.startsWith(p))) {
-    if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return NextResponse.next();
+    if ((await hasValidCliToken(request)) || (await hasValidToken(request)))
+      return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Sensitive admin APIs stay protected even when the dashboard itself is public.
   if (STRICT_PROTECTED_API_PATHS.some((p: any) => pathname.startsWith(p))) {
-    if ((await hasValidCliToken(request)) || (await hasValidToken(request))) return NextResponse.next();
+    if ((await hasValidCliToken(request)) || (await hasValidToken(request)))
+      return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Protect sensitive API endpoints (allow CLI token, JWT, or requireLogin=false)
   if (PROTECTED_API_PATHS.some((p: any) => pathname.startsWith(p))) {
     if (pathname === "/api/settings/require-login") return NextResponse.next();
-    if ((await hasValidCliToken(request)) || (await isAuthenticated(request))) return NextResponse.next();
+    if ((await hasValidCliToken(request)) || (await isAuthenticated(request)))
+      return NextResponse.next();
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -119,7 +130,9 @@ export async function proxy(request: any) {
     "/basic-chat",
     "/media-providers",
   ];
-  const isDashboardRoute: any = DASHBOARD_PATHS.some((p: any) => pathname === p || pathname.startsWith(p + "/"));
+  const isDashboardRoute: any = DASHBOARD_PATHS.some(
+    (p: any) => pathname === p || pathname.startsWith(p + "/"),
+  );
   if (isDashboardRoute) {
     let requireLogin: any = true;
     let tunnelDashboardAccess: any = true;
@@ -133,8 +146,12 @@ export async function proxy(request: any) {
         // Block tunnel/tailscale access if disabled (redirect to login)
         if (!tunnelDashboardAccess) {
           const host: any = (request.headers.get("host") || "").split(":")[0].toLowerCase();
-          const tunnelHost: any = settings.tunnelUrl ? new URL(settings.tunnelUrl).hostname.toLowerCase() : "";
-          const tailscaleHost: any = settings.tailscaleUrl ? new URL(settings.tailscaleUrl).hostname.toLowerCase() : "";
+          const tunnelHost: any = settings.tunnelUrl
+            ? new URL(settings.tunnelUrl).hostname.toLowerCase()
+            : "";
+          const tailscaleHost: any = settings.tailscaleUrl
+            ? new URL(settings.tailscaleUrl).hostname.toLowerCase()
+            : "";
           if ((tunnelHost && host === tunnelHost) || (tailscaleHost && host === tailscaleHost)) {
             return NextResponse.redirect(new URL("/login", request.url));
           }

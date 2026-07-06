@@ -43,7 +43,11 @@ function isTailscaleInstalled(spawnSync: any) {
   return getTailscaleBin(spawnSync) !== null;
 }
 
-function runTailscaleJson(spawnSync: any, args: any, { timeout = 5000 }: { timeout?: number } = {}) {
+function runTailscaleJson(
+  spawnSync: any,
+  args: any,
+  { timeout = 5000 }: { timeout?: number } = {},
+) {
   const bin = getTailscaleBin(spawnSync);
   if (!bin) return null;
   const out = runCommandSync(
@@ -74,7 +78,11 @@ function isTailscaleLoggedIn(spawnSync: any) {
 
 function hasBrew(execSync: any) {
   try {
-    execSync("which brew", { stdio: "ignore", windowsHide: true, env: { ...process.env, PATH: EXTENDED_PATH } });
+    execSync("which brew", {
+      stdio: "ignore",
+      windowsHide: true,
+      env: { ...process.env, PATH: EXTENDED_PATH },
+    });
     return true;
   } catch {
     return false;
@@ -105,7 +113,12 @@ function isDaemonRunning(spawnSync: any, execSync: any) {
       return true;
     }
     if (process.platform === "win32") {
-      const tasklist = runCommandSync(spawnSync, "tasklist", ["/FI", "IMAGENAME eq tailscaled.exe"], { timeout: 2000 });
+      const tasklist = runCommandSync(
+        spawnSync,
+        "tasklist",
+        ["/FI", "IMAGENAME eq tailscaled.exe"],
+        { timeout: 2000 },
+      );
       return tasklist?.toLowerCase().includes("tailscaled.exe") ?? false;
     }
     execSync("pgrep -x tailscaled", {

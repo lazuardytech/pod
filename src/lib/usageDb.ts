@@ -103,11 +103,15 @@ export function trackPendingRequest(
   const timerKey = `${connectionId}|${modelKey}`;
 
   if (!pendingRequests.byModel[modelKey]) pendingRequests.byModel[modelKey] = 0;
-  pendingRequests.byModel[modelKey] = Math.max(0, pendingRequests.byModel[modelKey] + (started ? 1 : -1));
+  pendingRequests.byModel[modelKey] = Math.max(
+    0,
+    pendingRequests.byModel[modelKey] + (started ? 1 : -1),
+  );
 
   if (connectionId) {
     if (!pendingRequests.byAccount[connectionId]) pendingRequests.byAccount[connectionId] = {};
-    if (!pendingRequests.byAccount[connectionId][modelKey]) pendingRequests.byAccount[connectionId][modelKey] = 0;
+    if (!pendingRequests.byAccount[connectionId][modelKey])
+      pendingRequests.byAccount[connectionId][modelKey] = 0;
     pendingRequests.byAccount[connectionId][modelKey] = Math.max(
       0,
       pendingRequests.byAccount[connectionId][modelKey] + (started ? 1 : -1),
@@ -145,7 +149,10 @@ export function trackPendingRequest(
   }
 
   if (process.env.PENDING_LOG === "true") {
-    logInfo("PENDING", `${started ? "START" : "END"}${error ? " (ERROR)" : ""}`, { provider, model });
+    logInfo("PENDING", `${started ? "START" : "END"}${error ? " (ERROR)" : ""}`, {
+      provider,
+      model,
+    });
   }
   statsEmitter.emit("pending");
 }
@@ -194,7 +201,9 @@ const SUMMARY_FLUSH_INTERVAL_MS = 500;
 
 function scheduleSummaryFlush(): void {
   if (summaryFlushTimer) return;
-  summaryFlushTimer = setTimeout(flushSummaryQueue, SUMMARY_FLUSH_INTERVAL_MS) as ReturnType<typeof setTimeout>;
+  summaryFlushTimer = setTimeout(flushSummaryQueue, SUMMARY_FLUSH_INTERVAL_MS) as ReturnType<
+    typeof setTimeout
+  >;
   if (summaryFlushTimer.unref) summaryFlushTimer.unref();
 }
 
@@ -264,8 +273,13 @@ function flushSummaryQueue(): void {
         };
         upsertSummary(db, dateKey, "day", "_", vals);
         if (entry.provider) upsertSummary(db, dateKey, "byProvider", entry.provider, vals);
-        const modelKey: string = entry.provider ? `${entry.model}|${entry.provider}` : (entry.model ?? "");
-        upsertSummary(db, dateKey, "byModel", modelKey, vals, { rawModel: entry.model, provider: entry.provider });
+        const modelKey: string = entry.provider
+          ? `${entry.model}|${entry.provider}`
+          : (entry.model ?? "");
+        upsertSummary(db, dateKey, "byModel", modelKey, vals, {
+          rawModel: entry.model,
+          provider: entry.provider,
+        });
         if (entry.connectionId) {
           upsertSummary(db, dateKey, "byAccount", entry.connectionId, vals, {
             rawModel: entry.model,
@@ -292,7 +306,9 @@ function flushSummaryQueue(): void {
     run();
     statsEmitter.emit("update");
   } catch (err) {
-    logError("usageDb", "Failed to flush daily_summary batch", { error: (err as Error)?.message || err });
+    logError("usageDb", "Failed to flush daily_summary batch", {
+      error: (err as Error)?.message || err,
+    });
   }
 }
 
@@ -386,7 +402,10 @@ async function getConnectionName(connectionId: string | undefined): Promise<stri
     const { getProviderConnections } = await import("@/lib/localDb");
     const list = await getProviderConnections();
     for (const c of list) {
-      connectionNameCache.set(c.id, (c.name as string) || (c.email as string) || String(c.id).slice(0, 8));
+      connectionNameCache.set(
+        c.id,
+        (c.name as string) || (c.email as string) || String(c.id).slice(0, 8),
+      );
     }
     return connectionNameCache.get(connectionId) || String(connectionId).slice(0, 8);
   } catch {
@@ -694,13 +713,22 @@ function historyRow(r: HistoryEntry): {
     apiKey: r.api_key ?? null,
     endpoint: r.endpoint ?? null,
     status: r.status || "ok",
-    tokens: blob.tokens || { prompt_tokens: r.prompt_tokens ?? null, completion_tokens: r.completion_tokens ?? null },
+    tokens: blob.tokens || {
+      prompt_tokens: r.prompt_tokens ?? null,
+      completion_tokens: r.completion_tokens ?? null,
+    },
     cost: r.cost ?? null,
   };
 }
 
 export async function getUsageHistory(
-  filter: { provider?: string; model?: string; startDate?: string; endDate?: string; limit?: number } = {},
+  filter: {
+    provider?: string;
+    model?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  } = {},
 ): Promise<ReturnType<typeof historyRow>[]> {
   if (isCloud) return [];
   const db = getDatabase();
@@ -815,7 +843,12 @@ const PERIOD_MS: Record<string, number> = {
   "90d": 7776000000,
 };
 
-type StatsBucket = { requests: number; promptTokens: number; completionTokens: number; cost: number };
+type StatsBucket = {
+  requests: number;
+  promptTokens: number;
+  completionTokens: number;
+  cost: number;
+};
 // type LastUsedBucket = StatsBucket & { lastUsed?: string };
 type ModelStatsBucket = StatsBucket & { rawModel: string; provider: string; lastUsed: string };
 type AccountStatsBucket = StatsBucket & {
@@ -833,7 +866,12 @@ type ApiKeyStatsBucket = StatsBucket & {
   apiKeyKey: string;
   lastUsed: string;
 };
-type EndpointStatsBucket = StatsBucket & { endpoint: string; rawModel: string; provider: string; lastUsed: string };
+type EndpointStatsBucket = StatsBucket & {
+  endpoint: string;
+  rawModel: string;
+  provider: string;
+  lastUsed: string;
+};
 
 export type UsageStatsResult = {
   totalRequests: number;
@@ -845,7 +883,12 @@ export type UsageStatsResult = {
   byAccount: Record<string, AccountStatsBucket>;
   byApiKey: Record<string, ApiKeyStatsBucket>;
   byEndpoint: Record<string, EndpointStatsBucket>;
-  last10Minutes: Array<{ requests: number; promptTokens: number; completionTokens: number; cost: number }>;
+  last10Minutes: Array<{
+    requests: number;
+    promptTokens: number;
+    completionTokens: number;
+    cost: number;
+  }>;
   pending: { byModel: Record<string, number>; byAccount: Record<string, Record<string, number>> };
   activeRequests: ActiveRequest[];
   recentRequests: RecentRequest[];
@@ -935,8 +978,10 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
   const now = new Date();
   const currentMinuteStart = new Date(Math.floor(now.getTime() / 60000) * 60000);
   const tenMinutesAgo = new Date(currentMinuteStart.getTime() - 9 * 60 * 1000);
-  const bucketMap: Record<number, { requests: number; promptTokens: number; completionTokens: number; cost: number }> =
-    {};
+  const bucketMap: Record<
+    number,
+    { requests: number; promptTokens: number; completionTokens: number; cost: number }
+  > = {};
   for (let i = 0; i < 10; i++) {
     const bucketKey = currentMinuteStart.getTime() - (9 - i) * 60 * 1000;
     bucketMap[bucketKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
@@ -1079,7 +1124,8 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
         const providerDisplayName = providerNodeNameMap[provider] || provider;
         const apiKeyVal = meta.apiKey;
         const keyInfo = apiKeyVal ? apiKeyMap[apiKeyVal] : null;
-        const keyName = keyInfo?.name || (apiKeyVal ? apiKeyVal.slice(0, 8) + "..." : "Local (No API Key)");
+        const keyName =
+          keyInfo?.name || (apiKeyVal ? apiKeyVal.slice(0, 8) + "..." : "Local (No API Key)");
         const apiKeyKey = apiKeyVal || "local-no-key";
         if (!stats.byApiKey[r.key]) {
           stats.byApiKey[r.key] = {
@@ -1157,14 +1203,22 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
       if (!ts || new Date(ts).getTime() < overlayCutoff) continue;
 
       const modelKey = entry.provider ? `${entry.model} (${entry.provider})` : entry.model;
-      if (modelKey && stats.byModel[modelKey] && new Date(ts) > new Date(stats.byModel[modelKey].lastUsed)) {
+      if (
+        modelKey &&
+        stats.byModel[modelKey] &&
+        new Date(ts) > new Date(stats.byModel[modelKey].lastUsed)
+      ) {
         stats.byModel[modelKey].lastUsed = ts;
       }
 
       if (entry.connectionId) {
-        const accountName = connectionMap[entry.connectionId] || `Account ${entry.connectionId.slice(0, 8)}...`;
+        const accountName =
+          connectionMap[entry.connectionId] || `Account ${entry.connectionId.slice(0, 8)}...`;
         const accountKey = `${entry.model} (${entry.provider} - ${accountName})`;
-        if (stats.byAccount[accountKey] && new Date(ts) > new Date(stats.byAccount[accountKey].lastUsed)) {
+        if (
+          stats.byAccount[accountKey] &&
+          new Date(ts) > new Date(stats.byAccount[accountKey].lastUsed)
+        ) {
           stats.byAccount[accountKey].lastUsed = ts;
         }
       }
@@ -1173,13 +1227,19 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
         entry.apiKey && typeof entry.apiKey === "string"
           ? `${entry.apiKey}|${entry.model}|${entry.provider || "unknown"}`
           : "local-no-key";
-      if (stats.byApiKey[apiKeyKey] && new Date(ts) > new Date(stats.byApiKey[apiKeyKey].lastUsed)) {
+      if (
+        stats.byApiKey[apiKeyKey] &&
+        new Date(ts) > new Date(stats.byApiKey[apiKeyKey].lastUsed)
+      ) {
         stats.byApiKey[apiKeyKey].lastUsed = ts;
       }
 
       const endpoint = entry.endpoint || "Unknown";
       const endpointKey = `${endpoint}|${entry.model}|${entry.provider || "unknown"}`;
-      if (stats.byEndpoint[endpointKey] && new Date(ts) > new Date(stats.byEndpoint[endpointKey].lastUsed)) {
+      if (
+        stats.byEndpoint[endpointKey] &&
+        new Date(ts) > new Date(stats.byEndpoint[endpointKey].lastUsed)
+      ) {
         stats.byEndpoint[endpointKey].lastUsed = ts;
       }
     }
@@ -1204,7 +1264,12 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
 
       if (r.provider) {
         if (!stats.byProvider[r.provider])
-          stats.byProvider[r.provider] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0 };
+          stats.byProvider[r.provider] = {
+            requests: 0,
+            promptTokens: 0,
+            completionTokens: 0,
+            cost: 0,
+          };
         const t = stats.byProvider[r.provider]!;
         t.requests++;
         t.promptTokens += prompt;
@@ -1234,7 +1299,8 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
       }
 
       if (r.connection_id) {
-        const accountName = connectionMap[r.connection_id] || `Account ${r.connection_id.slice(0, 8)}...`;
+        const accountName =
+          connectionMap[r.connection_id] || `Account ${r.connection_id.slice(0, 8)}...`;
         const accountKey = `${r.model} (${r.provider} - ${accountName})`;
         if (!stats.byAccount[accountKey]) {
           stats.byAccount[accountKey] = {
@@ -1353,11 +1419,22 @@ export async function getChartData(period: string = "7d"): Promise<ChartBucket[]
     const bucketCount = 24;
     const bucketMs = 3600000;
     const labelFn = (ts: number): string =>
-      new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+      new Date(ts).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
     const startTime = now - bucketCount * bucketMs;
     const buckets: ChartBucket[] = Array.from({ length: bucketCount }, (_, i) => {
       const ts = startTime + i * bucketMs;
-      return { label: labelFn(ts), tokens: 0, cost: 0, requests: 0, promptTokens: 0, completionTokens: 0 };
+      return {
+        label: labelFn(ts),
+        tokens: 0,
+        cost: 0,
+        requests: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+      };
     });
 
     const rows = db
@@ -1387,7 +1464,8 @@ export async function getChartData(period: string = "7d"): Promise<ChartBucket[]
 
   const bucketCount = period === "7d" ? 7 : period === "30d" ? 30 : 90;
   const today = new Date();
-  const labelFn = (d: Date): string => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const labelFn = (d: Date): string =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   const dayStart = new Date(today);
   dayStart.setDate(dayStart.getDate() - (bucketCount - 1));
@@ -1459,4 +1537,9 @@ export function getConnectionNameCacheStats(): ReturnType<LRUCache<string>["getS
 
 // Re-export request details for back-compat (existing routes import these
 // names from @/lib/usageDb)
-export { generateDetailId, getRequestDetailById, getRequestDetails, saveRequestDetail } from "@/lib/requestDetailsDb";
+export {
+  generateDetailId,
+  getRequestDetailById,
+  getRequestDetails,
+  saveRequestDetail,
+} from "@/lib/requestDetailsDb";

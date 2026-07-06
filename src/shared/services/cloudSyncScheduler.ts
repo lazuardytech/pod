@@ -1,7 +1,8 @@
 import { isCloudEnabled } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 
-const INTERNAL_BASE_URL = process.env.BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:20128";
+const INTERNAL_BASE_URL =
+  process.env.BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:20128";
 
 type SyncResult = Record<string, unknown> | null;
 

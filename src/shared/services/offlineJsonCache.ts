@@ -25,8 +25,10 @@ function requestToPromise<T = unknown>(request: IdbRequest): Promise<T> {
 function transactionDone(transaction: IdbTx): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error || new Error("IndexedDB transaction failed"));
-    transaction.onabort = () => reject(transaction.error || new Error("IndexedDB transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error || new Error("IndexedDB transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error || new Error("IndexedDB transaction aborted"));
   });
 }
 
@@ -104,7 +106,10 @@ function normalizeCacheKeys(cacheKeys: unknown = []): string[] {
   return [...new Set(cacheKeys.map((cacheKey) => String(cacheKey || "").trim()).filter(Boolean))];
 }
 
-function buildConditionalHeaders(existingHeaders: HeadersInit | undefined, record: CacheRecord | null): Headers {
+function buildConditionalHeaders(
+  existingHeaders: HeadersInit | undefined,
+  record: CacheRecord | null,
+): Headers {
   const headers = new Headers(existingHeaders || {});
 
   if (record?.etag && !headers.has("If-None-Match")) {
@@ -176,7 +181,10 @@ export async function writeOfflineJsonCache(
 
 type TouchMetadata = { etag?: string; lastModified?: string };
 
-async function touchOfflineJsonCache(cacheKey: string, metadata: TouchMetadata = {}): Promise<boolean> {
+async function touchOfflineJsonCache(
+  cacheKey: string,
+  metadata: TouchMetadata = {},
+): Promise<boolean> {
   if (!cacheKey) return false;
   const db = await getDb();
   if (!db) return false;
@@ -394,7 +402,13 @@ export async function loadJsonStaleWhileRevalidate({
     return { data: fresh, source: "network", stale: false };
   } catch (error) {
     if (hasUsableCache) {
-      return { data: cached.data, source: "cache", stale: true, invalidated: cached.invalidated, error };
+      return {
+        data: cached.data,
+        source: "cache",
+        stale: true,
+        invalidated: cached.invalidated,
+        error,
+      };
     }
     throw error;
   }

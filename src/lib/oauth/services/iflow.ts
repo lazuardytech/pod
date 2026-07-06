@@ -41,7 +41,9 @@ export class IFlowService {
     }
 
     // Create Basic Auth header
-    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
+    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      "base64",
+    );
 
     const response = await fetch(this.config.tokenUrl, {
       method: "POST",
@@ -72,11 +74,14 @@ export class IFlowService {
    */
   // todo(ts): iFlow user info shape — keep loose.
   async getUserInfo(accessToken: string): Promise<any> {
-    const response = await fetch(`${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`, {
-      headers: {
-        Accept: "application/json",
+    const response = await fetch(
+      `${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       const error = await response.text();

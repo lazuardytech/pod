@@ -3,7 +3,7 @@ import { errorResponse } from "open-sse/utils/error.js";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "*"
+  "Access-Control-Allow-Headers": "*",
 } as const;
 
 interface CountTokensBody {
@@ -19,7 +19,7 @@ interface CountTokensBody {
 export async function handleCountTokens(request: Request, _env: Env): Promise<Response> {
   let body: CountTokensBody;
   try {
-    body = await request.json() as CountTokensBody;
+    body = (await request.json()) as CountTokensBody;
   } catch {
     return errorResponse(400, "Invalid JSON body");
   }
@@ -43,9 +43,12 @@ export async function handleCountTokens(request: Request, _env: Env): Promise<Re
   // Rough estimate: ~4 chars per token
   const inputTokens = Math.ceil(totalChars / 4);
 
-  return new Response(JSON.stringify({
-    input_tokens: inputTokens
-  }), {
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS }
-  });
+  return new Response(
+    JSON.stringify({
+      input_tokens: inputTokens,
+    }),
+    {
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    },
+  );
 }

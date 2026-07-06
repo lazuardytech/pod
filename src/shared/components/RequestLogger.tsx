@@ -232,13 +232,17 @@ export default function RequestLogger({
       case "tokens_desc":
         result.sort(
           (a: any, b: any) =>
-            (b.promptTokens ?? 0) + (b.completionTokens ?? 0) - ((a.promptTokens ?? 0) + (a.completionTokens ?? 0)),
+            (b.promptTokens ?? 0) +
+            (b.completionTokens ?? 0) -
+            ((a.promptTokens ?? 0) + (a.completionTokens ?? 0)),
         );
         break;
       case "tokens_asc":
         result.sort(
           (a: any, b: any) =>
-            (a.promptTokens ?? 0) + (a.completionTokens ?? 0) - ((b.promptTokens ?? 0) + (b.completionTokens ?? 0)),
+            (a.promptTokens ?? 0) +
+            (a.completionTokens ?? 0) -
+            ((b.promptTokens ?? 0) + (b.completionTokens ?? 0)),
         );
         break;
     }
@@ -265,7 +269,11 @@ export default function RequestLogger({
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <LucideIcon name="search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey" />
+            <LucideIcon
+              name="search"
+              size={16}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
+            />
             <input
               aria-label="Search request logs"
               type="text"
@@ -280,14 +288,26 @@ export default function RequestLogger({
           {/* Status pills */}
           <div className="flex items-center gap-1">
             {[
-              { key: "all", label: "All", activeClass: "bg-porcelain/10 text-porcelain border border-porcelain/20" },
-              { key: "ok", label: "Success", activeClass: "border-emerald/30 bg-emerald/8 text-emerald" },
+              {
+                key: "all",
+                label: "All",
+                activeClass: "bg-porcelain/10 text-porcelain border border-porcelain/20",
+              },
+              {
+                key: "ok",
+                label: "Success",
+                activeClass: "border-emerald/30 bg-emerald/8 text-emerald",
+              },
               {
                 key: "failed",
                 label: "Failed",
                 activeClass: "border-warning-red/30 bg-warning-red/8 text-warning-red",
               },
-              { key: "pending", label: "Pending", activeClass: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400" },
+              {
+                key: "pending",
+                label: "Pending",
+                activeClass: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400",
+              },
             ].map((f: any) => (
               <button
                 key={f.key}
@@ -308,7 +328,12 @@ export default function RequestLogger({
         {/* Right: connection status + Stats */}
         <div className="flex items-center gap-2 text-[11px] text-fog-grey shrink-0">
           <div className="flex items-center gap-1.5">
-            <span className={cn("size-1.5 rounded-full", connected ? "bg-emerald animate-pulse" : "bg-warning-red")} />
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                connected ? "bg-emerald animate-pulse" : "bg-warning-red",
+              )}
+            />
             <span className={connected ? "text-emerald" : "text-warning-red"}>
               {connected ? "Connected" : "Disconnected"}
             </span>
@@ -317,7 +342,9 @@ export default function RequestLogger({
           <span className="text-storm-cloud">{counts.total}</span> total
           <span className="text-emerald">{counts.ok}</span> ok
           {counts.failed > 0 && <span className="text-warning-red">{counts.failed} failed</span>}
-          {counts.pending > 0 && <span className="text-aether-blue animate-pulse">{counts.pending} pending</span>}
+          {counts.pending > 0 && (
+            <span className="text-aether-blue animate-pulse">{counts.pending} pending</span>
+          )}
         </div>
       </div>
 
@@ -428,7 +455,12 @@ export default function RequestLogger({
       </p>
 
       {/* Detail Drawer */}
-      <RequestLogDetail log={selectedLog} detail={detailData} loading={detailLoading} onClose={closeDetail} />
+      <RequestLogDetail
+        log={selectedLog}
+        detail={detailData}
+        loading={detailLoading}
+        onClose={closeDetail}
+      />
     </div>
   );
 }

@@ -20,7 +20,9 @@ function MenuItem({
     <button
       onClick={onClick}
       className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] tracking-[-0.12px] transition-colors duration-100 ${
-        danger ? "text-warning-red hover:bg-warning-red/8" : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
+        danger
+          ? "text-warning-red hover:bg-warning-red/8"
+          : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
       }`}
     >
       <LucideIcon name={icon} className="text-[15px]" />

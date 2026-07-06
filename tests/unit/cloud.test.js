@@ -66,7 +66,11 @@ import { handleSync } from "../../cloud/src/handlers/sync.js";
 import { handleTestClaude } from "../../cloud/src/handlers/testClaude.js";
 import { handleVerify } from "../../cloud/src/handlers/verify.js";
 import worker from "../../cloud/src/index.js";
-import { deleteMachineData, getMachineData, saveMachineData } from "../../cloud/src/services/storage.js";
+import {
+  deleteMachineData,
+  getMachineData,
+  saveMachineData,
+} from "../../cloud/src/services/storage.js";
 import { extractBearerToken, parseApiKey } from "../../cloud/src/utils/apiKey.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -106,7 +110,13 @@ function makeMachineData(overrides = {}) {
   };
 }
 
-function makeRequest(method, path, body = null, authHeader = `Bearer ${VALID_KEY}`, extraHeaders = {}) {
+function makeRequest(
+  method,
+  path,
+  body = null,
+  authHeader = `Bearer ${VALID_KEY}`,
+  extraHeaders = {},
+) {
   const headers = { "Content-Type": "application/json", ...extraHeaders };
   if (authHeader) headers["Authorization"] = authHeader;
   return new Request(`https://worker.example.com${path}`, {
@@ -158,7 +168,11 @@ describe("parseApiKey", () => {
   });
 
   it("old format sk-{random8} → isNewFormat false", async () => {
-    vi.mocked(parseApiKey).mockResolvedValue({ isNewFormat: false, machineId: null, keyId: "random8x" });
+    vi.mocked(parseApiKey).mockResolvedValue({
+      isNewFormat: false,
+      machineId: null,
+      keyId: "random8x",
+    });
 
     const result = await parseApiKey("sk-random8x");
     expect(result).toEqual({ isNewFormat: false, machineId: null, keyId: "random8x" });
@@ -575,7 +589,9 @@ describe("handleVerify", () => {
       machineId: MACHINE_ID,
       keyId: "key01",
     });
-    vi.mocked(getMachineData).mockResolvedValue(makeMachineData({ apiKeys: [{ key: "sk-different-key" }] }));
+    vi.mocked(getMachineData).mockResolvedValue(
+      makeMachineData({ apiKeys: [{ key: "sk-different-key" }] }),
+    );
 
     const req = makeRequest("GET", "/v1/verify");
     const res = await handleVerify(req, makeEnv(), null);
@@ -667,7 +683,9 @@ describe("worker index router", () => {
 
   it("/v1/v1/chat/completions normalizes to /v1/chat/completions", async () => {
     const { handleChat } = await import("../../cloud/src/handlers/chat.js");
-    vi.mocked(handleChat).mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.mocked(handleChat).mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    );
 
     const req = new Request("https://worker.example.com/v1/v1/chat/completions", {
       method: "POST",

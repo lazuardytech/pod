@@ -306,7 +306,13 @@ function encodeMcpResult(selectedTool, resultContent) {
  * Encode ClientSideToolV2Result proto: { tool, mcp_result, call_id, model_call_id, tool_index }
  * Represents the result of executing a tool
  */
-function encodeClientSideToolV2Result(toolCallId, modelCallId, selectedTool, resultContent, toolIndex = 1) {
+function encodeClientSideToolV2Result(
+  toolCallId,
+  modelCallId,
+  selectedTool,
+  resultContent,
+  toolIndex = 1,
+) {
   return concatArrays(
     encodeField(FIELD.CV2R_TOOL, WIRE_TYPE.VARINT, CLIENT_SIDE_TOOL_V2_MCP),
     encodeField(FIELD.CV2R_MCP_RESULT, WIRE_TYPE.LEN, encodeMcpResult(selectedTool, resultContent)),
@@ -343,7 +349,11 @@ function encodeClientSideToolV2Call(
 ) {
   return concatArrays(
     encodeField(FIELD.CV2C_TOOL, WIRE_TYPE.VARINT, CLIENT_SIDE_TOOL_V2_MCP),
-    encodeField(FIELD.CV2C_MCP_PARAMS, WIRE_TYPE.LEN, encodeMcpParamsForCall(selectedTool, rawArgs, serverName)),
+    encodeField(
+      FIELD.CV2C_MCP_PARAMS,
+      WIRE_TYPE.LEN,
+      encodeMcpParamsForCall(selectedTool, rawArgs, serverName),
+    ),
     encodeField(FIELD.CV2C_CALL_ID, WIRE_TYPE.LEN, toolCallId),
     encodeField(FIELD.CV2C_NAME, WIRE_TYPE.LEN, toolName),
     encodeField(FIELD.CV2C_RAW_ARGS, WIRE_TYPE.LEN, rawArgs),
@@ -371,7 +381,9 @@ export function encodeToolResult(toolResult) {
     encodeField(FIELD.TOOL_RESULT_CALL_ID, WIRE_TYPE.LEN, toolCallId),
     encodeField(FIELD.TOOL_RESULT_NAME, WIRE_TYPE.LEN, toolName),
     encodeField(FIELD.TOOL_RESULT_INDEX, WIRE_TYPE.VARINT, toolIndex > 0 ? toolIndex : 1),
-    ...(modelCallId ? [encodeField(FIELD.TOOL_RESULT_MODEL_CALL_ID, WIRE_TYPE.LEN, modelCallId)] : []),
+    ...(modelCallId
+      ? [encodeField(FIELD.TOOL_RESULT_MODEL_CALL_ID, WIRE_TYPE.LEN, modelCallId)]
+      : []),
     encodeField(FIELD.TOOL_RESULT_RAW_ARGS, WIRE_TYPE.LEN, rawArgs),
     encodeField(
       FIELD.TOOL_RESULT_RESULT,
@@ -381,7 +393,15 @@ export function encodeToolResult(toolResult) {
     encodeField(
       FIELD.TOOL_RESULT_TOOL_CALL,
       WIRE_TYPE.LEN,
-      encodeClientSideToolV2Call(toolCallId, toolName, selectedTool, serverName, rawArgs, modelCallId, toolIndex),
+      encodeClientSideToolV2Call(
+        toolCallId,
+        toolName,
+        selectedTool,
+        serverName,
+        rawArgs,
+        modelCallId,
+        toolIndex,
+      ),
     ),
   );
 }
@@ -402,13 +422,23 @@ export function encodeMessage(
     encodeField(FIELD.MSG_ROLE, WIRE_TYPE.VARINT, role),
     encodeField(FIELD.MSG_ID, WIRE_TYPE.LEN, messageId),
     // Only include server_bubble_id if explicitly provided (last assistant message only)
-    ...(serverBubbleId ? [encodeField(FIELD.MSG_SERVER_BUBBLE_ID, WIRE_TYPE.LEN, serverBubbleId)] : []),
+    ...(serverBubbleId
+      ? [encodeField(FIELD.MSG_SERVER_BUBBLE_ID, WIRE_TYPE.LEN, serverBubbleId)]
+      : []),
     ...(hasToolResults
-      ? toolResults.map((tr) => encodeField(FIELD.MSG_TOOL_RESULTS, WIRE_TYPE.LEN, encodeToolResult(tr)))
+      ? toolResults.map((tr) =>
+          encodeField(FIELD.MSG_TOOL_RESULTS, WIRE_TYPE.LEN, encodeToolResult(tr)),
+        )
       : []),
     encodeField(FIELD.MSG_IS_AGENTIC, WIRE_TYPE.VARINT, hasTools ? 1 : 0),
-    encodeField(FIELD.MSG_UNIFIED_MODE, WIRE_TYPE.VARINT, hasTools ? UNIFIED_MODE.AGENT : UNIFIED_MODE.CHAT),
-    ...(isLast && hasTools ? [encodeField(FIELD.MSG_SUPPORTED_TOOLS, WIRE_TYPE.LEN, encodeVarint(1))] : []),
+    encodeField(
+      FIELD.MSG_UNIFIED_MODE,
+      WIRE_TYPE.VARINT,
+      hasTools ? UNIFIED_MODE.AGENT : UNIFIED_MODE.CHAT,
+    ),
+    ...(isLast && hasTools
+      ? [encodeField(FIELD.MSG_SUPPORTED_TOOLS, WIRE_TYPE.LEN, encodeVarint(1))]
+      : []),
   );
 }
 
@@ -473,7 +503,13 @@ export function encodeMcpTool(tool) {
 
 // ==================== REQUEST BUILDING ====================
 
-export function encodeRequest(messages, modelName, tools = [], reasoningEffort = null, forceAgentMode = false) {
+export function encodeRequest(
+  messages,
+  modelName,
+  tools = [],
+  reasoningEffort = null,
+  forceAgentMode = false,
+) {
   const hasTools = tools?.length > 0;
   const isAgentic = hasTools || forceAgentMode;
   const formattedMessages = [];
@@ -502,10 +538,16 @@ export function encodeRequest(messages, modelName, tools = [], reasoningEffort =
       // Avoid inserting duplicate assistant tool-result message if next one already matches
       const nextMsg = messages[i + 1];
       const nextHasToolResults =
-        nextMsg?.role === "assistant" && Array.isArray(nextMsg?.tool_results) && nextMsg.tool_results.length > 0;
-      const currentIds = new Set(msg.tool_results.map((tr) => tr?.tool_call_id).filter((id) => typeof id === "string"));
+        nextMsg?.role === "assistant" &&
+        Array.isArray(nextMsg?.tool_results) &&
+        nextMsg.tool_results.length > 0;
+      const currentIds = new Set(
+        msg.tool_results.map((tr) => tr?.tool_call_id).filter((id) => typeof id === "string"),
+      );
       const nextIds = new Set(
-        (nextMsg?.tool_results || []).map((tr) => tr?.tool_call_id).filter((id) => typeof id === "string"),
+        (nextMsg?.tool_results || [])
+          .map((tr) => tr?.tool_call_id)
+          .filter((id) => typeof id === "string"),
       );
       let sameIds = currentIds.size > 0 && currentIds.size === nextIds.size;
       if (sameIds) {
@@ -562,7 +604,15 @@ export function encodeRequest(messages, modelName, tools = [], reasoningEffort =
       encodeField(
         FIELD.MESSAGES,
         WIRE_TYPE.LEN,
-        encodeMessage(fm.content, fm.role, fm.messageId, null, fm.isLast, fm.hasTools, fm.toolResults),
+        encodeMessage(
+          fm.content,
+          fm.role,
+          fm.messageId,
+          null,
+          fm.isLast,
+          fm.hasTools,
+          fm.toolResults,
+        ),
       ),
     ),
 
@@ -583,15 +633,23 @@ export function encodeRequest(messages, modelName, tools = [], reasoningEffort =
     ...(isAgentic ? [encodeField(FIELD.SUPPORTED_TOOLS, WIRE_TYPE.LEN, encodeVarint(1))] : []),
 
     // Message IDs
-    ...messageIds.map((mid) => encodeField(FIELD.MESSAGE_IDS, WIRE_TYPE.LEN, encodeMessageId(mid.messageId, mid.role))),
+    ...messageIds.map((mid) =>
+      encodeField(FIELD.MESSAGE_IDS, WIRE_TYPE.LEN, encodeMessageId(mid.messageId, mid.role)),
+    ),
 
     // MCP Tools
-    ...(tools?.length > 0 ? tools.map((tool) => encodeField(FIELD.MCP_TOOLS, WIRE_TYPE.LEN, encodeMcpTool(tool))) : []),
+    ...(tools?.length > 0
+      ? tools.map((tool) => encodeField(FIELD.MCP_TOOLS, WIRE_TYPE.LEN, encodeMcpTool(tool)))
+      : []),
 
     // Mode fields
     encodeField(FIELD.LARGE_CONTEXT, WIRE_TYPE.VARINT, 0),
     encodeField(FIELD.UNKNOWN_38, WIRE_TYPE.VARINT, 0),
-    encodeField(FIELD.UNIFIED_MODE, WIRE_TYPE.VARINT, isAgentic ? UNIFIED_MODE.AGENT : UNIFIED_MODE.CHAT),
+    encodeField(
+      FIELD.UNIFIED_MODE,
+      WIRE_TYPE.VARINT,
+      isAgentic ? UNIFIED_MODE.AGENT : UNIFIED_MODE.CHAT,
+    ),
     encodeField(FIELD.UNKNOWN_47, WIRE_TYPE.LEN, ""),
     encodeField(FIELD.SHOULD_DISABLE_TOOLS, WIRE_TYPE.VARINT, isAgentic ? 0 : 1),
     encodeField(FIELD.THINKING_LEVEL, WIRE_TYPE.VARINT, thinkingLevel),
@@ -601,7 +659,13 @@ export function encodeRequest(messages, modelName, tools = [], reasoningEffort =
   );
 }
 
-export function buildChatRequest(messages, modelName, tools = [], reasoningEffort = null, forceAgentMode = false) {
+export function buildChatRequest(
+  messages,
+  modelName,
+  tools = [],
+  reasoningEffort = null,
+  forceAgentMode = false,
+) {
   return encodeField(
     FIELD.REQUEST,
     WIRE_TYPE.LEN,
@@ -668,7 +732,13 @@ export function wrapConnectRPCFrame(payload, compress = false) {
   return frame;
 }
 
-export function generateCursorBody(messages, modelName, tools = [], reasoningEffort = null, forceAgentMode = false) {
+export function generateCursorBody(
+  messages,
+  modelName,
+  tools = [],
+  reasoningEffort = null,
+  forceAgentMode = false,
+) {
   log(
     "BODY",
     `Generating: ${messages.length} msgs, model=${modelName}, tools=${tools.length}, reasoning=${reasoningEffort || "none"}, forceAgentMode=${forceAgentMode}`,

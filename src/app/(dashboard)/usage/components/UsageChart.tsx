@@ -2,7 +2,15 @@
 
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import Card from "@/shared/components/Card";
 import SegmentedControl from "@/shared/components/SegmentedControl";
 
@@ -54,9 +62,13 @@ export default function UsageChart({ period = "7d" }: any) {
       />
 
       {loading ? (
-        <div className="h-48 flex items-center justify-center text-text-muted text-sm">Loading...</div>
+        <div className="h-48 flex items-center justify-center text-text-muted text-sm">
+          Loading...
+        </div>
       ) : !hasData ? (
-        <div className="h-48 flex items-center justify-center text-text-muted text-sm">No data for this period</div>
+        <div className="h-48 flex items-center justify-center text-text-muted text-sm">
+          No data for this period
+        </div>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>

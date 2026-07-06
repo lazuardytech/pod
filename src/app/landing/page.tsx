@@ -35,7 +35,8 @@ export default function LandingPage() {
                 Ready to Simplify Your AI Infrastructure?
               </h2>
               <p className="text-[14px] text-storm-cloud leading-[1.6] tracking-[-0.13px] mb-8 max-w-xl mx-auto">
-                Join developers who are streamlining their AI integrations with Pod. Open source and free to start.
+                Join developers who are streamlining their AI integrations with Pod. Open source and
+                free to start.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
@@ -46,7 +47,9 @@ export default function LandingPage() {
                   Start Free
                 </button>
                 <button
-                  onClick={() => window.open("https://github.com/lazuardytech/pod#readme", "_blank")}
+                  onClick={() =>
+                    window.open("https://github.com/lazuardytech/pod#readme", "_blank")
+                  }
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-9 px-6 rounded-[6px] border border-charcoal-grey bg-graphite hover:bg-deep-slate text-porcelain text-[13px] font-[400] transition-colors duration-100"
                 >
                   Read Documentation

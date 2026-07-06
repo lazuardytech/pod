@@ -5,10 +5,16 @@ import { sanitizeError } from "@/lib/sanitizeError";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
 // Fetch with timeout wrapper
-const fetchWithTimeout = (url: string, options: RequestInit, timeout = 10000): Promise<Response> => {
+const fetchWithTimeout = (
+  url: string,
+  options: RequestInit,
+  timeout = 10000,
+): Promise<Response> => {
   return Promise.race([
     fetch(url, options),
-    new Promise<Response>((_, reject) => setTimeout(() => reject(new Error("Request timeout")), timeout)),
+    new Promise<Response>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timeout")), timeout),
+    ),
   ]);
 };
 
@@ -24,12 +30,16 @@ const isValidUrl = (url: any) => {
 
 // Parse error details for user-friendly messages
 const getErrorMessage = (error: any) => {
-  if (error.cause?.code === "ECONNREFUSED") return "Connection refused - provider node offline or unreachable";
-  if (error.cause?.code === "ENOTFOUND") return "DNS lookup failed - invalid domain or network issue";
+  if (error.cause?.code === "ECONNREFUSED")
+    return "Connection refused - provider node offline or unreachable";
+  if (error.cause?.code === "ENOTFOUND")
+    return "DNS lookup failed - invalid domain or network issue";
   if (error.cause?.code === "ETIMEDOUT") return "Connection timeout - provider node too slow";
-  if (sanitizeError(error).includes("timeout")) return "Request timeout (>10s) - provider node not responding";
+  if (sanitizeError(error).includes("timeout"))
+    return "Request timeout (>10s) - provider node not responding";
   if (error.cause?.code === "CERT_HAS_EXPIRED") return "SSL certificate expired";
-  if (error.cause?.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE") return "SSL certificate verification failed";
+  if (error.cause?.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE")
+    return "SSL certificate verification failed";
   if (error.cause?.code) return `Network error: ${error.cause.code}`;
   return "Network connection failed - check URL and network connectivity";
 };
@@ -83,7 +93,10 @@ export async function POST(request: any) {
     if (type === "custom-embedding") {
       const normalizedBase = baseUrl.trim().replace(/\/$/, "");
       if (!modelId?.trim()) {
-        return NextResponse.json({ valid: false, error: "Model ID required for embedding validation" });
+        return NextResponse.json({
+          valid: false,
+          error: "Model ID required for embedding validation",
+        });
       }
       const embedRes = await fetchWithTimeout(`${normalizedBase}/embeddings`, {
         method: "POST",
@@ -95,7 +108,9 @@ export async function POST(request: any) {
       });
       if (embedRes.ok) {
         const data = await embedRes.json().catch(() => null);
-        const dims = Array.isArray(data?.data?.[0]?.embedding) ? data.data[0].embedding.length : null;
+        const dims = Array.isArray(data?.data?.[0]?.embedding)
+          ? data.data[0].embedding.length
+          : null;
         return NextResponse.json({ valid: true, method: "embeddings", dimensions: dims });
       }
       if (embedRes.status === 401 || embedRes.status === 403) {

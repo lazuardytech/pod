@@ -1,5 +1,6 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { handleChat } from "@/sse/handlers/chat";
 
 let initialized = false;
@@ -28,9 +29,23 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: any) {
-  return await withApiKeyRateLimit(request, async () => {
-    // Fallback to local handling
-    await ensureInitialized();
-    return await handleChat(request);
-  });
+  try {
+    return await withApiKeyRateLimit(request, async () => {
+      await ensureInitialized();
+      return await handleChat(request);
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: { message: sanitizeError(error), type: "server_error", param: null },
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
+    );
+  }
 }

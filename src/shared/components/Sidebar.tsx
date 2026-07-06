@@ -60,7 +60,9 @@ function MediaFlyout({
         onMouseLeave={hide}
         className={cn(
           "flex items-center justify-center py-2 rounded-[2px] transition-colors duration-100",
-          isMediaActive ? "bg-porcelain/8 text-porcelain" : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
+          isMediaActive
+            ? "bg-porcelain/8 text-porcelain"
+            : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
         )}
       >
         <LucideIcon
@@ -81,26 +83,28 @@ function MediaFlyout({
           <p className="px-3 py-1.5 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
             Media Providers
           </p>
-          {MEDIA_PROVIDER_KINDS.filter((k: any) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind: any) => (
-            <Link
-              key={kind.id}
-              prefetch={false}
-              href={`/media-providers/${kind.id}`}
-              onClick={() => {
-                setOpen(false);
-                onClose?.();
-              }}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-1.5 transition-colors duration-100",
-                pathname.startsWith(`/media-providers/${kind.id}`)
-                  ? "text-porcelain bg-porcelain/8"
-                  : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
-              )}
-            >
-              <LucideIcon name={kind.icon} size={SIDEBAR_ICON_SIZES.nested} />
-              <span className="text-[13px] tracking-[-0.1px]">{kind.label}</span>
-            </Link>
-          ))}
+          {MEDIA_PROVIDER_KINDS.filter((k: any) => VISIBLE_MEDIA_KINDS.includes(k.id)).map(
+            (kind: any) => (
+              <Link
+                key={kind.id}
+                prefetch={false}
+                href={`/media-providers/${kind.id}`}
+                onClick={() => {
+                  setOpen(false);
+                  onClose?.();
+                }}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-1.5 transition-colors duration-100",
+                  pathname.startsWith(`/media-providers/${kind.id}`)
+                    ? "text-porcelain bg-porcelain/8"
+                    : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
+                )}
+              >
+                <LucideIcon name={kind.icon} size={SIDEBAR_ICON_SIZES.nested} />
+                <span className="text-[13px] tracking-[-0.1px]">{kind.label}</span>
+              </Link>
+            ),
+          )}
           <Link
             prefetch={false}
             href={COMBINED_WEB_ITEM.href}
@@ -172,7 +176,9 @@ function NavSection({
   if (collapsed) return <div className="space-y-0.5">{children}</div>;
   return (
     <div className="pt-4 first:pt-0">
-      <p className="px-3 mb-1 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">{label}</p>
+      <p className="px-3 mb-1 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
+        {label}
+      </p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -203,15 +209,22 @@ function NavItem({
       className={cn(
         "flex items-center gap-2.5 rounded-[2px] transition-colors duration-100 group",
         collapsed ? "justify-center px-0 py-2" : "px-3 py-1.5",
-        active ? "bg-porcelain/8 text-porcelain" : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
+        active
+          ? "bg-porcelain/8 text-porcelain"
+          : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
       )}
     >
       <LucideIcon
         name={icon}
         size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.expanded}
-        className={cn("shrink-0", active ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud")}
+        className={cn(
+          "shrink-0",
+          active ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
+        )}
       />
-      {!collapsed && <span className="text-[13px] font-[400] tracking-[-0.12px] truncate">{label}</span>}
+      {!collapsed && (
+        <span className="text-[13px] font-[400] tracking-[-0.12px] truncate">{label}</span>
+      )}
     </Link>
   );
 }
@@ -232,7 +245,8 @@ export default function Sidebar({
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
-  const collapsedFooterButtonClass = "size-8 rounded-[6px] text-fog-grey hover:bg-deep-slate hover:text-porcelain";
+  const collapsedFooterButtonClass =
+    "size-8 rounded-[6px] text-fog-grey hover:bg-deep-slate hover:text-porcelain";
 
   const isActive = (href: any) => {
     if (href === "/endpoint") {
@@ -315,10 +329,25 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className={cn("flex-1 overflow-y-auto custom-scrollbar space-y-0", collapsed ? "px-1 py-3" : "px-2 py-3")}>
+        <nav
+          className={cn(
+            "flex-1 overflow-y-auto custom-scrollbar space-y-0",
+            collapsed ? "px-1 py-3" : "px-2 py-3",
+          )}
+        >
           <NavSection label="API" collapsed={collapsed}>
-            <NavItem {...apiItems[0]!} active={isActive(apiItems[0]!.href)} onClick={onClose} collapsed={collapsed} />
-            <NavItem {...apiItems[1]!} active={isActive(apiItems[1]!.href)} onClick={onClose} collapsed={collapsed} />
+            <NavItem
+              {...apiItems[0]!}
+              active={isActive(apiItems[0]!.href)}
+              onClick={onClose}
+              collapsed={collapsed}
+            />
+            <NavItem
+              {...apiItems[1]!}
+              active={isActive(apiItems[1]!.href)}
+              onClick={onClose}
+              collapsed={collapsed}
+            />
 
             {/* Media Providers — flyout on hover when collapsed, accordion when expanded */}
             {collapsed ? (
@@ -339,7 +368,9 @@ export default function Sidebar({
                     size={SIDEBAR_ICON_SIZES.expanded}
                     className={cn(
                       "shrink-0",
-                      isMediaActive ? "text-porcelain" : "text-fog-grey group-hover:text-storm-cloud",
+                      isMediaActive
+                        ? "text-porcelain"
+                        : "text-fog-grey group-hover:text-storm-cloud",
                     )}
                   />
                   <span className="text-[13px] font-[400] tracking-[-0.12px] flex-1 text-left truncate">
@@ -355,7 +386,9 @@ export default function Sidebar({
 
                 {mediaOpen && (
                   <div className="pl-3 space-y-0.5">
-                    {MEDIA_PROVIDER_KINDS.filter((k: any) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind: any) => (
+                    {MEDIA_PROVIDER_KINDS.filter((k: any) =>
+                      VISIBLE_MEDIA_KINDS.includes(k.id),
+                    ).map((kind: any) => (
                       <Link
                         key={kind.id}
                         prefetch={false}
@@ -384,7 +417,9 @@ export default function Sidebar({
                       )}
                     >
                       <LucideIcon name={COMBINED_WEB_ITEM.icon} size={SIDEBAR_ICON_SIZES.nested} />
-                      <span className="text-[13px] tracking-[-0.1px]">{COMBINED_WEB_ITEM.label}</span>
+                      <span className="text-[13px] tracking-[-0.1px]">
+                        {COMBINED_WEB_ITEM.label}
+                      </span>
                     </Link>
                   </div>
                 )}
@@ -392,7 +427,13 @@ export default function Sidebar({
             )}
 
             {apiItems.slice(2).map((item: any) => (
-              <NavItem key={item.href} {...item} active={isActive(item.href)} onClick={onClose} collapsed={collapsed} />
+              <NavItem
+                key={item.href}
+                {...item}
+                active={isActive(item.href)}
+                onClick={onClose}
+                collapsed={collapsed}
+              />
             ))}
           </NavSection>
 
@@ -400,7 +441,13 @@ export default function Sidebar({
 
           <NavSection label="Analytics" collapsed={collapsed}>
             {analyticsItems.map((item: any) => (
-              <NavItem key={item.href} {...item} active={isActive(item.href)} onClick={onClose} collapsed={collapsed} />
+              <NavItem
+                key={item.href}
+                {...item}
+                active={isActive(item.href)}
+                onClick={onClose}
+                collapsed={collapsed}
+              />
             ))}
           </NavSection>
 
@@ -408,13 +455,24 @@ export default function Sidebar({
 
           <NavSection label="System" collapsed={collapsed}>
             {systemItems.map((item: any) => (
-              <NavItem key={item.href} {...item} active={isActive(item.href)} onClick={onClose} collapsed={collapsed} />
+              <NavItem
+                key={item.href}
+                {...item}
+                active={isActive(item.href)}
+                onClick={onClose}
+                collapsed={collapsed}
+              />
             ))}
           </NavSection>
         </nav>
 
         {/* Footer actions */}
-        <div className={cn("flex flex-col border-t border-charcoal-grey", collapsed ? "p-1.5 gap-1" : "p-2 gap-1.5")}>
+        <div
+          className={cn(
+            "flex flex-col border-t border-charcoal-grey",
+            collapsed ? "p-1.5 gap-1" : "p-2 gap-1.5",
+          )}
+        >
           {/* Version label — expanded only */}
           {!collapsed && (
             <p className="text-[11px] text-fog-grey px-1 pb-0.5">
@@ -449,13 +507,17 @@ export default function Sidebar({
               {isRestarting ? (
                 <LucideIcon
                   name="progress_activity"
-                  size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded}
+                  size={
+                    collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded
+                  }
                   className="animate-spin"
                 />
               ) : (
                 <LucideIcon
                   name="restart_alt"
-                  size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded}
+                  size={
+                    collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded
+                  }
                 />
               )}
               {!collapsed && "Restart"}
@@ -498,7 +560,9 @@ export default function Sidebar({
             <div className="flex items-center justify-center size-12 rounded-full bg-warning-red/10 text-warning-red mx-auto mb-4">
               <LucideIcon name="power_off" className="text-[24px]" />
             </div>
-            <h2 className="text-[15px] font-[510] text-porcelain mb-1.5 tracking-[-0.13px]">Server Disconnected</h2>
+            <h2 className="text-[15px] font-[510] text-porcelain mb-1.5 tracking-[-0.13px]">
+              Server Disconnected
+            </h2>
             <p className="text-[12px] text-storm-cloud mb-5">The proxy server has been stopped.</p>
             <button
               onClick={() => globalThis.location.reload()}

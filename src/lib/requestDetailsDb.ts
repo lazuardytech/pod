@@ -50,9 +50,13 @@ async function getObservabilityConfig(): Promise<ObservabilityConfig> {
         parseInt(process.env.OBSERVABILITY_BATCH_SIZE || String(DEFAULT_BATCH_SIZE), 10),
       flushIntervalMs:
         settings.observabilityFlushIntervalMs ||
-        parseInt(process.env.OBSERVABILITY_FLUSH_INTERVAL_MS || String(DEFAULT_FLUSH_INTERVAL_MS), 10),
+        parseInt(
+          process.env.OBSERVABILITY_FLUSH_INTERVAL_MS || String(DEFAULT_FLUSH_INTERVAL_MS),
+          10,
+        ),
       maxJsonSize:
-        (settings.observabilityMaxJsonSize || parseInt(process.env.OBSERVABILITY_MAX_JSON_SIZE || "5", 10)) * 1024,
+        (settings.observabilityMaxJsonSize ||
+          parseInt(process.env.OBSERVABILITY_MAX_JSON_SIZE || "5", 10)) * 1024,
     };
   } catch {
     cachedConfig = {
@@ -91,7 +95,9 @@ let writeBuffer: DetailItem[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let isFlushing = false;
 
-function sanitizeHeaders(headers: Record<string, unknown> | null | undefined): Record<string, unknown> {
+function sanitizeHeaders(
+  headers: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
   if (!headers || typeof headers !== "object") return {};
   const sensitiveKeys = ["authorization", "x-api-key", "cookie", "token", "api-key"];
   const sanitized: Record<string, unknown> = { ...headers };
@@ -150,7 +156,9 @@ function prepareRecord(
   };
 
   const latency =
-    typeof item.latency === "number" ? item.latency : (item.latency?.total ?? item.latency?.totalMs ?? null);
+    typeof item.latency === "number"
+      ? item.latency
+      : (item.latency?.total ?? item.latency?.totalMs ?? null);
   const t = item.tokens || {};
   return {
     id: item.id,
@@ -311,11 +319,20 @@ export type GetRequestDetailsResult = {
   pagination: RequestDetailsPagination;
 };
 
-export async function getRequestDetails(filter: GetRequestDetailsFilter = {}): Promise<GetRequestDetailsResult> {
+export async function getRequestDetails(
+  filter: GetRequestDetailsFilter = {},
+): Promise<GetRequestDetailsResult> {
   if (isCloud) {
     return {
       details: [],
-      pagination: { page: 1, pageSize: 50, totalItems: 0, totalPages: 0, hasNext: false, hasPrev: false },
+      pagination: {
+        page: 1,
+        pageSize: 50,
+        totalItems: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
   const db = getDatabase();
@@ -348,9 +365,9 @@ export async function getRequestDetails(filter: GetRequestDetailsFilter = {}): P
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-  const countRow = db.prepare(`SELECT COUNT(*) AS c FROM request_details ${where}`).get(...params) as
-    | { c?: number }
-    | undefined;
+  const countRow = db
+    .prepare(`SELECT COUNT(*) AS c FROM request_details ${where}`)
+    .get(...params) as { c?: number } | undefined;
   const totalItems = countRow?.c || 0;
 
   const page = filter.page || 1;
@@ -367,14 +384,23 @@ export async function getRequestDetails(filter: GetRequestDetailsFilter = {}): P
 
   return {
     details: rows.map(rowToDetail),
-    pagination: { page, pageSize, totalItems, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
+    pagination: {
+      page,
+      pageSize,
+      totalItems,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
   };
 }
 
 export async function getRequestDetailById(id: string): Promise<DetailItem | null> {
   if (isCloud) return null;
   const db = getDatabase();
-  const r = db.prepare("SELECT * FROM request_details WHERE id = ?").get(id) as DetailRow | undefined;
+  const r = db.prepare("SELECT * FROM request_details WHERE id = ?").get(id) as
+    | DetailRow
+    | undefined;
   return r ? rowToDetail(r) : null;
 }
 

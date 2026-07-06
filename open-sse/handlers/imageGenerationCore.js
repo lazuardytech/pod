@@ -44,7 +44,10 @@ export async function handleImageGenerationCore({
 
   const adapter = getImageAdapter(provider);
   if (!adapter) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, `Provider '${provider}' does not support image generation`);
+    return createErrorResult(
+      HTTP_STATUS.BAD_REQUEST,
+      `Provider '${provider}' does not support image generation`,
+    );
   }
 
   let url;
@@ -56,10 +59,16 @@ export async function handleImageGenerationCore({
     requestBody = await adapter.buildBody(model, body);
     headers = adapter.buildHeaders(credentials, requestBody, model, body);
   } catch (error) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, error.message || `Invalid ${provider} image request`);
+    return createErrorResult(
+      HTTP_STATUS.BAD_REQUEST,
+      error.message || `Invalid ${provider} image request`,
+    );
   }
 
-  log?.debug?.("IMAGE", `${provider.toUpperCase()} | ${model} | prompt="${body.prompt.slice(0, 50)}..."`);
+  log?.debug?.(
+    "IMAGE",
+    `${provider.toUpperCase()} | ${model} | prompt="${body.prompt.slice(0, 50)}..."`,
+  );
 
   let providerResponse;
   try {
@@ -79,9 +88,14 @@ export async function handleImageGenerationCore({
   if (
     !executor?.noAuth &&
     !adapter.noAuth &&
-    (providerResponse.status === HTTP_STATUS.UNAUTHORIZED || providerResponse.status === HTTP_STATUS.FORBIDDEN)
+    (providerResponse.status === HTTP_STATUS.UNAUTHORIZED ||
+      providerResponse.status === HTTP_STATUS.FORBIDDEN)
   ) {
-    const newCredentials = await refreshWithRetry(() => executor.refreshCredentials(credentials, log), 3, log);
+    const newCredentials = await refreshWithRetry(
+      () => executor.refreshCredentials(credentials, log),
+      3,
+      log,
+    );
 
     if (newCredentials?.accessToken || newCredentials?.apiKey) {
       log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed for image generation`);
@@ -134,7 +148,10 @@ export async function handleImageGenerationCore({
       parsed = await providerResponse.json();
     }
   } catch (parseError) {
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, parseError.message || `Invalid response from ${provider}`);
+    return createErrorResult(
+      HTTP_STATUS.BAD_GATEWAY,
+      parseError.message || `Invalid response from ${provider}`,
+    );
   }
 
   if (onRequestSuccess) await onRequestSuccess();
@@ -157,7 +174,12 @@ export async function handleImageGenerationCore({
     if (b64) {
       const buf = Buffer.from(b64, "base64");
       const fmt = (body.output_format || "png").toLowerCase();
-      const mime = fmt === "jpeg" || fmt === "jpg" ? "image/jpeg" : fmt === "webp" ? "image/webp" : "image/png";
+      const mime =
+        fmt === "jpeg" || fmt === "jpg"
+          ? "image/jpeg"
+          : fmt === "webp"
+            ? "image/webp"
+            : "image/png";
       return {
         success: true,
         response: new Response(buf, {

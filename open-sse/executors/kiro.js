@@ -60,7 +60,11 @@ export class KiroExecutor extends BaseExecutor {
     // Kept separate from status-based retryConfig because a plain 500 retry
     // would be dangerous (could mask client-side bugs); we only retry when the
     // body explicitly signals "server busy".
-    const transientRetry = this.config.transientRetry || { attempts: 3, baseDelayMs: 1000, maxDelayMs: 8000 };
+    const transientRetry = this.config.transientRetry || {
+      attempts: 3,
+      baseDelayMs: 1000,
+      maxDelayMs: 8000,
+    };
 
     // Abort-aware sleep helper
     const sleep = (ms, signal) =>
@@ -100,7 +104,10 @@ export class KiroExecutor extends BaseExecutor {
       const { attempts: maxRetries, delayMs } = resolveRetryEntry(retryConfig[response.status]);
       if (!response.ok && maxRetries > 0 && retryAttempts < maxRetries) {
         retryAttempts++;
-        log?.debug?.("RETRY", `${response.status} retry ${retryAttempts}/${maxRetries} after ${delayMs / 1000}s`);
+        log?.debug?.(
+          "RETRY",
+          `${response.status} retry ${retryAttempts}/${maxRetries} after ${delayMs / 1000}s`,
+        );
         await sleep(delayMs, signal);
         continue;
       }
@@ -130,7 +137,10 @@ export class KiroExecutor extends BaseExecutor {
             "RETRY",
             `KIRO ${response.status} transient (${transientAttempts}/${transientRetry.attempts}) | ${bodyText.slice(0, 120)}`,
           );
-          await sleep(jitteredDelay(transientRetry.baseDelayMs || 1000, transientAttempts - 1), signal);
+          await sleep(
+            jitteredDelay(transientRetry.baseDelayMs || 1000, transientAttempts - 1),
+            signal,
+          );
           continue;
         }
       }
@@ -295,7 +305,9 @@ export class KiroExecutor extends BaseExecutor {
                 ],
               };
               chunkIndex++;
-              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(startChunk)}\n\n`));
+              controller.enqueue(
+                new TextEncoder().encode(`data: ${JSON.stringify(startChunk)}\n\n`),
+              );
             } else {
               toolIndex = state.seenToolIds.get(toolCallId);
             }
@@ -334,7 +346,9 @@ export class KiroExecutor extends BaseExecutor {
                 ],
               };
               chunkIndex++;
-              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(argsChunk)}\n\n`));
+              controller.enqueue(
+                new TextEncoder().encode(`data: ${JSON.stringify(argsChunk)}\n\n`),
+              );
             }
           }
         }
@@ -392,19 +406,26 @@ export class KiroExecutor extends BaseExecutor {
         }
 
         // Emit final chunk after messageStopEvent or after receiving BOTH meteringEvent AND contextUsageEvent
-        if ((state.messageStopEvent || (state.hasMeteringEvent && state.hasContextUsage)) && !state.finishEmitted) {
+        if (
+          (state.messageStopEvent || (state.hasMeteringEvent && state.hasContextUsage)) &&
+          !state.finishEmitted
+        ) {
           state.finishEmitted = true;
 
           // Estimate tokens if not available from events
           if (!state.usage) {
             // Estimate output tokens from content length
             const estimatedOutputTokens =
-              state.totalContentLength > 0 ? Math.max(1, Math.floor(state.totalContentLength / 4)) : 0;
+              state.totalContentLength > 0
+                ? Math.max(1, Math.floor(state.totalContentLength / 4))
+                : 0;
 
             // Estimate input tokens from contextUsagePercentage
             // Kiro models typically have 200k context window
             const estimatedInputTokens =
-              state.contextUsagePercentage > 0 ? Math.floor((state.contextUsagePercentage * 200000) / 100) : 0;
+              state.contextUsagePercentage > 0
+                ? Math.floor((state.contextUsagePercentage * 200000) / 100)
+                : 0;
 
             state.usage = {
               prompt_tokens: estimatedInputTokens,

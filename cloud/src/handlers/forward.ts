@@ -1,8 +1,16 @@
 // CF headers to remove
 const CF_HEADERS = [
-  "cf-connecting-ip", "cf-connecting-ip6", "cf-ray", "cf-visitor",
-  "cf-ipcountry", "cf-tracking-id", "cf-connecting-ip6-policy",
-  "x-real-ip", "x-forwarded-for", "x-forwarded-proto", "x-forwarded-host"
+  "cf-connecting-ip",
+  "cf-connecting-ip6",
+  "cf-ray",
+  "cf-visitor",
+  "cf-ipcountry",
+  "cf-tracking-id",
+  "cf-connecting-ip6-policy",
+  "x-real-ip",
+  "x-forwarded-for",
+  "x-forwarded-proto",
+  "x-forwarded-host",
 ];
 
 const BLOCKED_HOST_SUFFIXES = [
@@ -39,7 +47,11 @@ function isUrlAllowed(targetUrl: string): boolean {
     for (const pattern of BLOCKED_HOST_PATTERNS) {
       if (pattern.test(hostname)) return false;
     }
-    if (BLOCKED_HOST_SUFFIXES.some((suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix))) {
+    if (
+      BLOCKED_HOST_SUFFIXES.some(
+        (suffix) => hostname === suffix.slice(1) || hostname.endsWith(suffix),
+      )
+    ) {
       return false;
     }
     return true;
@@ -58,25 +70,33 @@ export async function handleForward(request: Request): Promise<Response> {
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 401,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
     const parsed = await parseApiKey(apiKey);
     if (!parsed || !parsed.machineId) {
       return new Response(JSON.stringify({ error: "Invalid API key" }), {
         status: 401,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
 
     const url = new URL(request.url);
     const clientIp = request.headers.get("CF-Connecting-IP") || "";
-    const { targetUrl, headers = {}, body } = await request.json() as { targetUrl: string; headers: Record<string, string>; body: unknown };
+    const {
+      targetUrl,
+      headers = {},
+      body,
+    } = (await request.json()) as {
+      targetUrl: string;
+      headers: Record<string, string>;
+      body: unknown;
+    };
 
     if (!targetUrl) {
       return new Response(JSON.stringify({ error: "targetUrl is required" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -84,7 +104,7 @@ export async function handleForward(request: Request): Promise<Response> {
     if (!isUrlAllowed(targetUrl)) {
       return new Response(JSON.stringify({ error: "targetUrl is not allowed" }), {
         status: 403,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
 
@@ -109,9 +129,9 @@ export async function handleForward(request: Request): Promise<Response> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...cleanHeaders
+        ...cleanHeaders,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     // Use fetch with cf options to minimize auto-added headers
@@ -122,14 +142,14 @@ export async function handleForward(request: Request): Promise<Response> {
         scrapeShield: false,
         minify: { javascript: false, css: false, html: false },
         mirage: false,
-        polish: "off"
-      } as unknown as RequestInitCfProperties
+        polish: "off",
+      } as unknown as RequestInitCfProperties,
     });
 
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       return new Response(JSON.stringify({ error: "Redirect responses are not allowed" }), {
         status: 403,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
 
@@ -138,14 +158,14 @@ export async function handleForward(request: Request): Promise<Response> {
       status: response.status,
       headers: {
         "Content-Type": response.headers.get("Content-Type") || "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
+        "Access-Control-Allow-Origin": "*",
+      },
     });
   } catch (error) {
     console.error("[FORWARD] Error occurred");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 }

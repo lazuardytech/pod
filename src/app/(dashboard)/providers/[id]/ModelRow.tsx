@@ -70,7 +70,9 @@ export default function ModelRow({
           <code className="max-w-[72vw] truncate rounded bg-sidebar px-1.5 py-0.5 font-mono text-xs text-text-muted sm:max-w-[360px]">
             {fullModel}
           </code>
-          {model.name && <span className="truncate pl-1 text-[9px] italic text-text-muted/70">{model.name}</span>}
+          {model.name && (
+            <span className="truncate pl-1 text-[9px] italic text-text-muted/70">{model.name}</span>
+          )}
         </div>
         {onTest && (
           <div className="relative shrink-0 group/btn">
@@ -95,7 +97,10 @@ export default function ModelRow({
             onClick={() => onCopy(fullModel, `model-${model.id}`)}
             className="rounded p-0.5 text-text-muted hover:bg-sidebar hover:text-primary"
           >
-            <LucideIcon name={copied === `model-${model.id}` ? "check" : "content_copy"} className="text-sm" />
+            <LucideIcon
+              name={copied === `model-${model.id}` ? "check" : "content_copy"}
+              className="text-sm"
+            />
           </button>
           <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
             {copied === `model-${model.id}` ? "Copied!" : "Copy"}

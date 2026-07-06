@@ -81,7 +81,9 @@ export function DetailSection({
     <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-charcoal-grey bg-pitch-black/40">
         {icon && <LucideIcon name={icon} className="text-[13px] text-fog-grey" />}
-        <span className="text-[10px] font-[590] uppercase tracking-[0.06em] text-fog-grey">{title}</span>
+        <span className="text-[10px] font-[590] uppercase tracking-[0.06em] text-fog-grey">
+          {title}
+        </span>
       </div>
       <div className="p-3">{children}</div>
     </div>

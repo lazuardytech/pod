@@ -498,7 +498,10 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
   }
 
   // Function call arguments delta (standard or custom_tool_call variant)
-  if (eventType === "response.function_call_arguments.delta" || eventType === "response.custom_tool_call_input.delta") {
+  if (
+    eventType === "response.function_call_arguments.delta" ||
+    eventType === "response.custom_tool_call_input.delta"
+  ) {
     const argsDelta = data.delta || "";
     if (!argsDelta) return null;
 
@@ -554,7 +557,9 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
       // OpenAI Responses API: input_tokens already includes cached_tokens
       // Cache info is in input_tokens_details.cached_tokens
       const cacheReadTokens =
-        responseUsage.input_tokens_details?.cached_tokens || responseUsage.cache_read_input_tokens || 0;
+        responseUsage.input_tokens_details?.cached_tokens ||
+        responseUsage.cache_read_input_tokens ||
+        0;
 
       state.usage = {
         prompt_tokens: inputTokens,

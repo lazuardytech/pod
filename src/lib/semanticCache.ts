@@ -7,7 +7,9 @@ import { LRUCache } from "@/lib/cacheLayer";
 import { getDatabase } from "@/lib/sqlite/connection";
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function toNumber(value: unknown, fallback: number = 0): number {
@@ -40,10 +42,9 @@ function ensureCacheMetricsTable(): void {
 function incrementMetric(metric: string, amount: number = 1): void {
   try {
     const db = getDatabase();
-    db.prepare(`UPDATE cache_metrics SET value = value + ?, updated_at = datetime('now') WHERE key = ?`).run(
-      amount,
-      metric,
-    );
+    db.prepare(
+      `UPDATE cache_metrics SET value = value + ?, updated_at = datetime('now') WHERE key = ?`,
+    ).run(amount, metric);
   } catch {
     // ignore
   }
@@ -147,7 +148,10 @@ export function generateSignature(
   });
   // For large payloads, hash only the tail slice so we avoid blocking the
   // event loop with a multi-MB SHA-256 update on every request.
-  const slice = payload.length > SIGNATURE_MAX_BYTES ? payload.slice(payload.length - SIGNATURE_MAX_BYTES) : payload;
+  const slice =
+    payload.length > SIGNATURE_MAX_BYTES
+      ? payload.slice(payload.length - SIGNATURE_MAX_BYTES)
+      : payload;
   return crypto.createHash("sha256").update(slice).digest("hex");
 }
 
@@ -165,7 +169,9 @@ export function getCachedResponse(signature: string): unknown {
       .prepare(
         "SELECT response, tokens_saved, model, expires_at FROM semantic_cache WHERE signature = ? AND expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
       )
-      .get(signature) as { response?: string; tokens_saved?: number; model?: string; expires_at?: string } | undefined;
+      .get(signature) as
+      | { response?: string; tokens_saved?: number; model?: string; expires_at?: string }
+      | undefined;
 
     if (!row) {
       incrementMetric("misses");
@@ -188,7 +194,9 @@ export function getCachedResponse(signature: string): unknown {
     }
     const modelName = typeof record.model === "string" ? record.model : "";
     getMemoryCache().set(signature, { response: parsed, tokensSaved, model: modelName }, memoryTtl);
-    db.prepare("UPDATE semantic_cache SET hit_count = hit_count + 1 WHERE signature = ?").run(signature);
+    db.prepare("UPDATE semantic_cache SET hit_count = hit_count + 1 WHERE signature = ?").run(
+      signature,
+    );
 
     incrementMetric("hits");
     incrementMetric("tokens_saved", tokensSaved);
@@ -306,7 +314,9 @@ export function getCacheStats(): CacheStats {
   try {
     const db = getDatabase();
     const row = db
-      .prepare("SELECT COUNT(*) AS count FROM semantic_cache WHERE expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')")
+      .prepare(
+        "SELECT COUNT(*) AS count FROM semantic_cache WHERE expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
+      )
       .get() as { count?: number } | undefined;
     dbSize = toNumber(asRecord(row).count, 0);
   } catch {
@@ -330,7 +340,8 @@ export function getCacheStats(): CacheStats {
 
 export function isCacheableForRead(body: unknown, headers: unknown): boolean {
   if ((getHeaderValue(headers, "x-pod-no-cache") || "").toLowerCase() === "true") return false;
-  if ((getHeaderValue(headers, "x-omniroute-no-cache") || "").toLowerCase() === "true") return false;
+  if ((getHeaderValue(headers, "x-omniroute-no-cache") || "").toLowerCase() === "true")
+    return false;
   // Use same default as generateSignature (null → 1) so a request with no
   // temperature field and one with temperature=1 produce the same signature
   // AND both pass this check — previously the default was 0 here vs 1 in
@@ -342,7 +353,8 @@ export function isCacheableForRead(body: unknown, headers: unknown): boolean {
 
 export function isCacheableForWrite(body: unknown, headers: unknown): boolean {
   if ((getHeaderValue(headers, "x-pod-no-cache") || "").toLowerCase() === "true") return false;
-  if ((getHeaderValue(headers, "x-omniroute-no-cache") || "").toLowerCase() === "true") return false;
+  if ((getHeaderValue(headers, "x-omniroute-no-cache") || "").toLowerCase() === "true")
+    return false;
   const temp = (body as { temperature?: number } | null)?.temperature ?? 1;
   if (temp > 1) return false;
   return true;

@@ -6,7 +6,7 @@ import {
   isAccountUnavailable,
   getEarliestRateLimitedUntil,
   getUnavailableUntil,
-  formatRetryAfter
+  formatRetryAfter,
 } from "open-sse/services/accountFallback.js";
 import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
 import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
@@ -18,9 +18,16 @@ import { getMachineData, saveMachineData } from "../services/storage.js";
 
 const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
-async function getModelInfo(modelStr: string, machineId: string, env: Env): Promise<{ provider: string; model: string }> {
+async function getModelInfo(
+  modelStr: string,
+  machineId: string,
+  env: Env,
+): Promise<{ provider: string; model: string }> {
   const data = await getMachineData(machineId, env);
-  const info = await getModelInfoCore(modelStr, (data?.modelAliases as Record<string, string>) || {});
+  const info = await getModelInfoCore(
+    modelStr,
+    (data?.modelAliases as Record<string, string>) || {},
+  );
   return info as { provider: string; model: string };
 }
 
@@ -63,15 +70,15 @@ export async function handleChat(
   request: Request,
   env: Env,
   _ctx: ExecutionContext,
-  machineIdOverride: string | null = null
+  machineIdOverride: string | null = null,
 ): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "*"
-      }
+        "Access-Control-Allow-Headers": "*",
+      },
     });
   }
 
@@ -89,7 +96,7 @@ export async function handleChat(
     if (!parsed.isNewFormat || !parsed.machineId) {
       return errorResponse(
         HTTP_STATUS.BAD_REQUEST,
-        "API key does not contain machineId. Use /{machineId}/v1/... endpoint for old format keys."
+        "API key does not contain machineId. Use /{machineId}/v1/... endpoint for old format keys.",
       );
     }
 
@@ -106,7 +113,7 @@ export async function handleChat(
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
   }
@@ -127,7 +134,7 @@ export async function handleChat(
       models: comboModels,
       handleSingleModel: (reqBody: Record<string, unknown>, model: string) =>
         handleSingleModelChat(reqBody, model, machineId!, env),
-      log
+      log,
     });
   }
 
@@ -142,7 +149,7 @@ async function handleSingleModelChat(
   body: Record<string, unknown>,
   modelStr: string,
   machineId: string,
-  env: Env
+  env: Env,
 ): Promise<Response> {
   const modelInfo = await getModelInfo(modelStr, machineId, env);
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
@@ -163,42 +170,63 @@ async function handleSingleModelChat(
   while (true) {
     iterations++;
     if (iterations > maxIterations) {
-      log.warn("CHAT", `${provider.toUpperCase()} | fallback loop exceeded max iterations (${maxIterations})`);
+      log.warn(
+        "CHAT",
+        `${provider.toUpperCase()} | fallback loop exceeded max iterations (${maxIterations})`,
+      );
       return new Response(
         JSON.stringify({ error: { message: "All accounts unavailable after max retries" } }),
-        { status: HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+        {
+          status: HTTP_STATUS.SERVICE_UNAVAILABLE,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        },
       );
     }
     if (Date.now() - loopStartTime > CPU_DEADLINE_MS) {
       log.warn("CHAT", `${provider.toUpperCase()} | fallback loop exceeded CPU deadline`);
       return new Response(
         JSON.stringify({ error: { message: "Request timeout — all accounts exhausted" } }),
-        { status: HTTP_STATUS.GATEWAY_TIMEOUT, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+        {
+          status: HTTP_STATUS.GATEWAY_TIMEOUT,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        },
       );
     }
 
-    const credentials: CredentialsResponse = await getProviderCredentials(machineId, provider, env, excludeConnectionId);
+    const credentials: CredentialsResponse = await getProviderCredentials(
+      machineId,
+      provider,
+      env,
+      excludeConnectionId,
+    );
     if (!credentials || (credentials as CredentialsError).allRateLimited) {
       const errCreds = credentials as CredentialsError | null;
       if (errCreds?.allRateLimited) {
-        const retryAfterSec = Math.ceil((new Date(errCreds.retryAfter).getTime() - Date.now()) / 1000);
+        const retryAfterSec = Math.ceil(
+          (new Date(errCreds.retryAfter).getTime() - Date.now()) / 1000,
+        );
         const errorMsg = lastError || errCreds.lastError || "Unavailable";
         const msg = `[${provider}/${model}] ${errorMsg} (${errCreds.retryAfterHuman})`;
-        const status = lastStatus || Number(errCreds.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        const status =
+          lastStatus || Number(errCreds.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("CHAT", `${provider.toUpperCase()} | ${msg}`);
-        return new Response(
-          JSON.stringify({ error: { message: msg } }),
-          { status, headers: { "Content-Type": "application/json", "Retry-After": String(Math.max(retryAfterSec, 1)), "Access-Control-Allow-Origin": "*" } }
-        );
+        return new Response(JSON.stringify({ error: { message: msg } }), {
+          status,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(Math.max(retryAfterSec, 1)),
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
       }
       if (!excludeConnectionId) {
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
       }
       log.warn("CHAT", `${provider.toUpperCase()} | no more accounts`);
-      return new Response(
-        JSON.stringify({ error: lastError || "All accounts unavailable" }),
-        { status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
+      return new Response(JSON.stringify({ error: lastError || "All accounts unavailable" }), {
+        status: lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      });
     }
 
     const credResult = credentials as CredentialsResult;
@@ -218,7 +246,7 @@ async function handleSingleModelChat(
       onRequestSuccess: async () => {
         // Clear error status only if currently has error (optimization)
         await clearAccountError(machineId, credResult.id, credResult, env);
-      }
+      },
     });
 
     if (result.success) return result.response;
@@ -227,7 +255,14 @@ async function handleSingleModelChat(
 
     if (shouldFallback) {
       log.warn("FALLBACK", `${provider.toUpperCase()} | ${credResult.id} | ${result.status}`);
-      await markAccountUnavailable(machineId, credResult.id, result.status!, result.error!, env, result.resetsAtMs);
+      await markAccountUnavailable(
+        machineId,
+        credResult.id,
+        result.status!,
+        result.error!,
+        env,
+        result.resetsAtMs,
+      );
       excludeConnectionId = credResult.id;
       lastError = result.error ?? null;
       lastStatus = result.status ?? null;
@@ -242,7 +277,7 @@ async function checkAndRefreshToken(
   machineId: string,
   provider: string,
   credentials: CredentialsResult,
-  env: Env
+  env: Env,
 ): Promise<CredentialsResult> {
   if (!credentials.expiresAt) return credentials;
 
@@ -251,16 +286,24 @@ async function checkAndRefreshToken(
 
   log.debug("TOKEN", `${provider.toUpperCase()} | expiring, refreshing`);
 
-  const newCredentials = await refreshTokenByProvider(provider, credentials as unknown as Record<string, unknown>);
+  const newCredentials = await refreshTokenByProvider(
+    provider,
+    credentials as unknown as Record<string, unknown>,
+  );
   if (newCredentials?.accessToken) {
-    await updateCredentials(machineId, credentials.id, newCredentials as unknown as Record<string, unknown>, env);
+    await updateCredentials(
+      machineId,
+      credentials.id,
+      newCredentials as unknown as Record<string, unknown>,
+      env,
+    );
     return {
       ...credentials,
       accessToken: newCredentials.accessToken as string,
       refreshToken: (newCredentials.refreshToken as string) || credentials.refreshToken,
       expiresAt: newCredentials.expiresIn
         ? new Date(Date.now() + (newCredentials.expiresIn as number) * 1000).toISOString()
-        : credentials.expiresAt
+        : credentials.expiresAt,
     };
   }
 
@@ -273,14 +316,14 @@ async function validateApiKey(request: Request, machineId: string, env: Env): Pr
 
   const apiKey = authHeader.slice(7);
   const data = await getMachineData(machineId, env);
-  return (data?.apiKeys as Array<{ key: string }>)?.some(k => k.key === apiKey) || false;
+  return (data?.apiKeys as Array<{ key: string }>)?.some((k) => k.key === apiKey) || false;
 }
 
 async function getProviderCredentials(
   machineId: string,
   provider: string,
   env: Env,
-  excludeConnectionId: string | null = null
+  excludeConnectionId: string | null = null,
 ): Promise<CredentialsResponse> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
@@ -302,17 +345,19 @@ async function getProviderCredentials(
     const earliest = getEarliestRateLimitedUntil(allConnections);
     if (earliest) {
       const rateLimitedConns = allConnections.filter(
-        c => c.rateLimitedUntil && new Date(c.rateLimitedUntil as string).getTime() > Date.now()
+        (c) => c.rateLimitedUntil && new Date(c.rateLimitedUntil as string).getTime() > Date.now(),
       );
       const earliestConn = rateLimitedConns.sort(
-        (a, b) => new Date(a.rateLimitedUntil as string).getTime() - new Date(b.rateLimitedUntil as string).getTime()
+        (a, b) =>
+          new Date(a.rateLimitedUntil as string).getTime() -
+          new Date(b.rateLimitedUntil as string).getTime(),
       )[0];
       return {
         allRateLimited: true,
         retryAfter: earliest,
         retryAfterHuman: formatRetryAfter(earliest),
         lastError: (earliestConn?.lastError as string) || null,
-        lastErrorCode: (earliestConn?.errorCode as string) || null
+        lastErrorCode: (earliestConn?.errorCode as string) || null,
       };
     }
     return null;
@@ -327,11 +372,12 @@ async function getProviderCredentials(
     refreshToken: connection.refreshToken as string | undefined,
     expiresAt: connection.expiresAt as string | undefined,
     projectId: connection.projectId as string | undefined,
-    copilotToken: (connection.providerSpecificData as Record<string, unknown> | undefined)?.copilotToken as string | undefined,
+    copilotToken: (connection.providerSpecificData as Record<string, unknown> | undefined)
+      ?.copilotToken as string | undefined,
     providerSpecificData: connection.providerSpecificData as Record<string, unknown> | undefined,
     status: connection.status as string | undefined,
     lastError: connection.lastError as string | null | undefined,
-    rateLimitedUntil: connection.rateLimitedUntil as string | null | undefined
+    rateLimitedUntil: connection.rateLimitedUntil as string | null | undefined,
   };
 }
 
@@ -341,7 +387,7 @@ async function markAccountUnavailable(
   status: number | string,
   errorText: string,
   env: Env,
-  resetsAtMs: number | null = null
+  resetsAtMs: number | null = null,
 ): Promise<void> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
@@ -371,14 +417,17 @@ async function markAccountUnavailable(
   conn.updatedAt = new Date().toISOString();
 
   await saveMachineData(machineId, data!, env);
-  log.warn("ACCOUNT", `${connectionId} | unavailable until ${rateLimitedUntil} (backoff=${newBackoffLevel ?? backoffLevel})`);
+  log.warn(
+    "ACCOUNT",
+    `${connectionId} | unavailable until ${rateLimitedUntil} (backoff=${newBackoffLevel ?? backoffLevel})`,
+  );
 }
 
 async function clearAccountError(
   machineId: string,
   connectionId: string,
   currentCredentials: CredentialsResult,
-  env: Env
+  env: Env,
 ): Promise<void> {
   const hasError =
     currentCredentials.status === "unavailable" ||
@@ -407,7 +456,7 @@ async function updateCredentials(
   machineId: string,
   connectionId: string,
   newCredentials: Record<string, unknown>,
-  env: Env
+  env: Env,
 ): Promise<void> {
   const data = await getMachineData(machineId, env);
   const providers = data?.providers as Record<string, Record<string, unknown>> | undefined;
@@ -417,7 +466,9 @@ async function updateCredentials(
   conn.accessToken = newCredentials.accessToken;
   if (newCredentials.refreshToken) conn.refreshToken = newCredentials.refreshToken;
   if (newCredentials.expiresIn) {
-    conn.expiresAt = new Date(Date.now() + (newCredentials.expiresIn as number) * 1000).toISOString();
+    conn.expiresAt = new Date(
+      Date.now() + (newCredentials.expiresIn as number) * 1000,
+    ).toISOString();
     conn.expiresIn = newCredentials.expiresIn;
   }
   conn.updatedAt = new Date().toISOString();

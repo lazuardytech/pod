@@ -58,7 +58,12 @@ async function normalizeProxyPoolUpdate(proxyPoolIdInput: any) {
   return { hasProxyPoolField: true, proxyPoolId };
 }
 
-function shouldMergeProviderSpecificData(existing: any, incoming: any, hasLegacyProxy: any, hasProxyPoolField: any) {
+function shouldMergeProviderSpecificData(
+  existing: any,
+  incoming: any,
+  hasLegacyProxy: any,
+  hasProxyPoolField: any,
+) {
   return existing !== undefined || incoming !== undefined || hasLegacyProxy || hasProxyPoolField;
 }
 

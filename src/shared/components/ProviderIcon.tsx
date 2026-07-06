@@ -37,7 +37,16 @@ export default function ProviderIcon({
     );
   }
 
-  return <img src={src} alt={alt} width={size} height={size} className={className} onError={() => setErrored(true)} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      className={className}
+      onError={() => setErrored(true)}
+    />
+  );
 }
 
 ProviderIcon.propTypes = {

@@ -28,7 +28,9 @@ export function parseSSELine(line, format = null) {
     return JSON.parse(data);
   } catch (_error) {
     if (data.length > 0 && data.length < 1000) {
-      console.log(`[WARN] Failed to parse SSE line (${data.length} chars): ${data.substring(0, 100)}...`);
+      console.log(
+        `[WARN] Failed to parse SSE line (${data.length} chars): ${data.substring(0, 100)}...`,
+      );
     }
     return null;
   }
@@ -40,7 +42,11 @@ export function hasValuableContent(chunk, format) {
   if (format === FORMATS.OPENAI) {
     // Keep chunks that carry top-level reasoning summary envelopes, even when
     // `choices` is empty (Inception-style final summary chunk).
-    if (chunk && typeof chunk === "object" && Object.prototype.hasOwnProperty.call(chunk, "reasoning_summary")) {
+    if (
+      chunk &&
+      typeof chunk === "object" &&
+      Object.prototype.hasOwnProperty.call(chunk, "reasoning_summary")
+    ) {
       return true;
     }
     if (!chunk.choices?.[0]?.delta) return false;
@@ -102,7 +108,8 @@ export function hasValuableContent(chunk, format) {
 // Fix invalid id (generic or too short)
 export function fixInvalidId(parsed) {
   if (parsed.id && (parsed.id === "chat" || parsed.id === "completion" || parsed.id.length < 8)) {
-    const fallbackId = parsed.extend_fields?.requestId || parsed.extend_fields?.traceId || Date.now().toString(36);
+    const fallbackId =
+      parsed.extend_fields?.requestId || parsed.extend_fields?.traceId || Date.now().toString(36);
     parsed.id = `chatcmpl-${fallbackId}`;
     return true;
   }
@@ -126,7 +133,11 @@ function cleanUsagePayload(payload) {
     }
   }
 
-  if (cleaned.response && typeof cleaned.response === "object" && !Array.isArray(cleaned.response)) {
+  if (
+    cleaned.response &&
+    typeof cleaned.response === "object" &&
+    !Array.isArray(cleaned.response)
+  ) {
     const cleanedResponse = cleanUsagePayload(cleaned.response);
     if (cleanedResponse !== cleaned.response) {
       cleaned = { ...cleaned, response: cleanedResponse };

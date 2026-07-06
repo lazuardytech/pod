@@ -8,7 +8,14 @@ const OFFLINE_FALLBACK_URL = "/offline";
 const IMAGE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 31;
 const NAVIGATION_NETWORK_TIMEOUT_MS = 15000;
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico"];
-const SENSITIVE_SEARCH_PARAMS = new Set(["code", "token", "access_token", "id_token", "refresh_token", "session"]);
+const SENSITIVE_SEARCH_PARAMS = new Set([
+  "code",
+  "token",
+  "access_token",
+  "id_token",
+  "refresh_token",
+  "session",
+]);
 
 const SHELL_ROUTES = [
   "/",
@@ -148,7 +155,11 @@ async function handleNavigationRequest(request) {
 
   try {
     const response = await fetchWithTimeout(request, NAVIGATION_NETWORK_TIMEOUT_MS);
-    if (isCacheableResponse(response) && responseAllowsStorage(response) && !hasSensitiveQuery(url)) {
+    if (
+      isCacheableResponse(response) &&
+      responseAllowsStorage(response) &&
+      !hasSensitiveQuery(url)
+    ) {
       await shellCache.put(request, response.clone());
     }
     return response;
@@ -233,7 +244,11 @@ async function purgeExpiredImages() {
       const cached = await imageCache.match(request);
       if (!cached) return;
       const cacheTime = Number(cached.headers.get("sw-cache-time") || 0);
-      if (!Number.isFinite(cacheTime) || cacheTime <= 0 || Date.now() - cacheTime > IMAGE_MAX_AGE_MS) {
+      if (
+        !Number.isFinite(cacheTime) ||
+        cacheTime <= 0 ||
+        Date.now() - cacheTime > IMAGE_MAX_AGE_MS
+      ) {
         await imageCache.delete(request);
       }
     }),

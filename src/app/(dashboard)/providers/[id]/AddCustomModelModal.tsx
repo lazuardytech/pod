@@ -5,7 +5,13 @@ import { useEffect, useState } from "react";
 import { Button, Modal } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-export default function AddCustomModelModal({ isOpen, providerAlias, providerDisplayAlias, onSave, onClose }: any) {
+export default function AddCustomModelModal({
+  isOpen,
+  providerAlias,
+  providerDisplayAlias,
+  onSave,
+  onClose,
+}: any) {
   const [modelId, setModelId] = useState("");
   const [testStatus, setTestStatus] = useState<any>(null); // null | "testing" | "ok" | "error"
   const [testError, setTestError] = useState("");
@@ -94,7 +100,9 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
           </div>
           <p className="text-xs text-text-muted mt-1">
             Sent to provider as:{" "}
-            <code className="font-mono bg-sidebar px-1 rounded">{stripAlias(modelId.trim()) || "model-id"}</code>
+            <code className="font-mono bg-sidebar px-1 rounded">
+              {stripAlias(modelId.trim()) || "model-id"}
+            </code>
           </p>
         </div>
 

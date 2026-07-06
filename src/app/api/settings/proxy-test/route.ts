@@ -20,9 +20,13 @@ export async function POST(request: any) {
     }
 
     const status = typeof result?.status === "number" ? result.status : 500;
-    return NextResponse.json({ ok: false, error: proxyTestError(result) || "Proxy test failed" }, { status });
+    return NextResponse.json(
+      { ok: false, error: proxyTestError(result) || "Proxy test failed" },
+      { status },
+    );
   } catch (err) {
-    const message = (err as any)?.name === "AbortError" ? "Proxy test timed out" : sanitizeError(err);
+    const message =
+      (err as any)?.name === "AbortError" ? "Proxy test timed out" : sanitizeError(err);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

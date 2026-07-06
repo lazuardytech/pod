@@ -53,7 +53,10 @@ export async function POST(request: any) {
 
     // Validate name format
     if (!VALID_NAME_REGEX.test(asString(name))) {
-      return NextResponse.json({ error: "Name can only contain letters, numbers, -, _ and ." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Name can only contain letters, numbers, -, _ and ." },
+        { status: 400 },
+      );
     }
 
     if (systemPrompt != null && typeof systemPrompt !== "string") {
@@ -71,7 +74,10 @@ export async function POST(request: any) {
       return NextResponse.json({ error: "contentFilterMessage must be a string" }, { status: 400 });
     }
     if (typeof contentFilterMessage === "string" && contentFilterMessage.length > 2000) {
-      return NextResponse.json({ error: "contentFilterMessage exceeds 2000 characters" }, { status: 400 });
+      return NextResponse.json(
+        { error: "contentFilterMessage exceeds 2000 characters" },
+        { status: 400 },
+      );
     }
 
     // Check if name already exists
@@ -87,7 +93,9 @@ export async function POST(request: any) {
       systemPrompt: typeof systemPrompt === "string" && systemPrompt.trim() ? systemPrompt : null,
       modelId: typeof modelId === "string" && modelId.trim() ? modelId.trim() : null,
       contentFilterMessage:
-        typeof contentFilterMessage === "string" && contentFilterMessage.trim() ? contentFilterMessage.trim() : null,
+        typeof contentFilterMessage === "string" && contentFilterMessage.trim()
+          ? contentFilterMessage.trim()
+          : null,
     });
 
     return NextResponse.json(combo, { status: 201 });

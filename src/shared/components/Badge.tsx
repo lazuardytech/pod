@@ -47,7 +47,12 @@ export default function Badge({
 }) {
   return (
     <span
-      className={cn("inline-flex items-center font-[400] rounded-[4px]", variants[variant], sizes[size], className)}
+      className={cn(
+        "inline-flex items-center font-[400] rounded-[4px]",
+        variants[variant],
+        sizes[size],
+        className,
+      )}
       {...rest}
     >
       {dot && <span className={cn("size-1.5 rounded-full shrink-0", dotColors[variant])} />}

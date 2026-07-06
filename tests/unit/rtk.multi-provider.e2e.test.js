@@ -59,7 +59,11 @@ async function waitForRtkLine({ minBytes, filterName, timeoutMs = 5000 }) {
   const startOffset = logOffset();
   while (Date.now() - start < timeoutMs) {
     const text = readLogSince(startOffset);
-    const matches = [...text.matchAll(/\[RTK\] saved (\d+)B \/ (\d+)B \(([\d.]+)%\) via \[([\w,-]+)\] hits=(\d+)/g)];
+    const matches = [
+      ...text.matchAll(
+        /\[RTK\] saved (\d+)B \/ (\d+)B \(([\d.]+)%\) via \[([\w,-]+)\] hits=(\d+)/g,
+      ),
+    ];
     const mine = matches.find((m) => Number(m[2]) >= minBytes && m[4].includes(filterName));
     if (mine) {
       return {
@@ -138,7 +142,9 @@ maybe("RTK multi-provider E2E", () => {
       expect(hit.filters).toContain("git-diff");
 
       // Log actual savings for visibility
-      console.log(`  ✓ ${route.name}: saved ${hit.saved}B / ${hit.total}B (${hit.pct}%) filters=${hit.filters}`);
+      console.log(
+        `  ✓ ${route.name}: saved ${hit.saved}B / ${hit.total}B (${hit.pct}%) filters=${hit.filters}`,
+      );
     }, 20000);
   }
 });

@@ -74,7 +74,12 @@ function getSystemInfo() {
     bunVersion: process.versions.bun ?? null,
     platform: process.platform,
     arch: process.arch,
-    memoryUsage: { rss: mem.rss, heapUsed: mem.heapUsed, heapTotal: mem.heapTotal, external: mem.external ?? 0 },
+    memoryUsage: {
+      rss: mem.rss,
+      heapUsed: mem.heapUsed,
+      heapTotal: mem.heapTotal,
+      external: mem.external ?? 0,
+    },
     memoryUsageHumanized: {
       rss: humanizeBytes(mem.rss),
       heapUsed: humanizeBytes(mem.heapUsed),
@@ -177,11 +182,21 @@ export async function buildHealthPayload() {
 
   // — Provider breakdown by status —
   const now = Date.now();
-  const byStatus: Record<string, number> = { active: 0, error: 0, untested: 0, rateLimited: 0, modelLocked: 0 };
-  const byProvider: Record<string, { total: number; active: number; error: number; rateLimited: number }> = {};
+  const byStatus: Record<string, number> = {
+    active: 0,
+    error: 0,
+    untested: 0,
+    rateLimited: 0,
+    modelLocked: 0,
+  };
+  const byProvider: Record<
+    string,
+    { total: number; active: number; error: number; rateLimited: number }
+  > = {};
 
   for (const c of conns) {
-    const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
+    const isRateLimited =
+      c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     const hasModelLocks = Object.keys(c).some(
       (k) => k.startsWith("modelLock_") && c[k] && new Date(String(c[k])).getTime() > now,
     );
@@ -228,7 +243,9 @@ export async function buildHealthPayload() {
         ? {
             currentSize: semStats.memoryEntries,
             maxSize:
-              semStats.dbEntries !== undefined ? (cfg.semanticCacheMaxSize ?? 100) : (cfg.semanticCacheMaxSize ?? 100),
+              semStats.dbEntries !== undefined
+                ? (cfg.semanticCacheMaxSize ?? 100)
+                : (cfg.semanticCacheMaxSize ?? 100),
             currentBytes: null,
             maxBytes: parseInt(process.env.SEMANTIC_CACHE_MAX_BYTES || String(4 * 1024 * 1024), 10),
             hitRate: semStats.hitRate,
@@ -335,7 +352,13 @@ export async function buildHealthPayload() {
     };
   } catch {
     sync = {
-      modelsDev: { enabled: true, intervalHours: 1, lastSyncAt: null, lastSyncOk: false, lastError: null },
+      modelsDev: {
+        enabled: true,
+        intervalHours: 1,
+        lastSyncAt: null,
+        lastSyncOk: false,
+        lastError: null,
+      },
       cloud: { enabled: false, lastSyncAt: null },
     };
   }
@@ -343,7 +366,8 @@ export async function buildHealthPayload() {
   // — Provider health (existing circuit-breaker section) —
   const providerHealthMap: Record<string, Record<string, unknown>> = {};
   for (const c of conns) {
-    const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
+    const isRateLimited =
+      c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     const retryAfterMs = isRateLimited ? new Date(String(c.rateLimitedUntil)).getTime() - now : 0;
     let state = "CLOSED";
     if (isRateLimited) state = "OPEN";
@@ -389,11 +413,17 @@ export async function buildHealthPayload() {
       provider: string;
       providerName: string;
       rateLimitedCount: number;
-      connections: { connectionId: string; connectionName: string; rateLimitedUntil: string; retryAfterMs: number }[];
+      connections: {
+        connectionId: string;
+        connectionName: string;
+        rateLimitedUntil: string;
+        retryAfterMs: number;
+      }[];
     }
   > = {};
   for (const c of conns) {
-    const isRateLimited = c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
+    const isRateLimited =
+      c.rateLimitedUntil && new Date(String(c.rateLimitedUntil)).getTime() > now;
     if (!isRateLimited) continue;
     const key = c.provider;
     if (!rateLimitByProvider[key]) {
@@ -441,7 +471,12 @@ export async function buildHealthPayload() {
 
   const blockedByModel: Record<
     string,
-    { model: string; blockedCount: number; connections: Record<string, unknown>[]; earliestUnblockAt: string | null }
+    {
+      model: string;
+      blockedCount: number;
+      connections: Record<string, unknown>[];
+      earliestUnblockAt: string | null;
+    }
   > = {};
   for (const c of conns) {
     const providerInfo = AI_PROVIDERS[c.provider];
@@ -451,7 +486,12 @@ export async function buildHealthPayload() {
       if (expiry <= now) continue;
       const modelName = key.slice(MODEL_LOCK_PREFIX.length);
       if (!blockedByModel[modelName]) {
-        blockedByModel[modelName] = { model: modelName, blockedCount: 0, connections: [], earliestUnblockAt: null };
+        blockedByModel[modelName] = {
+          model: modelName,
+          blockedCount: 0,
+          connections: [],
+          earliestUnblockAt: null,
+        };
       }
       blockedByModel[modelName].blockedCount += 1;
       blockedByModel[modelName].connections.push({

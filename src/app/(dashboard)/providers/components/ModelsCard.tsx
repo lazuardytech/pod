@@ -39,7 +39,11 @@ export function ModelRow({
   onDisable?: any;
 }) {
   const borderColor =
-    testStatus === "ok" ? "border-green-500/40" : testStatus === "error" ? "border-red-500/40" : "border-border";
+    testStatus === "ok"
+      ? "border-green-500/40"
+      : testStatus === "error"
+        ? "border-red-500/40"
+        : "border-border";
   const iconColor = isTesting
     ? undefined
     : testStatus === "ok"
@@ -69,8 +73,12 @@ export function ModelRow({
           style={iconColor ? { color: iconColor } : undefined}
         />
         <div className="flex flex-col gap-1">
-          <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">{fullModel}</code>
-          {model.name && <span className="text-[9px] text-text-muted/70 italic pl-1">{model.name}</span>}
+          <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">
+            {fullModel}
+          </code>
+          {model.name && (
+            <span className="text-[9px] text-text-muted/70 italic pl-1">{model.name}</span>
+          )}
         </div>
         {onTest && (
           <div className="relative group/btn">
@@ -95,7 +103,10 @@ export function ModelRow({
             onClick={() => onCopy(fullModel, `model-${model.id}`)}
             className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
           >
-            <LucideIcon name={copied === `model-${model.id}` ? "check" : "content_copy"} className="text-sm" />
+            <LucideIcon
+              name={copied === `model-${model.id}` ? "check" : "content_copy"}
+              className="text-sm"
+            />
           </button>
           <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
             {copied === `model-${model.id}` ? "Copied!" : "Copy"}
@@ -205,7 +216,8 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
       const connData = await connRes.json();
       const customData = await customRes.json();
       if (aliasRes.ok) setModelAliases(aliasData.aliases || {});
-      if (connRes.ok) setConnections((connData.connections || []).filter((c: any) => c.provider === providerId));
+      if (connRes.ok)
+        setConnections((connData.connections || []).filter((c: any) => c.provider === providerId));
       if (customRes.ok) setCustomModels(customData.models || []);
     } catch (e) {
       console.error("ModelsCard fetch error:", e);
@@ -232,7 +244,9 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
 
   const handleDeleteAlias = async (alias: any) => {
     try {
-      const res = await fetch(`/api/models/alias?alias=${encodeURIComponent(alias)}`, { method: "DELETE" });
+      const res = await fetch(`/api/models/alias?alias=${encodeURIComponent(alias)}`, {
+        method: "DELETE",
+      });
       if (res.ok) await fetchData();
     } catch (e) {
       console.error("delete alias error:", e);
@@ -314,14 +328,18 @@ export default function ModelsCard({ providerId, kindFilter, providerAliasOverri
     <>
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Models{kindFilter ? ` — ${kindFilter.toUpperCase()}` : ""}</h2>
+          <h2 className="text-lg font-semibold">
+            Models{kindFilter ? ` — ${kindFilter.toUpperCase()}` : ""}
+          </h2>
         </div>
         {testError && <p className="text-xs text-red-500 mb-3 break-words">{testError}</p>}
 
         <div className="flex flex-wrap gap-3">
           {displayModels.map((model: any) => {
             const fullModel = `${providerAlias}/${model.id}`;
-            const existingAlias = Object.entries(modelAliases).find(([, m]: any) => m === fullModel)?.[0];
+            const existingAlias = Object.entries(modelAliases).find(
+              ([, m]: any) => m === fullModel,
+            )?.[0];
             return (
               <ModelRow
                 key={model.id}

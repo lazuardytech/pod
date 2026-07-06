@@ -94,7 +94,8 @@ export function convertCommandCodeToOpenAI(chunk, state) {
     case "text-delta": {
       const text = event.text || event.delta || "";
       if (!text) break;
-      const delta = state.chunkIndex === 0 ? { role: "assistant", content: text } : { content: text };
+      const delta =
+        state.chunkIndex === 0 ? { role: "assistant", content: text } : { content: text };
       state.chunkIndex++;
       state.openText = true;
       out.push(makeChunk(state, delta));
@@ -105,7 +106,9 @@ export function convertCommandCodeToOpenAI(chunk, state) {
       if (!text) break;
       // Map reasoning to OpenAI "reasoning_content" field (used by deepseek-reasoner-style clients).
       const delta =
-        state.chunkIndex === 0 ? { role: "assistant", reasoning_content: text } : { reasoning_content: text };
+        state.chunkIndex === 0
+          ? { role: "assistant", reasoning_content: text }
+          : { reasoning_content: text };
       state.chunkIndex++;
       out.push(makeChunk(state, delta));
       break;
@@ -154,7 +157,8 @@ export function convertCommandCodeToOpenAI(chunk, state) {
       if (state.toolIndexById.has(id)) break;
       const idx = state.toolIndex++;
       state.toolIndexById.set(id, idx);
-      const argsStr = typeof event.input === "string" ? event.input : JSON.stringify(event.input ?? {});
+      const argsStr =
+        typeof event.input === "string" ? event.input : JSON.stringify(event.input ?? {});
       const delta = {
         ...(state.chunkIndex === 0 ? { role: "assistant" } : {}),
         tool_calls: [
@@ -183,7 +187,9 @@ export function convertCommandCodeToOpenAI(chunk, state) {
         finalChunk.usage = {
           prompt_tokens: totalUsage.inputTokens ?? 0,
           completion_tokens: totalUsage.outputTokens ?? 0,
-          total_tokens: totalUsage.totalTokens ?? (totalUsage.inputTokens ?? 0) + (totalUsage.outputTokens ?? 0),
+          total_tokens:
+            totalUsage.totalTokens ??
+            (totalUsage.inputTokens ?? 0) + (totalUsage.outputTokens ?? 0),
         };
       }
       out.push(finalChunk);

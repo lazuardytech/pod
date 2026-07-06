@@ -13,7 +13,8 @@ const BINARY_NAME = "cloudflared";
 const IS_WINDOWS = os.platform() === "win32";
 const BIN_NAME = IS_WINDOWS ? `${BINARY_NAME}.exe` : BINARY_NAME;
 const BIN_PATH = path.join(/*turbopackIgnore: true*/ BIN_DIR, BIN_NAME);
-const POWERSHELL_HIDDEN_COMMAND = "powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command";
+const POWERSHELL_HIDDEN_COMMAND =
+  "powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command";
 
 const GITHUB_BASE_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download";
 
@@ -101,7 +102,8 @@ function downloadFile(url: string, dest: string): Promise<string> {
       .on("error", (err) => {
         resetDownloadState();
         file.close();
-        if (fs.existsSync(/*turbopackIgnore: true*/ dest)) fs.unlinkSync(/*turbopackIgnore: true*/ dest);
+        if (fs.existsSync(/*turbopackIgnore: true*/ dest))
+          fs.unlinkSync(/*turbopackIgnore: true*/ dest);
         reject(err);
       });
   });
@@ -120,7 +122,8 @@ function isValidBinary(filePath: string): boolean {
     fs.closeSync(fd);
     const magic = buf.toString("hex");
     if (IS_WINDOWS) return magic.startsWith("4d5a"); // PE (MZ)
-    if (os.platform() === "darwin") return magic.startsWith("cffaedfe") || magic.startsWith("cefaedfe");
+    if (os.platform() === "darwin")
+      return magic.startsWith("cffaedfe") || magic.startsWith("cefaedfe");
     return magic.startsWith("7f454c46"); // ELF (Linux)
   } catch {
     return false;
@@ -166,7 +169,9 @@ async function _ensureCloudflared(): Promise<string> {
 
   const url = getDownloadUrl();
   const isArchive = url.endsWith(".tgz");
-  const downloadDest = isArchive ? path.join(/*turbopackIgnore: true*/ BIN_DIR, "cloudflared.tgz.tmp") : tmpPath;
+  const downloadDest = isArchive
+    ? path.join(/*turbopackIgnore: true*/ BIN_DIR, "cloudflared.tgz.tmp")
+    : tmpPath;
 
   await downloadFile(url, downloadDest);
 
@@ -221,11 +226,15 @@ export async function spawnCloudflared(tunnelToken: string): Promise<ChildProces
     killExistingProcess();
     const binaryPath = await ensureCloudflared();
 
-    const child = spawn(binaryPath, ["tunnel", "run", "--dns-resolver-addrs", "1.1.1.1:53", "--token", tunnelToken], {
-      detached: false,
-      windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const child = spawn(
+      binaryPath,
+      ["tunnel", "run", "--dns-resolver-addrs", "1.1.1.1:53", "--token", tunnelToken],
+      {
+        detached: false,
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
 
     cloudflaredProcess = child;
     savePid(child.pid!);
@@ -281,7 +290,9 @@ export async function spawnCloudflared(tunnelToken: string): Promise<ChildProces
             );
           } else if (code === 2) {
             reject(
-              new Error(`cloudflared exited with code ${code}${stderrOutput} Check if required arguments are correct.`),
+              new Error(
+                `cloudflared exited with code ${code}${stderrOutput} Check if required arguments are correct.`,
+              ),
             );
           } else {
             reject(new Error(`cloudflared exited with code ${code}${stderrOutput}`));
@@ -317,10 +328,16 @@ export async function spawnQuickTunnel(
 ): Promise<QuickTunnelResult> {
   const binaryPath = await ensureCloudflared();
 
-  const configDir = fs.mkdtempSync(path.join(/*turbopackIgnore: true*/ os.tmpdir(), "cloudflared-quick-"));
+  const configDir = fs.mkdtempSync(
+    path.join(/*turbopackIgnore: true*/ os.tmpdir(), "cloudflared-quick-"),
+  );
   const configPath = path.join(/*turbopackIgnore: true*/ configDir, "config.yml");
   // Avoid using default ~/.cloudflared/config.yml, which can conflict with quick tunnel behavior.
-  fs.writeFileSync(/*turbopackIgnore: true*/ configPath, "# quick-tunnel config placeholder\n", "utf8");
+  fs.writeFileSync(
+    /*turbopackIgnore: true*/ configPath,
+    "# quick-tunnel config placeholder\n",
+    "utf8",
+  );
 
   let isCleaned = false;
   const cleanup = () => {
@@ -422,7 +439,9 @@ export async function spawnQuickTunnel(
             ),
           );
         } else if (code === 2) {
-          reject(new Error(`cloudflared exited with code ${code}. Check that arguments are correct.`));
+          reject(
+            new Error(`cloudflared exited with code ${code}. Check that arguments are correct.`),
+          );
         } else {
           reject(new Error(`cloudflared exited with code ${code}`));
         }
@@ -443,7 +462,10 @@ function killCloudflaredByPort(port: number) {
       const psCmd = `Get-CimInstance Win32_Process -Filter \\"Name='cloudflared.exe'\\" | Where-Object { $_.CommandLine -match ':${port}(\\D|$)' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }`;
       execSync(`${POWERSHELL_HIDDEN_COMMAND} "${psCmd}"`, { stdio: "ignore", windowsHide: true });
     } else {
-      execSync(`pkill -f "cloudflared.*:${port}([^0-9]|$)"`, { stdio: "ignore", windowsHide: true });
+      execSync(`pkill -f "cloudflared.*:${port}([^0-9]|$)"`, {
+        stdio: "ignore",
+        windowsHide: true,
+      });
     }
   } catch (_e) {
     /* ignore */

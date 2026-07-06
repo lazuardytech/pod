@@ -19,7 +19,9 @@ export function fetchUrlError(result: { ok: boolean; error?: string }): string {
 }
 
 export function proxyTestError(result: { ok: boolean; error?: string; status?: number }): string {
-  return result.ok ? "" : (result.error ?? `Proxy test failed with status ${result.status ?? "unknown"}`);
+  return result.ok
+    ? ""
+    : (result.error ?? `Proxy test failed with status ${result.status ?? "unknown"}`);
 }
 
 export function asRecord(value: unknown): ApiRecord {

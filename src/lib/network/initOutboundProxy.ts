@@ -17,6 +17,8 @@ export async function ensureOutboundProxyInitialized(): Promise<boolean> {
   return initialized;
 }
 
-ensureOutboundProxyInitialized().catch((err) => console.error("[ServerInit] Outbound proxy init error:", err));
+ensureOutboundProxyInitialized().catch((err) =>
+  console.error("[ServerInit] Outbound proxy init error:", err),
+);
 
 export default ensureOutboundProxyInitialized;

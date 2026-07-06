@@ -11,12 +11,27 @@ function* walk(dir) {
   }
 }
 
-const srcFiles = Array.from(walk("src")).filter(f => /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts"));
-const allFiles = Array.from(walk(".")).filter(f =>
-  /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts") && !f.includes("node_modules") && !f.includes(".next")
+const srcFiles = Array.from(walk("src")).filter(
+  (f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".d.ts"),
+);
+const allFiles = Array.from(walk(".")).filter(
+  (f) =>
+    /\.(ts|tsx)$/.test(f) &&
+    !f.endsWith(".d.ts") &&
+    !f.includes("node_modules") &&
+    !f.includes(".next"),
 );
 
-let fixes = { TS7006: 0, TS7034: 0, TS7005: 0, TS7031: 0, TS7053: 0, TS7018: 0, TS7016: 0, TS7023: 0 };
+let fixes = {
+  TS7006: 0,
+  TS7034: 0,
+  TS7005: 0,
+  TS7031: 0,
+  TS7053: 0,
+  TS7018: 0,
+  TS7016: 0,
+  TS7023: 0,
+};
 
 for (const file of allFiles) {
   let content = readFileSync(file, "utf-8");
@@ -35,7 +50,11 @@ for (const file of allFiles) {
     let line = lines[i];
 
     // Skip comments and JSDoc
-    if (line.trim().startsWith("//") || line.trim().startsWith("*") || line.trim().startsWith("/*")) {
+    if (
+      line.trim().startsWith("//") ||
+      line.trim().startsWith("*") ||
+      line.trim().startsWith("/*")
+    ) {
       fixedLines.push(line);
       continue;
     }
@@ -59,7 +78,19 @@ for (const file of allFiles) {
     // .then(fn), .catch(fn), .map(fn), .filter(fn), .forEach(fn), .reduce(fn)
     // These are callbacks — single param without type
     // Pattern: then(word => / then(word,  / map(word => / filter(word =>
-    for (const method of ["then", "catch", "map", "filter", "forEach", "reduce", "find", "some", "every", "flatMap", "sort"]) {
+    for (const method of [
+      "then",
+      "catch",
+      "map",
+      "filter",
+      "forEach",
+      "reduce",
+      "find",
+      "some",
+      "every",
+      "flatMap",
+      "sort",
+    ]) {
       // Single param arrow: .method(word =>
       const singleParamRe = new RegExp(`\\.${method}\\s*\\(\\s*([a-zA-Z_$]\\w*)\\s*=>`, "g");
       line = line.replace(singleParamRe, (m, param) => {
@@ -67,7 +98,10 @@ for (const file of allFiles) {
         return `.${method}((${param}: any) =>`;
       });
       // Single param arrow with function body: .method(function(word) {
-      const funcRe = new RegExp(`\\.${method}\\s*\\(\\s*function\\s*\\(\\s*([a-zA-Z_$]\\w*)\\s*\\)`, "g");
+      const funcRe = new RegExp(
+        `\\.${method}\\s*\\(\\s*function\\s*\\(\\s*([a-zA-Z_$]\\w*)\\s*\\)`,
+        "g",
+      );
       line = line.replace(funcRe, (m, param) => {
         fixes.TS7006++;
         return `.${method}(function(${param}: any)`;
@@ -76,16 +110,19 @@ for (const file of allFiles) {
 
     // Regular function declarations: function name(word) { or async function name(word) {
     // But skip if word already has : type
-    line = line.replace(/(\b(?:async\s+)?function\s+\w+\s*)\(\s*([a-zA-Z_$]\w*)\s*\)/g, (m, prefix, param) => {
-      if (param.endsWith("any") || param.endsWith("unknown") || param.includes(":")) return m;
-      fixes.TS7006++;
-      return `${prefix}(${param}: any)`;
-    });
+    line = line.replace(
+      /(\b(?:async\s+)?function\s+\w+\s*)\(\s*([a-zA-Z_$]\w*)\s*\)/g,
+      (m, prefix, param) => {
+        if (param.endsWith("any") || param.endsWith("unknown") || param.includes(":")) return m;
+        fixes.TS7006++;
+        return `${prefix}(${param}: any)`;
+      },
+    );
 
     // Arrow function declarations at top level: const name = (word) => { or const name = (word, w2) => {
     // This is tricky — need to not double-fix. Let's be conservative and only fix the catch/then/.map cases.
 
-    // Object literals that need type annotation  
+    // Object literals that need type annotation
     // const x = {} → const x: Record<string, any> = {}
     // But skip if already typed
     line = line.replace(/\b(const|let|var)\s+(\w+)\s*=\s*\{\s*\}/g, (m, kw, name) => {
@@ -106,14 +143,14 @@ for (const file of allFiles) {
     });
 
     // const x = new Set() → const x: Set<any> = new Set<any>()
-    line = line.replace(/\b(const|let|var)\s+(\w+)\s*=\s*new Set/ig, (m, kw, name) => {
+    line = line.replace(/\b(const|let|var)\s+(\w+)\s*=\s*new Set/gi, (m, kw, name) => {
       if (!m.includes(":")) {
         fixes.TS7005++;
         return `${kw} ${name}: Set<any> = new Set`;
       }
       return m;
     });
-    line = line.replace(/\b(const|let|var)\s+(\w+)\s*=\s*new Map/ig, (m, kw, name) => {
+    line = line.replace(/\b(const|let|var)\s+(\w+)\s*=\s*new Map/gi, (m, kw, name) => {
       if (!m.includes(":")) {
         fixes.TS7005++;
         return `${kw} ${name}: Map<any, any> = new Map`;

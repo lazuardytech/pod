@@ -20,13 +20,16 @@ export function tryAcquireSSESlot(routePath: any) {
   if (current >= DEFAULT_MAX_CONCURRENT) {
     return {
       allowed: false,
-      response: new Response(JSON.stringify({ error: "Too many connections", type: "overload_error" }), {
-        status: 503,
-        headers: {
-          "Content-Type": "application/json",
-          "Retry-After": "10",
+      response: new Response(
+        JSON.stringify({ error: "Too many connections", type: "overload_error" }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": "10",
+          },
         },
-      }),
+      ),
     };
   }
   counters.set(routePath, current + 1);

@@ -126,7 +126,9 @@ export default function KiroAuthModal({
                 <LucideIcon name="shield" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">AWS Builder ID</h3>
-                  <p className="text-sm text-text-muted">Recommended for most users. Free AWS account required.</p>
+                  <p className="text-sm text-text-muted">
+                    Recommended for most users. Free AWS account required.
+                  </p>
                 </div>
               </div>
             </button>
@@ -140,7 +142,9 @@ export default function KiroAuthModal({
                 <LucideIcon name="business" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">AWS IAM Identity Center</h3>
-                  <p className="text-sm text-text-muted">For enterprise users with custom AWS IAM Identity Center.</p>
+                  <p className="text-sm text-text-muted">
+                    For enterprise users with custom AWS IAM Identity Center.
+                  </p>
                 </div>
               </div>
             </button>
@@ -154,7 +158,9 @@ export default function KiroAuthModal({
                 <LucideIcon name="account_circle" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">Google Account</h3>
-                  <p className="text-sm text-text-muted">Login with your Google account (manual callback).</p>
+                  <p className="text-sm text-text-muted">
+                    Login with your Google account (manual callback).
+                  </p>
                 </div>
               </div>
             </button>
@@ -168,7 +174,9 @@ export default function KiroAuthModal({
                 <LucideIcon name="code" className="text-primary mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-semibold mb-1">GitHub Account</h3>
-                  <p className="text-sm text-text-muted">Login with your GitHub account (manual callback).</p>
+                  <p className="text-sm text-text-muted">
+                    Login with your GitHub account (manual callback).
+                  </p>
                 </div>
               </div>
             </button>
@@ -202,7 +210,9 @@ export default function KiroAuthModal({
                 placeholder="https://your-org.awsapps.com/start"
                 className="font-mono text-sm"
               />
-              <p className="text-xs text-text-muted mt-1">Your organization&apos;s AWS IAM Identity Center URL</p>
+              <p className="text-xs text-text-muted mt-1">
+                Your organization&apos;s AWS IAM Identity Center URL
+              </p>
             </div>
 
             <div>
@@ -213,7 +223,9 @@ export default function KiroAuthModal({
                 placeholder="us-east-1"
                 className="font-mono text-sm"
               />
-              <p className="text-xs text-text-muted mt-1">AWS region for your Identity Center (default: us-east-1)</p>
+              <p className="text-xs text-text-muted mt-1">
+                AWS region for your Identity Center (default: us-east-1)
+              </p>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -236,9 +248,12 @@ export default function KiroAuthModal({
               <div className="flex gap-2">
                 <LucideIcon name="info" className="text-amber-600 dark:text-amber-400" />
                 <div className="flex-1 text-sm">
-                  <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Manual Callback Required</p>
+                  <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                    Manual Callback Required
+                  </p>
                   <p className="text-amber-800 dark:text-amber-200">
-                    After login, you&apos;ll need to copy the callback URL from your browser and paste it back here.
+                    After login, you&apos;ll need to copy the callback URL from your browser and
+                    paste it back here.
                   </p>
                 </div>
               </div>
@@ -262,9 +277,12 @@ export default function KiroAuthModal({
               <div className="flex gap-2">
                 <LucideIcon name="info" className="text-amber-600 dark:text-amber-400" />
                 <div className="flex-1 text-sm">
-                  <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Manual Callback Required</p>
+                  <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                    Manual Callback Required
+                  </p>
                   <p className="text-amber-800 dark:text-amber-200">
-                    After login, you&apos;ll need to copy the callback URL from your browser and paste it back here.
+                    After login, you&apos;ll need to copy the callback URL from your browser and
+                    paste it back here.
                   </p>
                 </div>
               </div>
@@ -288,7 +306,10 @@ export default function KiroAuthModal({
             {autoDetecting && (
               <div className="text-center py-6">
                 <div className="size-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                  <LucideIcon name="progress_activity" className="text-3xl text-primary animate-spin" />
+                  <LucideIcon
+                    name="progress_activity"
+                    className="text-3xl text-primary animate-spin"
+                  />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Auto-detecting token...</h3>
                 <p className="text-sm text-text-muted">Reading from AWS SSO cache</p>
@@ -302,7 +323,10 @@ export default function KiroAuthModal({
                 {autoDetected && (
                   <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                     <div className="flex gap-2">
-                      <LucideIcon name="check_circle" className="text-green-600 dark:text-green-400" />
+                      <LucideIcon
+                        name="check_circle"
+                        className="text-green-600 dark:text-green-400"
+                      />
                       <p className="text-sm text-green-800 dark:text-green-200">
                         Token auto-detected from Kiro IDE successfully!
                       </p>
@@ -341,7 +365,11 @@ export default function KiroAuthModal({
                 )}
 
                 <div className="flex gap-2">
-                  <Button onClick={handleImportToken} fullWidth disabled={importing || !refreshToken.trim()}>
+                  <Button
+                    onClick={handleImportToken}
+                    fullWidth
+                    disabled={importing || !refreshToken.trim()}
+                  >
                     {importing ? "Importing..." : "Import Token"}
                   </Button>
                   <Button onClick={handleBack} variant="ghost" fullWidth>

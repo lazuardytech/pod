@@ -17,6 +17,7 @@ export function buildErrorBody(statusCode, message) {
     error: {
       message: message || DEFAULT_ERROR_MESSAGES[statusCode] || "An error occurred",
       type: errorInfo.type,
+      param: null,
       code: errorInfo.code,
     },
   };
@@ -69,8 +70,15 @@ export async function parseUpstreamError(response, executor = null) {
     try {
       const parsed = executor.parseError(response, bodyText);
       if (parsed && typeof parsed === "object") {
-        const msg = parsed.message || DEFAULT_ERROR_MESSAGES[response.status] || `Upstream error: ${response.status}`;
-        return { statusCode: parsed.status || response.status, message: msg, resetsAtMs: parsed.resetsAtMs };
+        const msg =
+          parsed.message ||
+          DEFAULT_ERROR_MESSAGES[response.status] ||
+          `Upstream error: ${response.status}`;
+        return {
+          statusCode: parsed.status || response.status,
+          message: msg,
+          resetsAtMs: parsed.resetsAtMs,
+        };
       }
     } catch {
       /* fall through to default parsing */
@@ -86,7 +94,8 @@ export async function parseUpstreamError(response, executor = null) {
   }
 
   const messageStr = typeof message === "string" ? message : JSON.stringify(message);
-  const finalMessage = messageStr || DEFAULT_ERROR_MESSAGES[response.status] || `Upstream error: ${response.status}`;
+  const finalMessage =
+    messageStr || DEFAULT_ERROR_MESSAGES[response.status] || `Upstream error: ${response.status}`;
 
   return { statusCode: response.status, message: finalMessage };
 }
@@ -117,15 +126,29 @@ export function createErrorResult(statusCode, message, resetsAtMs) {
  * @returns {Response}
  */
 export function unavailableResponse(statusCode, message, retryAfter, retryAfterHuman) {
-  const retryAfterSec = Math.max(Math.ceil((new Date(retryAfter).getTime() - Date.now()) / 1000), 1);
+  const retryAfterSec = Math.max(
+    Math.ceil((new Date(retryAfter).getTime() - Date.now()) / 1000),
+    1,
+  );
   const msg = `${message} (${retryAfterHuman})`;
-  return new Response(JSON.stringify({ error: { message: msg } }), {
-    status: statusCode,
-    headers: {
-      "Content-Type": "application/json",
-      "Retry-After": String(retryAfterSec),
+  const errorInfo =
+    ERROR_TYPES[statusCode] ||
+    (statusCode >= 500
+      ? { type: "server_error", code: "internal_server_error" }
+      : { type: "invalid_request_error", code: "unavailable" });
+
+  return new Response(
+    JSON.stringify({
+      error: { message: msg, type: errorInfo.type, param: null, code: errorInfo.code },
+    }),
+    {
+      status: statusCode,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(retryAfterSec),
+      },
     },
-  });
+  );
 }
 
 /**
@@ -142,6 +165,7 @@ export function formatProviderError(error, provider, model, statusCode) {
   // Expose low-level cause (e.g. UND_ERR_SOCKET, ECONNRESET, ETIMEDOUT) for diagnosing fetch failures
   const causeCode = error.cause?.code;
   const causeMsg = error.cause?.message;
-  const causeStr = causeCode || causeMsg ? ` (cause: ${[causeCode, causeMsg].filter(Boolean).join(": ")})` : "";
+  const causeStr =
+    causeCode || causeMsg ? ` (cause: ${[causeCode, causeMsg].filter(Boolean).join(": ")})` : "";
   return `[${code}]: ${message}${causeStr}`;
 }

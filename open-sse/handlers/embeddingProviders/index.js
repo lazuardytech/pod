@@ -18,7 +18,9 @@ const OPENAI_COMPAT_PROVIDERS = [
 ];
 
 const ADAPTERS = {
-  ...Object.fromEntries(OPENAI_COMPAT_PROVIDERS.map((id) => [id, createOpenAIEmbeddingAdapter(id)])),
+  ...Object.fromEntries(
+    OPENAI_COMPAT_PROVIDERS.map((id) => [id, createOpenAIEmbeddingAdapter(id)]),
+  ),
   gemini,
   google_ai_studio: gemini,
 };

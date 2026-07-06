@@ -31,17 +31,26 @@ export async function POST(request: any) {
     }
 
     if (limitType && !["unlimited", "limited"].includes(asString(limitType))) {
-      return NextResponse.json({ error: "limitType must be 'unlimited' or 'limited'" }, { status: 400 });
+      return NextResponse.json(
+        { error: "limitType must be 'unlimited' or 'limited'" },
+        { status: 400 },
+      );
     }
 
     if (limitType === "limited") {
       const rpm = Number(requestsPerMinute);
       const concurrent = Number(concurrentRequests);
       if (!Number.isFinite(rpm) || !Number.isInteger(rpm) || rpm <= 0) {
-        return NextResponse.json({ error: "Request per Minute must be a positive integer" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Request per Minute must be a positive integer" },
+          { status: 400 },
+        );
       }
       if (!Number.isFinite(concurrent) || !Number.isInteger(concurrent) || concurrent <= 0) {
-        return NextResponse.json({ error: "Concurrent Request must be a positive integer" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Concurrent Request must be a positive integer" },
+          { status: 400 },
+        );
       }
     }
 

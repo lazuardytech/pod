@@ -169,7 +169,10 @@ async function getGitHubUsage(accessToken, providerSpecificData, proxyOptions = 
         quotas: {
           chat: { ...formatGitHubQuotaSnapshot(snapshots.chat), resetAt },
           completions: { ...formatGitHubQuotaSnapshot(snapshots.completions), resetAt },
-          premium_interactions: { ...formatGitHubQuotaSnapshot(snapshots.premium_interactions), resetAt },
+          premium_interactions: {
+            ...formatGitHubQuotaSnapshot(snapshots.premium_interactions),
+            resetAt,
+          },
         },
       };
     } else if (data.monthly_quotas || data.limited_user_quotas) {
@@ -510,7 +513,8 @@ async function getClaudeUsage(accessToken, proxyOptions = null) {
       const quotas = {};
 
       // utilization = % USED (e.g. 87 means 87% used, 13% remaining)
-      const hasUtilization = (window) => window && typeof window === "object" && typeof window.utilization === "number";
+      const hasUtilization = (window) =>
+        window && typeof window === "object" && typeof window.utilization === "number";
 
       const createQuotaObject = (window) => {
         const used = window.utilization;
@@ -626,11 +630,16 @@ function toFiniteNumber(value, fallback = 0) {
 
 function getCodexRateLimitBody(snapshot) {
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
-  return snapshot.rate_limit && typeof snapshot.rate_limit === "object" ? snapshot.rate_limit : snapshot;
+  return snapshot.rate_limit && typeof snapshot.rate_limit === "object"
+    ? snapshot.rate_limit
+    : snapshot;
 }
 
 function formatCodexWindow(window) {
-  const used = Math.max(0, Math.min(100, toFiniteNumber(window?.used_percent ?? window?.percent_used, 0)));
+  const used = Math.max(
+    0,
+    Math.min(100, toFiniteNumber(window?.used_percent ?? window?.percent_used, 0)),
+  );
   return {
     used,
     total: 100,
@@ -644,9 +653,13 @@ function appendCodexQuotaWindows(quotas, prefix, snapshot) {
   const rateLimit = getCodexRateLimitBody(snapshot);
   if (!rateLimit) return false;
 
-  const primary = rateLimit.primary_window || rateLimit.primary || snapshot.primary_window || snapshot.primary;
+  const primary =
+    rateLimit.primary_window || rateLimit.primary || snapshot.primary_window || snapshot.primary;
   const secondary =
-    rateLimit.secondary_window || rateLimit.secondary || snapshot.secondary_window || snapshot.secondary;
+    rateLimit.secondary_window ||
+    rateLimit.secondary ||
+    snapshot.secondary_window ||
+    snapshot.secondary;
   let added = false;
 
   if (primary) {
@@ -674,8 +687,12 @@ function getCodexReviewRateLimit(data) {
   const additional = Array.isArray(data.additional_rate_limits) ? data.additional_rate_limits : [];
   return (
     additional.find((entry) => {
-      const id = String(entry?.limit_name || entry?.metered_feature || entry?.id || "").toLowerCase();
-      return id === "code_review" || id === "codex_review" || id === "review" || id.includes("review");
+      const id = String(
+        entry?.limit_name || entry?.metered_feature || entry?.id || "",
+      ).toLowerCase();
+      return (
+        id === "code_review" || id === "codex_review" || id === "review" || id.includes("review")
+      );
     }) || null
   );
 }
@@ -695,11 +712,14 @@ async function getCodexUsage(accessToken, proxyOptions = null) {
     );
 
     if (!response.ok) {
-      return { message: `Codex connected. Usage API temporarily unavailable (${response.status}).` };
+      return {
+        message: `Codex connected. Usage API temporarily unavailable (${response.status}).`,
+      };
     }
 
     const data = await response.json();
-    const normalRateLimit = data.rate_limit || data.rate_limits || data.rate_limits_by_limit_id?.codex || {};
+    const normalRateLimit =
+      data.rate_limit || data.rate_limits || data.rate_limits_by_limit_id?.codex || {};
     const reviewRateLimit = getCodexReviewRateLimit(data);
     const quotas = {};
 
@@ -995,7 +1015,9 @@ async function getGlmUsage(apiKey, provider, proxyOptions = null) {
     }
 
     const levelRaw = typeof data.level === "string" ? data.level : "";
-    const plan = levelRaw ? levelRaw.charAt(0).toUpperCase() + levelRaw.slice(1).toLowerCase() : "Unknown";
+    const plan = levelRaw
+      ? levelRaw.charAt(0).toUpperCase() + levelRaw.slice(1).toLowerCase()
+      : "Unknown";
 
     return { plan, quotas };
   } catch (error) {
@@ -1015,11 +1037,18 @@ function getMiniMaxField(model, snakeKey, camelKey) {
 }
 
 function getMiniMaxSessionTotal(model) {
-  return Math.max(0, Number(getMiniMaxField(model, "current_interval_total_count", "currentIntervalTotalCount")) || 0);
+  return Math.max(
+    0,
+    Number(getMiniMaxField(model, "current_interval_total_count", "currentIntervalTotalCount")) ||
+      0,
+  );
 }
 
 function getMiniMaxWeeklyTotal(model) {
-  return Math.max(0, Number(getMiniMaxField(model, "current_weekly_total_count", "currentWeeklyTotalCount")) || 0);
+  return Math.max(
+    0,
+    Number(getMiniMaxField(model, "current_weekly_total_count", "currentWeeklyTotalCount")) || 0,
+  );
 }
 
 function pickMiniMaxRepresentativeModel(models, getTotal) {
@@ -1037,13 +1066,16 @@ function getMiniMaxResetAt(model, capturedAtMs, remainsSnake, remainsCamel, endS
 
 function buildMiniMaxQuota(total, count, resetAt, countMeansRemaining) {
   const safeTotal = Math.max(0, total);
-  const used = countMeansRemaining ? Math.max(safeTotal - count, 0) : Math.min(Math.max(0, count), safeTotal);
+  const used = countMeansRemaining
+    ? Math.max(safeTotal - count, 0)
+    : Math.min(Math.max(0, count), safeTotal);
   const remaining = Math.max(safeTotal - used, 0);
   return {
     used,
     total: safeTotal,
     remaining,
-    remainingPercentage: safeTotal > 0 ? Math.max(0, Math.min(100, (remaining / safeTotal) * 100)) : 0,
+    remainingPercentage:
+      safeTotal > 0 ? Math.max(0, Math.min(100, (remaining / safeTotal) * 100)) : 0,
     resetAt,
     unlimited: false,
   };
@@ -1094,13 +1126,24 @@ async function getMiniMaxUsage(apiKey, provider, proxyOptions = null) {
       const combined = `${apiStatusMessage} ${rawText}`.trim();
       const authLike = /token plan|coding plan|invalid api key|invalid key|unauthorized|inactive/i;
 
-      if (response.status === 401 || response.status === 403 || apiStatusCode === 1004 || authLike.test(combined)) {
-        return { message: "MiniMax API key invalid or inactive. Use an active Token/Coding Plan key." };
+      if (
+        response.status === 401 ||
+        response.status === 403 ||
+        apiStatusCode === 1004 ||
+        authLike.test(combined)
+      ) {
+        return {
+          message: "MiniMax API key invalid or inactive. Use an active Token/Coding Plan key.",
+        };
       }
 
       if (!response.ok) {
         lastErrorMessage = `MiniMax usage endpoint error (${response.status})`;
-        if ((response.status === 404 || response.status === 405 || response.status >= 500) && canFallback) continue;
+        if (
+          (response.status === 404 || response.status === 405 || response.status >= 500) &&
+          canFallback
+        )
+          continue;
         return { message: `MiniMax connected. ${lastErrorMessage}` };
       }
 
@@ -1127,12 +1170,25 @@ async function getMiniMaxUsage(apiKey, provider, proxyOptions = null) {
         const total = getMiniMaxSessionTotal(sessionModel);
         const count = Math.max(
           0,
-          Number(getMiniMaxField(sessionModel, "current_interval_usage_count", "currentIntervalUsageCount")) || 0,
+          Number(
+            getMiniMaxField(
+              sessionModel,
+              "current_interval_usage_count",
+              "currentIntervalUsageCount",
+            ),
+          ) || 0,
         );
         quotas["session (5h)"] = buildMiniMaxQuota(
           total,
           count,
-          getMiniMaxResetAt(sessionModel, capturedAtMs, "remains_time", "remainsTime", "end_time", "endTime"),
+          getMiniMaxResetAt(
+            sessionModel,
+            capturedAtMs,
+            "remains_time",
+            "remainsTime",
+            "end_time",
+            "endTime",
+          ),
           countMeansRemaining,
         );
       }
@@ -1142,7 +1198,9 @@ async function getMiniMaxUsage(apiKey, provider, proxyOptions = null) {
         const total = getMiniMaxWeeklyTotal(weeklyModel);
         const count = Math.max(
           0,
-          Number(getMiniMaxField(weeklyModel, "current_weekly_usage_count", "currentWeeklyUsageCount")) || 0,
+          Number(
+            getMiniMaxField(weeklyModel, "current_weekly_usage_count", "currentWeeklyUsageCount"),
+          ) || 0,
         );
         quotas["weekly (7d)"] = buildMiniMaxQuota(
           total,

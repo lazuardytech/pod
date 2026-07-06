@@ -34,7 +34,10 @@ export async function POST(request: any) {
       apiKey = keys.find((k) => k.isActive !== false)?.key || null;
     } catch {}
 
-    const headers: Record<string, string> = { "Content-Type": "application/json", "x-pod-no-cache": "true" };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-pod-no-cache": "true",
+    };
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
     const start = Date.now();
@@ -67,7 +70,9 @@ export async function POST(request: any) {
         });
       }
       const hasEmbedding =
-        Array.isArray(parsed?.data) && parsed.data.length > 0 && Array.isArray(parsed.data[0]?.embedding);
+        Array.isArray(parsed?.data) &&
+        parsed.data.length > 0 &&
+        Array.isArray(parsed.data[0]?.embedding);
       if (!hasEmbedding) {
         return NextResponse.json({
           ok: false,
@@ -102,7 +107,8 @@ export async function POST(request: any) {
     } catch {}
 
     if (!res.ok) {
-      const detail = parsed?.error?.message || parsed?.msg || parsed?.message || parsed?.error || rawText;
+      const detail =
+        parsed?.error?.message || parsed?.msg || parsed?.message || parsed?.error || rawText;
       const error = `HTTP ${res.status}${detail ? `: ${String(detail).slice(0, 240)}` : ""}`;
       return NextResponse.json({ ok: false, latencyMs, error, status: res.status });
     }

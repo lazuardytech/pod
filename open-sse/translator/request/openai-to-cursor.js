@@ -113,7 +113,9 @@ function convertMessages(messages) {
           }
           if (block.type === "tool_result") {
             const toolCallId = block.tool_use_id || "";
-            const toolMeta = toolCallMetaMap.get(toolCallId) || toolCallMetaMap.get(normalizeToolCallId(toolCallId));
+            const toolMeta =
+              toolCallMetaMap.get(toolCallId) ||
+              toolCallMetaMap.get(normalizeToolCallId(toolCallId));
             const toolName = toolMeta?.name || "tool";
             const toolContent = extractContent(block.content);
             parts.push(buildToolResultBlock(toolName, toolCallId, toolContent));

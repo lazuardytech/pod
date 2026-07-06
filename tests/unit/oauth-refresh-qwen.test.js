@@ -76,7 +76,9 @@ describe("Qwen OAuth Token Refresh", () => {
       const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
       const result = await refreshQwenToken("old-refresh", null);
 
-      expect(result.providerSpecificData).toEqual({ resourceUrl: "https://portal.qwen.ai/tenant/abc" });
+      expect(result.providerSpecificData).toEqual({
+        resourceUrl: "https://portal.qwen.ai/tenant/abc",
+      });
     });
 
     it("does not include providerSpecificData when resource_url is absent", async () => {

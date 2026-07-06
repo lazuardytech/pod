@@ -58,9 +58,15 @@ function rowToMemory(row: MemoryRow): MemoryRecord {
   };
 }
 
-function findExistingMemory(db: ReturnType<typeof getDatabase>, apiKeyId: string, key: string): MemoryRow | undefined {
+function findExistingMemory(
+  db: ReturnType<typeof getDatabase>,
+  apiKeyId: string,
+  key: string,
+): MemoryRow | undefined {
   if (!key) return undefined;
-  const stmt = db.prepare("SELECT * FROM memories WHERE api_key_id = ? AND key = ? ORDER BY created_at DESC LIMIT 1");
+  const stmt = db.prepare(
+    "SELECT * FROM memories WHERE api_key_id = ? AND key = ? ORDER BY created_at DESC LIMIT 1",
+  );
   return stmt.get(apiKeyId, key) as MemoryRow | undefined;
 }
 
@@ -94,7 +100,8 @@ export async function createMemory(memory: CreateMemoryInput): Promise<MemoryRec
   const key = typeof memory?.key === "string" ? memory.key.trim() : "";
   const apiKeyId = String(memory?.apiKeyId || "");
   if (!apiKeyId) throw new Error("apiKeyId is required");
-  if (!memory?.content || typeof memory.content !== "string") throw new Error("content is required");
+  if (!memory?.content || typeof memory.content !== "string")
+    throw new Error("content is required");
 
   const content = memory.content;
   const metadata = memory.metadata;
@@ -202,7 +209,10 @@ export async function updateMemory(
   const fields: string[] = [];
   const values: unknown[] = [];
 
-  if (updates.type !== undefined && MEMORY_TYPES.has((updates.type as MemoryTypeValue) || ("" as MemoryTypeValue))) {
+  if (
+    updates.type !== undefined &&
+    MEMORY_TYPES.has((updates.type as MemoryTypeValue) || ("" as MemoryTypeValue))
+  ) {
     fields.push("type = ?");
     values.push(updates.type);
   }
@@ -285,7 +295,10 @@ export async function listMemories(options: ListMemoriesOptions = {}): Promise<L
     clauses.push("session_id = ?");
     params.push(options.sessionId);
   }
-  if (options.type && MEMORY_TYPES.has((options.type as MemoryTypeValue) || ("" as MemoryTypeValue))) {
+  if (
+    options.type &&
+    MEMORY_TYPES.has((options.type as MemoryTypeValue) || ("" as MemoryTypeValue))
+  ) {
     clauses.push("type = ?");
     params.push(options.type);
   }
@@ -324,11 +337,13 @@ export async function listMemories(options: ListMemoriesOptions = {}): Promise<L
       .all(...params, limit, offset) as MemoryRow[];
   }
 
-  const countRow = db.prepare(`SELECT COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")}`).get(...params) as
-    | { count?: number }
-    | undefined;
+  const countRow = db
+    .prepare(`SELECT COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")}`)
+    .get(...params) as { count?: number } | undefined;
   const typeRows = db
-    .prepare(`SELECT type, COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")} GROUP BY type`)
+    .prepare(
+      `SELECT type, COUNT(*) AS count FROM memories WHERE ${clauses.join(" AND ")} GROUP BY type`,
+    )
     .all(...params) as Array<{ type: string; count: number }>;
 
   const byType: Record<string, number> = {};

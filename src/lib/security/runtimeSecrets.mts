@@ -50,7 +50,10 @@ export function validateStartupSecrets(env: NodeJS.ProcessEnv = process.env): vo
  * Read an OAuth client secret from the environment by key. Returns `null` if
  * the variable is missing, not a string, or empty after trimming.
  */
-export function getOAuthClientSecret(envKey: string, env: NodeJS.ProcessEnv = process.env): string | null {
+export function getOAuthClientSecret(
+  envKey: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
   const value = env[envKey];
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }

@@ -4,13 +4,20 @@ import { handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
-import { extractApiKey, getProviderCredentials, isValidApiKey, markAccountUnavailable } from "../services/auth";
+import {
+  extractApiKey,
+  getProviderCredentials,
+  isValidApiKey,
+  markAccountUnavailable,
+} from "../services/auth";
 import { getComboModels, getModelInfo } from "../services/model";
 import * as log from "../utils/logger";
 
 const CREDENTIALED_PROVIDERS = new Set(
   Object.entries(AI_PROVIDERS)
-    .filter(([, p]) => p.serviceKinds?.includes("tts") && !p.noAuth && p.ttsConfig?.authType !== "none")
+    .filter(
+      ([, p]) => p.serviceKinds?.includes("tts") && !p.noAuth && p.ttsConfig?.authType !== "none",
+    )
     .map(([id]) => id),
 );
 
@@ -40,9 +47,14 @@ export async function handleTts(request: Request): Promise<Response> {
   if (!body.input) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: input");
   const comboModels = await getComboModels(modelStr);
   if (comboModels) {
-    const comboStrategies = (settings.comboStrategies || {}) as Record<string, Record<string, unknown>>;
+    const comboStrategies = (settings.comboStrategies || {}) as Record<
+      string,
+      Record<string, unknown>
+    >;
     const comboStrategy =
-      (comboStrategies[modelStr]?.fallbackStrategy as string) || (settings.comboStrategy as string) || "fallback";
+      (comboStrategies[modelStr]?.fallbackStrategy as string) ||
+      (settings.comboStrategy as string) ||
+      "fallback";
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "TTS",
@@ -73,7 +85,13 @@ async function handleSingleModelTts(
   const model = modelInfo.model;
   log.info("ROUTING", `Provider: ${provider}, Voice: ${model}`);
   if (!CREDENTIALED_PROVIDERS.has(provider)) {
-    const result = await handleTtsCore({ provider, model, input: body.input, responseFormat, language });
+    const result = await handleTtsCore({
+      provider,
+      model,
+      input: body.input,
+      responseFormat,
+      language,
+    });
     if (result.success === true) return result.response;
     return errorResponse(result.status || HTTP_STATUS.BAD_GATEWAY, result.error || "TTS failed");
   }
@@ -85,7 +103,8 @@ async function handleSingleModelTts(
     if (!credentials || credentials.allRateLimited) {
       if (credentials?.allRateLimited) {
         const msg = lastError || credentials.lastError || "Unavailable";
-        const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
+        const status =
+          lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${msg}`,
@@ -95,7 +114,10 @@ async function handleSingleModelTts(
       }
       if (excludeConnectionIds.size === 0)
         return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+      return errorResponse(
+        lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE,
+        lastError || "All accounts unavailable",
+      );
     }
     log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
     const connectionId = credentials.connectionId!;
@@ -108,7 +130,13 @@ async function handleSingleModelTts(
       language,
     });
     if (result.success === true) return result.response;
-    const { shouldFallback } = await markAccountUnavailable(connectionId, result.status, result.error, provider, model);
+    const { shouldFallback } = await markAccountUnavailable(
+      connectionId,
+      result.status,
+      result.error,
+      provider,
+      model,
+    );
     if (shouldFallback) {
       excludeConnectionIds.add(connectionId);
       lastError = result.error;

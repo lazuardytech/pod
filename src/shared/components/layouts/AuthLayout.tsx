@@ -9,7 +9,9 @@ export default function AuthLayout({ children }: { children?: any; [key: string]
       <div className="fixed bottom-0 right-0 w-[400px] h-[400px] bg-aether-blue/4 rounded-full blur-[100px] pointer-events-none z-0 translate-y-1/3 translate-x-1/3" />
 
       {/* Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 z-10 w-full h-full">{children}</main>
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 z-10 w-full h-full">
+        {children}
+      </main>
     </div>
   );
 }

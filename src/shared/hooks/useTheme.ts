@@ -31,7 +31,11 @@ export function useTheme(): {
   const { theme, setTheme: storeSetTheme, toggleTheme, initTheme } = useThemeStore();
 
   // Use useSyncExternalStore to safely subscribe to system theme
-  const systemPrefersDark = useSyncExternalStore(subscribeToSystemTheme, getSystemThemeSnapshot, getServerSnapshot);
+  const systemPrefersDark = useSyncExternalStore(
+    subscribeToSystemTheme,
+    getSystemThemeSnapshot,
+    getServerSnapshot,
+  );
 
   useEffect(() => {
     initTheme();

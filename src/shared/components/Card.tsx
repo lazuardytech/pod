@@ -46,7 +46,8 @@ export default function Card({
       className={cn(
         bg,
         "rounded-[6px] border border-charcoal-grey",
-        hover && "hover:border-muted-ash hover:bg-deep-slate transition-colors duration-100 cursor-pointer",
+        hover &&
+          "hover:border-muted-ash hover:bg-deep-slate transition-colors duration-100 cursor-pointer",
         paddings[padding],
         className,
       )}
@@ -62,9 +63,15 @@ export default function Card({
             )}
             <div>
               {title && (
-                <h3 className="text-[13px] font-[510] text-porcelain leading-[1.47] tracking-[-0.12px]">{title}</h3>
+                <h3 className="text-[13px] font-[510] text-porcelain leading-[1.47] tracking-[-0.12px]">
+                  {title}
+                </h3>
               )}
-              {subtitle && <p className="text-[12px] text-storm-cloud leading-[1.4] tracking-[-0.1px]">{subtitle}</p>}
+              {subtitle && (
+                <p className="text-[12px] text-storm-cloud leading-[1.4] tracking-[-0.1px]">
+                  {subtitle}
+                </p>
+              )}
             </div>
           </div>
           {action}
@@ -85,7 +92,10 @@ Card.Section = function CardSection({
   [key: string]: any;
 }) {
   return (
-    <div className={cn("p-3 rounded-[6px] bg-pitch-black border border-charcoal-grey", className)} {...props}>
+    <div
+      className={cn("p-3 rounded-[6px] bg-pitch-black border border-charcoal-grey", className)}
+      {...props}
+    >
       {children}
     </div>
   );

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
-import { getSyncStatus, startPeriodicSync, stopPeriodicSync, syncModelsDev } from "@/lib/modelsDevSync";
+import {
+  getSyncStatus,
+  startPeriodicSync,
+  stopPeriodicSync,
+  syncModelsDev,
+} from "@/lib/modelsDevSync";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 // GET — return current sync status

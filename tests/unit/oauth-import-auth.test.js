@@ -50,8 +50,12 @@ describe("OAuth import helper auth gates", () => {
     const autoImport = await import("@/app/api/oauth/kiro/auto-import/route.js");
     const importRoute = await import("@/app/api/oauth/kiro/import/route.js");
 
-    const autoResponse = await autoImport.GET(createRequest("http://localhost/api/oauth/kiro/auto-import"));
-    const importResponse = await importRoute.POST(createRequest("http://localhost/api/oauth/kiro/import"));
+    const autoResponse = await autoImport.GET(
+      createRequest("http://localhost/api/oauth/kiro/auto-import"),
+    );
+    const importResponse = await importRoute.POST(
+      createRequest("http://localhost/api/oauth/kiro/import"),
+    );
 
     expect(autoResponse).toBe(unauthorizedResponse);
     expect(importResponse).toBe(unauthorizedResponse);
@@ -64,7 +68,9 @@ describe("OAuth import helper auth gates", () => {
     const authorizeResponse = await authorize.GET(
       createRequest("http://localhost/api/oauth/kiro/social-authorize?provider=google"),
     );
-    const exchangeResponse = await exchange.POST(createRequest("http://localhost/api/oauth/kiro/social-exchange"));
+    const exchangeResponse = await exchange.POST(
+      createRequest("http://localhost/api/oauth/kiro/social-exchange"),
+    );
 
     expect(authorizeResponse).toBe(unauthorizedResponse);
     expect(exchangeResponse).toBe(unauthorizedResponse);
@@ -74,8 +80,12 @@ describe("OAuth import helper auth gates", () => {
     const gitlabPat = await import("@/app/api/oauth/gitlab/pat/route.js");
     const iflowCookie = await import("@/app/api/oauth/iflow/cookie/route.js");
 
-    const gitlabResponse = await gitlabPat.POST(createRequest("http://localhost/api/oauth/gitlab/pat"));
-    const iflowResponse = await iflowCookie.POST(createRequest("http://localhost/api/oauth/iflow/cookie"));
+    const gitlabResponse = await gitlabPat.POST(
+      createRequest("http://localhost/api/oauth/gitlab/pat"),
+    );
+    const iflowResponse = await iflowCookie.POST(
+      createRequest("http://localhost/api/oauth/iflow/cookie"),
+    );
 
     expect(gitlabResponse).toBe(unauthorizedResponse);
     expect(iflowResponse).toBe(unauthorizedResponse);
@@ -85,12 +95,17 @@ describe("OAuth import helper auth gates", () => {
     const oauthRoute = await import("@/app/api/oauth/[provider]/[action]/route.js");
 
     const authorizeResponse = await oauthRoute.GET(
-      createRequest("http://localhost/api/oauth/github/authorize?redirect_uri=http://localhost/callback"),
+      createRequest(
+        "http://localhost/api/oauth/github/authorize?redirect_uri=http://localhost/callback",
+      ),
       { params: Promise.resolve({ provider: "github", action: "authorize" }) },
     );
-    const exchangeResponse = await oauthRoute.POST(createRequest("http://localhost/api/oauth/github/exchange"), {
-      params: Promise.resolve({ provider: "github", action: "exchange" }),
-    });
+    const exchangeResponse = await oauthRoute.POST(
+      createRequest("http://localhost/api/oauth/github/exchange"),
+      {
+        params: Promise.resolve({ provider: "github", action: "exchange" }),
+      },
+    );
 
     expect(authorizeResponse).toBe(unauthorizedResponse);
     expect(exchangeResponse).toBe(unauthorizedResponse);

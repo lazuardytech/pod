@@ -27,8 +27,8 @@ export default function HeroSection() {
 
         {/* Description */}
         <p className="text-[15px] text-storm-cloud max-w-xl leading-[1.6] tracking-[-0.13px]">
-          AI endpoint proxy with web dashboard. Works seamlessly with Claude Code, OpenAI Codex, Cline, RooCode, and
-          other CLI tools.
+          AI endpoint proxy with web dashboard. Works seamlessly with Claude Code, OpenAI Codex,
+          Cline, RooCode, and other CLI tools.
         </p>
 
         {/* CTAs */}

@@ -13,7 +13,8 @@ function formatTime(): string {
 }
 const SENSITIVE_KEY_RE =
   /(api[_-]?key|access[_-]?token|refresh[_-]?token|id[_-]?token|bearer|authorization|cookie|secret|password|client[_-]?secret|private[_-]?key|sa[_-]?json|service[_-]?account)/i;
-const TOKEN_VALUE_RE = /(Bearer\s+[A-Za-z0-9._\-+/=]{16,}|sk-[A-Za-z0-9._\-]{16,}|eyJ[A-Za-z0-9._\-]{20,})/g;
+const TOKEN_VALUE_RE =
+  /(Bearer\s+[A-Za-z0-9._\-+/=]{16,}|sk-[A-Za-z0-9._\-]{16,}|eyJ[A-Za-z0-9._\-]{20,})/g;
 function maskValue(value: unknown): unknown {
   if (value == null) return value;
   if (typeof value !== "string") return value;

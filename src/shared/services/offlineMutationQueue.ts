@@ -41,8 +41,10 @@ function requestToPromise<T = unknown>(request: IdbRequest): Promise<T> {
 function transactionDone(transaction: IdbTx): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error || new Error("IndexedDB transaction failed"));
-    transaction.onabort = () => reject(transaction.error || new Error("IndexedDB transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error || new Error("IndexedDB transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error || new Error("IndexedDB transaction aborted"));
   });
 }
 
@@ -98,7 +100,10 @@ function normalizeMethod(method: unknown): string {
 function normalizeHeaders(headers: Record<string, unknown> = {}): Record<string, string> {
   if (!headers || typeof headers !== "object") return {};
   return Object.fromEntries(
-    Object.entries(headers).map(([k, v]) => [String(k), typeof v === "string" ? v : v == null ? "" : String(v)]),
+    Object.entries(headers).map(([k, v]) => [
+      String(k),
+      typeof v === "string" ? v : v == null ? "" : String(v),
+    ]),
   );
 }
 
@@ -126,7 +131,10 @@ function safeSerializeBody(body: unknown): string | null {
   return null; // unsupported type — caller gets { ok: false, reason: "unsupported_body_type" }
 }
 
-function canReplayNow(item: MutationRecord | null | undefined, nowMs: number = Date.now()): boolean {
+function canReplayNow(
+  item: MutationRecord | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
   return Number(item?.nextAttemptAt || 0) <= nowMs;
 }
 
@@ -203,7 +211,10 @@ async function updateQueueItem(
   }
 }
 
-async function dispatchQueueEvent(type: string, detail: Record<string, unknown> = {}): Promise<void> {
+async function dispatchQueueEvent(
+  type: string,
+  detail: Record<string, unknown> = {},
+): Promise<void> {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(type, { detail }));
 }
@@ -214,7 +225,9 @@ export async function getOfflineMutationQueueLength(): Promise<number> {
 
   try {
     const tx = db.transaction(STORE_NAME, "readonly");
-    const count = await requestToPromise<number>(tx.objectStore(STORE_NAME).count() as unknown as IdbRequest);
+    const count = await requestToPromise<number>(
+      tx.objectStore(STORE_NAME).count() as unknown as IdbRequest,
+    );
     await transactionDone(tx);
     return Number(count || 0);
   } catch {
@@ -235,7 +248,13 @@ export type EnqueueOfflineMutationResult =
   | { ok: false; reason: "missing_url" | "idb_unavailable" | "write_failed" };
 
 export async function enqueueOfflineMutation(
-  { url, method = "POST", headers = {}, body = undefined, meta = {} }: EnqueueOfflineMutationInput = { url: "" },
+  {
+    url,
+    method = "POST",
+    headers = {},
+    body = undefined,
+    meta = {},
+  }: EnqueueOfflineMutationInput = { url: "" },
 ): Promise<EnqueueOfflineMutationResult> {
   if (!url) return { ok: false, reason: "missing_url" };
   const db = await getDb();
@@ -259,10 +278,17 @@ export async function enqueueOfflineMutation(
 
   try {
     const tx = db.transaction(STORE_NAME, "readwrite");
-    const id = await requestToPromise<number>(tx.objectStore(STORE_NAME).add(record) as unknown as IdbRequest);
+    const id = await requestToPromise<number>(
+      tx.objectStore(STORE_NAME).add(record) as unknown as IdbRequest,
+    );
     await transactionDone(tx);
     const queueLength = await getOfflineMutationQueueLength();
-    await dispatchQueueEvent("pod:offline-mutation-enqueued", { id, queueLength, method: normalizedMethod, url });
+    await dispatchQueueEvent("pod:offline-mutation-enqueued", {
+      id,
+      queueLength,
+      method: normalizedMethod,
+      url,
+    });
     return { ok: true, id, queueLength };
   } catch {
     return { ok: false, reason: "write_failed" };
@@ -307,12 +333,20 @@ export type DrainResult = {
   remaining: number;
 };
 
-export async function drainOfflineMutationQueue({ limit = 25 }: { limit?: number } = {}): Promise<DrainResult> {
+export async function drainOfflineMutationQueue({
+  limit = 25,
+}: { limit?: number } = {}): Promise<DrainResult> {
   if (drainingPromise) return drainingPromise;
 
   drainingPromise = (async (): Promise<DrainResult> => {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
-      return { processed: 0, succeeded: 0, retried: 0, dropped: 0, remaining: await getOfflineMutationQueueLength() };
+      return {
+        processed: 0,
+        succeeded: 0,
+        retried: 0,
+        dropped: 0,
+        remaining: await getOfflineMutationQueueLength(),
+      };
     }
 
     const queue = await listQueueItems(limit);
@@ -359,7 +393,13 @@ export async function drainOfflineMutationQueue({ limit = 25 }: { limit?: number
 
     const remaining = await getOfflineMutationQueueLength();
     if (processed > 0 || succeeded > 0 || retried > 0 || dropped > 0) {
-      await dispatchQueueEvent("pod:offline-mutation-drain", { processed, succeeded, retried, dropped, remaining });
+      await dispatchQueueEvent("pod:offline-mutation-drain", {
+        processed,
+        succeeded,
+        retried,
+        dropped,
+        remaining,
+      });
     }
 
     return { processed, succeeded, retried, dropped, remaining };

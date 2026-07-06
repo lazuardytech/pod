@@ -23,7 +23,8 @@ export default function AnimatedBackground() {
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(circle at center, transparent 0%, rgba(24, 20, 17, 0.4) 100%)",
+            background:
+              "radial-gradient(circle at center, transparent 0%, rgba(24, 20, 17, 0.4) 100%)",
           }}
         />
       </div>
@@ -31,13 +32,14 @@ export default function AnimatedBackground() {
       {/* CSS Animations */}
       <style jsx global>{`
         @keyframes blob {
-          0%, 100% { 
+          0%,
+          100% {
             transform: translate(0, 0) scale(1);
           }
-          33% { 
+          33% {
             transform: translate(30px, -50px) scale(1.1);
           }
-          66% { 
+          66% {
             transform: translate(-20px, 20px) scale(0.9);
           }
         }

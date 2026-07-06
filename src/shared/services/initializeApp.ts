@@ -12,7 +12,12 @@ import {
   RESTART_COOLDOWN_MS,
   WATCHDOG_INTERVAL_MS,
 } from "@/lib/tunnel/tunnelConfig";
-import { enableTailscale, enableTunnel, getTailscaleService, getTunnelService } from "@/lib/tunnel/tunnelManager";
+import {
+  enableTailscale,
+  enableTunnel,
+  getTailscaleService,
+  getTunnelService,
+} from "@/lib/tunnel/tunnelManager";
 import { error as logError, info as logInfo } from "@/sse/utils/logger";
 
 process.setMaxListeners(20);
@@ -186,7 +191,8 @@ function startNetworkMonitor(): void {
       // Wait for DHCP/DNS to settle before probing
       await new Promise((r) => setTimeout(r, NETWORK_SETTLE_MS));
 
-      const reason = wasSleep && networkChanged ? "sleep+netchange" : wasSleep ? "sleep" : "netchange";
+      const reason =
+        wasSleep && networkChanged ? "sleep+netchange" : wasSleep ? "sleep" : "netchange";
       safeRestartTunnel(reason).catch(() => {});
       safeRestartTailscale(reason).catch(() => {});
     } catch (err) {

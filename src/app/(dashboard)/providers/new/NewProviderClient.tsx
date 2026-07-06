@@ -17,8 +17,9 @@ const authMethodOptions = Object.values(AUTH_METHODS).map((m: any) => ({
   label: m.name,
 }));
 
-const CardSection = (Card as typeof Card & { Section: ComponentType<{ children?: ReactNode; className?: string }> })
-  .Section;
+const CardSection = (
+  Card as typeof Card & { Section: ComponentType<{ children?: ReactNode; className?: string }> }
+).Section;
 
 export default function NewProviderPage() {
   const router = useRouter();
@@ -81,7 +82,9 @@ export default function NewProviderPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-semibold tracking-tight">Add New Provider</h1>
-        <p className="text-text-muted mt-2">Configure a new AI provider to use with your applications.</p>
+        <p className="text-text-muted mt-2">
+          Configure a new AI provider to use with your applications.
+        </p>
       </div>
 
       {/* Form */}
@@ -156,7 +159,9 @@ export default function NewProviderPage() {
           {/* OAuth2 Button */}
           {formData.authMethod === "oauth" && (
             <CardSection>
-              <p className="text-sm text-text-muted mb-4">Connect your account using OAuth2 authentication.</p>
+              <p className="text-sm text-text-muted mb-4">
+                Connect your account using OAuth2 authentication.
+              </p>
               <Button type="button" variant="secondary" icon="link">
                 Connect with OAuth2
               </Button>

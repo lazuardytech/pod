@@ -224,7 +224,8 @@ export function extractUsage(chunk) {
     return normalizeUsage({
       prompt_tokens: chunk.usage.prompt_tokens,
       completion_tokens: chunk.usage.completion_tokens || 0,
-      cached_tokens: chunk.usage.prompt_tokens_details?.cached_tokens || chunk.usage.prompt_cache_hit_tokens,
+      cached_tokens:
+        chunk.usage.prompt_tokens_details?.cached_tokens || chunk.usage.prompt_cache_hit_tokens,
       reasoning_tokens: chunk.usage.completion_tokens_details?.reasoning_tokens,
       prompt_tokens_details: chunk.usage.prompt_tokens_details,
       completion_tokens_details: chunk.usage.completion_tokens_details,
@@ -232,7 +233,10 @@ export function extractUsage(chunk) {
   }
 
   // Ollama format (done=true chunk with prompt_eval_count/eval_count)
-  if (chunk.done === true && (chunk.prompt_eval_count !== undefined || chunk.eval_count !== undefined)) {
+  if (
+    chunk.done === true &&
+    (chunk.prompt_eval_count !== undefined || chunk.eval_count !== undefined)
+  ) {
     return normalizeUsage({
       prompt_tokens: chunk.prompt_eval_count || 0,
       completion_tokens: chunk.eval_count || 0,
@@ -341,7 +345,10 @@ export function logUsage(provider, usage, model = null, connectionId = null, api
   }
 
   // Add cache info if present (unified from different formats)
-  const cacheRead = usage.cache_read_input_tokens || usage.cached_tokens || usage.prompt_tokens_details?.cached_tokens;
+  const cacheRead =
+    usage.cache_read_input_tokens ||
+    usage.cached_tokens ||
+    usage.prompt_tokens_details?.cached_tokens;
   if (cacheRead) msg += ` | cache_read=${cacheRead}`;
 
   const cacheCreation = usage.cache_creation_input_tokens;
@@ -360,6 +367,8 @@ export function logUsage(provider, usage, model = null, connectionId = null, api
     cache_creation_input_tokens: cacheCreation || 0,
     reasoning_tokens: reasoning || 0,
   };
-  saveRequestUsage({ model, provider, connectionId, tokens, apiKey: apiKey || undefined }).catch(() => {});
+  saveRequestUsage({ model, provider, connectionId, tokens, apiKey: apiKey || undefined }).catch(
+    () => {},
+  );
   appendRequestLog({ model, provider, connectionId, tokens, status: "SUCCESS" }).catch(() => {});
 }

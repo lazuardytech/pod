@@ -36,9 +36,22 @@ function StatusBadge({ active }: any) {
   );
 }
 
-import { DetailRow, DetailSection, LogDrawer, LogDrawerBody, LogDrawerHeader } from "@/shared/components/LogDrawer";
+import {
+  DetailRow,
+  DetailSection,
+  LogDrawer,
+  LogDrawerBody,
+  LogDrawerHeader,
+} from "@/shared/components/LogDrawer";
 
-export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefresh, onCountChange }: any) {
+export default function ProxyLogsTab({
+  sortBy,
+  setSortBy,
+  live,
+  setLive,
+  onRefresh,
+  onCountChange,
+}: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
   const [testing, setTesting] = useState<any>(null);
@@ -137,7 +150,10 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
           : { ok: false, message: data.error ?? "Test failed" },
       }));
     } catch {
-      setTestResults((prev: any) => ({ ...prev, [pool.id]: { ok: false, message: "Request failed" } }));
+      setTestResults((prev: any) => ({
+        ...prev,
+        [pool.id]: { ok: false, message: "Request failed" },
+      }));
     } finally {
       setTesting(null);
     }
@@ -149,7 +165,8 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-[6px] border border-charcoal-grey bg-deep-slate">
         <LucideIcon name="info" className="text-[14px] text-fog-grey shrink-0" />
         <p className="text-[11px] text-fog-grey leading-[1.5]">
-          Live proxy request logging is not available. Showing configured proxy pools. Manage pools in{" "}
+          Live proxy request logging is not available. Showing configured proxy pools. Manage pools
+          in{" "}
           <Link
             href="/proxy-pools"
             className="text-storm-cloud hover:text-porcelain underline underline-offset-2 transition-colors duration-100"
@@ -250,7 +267,10 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                           className="flex items-center gap-1.5 h-6 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-50 transition-colors duration-100"
                         >
                           {testing === pool.id ? (
-                            <LucideIcon name="progress_activity" className="text-[12px] animate-spin" />
+                            <LucideIcon
+                              name="progress_activity"
+                              className="text-[12px] animate-spin"
+                            />
                           ) : (
                             <LucideIcon name="network_check" className="text-[12px]" />
                           )}
@@ -259,7 +279,10 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                       </td>
                     </tr>
                     {testResults[pool.id] && (
-                      <tr key={`${pool.id}-result`} className="border-b border-charcoal-grey/50 last:border-0">
+                      <tr
+                        key={`${pool.id}-result`}
+                        className="border-b border-charcoal-grey/50 last:border-0"
+                      >
                         <td colSpan={6} className="px-3 py-2">
                           <div
                             className={cn(
@@ -295,7 +318,11 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
           {selectedPool && (
             <>
               <DetailSection title="Pool Info" icon="lan">
-                <DetailRow label="Name" value={selectedPool.name} accent="text-porcelain font-[510]" />
+                <DetailRow
+                  label="Name"
+                  value={selectedPool.name}
+                  accent="text-porcelain font-[510]"
+                />
                 <DetailRow label="URL" value={selectedPool.proxyUrl} mono accent="" />
                 <DetailRow label="Type" value={selectedPool.type || "http"} accent="" />
                 <DetailRow
@@ -303,7 +330,11 @@ export default function ProxyLogsTab({ sortBy, setSortBy, live, setLive, onRefre
                   value={selectedPool.isActive ? "Enabled" : "Disabled"}
                   accent={selectedPool.isActive ? "text-emerald" : "text-warning-red"}
                 />
-                <DetailRow label="Connections" value={String(selectedPool.boundConnectionCount ?? 0)} accent="" />
+                <DetailRow
+                  label="Connections"
+                  value={String(selectedPool.boundConnectionCount ?? 0)}
+                  accent=""
+                />
               </DetailSection>
 
               {selectedPool.username && (

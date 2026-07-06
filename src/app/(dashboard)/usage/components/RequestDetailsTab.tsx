@@ -84,7 +84,10 @@ function CollapsibleSection({ title, children, defaultOpen = false, icon = null 
         </div>
         <LucideIcon
           name="chevron_right"
-          className={cn("text-[20px] text-text-muted transition-transform duration-200", isOpen ? "rotate-90" : "")}
+          className={cn(
+            "text-[20px] text-text-muted transition-transform duration-200",
+            isOpen ? "rotate-90" : "",
+          )}
         />
       </button>
 
@@ -300,7 +303,10 @@ export default function RequestDetailsTab() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 sm:col-span-2 lg:col-span-1">
-            <span className="hidden text-sm font-medium text-text-main opacity-0 lg:block" aria-hidden="true">
+            <span
+              className="hidden text-sm font-medium text-text-main opacity-0 lg:block"
+              aria-hidden="true"
+            >
               Clear
             </span>
             <Button
@@ -324,8 +330,12 @@ export default function RequestDetailsTab() {
                 <th className="text-left p-4 text-sm font-semibold text-text-main">Timestamp</th>
                 <th className="text-left p-4 text-sm font-semibold text-text-main">Model</th>
                 <th className="text-left p-4 text-sm font-semibold text-text-main">Provider</th>
-                <th className="text-right p-4 text-sm font-semibold text-text-main">Input Tokens</th>
-                <th className="text-right p-4 text-sm font-semibold text-text-main">Output Tokens</th>
+                <th className="text-right p-4 text-sm font-semibold text-text-main">
+                  Input Tokens
+                </th>
+                <th className="text-right p-4 text-sm font-semibold text-text-main">
+                  Output Tokens
+                </th>
                 <th className="text-left p-4 text-sm font-semibold text-text-main">Latency</th>
               </tr>
             </thead>
@@ -364,9 +374,13 @@ export default function RequestDetailsTab() {
                     <td className="whitespace-nowrap p-4 text-sm text-text-main">
                       {new Date(detail.timestamp).toLocaleString()}
                     </td>
-                    <td className="max-w-[260px] truncate p-4 font-mono text-sm text-text-main">{detail.model}</td>
+                    <td className="max-w-[260px] truncate p-4 font-mono text-sm text-text-main">
+                      {detail.model}
+                    </td>
                     <td className="max-w-[180px] truncate p-4 text-sm text-text-main">
-                      <span className="font-medium">{getProviderName(detail.provider, providerNameCache)}</span>
+                      <span className="font-medium">
+                        {getProviderName(detail.provider, providerNameCache)}
+                      </span>
                     </td>
                     <td className="p-4 text-sm text-text-main text-right font-mono">
                       {getInputTokens(detail.tokens).toLocaleString()}
@@ -404,7 +418,12 @@ export default function RequestDetailsTab() {
         )}
       </Card>
 
-      <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="Request Details" width="lg">
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title="Request Details"
+        width="lg"
+      >
         {selectedDetail && (
           <div className="space-y-6">
             <div className="grid min-w-0 grid-cols-1 gap-4 text-sm sm:grid-cols-2">
@@ -414,7 +433,9 @@ export default function RequestDetailsTab() {
               </div>
               <div>
                 <span className="text-text-muted">Timestamp:</span>{" "}
-                <span className="text-text-main">{new Date(selectedDetail.timestamp).toLocaleString()}</span>
+                <span className="text-text-main">
+                  {new Date(selectedDetail.timestamp).toLocaleString()}
+                </span>
               </div>
               <div>
                 <span className="text-text-muted">Provider:</span>{" "}
@@ -429,7 +450,10 @@ export default function RequestDetailsTab() {
               <div>
                 <span className="text-text-muted">Status:</span>{" "}
                 <span
-                  className={cn("font-medium", selectedDetail.status === "success" ? "text-green-600" : "text-red-600")}
+                  className={cn(
+                    "font-medium",
+                    selectedDetail.status === "success" ? "text-green-600" : "text-red-600",
+                  )}
                 >
                   {selectedDetail.status}
                 </span>
@@ -437,7 +461,8 @@ export default function RequestDetailsTab() {
               <div>
                 <span className="text-text-muted">Latency:</span>{" "}
                 <span className="text-text-main font-mono">
-                  TTFT {selectedDetail.latency?.ttft || 0}ms / Total {selectedDetail.latency?.total || 0}ms
+                  TTFT {selectedDetail.latency?.ttft || 0}ms / Total{" "}
+                  {selectedDetail.latency?.total || 0}ms
                 </span>
               </div>
               <div>
@@ -479,7 +504,11 @@ export default function RequestDetailsTab() {
                 </CollapsibleSection>
               )}
 
-              <CollapsibleSection title="4. Client Response (Final)" defaultOpen={true} icon="output">
+              <CollapsibleSection
+                title="4. Client Response (Final)"
+                defaultOpen={true}
+                icon="output"
+              >
                 {selectedDetail.response?.thinking && (
                   <div className="mb-4">
                     <h4 className="font-semibold text-text-main mb-2 flex items-center gap-2 text-xs uppercase tracking-wide opacity-70">

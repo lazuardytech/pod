@@ -46,7 +46,11 @@ export async function GET() {
   } catch (error) {
     // Return cached data if available, even if expired
     if (cachedModels) {
-      return NextResponse.json({ models: cachedModels, cached: true, warning: sanitizeError(error) });
+      return NextResponse.json({
+        models: cachedModels,
+        cached: true,
+        warning: sanitizeError(error),
+      });
     }
 
     return NextResponse.json(

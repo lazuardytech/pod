@@ -4,7 +4,16 @@ import Link from "next/link";
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, Select, Toggle } from "@/shared/components";
+import {
+  Badge,
+  Button,
+  Card,
+  CardSkeleton,
+  Input,
+  Modal,
+  Select,
+  Toggle,
+} from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { APIKEY_PROVIDERS, OAUTH_PROVIDERS, WEB_COOKIE_PROVIDERS } from "@/shared/constants/config";
@@ -73,7 +82,8 @@ function getConnectionErrorTag(connection: any) {
   if (fromMessage && fromMessage !== "ERR") return fromMessage;
 
   const msg = (connection.lastError || "").toLowerCase();
-  if (msg.includes("runtime") || msg.includes("not runnable") || msg.includes("not installed")) return "RUNTIME";
+  if (msg.includes("runtime") || msg.includes("not runnable") || msg.includes("not installed"))
+    return "RUNTIME";
   if (
     msg.includes("invalid api key") ||
     msg.includes("token invalid") ||
@@ -200,11 +210,14 @@ export default function ProvidersPage() {
   }, [clearOfflineCacheNotice, notifyOfflineCache]);
 
   const getProviderStats = (providerId: any, authType: any) => {
-    const providerConnections = connections.filter((c: any) => c.provider === providerId && c.authType === authType);
+    const providerConnections = connections.filter(
+      (c: any) => c.provider === providerId && c.authType === authType,
+    );
 
     const getEffectiveStatus = (conn: any) => {
       const isCooldown = Object.entries(conn).some(
-        ([k, v]: any) => k.startsWith("modelLock_") && v && new Date(String(v)).getTime() > Date.now(),
+        ([k, v]: any) =>
+          k.startsWith("modelLock_") && v && new Date(String(v)).getTime() > Date.now(),
       );
       return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
     };
@@ -225,7 +238,8 @@ export default function ProvidersPage() {
 
     const latestError = errorConns.sort(
       (a: any, b: any) =>
-        new Date(String(b.lastErrorAt || 0)).getTime() - new Date(String(a.lastErrorAt || 0)).getTime(),
+        new Date(String(b.lastErrorAt || 0)).getTime() -
+        new Date(String(a.lastErrorAt || 0)).getTime(),
     )[0];
     const errorCode = latestError ? getConnectionErrorTag(latestError) : null;
     const errorTime = latestError?.lastErrorAt ? getRelativeTime(latestError.lastErrorAt) : null;
@@ -235,9 +249,13 @@ export default function ProvidersPage() {
 
   // Toggle all connections for a provider on/off
   const handleToggleProvider = async (providerId: any, authType: any, newActive: any) => {
-    const providerConns = connections.filter((c: any) => c.provider === providerId && c.authType === authType);
+    const providerConns = connections.filter(
+      (c: any) => c.provider === providerId && c.authType === authType,
+    );
     setConnections((prev: any) =>
-      prev.map((c: any) => (c.provider === providerId && c.authType === authType ? { ...c, isActive: newActive } : c)),
+      prev.map((c: any) =>
+        c.provider === providerId && c.authType === authType ? { ...c, isActive: newActive } : c,
+      ),
     );
 
     const results = await Promise.allSettled(
@@ -315,7 +333,9 @@ export default function ProvidersPage() {
   );
   const apikeyEntries = Object.entries(APIKEY_PROVIDERS).filter(
     ([id, info]: any) =>
-      (info.serviceKinds ?? ["llm"]).includes("llm") && matchSearch(info.name) && matchConnected(id, "apikey"),
+      (info.serviceKinds ?? ["llm"]).includes("llm") &&
+      matchSearch(info.name) &&
+      matchConnected(id, "apikey"),
   );
 
   const hasAnyResult =
@@ -335,7 +355,9 @@ export default function ProvidersPage() {
             className="text-[32px] text-text-muted mb-2"
           />
           <p className="text-text-muted text-sm">
-            {showConnectedOnly ? "No connected providers available" : "No providers match your search"}
+            {showConnectedOnly
+              ? "No connected providers available"
+              : "No providers match your search"}
           </p>
         </div>
       )}
@@ -343,7 +365,9 @@ export default function ProvidersPage() {
       {/* Custom Providers (OpenAI/Anthropic Compatible) — dynamic */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">Custom Providers </h2>
+          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+            Custom Providers{" "}
+          </h2>
           <div className="grid grid-cols-1 gap-2 sm:flex sm:w-auto">
             <Button
               size="sm"
@@ -395,7 +419,9 @@ export default function ProvidersPage() {
       {oauthEntries.length > 0 && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">OAuth Providers</h2>
+            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+              OAuth Providers
+            </h2>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <ModelAvailabilityBadge />
               <button
@@ -531,7 +557,9 @@ export default function ProvidersPage() {
         return (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">Web Cookie Providers</h2>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                Web Cookie Providers
+              </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {visibleWebCookieProviders.map(([key, info]: any) => (
@@ -719,7 +747,8 @@ function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle }:
   };
 
   const getIconPath = () => {
-    if (isCompatible) return provider.apiType === "responses" ? "/providers/oai-r.png" : "/providers/oai-cc.png";
+    if (isCompatible)
+      return provider.apiType === "responses" ? "/providers/oai-r.png" : "/providers/oai-cc.png";
     if (isAnthropicCompatible) return "/providers/anthropic-m.png";
     return `/providers/${provider.id}.png`;
   };
@@ -837,7 +866,8 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }: any) {
       // Auto-prepend the required prefix if user supplies a custom identifier
       // without it. Server validates that identifier starts with `openai-compatible-`.
       const rawId = formData.identifier.trim();
-      const normalizedId = rawId && !rawId.startsWith("openai-compatible-") ? `openai-compatible-${rawId}` : rawId;
+      const normalizedId =
+        rawId && !rawId.startsWith("openai-compatible-") ? `openai-compatible-${rawId}` : rawId;
       const res = await fetch("/api/provider-nodes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -917,7 +947,12 @@ function AddOpenAICompatibleModal({ isOpen, onClose, onCreated }: any) {
           <Button
             onClick={handleSubmit}
             fullWidth
-            disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || submitting}
+            disabled={
+              !formData.name.trim() ||
+              !formData.prefix.trim() ||
+              !formData.baseUrl.trim() ||
+              submitting
+            }
           >
             {submitting ? "Creating..." : "Create"}
           </Button>
@@ -953,7 +988,9 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }: any) {
       // without it. Server validates that identifier starts with `anthropic-compatible-`.
       const rawId = formData.identifier.trim();
       const normalizedId =
-        rawId && !rawId.startsWith("anthropic-compatible-") ? `anthropic-compatible-${rawId}` : rawId;
+        rawId && !rawId.startsWith("anthropic-compatible-")
+          ? `anthropic-compatible-${rawId}`
+          : rawId;
       const res = await fetch("/api/provider-nodes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1025,7 +1062,12 @@ function AddAnthropicCompatibleModal({ isOpen, onClose, onCreated }: any) {
           <Button
             onClick={handleSubmit}
             fullWidth
-            disabled={!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim() || submitting}
+            disabled={
+              !formData.name.trim() ||
+              !formData.prefix.trim() ||
+              !formData.baseUrl.trim() ||
+              submitting
+            }
           >
             {submitting ? "Creating..." : "Create"}
           </Button>
@@ -1088,7 +1130,9 @@ function ProviderTestResultsView({ results }: any) {
           />
           <div className="min-w-0 flex-[1_1_160px]">
             <span className="block truncate font-medium sm:inline">{r.connectionName}</span>
-            <span className="block truncate text-text-muted sm:ml-1.5 sm:inline">({r.provider})</span>
+            <span className="block truncate text-text-muted sm:ml-1.5 sm:inline">
+              ({r.provider})
+            </span>
           </div>
           {r.latencyMs !== undefined && (
             <span className="shrink-0 text-text-muted font-mono tabular-nums">{r.latencyMs}ms</span>
@@ -1099,7 +1143,9 @@ function ProviderTestResultsView({ results }: any) {
         </div>
       ))}
       {items.length === 0 && (
-        <div className="text-center py-4 text-text-muted text-sm">No active connections found for this group.</div>
+        <div className="text-center py-4 text-text-muted text-sm">
+          No active connections found for this group.
+        </div>
       )}
     </div>
   );

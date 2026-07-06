@@ -3,7 +3,7 @@ import { getMachineData, saveMachineData, deleteMachineData } from "../services/
 
 const CORS_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*"
+  "Access-Control-Allow-Origin": "*",
 };
 
 // Shared secret between dashboard (server) and worker — set via env secret binding.
@@ -16,7 +16,11 @@ function requireCloudSecret(request: Request, env: Env): boolean {
   return secret === env.CLOUD_SYNC_SECRET;
 }
 
-export async function handleSync(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+export async function handleSync(
+  request: Request,
+  env: Env,
+  _ctx: ExecutionContext,
+): Promise<Response> {
   const url = new URL(request.url);
   const machineId = url.pathname.split("/")[2]; // /sync/:machineId
 
@@ -26,8 +30,8 @@ export async function handleSync(request: Request, env: Env, _ctx: ExecutionCont
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "*"
-      }
+        "Access-Control-Allow-Headers": "*",
+      },
     });
   }
 
@@ -69,7 +73,7 @@ async function handleGet(machineId: string, env: Env): Promise<Response> {
   log.info("SYNC", "Data retrieved", { machineId });
   return jsonResponse({
     success: true,
-    data
+    data,
   });
 }
 
@@ -87,7 +91,7 @@ interface SyncBody {
 async function handlePost(request: Request, machineId: string, env: Env): Promise<Response> {
   let body: SyncBody;
   try {
-    body = await request.json() as SyncBody;
+    body = (await request.json()) as SyncBody;
   } catch {
     log.warn("SYNC", "Invalid JSON body", { machineId });
     return jsonResponse({ error: "Invalid JSON body" }, 400);
@@ -99,7 +103,11 @@ async function handlePost(request: Request, machineId: string, env: Env): Promis
     return jsonResponse({ error: "Missing providers array" }, 400);
   }
 
-  const existingData = await getMachineData(machineId, env) || { providers: {}, modelAliases: {}, apiKeys: [] };
+  const existingData = (await getMachineData(machineId, env)) || {
+    providers: {},
+    modelAliases: {},
+    apiKeys: [],
+  };
 
   // Merge providers by ID
   const mergedProviders: Record<string, unknown> = {};
@@ -116,7 +124,12 @@ async function handlePost(request: Request, machineId: string, env: Env): Promis
 
     if (workerProvider) {
       // Merge: token fields from Worker, config fields from Web
-      mergedProviders[providerId] = mergeProvider(webProvider, workerProvider as Record<string, unknown>, changes, providerId);
+      mergedProviders[providerId] = mergeProvider(
+        webProvider,
+        workerProvider as Record<string, unknown>,
+        changes,
+        providerId,
+      );
     } else {
       // New provider from Web
       mergedProviders[providerId] = formatProviderData(webProvider);
@@ -130,7 +143,7 @@ async function handlePost(request: Request, machineId: string, env: Env): Promis
     modelAliases: body.modelAliases || (existingData.modelAliases as Record<string, string>) || {},
     combos: body.combos || (existingData.combos as Array<unknown>) || [],
     apiKeys: body.apiKeys || (existingData.apiKeys as Array<unknown>) || [],
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
 
   // Store in D1 + invalidate cache
@@ -139,13 +152,13 @@ async function handlePost(request: Request, machineId: string, env: Env): Promis
   log.info("SYNC", "Data synced successfully", {
     machineId,
     providerCount: Object.keys(mergedProviders).length,
-    changes
+    changes,
   });
 
   return jsonResponse({
     success: true,
     data: finalData,
-    changes
+    changes,
   });
 }
 
@@ -158,7 +171,7 @@ async function handleDelete(machineId: string, env: Env): Promise<Response> {
   log.info("SYNC", "Data deleted", { machineId });
   return jsonResponse({
     success: true,
-    message: "Data deleted successfully"
+    message: "Data deleted successfully",
   });
 }
 
@@ -166,7 +179,12 @@ async function handleDelete(machineId: string, env: Env): Promise<Response> {
  * Merge provider data: compare updatedAt to decide which source to use
  * Simple logic: newer wins (sync entire provider)
  */
-function mergeProvider(webProvider: Record<string, unknown>, workerProvider: Record<string, unknown>, changes: { updated: string[]; fromWorker: string[] }, providerId: string): Record<string, unknown> {
+function mergeProvider(
+  webProvider: Record<string, unknown>,
+  workerProvider: Record<string, unknown>,
+  changes: { updated: string[]; fromWorker: string[] },
+  providerId: string,
+): Record<string, unknown> {
   const webTime = new Date((webProvider.updatedAt as string) || 0).getTime();
   const workerTime = new Date((workerProvider.updatedAt as string) || 0).getTime();
 
@@ -218,14 +236,20 @@ function formatProviderData(provider: Record<string, unknown>): Record<string, u
     errorCode: provider.errorCode || null,
     rateLimitedUntil: provider.rateLimitedUntil || null,
     createdAt: provider.createdAt,
-    updatedAt: provider.updatedAt || new Date().toISOString()
+    updatedAt: provider.updatedAt || new Date().toISOString(),
   };
 }
 
 /**
  * Update provider status (called when token refresh fails or API errors)
  */
-export function updateProviderStatus(providers: Record<string, unknown>, providerId: string, status: string, error: string | null = null, errorCode: string | null = null): Record<string, unknown> {
+export function updateProviderStatus(
+  providers: Record<string, unknown>,
+  providerId: string,
+  status: string,
+  error: string | null = null,
+  errorCode: string | null = null,
+): Record<string, unknown> {
   const provider = providers[providerId] as Record<string, unknown> | undefined;
   if (provider) {
     provider.status = status;
@@ -243,6 +267,6 @@ export function updateProviderStatus(providers: Record<string, unknown>, provide
 function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: CORS_HEADERS
+    headers: CORS_HEADERS,
   });
 }

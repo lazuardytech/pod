@@ -16,7 +16,10 @@ function ensureDir() {
 export function loadState(): any {
   try {
     if (fs.existsSync(/*turbopackIgnore: true*/ STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ STATE_FILE, "utf8")) as Record<string, unknown>;
+      return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ STATE_FILE, "utf8")) as Record<
+        string,
+        unknown
+      >;
     }
   } catch (_e) {
     /* ignore corrupt state */
@@ -31,7 +34,8 @@ export function saveState(state: any) {
 
 export function clearState() {
   try {
-    if (fs.existsSync(/*turbopackIgnore: true*/ STATE_FILE)) fs.unlinkSync(/*turbopackIgnore: true*/ STATE_FILE);
+    if (fs.existsSync(/*turbopackIgnore: true*/ STATE_FILE))
+      fs.unlinkSync(/*turbopackIgnore: true*/ STATE_FILE);
   } catch (_e) {
     /* ignore */
   }

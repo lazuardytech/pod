@@ -43,7 +43,8 @@ function isPrivateHostname(hostname: string): boolean {
   if (!hostname) return true;
   const h = hostname.toLowerCase().replace(/\.+$/, "");
   if (PRIVATE_HOSTNAMES.has(h)) return true;
-  if (PRIVATE_HOST_SUFFIXES.some((suffix) => h === suffix.slice(1) || h.endsWith(suffix))) return true;
+  if (PRIVATE_HOST_SUFFIXES.some((suffix) => h === suffix.slice(1) || h.endsWith(suffix)))
+    return true;
   // Bare numeric IPv4
   if (PRIVATE_IP_PATTERNS.some((re) => re.test(h))) return true;
   // Bracketed IPv6 e.g. [::1]
@@ -62,7 +63,10 @@ export type ValidateFetchUrlResult = { ok: true; url: URL } | { ok: false; error
  * Validate a user-supplied URL for use in server-side fetch calls. Blocks
  * non-http(s) protocols and private/internal IP ranges.
  */
-export function validateFetchUrl(url: unknown, options: ValidateFetchUrlOptions = {}): ValidateFetchUrlResult {
+export function validateFetchUrl(
+  url: unknown,
+  options: ValidateFetchUrlOptions = {},
+): ValidateFetchUrlResult {
   const { allowPrivate = false } = options ?? ({} as any);
   if (!url || typeof url !== "string") {
     return { ok: false, error: "URL is required" };

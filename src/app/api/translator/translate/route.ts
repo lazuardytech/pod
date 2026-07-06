@@ -17,7 +17,10 @@ export async function POST(request: any) {
     const body = payload.body;
 
     if (!step || !body) {
-      return NextResponse.json({ success: false, error: "Step and body required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Step and body required" },
+        { status: 400 },
+      );
     }
 
     const reqBody = asApiRecord(body);
@@ -29,7 +32,10 @@ export async function POST(request: any) {
         const { provider, model } = parseModel(asString(clientBody.model));
         const sourceFormat = detectFormat(clientBody);
         const targetFormat = getTargetFormat(provider);
-        return NextResponse.json({ success: true, result: { provider, model, sourceFormat, targetFormat } });
+        return NextResponse.json({
+          success: true,
+          result: { provider, model, sourceFormat, targetFormat },
+        });
       }
 
       case 2: {
@@ -62,7 +68,10 @@ export async function POST(request: any) {
         const model = asString(reqBody.model);
 
         if (!provider || !model) {
-          return NextResponse.json({ success: false, error: "provider and model required" }, { status: 400 });
+          return NextResponse.json(
+            { success: false, error: "provider and model required" },
+            { status: 400 },
+          );
         }
 
         const targetFormat = getTargetFormat(provider);

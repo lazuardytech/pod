@@ -16,7 +16,12 @@ export class OAuthService {
   /**
    * Build authorization URL
    */
-  buildAuthUrl(redirectUri: string, state: string, codeChallenge: string, extraParams: Record<string, string> = {}) {
+  buildAuthUrl(
+    redirectUri: string,
+    state: string,
+    codeChallenge: string,
+    extraParams: Record<string, string> = {},
+  ) {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: "code",

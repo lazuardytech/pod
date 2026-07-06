@@ -37,7 +37,10 @@ export async function PUT(request: any, { params }: { params: any }) {
     if (name !== undefined) updateData.name = name;
     if (limitType !== undefined) {
       if (!["unlimited", "limited"].includes(asString(limitType))) {
-        return NextResponse.json({ error: "limitType must be 'unlimited' or 'limited'" }, { status: 400 });
+        return NextResponse.json(
+          { error: "limitType must be 'unlimited' or 'limited'" },
+          { status: 400 },
+        );
       }
       updateData.limitType = limitType;
     }
@@ -54,10 +57,16 @@ export async function PUT(request: any, { params }: { params: any }) {
           ? Number(updateData.concurrentRequests)
           : (existing.concurrentRequests ?? 0);
       if (!Number.isFinite(rpm) || !Number.isInteger(rpm) || rpm <= 0) {
-        return NextResponse.json({ error: "Request per Minute must be a positive integer" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Request per Minute must be a positive integer" },
+          { status: 400 },
+        );
       }
       if (!Number.isFinite(concurrent) || !Number.isInteger(concurrent) || concurrent <= 0) {
-        return NextResponse.json({ error: "Concurrent Request must be a positive integer" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Concurrent Request must be a positive integer" },
+          { status: 400 },
+        );
       }
     }
 

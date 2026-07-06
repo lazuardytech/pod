@@ -30,7 +30,8 @@ export class GithubExecutor extends BaseExecutor {
       "user-agent": GITHUB_COPILOT.USER_AGENT,
       "openai-intent": "conversation-panel",
       "x-github-api-version": GITHUB_COPILOT.API_VERSION,
-      "x-request-id": crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      "x-request-id":
+        crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       "x-vscode-user-agent-library-version": "electron-fetch",
       "X-Initiator": "user",
       Accept: stream ? "text/event-stream" : "application/json",
@@ -62,7 +63,8 @@ export class GithubExecutor extends BaseExecutor {
         // Add to system message
         const systemIdx = body.messages.findIndex((m) => m.role === "system");
         if (systemIdx >= 0) {
-          body.messages[systemIdx].content = systemInstruction + "\n\n" + body.messages[systemIdx].content;
+          body.messages[systemIdx].content =
+            systemInstruction + "\n\n" + body.messages[systemIdx].content;
         } else {
           body.messages.unshift({ role: "system", content: systemInstruction });
         }
@@ -74,8 +76,11 @@ export class GithubExecutor extends BaseExecutor {
           .pop();
         if (lastUserIdx >= 0) {
           const userMsg = body.messages[lastUserIdx];
-          const userContent = typeof userMsg.content === "string" ? userMsg.content : JSON.stringify(userMsg.content);
-          userMsg.content = "Respond with ONLY raw JSON (no markdown, no backticks, no code blocks): " + userContent;
+          const userContent =
+            typeof userMsg.content === "string" ? userMsg.content : JSON.stringify(userMsg.content);
+          userMsg.content =
+            "Respond with ONLY raw JSON (no markdown, no backticks, no code blocks): " +
+            userContent;
         }
       }
     }
@@ -180,7 +185,10 @@ export class GithubExecutor extends BaseExecutor {
       body: this.sanitizeMessagesForChatCompletions(options.body),
     };
 
-    const result = await super.execute({ ...sanitizedOptions, proxyOptions: options.proxyOptions || null });
+    const result = await super.execute({
+      ...sanitizedOptions,
+      proxyOptions: options.proxyOptions || null,
+    });
 
     if (result.response.status === HTTP_STATUS.BAD_REQUEST) {
       const errorBody = await result.response.clone().text();
@@ -198,7 +206,15 @@ export class GithubExecutor extends BaseExecutor {
     return result;
   }
 
-  async executeWithResponsesEndpoint({ model, body, stream, credentials, signal, log, proxyOptions = null }) {
+  async executeWithResponsesEndpoint({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log,
+    proxyOptions = null,
+  }) {
     const url = this.config.responsesUrl;
     const headers = this.buildHeaders(credentials, stream);
 
@@ -333,7 +349,10 @@ export class GithubExecutor extends BaseExecutor {
         OAUTH_ENDPOINTS.github.token,
         {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
           body: new URLSearchParams(params),
         },
         proxyOptions,
@@ -356,11 +375,19 @@ export class GithubExecutor extends BaseExecutor {
     let copilotResult = await this.refreshCopilotToken(credentials.accessToken, log, proxyOptions);
 
     if (!copilotResult && credentials.refreshToken) {
-      const githubTokens = await this.refreshGitHubToken(credentials.refreshToken, log, proxyOptions);
+      const githubTokens = await this.refreshGitHubToken(
+        credentials.refreshToken,
+        log,
+        proxyOptions,
+      );
       if (githubTokens?.accessToken) {
         copilotResult = await this.refreshCopilotToken(githubTokens.accessToken, log, proxyOptions);
         if (copilotResult) {
-          return { ...githubTokens, copilotToken: copilotResult.token, copilotTokenExpiresAt: copilotResult.expiresAt };
+          return {
+            ...githubTokens,
+            copilotToken: copilotResult.token,
+            copilotTokenExpiresAt: copilotResult.expiresAt,
+          };
         }
         return githubTokens;
       }

@@ -118,7 +118,10 @@ export class BaseExecutor {
       const { attempts, delayMs } = resolveRetryEntry(retryConfig[statusKey]);
       if (attempts <= 0 || retryAttemptsByUrl[urlIndex] >= attempts) return false;
       retryAttemptsByUrl[urlIndex]++;
-      log?.debug?.("RETRY", `${reason} retry ${retryAttemptsByUrl[urlIndex]}/${attempts} after ${delayMs / 1000}s`);
+      log?.debug?.(
+        "RETRY",
+        `${reason} retry ${retryAttemptsByUrl[urlIndex]}/${attempts} after ${delayMs / 1000}s`,
+      );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       return true;
     };
@@ -136,7 +139,9 @@ export class BaseExecutor {
         () => connectCtrl.abort(new Error("fetch connect timeout")),
         FETCH_CONNECT_TIMEOUT_MS,
       );
-      const mergedSignal = signal ? AbortSignal.any([signal, connectCtrl.signal]) : connectCtrl.signal;
+      const mergedSignal = signal
+        ? AbortSignal.any([signal, connectCtrl.signal])
+        : connectCtrl.signal;
 
       try {
         const response = await proxyAwareFetch(

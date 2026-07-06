@@ -25,7 +25,10 @@ export async function initRateLimit(): Promise<RedisBackend | MemoryBackend> {
       console.log("[RateLimit] Redis backend active");
       return _backend;
     } catch (err) {
-      console.warn("[RateLimit] Redis connect failed, falling back to in-memory:", (err as Error)?.message || err);
+      console.warn(
+        "[RateLimit] Redis connect failed, falling back to in-memory:",
+        (err as Error)?.message || err,
+      );
     }
   }
 

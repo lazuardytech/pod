@@ -39,7 +39,9 @@ export class QoderService {
       throw new Error("Missing QODER OAuth client credentials");
     }
 
-    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
+    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      "base64",
+    );
 
     const response = await fetch(this.config.tokenUrl, {
       method: "POST",
@@ -74,7 +76,9 @@ export class QoderService {
       throw new Error("Missing QODER OAuth client credentials");
     }
 
-    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString("base64");
+    const basicAuth = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      "base64",
+    );
 
     const response = await fetch(this.config.tokenUrl, {
       method: "POST",
@@ -104,9 +108,12 @@ export class QoderService {
    */
   // todo(ts): Qoder user info shape — keep loose.
   async getUserInfo(accessToken: string): Promise<any> {
-    const response = await fetch(`${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`, {
-      headers: { Accept: "application/json" },
-    });
+    const response = await fetch(
+      `${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`,
+      {
+        headers: { Accept: "application/json" },
+      },
+    );
 
     if (!response.ok) {
       const error = await response.text();
