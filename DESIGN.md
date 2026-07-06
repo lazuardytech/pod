@@ -1,18 +1,18 @@
 # Pod Design
 
-Pod uses a compact, dark-only control-panel UI inspired by Linear.
+Pod uses a compact, dark-only control-panel UI inspired by Linear — technical, dense, calm, and high-signal.
 
 ## Design Direction
 
-- Tone: technical, dense, calm, high-signal
-- Theme: dark only
-- Accent: a single primary highlight for important actions
-- Default feel: operational dashboard, not marketing site
+- **Tone**: technical, dense, calm, high-signal
+- **Theme**: dark only (no light mode)
+- **Accent**: a single neon-lime primary highlight for important actions
+- **Default feel**: operational dashboard, not marketing site
 
 ## Core Rules
 
 1. Keep the darkest surface as the page background.
-2. Reserve the primary accent for CTA and active states.
+2. Reserve the primary accent for CTAs and active states.
 3. Prefer compact spacing and small control density.
 4. Use subtle elevation; avoid decorative shadows.
 5. Favor strong contrast for text and status clarity.
@@ -20,39 +20,40 @@ Pod uses a compact, dark-only control-panel UI inspired by Linear.
 
 ## Color Model
 
-- Background: near-black
-- Surface: dark graphite
-- Elevated surface: slightly lighter dark slate
-- Border: muted charcoal
-- Primary text: near-white
-- Secondary text: muted gray
-- Primary accent: neon-lime family
-- Success: green
-- Warning/Error: red
-- Informational accents: blue/cyan, used sparingly
+| Token            | Role                        |
+| ---------------- | --------------------------- |
+| Background       | Near-black                  |
+| Surface          | Dark graphite               |
+| Elevated surface | Slightly lighter dark slate |
+| Border           | Muted charcoal              |
+| Primary text     | Near-white                  |
+| Secondary text   | Muted gray                  |
+| Primary accent   | Neon-lime family            |
+| Success          | Green                       |
+| Warning / Error  | Red                         |
+| Informational    | Blue / cyan, used sparingly |
 
 ## Typography
 
-- Primary UI font: `Inter`
-- Monospace: `Berkeley Mono`-style fallback stack
-- General style: tight tracking, compact line height, strong hierarchy
-- Use mono for model IDs, provider aliases, endpoints, and logs
+- **UI font**: `Inter` (tight tracking, compact line height, strong hierarchy)
+- **Monospace**: `Berkeley Mono`-style fallback stack
+- Use mono for model IDs, provider aliases, endpoints, and log output
 
 ## Spacing and Shape
 
-- Base spacing unit: `4px`
-- Standard component radius: `6px`
-- Compact internal gaps are preferred over airy layouts
-- Use pill shapes only for badges, chips, or toggled states
+- **Base spacing unit**: `4px`
+- **Standard component radius**: `6px`
+- Compact internal gaps preferred over airy layouts
+- Pill shapes reserved for badges, chips, and toggled states
 
 ## Component Rules
 
 ### Buttons
 
-- Primary buttons use the primary accent with dark foreground
+- Primary buttons use the primary accent with dark foreground (`bg-primary` + `text-primary-fg`)
 - Secondary buttons stay neutral and low-noise
 - Destructive actions use red
-- Ghost buttons should read as tertiary controls, not hidden actions
+- Ghost buttons read as tertiary controls, not hidden actions
 
 ### Cards
 
@@ -62,27 +63,30 @@ Pod uses a compact, dark-only control-panel UI inspired by Linear.
 
 ### Inputs
 
-- Inputs should stay dark and calm by default
-- Focus state should be obvious but not loud
+- Dark and calm by default
+- Focus state is obvious but not loud
 - Never sacrifice readability for style
 
-### Status and Feedback
+### Status & Feedback
 
 - Use explicit success, warning, and error colors
 - Health, usage, lockout, and queue states must be easy to scan
 - Prefer concise text over decorative UI
+- Use `ConfirmModal` — never `window.confirm()`
 
-## Navigation
+### Navigation
 
-- Sidebar and dashboard navigation should feel dense and fast
-- Active state should be immediately visible
-- Route grouping should stay simple and operational
+- Dashboard pages at top-level routes (no `/dashboard` prefix)
+- Sidebar navigation feels dense and fast
+- Active state immediately visible
+- Route header actions go through `headerActionStore`
 
-## Offline and PWA UX
+## Offline & PWA UX
 
-- Offline state should be visible, not implicit
+- Offline state must be visible, not implicit
 - Pending sync state must be user-visible
-- Dashboard reads should degrade gracefully
+- Dashboard reads degrade gracefully (offlineJsonCache)
+- Offline mutations queue safely and idempotently
 - Avoid flows that depend on silent background refresh assumptions
 
 ## Do
@@ -94,14 +98,16 @@ Pod uses a compact, dark-only control-panel UI inspired by Linear.
 
 ## Do Not
 
-- Do not add light-mode patterns
-- Do not use the primary accent as decoration
-- Do not introduce large empty sections without strong purpose
-- Do not add visual noise that competes with logs, models, or operational data
+- Add light-mode patterns
+- Use the primary accent as decoration
+- Introduce large empty sections without strong purpose
+- Add visual noise that competes with logs, models, or operational data
 
 ## Implementation Pointers
 
-- Global tokens live in `src/app/globals.css`
-- Shared UI components live in `src/shared/components`
-- Offline/PWA UI lives in `src/shared/services` and `src/shared/components`
-- Dashboard pages should reuse existing layout and component patterns before inventing new ones
+| Resource               | Location                                                             |
+| ---------------------- | -------------------------------------------------------------------- |
+| Global design tokens   | `src/app/globals.css`                                                |
+| Shared UI components   | `src/shared/components`                                              |
+| Offline / PWA services | `src/shared/services` + `src/shared/components`                      |
+| Dashboard pages        | Reuse existing layout & component patterns before inventing new ones |

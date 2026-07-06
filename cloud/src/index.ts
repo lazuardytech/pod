@@ -156,7 +156,7 @@ export default {
       // ========== OLD FORMAT: /{machineId}/v1/... ==========
 
       // Machine ID based chat endpoint
-      if (path.match(/^\/[^\/]+\/v1\/chat\/completions$/) && request.method === "POST") {
+      if (path.match(/^\/[^/]+\/v1\/chat\/completions$/) && request.method === "POST") {
         const machineId = path.split("/")[1]!;
         const response = await handleChat(request, env, _ctx, machineId);
         log.response(response.status, Date.now() - startTime);
@@ -164,7 +164,7 @@ export default {
       }
 
       // Machine ID based embeddings endpoint
-      if (path.match(/^\/[^\/]+\/v1\/embeddings$/) && request.method === "POST") {
+      if (path.match(/^\/[^/]+\/v1\/embeddings$/) && request.method === "POST") {
         const machineId = path.split("/")[1]!;
         const response = await handleEmbeddings(request, env, _ctx, machineId);
         log.response(response.status, Date.now() - startTime);
@@ -172,7 +172,7 @@ export default {
       }
 
       // Machine ID based messages endpoint (Claude format)
-      if (path.match(/^\/[^\/]+\/v1\/messages$/) && request.method === "POST") {
+      if (path.match(/^\/[^/]+\/v1\/messages$/) && request.method === "POST") {
         const machineId = path.split("/")[1]!;
         const response = await handleChat(request, env, _ctx, machineId);
         log.response(response.status, Date.now() - startTime);
@@ -180,7 +180,7 @@ export default {
       }
 
       // Machine ID based api/chat endpoint (Ollama format)
-      if (path.match(/^\/[^\/]+\/v1\/api\/chat$/) && request.method === "POST") {
+      if (path.match(/^\/[^/]+\/v1\/api\/chat$/) && request.method === "POST") {
         const machineId = path.split("/")[1]!;
         const clonedReq = request.clone();
         const body = (await clonedReq.json()) as { model?: string };
@@ -191,7 +191,7 @@ export default {
       }
 
       // Machine ID based verify endpoint
-      if (path.match(/^\/[^\/]+\/v1\/verify$/) && request.method === "GET") {
+      if (path.match(/^\/[^/]+\/v1\/verify$/) && request.method === "GET") {
         const machineId = path.split("/")[1]!;
         const response = await handleVerify(request, env, machineId);
         log.response(response.status, Date.now() - startTime);

@@ -1,15 +1,15 @@
-# Pod -- Documentation Index
+# Pod — Documentation Index
 
-**Version:** v0.0.79 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128
+**Version:** v0.0.79 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128 | **Deployed at:** pod.lazuardy.tech
 
 ## Reading Order (New Contributors)
 
-1. [PRD.md](PRD.md) -- what Pod is, goals, constraints
-2. [knowledge/01-overview.md](knowledge/01-overview.md) -- quick facts, repo layout
-3. [knowledge/02-conventions.md](knowledge/02-conventions.md) -- coding and naming rules
-4. [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) -- commands, verification
-5. [knowledge/04-gotchas.md](knowledge/04-gotchas.md) -- common traps
-6. [knowledge/05-open-issues.md](knowledge/05-open-issues.md) -- active watchlist
+1. [PRD.md](PRD.md) — what Pod is, goals, constraints
+2. [knowledge/01-overview.md](knowledge/01-overview.md) — quick facts, repo layout
+3. [knowledge/02-conventions.md](knowledge/02-conventions.md) — coding and naming rules
+4. [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) — commands, verification
+5. [knowledge/04-gotchas.md](knowledge/04-gotchas.md) — common traps
+6. [knowledge/05-open-issues.md](knowledge/05-open-issues.md) — active watchlist
 
 ## Architecture Deep Dives
 
@@ -32,12 +32,12 @@
 | [../CHANGELOG.md](../CHANGELOG.md)                 | Release history                               |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md)           | Contribution guidelines                       |
 | [../SECURITY.md](../SECURITY.md)                   | Vulnerability disclosure policy               |
-| [../docs/API_INTERNAL.md](../docs/API_INTERNAL.md) | Internal Dashboard API reference              |
+| [../docs/API_INTERNAL.md](../docs/API_INTERNAL.md) | Internal dashboard API reference              |
 
 ## Other Directories
 
 | Path     | Purpose                                                            |
 | -------- | ------------------------------------------------------------------ |
-| issues/  | Historical audit and security analysis -- verify against live code |
+| issues/  | Historical audit and security analysis — verify against live code  |
 | reports/ | Release rollups and verification reports by version                |
-| plan/    | Draft plans (e.g. multi-instance optimization)                     |
+| plan/    | Draft plans (e.g. multi-instance optimization, JS-to-TS migration) |

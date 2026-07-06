@@ -321,7 +321,7 @@ export async function markAccountUnavailable(
   }
   if (!shouldFallback) return { shouldFallback: false, cooldownMs: 0 };
   const settingsData = await getSettings().catch((): Record<string, unknown> => ({}));
-  const minimumLockoutMinutes = Number(settingsData.minimumLockoutMinutes) ?? 60;
+  const minimumLockoutMinutes = Number(settingsData.minimumLockoutMinutes ?? 60);
   const minimumLockoutMs = Math.max(minimumLockoutMinutes, 0) * 60 * 1000;
   const prevLockCount = getModelLockCount(conn, model);
   const newLockCount = prevLockCount + 1;

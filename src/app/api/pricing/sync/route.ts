@@ -37,7 +37,8 @@ export async function POST(request: any) {
     if (action === "start") {
       // ponytail: guard at trust boundary — reject interval < 60s (CodeQL)
       const raw = Number(body.intervalMs) || 3600000;
-      const intervalMs = typeof raw === "number" && Number.isFinite(raw) && raw >= 60_000 ? raw : 3_600_000;
+      const intervalMs =
+        typeof raw === "number" && Number.isFinite(raw) && raw >= 60_000 ? raw : 3_600_000;
       startPeriodicSync(intervalMs);
       return NextResponse.json({ success: true, action: "start", ...getSyncStatus() });
     }

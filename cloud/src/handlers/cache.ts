@@ -1,4 +1,3 @@
-import { errorResponse } from "open-sse/utils/error.js";
 import { extractBearerToken, parseApiKey } from "../utils/apiKey.js";
 import { getMachineData } from "../services/storage.js";
 import * as log from "../utils/logger.js";
