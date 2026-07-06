@@ -391,7 +391,10 @@ describe("handleEmbeddingsCore — input validation", () => {
   });
 
   it("empty string input passes validation", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(makeProviderResponse(VALID_EMBEDDING_RESPONSE)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(makeProviderResponse(VALID_EMBEDDING_RESPONSE)),
+    );
     const result = await handleEmbeddingsCore(
       makeOptions({
         body: { model: "text-embedding-ada-002", input: "" },
@@ -403,7 +406,10 @@ describe("handleEmbeddingsCore — input validation", () => {
   });
 
   it("empty array input passes validation and reaches provider", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(makeProviderResponse(VALID_EMBEDDING_RESPONSE)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(makeProviderResponse(VALID_EMBEDDING_RESPONSE)),
+    );
     const result = await handleEmbeddingsCore(
       makeOptions({
         body: { model: "text-embedding-ada-002", input: [] },

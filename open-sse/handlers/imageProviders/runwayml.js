@@ -21,9 +21,20 @@ export default {
     const isVideo = !model.includes("image");
     const ratio = sizeToAspectRatio(body.size);
     if (isVideo) {
-      return { promptText: body.prompt, model, ratio, duration: 5, ...(body.image ? { promptImage: body.image } : {}) };
+      return {
+        promptText: body.prompt,
+        model,
+        ratio,
+        duration: 5,
+        ...(body.image ? { promptImage: body.image } : {}),
+      };
     }
-    return { promptText: body.prompt, model, ratio, ...(body.image ? { referenceImages: [{ uri: body.image }] } : {}) };
+    return {
+      promptText: body.prompt,
+      model,
+      ratio,
+      ...(body.image ? { referenceImages: [{ uri: body.image }] } : {}),
+    };
   },
   async parseResponse(response, { headers }) {
     const { id } = await response.json();
@@ -36,7 +47,8 @@ export default {
       if (!r.ok) throw new Error(`Runway status ${r.status}`);
       const s = await r.json();
       if (s.status === "SUCCEEDED") return s;
-      if (s.status === "FAILED" || s.status === "CANCELLED") throw new Error(s.failure || "Runway task failed");
+      if (s.status === "FAILED" || s.status === "CANCELLED")
+        throw new Error(s.failure || "Runway task failed");
     }
     throw new Error("Runway polling timeout");
   },

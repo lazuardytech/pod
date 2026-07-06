@@ -40,7 +40,9 @@ describe("GrokWebExecutor", () => {
     it("sends bare token as sso=cookie", async () => {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model: "grok-4",
@@ -55,7 +57,9 @@ describe("GrokWebExecutor", () => {
     it("strips sso= prefix from apiKey", async () => {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model: "grok-4",
@@ -74,7 +78,9 @@ describe("GrokWebExecutor", () => {
     async function executeOnce() {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model: "grok-4",
@@ -101,7 +107,9 @@ describe("GrokWebExecutor", () => {
     it("sends x-statsig-id and x-xai-request-id", async () => {
       const headers = await executeOnce();
       expect(headers["x-statsig-id"]).toBeTruthy();
-      expect(headers["x-xai-request-id"]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(headers["x-xai-request-id"]).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
     });
 
     it("sends Sec-* headers for Cloudflare bypass", async () => {
@@ -125,7 +133,9 @@ describe("GrokWebExecutor", () => {
     async function getPayload(model) {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model,
@@ -191,7 +201,9 @@ describe("GrokWebExecutor", () => {
     async function getPayload() {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model: "grok-4",
@@ -280,7 +292,9 @@ describe("GrokWebExecutor", () => {
     it("includes usage token estimates", async () => {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "Hello world" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "Hello world" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       const { response } = await exec.execute({
         model: "grok-4",
@@ -330,7 +344,9 @@ describe("GrokWebExecutor", () => {
     it("returns id starting with chatcmpl-grok-", async () => {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       const { response } = await exec.execute({
         model: "grok-4",
@@ -389,7 +405,9 @@ describe("GrokWebExecutor", () => {
     }
 
     it("first chunk has role=assistant delta", async () => {
-      global.fetch = vi.fn().mockResolvedValue(mockGrokNdjson([{ result: { response: { token: "answer" } } }]));
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(mockGrokNdjson([{ result: { response: { token: "answer" } } }]));
       const { dataLines } = await readSSEChunks();
       const first = JSON.parse(dataLines[0]);
       expect(first.object).toBe("chat.completion.chunk");
@@ -400,7 +418,10 @@ describe("GrokWebExecutor", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValue(
-          mockGrokNdjson([{ result: { response: { token: "Hello" } } }, { result: { response: { token: " world" } } }]),
+          mockGrokNdjson([
+            { result: { response: { token: "Hello" } } },
+            { result: { response: { token: " world" } } },
+          ]),
         );
       const { dataLines, text } = await readSSEChunks();
       const contentChunks = dataLines
@@ -415,7 +436,9 @@ describe("GrokWebExecutor", () => {
     });
 
     it("emits stop finish_reason at end", async () => {
-      global.fetch = vi.fn().mockResolvedValue(mockGrokNdjson([{ result: { response: { token: "answer" } } }]));
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(mockGrokNdjson([{ result: { response: { token: "answer" } } }]));
       const { dataLines } = await readSSEChunks();
       // Filter out [DONE] marker before parsing JSON
       const jsonLines = dataLines.filter((l) => l !== "[DONE]");
@@ -447,7 +470,9 @@ describe("GrokWebExecutor", () => {
       );
       const { dataLines } = await readSSEChunks();
       const nonMetadata = dataLines.slice(1, -1).filter((l) => l !== "[DONE]");
-      const deltas = nonMetadata.map((l) => JSON.parse(l).choices[0].delta).filter((d) => d.content);
+      const deltas = nonMetadata
+        .map((l) => JSON.parse(l).choices[0].delta)
+        .filter((d) => d.content);
       const hasThinking = deltas.some((d) => d.content.includes("I am thinking"));
       const hasReasoning = deltas.some((d) => d.reasoning_content);
       expect(hasThinking).toBe(true);
@@ -473,7 +498,9 @@ describe("GrokWebExecutor", () => {
       const { dataLines } = await readSSEChunks();
       const jsonLines = dataLines.filter((l) => l !== "[DONE]");
       const nonFirstLast = jsonLines.slice(1, -1);
-      const deltas = nonFirstLast.map((l) => JSON.parse(l).choices[0].delta).filter((d) => d.content);
+      const deltas = nonFirstLast
+        .map((l) => JSON.parse(l).choices[0].delta)
+        .filter((d) => d.content);
       // Only partial token delta is emitted, modelResponse fullMessage is dropped
       expect(deltas.some((d) => d.content.includes("partial"))).toBe(true);
       expect(deltas.some((d) => d.content.includes("final message"))).toBe(false);
@@ -589,7 +616,9 @@ describe("GrokWebExecutor", () => {
     it("handles error events in NDJSON stream", async () => {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ error: { message: "Upstream internal error", code: "INTERNAL" } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ error: { message: "Upstream internal error", code: "INTERNAL" } }]),
+        );
       const exec = new GrokWebExecutor();
       const { response } = await exec.execute({
         model: "grok-4",
@@ -609,7 +638,9 @@ describe("GrokWebExecutor", () => {
     async function getBody(messages) {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model: "grok-4",
@@ -671,7 +702,9 @@ describe("GrokWebExecutor", () => {
     it("POSTs to grok.com/rest/app-chat/conversations/new", async () => {
       global.fetch = vi
         .fn()
-        .mockResolvedValue(mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]));
+        .mockResolvedValue(
+          mockGrokNdjson([{ result: { response: { modelResponse: { message: "ok" } } } }]),
+        );
       const exec = new GrokWebExecutor();
       await exec.execute({
         model: "grok-4",
@@ -679,7 +712,9 @@ describe("GrokWebExecutor", () => {
         stream: false,
         credentials: { apiKey: "t" },
       });
-      expect(global.fetch.mock.calls[0][0]).toBe("https://grok.com/rest/app-chat/conversations/new");
+      expect(global.fetch.mock.calls[0][0]).toBe(
+        "https://grok.com/rest/app-chat/conversations/new",
+      );
       expect(global.fetch.mock.calls[0][1].method).toBe("POST");
     });
   });

@@ -47,19 +47,20 @@ Combos define model groups with fallback and round-robin strategies. When a prov
 
 ## Failure Handling
 
-| Failure type | Response |
-|-------------|----------|
-| Upstream error before streaming | Structured JSON error via `sanitizeError` |
-| Mid-stream failure | Graceful degradation (connection closes cleanly) |
-| Rate limit / overload | Provider cooldown with exponential backoff |
-| Auth failure | Early rejection before reaching provider |
-| Vercel relay 502/504 | Retry once (timeout = pod timeout - 5s) |
-| Kiro transient overload | Body-gated retry on overload markers |
-| Raw upstream error body | Never returned to client (leak prevention) |
+| Failure type                    | Response                                         |
+| ------------------------------- | ------------------------------------------------ |
+| Upstream error before streaming | Structured JSON error via `sanitizeError`        |
+| Mid-stream failure              | Graceful degradation (connection closes cleanly) |
+| Rate limit / overload           | Provider cooldown with exponential backoff       |
+| Auth failure                    | Early rejection before reaching provider         |
+| Vercel relay 502/504            | Retry once (timeout = pod timeout - 5s)          |
+| Kiro transient overload         | Body-gated retry on overload markers             |
+| Raw upstream error body         | Never returned to client (leak prevention)       |
 
 ## Observability
 
 Request details are captured per-request and stored in SQLite:
+
 - Timestamps, latency, status codes
 - Provider, model, token counts
 - Configurable via `OBSERVABILITY_*` env vars

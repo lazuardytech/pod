@@ -113,12 +113,18 @@ export function claudeToOpenAIResponse(chunk, state) {
       // Extract usage from message_delta event (Claude native format)
       // Normalize to OpenAI format (prompt_tokens/completion_tokens) for consistent logging
       if (chunk.usage && typeof chunk.usage === "object") {
-        const inputTokens = typeof chunk.usage.input_tokens === "number" ? chunk.usage.input_tokens : 0;
-        const outputTokens = typeof chunk.usage.output_tokens === "number" ? chunk.usage.output_tokens : 0;
+        const inputTokens =
+          typeof chunk.usage.input_tokens === "number" ? chunk.usage.input_tokens : 0;
+        const outputTokens =
+          typeof chunk.usage.output_tokens === "number" ? chunk.usage.output_tokens : 0;
         const cacheReadTokens =
-          typeof chunk.usage.cache_read_input_tokens === "number" ? chunk.usage.cache_read_input_tokens : 0;
+          typeof chunk.usage.cache_read_input_tokens === "number"
+            ? chunk.usage.cache_read_input_tokens
+            : 0;
         const cacheCreationTokens =
-          typeof chunk.usage.cache_creation_input_tokens === "number" ? chunk.usage.cache_creation_input_tokens : 0;
+          typeof chunk.usage.cache_creation_input_tokens === "number"
+            ? chunk.usage.cache_creation_input_tokens
+            : 0;
 
         // prompt_tokens = input_tokens + cache_read + cache_creation (all prompt-side tokens)
         const promptTokens = inputTokens + cacheReadTokens + cacheCreationTokens;
@@ -157,7 +163,8 @@ export function claudeToOpenAIResponse(chunk, state) {
           if (cacheRead > 0 || cacheCreate > 0) {
             finalChunk.usage.prompt_tokens_details = {};
             if (cacheRead > 0) finalChunk.usage.prompt_tokens_details.cached_tokens = cacheRead;
-            if (cacheCreate > 0) finalChunk.usage.prompt_tokens_details.cache_creation_tokens = cacheCreate;
+            if (cacheCreate > 0)
+              finalChunk.usage.prompt_tokens_details.cache_creation_tokens = cacheCreate;
           }
         }
 
@@ -169,7 +176,8 @@ export function claudeToOpenAIResponse(chunk, state) {
 
     case "message_stop": {
       if (!state.finishReasonSent) {
-        const finishReason = state.finishReason || (state.toolCalls?.size > 0 ? "tool_calls" : "stop");
+        const finishReason =
+          state.finishReason || (state.toolCalls?.size > 0 ? "tool_calls" : "stop");
         const usageObj =
           state.usage && typeof state.usage === "object"
             ? {

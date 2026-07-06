@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -211,7 +211,8 @@ describe("minimum lockout multiplier — modelLockCount * minimumLockoutMinutes"
   it("applies 2x minimum lockout on second lock of same model (modelLockCount=2) after lock expires", async () => {
     const conn = await seedConnection();
     const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
-    const { getModelLockKey, getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { getModelLockKey, getModelLockCountKey } =
+      await import("open-sse/services/accountFallback.js");
     const { updateSettings } = await import("@/lib/localDb.js");
 
     await updateSettings({ minimumLockoutMinutes: 1 });

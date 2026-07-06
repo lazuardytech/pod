@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createStreamController, createDisconnectAwareStream } from "../../open-sse/utils/streamHandler.js";
+import {
+  createDisconnectAwareStream,
+  createStreamController,
+} from "../../open-sse/utils/streamHandler.js";
 
 // ─── createStreamController ───────────────────────────────────────────
 
@@ -16,7 +19,10 @@ describe("createStreamController — disconnect and error handling", () => {
     const onDisconnect = vi.fn();
     const controller = createStreamController({ onDisconnect });
     controller.handleDisconnect("client_closed");
-    expect(onDisconnect).toHaveBeenCalledWith({ reason: "client_closed", duration: expect.any(Number) });
+    expect(onDisconnect).toHaveBeenCalledWith({
+      reason: "client_closed",
+      duration: expect.any(Number),
+    });
   });
 
   it("aborts the signal after disconnect timeout", async () => {
@@ -109,7 +115,10 @@ function mockReadableStream(readResults) {
 describe("createDisconnectAwareStream — mid-stream failure behavior", () => {
   it("passes chunks through until stream completes", async () => {
     const streamController = createStreamController();
-    const source = mockReadableStream([new TextEncoder().encode("chunk1"), new TextEncoder().encode("chunk2")]);
+    const source = mockReadableStream([
+      new TextEncoder().encode("chunk1"),
+      new TextEncoder().encode("chunk2"),
+    ]);
     const transform = new TransformStream();
     const piped = source.pipeThrough(transform);
 
@@ -134,7 +143,10 @@ describe("createDisconnectAwareStream — mid-stream failure behavior", () => {
     const controllerWithOnError = createStreamController({ onError });
     // Reuse but we'll observe via isConnected+manual
 
-    const source = mockReadableStream([new TextEncoder().encode("chunk1"), new Error("connection dropped")]);
+    const source = mockReadableStream([
+      new TextEncoder().encode("chunk1"),
+      new Error("connection dropped"),
+    ]);
     const transform = new TransformStream();
     const piped = source.pipeThrough(transform);
 

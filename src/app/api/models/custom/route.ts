@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+import { asString } from "@/app/api/_types";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { addCustomModel, deleteCustomModel, getCustomModels } from "@/models";
+
+export const dynamic = "force-dynamic";
+
+// GET /api/models/custom - List all custom models
+export async function GET() {
+  try {
+    const models = await getCustomModels();
+    return NextResponse.json({ models });
+  } catch (error) {
+    console.log("Error fetching custom models:", error);
+    return NextResponse.json({ error: "Failed to fetch custom models" }, { status: 500 });
+  }
+}
+
+// POST /api/models/custom - Add custom model
+export async function POST(request: any) {
+  try {
+    const [rawBody, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
+    const { providerAlias, id, type, name } = body ?? ({} as Record<string, unknown>);
+    if (!providerAlias || !id) {
+      return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
+    }
+    const added = await addCustomModel({
+      providerAlias: asString(providerAlias),
+      id: asString(id),
+      type: asString(type) || "llm",
+      name: asString(name),
+    });
+    return NextResponse.json({ success: true, added });
+  } catch (error) {
+    console.log("Error adding custom model:", error);
+    return NextResponse.json({ error: "Failed to add custom model" }, { status: 500 });
+  }
+}
+
+// DELETE /api/models/custom?providerAlias=xxx&id=yyy&type=zzz
+export async function DELETE(request: any) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const providerAlias = searchParams.get("providerAlias");
+    const id = searchParams.get("id");
+    const type = searchParams.get("type") || "llm";
+    if (!providerAlias || !id) {
+      return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
+    }
+    await deleteCustomModel({ providerAlias, id, type });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.log("Error deleting custom model:", error);
+    return NextResponse.json({ error: "Failed to delete custom model" }, { status: 500 });
+  }
+}

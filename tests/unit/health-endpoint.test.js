@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock all external modules before imports
-vi.mock("@/lib/localDb.js", () => ({
+vi.mock("@/lib/localDb", () => ({
   getProviderConnections: vi.fn(() => Promise.resolve([])),
   getCombos: vi.fn(() => Promise.resolve([])),
   getApiKeys: vi.fn(() => Promise.resolve([])),
@@ -10,7 +10,7 @@ vi.mock("@/lib/localDb.js", () => ({
   validateApiKey: vi.fn(),
 }));
 
-vi.mock("@/lib/sqlite/connection.js", () => ({
+vi.mock("@/lib/sqlite/connection.ts", () => ({
   getDatabase: vi.fn(() => ({
     prepare: vi.fn(() => ({
       get: vi.fn(() => ({ integrity_check: "ok", value: "1" })),
@@ -85,7 +85,7 @@ vi.mock("@/lib/modelsDevSync.js", () => ({
   })),
 }));
 
-vi.mock("@/shared/services/cloudSyncScheduler.js", () => ({
+vi.mock("@/shared/services/cloudSyncScheduler", () => ({
   getCloudSyncStatus: vi.fn(() => ({
     enabled: false,
     isRunning: false,
@@ -93,7 +93,7 @@ vi.mock("@/shared/services/cloudSyncScheduler.js", () => ({
   })),
 }));
 
-vi.mock("@/shared/constants/config.js", () => ({
+vi.mock("@/shared/constants/config", () => ({
   APP_CONFIG: {
     displayVersion: "0.0.63",
   },
@@ -115,7 +115,7 @@ vi.mock("node:fs", () => ({
 
 import { buildHealthPayload } from "@/app/api/monitoring/health/_health.js";
 import { GET } from "@/app/api/monitoring/health/route.js";
-import { getSettings, validateApiKey } from "@/lib/localDb.js";
+import { getSettings, validateApiKey } from "@/lib/localDb";
 
 describe("buildHealthPayload", () => {
   it("returns all expected top-level keys", async () => {

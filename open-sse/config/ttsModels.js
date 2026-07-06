@@ -20,7 +20,17 @@ const VOICES = {
 const v = (...keys) => keys.map((k) => ({ ...VOICES[k], type: "tts" }));
 
 // 9 voices for tts-1 / tts-1-hd
-const VOICES_STANDARD = v("alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer");
+const VOICES_STANDARD = v(
+  "alloy",
+  "ash",
+  "coral",
+  "echo",
+  "fable",
+  "nova",
+  "onyx",
+  "sage",
+  "shimmer",
+);
 // 13 voices for gpt-4o-mini-tts
 const VOICES_FULL = v(
   "alloy",

@@ -16,16 +16,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-
-import { claudeToOpenAIResponse } from "../../open-sse/translator/response/claude-to-openai.js";
-import { geminiToOpenAIResponse } from "../../open-sse/translator/response/gemini-to-openai.js";
-import { openaiToClaudeResponse } from "../../open-sse/translator/response/openai-to-claude.js";
-import { ollamaToOpenAI } from "../../open-sse/translator/response/ollama-to-openai.js";
-import { openaiToAntigravityResponse } from "../../open-sse/translator/response/openai-to-antigravity.js";
 import { translateNonStreamingResponse } from "../../open-sse/handlers/chatCore/nonStreamingHandler.js";
+import { FORMATS } from "../../open-sse/translator/formats.js";
 import { claudeToOpenAIRequest } from "../../open-sse/translator/request/claude-to-openai.js";
 import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.js";
-import { FORMATS } from "../../open-sse/translator/formats.js";
+import { claudeToOpenAIResponse } from "../../open-sse/translator/response/claude-to-openai.js";
+import { geminiToOpenAIResponse } from "../../open-sse/translator/response/gemini-to-openai.js";
+import { ollamaToOpenAI } from "../../open-sse/translator/response/ollama-to-openai.js";
+import { openaiToAntigravityResponse } from "../../open-sse/translator/response/openai-to-antigravity.js";
+import { openaiToClaudeResponse } from "../../open-sse/translator/response/openai-to-claude.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -180,7 +179,10 @@ describe("Streaming chunk parsing", () => {
     expect(o1.choices[0].finish_reason).toBeNull();
 
     // Chunk with thinking
-    const o2 = ollamaToOpenAI({ message: { role: "assistant", thinking: "I reason" }, done: false }, state);
+    const o2 = ollamaToOpenAI(
+      { message: { role: "assistant", thinking: "I reason" }, done: false },
+      state,
+    );
     expect(o2.choices[0].delta.reasoning_content).toBe("I reason");
     expect(o2.choices[0].delta.content).toBeUndefined();
 
@@ -193,7 +195,10 @@ describe("Streaming chunk parsing", () => {
     expect(o3.choices[0].delta.reasoning_content).toBe(" deeper");
 
     // Final done chunk
-    const o4 = ollamaToOpenAI({ done: true, prompt_eval_count: 42, eval_count: 7, done_reason: "stop" }, state);
+    const o4 = ollamaToOpenAI(
+      { done: true, prompt_eval_count: 42, eval_count: 7, done_reason: "stop" },
+      state,
+    );
     expect(o4.choices[0].finish_reason).toBe("stop");
     expect(o4.usage.prompt_tokens).toBe(42);
     expect(o4.usage.completion_tokens).toBe(7);
@@ -289,7 +294,10 @@ describe("Tool calls", () => {
     const state = createClaudeState(new Map([["proxy_read_file", "read_file"]]));
 
     // Start message
-    claudeToOpenAIResponse({ type: "message_start", message: { id: "msg_t1", model: "claude-sonnet-4" } }, state);
+    claudeToOpenAIResponse(
+      { type: "message_start", message: { id: "msg_t1", model: "claude-sonnet-4" } },
+      state,
+    );
 
     // tool_use content_block_start
     const t1 = claudeToOpenAIResponse(
@@ -354,7 +362,9 @@ describe("Tool calls", () => {
     const toolChunk = g1.find((c) => c.choices[0].delta.tool_calls);
     expect(toolChunk).toBeDefined();
     expect(toolChunk.choices[0].delta.tool_calls[0].function.name).toBe("get_weather");
-    expect(JSON.parse(toolChunk.choices[0].delta.tool_calls[0].function.arguments)).toEqual({ city: "Tokyo" });
+    expect(JSON.parse(toolChunk.choices[0].delta.tool_calls[0].function.arguments)).toEqual({
+      city: "Tokyo",
+    });
 
     // finish chunk should have tool_calls reason
     const finishChunk = g1.find((c) => c.choices[0].finish_reason);
@@ -389,7 +399,12 @@ describe("Tool calls", () => {
             index: 0,
             delta: {
               tool_calls: [
-                { index: 0, id: "call_1", type: "function", function: { name: "get_weather", arguments: "" } },
+                {
+                  index: 0,
+                  id: "call_1",
+                  type: "function",
+                  function: { name: "get_weather", arguments: "" },
+                },
               ],
             },
             finish_reason: null,
@@ -456,7 +471,14 @@ describe("Tool calls", () => {
           {
             index: 0,
             delta: {
-              tool_calls: [{ index: 0, id: "call_a", type: "function", function: { name: "search", arguments: "" } }],
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_a",
+                  type: "function",
+                  function: { name: "search", arguments: "" },
+                },
+              ],
             },
             finish_reason: null,
           },
@@ -502,7 +524,9 @@ describe("Tool calls", () => {
 
     expect(a3.response.candidates[0].content.parts).toHaveLength(1);
     expect(a3.response.candidates[0].content.parts[0].functionCall.name).toBe("search");
-    expect(a3.response.candidates[0].content.parts[0].functionCall.args).toEqual({ query: "weather" });
+    expect(a3.response.candidates[0].content.parts[0].functionCall.args).toEqual({
+      query: "weather",
+    });
     expect(a3.response.candidates[0].finishReason).toBe("STOP");
   });
 });
@@ -573,7 +597,9 @@ describe("Vision multi-part", () => {
     const imageChunk = g1.find((c) => c.choices[0].delta.images);
     expect(imageChunk).toBeDefined();
     expect(imageChunk.choices[0].delta.images[0].type).toBe("image_url");
-    expect(imageChunk.choices[0].delta.images[0].image_url.url).toBe("data:image/png;base64,aW1hZ2UtYmluYXJ5");
+    expect(imageChunk.choices[0].delta.images[0].image_url.url).toBe(
+      "data:image/png;base64,aW1hZ2UtYmluYXJ5",
+    );
   });
 
   it("OpenAI request with image_url → Claude: converts to Claude image source", () => {
@@ -610,7 +636,10 @@ describe("Reasoning / thinking content", () => {
   it("Claude stream: thinking blocks convert to reasoning_content chunks", () => {
     const state = createClaudeState();
 
-    claudeToOpenAIResponse({ type: "message_start", message: { id: "msg_think_1", model: "claude-sonnet-4" } }, state);
+    claudeToOpenAIResponse(
+      { type: "message_start", message: { id: "msg_think_1", model: "claude-sonnet-4" } },
+      state,
+    );
 
     // thinking block start → no content delta (thinking flows via reasoning_content)
     const t1 = claudeToOpenAIResponse(
@@ -678,7 +707,10 @@ describe("Reasoning / thinking content", () => {
         candidates: [
           {
             content: {
-              parts: [{ text: "Reasoning text", thoughtSignature: "sig_xyz" }, { text: "Regular output" }],
+              parts: [
+                { text: "Reasoning text", thoughtSignature: "sig_xyz" },
+                { text: "Regular output" },
+              ],
             },
           },
         ],
@@ -746,7 +778,9 @@ describe("Reasoning / thinking content", () => {
         object: "chat.completion.chunk",
         created: 1000,
         model: "deepseek-reasoner",
-        choices: [{ index: 0, delta: { reasoning_content: "more reasoning" }, finish_reason: null }],
+        choices: [
+          { index: 0, delta: { reasoning_content: "more reasoning" }, finish_reason: null },
+        ],
       },
       state,
     );
@@ -795,7 +829,12 @@ describe("Reasoning / thinking content", () => {
           finishReason: "STOP",
         },
       ],
-      usageMetadata: { promptTokenCount: 15, candidatesTokenCount: 8, thoughtsTokenCount: 3, totalTokenCount: 26 },
+      usageMetadata: {
+        promptTokenCount: 15,
+        candidatesTokenCount: 8,
+        thoughtsTokenCount: 3,
+        totalTokenCount: 26,
+      },
     };
 
     const result = translateNonStreamingResponse(geminiResponse, FORMATS.GEMINI, FORMATS.OPENAI);
@@ -841,7 +880,10 @@ describe("Edge cases", () => {
 
   it("Claude stream: message_delta includes cache tokens in usage", () => {
     const state = createClaudeState();
-    claudeToOpenAIResponse({ type: "message_start", message: { id: "msg_cache_1", model: "claude-sonnet-4" } }, state);
+    claudeToOpenAIResponse(
+      { type: "message_start", message: { id: "msg_cache_1", model: "claude-sonnet-4" } },
+      state,
+    );
 
     const result = claudeToOpenAIResponse(
       {

@@ -96,8 +96,12 @@ describe("Provider Validation API", () => {
         return normalized;
       };
 
-      expect(normalizeUrl("https://api.anthropic.com/v1/messages")).toBe("https://api.anthropic.com/v1");
-      expect(normalizeUrl("https://api.anthropic.com/v1/messages/")).toBe("https://api.anthropic.com/v1");
+      expect(normalizeUrl("https://api.anthropic.com/v1/messages")).toBe(
+        "https://api.anthropic.com/v1",
+      );
+      expect(normalizeUrl("https://api.anthropic.com/v1/messages/")).toBe(
+        "https://api.anthropic.com/v1",
+      );
       expect(normalizeUrl("https://api.anthropic.com/v1")).toBe("https://api.anthropic.com/v1");
     });
 
@@ -131,17 +135,21 @@ describe("Provider Validation API", () => {
   describe("Error Messages - Network", () => {
     it("should map ECONNREFUSED to user-friendly message", () => {
       const getErrorMessage = (error) => {
-        if (error.cause?.code === "ECONNREFUSED") return "Connection refused - provider node offline or unreachable";
+        if (error.cause?.code === "ECONNREFUSED")
+          return "Connection refused - provider node offline or unreachable";
         return "Unknown error";
       };
 
       const error = { cause: { code: "ECONNREFUSED" } };
-      expect(getErrorMessage(error)).toBe("Connection refused - provider node offline or unreachable");
+      expect(getErrorMessage(error)).toBe(
+        "Connection refused - provider node offline or unreachable",
+      );
     });
 
     it("should map ENOTFOUND to user-friendly message", () => {
       const getErrorMessage = (error) => {
-        if (error.cause?.code === "ENOTFOUND") return "DNS lookup failed - invalid domain or network issue";
+        if (error.cause?.code === "ENOTFOUND")
+          return "DNS lookup failed - invalid domain or network issue";
         return "Unknown error";
       };
 
@@ -151,7 +159,8 @@ describe("Provider Validation API", () => {
 
     it("should map timeout to user-friendly message", () => {
       const getErrorMessage = (error) => {
-        if (error.message.includes("timeout")) return "Request timeout (>10s) - provider node not responding";
+        if (error.message.includes("timeout"))
+          return "Request timeout (>10s) - provider node not responding";
         return "Unknown error";
       };
 
@@ -205,7 +214,9 @@ describe("Provider Validation API", () => {
     });
 
     it("should return not found for 404", () => {
-      expect(getModelsErrorMessage(404)).toBe("/models endpoint not found - try chat validation with model ID");
+      expect(getModelsErrorMessage(404)).toBe(
+        "/models endpoint not found - try chat validation with model ID",
+      );
     });
 
     it("should return server error for 500", () => {

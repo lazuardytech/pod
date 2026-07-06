@@ -38,7 +38,12 @@ function normalizeSerper(data, _query, searchType) {
   const results = items.map((item, idx) =>
     makeResult(
       "serper",
-      { title: item.title, url: item.link, snippet: item.snippet || item.description, published_at: item.date },
+      {
+        title: item.title,
+        url: item.link,
+        snippet: item.snippet || item.description,
+        published_at: item.date,
+      },
       idx,
       now,
     ),
@@ -137,7 +142,8 @@ function normalizeGooglePse(data, _query, _searchType) {
       now,
     ),
   );
-  const raw = data.searchInformation?.totalResults ?? data.queries?.request?.[0]?.totalResults ?? null;
+  const raw =
+    data.searchInformation?.totalResults ?? data.queries?.request?.[0]?.totalResults ?? null;
   const total = typeof raw === "string" ? Number(raw) : raw;
   return { results, totalResults: Number.isFinite(total) ? total : null };
 }
@@ -198,9 +204,15 @@ function normalizeYouCom(data, _query, searchType) {
   const section = searchType === "news" ? container?.news || [] : container?.web || [];
   const items = Array.isArray(section) ? section : [];
   const results = items.map((item, idx) => {
-    const firstSnippet = Array.isArray(item.snippets) ? item.snippets.find((v) => typeof v === "string") : null;
+    const firstSnippet = Array.isArray(item.snippets)
+      ? item.snippets.find((v) => typeof v === "string")
+      : null;
     const livecrawlText =
-      typeof item.markdown === "string" ? item.markdown : typeof item.html === "string" ? item.html : undefined;
+      typeof item.markdown === "string"
+        ? item.markdown
+        : typeof item.html === "string"
+          ? item.html
+          : undefined;
     const livecrawlFormat = typeof item.markdown === "string" ? "markdown" : "html";
     return makeResult(
       "youcom",
@@ -238,7 +250,9 @@ function normalizeSearxng(data, _query, _searchType) {
         url: item.url,
         snippet: item.content || item.snippet || "",
         published_at: item.publishedDate || item.published_date || null,
-        source_type: Array.isArray(item.engines) ? item.engines.join(", ") : item.engine || item.category || null,
+        source_type: Array.isArray(item.engines)
+          ? item.engines.join(", ")
+          : item.engine || item.category || null,
         image_url: item.thumbnail || item.img_src || null,
       },
       idx,

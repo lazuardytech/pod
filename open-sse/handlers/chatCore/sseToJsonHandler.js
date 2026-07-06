@@ -1,4 +1,4 @@
-import { generateDetailId, saveRequestDetail } from "@/lib/usageDb.js";
+import { generateDetailId, saveRequestDetail } from "@/lib/usageDb";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.js";
 import { FORMATS } from "../../translator/formats.js";
@@ -61,7 +61,8 @@ export function parseSSEToOpenAIResponse(rawSSE, fallbackModel) {
   for (const chunk of chunks) {
     const choice = chunk?.choices?.[0];
     const delta = choice?.delta || {};
-    if (typeof delta.content === "string" && delta.content.length > 0) contentParts.push(delta.content);
+    if (typeof delta.content === "string" && delta.content.length > 0)
+      contentParts.push(delta.content);
     if (typeof delta.reasoning_content === "string" && delta.reasoning_content.length > 0)
       reasoningParts.push(delta.reasoning_content);
     if (choice?.finish_reason) finishReason = choice.finish_reason;
@@ -72,7 +73,11 @@ export function parseSSEToOpenAIResponse(rawSSE, fallbackModel) {
       for (const tc of delta.tool_calls) {
         const idx = tc.index ?? 0;
         if (!toolCallMap.has(idx)) {
-          toolCallMap.set(idx, { id: tc.id || "", type: "function", function: { name: "", arguments: "" } });
+          toolCallMap.set(idx, {
+            id: tc.id || "",
+            type: "function",
+            function: { name: "", arguments: "" },
+          });
         }
         const existing = toolCallMap.get(idx);
         if (tc.id) existing.id = tc.id;
@@ -82,7 +87,10 @@ export function parseSSEToOpenAIResponse(rawSSE, fallbackModel) {
     }
   }
 
-  const message = { role: "assistant", content: contentParts.join("") || (toolCallMap.size > 0 ? null : "") };
+  const message = {
+    role: "assistant",
+    content: contentParts.join("") || (toolCallMap.size > 0 ? null : ""),
+  };
   if (reasoningParts.length > 0) message.reasoning_content = reasoningParts.join("");
   if (toolCallMap.size > 0) {
     message.tool_calls = [...toolCallMap.entries()].sort((a, b) => a[0] - b[0]).map(([, tc]) => tc);
@@ -129,7 +137,8 @@ export async function handleForcedSSEToJson({
   onFinalJsonResponse,
 }) {
   const contentType = providerResponse.headers.get("content-type") || "";
-  const isSSE = contentType.includes("text/event-stream") || (contentType === "" && provider === "codex");
+  const isSSE =
+    contentType.includes("text/event-stream") || (contentType === "" && provider === "codex");
   if (!isSSE) return null; // not handled here
 
   trackDone();
@@ -152,7 +161,14 @@ export async function handleForcedSSEToJson({
       const usage = jsonResponse.usage || {};
       const detailsId1 = generateDetailId(model);
       appendLog({ tokens: usage, status: "SUCCESS", detailsId: detailsId1 });
-      saveUsageStats({ provider, model, tokens: usage, connectionId, apiKey, endpoint: clientRawRequest?.endpoint });
+      saveUsageStats({
+        provider,
+        model,
+        tokens: usage,
+        connectionId,
+        apiKey,
+        endpoint: clientRawRequest?.endpoint,
+      });
 
       const { textContent } = pickAssistantMessageForChatCompletion(jsonResponse.output);
       const totalLatency = Date.now() - requestStartTime;
@@ -163,8 +179,15 @@ export async function handleForcedSSEToJson({
             id: detailsId1,
             ...ctx,
             latency: { ttft: totalLatency, total: totalLatency },
-            tokens: { prompt_tokens: usage.input_tokens || 0, completion_tokens: usage.output_tokens || 0 },
-            response: { content: textContent, thinking: null, finish_reason: jsonResponse.status || "unknown" },
+            tokens: {
+              prompt_tokens: usage.input_tokens || 0,
+              completion_tokens: usage.output_tokens || 0,
+            },
+            response: {
+              content: textContent,
+              thinking: null,
+              finish_reason: jsonResponse.status || "unknown",
+            },
             status: "success",
           },
           { endpoint: clientRawRequest?.endpoint || null },
@@ -192,13 +215,18 @@ export async function handleForcedSSEToJson({
       let finalResp;
 
       // Extract tool calls from Responses API output (function_call items)
-      const funcCallItems = (jsonResponse.output || []).filter((item) => item.type === "function_call");
+      const funcCallItems = (jsonResponse.output || []).filter(
+        (item) => item.type === "function_call",
+      );
       const toolCalls = funcCallItems.map((item, idx) => ({
         id: item.call_id || `call_${item.name}_${Date.now()}_${idx}`,
         type: "function",
         function: {
           name: item.name,
-          arguments: typeof item.arguments === "string" ? item.arguments : JSON.stringify(item.arguments || {}),
+          arguments:
+            typeof item.arguments === "string"
+              ? item.arguments
+              : JSON.stringify(item.arguments || {}),
         },
       }));
       const hasToolCalls = toolCalls.length > 0;
@@ -211,7 +239,11 @@ export async function handleForcedSSEToJson({
         finalResp = {
           response: {
             candidates: [
-              { content: { role: "model", parts: [{ text: textContent || "" }] }, finishReason: "STOP", index: 0 },
+              {
+                content: { role: "model", parts: [{ text: textContent || "" }] },
+                finishReason: "STOP",
+                index: 0,
+              },
             ],
             usageMetadata: {
               promptTokenCount: inTokens,
@@ -236,7 +268,11 @@ export async function handleForcedSSEToJson({
           created: jsonResponse.created_at || Math.floor(Date.now() / 1000),
           model: jsonResponse.model || model,
           choices: [{ index: 0, message, finish_reason: finishReason }],
-          usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: inTokens + outTokens },
+          usage: {
+            prompt_tokens: inTokens,
+            completion_tokens: outTokens,
+            total_tokens: inTokens + outTokens,
+          },
         };
       }
 
@@ -254,7 +290,10 @@ export async function handleForcedSSEToJson({
       };
     } catch {
       console.error("[ChatCore] Responses API SSE→JSON failed");
-      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to convert streaming response to JSON");
+      return createErrorResult(
+        HTTP_STATUS.BAD_GATEWAY,
+        "Failed to convert streaming response to JSON",
+      );
     }
   }
 
@@ -262,14 +301,25 @@ export async function handleForcedSSEToJson({
   try {
     const sseText = await providerResponse.text();
     const parsed = parseSSEToOpenAIResponse(sseText, model);
-    if (!parsed) return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Invalid SSE response for non-streaming request");
+    if (!parsed)
+      return createErrorResult(
+        HTTP_STATUS.BAD_GATEWAY,
+        "Invalid SSE response for non-streaming request",
+      );
 
     if (onRequestSuccess) await onRequestSuccess();
 
     const usage = parsed.usage || {};
     const detailsId2 = generateDetailId(model);
     appendLog({ tokens: usage, status: "SUCCESS", detailsId: detailsId2 });
-    saveUsageStats({ provider, model, tokens: usage, connectionId, apiKey, endpoint: clientRawRequest?.endpoint });
+    saveUsageStats({
+      provider,
+      model,
+      tokens: usage,
+      connectionId,
+      apiKey,
+      endpoint: clientRawRequest?.endpoint,
+    });
 
     const totalLatency = Date.now() - requestStartTime;
     saveRequestDetail(
@@ -307,6 +357,9 @@ export async function handleForcedSSEToJson({
     };
   } catch {
     console.error("[ChatCore] Chat Completions SSE→JSON failed");
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to convert streaming response to JSON");
+    return createErrorResult(
+      HTTP_STATUS.BAD_GATEWAY,
+      "Failed to convert streaming response to JSON",
+    );
   }
 }

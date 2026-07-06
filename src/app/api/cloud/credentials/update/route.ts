@@ -1,0 +1,56 @@
+import { NextResponse } from "next/server";
+import { asRecord, asString } from "@/app/api/_types";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth";
+import { getProviderConnections, updateProviderConnection } from "@/models";
+
+// Update provider credentials (for cloud token refresh)
+export async function PUT(request: any) {
+  try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
+    const [rawBody, _parseErr] = await parseJsonBody(request);
+    if (_parseErr) return _parseErr;
+    const body = rawBody as Record<string, unknown>;
+    const provider = asString(body.provider);
+    const credentials = asRecord(body.credentials);
+
+    if (!provider || !credentials) {
+      return NextResponse.json({ error: "Provider and credentials required" }, { status: 400 });
+    }
+
+    // Find active connection for provider
+    const connections = await getProviderConnections({ provider, isActive: true });
+    const connection = connections[0];
+
+    if (!connection) {
+      return NextResponse.json(
+        { error: `No active connection found for provider: ${provider}` },
+        { status: 404 },
+      );
+    }
+
+    // Update credentials
+    const updateData: Record<string, unknown> = {};
+    if (typeof credentials.accessToken === "string") {
+      updateData.accessToken = credentials.accessToken;
+    }
+    if (typeof credentials.refreshToken === "string") {
+      updateData.refreshToken = credentials.refreshToken;
+    }
+    if (typeof credentials.expiresIn === "number") {
+      updateData.expiresAt = new Date(Date.now() + credentials.expiresIn * 1000).toISOString();
+    }
+
+    await updateProviderConnection(connection.id, updateData);
+
+    return NextResponse.json({
+      success: true,
+      message: `Credentials updated for provider: ${provider}`,
+    });
+  } catch (error) {
+    console.log("Update credentials error:", error);
+    return NextResponse.json({ error: "Failed to update credentials" }, { status: 500 });
+  }
+}

@@ -1,4 +1,4 @@
-import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mjs";
+import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mts";
 import { buildKimiHeaders, OAUTH_ENDPOINTS } from "../config/appConstants.js";
 import { PROVIDERS } from "../config/providers.js";
 import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.js";
@@ -85,7 +85,8 @@ Respond ONLY with the JSON object, no other text.`;
         const url = this.config.baseUrl;
         if (url?.includes("{accountId}")) {
           const accountId = credentials?.providerSpecificData?.accountId;
-          if (!accountId) throw new Error(`${this.provider} requires accountId in providerSpecificData`);
+          if (!accountId)
+            throw new Error(`${this.provider} requires accountId in providerSpecificData`);
           return url.replace("{accountId}", accountId);
         }
         return url;
@@ -256,7 +257,11 @@ Respond ONLY with the JSON object, no other text.`;
       qwen: () =>
         this.refreshWithForm(
           OAUTH_ENDPOINTS.qwen.token,
-          { grant_type: "refresh_token", refresh_token: credentials.refreshToken, client_id: PROVIDERS.qwen.clientId },
+          {
+            grant_type: "refresh_token",
+            refresh_token: credentials.refreshToken,
+            client_id: PROVIDERS.qwen.clientId,
+          },
           proxyOptions,
         ),
       iflow: () => this.refreshIflow(credentials.refreshToken, proxyOptions),
@@ -304,7 +309,10 @@ Respond ONLY with the JSON object, no other text.`;
       url,
       {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams(params),
       },
       proxyOptions,
@@ -354,7 +362,10 @@ Respond ONLY with the JSON object, no other text.`;
       OAUTH_ENDPOINTS.google.token,
       {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams({
           grant_type: "refresh_token",
           refresh_token: refreshToken,
@@ -378,7 +389,11 @@ Respond ONLY with the JSON object, no other text.`;
       PROVIDERS.kiro.tokenUrl,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": "kiro-cli/1.0.0" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "User-Agent": "kiro-cli/1.0.0",
+        },
         body: JSON.stringify({ refreshToken }),
       },
       proxyOptions,
@@ -412,7 +427,11 @@ Respond ONLY with the JSON object, no other text.`;
     const expiresIn = expiresAtIso
       ? Math.max(1, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000))
       : undefined;
-    return { accessToken: data?.accessToken, refreshToken: data?.refreshToken || refreshToken, expiresIn };
+    return {
+      accessToken: data?.accessToken,
+      refreshToken: data?.refreshToken || refreshToken,
+      expiresIn,
+    };
   }
 
   async refreshKimiCoding(refreshToken, proxyOptions = null) {

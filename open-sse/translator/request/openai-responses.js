@@ -206,12 +206,19 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
                 // Chat Completions sends: { type: "image_url", image_url: { url: "...", detail: "..." } }
                 if (c.type === "image_url") {
                   const url = typeof c.image_url === "string" ? c.image_url : c.image_url?.url;
-                  return { type: "input_image", image_url: url, detail: c.image_url?.detail || "auto" };
+                  return {
+                    type: "input_image",
+                    image_url: url,
+                    detail: c.image_url?.detail || "auto",
+                  };
                 }
                 if (c.type === "input_image") return c;
                 // Serialize any unknown type (tool_use, tool_result, thinking, etc.) as text
                 const text = c.text || c.content || JSON.stringify(c);
-                return { type: contentType, text: typeof text === "string" ? text : JSON.stringify(text) };
+                return {
+                  type: contentType,
+                  text: typeof text === "string" ? text : JSON.stringify(text),
+                };
               })
             : [];
 
@@ -300,7 +307,8 @@ export function openaiToOpenAIResponsesRequest(model, body, stream, credentials)
   // Pass through other relevant fields
   if (body.temperature !== undefined) result.temperature = body.temperature;
   if (body.max_tokens !== undefined) result.max_tokens = body.max_tokens;
-  if (body.max_completion_tokens !== undefined) result.max_completion_tokens = body.max_completion_tokens;
+  if (body.max_completion_tokens !== undefined)
+    result.max_completion_tokens = body.max_completion_tokens;
   if (body.top_p !== undefined) result.top_p = body.top_p;
 
   // Pass reasoning effort through (set by client or chatCore from model suffix)

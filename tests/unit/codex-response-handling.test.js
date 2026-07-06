@@ -115,7 +115,9 @@ describe("CodexExecutor.buildHeaders — always SSE", () => {
   });
 
   it("sets Accept: text/event-stream when stream=false", () => {
-    expect(executor.buildHeaders({ accessToken: "tok" }, false)["Accept"]).toBe("text/event-stream");
+    expect(executor.buildHeaders({ accessToken: "tok" }, false)["Accept"]).toBe(
+      "text/event-stream",
+    );
   });
 
   it("sets Accept: text/event-stream when stream=true", () => {
@@ -128,7 +130,9 @@ describe("CodexExecutor.buildHeaders — always SSE", () => {
 
   it("sets session_id from credentials.connectionId when no _currentSessionId", () => {
     executor._currentSessionId = null;
-    expect(executor.buildHeaders({ accessToken: "tok", connectionId: "conn_abc" })["session_id"]).toBe("conn_abc");
+    expect(
+      executor.buildHeaders({ accessToken: "tok", connectionId: "conn_abc" })["session_id"],
+    ).toBe("conn_abc");
   });
 
   it("falls back to 'default' when no connectionId and no _currentSessionId", () => {
@@ -138,11 +142,15 @@ describe("CodexExecutor.buildHeaders — always SSE", () => {
 
   it("prefers _currentSessionId over credentials.connectionId", () => {
     executor._currentSessionId = "sess_internal";
-    expect(executor.buildHeaders({ accessToken: "tok", connectionId: "conn_abc" })["session_id"]).toBe("sess_internal");
+    expect(
+      executor.buildHeaders({ accessToken: "tok", connectionId: "conn_abc" })["session_id"],
+    ).toBe("sess_internal");
   });
 
   it("sets Authorization Bearer from accessToken", () => {
-    expect(executor.buildHeaders({ accessToken: "my-token" })["Authorization"]).toBe("Bearer my-token");
+    expect(executor.buildHeaders({ accessToken: "my-token" })["Authorization"]).toBe(
+      "Bearer my-token",
+    );
   });
 });
 
@@ -289,7 +297,10 @@ describe("handleForcedSSEToJson — Codex paths", () => {
   it("enters codex path when Content-Type is text/event-stream", async () => {
     const result = await handleForcedSSEToJson(
       ctx({
-        providerResponse: makeResponse({ contentType: "text/event-stream", sseText: SAMPLE_CODEX_SSE }),
+        providerResponse: makeResponse({
+          contentType: "text/event-stream",
+          sseText: SAMPLE_CODEX_SSE,
+        }),
       }),
     );
     expect(result).not.toBeNull();
@@ -452,7 +463,10 @@ describe("CodexExecutor.transformRequest — stream always true", () => {
   });
 
   it("preserves existing instructions", () => {
-    const body = { input: [{ role: "user", content: "hello" }], instructions: "Custom instructions" };
+    const body = {
+      input: [{ role: "user", content: "hello" }],
+      instructions: "Custom instructions",
+    };
     executor.transformRequest("gpt-5.3-codex", body, true, { accessToken: "test" });
     expect(body.instructions).toBe("Custom instructions");
   });
@@ -484,7 +498,10 @@ describe("CodexExecutor.transformRequest — stream always true", () => {
   });
 
   it("normalizes extra-high reasoning.effort inline", () => {
-    const body = { input: [{ role: "user", content: "hello" }], reasoning: { effort: "extra-high", summary: "auto" } };
+    const body = {
+      input: [{ role: "user", content: "hello" }],
+      reasoning: { effort: "extra-high", summary: "auto" },
+    };
     executor.transformRequest("gpt-5.3-codex", body, true, { accessToken: "test" });
     expect(body.reasoning.effort).toBe("xhigh");
   });

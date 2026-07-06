@@ -101,7 +101,9 @@ describe("RTK filters", () => {
 
   it("dedupLog collapses consecutive duplicates", () => {
     const input =
-      Array(20).fill("repeated log line A").join("\n") + "\nunique\n" + Array(10).fill("another dup").join("\n");
+      Array(20).fill("repeated log line A").join("\n") +
+      "\nunique\n" +
+      Array(10).fill("another dup").join("\n");
     const out = dedupLog(input);
     expect(out).toContain("repeated log line A");
     expect(out).toContain("duplicate lines");
@@ -212,7 +214,9 @@ describe("RTK filters (extras)", () => {
 
 describe("autoDetectFilter (extras)", () => {
   it("detects tree via box-drawing glyphs", () => {
-    expect(autoDetectFilter(".\n├── src\n│   └── main.rs\n└── Cargo.toml\n").filterName).toBe("tree");
+    expect(autoDetectFilter(".\n├── src\n│   └── main.rs\n└── Cargo.toml\n").filterName).toBe(
+      "tree",
+    );
   });
   it("detects ls via total + perms rows", () => {
     const input = [
@@ -340,7 +344,11 @@ describe("compressMessages (enabled)", () => {
       messages: [
         { role: "system", content: "you are" },
         { role: "user", content: "hi" },
-        { role: "assistant", content: null, tool_calls: [{ id: "c1", function: { name: "x", arguments: "{}" } }] },
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [{ id: "c1", function: { name: "x", arguments: "{}" } }],
+        },
         { role: "tool", tool_call_id: "c1", content: makeGrepOutput() },
         { role: "user", content: [{ type: "text", text: "next" }] },
       ],
@@ -356,7 +364,11 @@ describe("formatRtkLog", () => {
     expect(formatRtkLog({ bytesBefore: 0, bytesAfter: 0, hits: [] })).toBeNull();
   });
   it("formats savings line with percentage", () => {
-    const line = formatRtkLog({ bytesBefore: 1000, bytesAfter: 400, hits: [{ filter: "git-diff" }] });
+    const line = formatRtkLog({
+      bytesBefore: 1000,
+      bytesAfter: 400,
+      hits: [{ filter: "git-diff" }],
+    });
     expect(line).toContain("saved 600B");
     expect(line).toContain("60.0%");
     expect(line).toContain("git-diff");

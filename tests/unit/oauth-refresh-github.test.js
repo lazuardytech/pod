@@ -147,7 +147,8 @@ describe("GitHub OAuth Token Refresh", () => {
 
   describe("getRefreshLeadMs", () => {
     it("returns default buffer for github (no custom lead)", async () => {
-      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
+        await import("../../open-sse/services/tokenRefresh.js");
 
       expect(getRefreshLeadMs("github")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });

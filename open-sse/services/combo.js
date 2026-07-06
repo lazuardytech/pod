@@ -135,7 +135,10 @@ export function injectComboSystemPrompt(body, systemPrompt) {
     if (existing?.parts && Array.isArray(existing.parts)) {
       existing.parts.unshift(newPart);
     } else if (existing?.role || existing?.parts) {
-      req.systemInstruction = { role: existing.role || "user", parts: [newPart, ...(existing.parts || [])] };
+      req.systemInstruction = {
+        role: existing.role || "user",
+        parts: [newPart, ...(existing.parts || [])],
+      };
     } else {
       req.systemInstruction = { role: "user", parts: [newPart] };
     }
@@ -231,14 +234,18 @@ export async function handleComboChat({
       let retryAfter = null;
       try {
         const errorBody = await result.clone().json();
-        errorText = errorBody?.error?.message || errorBody?.error || errorBody?.message || errorText;
+        errorText =
+          errorBody?.error?.message || errorBody?.error || errorBody?.message || errorText;
         retryAfter = errorBody?.retryAfter || null;
       } catch {
         // Ignore JSON parse errors
       }
 
       // Track earliest retryAfter across all combo models
-      if (retryAfter && (!earliestRetryAfter || new Date(retryAfter) < new Date(earliestRetryAfter))) {
+      if (
+        retryAfter &&
+        (!earliestRetryAfter || new Date(retryAfter) < new Date(earliestRetryAfter))
+      ) {
         earliestRetryAfter = retryAfter;
       }
 
@@ -268,7 +275,10 @@ export async function handleComboChat({
         cooldownMs <= 5000 &&
         (result.status === 503 || result.status === 502 || result.status === 504)
       ) {
-        log.info("COMBO", `Model ${modelStr} transient ${result.status}, waiting ${cooldownMs}ms before next`);
+        log.info(
+          "COMBO",
+          `Model ${modelStr} transient ${result.status}, waiting ${cooldownMs}ms before next`,
+        );
         await new Promise((r) => setTimeout(r, cooldownMs));
       }
 

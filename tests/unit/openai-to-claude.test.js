@@ -228,7 +228,11 @@ describe("openaiToClaudeRequest", () => {
         tools: [
           {
             type: "function",
-            function: { name: "Bash", description: "", parameters: { type: "object", properties: {} } },
+            function: {
+              name: "Bash",
+              description: "",
+              parameters: { type: "object", properties: {} },
+            },
           },
         ],
         messages: [

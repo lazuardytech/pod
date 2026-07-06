@@ -1,0 +1,221 @@
+"use client";
+
+import { toast } from "sonner";
+import LucideIcon from "@/shared/components/LucideIcon";
+
+/**
+ * ModelAvailabilityBadge — compact inline status indicator
+ *
+ * Shows green when all models are operational, or amber/red when there are
+ * issues, with a hover popover for details and cooldown clearing.
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/shared/components";
+
+const STATUS_CONFIG: any = {
+  available: { icon: "check_circle", color: "#22c55e", label: "Available" },
+  cooldown: { icon: "schedule", color: "#f59e0b", label: "Cooldown" },
+  unavailable: { icon: "error", color: "#ef4444", label: "Unavailable" },
+  unknown: { icon: "help", color: "#6b7280", label: "Unknown" },
+};
+
+export default function ModelAvailabilityBadge() {
+  const [data, setData]: any = useState<any>(null);
+  const [loading, setLoading]: any = useState(true);
+  const [expanded, setExpanded]: any = useState(false);
+  const [clearing, setClearing]: any = useState<any>(null);
+  const ref: any = useRef<any>(null);
+
+  const fetchStatus: any = useCallback(async () => {
+    try {
+      const res: any = await fetch("/api/models/availability");
+      if (res.ok) {
+        const json: any = await res.json();
+        setData(json);
+      }
+    } catch {
+      // silent fail — will retry
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
+
+    const connect: any = () => {
+      if (closed) return;
+      es = new EventSource("/api/models/availability/stream");
+
+      es.onmessage = (event: any) => {
+        try {
+          const payload: any = JSON.parse(event.data);
+          if (payload?.error) return;
+          setData(payload);
+          setLoading(false);
+        } catch {
+          // keep stream alive on bad chunk
+        }
+      };
+
+      es.onerror = () => {
+        es.close();
+        fetchStatus().catch(() => {});
+        if (!closed) reconnectTimer = setTimeout(connect, 3000);
+      };
+    };
+
+    fetchStatus().catch(() => {});
+    connect();
+
+    return () => {
+      closed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (es) es.close();
+    };
+  }, [fetchStatus]);
+
+  // Close popover on outside click
+  useEffect(() => {
+    const handleClick: any = (e: any) => {
+      if (ref.current && !ref.current.contains(e.target)) setExpanded(false);
+    };
+    if (expanded) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [expanded]);
+
+  const handleClearCooldown: any = async (provider: any, model: any) => {
+    setClearing(`${provider}:${model}`);
+    try {
+      const res: any = await fetch("/api/models/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clearCooldown", provider, model }),
+      });
+      if (res.ok) {
+        toast.success(`Cooldown cleared for ${model}`);
+        await fetchStatus();
+      } else {
+        toast.error("Failed to clear cooldown");
+      }
+    } catch {
+      toast.error("Failed to clear cooldown");
+    } finally {
+      setClearing(null);
+    }
+  };
+
+  if (loading) return null;
+
+  const models: any = data?.models || [];
+  const unavailableCount: any =
+    data?.unavailableCount || models.filter((m: any) => m.status !== "available").length;
+  const isHealthy: any = unavailableCount === 0;
+
+  // Group unhealthy models by provider
+  // todo(ts): grouped buckets are untyped; widen to any until the API surfaces a shared shape
+  const byProvider: any = {};
+  models.forEach((m: any) => {
+    if (m.status === "available") return;
+    const key: any = m.provider || "unknown";
+    if (!byProvider[key]) byProvider[key] = [];
+    byProvider[key].push(m);
+  });
+
+  return (
+    <div className="relative" ref={ref}>
+      {/* <button
+        onClick={() => setExpanded(!expanded)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+          isHealthy
+            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/15"
+            : "bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/15"
+        }`}
+      >
+        <LucideIcon name={isHealthy ? "verified" : "warning"} className="text-[14px]" />
+        {isHealthy
+          ? "All models operational"
+          : `${unavailableCount} model${unavailableCount !== 1 ? "s" : ""} with issues`}
+      </button> */}
+
+      {expanded && (
+        <div className="absolute top-full right-0 mt-2 w-80 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg">
+            <div className="flex items-center gap-2">
+              <LucideIcon
+                name={isHealthy ? "verified" : "warning"}
+                className="text-[16px]"
+                style={{ color: isHealthy ? "#22c55e" : "#f59e0b" }}
+              />
+              <span className="text-sm font-semibold text-text-main">Model Status</span>
+            </div>
+            <button
+              onClick={fetchStatus}
+              className="p-1 rounded-lg hover:bg-surface text-text-muted hover:text-text-main transition-colors"
+              title="Refresh"
+            >
+              <LucideIcon name="refresh" className="text-[14px]" />
+            </button>
+          </div>
+
+          <div className="px-4 py-3 max-h-60 overflow-y-auto">
+            {isHealthy ? (
+              <p className="text-sm text-text-muted text-center py-2">
+                All models are responding normally.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {Object.entries(byProvider).map(([provider, provModels]: any) => (
+                  <div key={provider}>
+                    <p className="text-xs font-semibold text-text-main mb-1.5 capitalize">
+                      {provider}
+                    </p>
+                    <div className="flex flex-col gap-1">
+                      {(
+                        provModels as Array<{ provider: string; model: string; status: string }>
+                      ).map((m: any) => {
+                        const status: any = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;
+                        const isClearing: any = clearing === `${m.provider}:${m.model}`;
+                        return (
+                          <div
+                            key={`${m.provider}-${m.model}`}
+                            className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface/30"
+                          >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <LucideIcon
+                                name={status.icon}
+                                className="text-[14px] shrink-0"
+                                style={{ color: status.color }}
+                              />
+                              <span className="font-mono text-xs text-text-main truncate">
+                                {m.model}
+                              </span>
+                            </div>
+                            {m.status === "cooldown" && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleClearCooldown(m.provider, m.model)}
+                                disabled={isClearing}
+                                className="text-[10px] ml-2"
+                              >
+                                {isClearing ? "..." : "Clear"}
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -32,7 +32,12 @@ function ensureQwenSystemMessage(body) {
 function isQwenThinkingActive(body) {
   const thinking = body?.thinking;
   if (thinking === true || body?.enable_thinking === true) return true;
-  return typeof thinking === "object" && thinking !== null && !Array.isArray(thinking) && thinking.type === "enabled";
+  return (
+    typeof thinking === "object" &&
+    thinking !== null &&
+    !Array.isArray(thinking) &&
+    thinking.type === "enabled"
+  );
 }
 
 // Qwen rejects tool_choice="required" or object forms when thinking is active; neutralize to "auto".
@@ -77,7 +82,9 @@ export class QwenExecutor extends DefaultExecutor {
   // Using portal.qwen.ai when the token is issued for another shard returns 401/403.
   buildUrl(model, stream, urlIndex = 0, credentials = null) {
     const resourceUrl = credentials?.providerSpecificData?.resourceUrl;
-    const host = resourceUrl ? resourceUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "portal.qwen.ai";
+    const host = resourceUrl
+      ? resourceUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")
+      : "portal.qwen.ai";
     return `https://${host}/v1/chat/completions`;
   }
 
@@ -107,7 +114,10 @@ export class QwenExecutor extends DefaultExecutor {
     try {
       const response = await fetch(OAUTH_ENDPOINTS.qwen.token, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams({
           grant_type: "refresh_token",
           refresh_token: credentials.refreshToken,

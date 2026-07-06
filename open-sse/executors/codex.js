@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getConsistentMachineId } from "../../src/shared/utils/machineId.js";
+import { getConsistentMachineId } from "../../src/shared/utils/machineId";
 import { CODEX_DEFAULT_INSTRUCTIONS } from "../config/codexInstructions.js";
 import { getModelUpstreamId } from "../config/providerModels.js";
 import { PROVIDERS } from "../config/providers.js";
@@ -94,8 +94,11 @@ function normalizeCodexTools(body) {
     }
     // Normalize function tool shape (handle both Chat Completions and Responses schemas)
     const fn =
-      tool.function && typeof tool.function === "object" && !Array.isArray(tool.function) ? tool.function : null;
-    const rawName = typeof tool.name === "string" ? tool.name : typeof fn?.name === "string" ? fn.name : "";
+      tool.function && typeof tool.function === "object" && !Array.isArray(tool.function)
+        ? tool.function
+        : null;
+    const rawName =
+      typeof tool.name === "string" ? tool.name : typeof fn?.name === "string" ? fn.name : "";
     const name = rawName.trim();
     if (!name) return false;
     const description =
@@ -120,7 +123,11 @@ function normalizeCodexTools(body) {
     return true;
   });
   // Drop tool_choice if it references an unknown function name
-  if (body.tool_choice && typeof body.tool_choice === "object" && !Array.isArray(body.tool_choice)) {
+  if (
+    body.tool_choice &&
+    typeof body.tool_choice === "object" &&
+    !Array.isArray(body.tool_choice)
+  ) {
     if (body.tool_choice.type === "function") {
       const n = typeof body.tool_choice.name === "string" ? body.tool_choice.name.trim() : "";
       if (!n || !validNames.has(n)) delete body.tool_choice;
@@ -283,7 +290,11 @@ export class CodexExecutor extends BaseExecutor {
   async execute(args) {
     const imgCount = Array.isArray(args.body?.input)
       ? args.body.input.reduce(
-          (n, it) => n + (Array.isArray(it.content) ? it.content.filter((c) => c.type === "image_url").length : 0),
+          (n, it) =>
+            n +
+            (Array.isArray(it.content)
+              ? it.content.filter((c) => c.type === "image_url").length
+              : 0),
           0,
         )
       : 0;
@@ -335,8 +346,14 @@ export class CodexExecutor extends BaseExecutor {
         return result;
       }
       attempt++;
-      args.log?.debug?.("RETRY", `CODEX | SSE "${peek.matched}" retry ${attempt}/${attempts} after ${delayMs / 1000}s`);
-      dbg("CODEX", `SSE overloaded "${peek.matched}" -> retry ${attempt}/${attempts} in ${delayMs}ms`);
+      args.log?.debug?.(
+        "RETRY",
+        `CODEX | SSE "${peek.matched}" retry ${attempt}/${attempts} after ${delayMs / 1000}s`,
+      );
+      dbg(
+        "CODEX",
+        `SSE overloaded "${peek.matched}" -> retry ${attempt}/${attempts} in ${delayMs}ms`,
+      );
       try {
         await result.response.body?.cancel?.();
       } catch {
@@ -351,7 +368,8 @@ export class CodexExecutor extends BaseExecutor {
   // Caller MUST use replacementBody (original body has been read).
   // Uses TransformStream to avoid fragile releaseLock+getReader double-reader pattern.
   async _peekSseOverloaded(response) {
-    if (!response || !response.ok || !response.body) return { matched: null, replacementBody: null };
+    if (!response || !response.ok || !response.body)
+      return { matched: null, replacementBody: null };
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     const chunks = [];
@@ -410,7 +428,11 @@ export class CodexExecutor extends BaseExecutor {
             const ms = err.resets_at * 1000;
             if (ms > now) resetsAtMs = ms;
           }
-          if (!resetsAtMs && typeof err.resets_in_seconds === "number" && err.resets_in_seconds > 0) {
+          if (
+            !resetsAtMs &&
+            typeof err.resets_in_seconds === "number" &&
+            err.resets_in_seconds > 0
+          ) {
             resetsAtMs = now + err.resets_in_seconds * 1000;
           }
           if (resetsAtMs) {
@@ -439,7 +461,9 @@ export class CodexExecutor extends BaseExecutor {
 
     // Ensure input is present and non-empty (Codex API rejects empty input)
     if (!body.input || (Array.isArray(body.input) && body.input.length === 0)) {
-      body.input = [{ type: "message", role: "user", content: [{ type: "input_text", text: "..." }] }];
+      body.input = [
+        { type: "message", role: "user", content: [{ type: "input_text", text: "..." }] },
+      ];
     }
 
     // Keep system prompts in body.input as role=developer so they stay in the cacheable prefix

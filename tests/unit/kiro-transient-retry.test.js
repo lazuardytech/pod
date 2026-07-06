@@ -39,7 +39,9 @@ describe("isTransientErrorBody — body classification", () => {
   });
 
   it("matches Anthropic-style overloaded", () => {
-    expect(isTransientErrorBody('{"error":{"type":"overloaded_error","message":"Overloaded"}}')).toBe(true);
+    expect(
+      isTransientErrorBody('{"error":{"type":"overloaded_error","message":"Overloaded"}}'),
+    ).toBe(true);
   });
 
   it("matches generic temporarily unavailable", () => {
@@ -128,7 +130,9 @@ describe("KiroExecutor.execute — body-gated 500 retry", () => {
   });
 
   it("does NOT retry generic 500 (no transient body)", async () => {
-    fetchMock.mockResolvedValue(makeKiroResponse(JSON.stringify({ error: "Internal server error" }), 500));
+    fetchMock.mockResolvedValue(
+      makeKiroResponse(JSON.stringify({ error: "Internal server error" }), 500),
+    );
 
     const exec = buildExec();
     const result = await callExecute(exec);
@@ -175,7 +179,11 @@ describe("ERROR_RULES — checkFallbackError handles transient body patterns", (
 
   it('treats "unexpectedly high load" as backoff', async () => {
     const { checkFallbackError } = await import("../../open-sse/services/accountFallback.js");
-    const result = checkFallbackError(500, "Encountered unexpectedly high load when processing the request", 0);
+    const result = checkFallbackError(
+      500,
+      "Encountered unexpectedly high load when processing the request",
+      0,
+    );
     expect(result.newBackoffLevel).toBe(1);
   });
 

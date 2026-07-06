@@ -151,7 +151,9 @@ describe("fetchData non-fatal after tunnel enable", () => {
       userVisibleError = sanitizeTunnelError(error?.message);
     }
 
-    expect(userVisibleError).toBe("cloudflared exited with code 1. Ensure your tunnel token is valid.");
+    expect(userVisibleError).toBe(
+      "cloudflared exited with code 1. Ensure your tunnel token is valid.",
+    );
   });
 });
 
@@ -161,7 +163,7 @@ describe("tunnel enable route — no unnecessary delay", () => {
   it("enable route should not have DNS_WARMUP_DELAY_MS", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const routePath = path.join(process.cwd(), "src/app/api/tunnel/enable/route.js");
+    const routePath = path.join(process.cwd(), "src/app/api/tunnel/enable/route.ts");
     const content = fs.readFileSync(routePath, "utf8");
     expect(content).not.toContain("DNS_WARMUP_DELAY_MS");
     expect(content).not.toContain("setTimeout");

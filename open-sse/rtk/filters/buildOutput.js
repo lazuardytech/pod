@@ -62,7 +62,11 @@ export function buildOutput(input, _maxLines) {
     if (cargoCompileCount > 2 && cargoCompileLast && cargoCompileLast !== cargoCompileFirst) {
       out.push(`  ... (${cargoCompileCount - 2} compile lines)`);
       out.push(cargoCompileLast);
-    } else if (cargoCompileCount === 2 && cargoCompileLast && cargoCompileLast !== cargoCompileFirst) {
+    } else if (
+      cargoCompileCount === 2 &&
+      cargoCompileLast &&
+      cargoCompileLast !== cargoCompileFirst
+    ) {
       out.push(cargoCompileLast);
     }
     cargoCompileCount = 0;

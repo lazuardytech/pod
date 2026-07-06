@@ -3,15 +3,15 @@
  * Covers: settings normalization, extraction, injection, retrieval strategies, store operations.
  */
 
-import { describe, expect, it, vi, afterEach } from "vitest";
-import { normalizeMemorySettings, toMemoryRetrievalConfig } from "../../src/lib/memory/settings.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { extractFactsFromText } from "../../src/lib/memory/extraction.js";
 import {
-  injectMemory,
   formatMemoryContext,
-  shouldInjectMemory,
+  injectMemory,
   providerSupportsSystemMessage,
+  shouldInjectMemory,
 } from "../../src/lib/memory/injection.js";
+import { normalizeMemorySettings, toMemoryRetrievalConfig } from "../../src/lib/memory/settings.js";
 import { MemoryType } from "../../src/lib/memory/types.js";
 
 // ─── Group 1: Settings normalization ─────────────────────────────────────────
@@ -55,28 +55,53 @@ describe("normalizeMemorySettings", () => {
 
 describe("toMemoryRetrievalConfig", () => {
   it("maps 'recent' strategy → 'exact'", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 2000, strategy: "recent", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 2000,
+      strategy: "recent",
+      retentionDays: 30,
+    });
     expect(cfg.retrievalStrategy).toBe("exact");
   });
 
   it("maps 'semantic' strategy → 'semantic'", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 2000, strategy: "semantic", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 2000,
+      strategy: "semantic",
+      retentionDays: 30,
+    });
     expect(cfg.retrievalStrategy).toBe("semantic");
   });
 
   it("maps 'hybrid' strategy → 'hybrid'", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 2000, strategy: "hybrid", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 2000,
+      strategy: "hybrid",
+      retentionDays: 30,
+    });
     expect(cfg.retrievalStrategy).toBe("hybrid");
   });
 
   it("disabled when maxTokens=0", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: true, maxTokens: 0, strategy: "hybrid", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: true,
+      maxTokens: 0,
+      strategy: "hybrid",
+      retentionDays: 30,
+    });
     expect(cfg.enabled).toBe(false);
     expect(cfg.maxTokens).toBe(0);
   });
 
   it("disabled when enabled=false", () => {
-    const cfg = toMemoryRetrievalConfig({ enabled: false, maxTokens: 2000, strategy: "hybrid", retentionDays: 30 });
+    const cfg = toMemoryRetrievalConfig({
+      enabled: false,
+      maxTokens: 2000,
+      strategy: "hybrid",
+      retentionDays: 30,
+    });
     expect(cfg.enabled).toBe(false);
   });
 });
@@ -278,7 +303,8 @@ describe("shouldInjectMemory", () => {
 
 describe("providerSupportsSystemMessage", () => {
   it("returns true for openai", () => expect(providerSupportsSystemMessage("openai")).toBe(true));
-  it("returns true for anthropic", () => expect(providerSupportsSystemMessage("anthropic")).toBe(true));
+  it("returns true for anthropic", () =>
+    expect(providerSupportsSystemMessage("anthropic")).toBe(true));
   it("returns false for o1", () => expect(providerSupportsSystemMessage("o1")).toBe(false));
   it("returns false for glm", () => expect(providerSupportsSystemMessage("glm")).toBe(false));
   it("returns false for zai", () => expect(providerSupportsSystemMessage("zai")).toBe(false));
@@ -290,7 +316,7 @@ describe("providerSupportsSystemMessage", () => {
 
 // ─── Group 4: Retrieval strategies (mock DB) ─────────────────────────────────
 
-vi.mock("../../src/lib/sqlite/connection.js", () => ({
+vi.mock("../../src/lib/sqlite/connection.ts", () => ({
   getDatabase: vi.fn(),
 }));
 
@@ -310,11 +336,12 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("returns [] when maxTokens=0 (effectively disabled)", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const mockDb = {
-      prepare: vi
-        .fn()
-        .mockReturnValue({ all: vi.fn().mockReturnValue([]), get: vi.fn().mockReturnValue({ name: null }) }),
+      prepare: vi.fn().mockReturnValue({
+        all: vi.fn().mockReturnValue([]),
+        get: vi.fn().mockReturnValue({ name: null }),
+      }),
     };
     getDatabase.mockReturnValue(mockDb);
     const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
@@ -323,7 +350,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("'recent' strategy works as alias for 'exact'", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const now = new Date().toISOString();
     const mockRows = [
       {
@@ -358,7 +385,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("respects maxTokens budget", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const now = new Date().toISOString();
     // Each entry ~25 tokens (100 chars / 4)
     const mockRows = Array.from({ length: 10 }, (_, i) => ({
@@ -392,7 +419,7 @@ describe("retrieveMemories — strategy behavior", () => {
   });
 
   it("always returns at least one memory even if over budget", async () => {
-    const { getDatabase } = await import("../../src/lib/sqlite/connection.js");
+    const { getDatabase } = await import("../../src/lib/sqlite/connection.ts");
     const now = new Date().toISOString();
     const mockRows = [
       {

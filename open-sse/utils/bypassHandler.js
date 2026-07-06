@@ -94,7 +94,9 @@ export function handleBypassRequest(body, model, userAgent = "", ccFilterNaming 
       : createNonStreamingResponse(sourceFormat, model, namingText);
   }
 
-  return stream ? createStreamingResponse(sourceFormat, model) : createNonStreamingResponse(sourceFormat, model);
+  return stream
+    ? createStreamingResponse(sourceFormat, model)
+    : createNonStreamingResponse(sourceFormat, model);
 }
 
 const DEFAULT_BYPASS_TEXT = "CLI Command Execution: Clear Terminal";

@@ -2,8 +2,8 @@
   "name": "pod-cloud",
   "version": "0.2.13",
   "private": true,
-  "type": "module",
   "description": "Pod Cloud Worker - Self-hosted Cloudflare Worker proxy",
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
@@ -12,6 +12,7 @@
     "open-sse": "file:../open-sse"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260626.1",
     "wrangler": "^4.95.0"
   }
 }

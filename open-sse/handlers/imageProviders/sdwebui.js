@@ -11,7 +11,9 @@ export default {
     return { prompt, width: width || 512, height: height || 512, steps: 20, batch_size: n };
   },
   normalize: (responseBody) => {
-    const images = Array.isArray(responseBody.images) ? responseBody.images.map((img) => ({ b64_json: img })) : [];
+    const images = Array.isArray(responseBody.images)
+      ? responseBody.images.map((img) => ({ b64_json: img }))
+      : [];
     return { created: nowSec(), data: images };
   },
 };

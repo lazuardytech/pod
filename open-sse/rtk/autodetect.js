@@ -1,7 +1,11 @@
 // Port of auto_detect_filter (rtk/src/cmds/system/pipe_cmd.rs:132-188) + JS extras
 // Order: git-diff → git-status → grep → find → tree → ls → search-list
 //        → read-numbered → dedup-log → smart-truncate → null
-import { DETECT_WINDOW, READ_NUMBERED_MIN_HIT_RATIO, SMART_TRUNCATE_MIN_LINES } from "./constants.js";
+import {
+  DETECT_WINDOW,
+  READ_NUMBERED_MIN_HIT_RATIO,
+  SMART_TRUNCATE_MIN_LINES,
+} from "./constants.js";
 import { buildOutput } from "./filters/buildOutput.js";
 import { dedupLog } from "./filters/dedupLog.js";
 import { find } from "./filters/find.js";
@@ -25,7 +29,8 @@ const RE_LS_TOTAL = /^total \d+$/m;
 // Build-log signals (cargo / npm / yarn / pnpm)
 const RE_BUILD_NPM = /^(npm\s+(WARN|warn|notice|ERR|err)|>\s+\S+@\S+\s+\S+)/m;
 const RE_BUILD_NPM_SUMMARY = /^(added|removed|changed|audited)\s+\d+\s+packages?/im;
-const RE_BUILD_CARGO = /^\s*(Compiling|Checking|Building|Finished|Downloading|Updating|Fresh)\s+\S/m;
+const RE_BUILD_CARGO =
+  /^\s*(Compiling|Checking|Building|Finished|Downloading|Updating|Fresh)\s+\S/m;
 const RE_BUILD_YARN = /^(yarn|pnpm)\s+/m;
 
 export function autoDetectFilter(text) {

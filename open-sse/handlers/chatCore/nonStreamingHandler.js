@@ -1,4 +1,4 @@
-import { generateDetailId, saveRequestDetail } from "@/lib/usageDb.js";
+import { generateDetailId, saveRequestDetail } from "@/lib/usageDb";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.js";
 import { FORMATS } from "../../translator/formats.js";
@@ -7,7 +7,12 @@ import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.j
 import { decloakToolNames } from "../../utils/claudeCloaking.js";
 import { createErrorResult } from "../../utils/error.js";
 import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.js";
-import { buildRequestDetail, extractRequestConfig, extractUsageFromResponse, saveUsageStats } from "./requestDetail.js";
+import {
+  buildRequestDetail,
+  extractRequestConfig,
+  extractUsageFromResponse,
+  saveUsageStats,
+} from "./requestDetail.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
 
 /**
@@ -41,7 +46,10 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
           toolCalls.push({
             id: `call_${part.functionCall.name}_${Date.now()}_${toolCalls.length}`,
             type: "function",
-            function: { name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args || {}) },
+            function: {
+              name: part.functionCall.name,
+              arguments: JSON.stringify(part.functionCall.args || {}),
+            },
           });
         }
       }
@@ -123,7 +131,8 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
       result.usage = {
         prompt_tokens: responseBody.usage.input_tokens || 0,
         completion_tokens: responseBody.usage.output_tokens || 0,
-        total_tokens: (responseBody.usage.input_tokens || 0) + (responseBody.usage.output_tokens || 0),
+        total_tokens:
+          (responseBody.usage.input_tokens || 0) + (responseBody.usage.output_tokens || 0),
       };
     }
     return result;
@@ -188,20 +197,32 @@ export async function handleNonStreamingResponse({
         object: "chat.completion",
         created: jsonResponse.created_at || Math.floor(Date.now() / 1000),
         model,
-        choices: [{ index: 0, message: { role: "assistant", content: textContent }, finish_reason: "stop" }],
-        usage: { prompt_tokens: inTokens, completion_tokens: outTokens, total_tokens: inTokens + outTokens },
+        choices: [
+          { index: 0, message: { role: "assistant", content: textContent }, finish_reason: "stop" },
+        ],
+        usage: {
+          prompt_tokens: inTokens,
+          completion_tokens: outTokens,
+          total_tokens: inTokens + outTokens,
+        },
       };
     } catch {
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
       console.error("[ChatCore] Failed to parse Codex SSE response");
-      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, `Failed to parse Codex response from ${provider}`);
+      return createErrorResult(
+        HTTP_STATUS.BAD_GATEWAY,
+        `Failed to parse Codex response from ${provider}`,
+      );
     }
   } else if (isSSE) {
     const sseText = await providerResponse.text();
     const parsed = parseSSEToOpenAIResponse(sseText, model);
     if (!parsed) {
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
-      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Invalid SSE response for non-streaming request");
+      return createErrorResult(
+        HTTP_STATUS.BAD_GATEWAY,
+        "Invalid SSE response for non-streaming request",
+      );
     }
     responseBody = parsed;
   } else {
@@ -228,7 +249,14 @@ export async function handleNonStreamingResponse({
   const usage = extractUsageFromResponse(responseBody);
   const detailsId = generateDetailId(model);
   appendLog({ tokens: usage, status: "SUCCESS", detailsId });
-  saveUsageStats({ provider, model, tokens: usage, connectionId, apiKey, endpoint: clientRawRequest?.endpoint });
+  saveUsageStats({
+    provider,
+    model,
+    tokens: usage,
+    connectionId,
+    apiKey,
+    endpoint: clientRawRequest?.endpoint,
+  });
 
   const translatedResponse = needsTranslation(targetFormat, sourceFormat)
     ? translateNonStreamingResponse(responseBody, targetFormat, sourceFormat)
@@ -247,6 +275,15 @@ export async function handleNonStreamingResponse({
   // Ensure OpenAI-required fields
   if (!translatedResponse.object) translatedResponse.object = "chat.completion";
   if (!translatedResponse.created) translatedResponse.created = Math.floor(Date.now() / 1000);
+  if (!translatedResponse.system_fingerprint)
+    translatedResponse.system_fingerprint = `fp_${Date.now().toString(36)}`;
+
+  // Ensure logprobs is present in each choice (null when not requested)
+  if (translatedResponse?.choices) {
+    for (const choice of translatedResponse.choices) {
+      if (choice.logprobs === undefined) choice.logprobs = null;
+    }
+  }
 
   // Strip Azure-specific fields
   delete translatedResponse.prompt_filter_results;
@@ -255,7 +292,10 @@ export async function handleNonStreamingResponse({
   }
 
   if (translatedResponse?.usage) {
-    translatedResponse.usage = filterUsageForFormat(addBufferToUsage(translatedResponse.usage), sourceFormat);
+    translatedResponse.usage = filterUsageForFormat(
+      addBufferToUsage(translatedResponse.usage),
+      sourceFormat,
+    );
   }
 
   try {
@@ -282,7 +322,10 @@ export async function handleNonStreamingResponse({
         providerRequest: finalBody || translatedBody || null,
         providerResponse: responseBody || null,
         response: {
-          content: translatedResponse?.choices?.[0]?.message?.content || translatedResponse?.content || null,
+          content:
+            translatedResponse?.choices?.[0]?.message?.content ||
+            translatedResponse?.content ||
+            null,
           thinking:
             translatedResponse?.choices?.[0]?.message?.reasoning_content ||
             translatedResponse?.reasoning_content ||

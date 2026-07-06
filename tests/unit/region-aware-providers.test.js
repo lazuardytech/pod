@@ -14,8 +14,8 @@
  * 5. Gap documentation for xiaomi-mimo
  */
 import { describe, expect, it } from "vitest";
+import { getDefaultModel, PROVIDER_MODELS } from "../../open-sse/config/providerModels.js";
 import { PROVIDERS } from "../../open-sse/config/providers.js";
-import { PROVIDER_MODELS, getDefaultModel } from "../../open-sse/config/providerModels.js";
 import { DefaultExecutor } from "../../open-sse/executors/default.js";
 
 // ---- xiaomi-mimo ----
@@ -111,7 +111,9 @@ describe("glm / glm-cn", () => {
     const PROVIDER = "glm-cn";
 
     it("uses OpenAI-format China endpoint", () => {
-      expect(PROVIDERS[PROVIDER].baseUrl).toBe("https://open.bigmodel.cn/api/coding/paas/v4/chat/completions");
+      expect(PROVIDERS[PROVIDER].baseUrl).toBe(
+        "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",
+      );
       expect(PROVIDERS[PROVIDER].format).toBe("openai");
     });
 
@@ -249,7 +251,9 @@ describe("minimax / minimax-cn", () => {
   it("minimax and minimax-cn have different usage URLs (per open-sse/services/usage.js)", () => {
     // Expected usage URLs from open-sse/services/usage.js MINIMAX_USAGE_URLS
     expect("https://www.minimax.io/v1/token_plan/remains").toContain("minimax.io");
-    expect("https://www.minimaxi.com/v1/api/openplatform/coding_plan/remains").toContain("minimaxi.com");
+    expect("https://www.minimaxi.com/v1/api/openplatform/coding_plan/remains").toContain(
+      "minimaxi.com",
+    );
     // CN URLs reference minimaxi.com domain
     expect("https://www.minimaxi.com").not.toContain("minimax.io");
   });
@@ -262,7 +266,9 @@ describe("alicode / alicode-intl", () => {
     const PROVIDER = "alicode";
 
     it("uses OpenAI-format China endpoint", () => {
-      expect(PROVIDERS[PROVIDER].baseUrl).toBe("https://coding.dashscope.aliyuncs.com/v1/chat/completions");
+      expect(PROVIDERS[PROVIDER].baseUrl).toBe(
+        "https://coding.dashscope.aliyuncs.com/v1/chat/completions",
+      );
       expect(PROVIDERS[PROVIDER].format).toBe("openai");
     });
 
@@ -301,7 +307,9 @@ describe("alicode / alicode-intl", () => {
     const PROVIDER = "alicode-intl";
 
     it("uses OpenAI-format international endpoint", () => {
-      expect(PROVIDERS[PROVIDER].baseUrl).toBe("https://coding-intl.dashscope.aliyuncs.com/v1/chat/completions");
+      expect(PROVIDERS[PROVIDER].baseUrl).toBe(
+        "https://coding-intl.dashscope.aliyuncs.com/v1/chat/completions",
+      );
       expect(PROVIDERS[PROVIDER].format).toBe("openai");
     });
 
@@ -344,7 +352,9 @@ describe("byteplus", () => {
   const PROVIDER = "byteplus";
 
   it("has ap-southeast endpoint (region baked into hostname)", () => {
-    expect(PROVIDERS[PROVIDER].baseUrl).toBe("https://ark.ap-southeast.bytepluses.com/api/coding/v3/chat/completions");
+    expect(PROVIDERS[PROVIDER].baseUrl).toBe(
+      "https://ark.ap-southeast.bytepluses.com/api/coding/v3/chat/completions",
+    );
     expect(PROVIDERS[PROVIDER].format).toBe("openai");
   });
 

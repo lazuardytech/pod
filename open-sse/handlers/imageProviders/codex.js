@@ -88,7 +88,10 @@ async function parseStream(response, log, callbacks = {}) {
         try {
           const data = JSON.parse(dataStr);
           if (callbacks.onPartialImage && data?.partial_image_b64) {
-            callbacks.onPartialImage({ b64_json: data.partial_image_b64, index: data.partial_image_index });
+            callbacks.onPartialImage({
+              b64_json: data.partial_image_b64,
+              index: data.partial_image_index,
+            });
           }
         } catch {}
       }
@@ -121,7 +124,10 @@ function buildSseResponse(providerResponse, log, onSuccess) {
           onPartialImage: (info) => send("partial_image", info),
         });
         if (!b64) {
-          send("error", { message: "Codex did not return an image. Account may not be entitled (Plus/Pro required)." });
+          send("error", {
+            message:
+              "Codex did not return an image. Account may not be entitled (Plus/Pro required).",
+          });
         } else {
           if (onSuccess) await onSuccess();
           send("done", { created: nowSec(), data: [{ b64_json: b64 }] });
@@ -148,7 +154,8 @@ export default {
   stream: true,
   buildUrl: () => CODEX_RESPONSES_URL,
   buildHeaders: (creds) => {
-    const accountId = creds?.providerSpecificData?.chatgptAccountId || decodeAccountId(creds?.idToken);
+    const accountId =
+      creds?.providerSpecificData?.chatgptAccountId || decodeAccountId(creds?.idToken);
     return {
       accept: "text/event-stream, application/json",
       authorization: `Bearer ${creds?.accessToken || ""}`,
@@ -171,7 +178,10 @@ export default {
     const single = toDataUrl(body.image);
     if (single) refs.push(single);
     const detail = body.image_detail || CODEX_REF_DETAIL;
-    const imgTool = { type: "image_generation", output_format: (body.output_format || "png").toLowerCase() };
+    const imgTool = {
+      type: "image_generation",
+      output_format: (body.output_format || "png").toLowerCase(),
+    };
     if (body.size && body.size !== "") imgTool.size = body.size;
     if (body.quality && body.quality !== "") imgTool.quality = body.quality;
     if (body.background && body.background !== "") imgTool.background = body.background;
@@ -195,7 +205,9 @@ export default {
     }
     const b64 = await parseStream(response, log);
     if (!b64) {
-      throw new Error("Codex did not return an image. Account may not be entitled (Plus/Pro required).");
+      throw new Error(
+        "Codex did not return an image. Account may not be entitled (Plus/Pro required).",
+      );
     }
     return { created: nowSec(), data: [{ b64_json: b64 }] };
   },

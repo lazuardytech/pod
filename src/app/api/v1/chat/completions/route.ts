@@ -1,0 +1,51 @@
+import { initTranslators } from "open-sse/translator/index.js";
+import { withApiKeyRateLimit } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { handleChat } from "@/sse/handlers/chat";
+
+let initialized = false;
+
+/**
+ * Initialize translators once
+ */
+async function ensureInitialized() {
+  if (!initialized) {
+    await initTranslators();
+    initialized = true;
+  }
+}
+
+/**
+ * Handle CORS preflight
+ */
+export async function OPTIONS() {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+    },
+  });
+}
+
+export async function POST(request: any) {
+  try {
+    return await withApiKeyRateLimit(request, async () => {
+      await ensureInitialized();
+      return await handleChat(request);
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: { message: sanitizeError(error), type: "server_error", param: null },
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
+    );
+  }
+}

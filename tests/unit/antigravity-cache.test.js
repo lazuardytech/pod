@@ -15,7 +15,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { ANTIGRAVITY_HEADERS, INTERNAL_REQUEST_HEADER } from "../../open-sse/config/appConstants.js";
+import {
+  ANTIGRAVITY_HEADERS,
+  INTERNAL_REQUEST_HEADER,
+} from "../../open-sse/config/appConstants.js";
 import { PROVIDERS } from "../../open-sse/config/providers.js";
 
 const ENABLE = process.env.AG_CACHE_TEST === "1";
@@ -140,7 +143,9 @@ describe.skipIf(!ENABLE)("Antigravity cache behavior (real API)", () => {
       userText: "Reply with OK only.",
     });
 
-    console.log(`[diff-session ${acc.email}] r1: cached=${r1.cachedTokens} | r2: cached=${r2.cachedTokens}`);
+    console.log(
+      `[diff-session ${acc.email}] r1: cached=${r1.cachedTokens} | r2: cached=${r2.cachedTokens}`,
+    );
 
     expect(r1.status).toBe(200);
     expect(r2.status).toBe(200);
@@ -237,7 +242,8 @@ describe.skipIf(!ENABLE)("Antigravity cache behavior (real API)", () => {
       console.log(`[codex    call ${i + 1}] cached=${r.cachedTokens}`);
     }
 
-    const randomHitRate = randomResults.filter((r) => r.cachedTokens >= MIN_CACHE_TOKENS).length / N;
+    const randomHitRate =
+      randomResults.filter((r) => r.cachedTokens >= MIN_CACHE_TOKENS).length / N;
     const codexHitRate = codexResults.filter((r) => r.cachedTokens >= MIN_CACHE_TOKENS).length / N;
     console.log(`[summary] randomHitRate=${randomHitRate} codexHitRate=${codexHitRate}`);
 
@@ -263,7 +269,9 @@ describe.skipIf(!ENABLE)("Antigravity cache behavior (real API)", () => {
         userText: "Reply with OK only.",
       });
       results.push(r);
-      console.log(`[unique-prompt call ${i + 1}] prompt=${r.promptTokens} cached=${r.cachedTokens}`);
+      console.log(
+        `[unique-prompt call ${i + 1}] prompt=${r.promptTokens} cached=${r.cachedTokens}`,
+      );
     }
 
     results.forEach((r) => expect(r.status).toBe(200));

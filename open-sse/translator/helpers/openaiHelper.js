@@ -1,8 +1,20 @@
 // OpenAI helper functions for translator
 
 // Valid OpenAI content block types
-export const VALID_OPENAI_CONTENT_TYPES = ["text", "image_url", "image", "input_audio", "audio_url"];
-export const VALID_OPENAI_MESSAGE_TYPES = ["text", "image_url", "image", "tool_calls", "tool_result"];
+export const VALID_OPENAI_CONTENT_TYPES = [
+  "text",
+  "image_url",
+  "image",
+  "input_audio",
+  "audio_url",
+];
+export const VALID_OPENAI_MESSAGE_TYPES = [
+  "text",
+  "image_url",
+  "image",
+  "tool_calls",
+  "tool_result",
+];
 
 // Filter messages to OpenAI standard format
 // Remove: thinking, redacted_thinking, signature, and other non-OpenAI blocks
@@ -49,7 +61,10 @@ export function filterToOpenAIFormat(body) {
       }
 
       const allText = filteredContent.every((b) => b.type === "text");
-      return { ...msg, content: allText ? filteredContent.map((b) => b.text).join("\n") : filteredContent };
+      return {
+        ...msg,
+        content: allText ? filteredContent.map((b) => b.text).join("\n") : filteredContent,
+      };
     }
 
     return msg;

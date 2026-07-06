@@ -31,7 +31,10 @@ export async function handleEmbeddingsCore({
 
   const adapter = getEmbeddingAdapter(provider);
   if (!adapter) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, `Provider '${provider}' does not support embeddings.`);
+    return createErrorResult(
+      HTTP_STATUS.BAD_REQUEST,
+      `Provider '${provider}' does not support embeddings.`,
+    );
   }
 
   const ctx = { input };
@@ -65,9 +68,14 @@ export async function handleEmbeddingsCore({
   const executor = getExecutor(provider);
   if (
     !executor?.noAuth &&
-    (providerResponse.status === HTTP_STATUS.UNAUTHORIZED || providerResponse.status === HTTP_STATUS.FORBIDDEN)
+    (providerResponse.status === HTTP_STATUS.UNAUTHORIZED ||
+      providerResponse.status === HTTP_STATUS.FORBIDDEN)
   ) {
-    const newCredentials = await refreshWithRetry(() => executor.refreshCredentials(credentials, log), 3, log);
+    const newCredentials = await refreshWithRetry(
+      () => executor.refreshCredentials(credentials, log),
+      3,
+      log,
+    );
 
     if (newCredentials?.accessToken || newCredentials?.apiKey) {
       log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed for embeddings`);

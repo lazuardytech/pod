@@ -1,6 +1,6 @@
 // biome-ignore lint/style/useNodejsImportProtocol: node: protocol not supported by webpack bundler
 import { arch, platform } from "os";
-import { getOAuthClientSecret } from "../../src/lib/security/runtimeSecrets.mjs";
+import { getOAuthClientSecret } from "../../src/lib/security/runtimeSecrets.mts";
 
 // === OS/Arch helpers ===
 function mapStainlessOs() {
@@ -114,7 +114,10 @@ export const PROVIDERS = {
     authUrl: "https://qoder.com/oauth/authorize",
   },
   antigravity: {
-    baseUrls: ["https://daily-cloudcode-pa.googleapis.com", "https://daily-cloudcode-pa.sandbox.googleapis.com"],
+    baseUrls: [
+      "https://daily-cloudcode-pa.googleapis.com",
+      "https://daily-cloudcode-pa.sandbox.googleapis.com",
+    ],
     format: "antigravity",
     headers: { "User-Agent": `antigravity/1.107.0 ${platform()}/${arch()}` },
     clientId: "ANTIGRAVITY_OAUTH_CLIENT_ID_PLACEHOLDER",

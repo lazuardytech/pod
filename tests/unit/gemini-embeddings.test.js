@@ -19,7 +19,10 @@ describe("Gemini embedding adapter", () => {
     });
 
     it("forwards numeric dimensions as outputDimensionality on single input", () => {
-      const body = geminiAdapter.buildBody("text-embedding-004", { input: "hello", dimensions: 256 });
+      const body = geminiAdapter.buildBody("text-embedding-004", {
+        input: "hello",
+        dimensions: 256,
+      });
       expect(body).toEqual({
         model: "models/text-embedding-004",
         content: { parts: [{ text: "hello" }] },
@@ -28,13 +31,19 @@ describe("Gemini embedding adapter", () => {
     });
 
     it("coerces numeric string dimensions like '256' to a number", () => {
-      const body = geminiAdapter.buildBody("text-embedding-004", { input: "hello", dimensions: "256" });
+      const body = geminiAdapter.buildBody("text-embedding-004", {
+        input: "hello",
+        dimensions: "256",
+      });
       expect(body.outputDimensionality).toBe(256);
     });
 
     it("ignores empty-string and zero/negative dimensions", () => {
       for (const bad of ["", 0, -1, "abc", null]) {
-        const body = geminiAdapter.buildBody("text-embedding-004", { input: "hello", dimensions: bad });
+        const body = geminiAdapter.buildBody("text-embedding-004", {
+          input: "hello",
+          dimensions: bad,
+        });
         expect("outputDimensionality" in body).toBe(false);
       }
     });

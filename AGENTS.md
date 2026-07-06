@@ -5,8 +5,8 @@ Operational rules for AI agents working on the **Pod** project.
 ## Project Identity
 
 - Project name: pod, v0.0.79
-- Runtime: Bun + Next.js 16 (JS, no TS)
-- Engine: open-sse/ (local fork, not npm)
+- Runtime: Bun + Next.js 16 (TS, strict mode)
+- Engine: open-sse/ (local fork, not npm, frozen as JS)
 - Data: SQLite at ~/.pod/pod.sqlite
 - Port: 20128
 - Health: GET /api/health (public)
@@ -21,18 +21,21 @@ Operational rules for AI agents working on the **Pod** project.
 6. Route header actions through headerActionStore.
 7. Pair bg-primary with text-primary-fg.
 8. Bump version in package.json AND src/shared/constants/config.js.
-9. Use src/lib/localDb.js and src/lib/sqlite/connection.js for storage.
+9. Use src/lib/localDb.ts and src/lib/sqlite/connection.ts for storage.
+10. User may invoke `/ponytail lite|full|ultra`; "stop ponytail" / "normal mode" reverts. Ponytail favors one-line solutions, YAGNI, stdlib over deps, and deletion over addition.
 
 ## Security & API Rules
 
 1. sanitizeError(error) required in API catch blocks returning client-facing JSON.
 2. Use parseJsonBody(request) for mutation routes instead of raw request.json().
 3. Never return raw upstream error bodies to clients.
-4. /v1/models, /v1/models/[kind], and /v1beta/models must respect requireApiKey.
+4. /v1/models, /v1/models/{model}, and /v1beta/models must respect requireApiKey.
 5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
 6. /api/restart and /api/shutdown require SHUTDOWN_SECRET.
-7. Stateful internal APIs must stay covered by dashboardGuard.js and src/proxy.js.
+7. Stateful internal APIs must stay covered by dashboardGuard.ts and src/proxy.ts -- keep matchers in sync.
 8. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
+9. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
+10. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
 
 ## Runtime Invariants
 
@@ -41,10 +44,11 @@ Operational rules for AI agents working on the **Pod** project.
 3. Semantic cache signatures must include memoryOwnerId.
 4. SQLite cache TTL comparisons must use strftime('%Y-%m-%dT%H:%M:%SZ', 'now').
 5. Connection locking must stay transactional.
-6. Preserve modelLockCount_${model} semantics.
-7. Keep the guarded fallback loop in src/sse/handlers/chat.js.
+6. Preserve modelLockCount\_${model} semantics.
+7. Keep the guarded fallback loop in src/sse/handlers/chat.ts.
 8. Keep the outer crash guard in open-sse/utils/stream.js.
 9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
+10. open-sse/ is frozen as JS -- do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
 
 ## Rate Limiting
 
@@ -61,12 +65,12 @@ Operational rules for AI agents working on the **Pod** project.
 3. Vercel relay timeout stays pod timeout - 5s; retry once on 502/504.
 4. Keep https://www.google.com/generate_204 as relay health target.
 5. Kiro retry body-gated on transient overload markers.
-6. cloud/src/handlers/testClaude.js is a 410 compatibility stub.
+6. cloud/src/handlers/testClaude.ts is a 410 compatibility stub.
 7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js -- do NOT emit <think> or </think> as content delta.
 
 ## Operations
 
-1. Keep global process handlers in server-init.js.
+1. Keep global process handlers in server-init.ts.
 2. SIGINT must allow queue flush and cleanup.
 3. Tunnel startup must treat fetchData() as non-fatal.
 4. Cloudflared tunnel spawn must stay serialized.
@@ -75,6 +79,19 @@ Operational rules for AI agents working on the **Pod** project.
 7. Offline reads use offlineJsonCache; offline writes use the mutation queue stack.
 8. Queue only safe, idempotent dashboard mutations.
 9. Git workflow: canary is the active development branch; main is the stable/release branch.
+10. Zeabur env changes take effect only on next restart/deploy -- no auto-restart on env mutation.
+11. /api/restart and /api/shutdown return 403 when NODE_ENV=production; SHUTDOWN_SECRET is dev-only.
+12. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
+
+## Deployment Topology (Zeabur)
+
+- Project: `Pod`, env `production` (id `6a1b7fa2b764eebf4f53b39e`), region Lazuardy Tech.
+- Service `pod` (main, id `6a1b7ffff9a5b4afba15bc03`) -> `pod.lazuardy.tech` (Cloudflare-proxied), port 20140.
+- Service `pod-canary` (id `6a20333e1d0765dcfbb985da`) -> `pod-canary.zeabur.app`, port 20140.
+- In-project Redis service (id `service-6a2021e61d0765dcfbb9817e`) backs `REDIS_URL`.
+- In-project Freebuff service (id `service-6a1ee2be8197c9aa0ae2f263`) -- docker-network alias `FREEBUFF_HOST`, not referenced in source.
+- `POD_HOST` (canary only) = prod service id; `POD_CANARY_HOST` (pod only) = canary service id. Used for canary <-> prod cross-calls.
+- `PORT=20140` in production overrides the Dockerfile default of 20128.
 
 ## Verification Before Push
 
@@ -88,10 +105,10 @@ bun run build
 
 - .agents/INDEX.md -- project index
 - .agents/PRD.md -- product requirements
-- .agents/architecture/* -- system design
-- .agents/knowledge/* -- working knowledge
-- .agents/issues/* -- historical audits
-- .agents/reports/* -- release & verification reports
+- .agents/architecture/\* -- system design
+- .agents/knowledge/\* -- working knowledge
+- .agents/issues/\* -- historical audits
+- .agents/reports/\* -- release & verification reports
 - DESIGN.md -- UI system reference
 - CHANGELOG.md -- release history
 - docs/API_INTERNAL.md -- internal API reference

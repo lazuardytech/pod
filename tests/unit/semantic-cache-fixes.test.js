@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // Mock dependencies before importing the module under test
-vi.mock("@/lib/sqlite/connection.js", () => ({
+vi.mock("@/lib/sqlite/connection.ts", () => ({
   getDatabase: () => ({
     prepare: () => ({
       run: () => {},
@@ -39,7 +39,8 @@ vi.mock("@/lib/cacheLayer.js", () => ({
 }));
 
 // Import after mocks
-const { generateSignature, isCacheableForRead, isCacheableForWrite } = await import("../../src/lib/semanticCache.js");
+const { generateSignature, isCacheableForRead, isCacheableForWrite } =
+  await import("../../src/lib/semanticCache.js");
 
 // MAX_SEMANTIC_CACHE_BYTES is not exported — test it via isSmallEnoughForSemanticCache
 // which is local to chatCore. We test the constant indirectly by checking the
@@ -52,7 +53,10 @@ const { generateSignature, isCacheableForRead, isCacheableForWrite } = await imp
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const chatCoreSrc = readFileSync(resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js"), "utf8");
+const chatCoreSrc = readFileSync(
+  resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js"),
+  "utf8",
+);
 
 describe("MAX_SEMANTIC_CACHE_BYTES", () => {
   it("is set to 512KB in chatCore.js", () => {

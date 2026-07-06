@@ -3,7 +3,8 @@
 import { LS_EXT_SUMMARY_TOP, LS_NOISE_DIRS } from "../constants.js";
 
 // Rust LS_DATE_RE: month + day + (year|HH:MM)
-const LS_DATE_RE = /\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+(\d{4}|\d{2}:\d{2})\s+/;
+const LS_DATE_RE =
+  /\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+(\d{4}|\d{2}:\d{2})\s+/;
 
 function humanSize(bytes) {
   if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)}M`;

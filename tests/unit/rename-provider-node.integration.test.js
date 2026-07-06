@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -91,7 +91,9 @@ describe("renameProviderNode — basic node table update", () => {
 
   it("rejects when source node missing", async () => {
     const { renameProviderNode } = await import("@/lib/localDb.js");
-    await expect(renameProviderNode("openai-compatible-missing", NEW_ID)).rejects.toThrow(/not found/i);
+    await expect(renameProviderNode("openai-compatible-missing", NEW_ID)).rejects.toThrow(
+      /not found/i,
+    );
   });
 
   it("rejects when oldId === newId", async () => {
@@ -104,7 +106,8 @@ describe("renameProviderNode — basic node table update", () => {
 describe("renameProviderNode — cascades to dependent tables", () => {
   it("rewrites provider_connections.provider", async () => {
     await seedCustomNode();
-    const { createProviderConnection, getProviderConnections, renameProviderNode } = await import("@/lib/localDb.js");
+    const { createProviderConnection, getProviderConnections, renameProviderNode } =
+      await import("@/lib/localDb.js");
     const conn = await createProviderConnection({
       provider: OLD_ID,
       authType: "apikey",
@@ -123,7 +126,8 @@ describe("renameProviderNode — cascades to dependent tables", () => {
 
   it("rewrites custom_models.provider_alias", async () => {
     await seedCustomNode();
-    const { addCustomModel, getCustomModels, renameProviderNode } = await import("@/lib/localDb.js");
+    const { addCustomModel, getCustomModels, renameProviderNode } =
+      await import("@/lib/localDb.js");
     await addCustomModel({ providerAlias: OLD_ID, id: "my-model", name: "My Model" });
 
     await renameProviderNode(OLD_ID, NEW_ID);
@@ -137,7 +141,12 @@ describe("renameProviderNode — cascades to dependent tables", () => {
     const { createCombo, getComboById, renameProviderNode } = await import("@/lib/localDb.js");
     const combo = await createCombo({
       name: "test-combo",
-      models: [`${OLD_ID}/gpt-4`, `${OLD_ID}/gpt-4o-mini`, "openai/gpt-3.5", "some-alias-without-slash"],
+      models: [
+        `${OLD_ID}/gpt-4`,
+        `${OLD_ID}/gpt-4o-mini`,
+        "openai/gpt-3.5",
+        "some-alias-without-slash",
+      ],
     });
 
     await renameProviderNode(OLD_ID, NEW_ID);
@@ -168,7 +177,10 @@ describe("renameProviderNode — cascades to dependent tables", () => {
     await seedCustomNode();
     const { updateSettings, getSettings, renameProviderNode } = await import("@/lib/localDb.js");
     await updateSettings({
-      providerStrategies: { [OLD_ID]: { fallbackStrategy: "round-robin" }, openai: { fallbackStrategy: "fill-first" } },
+      providerStrategies: {
+        [OLD_ID]: { fallbackStrategy: "round-robin" },
+        openai: { fallbackStrategy: "fill-first" },
+      },
       providerThinking: { [OLD_ID]: { mode: "extended", effortMode: "high" } },
     });
 
@@ -185,13 +197,25 @@ describe("renameProviderNode — cascades to dependent tables", () => {
   it("rewrites usage_history.provider and request_log.provider rows", async () => {
     await seedCustomNode();
     const { renameProviderNode } = await import("@/lib/localDb.js");
-    const { getDatabase } = await import("@/lib/sqlite/connection.js");
+    const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const db = getDatabase();
 
     db.prepare(
       `INSERT INTO usage_history (timestamp, provider, model, connection_id, api_key, endpoint, status, prompt_tokens, completion_tokens, cost, data)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(new Date().toISOString(), OLD_ID, "gpt-4", "conn-1", null, "/v1/chat", "200", 10, 5, 0.001, "{}");
+    ).run(
+      new Date().toISOString(),
+      OLD_ID,
+      "gpt-4",
+      "conn-1",
+      null,
+      "/v1/chat",
+      "200",
+      10,
+      5,
+      0.001,
+      "{}",
+    );
 
     db.prepare(
       `INSERT INTO request_log (timestamp, model, provider, account, prompt_tokens, completion_tokens, status, combo)
@@ -213,7 +237,9 @@ describe("renameProviderNode — cascades to dependent tables", () => {
     expect(db.prepare("SELECT provider FROM usage_history").get().provider).toBe(NEW_ID);
     expect(db.prepare("SELECT provider FROM request_log").get().provider).toBe(NEW_ID);
     expect(db.prepare("SELECT provider FROM request_details").get().provider).toBe(NEW_ID);
-    expect(db.prepare("SELECT key FROM daily_summary WHERE bucket = 'byProvider'").get().key).toBe(NEW_ID);
+    expect(db.prepare("SELECT key FROM daily_summary WHERE bucket = 'byProvider'").get().key).toBe(
+      NEW_ID,
+    );
   });
 });
 
@@ -225,7 +251,8 @@ describe("renameProviderNode — atomicity", () => {
     // SQLite PRIMARY KEY constraint) blocks the rename atomically.
     await seedCustomNode(OLD_ID);
     await seedCustomNode(NEW_ID);
-    const { renameProviderNode, getProviderConnections, createProviderConnection } = await import("@/lib/localDb.js");
+    const { renameProviderNode, getProviderConnections, createProviderConnection } =
+      await import("@/lib/localDb.js");
 
     await createProviderConnection({
       provider: OLD_ID,

@@ -46,7 +46,8 @@ export default {
       const s = await r.json();
       const flag = s.data?.successFlag;
       if (flag === 1) return s.data;
-      if (flag === 2 || flag === 3) throw new Error(s.data?.errorMessage || "NanoBanana generation failed");
+      if (flag === 2 || flag === 3)
+        throw new Error(s.data?.errorMessage || "NanoBanana generation failed");
     }
     throw new Error("NanoBanana polling timeout");
   },

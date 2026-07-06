@@ -82,7 +82,14 @@ function successResult(data) {
  * Run a single dedicated search provider attempt.
  * @returns {Promise<{success:boolean, status?:number, error?:string, data?:object}>}
  */
-async function tryDedicatedProvider({ provider, providerConfig, body, credentials, log, globalStartTime }) {
+async function tryDedicatedProvider({
+  provider,
+  providerConfig,
+  body,
+  credentials,
+  log,
+  globalStartTime,
+}) {
   const startTime = Date.now();
   const token = credentials?.apiKey || credentials?.accessToken || undefined;
 
@@ -112,7 +119,11 @@ async function tryDedicatedProvider({ provider, providerConfig, body, credential
   try {
     ({ url, init } = buildSearchRequest({ id: provider.id, ...providerConfig }, params));
   } catch (err) {
-    return { success: false, status: 400, error: err?.message || `Invalid request for ${provider.id}` };
+    return {
+      success: false,
+      status: 400,
+      error: err?.message || `Invalid request for ${provider.id}`,
+    };
   }
 
   // Timeout = min(provider timeout, remaining global)
@@ -121,10 +132,17 @@ async function tryDedicatedProvider({ provider, providerConfig, body, credential
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
-  log?.info?.("SEARCH", `${provider.id} | "${params.query.slice(0, 80)}" | type=${params.searchType}`);
+  log?.info?.(
+    "SEARCH",
+    `${provider.id} | "${params.query.slice(0, 80)}" | type=${params.searchType}`,
+  );
 
   try {
-    const resp = await fetch(url, { ...init, headers: sanitizeHeaders(init.headers), signal: controller.signal });
+    const resp = await fetch(url, {
+      ...init,
+      headers: sanitizeHeaders(init.headers),
+      signal: controller.signal,
+    });
     clearTimeout(timer);
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
@@ -180,7 +198,11 @@ async function tryDedicatedProvider({ provider, providerConfig, body, credential
         error: formatSearxngNetworkError({ err, fetchUrl: url }),
       };
     }
-    return { success: false, status, error: `${provider.id} ${isTimeout ? "timeout" : "error"}: ${err.message}` };
+    return {
+      success: false,
+      status,
+      error: `${provider.id} ${isTimeout ? "timeout" : "error"}: ${err.message}`,
+    };
   }
 }
 
@@ -236,7 +258,10 @@ export async function handleSearchCore({ body, provider, providerConfig, credent
     provider.searchViaChat &&
     providerConfig
   ) {
-    log?.warn?.("SEARCH", `${provider.id} dedicated failed (${result.status}), falling back to chat-based search`);
+    log?.warn?.(
+      "SEARCH",
+      `${provider.id} dedicated failed (${result.status}), falling back to chat-based search`,
+    );
     const fallback = await handleChatSearch({
       provider: provider.id,
       query: clean,

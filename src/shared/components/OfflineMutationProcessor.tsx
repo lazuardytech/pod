@@ -1,0 +1,78 @@
+"use client";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { drainOfflineMutationQueue } from "@/shared/services/offlineMutationQueue";
+
+const RETRY_INTERVAL_MS = 1000 * 30;
+const QUEUE_TOAST_DEBOUNCE_MS = 2500;
+
+export default function OfflineMutationProcessor(): any {
+  const isDrainingRef = useRef(false);
+  const lastQueueToastAtRef = useRef(0);
+
+  useEffect((): any => {
+    let cancelled = false;
+    let intervalId: any = null;
+
+    const runDrain = async (): Promise<any> => {
+      if (cancelled || isDrainingRef.current) return;
+      isDrainingRef.current = true;
+      try {
+        const summary = await drainOfflineMutationQueue({ limit: 30 });
+        if (cancelled || !summary) return;
+
+        if (summary.succeeded > 0) {
+          const suffix = summary.succeeded > 1 ? "changes" : "change";
+          toast.success(`${summary.succeeded} queued ${suffix} synced.`);
+        }
+        if (summary.dropped > 0) {
+          const suffix = summary.dropped > 1 ? "changes" : "change";
+          toast.warning(`${summary.dropped} queued ${suffix} could not be synced.`);
+        }
+      } finally {
+        isDrainingRef.current = false;
+      }
+    };
+
+    const onOnline = (): any => {
+      runDrain().catch((): any => {});
+    };
+
+    const onVisible = (): any => {
+      if (document.hidden) return;
+      runDrain().catch((): any => {});
+    };
+
+    const onQueued = (event: any): any => {
+      const now = Date.now();
+      if (now - lastQueueToastAtRef.current < QUEUE_TOAST_DEBOUNCE_MS) return;
+      lastQueueToastAtRef.current = now;
+
+      const queueLength = Number(event?.detail?.queueLength || 0);
+      if (queueLength > 0) {
+        toast.info(
+          `Offline: queued ${queueLength} pending ${queueLength > 1 ? "changes" : "change"}.`,
+        );
+      } else {
+        toast.info("Offline: change queued and will sync when online.");
+      }
+    };
+
+    runDrain().catch((): any => {});
+    intervalId = window.setInterval((): any => runDrain().catch((): any => {}), RETRY_INTERVAL_MS);
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("pod:offline-mutation-enqueued", onQueued);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return (): any => {
+      cancelled = true;
+      if (intervalId) window.clearInterval(intervalId);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("pod:offline-mutation-enqueued", onQueued);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  return null;
+}

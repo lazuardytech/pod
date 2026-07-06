@@ -62,8 +62,11 @@ vi.mock("bun:sqlite", () => {
 // Mock child_process for Strategy 2 fallback
 let cliMockResults = {};
 const execFileMock = vi.fn((file, args, opts, cb) => {
-  const sql = args.find((arg) => typeof arg === "string" && arg.includes("SELECT value FROM itemTable")) || "";
-  const parameterArg = args.find((arg) => typeof arg === "string" && arg.includes(".parameter set @key")) || "";
+  const sql =
+    args.find((arg) => typeof arg === "string" && arg.includes("SELECT value FROM itemTable")) ||
+    "";
+  const parameterArg =
+    args.find((arg) => typeof arg === "string" && arg.includes(".parameter set @key")) || "";
   let stdout = "";
 
   for (const [key, value] of Object.entries(cliMockResults)) {

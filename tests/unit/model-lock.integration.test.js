@@ -15,7 +15,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -71,7 +71,13 @@ describe("markAccountUnavailable — persists model lock to SQLite", () => {
     const { markAccountUnavailable } = await import("@/sse/services/auth.js");
 
     const before = Date.now();
-    const result = await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
+    const result = await markAccountUnavailable(
+      conn.id,
+      429,
+      "rate limit exceeded",
+      PROVIDER,
+      "gpt-5",
+    );
     expect(result.shouldFallback).toBe(true);
     expect(result.cooldownMs).toBeGreaterThan(0);
 
@@ -133,7 +139,14 @@ describe("markAccountUnavailable — persists model lock to SQLite", () => {
 
     // 6 hours in the future — must be clamped to 30 min
     const resetsAtMs = Date.now() + 6 * 60 * 60 * 1000;
-    const result = await markAccountUnavailable(conn.id, 429, "usage_limit_reached", PROVIDER, "gpt-y", resetsAtMs);
+    const result = await markAccountUnavailable(
+      conn.id,
+      429,
+      "usage_limit_reached",
+      PROVIDER,
+      "gpt-y",
+      resetsAtMs,
+    );
     expect(result.cooldownMs).toBeLessThanOrEqual(MAX_RATE_LIMIT_COOLDOWN_MS);
     expect(result.cooldownMs).toBeGreaterThan(MAX_RATE_LIMIT_COOLDOWN_MS - 1000);
 
@@ -222,9 +235,8 @@ describe("getProviderCredentials — connection selection respects model locks",
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
 
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     await markAccountUnavailable(connA.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
     invalidateConnectionsCache();
@@ -236,9 +248,8 @@ describe("getProviderCredentials — connection selection respects model locks",
   it("lock on model X does NOT affect requests for model Y on the same connection", async () => {
     const conn = await seedConnection({ name: "solo", priority: 1 });
 
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
     invalidateConnectionsCache();
@@ -257,9 +268,8 @@ describe("getProviderCredentials — connection selection respects model locks",
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
 
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     await markAccountUnavailable(connA.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
     await markAccountUnavailable(connB.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
@@ -277,7 +287,8 @@ describe("getProviderCredentials — connection selection respects model locks",
   it("after lock expires, connection becomes selectable again", async () => {
     const conn = await seedConnection({ name: "expirable", priority: 1 });
     const { updateProviderConnection } = await import("@/lib/localDb.js");
-    const { getProviderCredentials, invalidateConnectionsCache } = await import("@/sse/services/auth.js");
+    const { getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     // Manually set an already-expired lock
     await updateProviderConnection(conn.id, {
@@ -294,7 +305,8 @@ describe("getProviderCredentials — connection selection respects model locks",
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
 
-    const { getProviderCredentials, invalidateConnectionsCache } = await import("@/sse/services/auth.js");
+    const { getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
     invalidateConnectionsCache();
 
     const creds = await getProviderCredentials(PROVIDER, connA.id, "gpt-5");
@@ -377,9 +389,8 @@ describe("connection-level lock (account-wide lockdown)", () => {
   it("connection-locked connection is skipped by getProviderCredentials", async () => {
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     await markAccountUnavailable(connA.id, 401, "Unauthorized", PROVIDER, "gpt-5");
     invalidateConnectionsCache();
@@ -391,9 +402,8 @@ describe("connection-level lock (account-wide lockdown)", () => {
   it("when all connections are connection-locked, returns allRateLimited", async () => {
     const connA = await seedConnection({ name: "A", priority: 1 });
     const connB = await seedConnection({ name: "B", priority: 2 });
-    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } = await import(
-      "@/sse/services/auth.js"
-    );
+    const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
+      await import("@/sse/services/auth.js");
 
     await markAccountUnavailable(connA.id, 401, "Unauthorized", PROVIDER, "gpt-5");
     await markAccountUnavailable(connB.id, 401, "Unauthorized", PROVIDER, "gpt-5");

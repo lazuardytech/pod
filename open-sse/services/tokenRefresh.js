@@ -166,7 +166,10 @@ export async function refreshGoogleToken(refreshToken, clientId, clientSecret, l
 
     if (!response.ok) {
       const errorText = await response.text();
-      log?.error?.("TOKEN_REFRESH", "Failed to refresh Google token", { status: response.status, error: errorText });
+      log?.error?.("TOKEN_REFRESH", "Failed to refresh Google token", {
+        status: response.status,
+        error: errorText,
+      });
       return null;
     }
 
@@ -219,7 +222,9 @@ export async function refreshQwenToken(refreshToken, log) {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token || refreshToken,
         expiresIn: tokens.expires_in,
-        providerSpecificData: tokens.resource_url ? { resourceUrl: tokens.resource_url } : undefined,
+        providerSpecificData: tokens.resource_url
+          ? { resourceUrl: tokens.resource_url }
+          : undefined,
       };
     } else {
       const errorText = await response.text().catch(() => "");
@@ -267,7 +272,8 @@ export async function refreshCodexToken(refreshToken, log) {
       let errorCode = null;
       try {
         const parsed = JSON.parse(errorText);
-        errorCode = parsed?.error?.code || (typeof parsed?.error === "string" ? parsed.error : null);
+        errorCode =
+          parsed?.error?.code || (typeof parsed?.error === "string" ? parsed.error : null);
       } catch {}
 
       if (
@@ -276,10 +282,14 @@ export async function refreshCodexToken(refreshToken, log) {
         errorCode === "token_expired" ||
         errorCode === "invalid_token"
       ) {
-        log?.error?.("TOKEN_REFRESH", "Codex refresh token already used or invalid. Re-auth required.", {
-          status: response.status,
-          errorCode,
-        });
+        log?.error?.(
+          "TOKEN_REFRESH",
+          "Codex refresh token already used or invalid. Re-auth required.",
+          {
+            status: response.status,
+            errorCode,
+          },
+        );
         return { error: "unrecoverable_refresh_error", code: errorCode };
       }
 
@@ -313,7 +323,12 @@ export async function refreshCodexToken(refreshToken, log) {
  * Specialized refresh for Kiro (AWS CodeWhisperer) tokens
  * Supports both AWS SSO OIDC (Builder ID/IDC) and Social Auth (Google/GitHub)
  */
-export async function refreshKiroToken(refreshToken, providerSpecificData, log, proxyOptions = null) {
+export async function refreshKiroToken(
+  refreshToken,
+  providerSpecificData,
+  log,
+  proxyOptions = null,
+) {
   try {
     const authMethod = providerSpecificData?.authMethod;
     const clientId = providerSpecificData?.clientId;
@@ -325,7 +340,9 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
     if (clientId && clientSecret) {
       const isIDC = authMethod === "idc";
       const endpoint =
-        isIDC && region ? `https://oidc.${region}.amazonaws.com/token` : "https://oidc.us-east-1.amazonaws.com/token";
+        isIDC && region
+          ? `https://oidc.${region}.amazonaws.com/token`
+          : "https://oidc.us-east-1.amazonaws.com/token";
 
       const response = await proxyAwareFetch(
         endpoint,
@@ -418,7 +435,10 @@ export async function refreshKiroToken(refreshToken, providerSpecificData, log, 
 export async function refreshIflowToken(refreshToken, log) {
   try {
     if (!PROVIDERS.iflow.clientSecret) {
-      log?.error?.("TOKEN_REFRESH", "Missing IFLOW_OAUTH_CLIENT_SECRET; skipping iFlow token refresh");
+      log?.error?.(
+        "TOKEN_REFRESH",
+        "Missing IFLOW_OAUTH_CLIENT_SECRET; skipping iFlow token refresh",
+      );
       return null;
     }
 
@@ -620,7 +640,11 @@ async function _getAccessTokenInternal(provider, credentials, log) {
       return await refreshGitHubToken(credentials.refreshToken, log);
 
     case "kiro":
-      return await refreshKiroToken(credentials.refreshToken, credentials.providerSpecificData, log);
+      return await refreshKiroToken(
+        credentials.refreshToken,
+        credentials.providerSpecificData,
+        log,
+      );
 
     case "vertex":
     case "vertex-partner": {
@@ -758,7 +782,12 @@ export function parseVertexSaJson(apiKey) {
   if (typeof apiKey !== "string") return null;
   try {
     const parsed = JSON.parse(apiKey);
-    if (parsed.type === "service_account" && parsed.client_email && parsed.private_key && parsed.project_id) {
+    if (
+      parsed.type === "service_account" &&
+      parsed.client_email &&
+      parsed.private_key &&
+      parsed.project_id
+    ) {
       return parsed;
     }
     return null;

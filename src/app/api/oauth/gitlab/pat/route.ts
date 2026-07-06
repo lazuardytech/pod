@@ -1,0 +1,123 @@
+import { NextResponse } from "next/server";
+import { fetchUrlError } from "@/app/api/_types";
+import { getProviderConnections } from "@/lib/localDb";
+import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkStrictDashboardAuth } from "@/lib/routeAuth";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { validateFetchUrl } from "@/lib/validateUrl";
+import { createProviderConnection } from "@/models";
+
+const GITLAB_DEFAULT_BASE = "https://gitlab.com";
+
+/**
+ * POST /api/oauth/gitlab/pat
+ * Authenticate GitLab Duo with a Personal Access Token (PAT)
+ */
+export async function POST(request: any) {
+  try {
+    const authResponse = await checkStrictDashboardAuth(request);
+    if (authResponse) return authResponse;
+
+    let body;
+    try {
+      const [parsed, _parseErr] = await parseJsonBody(request);
+      if (_parseErr) return _parseErr;
+      body = parsed;
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const bodyFields = (body ?? {}) as Record<string, unknown>;
+    const token = bodyFields.token as string | undefined;
+    const baseUrl = bodyFields.baseUrl as string | undefined;
+    if (!token?.trim()) {
+      return NextResponse.json({ error: "Personal Access Token is required" }, { status: 400 });
+    }
+
+    const base = (baseUrl?.trim() || GITLAB_DEFAULT_BASE).replace(/\/$/, "");
+
+    // Validate the GitLab base URL — must be http/https and not a private address
+    const urlCheck = validateFetchUrl(base);
+    if (!urlCheck.ok) {
+      return NextResponse.json(
+        { error: `Invalid GitLab base URL: ${fetchUrlError(urlCheck)}` },
+        { status: 400 },
+      );
+    }
+
+    // Hostname allowlist: gitlab.com + its subdomains, or an existing provider connection.
+    const parsedHost = urlCheck.url.hostname.toLowerCase();
+    const isGitLabHosted =
+      parsedHost === "gitlab.com" ||
+      parsedHost === "www.gitlab.com" ||
+      parsedHost.endsWith(".gitlab.com");
+    if (!isGitLabHosted) {
+      // Allow self-hosted GitLab instances the user has already configured as a provider connection
+      const existingConnections = await getProviderConnections({ provider: "gitlab" }).catch(
+        () => [],
+      );
+      const hasExisting = existingConnections.some((conn) => {
+        const connBase = (conn.providerSpecificData as Record<string, unknown> | undefined)
+          ?.baseUrl as string | undefined;
+        if (!connBase) return false;
+        try {
+          return new URL(connBase).hostname.toLowerCase() === parsedHost;
+        } catch {
+          return false;
+        }
+      });
+      if (!hasExisting) {
+        return NextResponse.json(
+          {
+            error:
+              "GitLab base URL must be gitlab.com or match an existing GitLab provider connection",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Reconstruct fetch URL from parsed components (not user string concat)
+    // so CodeQL recognises the host has been validated and allowlisted.
+    const targetUrl = new URL(
+      "/api/v4/user",
+      `${urlCheck.url.protocol}//${parsedHost}${urlCheck.url.port ? `:${urlCheck.url.port}` : ""}`,
+    );
+    const userRes = await fetch(targetUrl, {
+      headers: { "Private-Token": token.trim(), Accept: "application/json" },
+    });
+
+    if (!userRes.ok) {
+      return NextResponse.json(
+        { error: `GitLab token verification failed (${userRes.status})` },
+        { status: 401 },
+      );
+    }
+
+    const user = await userRes.json();
+    const email = user.email || user.public_email || "";
+
+    await createProviderConnection({
+      provider: "gitlab",
+      authType: "oauth",
+      accessToken: token.trim(),
+      refreshToken: null,
+      expiresAt: null,
+      email,
+      displayName: user.name || user.username || email,
+      testStatus: "active",
+      providerSpecificData: {
+        username: user.username || "",
+        email,
+        name: user.name || "",
+        baseUrl: base,
+        authKind: "personal_access_token",
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("GitLab PAT auth error:", error);
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
+  }
+}

@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  const { closeDatabase } = await import("@/lib/sqlite/connection.js");
+  const { closeDatabase } = await import("@/lib/sqlite/connection.ts");
   closeDatabase();
   if (originalDataDir === undefined) delete process.env.DATA_DIR;
   else process.env.DATA_DIR = originalDataDir;
@@ -77,7 +77,10 @@ describe("api key limit config + enforcement", () => {
     });
 
     const okHandler = async () =>
-      new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
 
     const r1 = await withApiKeyRateLimit(req, okHandler);
     const r2 = await withApiKeyRateLimit(req, okHandler);

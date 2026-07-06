@@ -1,0 +1,68 @@
+"use client";
+
+import { useEffect, useSyncExternalStore } from "react";
+import useThemeStore from "@/store/themeStore";
+
+// Subscribe to system theme changes
+function subscribeToSystemTheme(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+// Get current system theme preference
+function getSystemThemeSnapshot(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+// Server snapshot always returns false
+function getServerSnapshot(): boolean {
+  return false;
+}
+
+export function useTheme(): {
+  theme: string;
+  setTheme: (theme: string) => void;
+  toggleTheme: () => void;
+  isDark: boolean;
+} {
+  const { theme, setTheme: storeSetTheme, toggleTheme, initTheme } = useThemeStore();
+
+  // Use useSyncExternalStore to safely subscribe to system theme
+  const systemPrefersDark = useSyncExternalStore(
+    subscribeToSystemTheme,
+    getSystemThemeSnapshot,
+    getServerSnapshot,
+  );
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
+
+  // Listen for system theme changes when theme is "system"
+  useEffect(() => {
+    if (theme !== "system") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => initTheme();
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme, initTheme]);
+
+  // Compute isDark from current state (no effect needed)
+  const isDark = theme === "dark" || (theme === "system" && systemPrefersDark);
+
+  const setTheme = (t: string) => storeSetTheme(t as "dark" | "light" | "system");
+
+  return {
+    theme,
+    setTheme,
+    toggleTheme,
+    isDark,
+  };
+}

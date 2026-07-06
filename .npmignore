@@ -20,7 +20,6 @@ CLIProxyAPI/
 .gitignore
 .env*
 jsconfig.json
-eslint.config.mjs
 postcss.config.mjs
 next.config.mjs
 tsconfig.json

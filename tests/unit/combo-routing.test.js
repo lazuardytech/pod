@@ -10,15 +10,26 @@ describe("combo round-robin routing", () => {
   it("keeps existing one-request round-robin behavior by default", () => {
     const models = ["provider/model-a", "provider/model-b"];
 
-    const firstChoices = Array.from({ length: 4 }, () => getRotatedModels(models, "code-xhigh", "round-robin")[0]);
+    const firstChoices = Array.from(
+      { length: 4 },
+      () => getRotatedModels(models, "code-xhigh", "round-robin")[0],
+    );
 
-    expect(firstChoices).toEqual(["provider/model-a", "provider/model-b", "provider/model-a", "provider/model-b"]);
+    expect(firstChoices).toEqual([
+      "provider/model-a",
+      "provider/model-b",
+      "provider/model-a",
+      "provider/model-b",
+    ]);
   });
 
   it("sticks to each combo model for the configured number of requests", () => {
     const models = ["provider/model-a", "provider/model-b"];
 
-    const firstChoices = Array.from({ length: 6 }, () => getRotatedModels(models, "code-xhigh", "round-robin", 2)[0]);
+    const firstChoices = Array.from(
+      { length: 6 },
+      () => getRotatedModels(models, "code-xhigh", "round-robin", 2)[0],
+    );
 
     expect(firstChoices).toEqual([
       "provider/model-a",

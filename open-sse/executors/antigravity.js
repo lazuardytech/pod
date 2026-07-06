@@ -90,7 +90,11 @@ export class AntigravityExecutor extends BaseExecutor {
       tools = allDeclarations.length > 0 ? [{ functionDeclarations: allDeclarations }] : [];
     }
 
-    const { tools: _originalTools, toolConfig: _originalToolConfig, ...requestWithoutTools } = body.request || {};
+    const {
+      tools: _originalTools,
+      toolConfig: _originalToolConfig,
+      ...requestWithoutTools
+    } = body.request || {};
     const generationConfig = { ...(requestWithoutTools.generationConfig || {}) };
     if (generationConfig.maxOutputTokens > MAX_ANTIGRAVITY_OUTPUT_TOKENS) {
       generationConfig.maxOutputTokens = MAX_ANTIGRAVITY_OUTPUT_TOKENS;
@@ -101,7 +105,8 @@ export class AntigravityExecutor extends BaseExecutor {
       generationConfig,
       ...(contents && { contents }),
       ...(tools && { tools }),
-      sessionId: body.request?.sessionId || deriveSessionId(credentials?.email || credentials?.connectionId),
+      sessionId:
+        body.request?.sessionId || deriveSessionId(credentials?.email || credentials?.connectionId),
       safetySettings: undefined,
       ...(tools?.length > 0 && { toolConfig: { functionCallingConfig: { mode: "VALIDATED" } } }),
     };
@@ -125,7 +130,10 @@ export class AntigravityExecutor extends BaseExecutor {
         OAUTH_ENDPOINTS.google.token,
         {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
           body: new URLSearchParams({
             grant_type: "refresh_token",
             refresh_token: credentials.refreshToken,
@@ -245,7 +253,10 @@ export class AntigravityExecutor extends BaseExecutor {
           proxyOptions,
         );
 
-        if (response.status === HTTP_STATUS.RATE_LIMITED || response.status === HTTP_STATUS.SERVICE_UNAVAILABLE) {
+        if (
+          response.status === HTTP_STATUS.RATE_LIMITED ||
+          response.status === HTTP_STATUS.SERVICE_UNAVAILABLE
+        ) {
           // Try to get retry time from headers first
           let retryMs = this.parseRetryHeaders(response.headers);
 
@@ -261,7 +272,11 @@ export class AntigravityExecutor extends BaseExecutor {
             }
           }
 
-          if (retryMs && retryMs <= MAX_RETRY_AFTER_MS && retryAfterAttemptsByUrl[urlIndex] < MAX_RETRY_AFTER_RETRIES) {
+          if (
+            retryMs &&
+            retryMs <= MAX_RETRY_AFTER_MS &&
+            retryAfterAttemptsByUrl[urlIndex] < MAX_RETRY_AFTER_RETRIES
+          ) {
             retryAfterAttemptsByUrl[urlIndex]++;
             log?.debug?.(
               "RETRY",
@@ -280,7 +295,10 @@ export class AntigravityExecutor extends BaseExecutor {
           ) {
             retryAttemptsByUrl[urlIndex]++;
             // Exponential backoff: 2s, 4s, 8s...
-            const backoffMs = Math.min(1000 * 2 ** retryAttemptsByUrl[urlIndex], MAX_RETRY_AFTER_MS);
+            const backoffMs = Math.min(
+              1000 * 2 ** retryAttemptsByUrl[urlIndex],
+              MAX_RETRY_AFTER_MS,
+            );
             log?.debug?.(
               "RETRY",
               `429 auto retry ${retryAttemptsByUrl[urlIndex]}/${MAX_AUTO_RETRIES} after ${backoffMs / 1000}s`,

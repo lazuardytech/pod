@@ -295,8 +295,18 @@ export const PROVIDER_MODELS = {
       params: ["language", "response_format", "temperature", "prompt"],
     },
     // Image models
-    { id: "gpt-image-1", name: "GPT Image 1", type: "image", params: ["n", "size", "quality", "response_format"] },
-    { id: "dall-e-3", name: "DALL-E 3", type: "image", params: ["size", "quality", "style", "response_format"] },
+    {
+      id: "gpt-image-1",
+      name: "GPT Image 1",
+      type: "image",
+      params: ["n", "size", "quality", "response_format"],
+    },
+    {
+      id: "dall-e-3",
+      name: "DALL-E 3",
+      type: "image",
+      params: ["size", "quality", "style", "response_format"],
+    },
     { id: "dall-e-2", name: "DALL-E 2", type: "image", params: ["n", "size", "response_format"] },
   ],
   anthropic: [
@@ -325,25 +335,67 @@ export const PROVIDER_MODELS = {
     { id: "text-embedding-005", name: "Text Embedding 005", type: "embedding" },
     { id: "text-embedding-004", name: "Text Embedding 004 (Legacy)", type: "embedding" },
     // Image models (Nano Banana)
-    { id: "gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Image (Nano Banana 2)", type: "image", params: [] },
-    { id: "gemini-3-pro-image-preview", name: "Gemini 3 Pro Image (Nano Banana Pro)", type: "image", params: [] },
-    { id: "gemini-2.5-flash-image", name: "Gemini 2.5 Flash Image (Nano Banana)", type: "image", params: [] },
+    {
+      id: "gemini-3.1-flash-image-preview",
+      name: "Gemini 3.1 Flash Image (Nano Banana 2)",
+      type: "image",
+      params: [],
+    },
+    {
+      id: "gemini-3-pro-image-preview",
+      name: "Gemini 3 Pro Image (Nano Banana Pro)",
+      type: "image",
+      params: [],
+    },
+    {
+      id: "gemini-2.5-flash-image",
+      name: "Gemini 2.5 Flash Image (Nano Banana)",
+      type: "image",
+      params: [],
+    },
     // STT models (multimodal generateContent)
-    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro (Best)", type: "stt", params: ["language", "prompt"] },
-    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", type: "stt", params: ["language", "prompt"] },
+    {
+      id: "gemini-2.5-pro",
+      name: "Gemini 2.5 Pro (Best)",
+      type: "stt",
+      params: ["language", "prompt"],
+    },
+    {
+      id: "gemini-2.5-flash",
+      name: "Gemini 2.5 Flash",
+      type: "stt",
+      params: ["language", "prompt"],
+    },
     {
       id: "gemini-2.5-flash-lite",
       name: "Gemini 2.5 Flash Lite (Cheapest)",
       type: "stt",
       params: ["language", "prompt"],
     },
-    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", type: "stt", params: ["language", "prompt"] },
+    {
+      id: "gemini-2.0-flash",
+      name: "Gemini 2.0 Flash",
+      type: "stt",
+      params: ["language", "prompt"],
+    },
   ],
   openrouter: [
     // Embedding models
-    { id: "openai/text-embedding-3-large", name: "OpenAI Text Embedding 3 Large", type: "embedding" },
-    { id: "openai/text-embedding-3-small", name: "OpenAI Text Embedding 3 Small", type: "embedding" },
-    { id: "openai/text-embedding-ada-002", name: "OpenAI Text Embedding Ada 002", type: "embedding" },
+    {
+      id: "openai/text-embedding-3-large",
+      name: "OpenAI Text Embedding 3 Large",
+      type: "embedding",
+    },
+    {
+      id: "openai/text-embedding-3-small",
+      name: "OpenAI Text Embedding 3 Small",
+      type: "embedding",
+    },
+    {
+      id: "openai/text-embedding-ada-002",
+      name: "OpenAI Text Embedding Ada 002",
+      type: "embedding",
+    },
     { id: "qwen/qwen3-embedding-8b", name: "Qwen3 Embedding 8B", type: "embedding" },
     { id: "perplexity/pplx-embed-v1-4b", name: "Perplexity Embed V1 4B", type: "embedding" },
     { id: "perplexity/pplx-embed-v1-0.6b", name: "Perplexity Embed V1 0.6B", type: "embedding" },
@@ -369,7 +421,12 @@ export const PROVIDER_MODELS = {
       type: "image",
       params: ["n", "size", "quality", "response_format"],
     },
-    { id: "google/imagen-3.0-generate-002", name: "Imagen 3 (via OpenRouter)", type: "image", params: ["n", "size"] },
+    {
+      id: "google/imagen-3.0-generate-002",
+      name: "Imagen 3 (via OpenRouter)",
+      type: "image",
+      params: ["n", "size"],
+    },
     {
       id: "black-forest-labs/FLUX.1-schnell",
       name: "FLUX.1 Schnell (via OpenRouter)",
@@ -401,7 +458,12 @@ export const PROVIDER_MODELS = {
     { id: "MiniMax-M2.5", name: "MiniMax M2.5" },
     { id: "MiniMax-M2.1", name: "MiniMax M2.1" },
     // Image models
-    { id: "minimax-image-01", name: "MiniMax Image 01", type: "image", params: ["n", "size", "response_format"] },
+    {
+      id: "minimax-image-01",
+      name: "MiniMax Image 01",
+      type: "image",
+      params: ["n", "size", "response_format"],
+    },
   ],
   "minimax-cn": [
     { id: "MiniMax-M2.7", name: "MiniMax M2.7" },
@@ -454,14 +516,39 @@ export const PROVIDER_MODELS = {
     { id: "@cf/zai-org/glm-4.7-flash", name: "GLM 4.7 Flash" },
     { id: "@cf/qwen/qwq-32b", name: "QwQ 32B" },
     { id: "@cf/qwen/qwen2.5-coder-32b-instruct", name: "Qwen 2.5 Coder 32B Instruct" },
-    { id: "@cf/black-forest-labs/flux-2-klein-9b", name: "FLUX.2 Klein 9B", type: "image", params: ["size"] },
-    { id: "@cf/black-forest-labs/flux-2-klein-4b", name: "FLUX.2 Klein 4B", type: "image", params: ["size"] },
+    {
+      id: "@cf/black-forest-labs/flux-2-klein-9b",
+      name: "FLUX.2 Klein 9B",
+      type: "image",
+      params: ["size"],
+    },
+    {
+      id: "@cf/black-forest-labs/flux-2-klein-4b",
+      name: "FLUX.2 Klein 4B",
+      type: "image",
+      params: ["size"],
+    },
     { id: "@cf/black-forest-labs/flux-2-dev", name: "FLUX.2 Dev", type: "image", params: ["size"] },
     { id: "@cf/leonardo/lucid-origin", name: "Lucid Origin", type: "image", params: ["size"] },
     { id: "@cf/leonardo/phoenix-1.0", name: "Phoenix 1.0", type: "image", params: ["size"] },
-    { id: "@cf/black-forest-labs/flux-1-schnell", name: "FLUX.1 Schnell", type: "image", params: ["size"] },
-    { id: "@cf/bytedance/stable-diffusion-xl-lightning", name: "SDXL Lightning", type: "image", params: ["size"] },
-    { id: "@cf/lykon/dreamshaper-8-lcm", name: "DreamShaper 8 LCM", type: "image", params: ["size"] },
+    {
+      id: "@cf/black-forest-labs/flux-1-schnell",
+      name: "FLUX.1 Schnell",
+      type: "image",
+      params: ["size"],
+    },
+    {
+      id: "@cf/bytedance/stable-diffusion-xl-lightning",
+      name: "SDXL Lightning",
+      type: "image",
+      params: ["size"],
+    },
+    {
+      id: "@cf/lykon/dreamshaper-8-lcm",
+      name: "DreamShaper 8 LCM",
+      type: "image",
+      params: ["size"],
+    },
     {
       id: "@cf/runwayml/stable-diffusion-v1-5-img2img",
       name: "Stable Diffusion v1.5 Img2Img",
@@ -476,7 +563,12 @@ export const PROVIDER_MODELS = {
       params: ["size"],
       capabilities: ["edit", "mask"],
     },
-    { id: "@cf/stabilityai/stable-diffusion-xl-base-1.0", name: "SDXL Base 1.0", type: "image", params: ["size"] },
+    {
+      id: "@cf/stabilityai/stable-diffusion-xl-base-1.0",
+      name: "SDXL Base 1.0",
+      type: "image",
+      params: ["size"],
+    },
   ],
   byteplus: [
     { id: "seed-2-0-pro-260328", name: "Seed 2.0 Pro" },
@@ -562,7 +654,12 @@ export const PROVIDER_MODELS = {
     { id: "z-ai/glm4.7", name: "GLM 4.7" },
     { id: "nvidia/nv-embedqa-e5-v5", name: "NV EmbedQA E5 v5", type: "embedding" },
     // STT models
-    { id: "nvidia/parakeet-ctc-1.1b-asr", name: "Parakeet CTC 1.1B", type: "stt", params: ["language"] },
+    {
+      id: "nvidia/parakeet-ctc-1.1b-asr",
+      name: "Parakeet CTC 1.1B",
+      type: "stt",
+      params: ["language"],
+    },
   ],
   nebius: [
     { id: "meta-llama/Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct" },
@@ -703,7 +800,12 @@ export const PROVIDER_MODELS = {
     { id: "nanobanana-pro", name: "NanoBanana Pro", type: "image", params: ["n", "size"] },
   ],
   sdwebui: [
-    { id: "stable-diffusion-v1-5", name: "Stable Diffusion v1.5", type: "image", params: ["n", "size"] },
+    {
+      id: "stable-diffusion-v1-5",
+      name: "Stable Diffusion v1.5",
+      type: "image",
+      params: ["n", "size"],
+    },
     { id: "sdxl-base-1.0", name: "SDXL Base 1.0", type: "image", params: ["n", "size"] },
   ],
   comfyui: [
@@ -712,9 +814,19 @@ export const PROVIDER_MODELS = {
   ],
   huggingface: [
     { id: "black-forest-labs/FLUX.1-schnell", name: "FLUX.1 Schnell", type: "image", params: [] },
-    { id: "stabilityai/stable-diffusion-xl-base-1.0", name: "SDXL Base 1.0", type: "image", params: [] },
+    {
+      id: "stabilityai/stable-diffusion-xl-base-1.0",
+      name: "SDXL Base 1.0",
+      type: "image",
+      params: [],
+    },
     // STT models
-    { id: "openai/whisper-large-v3", name: "Whisper Large v3 (HF)", type: "stt", params: ["language"] },
+    {
+      id: "openai/whisper-large-v3",
+      name: "Whisper Large v3 (HF)",
+      type: "stt",
+      params: ["language"],
+    },
     { id: "openai/whisper-small", name: "Whisper Small (HF)", type: "stt", params: ["language"] },
   ],
   deepgram: [
@@ -730,16 +842,41 @@ export const PROVIDER_MODELS = {
     { id: "fal-ai/flux/schnell", name: "FLUX Schnell", type: "image", params: ["n", "size"] },
     { id: "fal-ai/flux/dev", name: "FLUX Dev", type: "image", params: ["n", "size"] },
     { id: "fal-ai/flux-pro/v1.1", name: "FLUX Pro v1.1", type: "image", params: ["n", "size"] },
-    { id: "fal-ai/flux-pro/v1.1-ultra", name: "FLUX Pro v1.1 Ultra", type: "image", params: ["n", "size"] },
+    {
+      id: "fal-ai/flux-pro/v1.1-ultra",
+      name: "FLUX Pro v1.1 Ultra",
+      type: "image",
+      params: ["n", "size"],
+    },
     { id: "fal-ai/recraft-v3", name: "Recraft V3", type: "image", params: ["n", "size", "style"] },
-    { id: "fal-ai/ideogram/v2", name: "Ideogram V2", type: "image", params: ["n", "size", "style"] },
-    { id: "fal-ai/stable-diffusion-v35-large", name: "SD 3.5 Large", type: "image", params: ["n", "size"] },
+    {
+      id: "fal-ai/ideogram/v2",
+      name: "Ideogram V2",
+      type: "image",
+      params: ["n", "size", "style"],
+    },
+    {
+      id: "fal-ai/stable-diffusion-v35-large",
+      name: "SD 3.5 Large",
+      type: "image",
+      params: ["n", "size"],
+    },
   ],
   "stability-ai": [
     { id: "stable-image-ultra", name: "Stable Image Ultra", type: "image", params: ["size"] },
-    { id: "stable-image-core", name: "Stable Image Core", type: "image", params: ["size", "style"] },
+    {
+      id: "stable-image-core",
+      name: "Stable Image Core",
+      type: "image",
+      params: ["size", "style"],
+    },
     { id: "sd3.5-large", name: "Stable Diffusion 3.5 Large", type: "image", params: ["size"] },
-    { id: "sd3.5-large-turbo", name: "Stable Diffusion 3.5 Large Turbo", type: "image", params: ["size"] },
+    {
+      id: "sd3.5-large-turbo",
+      name: "Stable Diffusion 3.5 Large Turbo",
+      type: "image",
+      params: ["size"],
+    },
     { id: "sd3.5-medium", name: "Stable Diffusion 3.5 Medium", type: "image", params: ["size"] },
   ],
   "black-forest-labs": [

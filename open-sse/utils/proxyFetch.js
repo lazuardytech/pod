@@ -53,10 +53,20 @@ function getEnvProxyUrl(targetUrl) {
   }
 
   if (protocol === "https:") {
-    return process.env.HTTPS_PROXY || process.env.https_proxy || process.env.ALL_PROXY || process.env.all_proxy;
+    return (
+      process.env.HTTPS_PROXY ||
+      process.env.https_proxy ||
+      process.env.ALL_PROXY ||
+      process.env.all_proxy
+    );
   }
 
-  return process.env.HTTP_PROXY || process.env.http_proxy || process.env.ALL_PROXY || process.env.all_proxy;
+  return (
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy ||
+    process.env.ALL_PROXY ||
+    process.env.all_proxy
+  );
 }
 
 /**
@@ -100,7 +110,10 @@ async function getDispatcher(proxyUrl) {
       proxyDispatchers.delete(proxyDispatchers.keys().next().value);
     }
     const { ProxyAgent } = await import("undici");
-    proxyDispatchers.set(normalized, new ProxyAgent({ uri: normalized, connect: { timeout: CONNECT_TIMEOUT_MS } }));
+    proxyDispatchers.set(
+      normalized,
+      new ProxyAgent({ uri: normalized, connect: { timeout: CONNECT_TIMEOUT_MS } }),
+    );
   }
 
   return proxyDispatchers.get(normalized);
@@ -144,7 +157,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       return await originalFetch(url, { ...options, dispatcher });
     } catch (proxyError) {
       if (proxyOptions?.strictProxy === true) {
-        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+        throw new Error(
+          `[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`,
+        );
       }
       console.warn("[ProxyFetch] Proxy failed, falling back to direct");
       return originalFetch(url, options);

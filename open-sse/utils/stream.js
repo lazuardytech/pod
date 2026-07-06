@@ -1,4 +1,4 @@
-import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb.js";
+import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb";
 import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.js";
 import { FORMATS } from "../translator/formats.js";
 import { initState, translateResponse } from "../translator/index.js";
@@ -29,7 +29,11 @@ function stripClaudeToolSuffixes(node) {
     return changed ? next : node;
   }
 
-  if (node.type === "tool_use" && typeof node.name === "string" && node.name.endsWith(CLAUDE_TOOL_SUFFIX)) {
+  if (
+    node.type === "tool_use" &&
+    typeof node.name === "string" &&
+    node.name.endsWith(CLAUDE_TOOL_SUFFIX)
+  ) {
     return { ...node, name: node.name.slice(0, -CLAUDE_TOOL_SUFFIX.length) };
   }
 
@@ -75,7 +79,10 @@ function extractReasoningSummaryText(value) {
 
   const nested = value.summary;
   const nestedContent =
-    nested && typeof nested === "object" && !Array.isArray(nested) && typeof nested.content === "string"
+    nested &&
+    typeof nested === "object" &&
+    !Array.isArray(nested) &&
+    typeof nested.content === "string"
       ? nested.content.trim()
       : "";
   return nestedContent.length > 0 ? nestedContent : null;
@@ -88,13 +95,20 @@ function extractReasoningSummaryText(value) {
  */
 function buildReasoningSummaryCompatChunk(chunk, summaryText) {
   const compatChunk = {
-    id: typeof chunk.id === "string" && chunk.id.trim().length > 0 ? chunk.id : `chatcmpl-${Date.now()}`,
-    object: typeof chunk.object === "string" && chunk.object.trim().length > 0 ? chunk.object : "chat.completion.chunk",
+    id:
+      typeof chunk.id === "string" && chunk.id.trim().length > 0
+        ? chunk.id
+        : `chatcmpl-${Date.now()}`,
+    object:
+      typeof chunk.object === "string" && chunk.object.trim().length > 0
+        ? chunk.object
+        : "chat.completion.chunk",
     created:
       typeof chunk.created === "number" && Number.isFinite(chunk.created)
         ? chunk.created
         : Math.floor(Date.now() / 1000),
-    model: typeof chunk.model === "string" && chunk.model.trim().length > 0 ? chunk.model : "unknown",
+    model:
+      typeof chunk.model === "string" && chunk.model.trim().length > 0 ? chunk.model : "unknown",
     choices: [
       {
         index: 0,
@@ -136,7 +150,7 @@ const STREAM_MODE = {
  * @param {function} options.onStreamComplete - Callback when stream completes (content, usage)
  * @param {string} options.apiKey - API key for usage tracking
  */
-const STALL_TIMEOUT_MS = 180_000; // 3 minutes
+const STALL_TIMEOUT_MS = 300_000; // 5 minutes
 
 export function createSSEStream(options = {}) {
   const {
@@ -161,13 +175,17 @@ export function createSSEStream(options = {}) {
   // Per-stream decoder with stream:true to correctly handle multi-byte chars split across chunks
   const decoder = new TextDecoder("utf-8", { fatal: false });
 
-  const state = mode === STREAM_MODE.TRANSLATE ? { ...initState(sourceFormat), provider, toolNameMap, model } : null;
+  const state =
+    mode === STREAM_MODE.TRANSLATE
+      ? { ...initState(sourceFormat), provider, toolNameMap, model }
+      : null;
 
   let totalContentLength = 0;
   let accumulatedContent = "";
   let accumulatedThinking = "";
   let ttftAt = null;
   let sawDone = false;
+  const includeUsage = body?.stream_options?.include_usage === true;
 
   const allowSuffixFallback = provider === "claude";
 
@@ -182,7 +200,7 @@ export function createSSEStream(options = {}) {
       const resetStall = () => {
         if (stallTimer) clearTimeout(stallTimer);
         stallTimer = setTimeout(() => {
-          const errChunk = `data: ${JSON.stringify({ error: { message: "Stream stalled: no data received for 3 minutes", type: "stream_stall", code: "stream_stall" } })}`;
+          const errChunk = `data: ${JSON.stringify({ error: { message: "Stream stalled: no data received for 5 minutes", type: "stream_stall", code: "stream_stall" } })}`;
           try {
             controller.enqueue(sharedEncoder.encode(errChunk + "\n\ndata: [DONE]\n\n"));
           } catch {}
@@ -236,16 +254,26 @@ export function createSSEStream(options = {}) {
                 const summaryText = extractReasoningSummaryText(parsed.reasoning_summary);
                 const firstChoice = Array.isArray(parsed.choices) ? parsed.choices[0] || {} : {};
                 const firstDelta = (firstChoice && firstChoice.delta) || {};
-                const hasTextDelta = typeof firstDelta.content === "string" && firstDelta.content.length > 0;
+                const hasTextDelta =
+                  typeof firstDelta.content === "string" && firstDelta.content.length > 0;
                 const hasReasoningDelta =
-                  typeof firstDelta.reasoning_content === "string" && firstDelta.reasoning_content.length > 0;
-                const hasToolDelta = Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
+                  typeof firstDelta.reasoning_content === "string" &&
+                  firstDelta.reasoning_content.length > 0;
+                const hasToolDelta =
+                  Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
                 const hasFinishReason =
-                  typeof firstChoice.finish_reason === "string" && firstChoice.finish_reason.length > 0;
+                  typeof firstChoice.finish_reason === "string" &&
+                  firstChoice.finish_reason.length > 0;
 
-                if (summaryText && !hasTextDelta && !hasReasoningDelta && !hasToolDelta && !hasFinishReason) {
+                if (
+                  summaryText &&
+                  !hasTextDelta &&
+                  !hasReasoningDelta &&
+                  !hasToolDelta &&
+                  !hasFinishReason
+                ) {
                   const compatChunk = buildReasoningSummaryCompatChunk(parsed, summaryText);
-                  const compatOutput = `data: ${JSON.stringify(compatChunk)}\n`;
+                  const compatOutput = `data: ${JSON.stringify(compatChunk)}\n\n`;
                   accumulatedThinking += summaryText;
                   totalContentLength += summaryText.length;
                   reqLogger?.appendConvertedChunk?.(compatOutput);
@@ -262,6 +290,13 @@ export function createSSEStream(options = {}) {
                   if (!parsed.created) {
                     parsed.created = Math.floor(Date.now() / 1000);
                     fieldsInjected = true;
+                  }
+                  // Ensure logprobs on each choice (null when not present)
+                  for (const choice of parsed.choices) {
+                    if (choice.logprobs === undefined) {
+                      choice.logprobs = null;
+                      fieldsInjected = true;
+                    }
                   }
                 }
 
@@ -287,7 +322,7 @@ export function createSSEStream(options = {}) {
                     // Already sent content — silently drop error and close stream
                     continue;
                   }
-                  output = `data: ${JSON.stringify(parsed)}\n`;
+                  output = `data: ${JSON.stringify(parsed)}\n\n`;
                   emit(output, controller);
                   continue;
                 }
@@ -314,19 +349,21 @@ export function createSSEStream(options = {}) {
                 }
 
                 const isFinishChunk = parsed.choices?.[0]?.finish_reason;
-                if (isFinishChunk && !hasValidUsage(parsed.usage)) {
-                  const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
-                  parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
-                  output = `data: ${JSON.stringify(parsed)}\n`;
-                  usage = estimated;
-                  injectedUsage = true;
-                } else if (isFinishChunk && usage) {
-                  const buffered = addBufferToUsage(usage);
-                  parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
-                  output = `data: ${JSON.stringify(parsed)}\n`;
-                  injectedUsage = true;
+                if (includeUsage) {
+                  if (isFinishChunk && !hasValidUsage(parsed.usage)) {
+                    const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
+                    parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
+                    output = `data: ${JSON.stringify(parsed)}\n\n`;
+                    usage = estimated;
+                    injectedUsage = true;
+                  } else if (isFinishChunk && usage) {
+                    const buffered = addBufferToUsage(usage);
+                    parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
+                    output = `data: ${JSON.stringify(parsed)}\n\n`;
+                    injectedUsage = true;
+                  }
                 } else if (idFixed || fieldsInjected) {
-                  output = `data: ${JSON.stringify(parsed)}\n`;
+                  output = `data: ${JSON.stringify(parsed)}\n\n`;
                   injectedUsage = true;
                 }
               } catch {}
@@ -337,9 +374,9 @@ export function createSSEStream(options = {}) {
                 sawDone = true;
               }
               if (line.startsWith("data:") && !line.startsWith("data: ")) {
-                output = "data: " + line.slice(5) + "\n";
+                output = "data: " + line.slice(5) + "\n\n";
               } else {
-                output = line + "\n";
+                output = line + "\n\n";
               }
             }
 
@@ -420,15 +457,22 @@ export function createSSEStream(options = {}) {
               }
 
               // Inject estimated usage if finish chunk has no valid usage
-              const isFinishChunk = item.type === "message_delta" || item.choices?.[0]?.finish_reason;
-              if (state.finishReason && isFinishChunk && !hasValidUsage(item.usage) && totalContentLength > 0) {
-                const estimated = estimateUsage(body, totalContentLength, sourceFormat);
-                item.usage = filterUsageForFormat(estimated, sourceFormat); // Filter + already has buffer
-                state.usage = estimated;
-              } else if (state.finishReason && isFinishChunk && state.usage) {
-                // Add buffer and filter usage for client (but keep original in state.usage for logging)
-                const buffered = addBufferToUsage(state.usage);
-                item.usage = filterUsageForFormat(buffered, sourceFormat);
+              const isFinishChunk =
+                item.type === "message_delta" || item.choices?.[0]?.finish_reason;
+              if (includeUsage) {
+                if (
+                  state.finishReason &&
+                  isFinishChunk &&
+                  !hasValidUsage(item.usage) &&
+                  totalContentLength > 0
+                ) {
+                  const estimated = estimateUsage(body, totalContentLength, sourceFormat);
+                  item.usage = filterUsageForFormat(estimated, sourceFormat);
+                  state.usage = estimated;
+                } else if (state.finishReason && isFinishChunk && state.usage) {
+                  const buffered = addBufferToUsage(state.usage);
+                  item.usage = filterUsageForFormat(buffered, sourceFormat);
+                }
               }
 
               emit(formatSSE(item, sourceFormat), controller);
@@ -467,7 +511,7 @@ export function createSSEStream(options = {}) {
             if (decloaked.startsWith("data:") && !decloaked.startsWith("data: ")) {
               output = "data: " + decloaked.slice(5);
             }
-            if (!output.endsWith("\n")) output += "\n";
+            if (!output.endsWith("\n\n")) output += "\n\n";
             emit(output, controller);
           }
 
@@ -478,7 +522,13 @@ export function createSSEStream(options = {}) {
           if (hasValidUsage(usage)) {
             logUsage(provider, usage, model, connectionId, apiKey);
           } else {
-            appendRequestLog({ model, provider, connectionId, tokens: null, status: "SUCCESS" }).catch(() => {});
+            appendRequestLog({
+              model,
+              provider,
+              connectionId,
+              tokens: null,
+              status: "SUCCESS",
+            }).catch(() => {});
           }
 
           if (!sawDone) emit("data: [DONE]\n\n", controller);
@@ -541,7 +591,13 @@ export function createSSEStream(options = {}) {
         if (hasValidUsage(state?.usage)) {
           logUsage(state.provider || targetFormat, state.usage, model, connectionId, apiKey);
         } else {
-          appendRequestLog({ model, provider, connectionId, tokens: null, status: "SUCCESS" }).catch(() => {});
+          appendRequestLog({
+            model,
+            provider,
+            connectionId,
+            tokens: null,
+            status: "SUCCESS",
+          }).catch(() => {});
         }
 
         if (onStreamComplete) {

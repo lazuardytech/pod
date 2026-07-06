@@ -284,7 +284,9 @@ function wrapInCloudCodeEnvelope(model, geminiCLI, credentials = null, isAntigra
     userAgent: isAntigravity ? "antigravity" : "gemini-cli",
     requestId: isAntigravity ? `agent-${generateUUID()}` : generateRequestId(),
     request: {
-      sessionId: isAntigravity ? deriveSessionId(credentials?.email || credentials?.connectionId) : generateSessionId(),
+      sessionId: isAntigravity
+        ? deriveSessionId(credentials?.email || credentials?.connectionId)
+        : generateSessionId(),
       contents: geminiCLI.contents,
       systemInstruction: geminiCLI.systemInstruction,
       generationConfig: geminiCLI.generationConfig,
@@ -377,7 +379,9 @@ function wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials = nu
           } else if (block.type === "tool_result") {
             let content = block.content;
             if (Array.isArray(content)) {
-              content = content.map((c) => (c.type === "text" ? c.text : JSON.stringify(c))).join("\n");
+              content = content
+                .map((c) => (c.type === "text" ? c.text : JSON.stringify(c)))
+                .join("\n");
             }
             // Resolve the original tool name from the id — Gemini requires it to match the functionCall name
             const resolvedName = toolUseIdToName[block.tool_use_id]

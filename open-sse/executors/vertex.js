@@ -104,12 +104,17 @@ export class VertexExecutor extends BaseExecutor {
     // SA JSON flow: mint Bearer token (cached)
     if (saJson) {
       const result = await refreshVertexToken(saJson, log);
-      if (!result?.accessToken) throw new Error("Vertex: failed to mint access token from Service Account JSON");
+      if (!result?.accessToken)
+        throw new Error("Vertex: failed to mint access token from Service Account JSON");
       credentials.accessToken = result.accessToken;
     }
 
     // vertex-partner with raw key: auto-resolve project_id if not provided
-    if (this.provider === "vertex-partner" && !saJson && !credentials?.providerSpecificData?.projectId) {
+    if (
+      this.provider === "vertex-partner" &&
+      !saJson &&
+      !credentials?.providerSpecificData?.projectId
+    ) {
       const projectId = await resolveProjectId(credentials.apiKey);
       if (!projectId)
         throw new Error(

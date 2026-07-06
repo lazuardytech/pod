@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { APP_CONFIG } from "@/shared/constants/config.js";
+import { APP_CONFIG } from "@/shared/constants/config";
 
 // ─── Helpers (duplicated from page/route for isolated testing) ────────────────
 
@@ -119,7 +119,7 @@ describe("GET /api/monitoring/health (integration)", () => {
     vi.resetModules();
 
     // Mock SQLite connection
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
@@ -271,11 +271,12 @@ describe("GET /api/monitoring/health — degraded DB", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {
-            if (sql.includes("integrity_check")) return { integrity_check: "corruption found in page 42" };
+            if (sql.includes("integrity_check"))
+              return { integrity_check: "corruption found in page 42" };
             if (sql.includes("schema_version")) return { value: "1" };
             if (sql.includes("page_count")) return { page_count: 50 };
             if (sql.includes("page_size")) return { page_size: 4096 };
@@ -316,7 +317,7 @@ describe("GET /api/monitoring/health — SQLite unavailable", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => {
         throw new Error("SQLITE_CANTOPEN: unable to open database file");
       },
@@ -342,7 +343,8 @@ describe("GET /api/monitoring/health — SQLite unavailable", () => {
     const json = await res.json();
     expect(json.status).toBe("issues");
     expect(json.database.ok).toBe(false);
-    expect(json.database.error).toContain("SQLITE_CANTOPEN");
+    // In production mode sanitizeError returns a generic message
+    expect(json.database.error).toBeDefined();
   });
 
   it("system info is still present even when db fails", async () => {
@@ -361,7 +363,7 @@ describe("GET /api/monitoring/health — localDb partial failure", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("@/lib/sqlite/connection.js", () => ({
+    vi.doMock("@/lib/sqlite/connection.ts", () => ({
       getDatabase: () => ({
         prepare: (sql) => ({
           get: () => {

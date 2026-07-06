@@ -49,7 +49,11 @@ function decompressPayload(payload, flags) {
     } catch {}
   }
 
-  if (flags === COMPRESS_FLAG.GZIP || flags === COMPRESS_FLAG.TRAILER || flags === COMPRESS_FLAG.GZIP_TRAILER) {
+  if (
+    flags === COMPRESS_FLAG.GZIP ||
+    flags === COMPRESS_FLAG.TRAILER ||
+    flags === COMPRESS_FLAG.GZIP_TRAILER
+  ) {
     // Primary: try gzip decompression (standard gzip header 0x1f 0x8b)
     try {
       return zlib.gunzipSync(payload);
@@ -65,7 +69,10 @@ function decompressPayload(payload, flags) {
           debugLog(
             `[DECOMPRESS ERROR] flags=${flags}, payloadSize=${payload.length}, gzip=${gzipErr.message}, deflate=${deflateErr.message}, raw=${rawErr.message}`,
           );
-          debugLog(`[DECOMPRESS ERROR] First 50 bytes (hex):`, payload.slice(0, 50).toString("hex"));
+          debugLog(
+            `[DECOMPRESS ERROR] First 50 bytes (hex):`,
+            payload.slice(0, 50).toString("hex"),
+          );
           return payload;
         }
       }
@@ -127,7 +134,8 @@ export class CursorExecutor extends BaseExecutor {
     const reasoningEffort = body.reasoning_effort || null;
     // Detect Claude Code UA to force Agent mode (issue #643)
     const ua = credentials?.rawHeaders?.["user-agent"] || "";
-    const forceAgentMode = ua.includes("claude-cli") || ua.includes("claude-code") || ua.includes("Claude Code");
+    const forceAgentMode =
+      ua.includes("claude-cli") || ua.includes("claude-code") || ua.includes("Claude Code");
     return generateCursorBody(messages, model, tools, reasoningEffort, forceAgentMode);
   }
 
@@ -293,7 +301,9 @@ export class CursorExecutor extends BaseExecutor {
 
     while (offset < buffer.length) {
       if (offset + 5 > buffer.length) {
-        debugLog(`[CURSOR BUFFER] Reached end, offset=${offset}, remaining=${buffer.length - offset}`);
+        debugLog(
+          `[CURSOR BUFFER] Reached end, offset=${offset}, remaining=${buffer.length - offset}`,
+        );
         break;
       }
 
@@ -327,7 +337,9 @@ export class CursorExecutor extends BaseExecutor {
           const text = payload.toString("utf-8");
           if (text.includes('"error"')) {
             const hasContent = totalContent || toolCallsMap.size > 0;
-            debugLog(`[CURSOR BUFFER] Error frame (hasContent=${hasContent}): ${text.slice(0, 500)}`);
+            debugLog(
+              `[CURSOR BUFFER] Error frame (hasContent=${hasContent}): ${text.slice(0, 500)}`,
+            );
             if (hasContent) {
               break;
             }
@@ -462,7 +474,9 @@ export class CursorExecutor extends BaseExecutor {
 
     while (offset < buffer.length) {
       if (offset + 5 > buffer.length) {
-        debugLog(`[CURSOR BUFFER SSE] Reached end, offset=${offset}, remaining=${buffer.length - offset}`);
+        debugLog(
+          `[CURSOR BUFFER SSE] Reached end, offset=${offset}, remaining=${buffer.length - offset}`,
+        );
         break;
       }
 
@@ -496,7 +510,9 @@ export class CursorExecutor extends BaseExecutor {
           const text = payload.toString("utf-8");
           if (text.includes('"error"')) {
             const hasContent = chunks.length > 0 || totalContent || toolCallsMap.size > 0;
-            debugLog(`[CURSOR BUFFER SSE] Error frame (hasContent=${hasContent}): ${text.slice(0, 500)}`);
+            debugLog(
+              `[CURSOR BUFFER SSE] Error frame (hasContent=${hasContent}): ${text.slice(0, 500)}`,
+            );
             if (hasContent) {
               break;
             }
