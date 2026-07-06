@@ -1,6 +1,6 @@
 # Pod — Documentation Index
 
-**Version:** v0.0.79 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128 | **Deployed at:** pod.lazuardy.tech
+**Version:** v0.0.80 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128 | **Deployed at:** pod.lazuardy.tech
 
 ## Reading Order (New Contributors)
 
@@ -33,6 +33,7 @@
 | [../CONTRIBUTING.md](../CONTRIBUTING.md)           | Contribution guidelines                       |
 | [../SECURITY.md](../SECURITY.md)                   | Vulnerability disclosure policy               |
 | [../docs/API_INTERNAL.md](../docs/API_INTERNAL.md) | Internal dashboard API reference              |
+| [compatibility-matrix.md](compatibility-matrix.md) | API compatibility matrix (OpenAI + Anthropic) |
 
 ## Other Directories
 

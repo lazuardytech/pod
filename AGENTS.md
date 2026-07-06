@@ -4,7 +4,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Project Identity
 
-- **Project name**: pod, v0.0.79
+- **Project name**: pod, v0.0.80
 - **Runtime**: Bun + Next.js 16 (TS, strict mode)
 - **Engine**: open-sse/ (local fork, not npm, frozen as JS)
 - **Data**: SQLite at ~/.pod/pod.sqlite
