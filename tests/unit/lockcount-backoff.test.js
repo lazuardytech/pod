@@ -56,7 +56,7 @@ beforeEach(async () => {
     combos: [],
     apiKeys: [],
     customModels: [],
-    settings: {},
+    settings: { minimumLockoutMinutes: 0 },
     pricing: {},
   });
   await clearCaches();

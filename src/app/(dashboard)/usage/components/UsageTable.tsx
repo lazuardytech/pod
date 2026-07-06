@@ -122,7 +122,11 @@ export default function UsageTable({
   const toggleGroup = useCallback((groupKey: any) => {
     setExpanded((prev: any) => {
       const next = new Set(prev);
-      next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
       return next;
     });
   }, []);

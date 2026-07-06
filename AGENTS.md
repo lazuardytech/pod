@@ -4,23 +4,25 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Project Identity
 
-- Project name: pod, v0.0.79
-- Runtime: Bun + Next.js 16 (TS, strict mode)
-- Engine: open-sse/ (local fork, not npm, frozen as JS)
-- Data: SQLite at ~/.pod/pod.sqlite
-- Port: 20128
-- Health: GET /api/health (public)
+- **Project name**: pod, v0.0.80
+- **Runtime**: Bun + Next.js 16 (TS, strict mode)
+- **Engine**: open-sse/ (local fork, not npm, frozen as JS)
+- **Data**: SQLite at ~/.pod/pod.sqlite
+- **Port**: 20128
+- **Health**: GET /api/health (public)
+- **Deployment**: pod.lazuardy.tech (Zeabur, Cloudflare-proxied)
+- **Branch model**: canary (active dev), main (stable/release)
 
 ## Non-Negotiable Rules
 
-1. Bun only -- never npm/pnpm.
+1. Bun only — never npm/pnpm.
 2. Product name stays "pod".
 3. Never replace local open-sse with the npm package.
 4. Dashboard pages at top-level; no /dashboard prefix.
 5. Use ConfirmModal, never window.confirm().
 6. Route header actions through headerActionStore.
 7. Pair bg-primary with text-primary-fg.
-8. Bump version in package.json AND src/shared/constants/config.js.
+8. Bump version in package.json AND src/shared/constants/config.ts (displayVersion).
 9. Use src/lib/localDb.ts and src/lib/sqlite/connection.ts for storage.
 10. User may invoke `/ponytail lite|full|ultra`; "stop ponytail" / "normal mode" reverts. Ponytail favors one-line solutions, YAGNI, stdlib over deps, and deletion over addition.
 
@@ -28,14 +30,16 @@ Operational rules for AI agents working on the **Pod** project.
 
 1. sanitizeError(error) required in API catch blocks returning client-facing JSON.
 2. Use parseJsonBody(request) for mutation routes instead of raw request.json().
+   Note: parseJsonBody throws on empty bodies (e.g. POST with no body). Routes accepting optional/no body should read via request.text() + guard instead.
 3. Never return raw upstream error bodies to clients.
 4. /v1/models, /v1/models/{model}, and /v1beta/models must respect requireApiKey.
 5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
-6. /api/restart and /api/shutdown require SHUTDOWN_SECRET.
-7. Stateful internal APIs must stay covered by dashboardGuard.ts and src/proxy.ts -- keep matchers in sync.
-8. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
-9. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
-10. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
+6. /api/restart and /api/shutdown require SHUTDOWN_SECRET; return 403 in production (NODE_ENV=production).
+7. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
+8. Stateful internal APIs must stay covered by dashboardGuard.ts and src/proxy.ts — keep matchers in sync.
+9. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
+10. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
+11. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
 
 ## Runtime Invariants
 
@@ -48,7 +52,8 @@ Operational rules for AI agents working on the **Pod** project.
 7. Keep the guarded fallback loop in src/sse/handlers/chat.ts.
 8. Keep the outer crash guard in open-sse/utils/stream.js.
 9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
-10. open-sse/ is frozen as JS -- do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
+10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
+11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
 
 ## Rate Limiting
 
@@ -66,7 +71,7 @@ Operational rules for AI agents working on the **Pod** project.
 4. Keep https://www.google.com/generate_204 as relay health target.
 5. Kiro retry body-gated on transient overload markers.
 6. cloud/src/handlers/testClaude.ts is a 410 compatibility stub.
-7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js -- do NOT emit <think> or </think> as content delta.
+7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js — do NOT emit <think> or </think> as content delta.
 
 ## Operations
 
@@ -78,10 +83,8 @@ Operational rules for AI agents working on the **Pod** project.
 6. Service worker lifecycle is registration-only; Pod does not auto-update itself.
 7. Offline reads use offlineJsonCache; offline writes use the mutation queue stack.
 8. Queue only safe, idempotent dashboard mutations.
-9. Git workflow: canary is the active development branch; main is the stable/release branch.
-10. Zeabur env changes take effect only on next restart/deploy -- no auto-restart on env mutation.
-11. /api/restart and /api/shutdown return 403 when NODE_ENV=production; SHUTDOWN_SECRET is dev-only.
-12. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
+9. Git workflow: canary is active development branch; main is stable/release branch.
+10. Zeabur env changes take effect only on next restart/deploy — no auto-restart on env mutation.
 
 ## Deployment Topology (Zeabur)
 
@@ -89,26 +92,45 @@ Operational rules for AI agents working on the **Pod** project.
 - Service `pod` (main, id `6a1b7ffff9a5b4afba15bc03`) -> `pod.lazuardy.tech` (Cloudflare-proxied), port 20140.
 - Service `pod-canary` (id `6a20333e1d0765dcfbb985da`) -> `pod-canary.zeabur.app`, port 20140.
 - In-project Redis service (id `service-6a2021e61d0765dcfbb9817e`) backs `REDIS_URL`.
-- In-project Freebuff service (id `service-6a1ee2be8197c9aa0ae2f263`) -- docker-network alias `FREEBUFF_HOST`, not referenced in source.
+- In-project Freebuff service (id `service-6a1ee2be8197c9aa0ae2f263`) — docker-network alias `FREEBUFF_HOST`, not referenced in source.
 - `POD_HOST` (canary only) = prod service id; `POD_CANARY_HOST` (pod only) = canary service id. Used for canary <-> prod cross-calls.
 - `PORT=20140` in production overrides the Dockerfile default of 20128.
+
+## API Compatibility Policy
+
+1. OpenAI-compatible routes (`/v1/*`) must follow official OpenAI API behavior — check docs before changes.
+2. Anthropic-compatible routes (`/v1/messages`) must follow official Anthropic API behavior — check docs before changes.
+3. Error shapes, auth headers, streaming format, model IDs, and tool calling must match official spec.
+4. Any regression in compatibility is a release blocker — fix on canary before any merge to main.
+
+## Reference-Checking Workflow
+
+Before planning, fixing, or deploying:
+
+1. Check current internet references for the task.
+2. Read official OpenAI/Anthropic API docs when working on compatible routes.
+3. Read relevant Context7 MCP docs and best practices when changing code/config/deployment.
+4. Check Ponytail reference (github.com/DietrichGebert/ponytail) before spawning subagents.
 
 ## Verification Before Push
 
 ```bash
-bun run check
-bun run test:run
-bun run build
+bun run check    # oxfmt + oxlint + tsc --noEmit
+bun run test:run # vitest run (verbose)
+bun run build    # NODE_ENV=production next build (turbopack)
 ```
 
 ## Docs Map
 
-- .agents/INDEX.md -- project index
-- .agents/PRD.md -- product requirements
-- .agents/architecture/\* -- system design
-- .agents/knowledge/\* -- working knowledge
-- .agents/issues/\* -- historical audits
-- .agents/reports/\* -- release & verification reports
-- DESIGN.md -- UI system reference
-- CHANGELOG.md -- release history
-- docs/API_INTERNAL.md -- internal API reference
+| Path                    | Purpose                                  |
+| ----------------------- | ---------------------------------------- |
+| .agents/INDEX.md        | Documentation index and reading order    |
+| .agents/PRD.md          | Product requirements document            |
+| .agents/architecture/\* | System design deep dives                 |
+| .agents/knowledge/\*    | Working knowledge (gotchas, conventions) |
+| .agents/issues/\*       | Historical audits and security analysis  |
+| .agents/reports/\*      | Release rollups & verification reports   |
+| .agents/plan/\*         | Draft plans (migrations, optimization)   |
+| DESIGN.md               | UI design system reference               |
+| CHANGELOG.md            | Release history                          |
+| docs/API_INTERNAL.md    | Internal dashboard API reference         |

@@ -158,9 +158,6 @@ export default function HealthPage() {
     return () => {
       closed = true;
       cleanup();
-    };
-
-    return () => {
       esRef.current?.close();
     };
   }, []);

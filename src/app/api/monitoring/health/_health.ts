@@ -345,7 +345,7 @@ export async function buildHealthPayload() {
         enabled: true,
         intervalHours: (mDevStatus.intervalMs || 3600000) / 3600000,
         lastSyncAt: mDevStatus.lastSync,
-        lastSyncOk: mDevStatus.lastSync != null,
+        lastSyncOk: mDevStatus.lastSync !== null,
         lastError: null,
       },
       cloud: cloudSync,
