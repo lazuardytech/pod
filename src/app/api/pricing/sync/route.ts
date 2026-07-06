@@ -35,7 +35,8 @@ export async function POST(request: any) {
     const action = asString(body.action) || "sync";
 
     if (action === "start") {
-      const intervalMs = Number(body.intervalMs) || 3600000;
+      // ponytail: minimum 60s at the API trust boundary
+      const intervalMs = Math.max(60000, Number(body.intervalMs) || 3600000);
       startPeriodicSync(intervalMs);
       return NextResponse.json({ success: true, action: "start", ...getSyncStatus() });
     }

@@ -358,6 +358,8 @@ async function _doSync(opts: { signal?: AbortSignal } = {}): Promise<SyncResult>
 export function startPeriodicSync(intervalMs: number = 3600000): void {
   if (g.timer) return; // already running
 
+  // ponytail: minimum 60s to prevent resource exhaustion from user-controlled timer
+  intervalMs = Math.max(60000, intervalMs);
   g.intervalMs = intervalMs;
 
   // Run immediately (non-blocking)
