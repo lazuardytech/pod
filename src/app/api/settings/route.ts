@@ -16,7 +16,7 @@ const SETTINGS_RESPONSE_HEADERS = {
 export async function GET() {
   try {
     const settings = await getSettings();
-    const { password, ...safeSettings } = settings ?? ({} as any);
+    const { password, ...safeSettings } = settings ?? ({} as { password?: string });
 
     const enableRequestLogs = process.env.ENABLE_REQUEST_LOGS === "true";
     const enableTranslator = process.env.ENABLE_TRANSLATOR === "true";
@@ -48,7 +48,7 @@ export async function GET() {
   }
 }
 
-export async function PATCH(request: any) {
+export async function PATCH(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -102,7 +102,7 @@ export async function PATCH(request: any) {
       resetComboRotation();
     }
 
-    const { password, ...safeSettings } = settings ?? ({} as any);
+    const { password, ...safeSettings } = settings ?? ({} as { password?: string });
     return NextResponse.json(safeSettings, { headers: SETTINGS_RESPONSE_HEADERS });
   } catch (error) {
     console.log("Error updating settings:", error);

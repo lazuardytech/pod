@@ -6,7 +6,6 @@ import {
   stopPeriodicSync,
   syncModelsDev,
 } from "@/lib/modelsDevSync";
-import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 // GET — return current sync status
 export async function GET() {
@@ -24,11 +23,13 @@ export async function POST(request: any) {
   try {
     let body: Record<string, unknown> = {};
     try {
-      const [parsed, _parseErr] = await parseJsonBody(request);
-      if (_parseErr) return _parseErr;
-      body = parsed as Record<string, unknown>;
+      const text = await request.text();
+      if (text) {
+        const parsed = JSON.parse(text);
+        body = parsed as Record<string, unknown>;
+      }
     } catch {
-      // no body is fine
+      // no body or invalid JSON is fine
     }
 
     const action = asString(body.action) || "sync";

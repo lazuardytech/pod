@@ -71,7 +71,7 @@ export default async function handler(req) {
     if (timeoutId) clearTimeout(timeoutId);
     const isTimeout = controller && controller.signal.aborted;
     return new Response(JSON.stringify({
-      error: isTimeout ? "Upstream relay request timed out" : ((err as any).message || "Relay error")
+      error: isTimeout ? "Upstream relay request timed out" : ((err as Error).message || "Relay error")
     }), {
       status: 504,
       headers: { "content-type": "application/json" },

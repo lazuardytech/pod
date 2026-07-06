@@ -38,7 +38,7 @@ export async function PUT(request: any) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { model, alias } = body ?? ({} as any);
+    const { model, alias } = body ?? ({} as Record<string, unknown>);
 
     if (!model || !alias) {
       return NextResponse.json({ error: "Model and alias required" }, { status: 400 });

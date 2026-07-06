@@ -11,7 +11,7 @@ import {
 } from "@/shared/constants/providers";
 import { testSingleConnection } from "../[id]/test/testUtils";
 
-function getAuthGroup(providerId: any, connection = null as any) {
+function getAuthGroup(providerId: string, connection?: { authType?: string; provider?: string }) {
   // Prioritize authType from connection if available
   if (connection?.authType) {
     if (connection.authType === "oauth") {
@@ -49,7 +49,7 @@ export async function POST(request: any) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { mode, providerId } = body ?? ({} as any);
+    const { mode, providerId } = body ?? ({} as Record<string, unknown>);
 
     if (!mode) {
       return NextResponse.json({ error: "mode is required" }, { status: 400 });

@@ -2,7 +2,7 @@ import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import { handleFetchCore } from "open-sse/handlers/fetch/index.js";
 import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
-import { getCombos, getSettings } from "@/lib/localDb";
+import { getCombos, getSettings, type Settings } from "@/lib/localDb";
 import {
   AI_PROVIDERS,
   type ProviderDefinition,
@@ -98,7 +98,7 @@ async function handleSingleProviderFetch(
   providerInput: string,
   request: Request,
   apiKey: string | null,
-  settings: any,
+  settings: Settings,
 ): Promise<Response> {
   const targetUrl = body.url as string;
   const format = body.format;

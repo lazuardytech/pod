@@ -26,7 +26,7 @@ export async function POST(request: any) {
     );
   } catch (err) {
     const message =
-      (err as any)?.name === "AbortError" ? "Proxy test timed out" : sanitizeError(err);
+      (err as Error)?.name === "AbortError" ? "Proxy test timed out" : sanitizeError(err);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

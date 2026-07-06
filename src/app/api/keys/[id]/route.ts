@@ -75,7 +75,7 @@ export async function PUT(request: any, { params }: { params: any }) {
     return NextResponse.json({ key: updated });
   } catch (error) {
     console.log("Error updating key:", error);
-    if (String((error as any)?.message || "").includes("positive integer")) {
+    if (String((error as Error)?.message || "").includes("positive integer")) {
       return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to update key" }, { status: 500 });

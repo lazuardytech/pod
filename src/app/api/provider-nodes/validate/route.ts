@@ -219,8 +219,11 @@ export async function POST(request: any) {
     const errorMessage = getErrorMessage(error);
     console.error("Error validating provider node:", {
       message: sanitizeError(error),
-      cause: (error as any).cause,
-      code: (error as any).cause?.code,
+      cause: (error as Error).cause,
+      code:
+        error instanceof Error && error.cause
+          ? (error.cause as Record<string, unknown>).code
+          : undefined,
       userMessage: errorMessage,
     });
     return NextResponse.json(

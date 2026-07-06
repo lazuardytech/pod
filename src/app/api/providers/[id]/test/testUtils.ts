@@ -23,7 +23,23 @@ import {
 import { buildClineHeaders } from "@/shared/utils/clineAuth.mts";
 
 // OAuth provider test endpoints
-const OAUTH_TEST_CONFIG = {
+// Shared type for OAuth test config entries
+interface OAuthTestConfigEntry {
+  url?: string;
+  method?: string;
+  authHeader?: string;
+  authPrefix?: string;
+  extraHeaders?: Record<string, string>;
+  body?: string;
+  acceptStatuses?: number[];
+  buildUrl?: (token: string) => string;
+  noAuth?: boolean;
+  tokenExists?: boolean;
+  refreshable?: boolean;
+  checkExpiry?: boolean;
+}
+
+const OAUTH_TEST_CONFIG: Record<string, OAuthTestConfigEntry> = {
   claude: { checkExpiry: true, refreshable: true },
   codex: {
     url: "https://chatgpt.com/backend-api/codex/responses",
@@ -88,7 +104,7 @@ const OAUTH_TEST_CONFIG = {
     authPrefix: "Bearer ",
   },
   codebuddy: { tokenExists: true },
-};
+} satisfies Record<string, OAuthTestConfigEntry>;
 
 async function probeClineAccessToken(accessToken: any) {
   const res = await fetch("https://api.cline.bot/api/v1/users/me", {
@@ -268,8 +284,11 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
   if (!config) return { valid: false, error: "Provider test not supported", refreshed: false };
   if (!connection.accessToken) return { valid: false, error: "No access token", refreshed: false };
 
+  const cfg = config as OAuthTestConfigEntry;
+  // Narrow each config property to its expected runtime type
+
   // Cursor uses protobuf API - can only verify token exists, not test endpoint
-  if ((config as any).tokenExists) {
+  if (cfg.tokenExists) {
     return { valid: true, error: null, refreshed: false, newTokens: null };
   }
 
@@ -278,7 +297,7 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
   let newTokens: Record<string, unknown> | null = null;
 
   const tokenExpired = isTokenExpired(connection);
-  if ((config as any).refreshable && tokenExpired && connection.refreshToken) {
+  if (cfg.refreshable && tokenExpired && connection.refreshToken) {
     const tokens = await refreshOAuthToken(connection);
     if (tokens) {
       accessToken = tokens.accessToken;
@@ -289,7 +308,7 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
     }
   }
 
-  if ((config as any).checkExpiry) {
+  if (cfg.checkExpiry) {
     if (refreshed) return { valid: true, error: null, refreshed, newTokens };
     if (tokenExpired) return { valid: false, error: "Token expired", refreshed: false };
     return { valid: true, error: null, refreshed: false, newTokens: null };
@@ -321,54 +340,41 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
   }
 
   try {
-    const testUrl = (config as any).buildUrl
-      ? (config as any).buildUrl(accessToken)
-      : (config as any).url;
-    const headers = (config as any).noAuth
-      ? { ...(config as any).extraHeaders }
+    const testUrl = cfg.buildUrl ? cfg.buildUrl(accessToken) : cfg.url;
+    const headers = cfg.noAuth
+      ? { ...cfg.extraHeaders }
       : {
-          [(config as any).authHeader]: `${(config as any).authPrefix}${accessToken}`,
-          ...(config as any).extraHeaders,
+          [cfg.authHeader as string]: `${cfg.authPrefix as string}${accessToken}`,
+          ...cfg.extraHeaders,
         };
     const fetchOpts: { method: string; headers: Record<string, string>; body?: string } = {
-      method: (config as any).method,
+      method: cfg.method as string,
       headers,
     };
-    if ((config as any).body) fetchOpts.body = (config as any).body;
+    if (cfg.body) fetchOpts.body = cfg.body as string;
     const res = await fetchWithConnectionProxy(testUrl, fetchOpts, effectiveProxy);
 
-    const accepted =
-      res.ok ||
-      ((config as any).acceptStatuses && (config as any).acceptStatuses.includes(res.status));
+    const accepted = res.ok || (cfg.acceptStatuses as number[] | undefined)?.includes(res.status);
     if (accepted) return { valid: true, error: null, refreshed, newTokens };
 
-    if (
-      res.status === 401 &&
-      (config as any).refreshable &&
-      !refreshed &&
-      connection.refreshToken
-    ) {
+    if (res.status === 401 && cfg.refreshable && !refreshed && connection.refreshToken) {
       const tokens = await refreshOAuthToken(connection);
       if (tokens) {
-        const retryUrl = (config as any).buildUrl
-          ? (config as any).buildUrl(tokens.accessToken)
-          : testUrl;
-        const retryHeaders = (config as any).noAuth
-          ? { ...(config as any).extraHeaders }
+        const retryUrl = cfg.buildUrl ? cfg.buildUrl(tokens.accessToken) : testUrl;
+        const retryHeaders = cfg.noAuth
+          ? { ...cfg.extraHeaders }
           : {
-              [(config as any).authHeader]: `${(config as any).authPrefix}${tokens.accessToken}`,
-              ...(config as any).extraHeaders,
+              [cfg.authHeader as string]: `${cfg.authPrefix as string}${tokens.accessToken}`,
+              ...cfg.extraHeaders,
             };
         const retryOpts: { method: string; headers: Record<string, string>; body?: string } = {
-          method: (config as any).method,
+          method: cfg.method as string,
           headers: retryHeaders,
         };
-        if ((config as any).body) retryOpts.body = (config as any).body;
+        if (cfg.body) retryOpts.body = cfg.body as string;
         const retryRes = await fetchWithConnectionProxy(retryUrl, retryOpts, effectiveProxy);
         const retryAccepted =
-          retryRes.ok ||
-          ((config as any).acceptStatuses &&
-            (config as any).acceptStatuses.includes(retryRes.status));
+          retryRes.ok || (cfg.acceptStatuses as number[] | undefined)?.includes(retryRes.status);
         if (retryAccepted) return { valid: true, error: null, refreshed: true, newTokens: tokens };
       }
       return { valid: false, error: "Token invalid or revoked", refreshed: false };
@@ -382,13 +388,17 @@ async function testOAuthConnection(connection: any, effectiveProxy: any = null) 
   }
 }
 
-async function fetchWithConnectionProxy(url: any, options: any = {}, effectiveProxy: any = null) {
+async function fetchWithConnectionProxy(
+  url: any,
+  options: any = {},
+  effectiveProxy: Record<string, unknown> | null = null,
+) {
   // Vercel relay: forward via relay URL
   if (effectiveProxy?.vercelRelayUrl) {
     const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
     return proxyAwareFetch(url, options, {
       vercelRelayUrl: effectiveProxy.vercelRelayUrl,
-    } as any);
+    } as unknown as null);
   }
 
   if (!effectiveProxy?.connectionProxyEnabled || !effectiveProxy?.connectionProxyUrl) {
@@ -400,7 +410,7 @@ async function fetchWithConnectionProxy(url: any, options: any = {}, effectivePr
     connectionProxyEnabled: true,
     connectionProxyUrl: effectiveProxy.connectionProxyUrl,
     connectionNoProxy: effectiveProxy.connectionNoProxy || "",
-  } as any);
+  } as unknown as null);
 }
 
 async function testApiKeyConnection(connection: any, effectiveProxy: any = null) {
@@ -938,13 +948,17 @@ export async function testSingleConnection(id: any) {
     lastErrorAt: result.valid ? null : new Date().toISOString(),
   };
 
-  if ((result as any).refreshed && (result as any).newTokens) {
-    updateData.accessToken = (result as any).newTokens.accessToken;
-    if ((result as any).newTokens.refreshToken)
-      updateData.refreshToken = (result as any).newTokens.refreshToken;
-    if ((result as any).newTokens.expiresIn) {
+  if (
+    (result as { refreshed?: boolean; newTokens?: Record<string, unknown> }).refreshed &&
+    (result as { refreshed?: boolean; newTokens?: Record<string, unknown> }).newTokens
+  ) {
+    const resultCfg = result as Record<string, unknown>;
+    const newTokens = resultCfg.newTokens as Record<string, unknown>;
+    updateData.accessToken = newTokens.accessToken;
+    if (newTokens.refreshToken) updateData.refreshToken = newTokens.refreshToken;
+    if (newTokens.expiresIn) {
       updateData.expiresAt = new Date(
-        Date.now() + (result as any).newTokens.expiresIn * 1000,
+        Date.now() + (newTokens.expiresIn as number) * 1000,
       ).toISOString();
     }
   }

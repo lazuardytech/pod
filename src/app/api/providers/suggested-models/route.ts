@@ -11,7 +11,11 @@ const FILTERS = {
         (m: any) =>
           m.pricing?.prompt === "0" && m.pricing?.completion === "0" && m.context_length >= 200000,
       )
-      .map((m: any) => ({ id: m.id, name: (m as any).name, contextLength: m.context_length }))
+      .map((m: any) => ({
+        id: m.id,
+        name: (m as Record<string, unknown>).name,
+        contextLength: m.context_length,
+      }))
       .sort((a: any, b: any) => b.contextLength - a.contextLength),
 
   "opencode-free": (models: any) =>

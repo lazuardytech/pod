@@ -14,19 +14,18 @@ function MediaFlyout({
   pathname,
   onClose,
 }: {
-  isMediaActive?: any;
-  pathname?: any;
-  onClose?: any;
-  [key: string]: any;
+  isMediaActive?: boolean;
+  pathname: string;
+  onClose?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0 });
-  const triggerRef = useRef<any>(null);
-  const flyoutRef = useRef<any>(null);
-  const timerRef = useRef<any>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const show = useCallback(() => {
-    clearTimeout(timerRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setPos({ top: rect.top });
@@ -39,10 +38,15 @@ function MediaFlyout({
   }, []);
 
   const cancelHide = useCallback(() => {
-    clearTimeout(timerRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  useEffect(() => () => clearTimeout(timerRef.current), []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   const VISIBLE_MEDIA_KINDS = ["embedding", "image", "tts", "stt"];
   const COMBINED_WEB_ITEM = {
@@ -83,28 +87,28 @@ function MediaFlyout({
           <p className="px-3 py-1.5 text-[10px] font-[590] text-fog-grey uppercase tracking-[0.06em]">
             Media Providers
           </p>
-          {MEDIA_PROVIDER_KINDS.filter((k: any) => VISIBLE_MEDIA_KINDS.includes(k.id)).map(
-            (kind: any) => (
-              <Link
-                key={kind.id}
-                prefetch={false}
-                href={`/media-providers/${kind.id}`}
-                onClick={() => {
-                  setOpen(false);
-                  onClose?.();
-                }}
-                className={cn(
-                  "flex items-center gap-2.5 px-3 py-1.5 transition-colors duration-100",
-                  pathname.startsWith(`/media-providers/${kind.id}`)
-                    ? "text-porcelain bg-porcelain/8"
-                    : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
-                )}
-              >
-                <LucideIcon name={kind.icon} size={SIDEBAR_ICON_SIZES.nested} />
-                <span className="text-[13px] tracking-[-0.1px]">{kind.label}</span>
-              </Link>
-            ),
-          )}
+          {MEDIA_PROVIDER_KINDS.filter((k: { id: string }) =>
+            VISIBLE_MEDIA_KINDS.includes(k.id),
+          ).map((kind: { id: string; label: string; icon: string }) => (
+            <Link
+              key={kind.id}
+              prefetch={false}
+              href={`/media-providers/${kind.id}`}
+              onClick={() => {
+                setOpen(false);
+                onClose?.();
+              }}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-1.5 transition-colors duration-100",
+                pathname.startsWith(`/media-providers/${kind.id}`)
+                  ? "text-porcelain bg-porcelain/8"
+                  : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
+              )}
+            >
+              <LucideIcon name={kind.icon} size={SIDEBAR_ICON_SIZES.nested} />
+              <span className="text-[13px] tracking-[-0.1px]">{kind.label}</span>
+            </Link>
+          ))}
           <Link
             prefetch={false}
             href={COMBINED_WEB_ITEM.href}
@@ -168,10 +172,9 @@ function NavSection({
   children,
   collapsed,
 }: {
-  label?: any;
-  children?: any;
-  collapsed?: any;
-  [key: string]: any;
+  label?: string;
+  children?: React.ReactNode;
+  collapsed?: boolean;
 }) {
   if (collapsed) return <div className="space-y-0.5">{children}</div>;
   return (
@@ -192,13 +195,12 @@ function NavItem({
   onClick,
   collapsed,
 }: {
-  href?: any;
-  label?: any;
-  icon?: any;
-  active?: any;
-  onClick?: any;
-  collapsed?: any;
-  [key: string]: any;
+  href: string;
+  label?: string;
+  icon?: string;
+  active?: boolean;
+  onClick?: () => void;
+  collapsed?: boolean;
 }) {
   return (
     <Link
@@ -234,10 +236,9 @@ export default function Sidebar({
   collapsed = false,
   onToggleCollapse,
 }: {
-  onClose?: any;
+  onClose?: () => void;
   collapsed?: boolean;
-  onToggleCollapse?: any;
-  [key: string]: any;
+  onToggleCollapse?: () => void;
 }) {
   const pathname = usePathname();
   const [mediaOpen, setMediaOpen] = useState(false);
@@ -248,7 +249,7 @@ export default function Sidebar({
   const collapsedFooterButtonClass =
     "size-8 rounded-[6px] text-fog-grey hover:bg-deep-slate hover:text-porcelain";
 
-  const isActive = (href: any) => {
+  const isActive = (href: string) => {
     if (href === "/endpoint") {
       return pathname === "/" || pathname.startsWith("/endpoint");
     }
@@ -355,7 +356,7 @@ export default function Sidebar({
             ) : (
               <>
                 <button
-                  onClick={() => setMediaOpen((v: any) => !v)}
+                  onClick={() => setMediaOpen((v: boolean) => !v)}
                   className={cn(
                     "w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[2px] transition-colors duration-100 group",
                     isMediaActive
@@ -386,9 +387,9 @@ export default function Sidebar({
 
                 {mediaOpen && (
                   <div className="pl-3 space-y-0.5">
-                    {MEDIA_PROVIDER_KINDS.filter((k: any) =>
+                    {MEDIA_PROVIDER_KINDS.filter((k: { id: string }) =>
                       VISIBLE_MEDIA_KINDS.includes(k.id),
-                    ).map((kind: any) => (
+                    ).map((kind: { id: string; icon: string; label: string }) => (
                       <Link
                         key={kind.id}
                         prefetch={false}
@@ -426,7 +427,7 @@ export default function Sidebar({
               </>
             )}
 
-            {apiItems.slice(2).map((item: any) => (
+            {apiItems.slice(2).map((item: { href: string; label: string; icon: string }) => (
               <NavItem
                 key={item.href}
                 {...item}
@@ -440,7 +441,7 @@ export default function Sidebar({
           {!collapsed && <div className="h-px" />}
 
           <NavSection label="Analytics" collapsed={collapsed}>
-            {analyticsItems.map((item: any) => (
+            {analyticsItems.map((item: { href: string; label: string; icon: string }) => (
               <NavItem
                 key={item.href}
                 {...item}
@@ -454,7 +455,7 @@ export default function Sidebar({
           {!collapsed && <div className="h-px" />}
 
           <NavSection label="System" collapsed={collapsed}>
-            {systemItems.map((item: any) => (
+            {systemItems.map((item: { href: string; label: string; icon: string }) => (
               <NavItem
                 key={item.href}
                 {...item}

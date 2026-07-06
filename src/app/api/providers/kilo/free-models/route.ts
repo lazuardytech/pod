@@ -34,7 +34,7 @@ export async function GET() {
       .filter((m: any) => m.isFree === true)
       .map((m: any) => ({
         id: m.id,
-        name: (m as any).name,
+        name: (m as Record<string, unknown>).name,
         isFree: true,
         context_length: m.context_length || 0,
       }));

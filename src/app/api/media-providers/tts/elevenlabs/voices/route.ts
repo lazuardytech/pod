@@ -59,7 +59,7 @@ export async function GET(request: any) {
       if (!byLang[code].voices.find((v: any) => v.id === voice.voice_id)) {
         byLang[code].voices.push({
           id: voice.voice_id,
-          name: (voice as any).name,
+          name: (voice as Record<string, unknown>).name as string,
           gender: voice.labels?.gender || "",
           lang: code,
           // premade voices are free; professional library voices added to account may require paid plan

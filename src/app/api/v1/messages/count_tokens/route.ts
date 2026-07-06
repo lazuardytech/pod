@@ -32,7 +32,7 @@ export async function POST(request: any) {
     }
 
     // Estimate token count based on content length
-    const messages = (body as any).messages || [];
+    const messages = ((body as Record<string, unknown>).messages as { content?: unknown }[]) || [];
     let totalChars = 0;
     for (const msg of messages) {
       if (typeof msg.content === "string") {

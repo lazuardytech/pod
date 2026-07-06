@@ -8,7 +8,7 @@ import { asApiRecord, asString } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -54,7 +54,7 @@ export async function POST(request: any) {
           clientBody,
           stream,
           undefined,
-          provider as any,
+          provider as string as unknown as null,
         );
         delete result._toolNameMap;
 
@@ -85,7 +85,7 @@ export async function POST(request: any) {
           openaiBody,
           stream,
           undefined,
-          provider as any,
+          provider as string as unknown as null,
         );
         delete translated._toolNameMap;
 

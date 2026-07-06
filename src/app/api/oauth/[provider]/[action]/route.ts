@@ -158,7 +158,12 @@ export async function POST(request: any, { params }: { params: any }) {
     }
 
     if (action === "exchange") {
-      const { code, redirectUri, codeVerifier, state, meta } = body ?? ({} as any);
+      const bodyFields = (body ?? {}) as Record<string, unknown>;
+      const code = bodyFields.code as string | undefined;
+      const redirectUri = bodyFields.redirectUri as string | undefined;
+      const codeVerifier = bodyFields.codeVerifier as string | undefined;
+      const state = bodyFields.state as string | undefined;
+      const meta = bodyFields.meta as Record<string, unknown> | undefined;
 
       // Cline uses authorization_code without PKCE
       const noPkceExchangeProviders = ["cline"];
@@ -169,9 +174,9 @@ export async function POST(request: any, { params }: { params: any }) {
       // Exchange code for tokens (meta carries provider-specific params, e.g. gitlab clientId/baseUrl)
       const tokenData = await exchangeTokens(
         provider,
-        code,
-        redirectUri,
-        codeVerifier,
+        code as string,
+        redirectUri as string,
+        codeVerifier as string,
         state,
         meta,
       );
@@ -199,7 +204,10 @@ export async function POST(request: any, { params }: { params: any }) {
     }
 
     if (action === "poll") {
-      const { deviceCode, codeVerifier, extraData } = body ?? ({} as any);
+      const pollFields = (body ?? {}) as Record<string, unknown>;
+      const deviceCode = pollFields.deviceCode as string | undefined;
+      const codeVerifier = pollFields.codeVerifier as string | undefined;
+      const extraData = pollFields.extraData as Record<string, unknown> | undefined;
 
       if (!deviceCode) {
         return NextResponse.json({ error: "Missing device code" }, { status: 400 });

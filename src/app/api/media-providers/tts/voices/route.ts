@@ -58,7 +58,7 @@ export async function GET(request: any) {
         const v = item as Record<string, unknown>;
         return {
           id: v.id,
-          name: (v as any).name,
+          name: (v as Record<string, unknown>).name,
           locale: asString(v.locale).replace("_", "-"),
           lang: v.lang,
           country: v.country,
@@ -74,7 +74,7 @@ export async function GET(request: any) {
         const language = asString(labels.language) || "en";
         return {
           id: v.voice_id,
-          name: (v as any).name,
+          name: (v as Record<string, unknown>).name,
           locale: language,
           lang: language.split("-")[0],
           country: "",

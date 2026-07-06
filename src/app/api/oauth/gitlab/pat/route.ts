@@ -27,7 +27,9 @@ export async function POST(request: any) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const { token, baseUrl } = body ?? ({} as any);
+    const bodyFields = (body ?? {}) as Record<string, unknown>;
+    const token = bodyFields.token as string | undefined;
+    const baseUrl = bodyFields.baseUrl as string | undefined;
     if (!token?.trim()) {
       return NextResponse.json({ error: "Personal Access Token is required" }, { status: 400 });
     }

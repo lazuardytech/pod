@@ -76,7 +76,7 @@ export async function POST(request: any, { params }: { params: any }) {
         if (modelsRes.ok) {
           const data = await modelsRes.json();
           models = (data.models || []).map((m: any) => ({
-            id: m.id || (m as any).name,
+            id: m.id || (m as Record<string, unknown>).name,
             name: m.name || m.id,
           }));
         }

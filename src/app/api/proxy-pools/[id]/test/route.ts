@@ -40,7 +40,7 @@ async function testVercelRelay(proxyPool: any, timeoutMs: number = 10000) {
     return {
       ok: false,
       status: 500,
-      error: (err as any)?.name === "AbortError" ? "Relay test timed out" : sanitizeError(err),
+      error: (err as Error)?.name === "AbortError" ? "Relay test timed out" : sanitizeError(err),
     };
   } finally {
     clearTimeout(timer);

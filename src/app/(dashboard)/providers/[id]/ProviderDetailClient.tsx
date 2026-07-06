@@ -1405,9 +1405,9 @@ export default function ProviderDetailPage() {
         <OAuthModal
           isOpen={showOAuthModal}
           provider={providerId}
-          providerInfo={providerInfo}
-          oauthMeta={null}
-          idcConfig={null}
+          providerInfo={providerInfo as unknown as { name: string }}
+          oauthMeta={undefined}
+          idcConfig={undefined}
           onSuccess={handleOAuthSuccess}
           onClose={() => setShowOAuthModal(false)}
         />

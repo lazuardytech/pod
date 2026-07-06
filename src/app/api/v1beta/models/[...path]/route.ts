@@ -312,7 +312,7 @@ async function convertOpenAIResponseToGemini(response: any, model: any) {
     });
   }
 
-  const { message, finish_reason } = choice ?? ({} as any);
+  const { message, finish_reason } = choice ?? ({} as Record<string, unknown>);
 
   const parts: any[] = [];
   if (message.reasoning_content) {

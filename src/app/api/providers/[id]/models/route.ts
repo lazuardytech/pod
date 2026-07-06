@@ -221,7 +221,7 @@ const PROVIDER_MODELS_CONFIG = {
 /**
  * GET /api/providers/[id]/models - Get models list from provider
  */
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -373,7 +373,7 @@ export async function GET(request: any, { params }: { params: any }) {
     }
 
     if (connection.provider === "gemini-cli") {
-      const { accessToken, refreshToken } = connection ?? ({} as any);
+      const { accessToken, refreshToken } = connection ?? {};
       if (!accessToken) {
         return NextResponse.json({ error: "No valid token found" }, { status: 401 });
       }
@@ -466,8 +466,20 @@ export async function GET(request: any, { params }: { params: any }) {
       });
     }
 
-    const config =
-      PROVIDER_MODELS_CONFIG[connection.provider as keyof typeof PROVIDER_MODELS_CONFIG];
+    const config = PROVIDER_MODELS_CONFIG[
+      connection.provider as keyof typeof PROVIDER_MODELS_CONFIG
+    ] as
+      | {
+          url?: string;
+          method?: string;
+          headers?: Record<string, string>;
+          authHeader?: string;
+          authPrefix?: string;
+          authQuery?: string;
+          body?: unknown;
+          parseResponse?: (data: unknown) => unknown[];
+        }
+      | undefined;
     if (!config) {
       return NextResponse.json(
         { error: `Provider ${connection.provider} does not support models listing` },
@@ -482,19 +494,22 @@ export async function GET(request: any, { params }: { params: any }) {
       return NextResponse.json({ error: "No valid token found" }, { status: 401 });
     }
 
+    // config is guaranteed non-null after the check above
+    const cfg = config as NonNullable<typeof config>;
+
     // Build request URL
-    let url = (config as any).url;
+    let url = cfg.url ?? "";
     if (connection.provider === "qwen") {
       url = resolveQwenModelsUrl(connection);
     }
-    if ((config as any).authQuery) {
-      url += `?${(config as any).authQuery}=${token}`;
+    if (cfg.authQuery) {
+      url += `?${cfg.authQuery}=${token}`;
     }
 
     // Build headers
-    const headers: Record<string, string> = { ...(config as any).headers };
-    if ((config as any).authHeader && !(config as any).authQuery) {
-      headers[(config as any).authHeader] = ((config as any).authPrefix || "") + token;
+    const headers: Record<string, string> = { ...cfg.headers };
+    if (cfg.authHeader && !cfg.authQuery) {
+      headers[cfg.authHeader] = (cfg.authPrefix || "") + token;
     }
 
     // Make request
@@ -502,12 +517,12 @@ export async function GET(request: any, { params }: { params: any }) {
       method?: string;
       headers?: Record<string, string>;
     } = {
-      method: (config as any).method,
+      method: cfg.method,
       headers,
     };
 
-    if ((config as any).body && (config as any).method === "POST") {
-      fetchOptions.body = JSON.stringify((config as any).body);
+    if (cfg.body && cfg.method === "POST") {
+      fetchOptions.body = JSON.stringify(cfg.body);
     }
 
     const response = await fetch(url, fetchOptions);
@@ -521,7 +536,7 @@ export async function GET(request: any, { params }: { params: any }) {
     }
 
     const data = await response.json();
-    const models = (config as any).parseResponse(data);
+    const models = cfg.parseResponse ? cfg.parseResponse(data) : [];
 
     return NextResponse.json({
       provider: connection.provider,

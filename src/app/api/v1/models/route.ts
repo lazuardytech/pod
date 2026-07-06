@@ -175,7 +175,7 @@ export async function buildModelsList(kindFilter: any) {
   for (const combo of combos) {
     if (!comboMatchesKinds(combo, kindFilter)) continue;
     const entry: Record<string, unknown> = {
-      id: (combo as any).name,
+      id: (combo as Record<string, unknown>).name,
       object: "model",
       created: timestamp,
       owned_by: "combo",

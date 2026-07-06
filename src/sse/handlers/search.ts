@@ -2,7 +2,7 @@ import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import { handleSearchCore } from "open-sse/handlers/search/index.js";
 import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
-import { getCombos, getSettings } from "@/lib/localDb";
+import { getCombos, getSettings, type Settings } from "@/lib/localDb";
 import {
   AI_PROVIDERS,
   type ProviderDefinition,
@@ -90,7 +90,7 @@ async function handleSingleProviderSearch(
   providerInput: string,
   request: Request,
   apiKey: string | null,
-  settings: any,
+  settings: Settings,
 ): Promise<Response> {
   const query = body.query as string;
   const providerId = resolveProviderId(providerInput);

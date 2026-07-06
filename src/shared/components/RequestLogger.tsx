@@ -6,7 +6,7 @@ import RequestLogDetail from "./RequestLogDetail";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
-const fmtTokens = (n: any) => {
+const fmtTokens = (n: number | string | null | undefined) => {
   if (n == null || n === "-") return "—";
   const num = typeof n === "string" ? parseInt(n, 10) : n;
   if (Number.isNaN(num)) return "—";
@@ -17,7 +17,7 @@ const fmtTokens = (n: any) => {
 
 // ─── Badges ───────────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status?: any; [key: string]: any }) {
+function StatusBadge({ status }: { status?: string }) {
   if (!status) return null;
   const isPending = status.includes("PENDING");
   const isFailed = status.includes("FAILED");
@@ -37,7 +37,7 @@ function StatusBadge({ status }: { status?: any; [key: string]: any }) {
   );
 }
 
-function ProviderBadge({ provider }: { provider?: any; [key: string]: any }) {
+function ProviderBadge({ provider }: { provider?: string }) {
   if (!provider || provider === "-") return <span className="text-fog-grey">—</span>;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-deep-slate border border-charcoal-grey text-[10px] font-[590] text-storm-cloud uppercase">
@@ -46,7 +46,7 @@ function ProviderBadge({ provider }: { provider?: any; [key: string]: any }) {
   );
 }
 
-function ComboBadge({ combo }: { combo?: any; [key: string]: any }) {
+function ComboBadge({ combo }: { combo?: string }) {
   if (!combo) return <span className="text-fog-grey/40">—</span>;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-amethyst/10 border border-amethyst/20 text-[10px] text-amethyst">
@@ -67,29 +67,28 @@ export default function RequestLogger({
   setFilterProvider,
   onProvidersChange,
 }: {
-  sortBy?: any;
-  setSortBy?: any;
-  recording?: any;
-  setRecording?: any;
-  refreshRef?: any;
-  filterProvider?: any;
-  setFilterProvider?: any;
-  onProvidersChange?: any;
-  [key: string]: any;
+  sortBy?: string;
+  setSortBy?: (sort: string) => void;
+  recording?: boolean;
+  setRecording?: (rec: boolean) => void;
+  refreshRef?: React.MutableRefObject<(() => void) | null>;
+  filterProvider?: string;
+  setFilterProvider?: (provider: string) => void;
+  onProvidersChange?: (providers: string[]) => void;
 }) {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [connected, setConnected] = useState(false);
 
   // Detail drawer state
-  const [selectedLog, setSelectedLog] = useState<any>(null);
-  const [detailData, setDetailData] = useState<any>(null);
+  const [selectedLog, setSelectedLog] = useState<Record<string, unknown> | null>(null);
+  const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const detailAbortRef = useRef<any>(null);
+  const detailAbortRef = useRef<AbortController | null>(null);
 
-  const esRef = useRef<any>(null);
+  const esRef = useRef<EventSource | null>(null);
   const recordingRef = useRef(recording);
 
   // Keep recordingRef in sync
@@ -98,7 +97,7 @@ export default function RequestLogger({
   }, [recording]);
 
   // Fetch logs via REST (for manual refresh)
-  const fetchLogs = useCallback(async (showLoading: any = false) => {
+  const fetchLogs = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
       const res = await fetch("/api/usage/request-logs?limit=300");
@@ -132,10 +131,10 @@ export default function RequestLogger({
         setLoading(false);
       };
 
-      es.onmessage = (e: any) => {
+      es.onmessage = (e: MessageEvent) => {
         if (!recordingRef.current) return;
         try {
-          const msg = JSON.parse(e.data);
+          const msg = JSON.parse(e.data as string) as Record<string, unknown>;
           if (msg.type === "init" || msg.type === "update") {
             setLogs(Array.isArray(msg.logs) ? msg.logs : []);
             if (loading) setLoading(false);
@@ -165,7 +164,7 @@ export default function RequestLogger({
   }, []);
 
   // Open detail drawer
-  const openDetail = useCallback(async (log: any) => {
+  const openDetail = useCallback(async (log: Record<string, unknown>) => {
     // Cancel any in-flight detail fetch
     if (detailAbortRef.current) {
       detailAbortRef.current.abort();
@@ -182,8 +181,8 @@ export default function RequestLogger({
         const data = await res.json();
         setDetailData(data.detail ?? null);
       }
-    } catch (e) {
-      if ((e as any)?.name === "AbortError") return; // cancelled — ignore
+    } catch (e: unknown) {
+      if ((e as Error)?.name === "AbortError") return; // cancelled — ignore
     } finally {
       if (!controller.signal.aborted) setDetailLoading(false);
     }
@@ -196,7 +195,13 @@ export default function RequestLogger({
 
   // Derived data
   const providers = useMemo(
-    () => [...new Set(logs.map((l: any) => l.provider).filter((p: any) => p && p !== "-"))],
+    () => [
+      ...new Set(
+        logs
+          .map((l: Record<string, unknown>) => l.provider as string)
+          .filter((p: string) => p && p !== "-"),
+      ),
+    ],
     [logs],
   );
 
@@ -205,20 +210,20 @@ export default function RequestLogger({
   }, [providers, onProvidersChange]);
 
   const filtered = useMemo(() => {
-    let result = logs.filter((l: any) => {
-      if (filterStatus === "ok" && !l.status?.includes("SUCCESS")) return false;
-      if (filterStatus === "failed" && !l.status?.includes("FAILED")) return false;
-      if (filterStatus === "pending" && !l.status?.includes("PENDING")) return false;
+    let result = logs.filter((l: Record<string, unknown>) => {
+      if (filterStatus === "ok" && !(l.status as string)?.includes("SUCCESS")) return false;
+      if (filterStatus === "failed" && !(l.status as string)?.includes("FAILED")) return false;
+      if (filterStatus === "pending" && !(l.status as string)?.includes("PENDING")) return false;
       if (filterStatus === "combo" && !l.combo) return false;
       if (filterProvider !== "all" && l.provider !== filterProvider) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
-          l.model?.toLowerCase().includes(q) ||
-          l.provider?.toLowerCase().includes(q) ||
-          l.account?.toLowerCase().includes(q) ||
-          l.status?.toLowerCase().includes(q) ||
-          l.combo?.toLowerCase().includes(q)
+          (l.model as string)?.toLowerCase().includes(q) ||
+          (l.provider as string)?.toLowerCase().includes(q) ||
+          (l.account as string)?.toLowerCase().includes(q) ||
+          (l.status as string)?.toLowerCase().includes(q) ||
+          (l.combo as string)?.toLowerCase().includes(q)
         );
       }
       return true;
@@ -231,18 +236,18 @@ export default function RequestLogger({
         break;
       case "tokens_desc":
         result.sort(
-          (a: any, b: any) =>
-            (b.promptTokens ?? 0) +
-            (b.completionTokens ?? 0) -
-            ((a.promptTokens ?? 0) + (a.completionTokens ?? 0)),
+          (a: Record<string, unknown>, b: Record<string, unknown>) =>
+            ((b.promptTokens as number) ?? 0) +
+            ((b.completionTokens as number) ?? 0) -
+            (((a.promptTokens as number) ?? 0) + ((a.completionTokens as number) ?? 0)),
         );
         break;
       case "tokens_asc":
         result.sort(
-          (a: any, b: any) =>
-            (a.promptTokens ?? 0) +
-            (a.completionTokens ?? 0) -
-            ((b.promptTokens ?? 0) + (b.completionTokens ?? 0)),
+          (a: Record<string, unknown>, b: Record<string, unknown>) =>
+            ((a.promptTokens as number) ?? 0) +
+            ((a.completionTokens as number) ?? 0) -
+            (((b.promptTokens as number) ?? 0) + ((b.completionTokens as number) ?? 0)),
         );
         break;
     }
@@ -253,10 +258,14 @@ export default function RequestLogger({
   const counts = useMemo(
     () => ({
       total: logs.length,
-      ok: logs.filter((l: any) => l.status?.includes("SUCCESS")).length,
-      failed: logs.filter((l: any) => l.status?.includes("FAILED")).length,
-      pending: logs.filter((l: any) => l.status?.includes("PENDING")).length,
-      combo: logs.filter((l: any) => l.combo).length,
+      ok: logs.filter((l: Record<string, unknown>) => (l.status as string)?.includes("SUCCESS"))
+        .length,
+      failed: logs.filter((l: Record<string, unknown>) => (l.status as string)?.includes("FAILED"))
+        .length,
+      pending: logs.filter((l: Record<string, unknown>) =>
+        (l.status as string)?.includes("PENDING"),
+      ).length,
+      combo: logs.filter((l: Record<string, unknown>) => l.combo).length,
     }),
     [logs],
   );
@@ -278,7 +287,7 @@ export default function RequestLogger({
               aria-label="Search request logs"
               type="text"
               value={search}
-              onChange={(e: any) => setSearch(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               placeholder="Search request logs..."
               className="w-full h-7 pl-8 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
               name="search"
@@ -308,7 +317,7 @@ export default function RequestLogger({
                 label: "Pending",
                 activeClass: "border-yellow-500/30 bg-yellow-500/8 text-yellow-400",
               },
-            ].map((f: any) => (
+            ].map((f: { key: string; label: string; activeClass: string }) => (
               <button
                 key={f.key}
                 onClick={() => setFilterStatus(f.key)}
@@ -394,14 +403,23 @@ export default function RequestLogger({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((log: any) => {
-                  const isSelected = selectedLog?.id === log.id;
-                  const isFailed = log.status?.includes("FAILED");
-                  const isPending = log.status?.includes("PENDING");
+                {filtered.map((log: Record<string, unknown>) => {
+                  const logId = log.id as string;
+                  const isSelected = (selectedLog?.id as string) === logId;
+                  const isFailed = (log.status as string)?.includes("FAILED");
+                  const isPending = (log.status as string)?.includes("PENDING");
+                  const logStatus = log.status as string;
+                  const logModel = log.model as string;
+                  const logProvider = log.provider as string;
+                  const logAccount = log.account as string;
+                  const logPromptTokens = log.promptTokens as string | number;
+                  const logCompletionTokens = log.completionTokens as string | number;
+                  const logCombo = log.combo as string;
+                  const logTimestamp = log.timestamp as string;
 
                   return (
                     <tr
-                      key={log.id}
+                      key={logId}
                       onClick={() => (isSelected ? closeDetail() : openDetail(log))}
                       className={cn(
                         "border-b border-charcoal-grey/50 last:border-0 cursor-pointer transition-colors duration-100",
@@ -412,34 +430,34 @@ export default function RequestLogger({
                       )}
                     >
                       <td className="px-3 py-2 border-r border-charcoal-grey/50 text-fog-grey font-mono text-[11px]">
-                        {log.timestamp}
+                        {logTimestamp}
                       </td>
                       <td
                         className="px-3 py-2 border-r border-charcoal-grey/50 text-porcelain font-mono max-w-[200px] truncate"
-                        title={log.model}
+                        title={logModel}
                       >
-                        {log.model}
+                        {logModel}
                       </td>
                       <td className="px-3 py-2 border-r border-charcoal-grey/50">
-                        <ProviderBadge provider={log.provider} />
+                        <ProviderBadge provider={logProvider} />
                       </td>
                       <td
                         className="px-3 py-2 border-r border-charcoal-grey/50 text-storm-cloud max-w-[140px] truncate"
-                        title={log.account}
+                        title={logAccount}
                       >
-                        {log.account || "—"}
+                        {logAccount || "—"}
                       </td>
                       <td className="px-3 py-2 border-r border-charcoal-grey/50 text-right text-aether-blue font-mono">
-                        {fmtTokens(log.promptTokens)}
+                        {fmtTokens(logPromptTokens)}
                       </td>
                       <td className="px-3 py-2 border-r border-charcoal-grey/50 text-right text-emerald font-mono">
-                        {fmtTokens(log.completionTokens)}
+                        {fmtTokens(logCompletionTokens)}
                       </td>
                       <td className="px-3 py-2 border-r border-charcoal-grey/50">
-                        <StatusBadge status={log.status} />
+                        <StatusBadge status={logStatus} />
                       </td>
                       <td className="px-3 py-2">
-                        <ComboBadge combo={log.combo} />
+                        <ComboBadge combo={logCombo} />
                       </td>
                     </tr>
                   );

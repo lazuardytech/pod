@@ -33,7 +33,7 @@ export async function OPTIONS() {
  * If slug matches a known kind (image, tts, etc.) → return kind-filtered list.
  * Otherwise → treat as model ID lookup.
  */
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const settings = await getSettings();
     if (settings.requireApiKey) {
@@ -71,7 +71,7 @@ export async function GET(request: any, { params }: { params: any }) {
     // Check combos
     const combos = await getCombos().catch(() => []);
     for (const combo of combos) {
-      if ((combo as any).name === modelId) {
+      if ((combo as Record<string, unknown>).name === modelId) {
         return Response.json(
           { id: modelId, object: "model", created: timestamp, owned_by: "combo" },
           { headers: CORS },
@@ -85,7 +85,7 @@ export async function GET(request: any, { params }: { params: any }) {
       if (modelId.startsWith(prefix)) {
         const bareId = modelId.slice(prefix.length);
         for (const model of providerModels) {
-          if ((model as any).id === bareId) {
+          if ((model as Record<string, unknown>).id === bareId) {
             return Response.json(
               { id: modelId, object: "model", created: timestamp, owned_by: alias },
               { headers: CORS },
@@ -103,13 +103,19 @@ export async function GET(request: any, { params }: { params: any }) {
       const bareId = modelId.slice(prefix.length);
 
       const subConfigModels: string[] = [];
-      if (Array.isArray((providerInfo as any).ttsConfig?.models)) {
-        for (const m of (providerInfo as any).ttsConfig.models) {
+      const ttsConfig = (providerInfo as Record<string, unknown>).ttsConfig as
+        | { models?: Array<{ id?: string }> }
+        | undefined;
+      if (Array.isArray(ttsConfig?.models)) {
+        for (const m of ttsConfig.models) {
           if (m?.id) subConfigModels.push(m.id);
         }
       }
-      if (Array.isArray((providerInfo as any).embeddingConfig?.models)) {
-        for (const m of (providerInfo as any).embeddingConfig.models) {
+      const embeddingConfig = (providerInfo as Record<string, unknown>).embeddingConfig as
+        | { models?: Array<{ id?: string }> }
+        | undefined;
+      if (Array.isArray(embeddingConfig?.models)) {
+        for (const m of embeddingConfig.models) {
           if (m?.id) subConfigModels.push(m.id);
         }
       }
@@ -120,13 +126,13 @@ export async function GET(request: any, { params }: { params: any }) {
         );
       }
 
-      if (bareId === "search" && (providerInfo as any).searchConfig) {
+      if (bareId === "search" && (providerInfo as Record<string, unknown>).searchConfig) {
         return Response.json(
           { id: modelId, object: "model", created: timestamp, owned_by: alias, kind: "webSearch" },
           { headers: CORS },
         );
       }
-      if (bareId === "fetch" && (providerInfo as any).fetchConfig) {
+      if (bareId === "fetch" && (providerInfo as Record<string, unknown>).fetchConfig) {
         return Response.json(
           { id: modelId, object: "model", created: timestamp, owned_by: alias, kind: "webFetch" },
           { headers: CORS },

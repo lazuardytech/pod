@@ -109,7 +109,7 @@ export async function PUT(request: any, { params }: { params: any }) {
       lastError,
       lastErrorAt,
       providerSpecificData,
-    } = body ?? ({} as any);
+    } = body ?? ({} as Record<string, unknown>);
 
     const existing = await getProviderConnectionById(id);
     if (!existing) {

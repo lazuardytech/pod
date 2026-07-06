@@ -880,7 +880,7 @@ function ComboFormModal({
         onClose={() => setShowModelSelect(false)}
         onSelect={handleAddModel}
         onDeselect={handleDeselectModel}
-        selectedModel={null}
+        selectedModel={undefined}
         activeProviders={activeProviders}
         modelAliases={modelAliases}
         title="Add Model to Combo"

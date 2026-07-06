@@ -112,7 +112,7 @@ export async function POST(request: any) {
     const body = rawBody as Record<string, unknown>;
     const provider = normalizeProviderId(body.provider);
     const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } =
-      body ?? ({} as any);
+      body ?? ({} as Record<string, unknown>);
     const proxyConfig = normalizeProxyConfig(body);
     if (proxyConfig.error) {
       return NextResponse.json({ error: proxyConfig.error }, { status: 400 });

@@ -65,7 +65,7 @@ export async function POST(request: any) {
     return NextResponse.json(
       {
         key: apiKey.key,
-        name: (apiKey as any).name,
+        name: (apiKey as unknown as Record<string, unknown>).name,
         id: apiKey.id,
         machineId: apiKey.machineId,
         limitType: apiKey.limitType,
@@ -76,7 +76,7 @@ export async function POST(request: any) {
     );
   } catch (error) {
     console.log("Error creating key:", error);
-    if (String((error as any)?.message || "").includes("positive integer")) {
+    if (String((error as Error)?.message || "").includes("positive integer")) {
       return NextResponse.json({ error: sanitizeError(error) }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to create key" }, { status: 500 });

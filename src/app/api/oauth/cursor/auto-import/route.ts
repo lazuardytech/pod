@@ -254,7 +254,7 @@ export async function GET(request: any) {
     return NextResponse.json({ found: false, windowsManual: true, dbPath });
   } catch (error) {
     logError("CursorAutoImport", "Cursor auto-import failed", {
-      error: (error as any)?.message || error,
+      error: (error as Error)?.message || error,
     });
     return NextResponse.json({ found: false, error: sanitizeError(error) }, { status: 500 });
   }

@@ -60,7 +60,7 @@ export async function GET(request: any) {
             voices: [],
           };
         }
-        const voiceId = m.canonical_name || (m as any).name;
+        const voiceId = m.canonical_name || (m as Record<string, unknown>).name;
         if (!byLang[code].voices.find((x: any) => x.id === voiceId)) {
           byLang[code].voices.push({
             id: voiceId,

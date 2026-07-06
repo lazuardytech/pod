@@ -10,7 +10,7 @@ export async function POST(request: any) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { model, kind } = body ?? ({} as any);
+    const { model, kind } = body ?? ({} as Record<string, unknown>);
     if (!model) return NextResponse.json({ error: "Model required" }, { status: 400 });
 
     const envBase = process.env.BASE_URL;

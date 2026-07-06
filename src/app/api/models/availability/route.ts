@@ -25,7 +25,7 @@ export async function POST(request: any) {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
     const body = rawBody as Record<string, unknown>;
-    const { action, provider, model } = body ?? ({} as any);
+    const { action, provider, model } = body ?? ({} as Record<string, unknown>);
     const providerStr = asString(provider);
     const modelStr = asString(model);
 

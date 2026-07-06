@@ -107,7 +107,7 @@ export async function PATCH(request: any, { params }: { params: any }) {
     return NextResponse.json({ node: updated });
   } catch (error) {
     const message =
-      typeof (error as any)?.message === "string"
+      typeof (error as Error)?.message === "string"
         ? sanitizeError(error)
         : "Failed to rename provider node";
     console.log("Error renaming provider node:", message);
