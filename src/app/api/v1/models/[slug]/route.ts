@@ -40,14 +40,28 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
       const apiKey = extractApiKey(request);
       if (!apiKey) {
         return Response.json(
-          { error: { message: "Missing API key", type: "authentication_error", param: null } },
+          {
+            error: {
+              message: "Missing API key",
+              type: "authentication_error",
+              param: null,
+              code: "invalid_api_key",
+            },
+          },
           { status: 401, headers: CORS },
         );
       }
       const valid = await validateApiKey(apiKey);
       if (!valid) {
         return Response.json(
-          { error: { message: "Invalid API key", type: "authentication_error", param: null } },
+          {
+            error: {
+              message: "Invalid API key",
+              type: "authentication_error",
+              param: null,
+              code: "invalid_api_key",
+            },
+          },
           { status: 401, headers: CORS },
         );
       }
@@ -154,7 +168,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     );
   } catch (error) {
     return Response.json(
-      { error: { message: sanitizeError(error), type: "server_error", param: null } },
+      {
+        error: {
+          message: sanitizeError(error),
+          type: "server_error",
+          param: null,
+          code: "internal_server_error",
+        },
+      },
       { status: 500, headers: CORS },
     );
   }

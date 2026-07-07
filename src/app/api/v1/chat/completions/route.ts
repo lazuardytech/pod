@@ -37,7 +37,12 @@ export async function POST(request: any) {
   } catch (error) {
     return new Response(
       JSON.stringify({
-        error: { message: sanitizeError(error), type: "server_error", param: null },
+        error: {
+          message: sanitizeError(error),
+          type: "server_error",
+          param: null,
+          code: "internal_server_error",
+        },
       }),
       {
         status: 500,
