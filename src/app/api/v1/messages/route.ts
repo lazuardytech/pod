@@ -1,12 +1,11 @@
 import { initTranslators } from "open-sse/translator/index.js";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
 import { handleChat } from "@/sse/handlers/chat";
+import { anthropicErrorResponse } from "@/lib/anthropicError";
 
 let initialized = false;
 
-/**
- * Initialize translators once
- */
 async function ensureInitialized() {
   if (!initialized) {
     await initTranslators();
@@ -14,9 +13,6 @@ async function ensureInitialized() {
   }
 }
 
-/**
- * Handle CORS preflight
- */
 export async function OPTIONS() {
   return new Response(null, {
     headers: {
@@ -27,12 +23,14 @@ export async function OPTIONS() {
   });
 }
 
-/**
- * POST /v1/messages - Claude format (auto convert via handleChat)
- */
 export async function POST(request: any) {
-  return await withApiKeyRateLimit(request, async () => {
-    await ensureInitialized();
-    return await handleChat(request);
-  });
+  try {
+    const result = await withApiKeyRateLimit(request, async () => {
+      await ensureInitialized();
+      return await handleChat(request);
+    });
+    return result;
+  } catch (error) {
+    return anthropicErrorResponse(500, sanitizeError(error));
+  }
 }

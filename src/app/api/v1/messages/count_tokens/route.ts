@@ -1,5 +1,6 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { anthropicErrorResponse } from "@/lib/anthropicError";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,16 +8,10 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "*",
 };
 
-/**
- * Handle CORS preflight
- */
 export async function OPTIONS() {
   return new Response(null, { headers: CORS_HEADERS });
 }
 
-/**
- * POST /v1/messages/count_tokens - Mock token count response
- */
 export async function POST(request: any) {
   return await withApiKeyRateLimit(request, async () => {
     let body;
@@ -25,13 +20,9 @@ export async function POST(request: any) {
       if (parseErr) return parseErr;
       body = parsed;
     } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-      });
+      return anthropicErrorResponse(400, "Invalid JSON body");
     }
 
-    // Estimate token count based on content length
     const messages = ((body as Record<string, unknown>).messages as { content?: unknown }[]) || [];
     let totalChars = 0;
     for (const msg of messages) {
@@ -46,16 +37,10 @@ export async function POST(request: any) {
       }
     }
 
-    // Rough estimate: ~4 chars per token
     const inputTokens = Math.ceil(totalChars / 4);
 
-    return new Response(
-      JSON.stringify({
-        input_tokens: inputTokens,
-      }),
-      {
-        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-      },
-    );
+    return new Response(JSON.stringify({ input_tokens: inputTokens }), {
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    });
   });
 }

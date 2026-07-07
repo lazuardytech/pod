@@ -32,15 +32,14 @@ Errors return `{ error: { message, type, param, code } }` with appropriate HTTP 
 
 ### Partially Supported
 
-- `stream_options.include_usage` — not verified at route level
+- `stream_options.include_usage` — handled in stream.js, injects estimated usage on finish chunk
 - `response_format` — json_schema/json_object supported via translator, route-level schema validation not tested
 - `tool_choice` — `auto`, `none`, `required` supported; named function choice passes through
-- Parallel tool calls — supported
-- `max_completion_tokens` vs `max_tokens` — Pod uses `max_tokens`, `max_completion_tokens` not separately handled
+- `max_completion_tokens` vs `max_tokens` — both accepted; `max_tokens` used internally, `max_completion_tokens` passed through for reasoning models
+- `/v1/messages` error format — returns OpenAI format `{ error: {...} }` instead of Anthropic format `{ type: "error", error: {...} }`. Works with Anthropic SDKs but not spec-compliant.
 
 ### Not Supported
 
-- `POST /v1/chat/completions` with `stream_options` usage reporting in streaming
 - Assistant API (`/v1/assistants`)
 - Batch API (`/v1/batches`)
 - Fine-tuning API
@@ -65,6 +64,10 @@ Errors via same `{ error: { message, type, param, code } }` format through the g
 - Tool use (`tool_use` blocks) — supported
 - Streaming — supported (SSE with content_block_delta, content_block_start, etc.)
 - `metadata` — passed through
+
+### Partially Supported
+
+- Error format — errors return OpenAI `{ error: {...} }` shape, not Anthropic `{ type: "error", error: {...} }`. The `/v1/messages` route has catch blocks returning Anthropic format, but errors from `handleChat` core are still OpenAI-format.
 
 ### Not Supported
 
