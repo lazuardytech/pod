@@ -84,7 +84,8 @@ Operational rules for AI agents working on the **Pod** project.
 7. Offline reads use offlineJsonCache; offline writes use the mutation queue stack.
 8. Queue only safe, idempotent dashboard mutations.
 9. Git workflow: canary is active development branch; main is stable/release branch.
-10. Zeabur env changes take effect only on next restart/deploy — no auto-restart on env mutation.
+10. PR convention: canary→main via PR only — never push canary changes directly to origin/main.
+11. Zeabur env changes take effect only on next restart/deploy — no auto-restart on env mutation.
 
 ## Deployment Topology (Zeabur)
 
@@ -122,15 +123,16 @@ bun run build    # NODE_ENV=production next build (turbopack)
 
 ## Docs Map
 
-| Path                    | Purpose                                  |
-| ----------------------- | ---------------------------------------- |
-| .agents/INDEX.md        | Documentation index and reading order    |
-| .agents/PRD.md          | Product requirements document            |
-| .agents/architecture/\* | System design deep dives                 |
-| .agents/knowledge/\*    | Working knowledge (gotchas, conventions) |
-| .agents/issues/\*       | Historical audits and security analysis  |
-| .agents/reports/\*      | Release rollups & verification reports   |
-| .agents/plan/\*         | Draft plans (migrations, optimization)   |
-| DESIGN.md               | UI design system reference               |
-| CHANGELOG.md            | Release history                          |
-| docs/API_INTERNAL.md    | Internal dashboard API reference         |
+| Path                            | Purpose                                       |
+| ------------------------------- | --------------------------------------------- |
+| .agents/INDEX.md                | Documentation index and reading order         |
+| .agents/PRD.md                  | Product requirements document                 |
+| .agents/architecture/\*         | System design deep dives                      |
+| .agents/knowledge/\*            | Working knowledge (gotchas, conventions)      |
+| .agents/issues/\*               | Historical audits and security analysis       |
+| .agents/reports/\*              | Release rollups & verification reports        |
+| .agents/plan/\*                 | Draft plans (migrations, optimization)        |
+| DESIGN.md                       | UI design system reference                    |
+| CHANGELOG.md                    | Release history                               |
+| docs/API_INTERNAL.md            | Internal dashboard API reference              |
+| .agents/compatibility-matrix.md | API compatibility matrix (OpenAI + Anthropic) |
