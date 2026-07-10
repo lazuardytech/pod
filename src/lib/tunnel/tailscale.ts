@@ -64,8 +64,13 @@ function runTailscaleJson(
   }
 }
 
+// ponytail: cache `which tailscale` result — avoids 3s spawnSync on every request
+// when tailscale is not installed (e.g. Zeabur containers)
+let _cachedBin: string | null | undefined;
+
 // Prefer system tailscale, fallback to local bin, then Windows default path
 function getTailscaleBin(): string | null {
+  if (_cachedBin !== undefined) return _cachedBin;
   try {
     const lookupCommand = IS_WINDOWS ? "where" : "which";
     const lookupArg = "tailscale";
@@ -73,13 +78,22 @@ function getTailscaleBin(): string | null {
       timeout: 3000,
       env: { ...process.env, PATH: EXTENDED_PATH },
     })?.trim();
-    if (systemPath) return systemPath;
+    if (systemPath) {
+      _cachedBin = systemPath;
+      return _cachedBin;
+    }
   } catch (_e) {
     /* not in PATH */
   }
-  if (fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_BIN)) return TAILSCALE_BIN;
-  if (IS_WINDOWS && fs.existsSync(/*turbopackIgnore: true*/ WINDOWS_TAILSCALE_BIN))
-    return WINDOWS_TAILSCALE_BIN;
+  if (fs.existsSync(/*turbopackIgnore: true*/ TAILSCALE_BIN)) {
+    _cachedBin = TAILSCALE_BIN;
+    return _cachedBin;
+  }
+  if (IS_WINDOWS && fs.existsSync(/*turbopackIgnore: true*/ WINDOWS_TAILSCALE_BIN)) {
+    _cachedBin = WINDOWS_TAILSCALE_BIN;
+    return _cachedBin;
+  }
+  _cachedBin = null;
   return null;
 }
 
@@ -107,7 +121,7 @@ export function isTailscaleRunning(): boolean {
 }
 
 /** Get funnel URL from tailscale status */
-export function getTailscaleFunnelUrl(port: number): string | null {
+export function getTailscaleFunnelUrl(_port: number): string | null {
   const json = runTailscaleJson(["status", "--json"], { timeout: 5000 });
   if (!json) return null;
   const self = json.Self as { DNSName?: string } | undefined;

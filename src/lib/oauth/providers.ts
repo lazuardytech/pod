@@ -287,7 +287,7 @@ const PROVIDERS: Record<string, ProviderHandler> = {
     flowType: "authorization_code_pkce",
     fixedPort: 1455,
     callbackPath: "/auth/callback",
-    buildAuthUrl: (config, redirectUri, state, codeChallenge, meta) => {
+    buildAuthUrl: (config, redirectUri, state, codeChallenge, _meta) => {
       const params: Record<string, string> = {
         response_type: "code",
         client_id: config.clientId!,

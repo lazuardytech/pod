@@ -280,34 +280,6 @@ interface UsageStatsShape {
   errorProvider?: string;
 }
 
-interface StatsGroup {
-  groupKey: string;
-  summary: {
-    requests: number;
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-    cost: number;
-    inputCost: number;
-    outputCost: number;
-    lastUsed: string | null;
-    pending: number;
-  };
-  items: Record<string, unknown>[];
-}
-
-interface StatsRenderItem {
-  rawModel: string;
-  provider: string;
-  pending: number;
-  requests: number;
-  lastUsed: string;
-  accountName?: string;
-  connectionId?: string;
-  keyName?: string;
-  endpoint?: string;
-}
-
 export default function UsageStats({
   period: periodProp,
   setPeriod: setPeriodProp,

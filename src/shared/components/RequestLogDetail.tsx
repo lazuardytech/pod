@@ -40,7 +40,7 @@ function TokenPill({
   color?: any;
   [key: string]: any;
 }) {
-  if (value == null) return null;
+  if (value === null || value === undefined) return null;
   return (
     <span
       className={cn(

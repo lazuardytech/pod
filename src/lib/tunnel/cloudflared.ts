@@ -272,7 +272,7 @@ export async function spawnCloudflared(tunnelToken: string): Promise<ChildProces
         }
       });
 
-      child.on("exit", (code, signal) => {
+      child.on("exit", (code, _signal) => {
         cloudflaredProcess = null;
         clearPid();
         const wasConnected = resolved; // true = already connected successfully
@@ -424,7 +424,7 @@ export async function spawnQuickTunnel(
       reject(err);
     });
 
-    child.on("exit", (code, signal) => {
+    child.on("exit", (code, _signal) => {
       cloudflaredProcess = null;
       clearPid();
       if (!resolved) {

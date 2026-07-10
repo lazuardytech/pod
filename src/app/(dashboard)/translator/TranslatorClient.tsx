@@ -82,7 +82,7 @@ export default function TranslatorPage() {
   const toggle = (id: any) => setExpanded((prev: any) => ({ ...prev, [id]: !prev[id] }));
 
   const openNext = (nextId: number) =>
-    setExpanded((prev: any) => {
+    setExpanded((_prev: any) => {
       const next: Record<number, boolean> = {};
       STEPS.forEach((s: any) => {
         next[s.id] = false;

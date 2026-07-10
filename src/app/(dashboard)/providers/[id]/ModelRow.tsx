@@ -4,17 +4,17 @@ import LucideIcon from "@/shared/components/LucideIcon";
 export default function ModelRow({
   model,
   fullModel,
-  alias,
+  alias: _alias,
   copied,
   onCopy,
   testStatus,
   isCustom,
-  isFree,
+  isFree: _isFree,
   onDeleteAlias,
   onTest,
   isTesting,
   onDisable,
-  onSetAlias,
+  onSetAlias: _onSetAlias,
 }: {
   model: any;
   fullModel?: any;

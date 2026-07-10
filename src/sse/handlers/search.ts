@@ -88,9 +88,9 @@ export async function handleSearch(request: Request): Promise<Response> {
 async function handleSingleProviderSearch(
   body: Record<string, any>,
   providerInput: string,
-  request: Request,
-  apiKey: string | null,
-  settings: Settings,
+  _request: Request,
+  _apiKey: string | null,
+  _settings: Settings,
 ): Promise<Response> {
   const query = body.query as string;
   const providerId = resolveProviderId(providerInput);

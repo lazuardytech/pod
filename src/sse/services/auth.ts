@@ -19,7 +19,6 @@ import {
 import {
   getProviderConnections,
   getSettings,
-  type Settings,
   updateProviderConnection,
   validateApiKey,
 } from "@/lib/localDb";
@@ -61,7 +60,7 @@ function schedulePersist(connectionId: string, fields: PersistEntry): void {
   if (existing?.timer) clearTimeout(existing.timer);
   const merged: PersistEntry = { ...(existing || {}), ...fields };
   merged.timer = setTimeout((): void => {
-    const { timer, ...payload } = persistQueue.get(connectionId) || {};
+    const { timer: _timer, ...payload } = persistQueue.get(connectionId) || {};
     persistQueue.delete(connectionId);
     updateProviderConnection(connectionId, payload).catch((err: unknown): void => {
       log.debug(

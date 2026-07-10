@@ -102,7 +102,7 @@ export async function PATCH(request: Request) {
       resetComboRotation();
     }
 
-    const { password, ...safeSettings } = settings ?? ({} as { password?: string });
+    const { password: _password, ...safeSettings } = settings ?? ({} as { password?: string });
     return NextResponse.json(safeSettings, { headers: SETTINGS_RESPONSE_HEADERS });
   } catch (error) {
     console.log("Error updating settings:", error);

@@ -180,8 +180,8 @@ const getPageInfo = (pathname: any) => {
 export default function Header({
   onMenuClick,
   showMenuButton = true,
-  sidebarCollapsed,
-  onToggleSidebar,
+  sidebarCollapsed: _sidebarCollapsed,
+  onToggleSidebar: _onToggleSidebar,
 }: {
   onMenuClick?: any;
   showMenuButton?: boolean;

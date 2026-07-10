@@ -9,7 +9,7 @@ import {
   invalidateStale,
 } from "@/lib/semanticCache";
 
-export async function GET(request: any) {
+export async function GET(_request: any) {
   try {
     const settings = await getSettings();
     return NextResponse.json({
