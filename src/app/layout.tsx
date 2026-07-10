@@ -6,9 +6,6 @@ import OfflineSyncStatus from "@/shared/components/OfflineSyncStatus";
 import PWAInstallPrompt from "@/shared/components/PWAInstallPrompt";
 import ServiceWorkerRegistrar from "@/shared/components/ServiceWorkerRegistrar";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
-import "@/lib/initCloudSync";
-import "@/lib/network/initOutboundProxy";
-
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",

@@ -80,7 +80,7 @@ WORKDIR /app
 EXPOSE 20128
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:20128/api/health || exit 1
+  CMD curl -f "http://localhost:${PORT:-20128}/api/health" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bun", "/app/server.js"]

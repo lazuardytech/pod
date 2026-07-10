@@ -17,8 +17,10 @@ export async function ensureOutboundProxyInitialized(): Promise<boolean> {
   return initialized;
 }
 
-ensureOutboundProxyInitialized().catch((err) =>
-  console.error("[ServerInit] Outbound proxy init error:", err),
-);
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  ensureOutboundProxyInitialized().catch((err) =>
+    console.error("[ServerInit] Outbound proxy init error:", err),
+  );
+}
 
 export default ensureOutboundProxyInitialized;

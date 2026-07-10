@@ -113,8 +113,14 @@ export class RedisBackend {
 
     try {
       const count = await this.client.incr(key);
-      // Safety TTL — auto-clear if process crashes before DECR
-      await this.client.expire(key, CONC_SAFETY_TTL);
+
+      // If EXPIRE fails after INCR succeeded, DECR to undo the leak
+      try {
+        await this.client.expire(key, CONC_SAFETY_TTL);
+      } catch {
+        await this.client.decr(key).catch(() => {});
+        return { ok: false, retryAfterSeconds: 1, type: "error" };
+      }
 
       if (count > maxConc) {
         await this.client.decr(key);
