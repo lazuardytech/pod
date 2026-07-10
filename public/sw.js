@@ -6,7 +6,8 @@ const IMAGE_CACHE_NAME = `pod-image-cache-${SW_VERSION}`;
 
 const OFFLINE_FALLBACK_URL = "/offline";
 const IMAGE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 31;
-const NAVIGATION_NETWORK_TIMEOUT_MS = 15000;
+// ponytail: 5s is enough — 15s made cold-start pain unbearable on idle Zeabur canary
+const NAVIGATION_NETWORK_TIMEOUT_MS = 5000;
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico"];
 const SENSITIVE_SEARCH_PARAMS = new Set([
   "code",
@@ -17,14 +18,25 @@ const SENSITIVE_SEARCH_PARAMS = new Set([
   "session",
 ]);
 
+// ponytail: all 15 dashboard pages so alpha testers get instant nav everywhere
 const SHELL_ROUTES = [
   "/",
   "/landing",
   "/login",
   "/endpoint",
   "/providers",
+  "/media-providers",
+  "/combos",
+  "/quota",
   "/usage",
+  "/memory",
+  "/cache",
+  "/health",
+  "/logs",
+  "/proxy-pools",
   "/settings",
+  "/translator",
+  "/basic-chat",
   OFFLINE_FALLBACK_URL,
 ];
 
@@ -153,6 +165,25 @@ async function handleNavigationRequest(request) {
   const shellCache = await caches.open(SHELL_CACHE_NAME);
   const url = new URL(request.url);
 
+  // ponytail: cache-first for instant navigation, bg refresh keeps cache fresh
+  // Network-first (the previous design) caused 3-15s cold-start delay on idle Zeabur instances
+  const cached = await shellCache.match(request, { ignoreSearch: true });
+  if (cached) {
+    fetchWithTimeout(request, NAVIGATION_NETWORK_TIMEOUT_MS)
+      .then((response) => {
+        if (
+          response &&
+          isCacheableResponse(response) &&
+          responseAllowsStorage(response) &&
+          !hasSensitiveQuery(url)
+        ) {
+          shellCache.put(request, response.clone());
+        }
+      })
+      .catch(() => {});
+    return cached;
+  }
+
   try {
     const response = await fetchWithTimeout(request, NAVIGATION_NETWORK_TIMEOUT_MS);
     if (
@@ -255,7 +286,32 @@ async function purgeExpiredImages() {
   );
 }
 
+async function warmShellCache() {
+  // ponytail: on activate, proactively fill any shell routes that install-phase precache missed
+  // (cold Zeabur canary often causes install-time fetches to fail)
+  const shellCache = await caches.open(SHELL_CACHE_NAME);
+  const existing = new Set();
+  for (const key of await shellCache.keys()) {
+    existing.add(key.url.replace(self.location.origin, ""));
+  }
+  await Promise.all(
+    SHELL_ROUTES.map(async (route) => {
+      if (existing.has(route)) return;
+      try {
+        const response = await fetch(new Request(route));
+        if (isCacheableResponse(response) && responseAllowsStorage(response)) {
+          await shellCache.put(route, response);
+        }
+      } catch {
+        // Best-effort warming — failures at this point are fine
+      }
+    }),
+  );
+}
+
 self.addEventListener("install", (event) => {
+  // ponytail: skipWaiting so canary users don't need to hard-reload for updated SW
+  self.skipWaiting();
   event.waitUntil(
     (async () => {
       await precacheShell();
@@ -271,6 +327,8 @@ self.addEventListener("activate", (event) => {
       await Promise.all(keys.filter((key) => !expected.has(key)).map((key) => caches.delete(key)));
       await purgeExpiredImages();
       await self.clients.claim();
+      // ponytail: warm after claim so first navigation isn't blocked
+      warmShellCache();
     })(),
   );
 });
