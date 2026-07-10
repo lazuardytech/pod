@@ -13,7 +13,7 @@ import {
 export default function EditConnectionModal({
   isOpen,
   connection,
-  proxyPools,
+  proxyPools: _proxyPools,
   onSave,
   onClose,
 }: {

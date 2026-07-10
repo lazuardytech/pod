@@ -21,7 +21,7 @@ import Card from "./Card";
 import SegmentedControl from "./SegmentedControl";
 
 function timeAgo(timestamp: string | number | undefined) {
-  if (timestamp == null) return "—";
+  if (timestamp === null || timestamp === undefined) return "—";
   const diff = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -133,9 +133,9 @@ function sortData(
       let valB = b[sortBy] as string | number | undefined;
       if (typeof valA === "string") valA = valA.toLowerCase();
       if (typeof valB === "string") valB = valB.toLowerCase();
-      if (valA == null && valB == null) return 0;
-      if (valA == null) return sortOrder === "asc" ? -1 : 1;
-      if (valB == null) return sortOrder === "asc" ? 1 : -1;
+      if (valA === null && valB === null) return 0;
+      if (valA === null || valA === undefined) return sortOrder === "asc" ? -1 : 1;
+      if (valB === null || valB === undefined) return sortOrder === "asc" ? 1 : -1;
       if (valA < valB) return sortOrder === "asc" ? -1 : 1;
       if (valA > valB) return sortOrder === "asc" ? 1 : -1;
       return 0;

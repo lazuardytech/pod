@@ -50,7 +50,11 @@ export async function PUT(request: any, { params }: { params: any }) {
     }
 
     if ("systemPrompt" in body) {
-      if (body.systemPrompt != null && typeof body.systemPrompt !== "string") {
+      if (
+        body.systemPrompt !== null &&
+        body.systemPrompt !== undefined &&
+        typeof body.systemPrompt !== "string"
+      ) {
         return NextResponse.json({ error: "systemPrompt must be a string" }, { status: 400 });
       }
       if (typeof body.systemPrompt === "string" && body.systemPrompt.length > 50000) {
@@ -66,7 +70,7 @@ export async function PUT(request: any, { params }: { params: any }) {
     }
 
     if ("modelId" in body) {
-      if (body.modelId != null && typeof body.modelId !== "string") {
+      if (body.modelId !== null && body.modelId !== undefined && typeof body.modelId !== "string") {
         return NextResponse.json({ error: "modelId must be a string" }, { status: 400 });
       }
       body.modelId =
@@ -74,7 +78,11 @@ export async function PUT(request: any, { params }: { params: any }) {
     }
 
     if ("contentFilterMessage" in body) {
-      if (body.contentFilterMessage != null && typeof body.contentFilterMessage !== "string") {
+      if (
+        body.contentFilterMessage !== null &&
+        body.contentFilterMessage !== undefined &&
+        typeof body.contentFilterMessage !== "string"
+      ) {
         return NextResponse.json(
           { error: "contentFilterMessage must be a string" },
           { status: 400 },

@@ -60,18 +60,22 @@ export async function POST(request: any) {
       );
     }
 
-    if (systemPrompt != null && typeof systemPrompt !== "string") {
+    if (systemPrompt !== null && systemPrompt !== undefined && typeof systemPrompt !== "string") {
       return NextResponse.json({ error: "systemPrompt must be a string" }, { status: 400 });
     }
     if (typeof systemPrompt === "string" && systemPrompt.length > 50000) {
       return NextResponse.json({ error: "systemPrompt exceeds 50000 characters" }, { status: 400 });
     }
 
-    if (modelId != null && typeof modelId !== "string") {
+    if (modelId !== null && modelId !== undefined && typeof modelId !== "string") {
       return NextResponse.json({ error: "modelId must be a string" }, { status: 400 });
     }
 
-    if (contentFilterMessage != null && typeof contentFilterMessage !== "string") {
+    if (
+      contentFilterMessage !== null &&
+      contentFilterMessage !== undefined &&
+      typeof contentFilterMessage !== "string"
+    ) {
       return NextResponse.json({ error: "contentFilterMessage must be a string" }, { status: 400 });
     }
     if (typeof contentFilterMessage === "string" && contentFilterMessage.length > 2000) {

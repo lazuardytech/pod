@@ -509,7 +509,9 @@ export default function ConnectionsCard({ providerId, isOAuth }: any) {
       const override = (settingsData.providerStrategies || {})[providerId] || {};
       setProviderStrategy(override.fallbackStrategy || null);
       setProviderStickyLimit(
-        override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1",
+        override.stickyRoundRobinLimit !== null && override.stickyRoundRobinLimit !== undefined
+          ? String(override.stickyRoundRobinLimit)
+          : "1",
       );
     } catch (e) {
       console.error("ConnectionsCard fetch error:", e);

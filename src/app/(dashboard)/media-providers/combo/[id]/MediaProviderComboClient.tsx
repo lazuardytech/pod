@@ -461,7 +461,7 @@ export default function ComboDetailPage(): any {
           {testError && <p className="mt-3 text-xs text-red-500 break-words">{testError}</p>}
           {testResult && (
             <div className="mt-3 flex flex-col gap-3">
-              {testResult.latencyMs != null && (
+              {testResult.latencyMs !== null && testResult.latencyMs !== undefined && (
                 <span className="text-[11px] text-text-muted">⚡ {testResult.latencyMs}ms</span>
               )}
               {testResult.imageUrl && (

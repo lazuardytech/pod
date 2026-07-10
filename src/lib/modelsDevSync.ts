@@ -191,20 +191,21 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
       const output = toMillionTokenRate(cost.output);
 
       // Skip models with no usable pricing
-      if (input == null && output == null) continue;
+      if (input === null && output === null) continue;
 
       const entryOut: ModelPricingEntry = {};
-      if (input != null) entryOut.input = input;
-      if (output != null) entryOut.output = output;
+      if (input !== null && input !== undefined) entryOut.input = input;
+      if (output !== null && output !== undefined) entryOut.output = output;
 
       const cached = toMillionTokenRate(cost.cache_read);
-      if (cached != null) entryOut.cached = cached;
+      if (cached !== null && cached !== undefined) entryOut.cached = cached;
 
       const cacheCreation = toMillionTokenRate(cost.cache_write);
-      if (cacheCreation != null) entryOut.cache_creation = cacheCreation;
+      if (cacheCreation !== null && cacheCreation !== undefined)
+        entryOut.cache_creation = cacheCreation;
 
       const reasoning = toMillionTokenRate(cost.reasoning);
-      if (reasoning != null) entryOut.reasoning = reasoning;
+      if (reasoning !== null && reasoning !== undefined) entryOut.reasoning = reasoning;
 
       if (!result[podProvider]) result[podProvider] = {};
       result[podProvider][String(modelId)] = entryOut;
@@ -219,7 +220,7 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
  * models.dev already uses $/1M, but guard against null/undefined/string.
  */
 function toMillionTokenRate(val: unknown): number | null {
-  if (val == null) return null;
+  if (val === null || val === undefined) return null;
   const n = Number(val);
   if (!Number.isFinite(n) || n < 0) return null;
   return n;

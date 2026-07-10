@@ -102,7 +102,7 @@ function normalizeHeaders(headers: Record<string, unknown> = {}): Record<string,
   return Object.fromEntries(
     Object.entries(headers).map(([k, v]) => [
       String(k),
-      typeof v === "string" ? v : v == null ? "" : String(v),
+      typeof v === "string" ? v : v === null || v === undefined ? "" : String(v),
     ]),
   );
 }
@@ -113,7 +113,7 @@ function buildBackoffMs(attempts: number): number {
 }
 
 function safeSerializeBody(body: unknown): string | null {
-  if (body == null) return null;
+  if (body === null || body === undefined) return null;
   if (typeof body === "string") return body;
   if (
     typeof body === "object" &&
@@ -307,7 +307,7 @@ async function replayMutation(item: MutationRecord): Promise<ReplayOutcome> {
     headers: normalizeHeaders(item?.headers || {}),
   };
 
-  if (method !== "GET" && method !== "HEAD" && item?.body != null) {
+  if (method !== "GET" && method !== "HEAD" && item?.body !== null && item?.body !== undefined) {
     init.body = typeof item.body === "string" ? item.body : String(item.body);
   }
 

@@ -1259,7 +1259,7 @@ function GenericExampleCard({ providerId, kind }: any): any {
   const useStreaming = kind === "image" && providerId === "codex" && !wantBinary;
   const apiPathWithQuery = `${apiPath}${wantBinary ? "?response_format=binary" : ""}`;
   // Sanitize pinnedConnectionId to prevent header injection in the curl snippet display
-  const safeConnectionId = pinnedConnectionId ? pinnedConnectionId.replace(/[^\w\-]/g, "") : "";
+  const safeConnectionId = pinnedConnectionId ? pinnedConnectionId.replace(/[^\w-]/g, "") : "";
   const headersPreview = `-H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}"${safeConnectionId ? ` \\\n  -H "x-connection-id: ${safeConnectionId}"` : ""}${useStreaming ? ` \\\n  -H "Accept: text/event-stream"` : ""}`;
   const curlSnippet = `curl -X ${kindConfig.endpoint.method} ${endpoint}${apiPathWithQuery} \\
   ${headersPreview.replace(/\\\n {2}/g, "\\\n  ")} \\
@@ -2204,7 +2204,7 @@ export default function MediaProviderDetailPage(): any {
     return <div className="text-text-muted text-sm py-12 text-center">Loading...</div>;
   }
 
-  if (provider == null) return null;
+  if (provider === null || provider === undefined) return null;
 
   const kinds = isCustom ? ["embedding"] : (builtInProvider?.serviceKinds ?? ["llm"]);
   if (!isCustom && !kinds.includes(kind)) return notFound();
