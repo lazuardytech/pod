@@ -30,6 +30,7 @@
 - `parseJsonBody(request)` for all mutation routes (never raw `request.json()`)
 - Never return raw upstream error bodies to clients
 - SSRF protection must block `0.0.0.0` and DNS-rebinding-style hosts
+- **Abort-safe body parsing**: API route handlers MUST NOT use raw `request.text()` or `request.json()` for mutation routes. Use `readBodyText(request, { maxBytes })` from `@/lib/parseJsonBody` for text bodies, and `parseJsonBody(request)` for JSON bodies. Both helpers classify aborts and return structured errors instead of throwing → caller returns 499 (client disconnect) or 413 (too large) deterministically. Hard cap defaults to 50MB, env-tunable via `POD_MAX_REQUEST_BODY_BYTES` / `POD_MAX_CHAT_BODY_BYTES`.
 
 ## Storage
 

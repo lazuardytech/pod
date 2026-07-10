@@ -13,7 +13,7 @@ export default defineConfig({
     ],
   },
   test: {
-    include: ["tests/**/*.test.{js,mjs}"],
+    include: ["tests/**/*.test.{js,mjs,ts}"],
     environment: "node",
     testTimeout: 20000,
     hookTimeout: 30000,

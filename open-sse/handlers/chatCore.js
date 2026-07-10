@@ -916,7 +916,14 @@ export async function handleChatCore({
               controller.enqueue(value);
             }
           } catch (e) {
-            controller.error(e);
+            // ponytail: controller.close() on AbortError — controller.error() re-emits the
+            // abort to the response writer, which surfaces as unhandledRejection at
+            // node:_http_server.
+            if (e?.name === "AbortError") {
+              controller.close();
+            } else {
+              controller.error(e);
+            }
           } finally {
             controller.close();
           }

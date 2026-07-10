@@ -1,6 +1,8 @@
 # Pod — Documentation Index
 
-**Version:** v0.0.80 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128 | **Deployed at:** pod.lazuardy.tech
+**Version:** v0.0.81 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128 | **Deployed at:** pod.lazuardy.tech
+
+v0.0.81: AbortError unhandledRejection fix; body cap 10MB → 50MB env-tunable.
 
 ## Reading Order (New Contributors)
 
@@ -34,6 +36,16 @@
 | [../SECURITY.md](../SECURITY.md)                   | Vulnerability disclosure policy               |
 | [../docs/API_INTERNAL.md](../docs/API_INTERNAL.md) | Internal dashboard API reference              |
 | [compatibility-matrix.md](compatibility-matrix.md) | API compatibility matrix (OpenAI + Anthropic) |
+
+## Knowledge (working notes)
+
+| File                                                         | Covers                                             |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| [knowledge/01-overview.md](knowledge/01-overview.md)         | Quick facts, repo layout, three-layer architecture |
+| [knowledge/02-conventions.md](knowledge/02-conventions.md)   | Coding, naming, body parsing, modal rules          |
+| [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) | Commands, pre-push verification, Zeabur deploy     |
+| [knowledge/04-gotchas.md](knowledge/04-gotchas.md)           | Common traps (parser quirks, Turbopack, abort)     |
+| [knowledge/05-open-issues.md](knowledge/05-open-issues.md)   | Active watchlist                                   |
 
 ## Other Directories
 

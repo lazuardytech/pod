@@ -4,8 +4,24 @@ export const APP_CONFIG = {
   name: "Pod",
   description: "AI Infrastructure Management",
   version: pkg.version,
-  displayVersion: "0.0.80",
+  displayVersion: "0.0.81",
 } as const;
+
+export const MAX_REQUEST_BODY_BYTES: number = (() => {
+  const raw = process.env.POD_MAX_REQUEST_BODY_BYTES;
+  const n = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 50 * 1024 * 1024; // 50MB default
+})();
+
+export const MAX_CHAT_BODY_BYTES: number = (() => {
+  const raw = process.env.POD_MAX_CHAT_BODY_BYTES;
+  const n = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : MAX_REQUEST_BODY_BYTES;
+})();
+
+export function getMaxRequestBodyBytes(stream: boolean): number {
+  return stream ? MAX_CHAT_BODY_BYTES : MAX_REQUEST_BODY_BYTES;
+}
 
 export const GITHUB_CONFIG = {
   changelogUrl: "https://raw.githubusercontent.com/lazuardytech/pod/refs/heads/master/CHANGELOG.md",

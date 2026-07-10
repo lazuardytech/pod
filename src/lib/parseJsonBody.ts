@@ -16,3 +16,32 @@ export async function parseJsonBody(request: Request): Promise<ParseJsonBodyResu
     return [null, NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })];
   }
 }
+
+export type ReadBodyResult =
+  | { ok: true; text: string }
+  | { ok: false; reason: "aborted" }
+  | { ok: false; reason: "too_large"; maxBytes: number };
+
+export async function readBodyText(
+  request: Request,
+  options: { maxBytes: number },
+): Promise<ReadBodyResult> {
+  let text: string;
+  try {
+    text = await request.text();
+  } catch (err) {
+    const name = (err as { name?: unknown })?.name;
+    const message = (err as { message?: unknown })?.message;
+    if (
+      name === "AbortError" ||
+      (typeof message === "string" && message.toLowerCase().includes("aborted"))
+    ) {
+      return { ok: false, reason: "aborted" };
+    }
+    throw err;
+  }
+  if (text.length > options.maxBytes) {
+    return { ok: false, reason: "too_large", maxBytes: options.maxBytes };
+  }
+  return { ok: true, text };
+}

@@ -2,7 +2,7 @@
 
 > **Self-hosted AI gateway and proxy** — unify 50+ LLM providers behind a single OpenAI-compatible endpoint.
 
-v0.0.79 — active development on `canary`, stable releases on `main`.
+v0.0.81 — active development on `canary`, stable releases on `main`.
 
 ---
 
@@ -55,6 +55,12 @@ bun install
 bun run dev        # starts on http://localhost:20128
 ```
 
+## Operational Notes
+
+- **Body size cap**: Default 50MB per request. Override with `POD_MAX_REQUEST_BODY_BYTES` (and `POD_MAX_CHAT_BODY_BYTES` for chat routes). Requests exceeding the cap return `413 Payload Too Large`.
+- **Client disconnect handling**: Pod returns `499 Client Closed Request` on abrupt client disconnects (browser tab close, network drop, cancelled stream). No unhandled rejections, no log spam.
+- **Health checks**: `GET /api/health` is public. `GET /api/monitoring/health` requires an API key.
+
 ## Environment Variables
 
 | Variable                          | Default                                 | Description                                                       |
@@ -84,6 +90,8 @@ bun run dev        # starts on http://localhost:20128
 | `PROMPT_CACHE_MAX_SIZE`           | `50`                                    | Prompt cache max entries                                          |
 | `PROMPT_CACHE_TTL_MS`             | `300000`                                | Prompt cache TTL (ms)                                             |
 | `REDIS_URL`                       | _(none)_                                | Redis connection URL for distributed rate limiting                |
+| `POD_MAX_REQUEST_BODY_BYTES`      | `52428800` (50MB)                       | Max request body bytes for non-chat routes                        |
+| `POD_MAX_CHAT_BODY_BYTES`         | inherits `POD_MAX_REQUEST_BODY_BYTES`   | Max request body bytes for chat/completions routes                |
 | `IFLOW_OAUTH_CLIENT_SECRET`       | _(optional)_                            | Required for iFlow OAuth flows or token refresh                   |
 | `QODER_OAUTH_CLIENT_ID`           | _(optional)_                            | Optional Qoder OAuth client ID override                           |
 | `QODER_OAUTH_CLIENT_SECRET`       | _(optional)_                            | Required for Qoder OAuth flows                                    |

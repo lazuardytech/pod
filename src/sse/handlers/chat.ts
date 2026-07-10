@@ -12,6 +12,8 @@ import { handleBypassRequest } from "open-sse/utils/bypassHandler.js";
 import { cacheClaudeHeaders } from "open-sse/utils/claudeHeaderCache.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getApiKeyByKey, getSettings } from "@/lib/localDb";
+import { readBodyText } from "@/lib/parseJsonBody";
+import { MAX_CHAT_BODY_BYTES } from "@/shared/constants/config";
 import {
   clearAccountError,
   extractApiKey,
@@ -31,14 +33,23 @@ export async function handleChat(
   request: Request,
   clientRawRequest: unknown = null,
 ): Promise<Response> {
-  const text = await request.text();
-  if (text.length > 10 * 1024 * 1024) {
-    log.warn("CHAT", "Request body too large");
-    return errorResponse(413, "Request body too large");
+  const bodyResult = await readBodyText(request, { maxBytes: MAX_CHAT_BODY_BYTES });
+  if (!bodyResult.ok) {
+    if (bodyResult.reason === "aborted") {
+      log.info("CHAT", "Client disconnected before body read");
+      return errorResponse(499, "Client disconnected");
+    }
+    if (bodyResult.reason === "too_large") {
+      log.warn("CHAT", `Request body too large (max ${bodyResult.maxBytes} bytes)`);
+      return errorResponse(413, "Request body too large");
+    }
+    const _exhaustive: never = bodyResult;
+    void _exhaustive;
+    return errorResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal error");
   }
   let body: Record<string, any>;
   try {
-    body = JSON.parse(text);
+    body = JSON.parse(bodyResult.text);
   } catch {
     log.warn("CHAT", "Invalid JSON body");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
@@ -324,9 +335,12 @@ async function handleSingleModelChat(
                   return;
                 }
                 controller.enqueue(value);
-              } catch (err) {
+              } catch {
+                // ponytail: controller.close() on abort — controller.error() re-emits the
+                // abort to the response writer, which surfaces as unhandledRejection at
+                // node:_http_server.
                 streamDone = true;
-                controller.error(err);
+                controller.close();
               } finally {
                 if (streamDone) activeSseConnections--;
               }

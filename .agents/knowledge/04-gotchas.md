@@ -39,3 +39,21 @@ Version must be bumped in both `package.json` AND `src/shared/constants/config.j
 ## 10. SSE Connection Cap
 
 The 100-connection cap is enforced at the handler level. Exceeding it causes new connections to queue or reject. Monitor during high-load testing.
+
+## 31. AbortError at node:\_http_server
+
+When a client disconnects mid-request (browser tab close, network drop, cancelled stream), Node's HTTP layer emits `Error: aborted` on the response stream's `onClose`. If a route or SSE wrapper propagates this via `controller.error(err)` (Web Streams) or an unhandled `try/catch` in `request.text()` / `request.json()`, the error surfaces as `unhandledRejection` and floods logs. Mitigation:
+
+- Mutation routes must use `readBodyText()` (or `parseJsonBody()`) from `@/lib/parseJsonBody`. Both return `{ ok: false; reason: "aborted" }` on disconnect, so the caller returns 499.
+- SSE stream wrappers must use `controller.close()` (not `controller.error(err)`) on reader abort — `error()` re-emits to the response writer and surfaces as `unhandledRejection`.
+- The global `unhandledRejection` handler in `server-init.ts` / `instrumentation.ts` classifies `node:_http_server` origins as `[ClientDisconnect]` (not `[FATAL]`) and dedupes within a 1-second window.
+
+See `.agents/plans/fix-aborterror-spam-body-cap-hang` for the full fix reference.
+
+### Cross-boundary trace: 20MB chat completion with client disconnect
+
+1. Client POSTs 20MB body, browser tab closes at t=1s.
+2. `readBodyText()` may or may not detect abort depending on when close happens.
+3. If abort detected → route returns 499, no log spam.
+4. If abort detected after body read (during upstream `fetch`) → `controller.close()` in SSE wrapper, global handler classifies as `[ClientDisconnect]`, dedupes if more than 5 in 1s.
+5. Server stays up. No `unhandledRejection`. No `[FATAL]` log.

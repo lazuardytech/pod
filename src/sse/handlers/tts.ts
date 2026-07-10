@@ -3,6 +3,8 @@ import { handleTtsCore } from "open-sse/handlers/ttsCore.js";
 import { handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
+import { readBodyText } from "@/lib/parseJsonBody";
+import { getMaxRequestBodyBytes } from "@/shared/constants/config";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 import {
   extractApiKey,
@@ -22,9 +24,23 @@ const CREDENTIALED_PROVIDERS = new Set(
 );
 
 export async function handleTts(request: Request): Promise<Response> {
+  const bodyResult = await readBodyText(request, {
+    maxBytes: getMaxRequestBodyBytes(false),
+  });
+  if (!bodyResult.ok) {
+    if (bodyResult.reason === "aborted") {
+      return errorResponse(499, "Client disconnected");
+    }
+    if (bodyResult.reason === "too_large") {
+      return errorResponse(413, "Request body too large");
+    }
+    const _exhaustive: never = bodyResult;
+    void _exhaustive;
+    return errorResponse(500, "Internal error");
+  }
   let body: Record<string, any>;
   try {
-    body = await request.json();
+    body = JSON.parse(bodyResult.text);
   } catch {
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
   }
