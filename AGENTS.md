@@ -36,7 +36,7 @@ Operational rules for AI agents working on the **Pod** project.
 5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
 6. /api/restart and /api/shutdown require SHUTDOWN_SECRET; return 403 in production (NODE_ENV=production).
 7. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
-8. Stateful internal APIs must stay covered by dashboardGuard.ts and src/proxy.ts — keep matchers in sync.
+8. Stateful internal APIs self-authenticate via routeAuth.ts — dashboardGuard.ts and proxy.ts were removed (no middleware.ts registered).
 9. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
 10. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
 11. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
@@ -54,6 +54,7 @@ Operational rules for AI agents working on the **Pod** project.
 9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
 10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
 11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
+12. `src/instrumentation.ts` is the canonical startup path (Next.js 16) — runs `initializeApp()` + signal handlers in production; side-effect imports in layout.tsx for startup code have been removed.
 
 ## Rate Limiting
 
@@ -75,7 +76,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Operations
 
-1. Keep global process handlers in server-init.ts.
+1. Keep global process handlers in server-init.ts and instrumentation.ts (production).
 2. SIGINT must allow queue flush and cleanup.
 3. Tunnel startup must treat fetchData() as non-fatal.
 4. Cloudflared tunnel spawn must stay serialized.
