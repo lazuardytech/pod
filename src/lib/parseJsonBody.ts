@@ -45,3 +45,46 @@ export async function readBodyText(
   }
   return { ok: true, text };
 }
+
+export async function readBodyTextStream(
+  request: Request,
+  options: { maxBytes: number },
+): Promise<ReadBodyResult> {
+  const stream = request.body;
+  if (!stream) return { ok: false, reason: "aborted" };
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        totalBytes += value.byteLength;
+        if (totalBytes > options.maxBytes) {
+          reader.cancel().catch((): void => {});
+          return { ok: false, reason: "too_large", maxBytes: options.maxBytes };
+        }
+        chunks.push(value);
+      }
+    }
+  } catch (err) {
+    reader.cancel().catch((): void => {});
+    const name = (err as { name?: unknown })?.name;
+    const message = (err as { message?: unknown })?.message;
+    if (
+      name === "AbortError" ||
+      (typeof message === "string" && message.toLowerCase().includes("aborted"))
+    ) {
+      return { ok: false, reason: "aborted" };
+    }
+    throw err;
+  }
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const c of chunks) {
+    merged.set(c, offset);
+    offset += c.byteLength;
+  }
+  return { ok: true, text: new TextDecoder().decode(merged) };
+}

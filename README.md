@@ -2,7 +2,7 @@
 
 > **Self-hosted AI gateway and proxy** — unify 50+ LLM providers behind a single OpenAI-compatible endpoint.
 
-v0.0.81 — active development on `canary`, stable releases on `main`.
+v0.0.82 — active development on `canary`, stable releases on `main`.
 
 ---
 

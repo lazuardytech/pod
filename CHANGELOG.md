@@ -10,6 +10,14 @@
 - Abort-safe body parsing applied to 6 sibling routes: `imageGeneration`, `tts`, `fetch`, `embeddings`, `search`, `pricing/sync`.
 - `open-sse/handlers/chatCore.js`: catch block now filters `AbortError` and calls `controller.close()` instead of `controller.error(e)`.
 
+## v0.0.82 (2026-07-11)
+
+### Fixed
+
+- Canary 9-15s body-size-bound latency: `src/sse/handlers/chat.ts` now uses `readBodyTextStream()` (chunk-by-chunk body read with explicit size cap) instead of `request.text()` for large bodies. Added per-request timing instrumentation (`t_read`, `t_parse`, `t_bypass`) for diagnosis.
+- Redis shared-keyspace risk: `src/lib/rateLimit/redis.ts` now respects `RATELIMIT_KEY_PREFIX` env var so canary can use a separate namespace. Added 1-second per-op timeout wrapper (`RATELIMIT_REDIS_TIMEOUT_MS` env) to prevent stalled connections from blocking requests.
+- Stale semantic cache doc: `.agents/architecture/{03-data,01-app}.md` now correctly describe the cache as in-process LRU + per-instance SQLite (no Redis involvement), matching `src/lib/semanticCache.ts`.
+
 ## v0.0.79 (2026-06-05)
 
 - Security hardening phase 1: error sanitization across 18+ API routes (`sanitizeError`)
