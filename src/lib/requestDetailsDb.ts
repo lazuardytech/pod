@@ -280,7 +280,7 @@ function rowToDetail(r: DetailRow): DetailItem {
     status: r.status,
     latency:
       (payload.latency as number | { total?: number; totalMs?: number } | undefined) ??
-      (r.latency_ms != null ? { total: r.latency_ms } : {}),
+      (r.latency_ms !== null && r.latency_ms !== undefined ? { total: r.latency_ms } : {}),
     tokens:
       (payload.tokens as DetailItem["tokens"]) ??
       ({

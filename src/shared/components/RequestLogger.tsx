@@ -7,7 +7,7 @@ import RequestLogDetail from "./RequestLogDetail";
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 const fmtTokens = (n: number | string | null | undefined) => {
-  if (n == null || n === "-") return "—";
+  if (n === null || n === undefined || n === "-") return "—";
   const num = typeof n === "string" ? parseInt(n, 10) : n;
   if (Number.isNaN(num)) return "—";
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;

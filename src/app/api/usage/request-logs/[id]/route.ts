@@ -115,7 +115,10 @@ export async function GET(request: any, { params }: { params: any }) {
             model: detail.model,
             status: detail.status,
             latency:
-              payload.latency ?? (detail.latency_ms != null ? { total: detail.latency_ms } : {}),
+              payload.latency ??
+              (detail.latency_ms !== null && detail.latency_ms !== undefined
+                ? { total: detail.latency_ms }
+                : {}),
             tokens: payload.tokens ?? {
               prompt_tokens: detail.prompt_tokens,
               completion_tokens: detail.completion_tokens,

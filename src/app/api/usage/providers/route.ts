@@ -13,7 +13,9 @@ export async function GET() {
 
     // Extract unique providers
     const providerIds = [
-      ...new Set(details.map((r) => r.provider).filter((p): p is string => p != null)),
+      ...new Set(
+        details.map((r) => r.provider).filter((p): p is string => p !== null && p !== undefined),
+      ),
     ].sort();
 
     const providerNodes = await getProviderNodes();

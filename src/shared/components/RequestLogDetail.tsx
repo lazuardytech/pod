@@ -147,27 +147,27 @@ export default function RequestLogDetail({
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             <TokenPill label="In" value={promptTokens} color="bg-aether-blue/10 text-aether-blue" />
             <TokenPill label="Out" value={completionTokens} color="bg-emerald/10 text-emerald" />
-            {cacheRead != null && (
+            {cacheRead !== null && cacheRead !== undefined && (
               <TokenPill label="Cache Read" color="bg-sky-500/10 text-sky-400" value={cacheRead} />
             )}
-            {cacheWrite != null && (
+            {cacheWrite !== null && cacheWrite !== undefined && (
               <TokenPill
                 label="Cache Write"
                 color="bg-amber-500/10 text-amber-400"
                 value={cacheWrite}
               />
             )}
-            {reasoning != null && (
+            {reasoning !== null && reasoning !== undefined && (
               <TokenPill label="Reasoning" color="bg-amethyst/10 text-amethyst" value={reasoning} />
             )}
           </div>
         </DetailSection>
 
         {/* Latency */}
-        {latencyMs != null && (
+        {latencyMs !== null && latencyMs !== undefined && (
           <DetailSection title="Latency" icon="speed">
             <DetailRow label="Total" value={`${latencyMs.toLocaleString()}ms`} mono />
-            {detail?.latency?.ttfb != null && (
+            {detail?.latency?.ttfb !== null && detail?.latency?.ttfb !== undefined && (
               <DetailRow label="TTFB" value={`${detail.latency.ttfb.toLocaleString()}ms`} mono />
             )}
           </DetailSection>

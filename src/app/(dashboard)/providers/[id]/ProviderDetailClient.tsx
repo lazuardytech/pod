@@ -274,7 +274,9 @@ export default function ProviderDetailPage() {
       const override = (settingsData.providerStrategies || {})[providerId] || {};
       setProviderStrategy(override.fallbackStrategy || null);
       setProviderStickyLimit(
-        override.stickyRoundRobinLimit != null ? String(override.stickyRoundRobinLimit) : "1",
+        override.stickyRoundRobinLimit !== null && override.stickyRoundRobinLimit !== undefined
+          ? String(override.stickyRoundRobinLimit)
+          : "1",
       );
       // Load per-provider thinking config
       const thinkingCfg = (settingsData.providerThinking || {})[providerId] || {};
