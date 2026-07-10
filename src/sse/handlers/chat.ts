@@ -12,7 +12,7 @@ import { handleBypassRequest } from "open-sse/utils/bypassHandler.js";
 import { cacheClaudeHeaders } from "open-sse/utils/claudeHeaderCache.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getApiKeyByKey, getSettings } from "@/lib/localDb";
-import { readBodyText } from "@/lib/parseJsonBody";
+import { readBodyTextStream } from "@/lib/parseJsonBody";
 import { MAX_CHAT_BODY_BYTES } from "@/shared/constants/config";
 import {
   clearAccountError,
@@ -33,14 +33,25 @@ export async function handleChat(
   request: Request,
   clientRawRequest: unknown = null,
 ): Promise<Response> {
-  const bodyResult = await readBodyText(request, { maxBytes: MAX_CHAT_BODY_BYTES });
+  const t0 = performance.now();
+  const bodyResult = await readBodyTextStream(request, { maxBytes: MAX_CHAT_BODY_BYTES });
+  const t1 = performance.now();
   if (!bodyResult.ok) {
+    const userAgent = request?.headers?.get("user-agent") || "";
     if (bodyResult.reason === "aborted") {
       log.info("CHAT", "Client disconnected before body read");
+      log.debug(
+        "CHAT",
+        `body=0B ua="${userAgent.slice(0, 40)}" t_read=${(t1 - t0).toFixed(0)}ms t_parse=0ms t_bypass=0ms`,
+      );
       return errorResponse(499, "Client disconnected");
     }
     if (bodyResult.reason === "too_large") {
       log.warn("CHAT", `Request body too large (max ${bodyResult.maxBytes} bytes)`);
+      log.debug(
+        "CHAT",
+        `body=>${bodyResult.maxBytes}B ua="${userAgent.slice(0, 40)}" t_read=${(t1 - t0).toFixed(0)}ms t_parse=0ms t_bypass=0ms`,
+      );
       return errorResponse(413, "Request body too large");
     }
     const _exhaustive: never = bodyResult;
@@ -51,9 +62,15 @@ export async function handleChat(
   try {
     body = JSON.parse(bodyResult.text);
   } catch {
+    const userAgent = request?.headers?.get("user-agent") || "";
     log.warn("CHAT", "Invalid JSON body");
+    log.debug(
+      "CHAT",
+      `body=${bodyResult.text.length}B ua="${userAgent.slice(0, 40)}" t_read=${(t1 - t0).toFixed(0)}ms t_parse=${(performance.now() - t1).toFixed(0)}ms t_bypass=0ms`,
+    );
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");
   }
+  const t2 = performance.now();
 
   // Check SSE connection cap before processing
   if (body.stream && activeSseConnections >= MAX_SSE_CONNECTIONS) {
@@ -102,6 +119,11 @@ export async function handleChat(
   }
   const userAgent = request?.headers?.get("user-agent") || "";
   const bypassResponse = handleBypassRequest(body, modelStr, userAgent, !!settings.ccFilterNaming);
+  const t3 = performance.now();
+  log.debug(
+    "CHAT",
+    `body=${bodyResult.text.length}B ua="${userAgent.slice(0, 40)}" t_read=${(t1 - t0).toFixed(0)}ms t_parse=${(t2 - t1).toFixed(0)}ms t_bypass=${(t3 - t2).toFixed(0)}ms`,
+  );
   if (bypassResponse) {
     if ("response" in bypassResponse && bypassResponse.response) return bypassResponse.response;
     return bypassResponse as Response;

@@ -3,11 +3,33 @@
 
 import crypto from "node:crypto";
 
-const RPM_KEY_PREFIX = "ratelimit:rpm:";
-const CONC_KEY_PREFIX = "ratelimit:conc:";
+const KEY_PREFIX = process.env.RATELIMIT_KEY_PREFIX ?? "";
+const RPM_KEY_PREFIX = `${KEY_PREFIX}ratelimit:rpm:`;
+const CONC_KEY_PREFIX = `${KEY_PREFIX}ratelimit:conc:`;
+
+/**
+ * Exported for testability. Resolves the effective Redis key prefix from
+ * the `RATELIMIT_KEY_PREFIX` env var (defaults to empty string).
+ */
+export function getRateLimitKeyPrefix(): string {
+  return process.env.RATELIMIT_KEY_PREFIX ?? "";
+}
 const WINDOW_MS = 60000;
 const CLEANUP_TTL = 120;
 const CONC_SAFETY_TTL = 60;
+const REDIS_OP_TIMEOUT_MS = Number.parseInt(process.env.RATELIMIT_REDIS_TIMEOUT_MS ?? "1000", 10);
+
+function withTimeout<T>(p: Promise<T>, opName: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`redis:${opName} timeout after ${REDIS_OP_TIMEOUT_MS}ms`)),
+        REDIS_OP_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+}
 
 export type RpmResult =
   | { ok: true; member: string }
@@ -29,8 +51,8 @@ export class RedisBackend {
   async connect(): Promise<void> {
     this.client = new Bun.RedisClient(this.url);
     try {
-      await this.client.connect();
-      await this.client.ping();
+      await withTimeout(this.client.connect(), "connect");
+      await withTimeout(this.client.ping(), "ping");
       this.connected = true;
     } catch (err) {
       this.connected = false;
@@ -44,7 +66,7 @@ export class RedisBackend {
 
   async close(): Promise<void> {
     if (this.client && this.connected) {
-      await this.client.close();
+      this.client.close();
       this.connected = false;
     }
   }
@@ -61,14 +83,14 @@ export class RedisBackend {
 
     try {
       // Remove expired entries, then check count BEFORE adding
-      await this.client.zremrangebyscore(key, 0, windowStart);
-      const count = await this.client.zcard(key);
+      await withTimeout(this.client.zremrangebyscore(key, 0, windowStart), "zremrangebyscore");
+      const count = await withTimeout(this.client.zcard(key), "zcard");
       // TTL for cleanup
-      await this.client.expire(key, CLEANUP_TTL);
+      await withTimeout(this.client.expire(key, CLEANUP_TTL), "expire");
 
       if (count >= maxRpm) {
         // Get the oldest entry for retry-after calculation
-        const oldest = await this.client.zrange(key, 0, 0);
+        const oldest = await withTimeout(this.client.zrange(key, 0, 0), "zrange");
         const oldestTs = oldest && oldest.length > 0 ? Number(oldest[0]) : now;
         const retryAfterSeconds = Math.max(1, Math.ceil((oldestTs + WINDOW_MS - now) / 1000));
         return { ok: false, retryAfterSeconds, type: "rpm" };
@@ -77,7 +99,7 @@ export class RedisBackend {
       // Only add entry when within limit — use unique member ID to avoid
       // collision when two requests arrive in the same millisecond
       const member = `${String(now)}:${crypto.randomUUID().slice(0, 8)}`;
-      await this.client.zadd(key, now, member);
+      await withTimeout(this.client.zadd(key, now, member), "zadd");
       return { ok: true, member };
     } catch (err) {
       console.warn("[RateLimit] Redis RPM error:", (err as Error)?.message || err);
@@ -93,10 +115,10 @@ export class RedisBackend {
     const key = RPM_KEY_PREFIX + keyId;
     try {
       if (requestId) {
-        await this.client.zrem(key, requestId);
+        await withTimeout(this.client.zrem(key, requestId), "zrem");
       } else {
         // Fallback: remove newest entry
-        await this.client.zpopmax(key, 1);
+        await withTimeout(this.client.zpopmax(key, 1), "zpopmax");
       }
     } catch {
       // Best effort
@@ -112,18 +134,18 @@ export class RedisBackend {
     const key = CONC_KEY_PREFIX + keyId;
 
     try {
-      const count = await this.client.incr(key);
+      const count = await withTimeout(this.client.incr(key), "incr");
 
       // If EXPIRE fails after INCR succeeded, DECR to undo the leak
       try {
-        await this.client.expire(key, CONC_SAFETY_TTL);
+        await withTimeout(this.client.expire(key, CONC_SAFETY_TTL), "expire");
       } catch {
-        await this.client.decr(key).catch(() => {});
+        await withTimeout(this.client.decr(key), "decr").catch(() => {});
         return { ok: false, retryAfterSeconds: 1, type: "error" };
       }
 
       if (count > maxConc) {
-        await this.client.decr(key);
+        await withTimeout(this.client.decr(key), "decr");
         return { ok: false, retryAfterSeconds: 1, type: "concurrent" };
       }
 
@@ -134,7 +156,8 @@ export class RedisBackend {
           if (released) return;
           released = true;
           try {
-            await this.client?.decr(key);
+            if (!this.client) return;
+            await withTimeout(this.client.decr(key), "decr");
           } catch {
             // Best effort
           }

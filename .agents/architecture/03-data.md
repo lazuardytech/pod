@@ -31,7 +31,7 @@ Pod uses a local-first storage model:
 - Caches LLM responses based on semantic similarity
 - Cache signatures include `memoryOwnerId`
 - TTL comparisons use `strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`
-- Backed by Redis or in-memory fallback
+- Backed by in-process LRU + per-instance SQLite only
 - Thundering herd protection via in-flight deduplication
 - Configurable via env vars: `SEMANTIC_CACHE_MAX_BYTES`, `SEMANTIC_CACHE_MAX_SIZE`, `SEMANTIC_CACHE_TTL_MS`
 

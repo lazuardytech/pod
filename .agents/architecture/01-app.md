@@ -90,31 +90,31 @@ Key rules:
 
 ## Backend Services (`src/lib/`)
 
-| Path                       | Purpose                                                        |
-| -------------------------- | -------------------------------------------------------------- |
-| `localDb.js`               | Primary database access layer (preferred entry point)          |
-| `sqlite/`                  | Connection management, schema, migrations                      |
-| `semanticCache.js`         | Semantic cache with memoryOwnerId-aware signatures             |
-| `cacheLayer.js`            | Cache abstraction layer                                        |
-| `usageDb.js`               | Usage tracking and billing data                                |
-| `requestDetailsDb.js`      | Observability request-detail storage                           |
-| `rateLimit/`               | Rate limiter (Redis when REDIS_URL exists, in-memory fallback) |
-| `memory/`                  | Memory pipeline (injection, extraction, persistence)           |
-| `tunnel/`                  | Cloudflared tunnel management                                  |
-| `oauth/`                   | OAuth token refresh for Claude, Codex, Copilot, GitHub, etc.   |
-| `shutdown.js`              | Graceful shutdown with queue flush                             |
-| `network/`                 | Network utilities                                              |
-| `security/`                | SSRF protection, URL validation                                |
-| `parseJsonBody.js`         | Safe JSON body parser for mutation routes                      |
-| `sanitizeError.js`         | Error sanitization for client-facing responses                 |
-| `routeAuth.js`             | Route-level auth helpers                                       |
-| `validateUrl.js`           | URL validation with SSRF protection                            |
-| `consoleLogBuffer.js`      | Console log capture for dashboard                              |
-| `modelsDevSync.js`         | models.dev catalog sync                                        |
-| `disabledModelsDb.js`      | Disabled model tracking                                        |
-| `providerNormalization.js` | Provider name normalization                                    |
-| `initCloudSync.js`         | Cloud sync initialization                                      |
-| `dataDir.js`               | Data directory resolution                                      |
+| Path                       | Purpose                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| `localDb.js`               | Primary database access layer (preferred entry point)                                     |
+| `sqlite/`                  | Connection management, schema, migrations                                                 |
+| `semanticCache.js`         | Semantic cache with memoryOwnerId-aware signatures (in-process LRU + per-instance SQLite) |
+| `cacheLayer.js`            | Cache abstraction layer                                                                   |
+| `usageDb.js`               | Usage tracking and billing data                                                           |
+| `requestDetailsDb.js`      | Observability request-detail storage                                                      |
+| `rateLimit/`               | Rate limiter (Redis when REDIS_URL exists, in-memory fallback)                            |
+| `memory/`                  | Memory pipeline (injection, extraction, persistence)                                      |
+| `tunnel/`                  | Cloudflared tunnel management                                                             |
+| `oauth/`                   | OAuth token refresh for Claude, Codex, Copilot, GitHub, etc.                              |
+| `shutdown.js`              | Graceful shutdown with queue flush                                                        |
+| `network/`                 | Network utilities                                                                         |
+| `security/`                | SSRF protection, URL validation                                                           |
+| `parseJsonBody.js`         | Safe JSON body parser for mutation routes                                                 |
+| `sanitizeError.js`         | Error sanitization for client-facing responses                                            |
+| `routeAuth.js`             | Route-level auth helpers                                                                  |
+| `validateUrl.js`           | URL validation with SSRF protection                                                       |
+| `consoleLogBuffer.js`      | Console log capture for dashboard                                                         |
+| `modelsDevSync.js`         | models.dev catalog sync                                                                   |
+| `disabledModelsDb.js`      | Disabled model tracking                                                                   |
+| `providerNormalization.js` | Provider name normalization                                                               |
+| `initCloudSync.js`         | Cloud sync initialization                                                                 |
+| `dataDir.js`               | Data directory resolution                                                                 |
 
 ## SSE Orchestration (`src/sse/`)
 
