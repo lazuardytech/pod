@@ -313,19 +313,30 @@ async function handleSingleModelChat(
         if (resp?.body && body.stream) {
           activeSseConnections++;
           const reader = resp.body.getReader();
+          let streamDone = false;
           const newStream = new ReadableStream({
             async pull(controller) {
-              const { done, value } = await reader.read();
-              if (done) {
-                activeSseConnections--;
-                controller.close();
-              } else {
+              try {
+                const { done, value } = await reader.read();
+                if (done) {
+                  streamDone = true;
+                  controller.close();
+                  return;
+                }
                 controller.enqueue(value);
+              } catch (err) {
+                streamDone = true;
+                controller.error(err);
+              } finally {
+                if (streamDone) activeSseConnections--;
               }
             },
             cancel() {
-              activeSseConnections--;
-              reader.cancel();
+              if (!streamDone) {
+                streamDone = true;
+                activeSseConnections--;
+              }
+              reader.cancel().catch(() => {});
             },
           });
           return new Response(newStream, { status: resp.status, headers: resp.headers });
