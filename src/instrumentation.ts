@@ -23,7 +23,8 @@ export async function register() {
 
   setupSignalHandlers();
 
-  // Initialize app (rate limiter, tunnel, watchdog, etc.)
+  // Initialize app in background — don't block server startup.
+  // Rate limiter, tunnel, watchdog, etc. will finish asynchronously.
   const { default: initializeApp } = await import("@/shared/services/initializeApp");
-  await initializeApp();
+  initializeApp().catch((err) => console.error("[Init] Background init error:", err));
 }
