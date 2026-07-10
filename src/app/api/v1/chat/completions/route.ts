@@ -15,6 +15,14 @@ async function ensureInitialized() {
   }
 }
 
+function isAbortError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { name?: unknown; message?: unknown };
+  if (e.name === "AbortError") return true;
+  if (typeof e.message === "string" && e.message.toLowerCase().includes("aborted")) return true;
+  return false;
+}
+
 /**
  * Handle CORS preflight
  */
@@ -32,7 +40,15 @@ export async function POST(request: any) {
   try {
     return await withApiKeyRateLimit(request, async () => {
       await ensureInitialized();
-      return await handleChat(request);
+      try {
+        return await handleChat(request);
+      } catch (err) {
+        if (isAbortError(err)) {
+          // Client disconnected — no body to return, no error to log
+          return new Response(null, { status: 499 });
+        }
+        throw err;
+      }
     });
   } catch (error) {
     return new Response(

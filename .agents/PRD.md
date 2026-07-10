@@ -1,6 +1,6 @@
 # Pod -- Product Requirements Document
 
-**Version:** v0.0.79 | **Status:** Active development
+**Version:** v0.0.81 | **Status:** Active development
 
 ## Overview
 
@@ -85,14 +85,22 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - **Dark-only UI** -- no light mode
 - **Defensive by default** -- sanitized errors, safe streaming, crash guards
 
+## Operational Guarantees
+
+- **Abort-safe streaming**: Client disconnects return 499 (not 500); no unhandledRejection floods. SSE stream wrappers use `controller.close()` on abort. Global `unhandledRejection` handler classifies `node:_http_server` aborts as `[ClientDisconnect]` and dedupes within 1s.
+- **Configurable body cap**: All mutation routes enforce a 50MB default body cap (env-tunable). 413 returned on overflow; no silent memory spikes.
+- **Compatibility first**: OpenAI/Anthropic error shapes, auth headers, streaming format, and tool calling match official specs. Any regression is a release blocker.
+- **Offline-first dashboard**: Reads degrade via `offlineJsonCache`; writes queue via mutation stack; only safe idempotent mutations queued.
+
 ## Key Numbers
 
 | Metric              | Value                                                                                         |
 | ------------------- | --------------------------------------------------------------------------------------------- |
-| Version             | v0.0.79                                                                                       |
+| Version             | v0.0.81                                                                                       |
 | Default port        | 20128                                                                                         |
 | SSE connection cap  | 100 concurrent                                                                                |
 | SSE idle timeout    | 5 minutes                                                                                     |
+| Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES)                       |
 | Providers supported | 50+                                                                                           |
 | API route families  | 10 (chat, responses, messages, embeddings, audio, images, moderations, models, files, ollama) |
 | Dashboard pages     | 15 (top-level, no /dashboard prefix)                                                          |

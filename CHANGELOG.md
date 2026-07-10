@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- AbortError unhandledRejection spam on client disconnect: `request.text()` / `request.json()` now return `{ ok: false, reason: "aborted" }` via `readBodyText()` helper; routes return 499 cleanly. SSE stream wrappers in `src/sse/handlers/chat.ts` use `controller.close()` (not `controller.error(err)`) on reader abort, preventing the abort from re-surfacing in the Next.js response writer.
+- Hard 10MB body cap raised to 50MB default (env-tunable: `POD_MAX_REQUEST_BODY_BYTES`, `POD_MAX_CHAT_BODY_BYTES`).
+- Global `unhandledRejection` / `uncaughtException` handlers in `server-init.ts` and `instrumentation.ts` now classify `Error: aborted at node:_http_server` as `[ClientDisconnect]` (not `[FATAL]`) and dedupe log spam (1s window, 5-error threshold).
+- Abort-safe body parsing applied to 6 sibling routes: `imageGeneration`, `tts`, `fetch`, `embeddings`, `search`, `pricing/sync`.
+- `open-sse/handlers/chatCore.js`: catch block now filters `AbortError` and calls `controller.close()` instead of `controller.error(e)`.
+
 ## v0.0.79 (2026-06-05)
 
 - Security hardening phase 1: error sanitization across 18+ API routes (`sanitizeError`)

@@ -2,6 +2,8 @@ import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import { handleEmbeddingsCore } from "open-sse/handlers/embeddingsCore.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getSettings } from "@/lib/localDb";
+import { readBodyText } from "@/lib/parseJsonBody";
+import { getMaxRequestBodyBytes } from "@/shared/constants/config";
 import {
   clearAccountError,
   extractApiKey,
@@ -14,9 +16,23 @@ import { checkAndRefreshToken, updateProviderCredentials } from "../services/tok
 import * as log from "../utils/logger";
 
 export async function handleEmbeddings(request: Request): Promise<Response> {
+  const bodyResult = await readBodyText(request, {
+    maxBytes: getMaxRequestBodyBytes(false),
+  });
+  if (!bodyResult.ok) {
+    if (bodyResult.reason === "aborted") {
+      return errorResponse(499, "Client disconnected");
+    }
+    if (bodyResult.reason === "too_large") {
+      return errorResponse(413, "Request body too large");
+    }
+    const _exhaustive: never = bodyResult;
+    void _exhaustive;
+    return errorResponse(500, "Internal error");
+  }
   let body: Record<string, any>;
   try {
-    body = await request.json();
+    body = JSON.parse(bodyResult.text);
   } catch {
     log.warn("EMBEDDINGS", "Invalid JSON body");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");

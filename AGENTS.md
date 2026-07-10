@@ -4,7 +4,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Project Identity
 
-- **Project name**: pod, v0.0.80
+- **Project name**: pod, v0.0.81
 - **Runtime**: Bun + Next.js 16 (TS, strict mode)
 - **Engine**: open-sse/ (local fork, not npm, frozen as JS)
 - **Data**: SQLite at ~/.pod/pod.sqlite
@@ -40,6 +40,7 @@ Operational rules for AI agents working on the **Pod** project.
 9. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
 10. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
 11. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
+12. Body size cap defaults to 50MB (env `POD_MAX_REQUEST_BODY_BYTES`); chat routes use `POD_MAX_CHAT_BODY_BYTES` (default inherits). Helpers `readBodyText()` (in `src/lib/parseJsonBody.ts`) and `getMaxRequestBodyBytes(stream)` (in `src/shared/constants/config.ts`) are the canonical entry points — raw `request.text()` / `request.json()` for mutation routes is forbidden.
 
 ## Runtime Invariants
 
@@ -55,6 +56,7 @@ Operational rules for AI agents working on the **Pod** project.
 10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
 11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
 12. `src/instrumentation.ts` is the canonical startup path (Next.js 16) — runs `initializeApp()` + signal handlers in production; side-effect imports in layout.tsx for startup code have been removed.
+13. AbortError at `node:_http_server` (client disconnect) must be classified as `[ClientDisconnect]`, not `[FATAL]`. SSE stream wrappers use `controller.close()` (not `controller.error(err)`) on reader abort. See `.agents/knowledge/04-gotchas.md` item 31.
 
 ## Rate Limiting
 
@@ -87,6 +89,7 @@ Operational rules for AI agents working on the **Pod** project.
 9. Git workflow: canary is active development branch; main is stable/release branch.
 10. PR convention: canary→main via PR only — never push canary changes directly to origin/main.
 11. Zeabur env changes take effect only on next restart/deploy — no auto-restart on env mutation.
+12. After any push to canary, verify deployment on Zeabur (build logs, `/api/health`, version endpoint) before considering the task complete.
 
 ## Deployment Topology (Zeabur)
 

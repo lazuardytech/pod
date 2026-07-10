@@ -3,6 +3,8 @@ import { handleFetchCore } from "open-sse/handlers/fetch/index.js";
 import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
 import { getCombos, getSettings, type Settings } from "@/lib/localDb";
+import { readBodyText } from "@/lib/parseJsonBody";
+import { getMaxRequestBodyBytes } from "@/shared/constants/config";
 import {
   AI_PROVIDERS,
   type ProviderDefinition,
@@ -19,9 +21,23 @@ import { checkAndRefreshToken, updateProviderCredentials } from "../services/tok
 import * as log from "../utils/logger";
 
 export async function handleFetch(request: Request): Promise<Response> {
+  const bodyResult = await readBodyText(request, {
+    maxBytes: getMaxRequestBodyBytes(false),
+  });
+  if (!bodyResult.ok) {
+    if (bodyResult.reason === "aborted") {
+      return errorResponse(499, "Client disconnected");
+    }
+    if (bodyResult.reason === "too_large") {
+      return errorResponse(413, "Request body too large");
+    }
+    const _exhaustive: never = bodyResult;
+    void _exhaustive;
+    return errorResponse(500, "Internal error");
+  }
   let body: Record<string, any>;
   try {
-    body = await request.json();
+    body = JSON.parse(bodyResult.text);
   } catch {
     log.warn("FETCH", "Invalid JSON body");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid JSON body");

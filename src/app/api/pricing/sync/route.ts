@@ -6,7 +6,9 @@ import {
   stopPeriodicSync,
   syncModelsDev,
 } from "@/lib/modelsDevSync";
+import { readBodyText } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { getMaxRequestBodyBytes } from "@/shared/constants/config";
 // GET — return current sync status
 export async function GET() {
   try {
@@ -22,14 +24,30 @@ export async function GET() {
 export async function POST(request: any) {
   try {
     let body: Record<string, unknown> = {};
-    try {
-      const text = await request.text();
-      if (text) {
-        const parsed = JSON.parse(text);
-        body = parsed as Record<string, unknown>;
+    const bodyResult = await readBodyText(request as Request, {
+      maxBytes: getMaxRequestBodyBytes(false),
+    });
+    if (!bodyResult.ok) {
+      if (bodyResult.reason === "aborted") {
+        return new NextResponse("Client disconnected", { status: 499 });
       }
-    } catch {
-      // no body or invalid JSON is fine
+      if (bodyResult.reason === "too_large") {
+        return NextResponse.json(
+          { success: false, error: "Request body too large" },
+          { status: 413 },
+        );
+      }
+      const _exhaustive: never = bodyResult;
+      void _exhaustive;
+      return NextResponse.json({ success: false, error: "Internal error" }, { status: 500 });
+    }
+    if (bodyResult.text) {
+      try {
+        const parsed = JSON.parse(bodyResult.text);
+        body = parsed as Record<string, unknown>;
+      } catch {
+        // no body or invalid JSON is fine
+      }
     }
 
     const action = asString(body.action) || "sync";

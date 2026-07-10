@@ -1,6 +1,6 @@
 {
   "name": "pod",
-  "version": "0.0.80",
+  "version": "0.0.81",
   "private": true,
   "description": "Pod web dashboard",
   "scripts": {
