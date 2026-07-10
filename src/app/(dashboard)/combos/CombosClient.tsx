@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import {
   Button,
   Card,
@@ -33,6 +34,10 @@ import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
+const CACHE_COMBOS = "combos:list";
+const CACHE_PROVIDERS = "combos:providers";
+const CACHE_SETTINGS = "combos:settings";
+const MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 export default function CombosPage() {
   const [combos, setCombos] = useState<any[]>([]);
@@ -66,23 +71,47 @@ export default function CombosPage() {
     fetchData();
   }, []);
 
+  const applyCombos = (data: any) => {
+    const payload = data as { combos?: any[] };
+    setCombos((payload?.combos || []).filter((c: any) => !c.kind));
+  };
+  const applyProviders = (data: any) => {
+    const payload = data as { connections?: any[] };
+    setActiveProviders(payload?.connections || []);
+  };
+  const applySettings = (data: any) => {
+    const payload = data as { comboStrategies?: Record<string, any> };
+    setComboStrategies(payload?.comboStrategies || {});
+  };
+
   const fetchData = async () => {
     try {
-      const [combosRes, providersRes, settingsRes] = await Promise.all([
-        fetch("/api/combos"),
-        fetch("/api/providers"),
-        fetch("/api/settings"),
+      await Promise.all([
+        loadJsonStaleWhileRevalidate({
+          url: "/api/combos",
+          cacheKey: CACHE_COMBOS,
+          maxStaleMs: MAX_STALE_MS,
+          onCacheData: (d) => {
+            applyCombos(d);
+            setLoading(false);
+          },
+          onFreshData: applyCombos,
+        }),
+        loadJsonStaleWhileRevalidate({
+          url: "/api/providers",
+          cacheKey: CACHE_PROVIDERS,
+          maxStaleMs: MAX_STALE_MS,
+          onCacheData: applyProviders,
+          onFreshData: applyProviders,
+        }),
+        loadJsonStaleWhileRevalidate({
+          url: "/api/settings",
+          cacheKey: CACHE_SETTINGS,
+          maxStaleMs: MAX_STALE_MS,
+          onCacheData: applySettings,
+          onFreshData: applySettings,
+        }),
       ]);
-      const combosData = await combosRes.json();
-      const providersData = await providersRes.json();
-      const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-
-      // Only LLM combos here — webSearch/webFetch combos belong to media-providers/web
-      if (combosRes.ok) setCombos((combosData.combos || []).filter((c: any) => !c.kind));
-      if (providersRes.ok) {
-        setActiveProviders(providersData.connections || []);
-      }
-      setComboStrategies(settingsData.comboStrategies || {});
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
