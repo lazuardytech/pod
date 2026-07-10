@@ -47,7 +47,7 @@ import {
 export default function ProxyLogsTab({
   sortBy: _sortBy,
   setSortBy: _setSortBy,
-  live: _live,
+  live,
   setLive: _setLive,
   onRefresh,
   onCountChange,
