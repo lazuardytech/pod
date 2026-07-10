@@ -20,9 +20,9 @@ export function ModelRow({
   onDeleteAlias,
   onTest,
   isTesting,
-  alias,
-  onSetAlias,
-  onDisable,
+  alias: _alias,
+  onSetAlias: _onSetAlias,
+  onDisable: _onDisable,
 }: {
   model: any;
   fullModel?: any;

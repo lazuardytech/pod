@@ -736,7 +736,7 @@ export default function ProviderDetailPage() {
         strategy={verticalListSortingStrategy}
       >
         <div className="flex min-w-0 flex-col divide-y divide-black/[0.03] dark:divide-white/[0.03]">
-          {connections.map((conn: any, index: any) => (
+          {connections.map((conn: any, _index: any) => (
             <SortableConnectionRow
               key={conn.id}
               conn={conn}

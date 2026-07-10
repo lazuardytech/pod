@@ -627,7 +627,7 @@ export default function ProvidersPage() {
   );
 }
 
-function ProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
+function ProviderCard({ providerId, provider, stats, authType: _authType, onToggle }: any) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats ?? ({} as any);
   const isNoAuth = !!provider.noAuth;
 
@@ -728,7 +728,7 @@ ProviderCard.propTypes = {
   onToggle: PropTypes.func,
 };
 
-function ApiKeyProviderCard({ providerId, provider, stats, authType, onToggle }: any) {
+function ApiKeyProviderCard({ providerId, provider, stats, authType: _authType, onToggle }: any) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats ?? ({} as any);
   const isCompatible = providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
   const isAnthropicCompatible = providerId.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);

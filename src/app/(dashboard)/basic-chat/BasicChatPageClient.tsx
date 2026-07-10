@@ -31,7 +31,7 @@ function safeParse(value: any, fallback: any): any {
 
 function textValue(value: any): any {
   if (typeof value === "string") return value;
-  if (value == null) return "";
+  if (value === null || value === undefined) return "";
   if (Array.isArray(value)) return value.map(textValue).filter(Boolean).join(" ");
   if (typeof value === "object") {
     if (typeof value.message === "string") return value.message;

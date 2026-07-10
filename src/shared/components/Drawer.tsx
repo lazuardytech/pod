@@ -10,7 +10,6 @@ export default function Drawer({
   children,
   width = "md",
   className,
-  ...rest
 }: {
   isOpen?: any;
   onClose?: any;

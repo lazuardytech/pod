@@ -59,12 +59,12 @@ function ComboBadge({ combo }: { combo?: string }) {
 
 export default function RequestLogger({
   sortBy,
-  setSortBy,
+  setSortBy: _setSortBy,
   recording,
-  setRecording,
+  setRecording: _setRecording,
   refreshRef,
   filterProvider,
-  setFilterProvider,
+  setFilterProvider: _setFilterProvider,
   onProvidersChange,
 }: {
   sortBy?: string;

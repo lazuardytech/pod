@@ -18,7 +18,7 @@ const TOKEN_VALUE_RE = new RegExp(
   "g",
 );
 function maskValue(value: unknown): unknown {
-  if (value == null) return value;
+  if (value === null || value === undefined) return value;
   if (typeof value !== "string") return value;
   if (value.length < 8) return "***";
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
@@ -27,7 +27,7 @@ function redactString(str: string): string {
   return str.replace(TOKEN_VALUE_RE, (match) => maskValue(match) as string);
 }
 function sanitizeForLog(value: unknown, depth = 0): unknown {
-  if (value == null) return value;
+  if (value === null || value === undefined) return value;
   if (depth > 4) return "[depth-limit]";
   if (typeof value === "string") return redactString(value);
   if (typeof value === "number" || typeof value === "boolean") return value;

@@ -96,9 +96,9 @@ export async function handleFetch(request: Request): Promise<Response> {
 async function handleSingleProviderFetch(
   body: Record<string, any>,
   providerInput: string,
-  request: Request,
-  apiKey: string | null,
-  settings: Settings,
+  _request: Request,
+  _apiKey: string | null,
+  _settings: Settings,
 ): Promise<Response> {
   const targetUrl = body.url as string;
   const format = body.format;

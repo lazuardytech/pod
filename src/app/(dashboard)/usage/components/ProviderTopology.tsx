@@ -197,7 +197,7 @@ function buildLayout(providers: any, activeSet: any, lastSet: any, errorSet: any
     draggable: false,
   });
 
-  const edgeStyle: any = (active: any, last: any, error: any, color: any) => {
+  const edgeStyle: any = (active: any, last: any, error: any, _color: any) => {
     if (error) return { stroke: "#ef4444", strokeWidth: 2.5, opacity: 0.9 };
     if (active) return { stroke: "#22c55e", strokeWidth: 2.5, opacity: 0.9 };
     if (last) return { stroke: "#22c55e", strokeWidth: 2, opacity: 0.7 };

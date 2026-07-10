@@ -102,7 +102,7 @@ export function DetailRow({
   accent?: any;
   [key: string]: any;
 }) {
-  if (value == null || value === "" || value === "-") return null;
+  if (value === null || value === undefined || value === "" || value === "-") return null;
   return (
     <div className="flex items-start justify-between gap-3 py-1 border-b border-charcoal-grey/50 last:border-0">
       <span className="text-[11px] text-fog-grey shrink-0">{label}</span>

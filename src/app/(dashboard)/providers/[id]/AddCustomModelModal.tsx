@@ -8,7 +8,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 export default function AddCustomModelModal({
   isOpen,
   providerAlias,
-  providerDisplayAlias,
+  providerDisplayAlias: _providerDisplayAlias,
   onSave,
   onClose,
 }: any) {

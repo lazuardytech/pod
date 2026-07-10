@@ -9,7 +9,6 @@ export default function ProviderIcon({
   className = "",
   fallbackText = "?",
   fallbackColor,
-  ...rest
 }: {
   src?: any;
   alt?: any;

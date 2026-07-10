@@ -20,7 +20,7 @@ export interface ProviderState {
   fetchProviders: () => Promise<void>;
 }
 
-const useProviderStore = create<ProviderState>((set, get) => ({
+const useProviderStore = create<ProviderState>((set, _get) => ({
   providers: [],
   loading: false,
   error: null,

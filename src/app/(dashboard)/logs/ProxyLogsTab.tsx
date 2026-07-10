@@ -45,10 +45,10 @@ import {
 } from "@/shared/components/LogDrawer";
 
 export default function ProxyLogsTab({
-  sortBy,
-  setSortBy,
-  live,
-  setLive,
+  sortBy: _sortBy,
+  setSortBy: _setSortBy,
+  live: _live,
+  setLive: _setLive,
   onRefresh,
   onCountChange,
 }: any) {

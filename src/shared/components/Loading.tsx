@@ -5,7 +5,6 @@ import { cn } from "@/shared/utils/cn";
 export function Spinner({
   size = "md",
   className,
-  ...rest
 }: {
   size?: string;
   className?: any;

@@ -42,7 +42,7 @@ const CAVEMAN_LEVELS: any = [
   { id: "full", label: "Full", desc: "Drop articles, fragments OK" },
   { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
 ];
-export default function APIPageClient({ machineId }: any) {
+export default function APIPageClient({ machineId: _machineId }: any) {
   const [keys, setKeys]: any = useState<any[]>([]);
   const [loading, setLoading]: any = useState(true);
   const [showAddModal, setShowAddModal]: any = useState(false);
@@ -405,6 +405,7 @@ export default function APIPageClient({ machineId }: any) {
         onCacheData: (data: any) => {
           const payload: any = data as { keys?: unknown[] };
           setKeys((payload?.keys || []) as typeof keys);
+          setLoading(false);
         },
         onFreshData: (data: any) => {
           const payload: any = data as { keys?: unknown[] };
