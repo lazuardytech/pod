@@ -46,8 +46,10 @@ export async function handleTts(request: Request): Promise<Response> {
   }
   const url = new URL(request.url);
   const modelStr = body.model as string | undefined;
-  const responseFormat = url.searchParams.get("response_format") || "mp3";
+  const responseFormat = body.response_format || url.searchParams.get("response_format") || "mp3";
   const language = body.language || "";
+  const voice = body.voice || "";
+  const speed = typeof body.speed === "number" ? body.speed : undefined;
   log.request(
     "POST",
     `${url.pathname} | ${modelStr} | format=${responseFormat}${language ? ` | lang=${language}` : ""}`,
@@ -79,14 +81,15 @@ export async function handleTts(request: Request): Promise<Response> {
     return handleComboChat({
       body,
       models: comboModels,
-      handleSingleModel: (b, m) => handleSingleModelTts(b, m, responseFormat, language),
+      handleSingleModel: (b, m) =>
+        handleSingleModelTts(b, m, responseFormat, language, voice, speed),
       log,
       comboName: modelStr,
       comboStrategy,
       comboStickyLimit,
     });
   }
-  return handleSingleModelTts(body, modelStr, responseFormat, language);
+  return handleSingleModelTts(body, modelStr, responseFormat, language, voice, speed);
 }
 
 async function handleSingleModelTts(
@@ -94,6 +97,8 @@ async function handleSingleModelTts(
   modelStr: string,
   responseFormat: string,
   language: string,
+  voice: string,
+  speed?: number,
 ): Promise<Response> {
   const modelInfo = await getModelInfo(modelStr);
   if (!modelInfo.provider) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid model format");
@@ -107,6 +112,8 @@ async function handleSingleModelTts(
       input: body.input,
       responseFormat,
       language,
+      voice,
+      speed,
     });
     if (result.success === true) return result.response;
     return errorResponse(result.status || HTTP_STATUS.BAD_GATEWAY, result.error || "TTS failed");
@@ -144,6 +151,8 @@ async function handleSingleModelTts(
       credentials: credentials as Record<string, unknown>,
       responseFormat,
       language,
+      voice,
+      speed,
     });
     if (result.success === true) return result.response;
     const { shouldFallback } = await markAccountUnavailable(

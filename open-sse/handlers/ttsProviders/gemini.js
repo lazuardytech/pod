@@ -51,6 +51,7 @@ export default {
   async synthesize(text, model, credentials, _responseFormat, opts = {}) {
     if (!credentials?.apiKey) throw new Error("No Gemini API key configured");
     const { modelId, voiceId } = parseGeminiModelVoice(model);
+    const voice = opts.voice || voiceId;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${credentials.apiKey}`;
     const res = await fetch(url, {
       method: "POST",
@@ -59,7 +60,7 @@ export default {
         contents: [{ parts: [{ text: buildPrompt(text, opts.language) }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceId } } },
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
         },
       }),
     });

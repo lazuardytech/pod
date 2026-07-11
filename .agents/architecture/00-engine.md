@@ -12,8 +12,8 @@ open-sse/
   services/         Model resolution, provider metadata, credential management, token refresh
   transformer/      Response transformation utilities
   translator/       Request/response format translation (OpenAI ↔ Claude ↔ Gemini)
-  utils/            Stream processing, error handling, proxy fetch patch
-  rtk/              Runtime kernel utilities
+  utils/            Stream processing, error handling, proxy fetch patch, RTK
+  rtk/              Real Talk tool_result compression subsystem
   index.js          Public API surface — re-exports for src/sse/ consumers
 ```
 

@@ -34,7 +34,7 @@ cd docker && docker compose up -d
 
 ### Zeabur
 
-Production deployment at **pod.lazuardy.tech**.
+Production deployment at **pod.lazuardy.tech** (port 20140). Canary at **pod-canary.zeabur.app**.
 
 ### Local Development
 
@@ -52,14 +52,15 @@ Cloudflare handles TLS termination, DDoS protection, and edge caching.
 
 ## Key Files
 
-| File                  | Role                                                            |
-| --------------------- | --------------------------------------------------------------- |
-| `src/server-init.js`  | Global process handlers, shutdown hooks, app initialization     |
-| `src/lib/shutdown.js` | Graceful shutdown: signal handlers, queue flush, tunnel cleanup |
-| `src/lib/tunnel/`     | Cloudflared tunnel management                                   |
-| `src/lib/network/`    | Network utilities                                               |
-| `docker/`             | Dockerfile and docker-compose.yml                               |
-| `cloud/`              | Cloudflare Worker backend                                       |
+| File                     | Role                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| `src/instrumentation.ts` | Next.js 16 startup entry point                                  |
+| `src/server-init.ts`     | Global process handlers, shutdown hooks                         |
+| `src/lib/shutdown.ts`    | Graceful shutdown: signal handlers, queue flush, tunnel cleanup |
+| `src/lib/tunnel/`        | Cloudflared tunnel management                                   |
+| `src/lib/network/`       | Network utilities                                               |
+| `docker/`                | Dockerfile and docker-compose.yml                               |
+| `cloud/`                 | Cloudflare Worker backend                                       |
 
 ## Rules
 

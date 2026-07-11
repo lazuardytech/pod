@@ -19,7 +19,7 @@ Each request passes through this pipeline. Fails early on missing credentials or
 | Media (speech/image/embed/search) | Deepgram, AssemblyAI, ElevenLabs, Voyage AI, SD WebUI, ComfyUI, Tavily, Brave Search, SearXNG, Fal.ai, Stability AI, Jina AI, and more                                                                                                                         |
 | Custom nodes                      | OpenAI-compatible, Anthropic-compatible, custom embedding nodes (added from dashboard)                                                                                                                                                                         |
 
-Provider definitions live in `src/shared/constants/providers.js`. Model catalogs in `src/shared/constants/models.js`.
+Provider definitions live in `src/shared/constants/providers.ts`. Model catalogs in `src/shared/constants/models.ts`.
 
 ## Auth Types
 

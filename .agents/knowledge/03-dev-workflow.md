@@ -24,10 +24,10 @@ All three must pass before pushing. No exceptions.
 
 ## Workflow Rules
 
-1. **Update docs from live code** -- documentation reflects current codebase, not intentions
-2. **Small verifiable changes** -- each change should be independently testable
-3. **Verify routing/auth/stream** -- test the specific path you changed
-4. **After translator changes** -- verify thinking content does not leak into content field
+1. **Update docs from live code** — documentation reflects current codebase, not intentions
+2. **Small verifiable changes** — each change should be independently testable
+3. **Verify routing/auth/stream** — test the specific path you changed
+4. **After translator changes** — verify thinking content does not leak into content field
 
 ## Testing
 

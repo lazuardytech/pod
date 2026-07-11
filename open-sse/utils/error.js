@@ -35,6 +35,8 @@ export function errorResponse(statusCode, message) {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers":
+        "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests",
     },
   });
 }

@@ -274,10 +274,7 @@ async function handleSingleModelChat(
         }
         if (excludeConnectionIds.size === 0) {
           log.warn("AUTH", `No active credentials for provider: ${provider}`);
-          return errorResponse(
-            HTTP_STATUS.NOT_FOUND,
-            `No active credentials for provider: ${provider}`,
-          );
+          return errorResponse(HTTP_STATUS.NOT_FOUND, "Model not found");
         }
         log.warn("CHAT", "No more accounts available", { provider });
         return errorResponse(

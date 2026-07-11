@@ -4,11 +4,7 @@
 
 ### Fixed
 
-- AbortError unhandledRejection spam on client disconnect: `request.text()` / `request.json()` now return `{ ok: false, reason: "aborted" }` via `readBodyText()` helper; routes return 499 cleanly. SSE stream wrappers in `src/sse/handlers/chat.ts` use `controller.close()` (not `controller.error(err)`) on reader abort, preventing the abort from re-surfacing in the Next.js response writer.
-- Hard 10MB body cap raised to 50MB default (env-tunable: `POD_MAX_REQUEST_BODY_BYTES`, `POD_MAX_CHAT_BODY_BYTES`).
-- Global `unhandledRejection` / `uncaughtException` handlers in `server-init.ts` and `instrumentation.ts` now classify `Error: aborted at node:_http_server` as `[ClientDisconnect]` (not `[FATAL]`) and dedupe log spam (1s window, 5-error threshold).
-- Abort-safe body parsing applied to 6 sibling routes: `imageGeneration`, `tts`, `fetch`, `embeddings`, `search`, `pricing/sync`.
-- `open-sse/handlers/chatCore.js`: catch block now filters `AbortError` and calls `controller.close()` instead of `controller.error(e)`.
+- Remove redundant `controller.close()` in `open-sse/handlers/chatCore.js` finally block — already closed in the success path.
 
 ## v0.0.82 (2026-07-11)
 
@@ -17,6 +13,39 @@
 - Canary 9-15s body-size-bound latency: `src/sse/handlers/chat.ts` now uses `readBodyTextStream()` (chunk-by-chunk body read with explicit size cap) instead of `request.text()` for large bodies. Added per-request timing instrumentation (`t_read`, `t_parse`, `t_bypass`) for diagnosis.
 - Redis shared-keyspace risk: `src/lib/rateLimit/redis.ts` now respects `RATELIMIT_KEY_PREFIX` env var so canary can use a separate namespace. Added 1-second per-op timeout wrapper (`RATELIMIT_REDIS_TIMEOUT_MS` env) to prevent stalled connections from blocking requests.
 - Stale semantic cache doc: `.agents/architecture/{03-data,01-app}.md` now correctly describe the cache as in-process LRU + per-instance SQLite (no Redis involvement), matching `src/lib/semanticCache.ts`.
+
+## v0.0.81 (2026-07-11)
+
+### Fixed
+
+- AbortError unhandledRejection spam on client disconnect: `request.text()` / `request.json()` now return `{ ok: false, reason: "aborted" }` via `readBodyText()` helper; routes return 499 cleanly. SSE stream wrappers in `src/sse/handlers/chat.ts` use `controller.close()` (not `controller.error(err)`) on reader abort, preventing the abort from re-surfacing in the Next.js response writer.
+- Hard 10MB body cap raised to 50MB default (env-tunable: `POD_MAX_REQUEST_BODY_BYTES`, `POD_MAX_CHAT_BODY_BYTES`).
+- Global `unhandledRejection` / `uncaughtException` handlers in `server-init.ts` and `instrumentation.ts` now classify `Error: aborted at node:_http_server` as `[ClientDisconnect]` (not `[FATAL]`) and dedupe log spam (1s window, 5-error threshold).
+- Abort-safe body parsing applied to 6 sibling routes: `imageGeneration`, `tts`, `fetch`, `embeddings`, `search`, `pricing/sync`.
+- `open-sse/handlers/chatCore.js`: catch block now filters `AbortError` and calls `controller.close()` instead of `controller.error(e)`.
+- Resolve intermittent hang: fix HEALTHCHECK port, SSE counter leak, Redis leak, instrumentation.ts init order, dead code cleanup.
+- Redirect root `/` to `/endpoint` instead of nonexistent `/dashboard`.
+- Don't block server startup on Redis init failure in `register()`.
+- Cache tailscale binary lookup; show cached API keys immediately.
+- Add offline cache to combos page — instant load on revisit.
+- Optimize service worker for Zeabur cold-start.
+- Resolve remaining `eqeqeq` lint warnings across `src/`.
+
+## v0.0.80 (2026-07-07)
+
+### Docs
+
+- Add API compatibility matrix (`compatibility-matrix.md`) with OpenAI/Anthropic endpoint status, error shapes, and SDK verification.
+- Add API compatibility policy and reference-checking workflow to AGENTS.md.
+- Update README and AGENTS.md for regex fix and project scope.
+
+### Fixed
+
+- Update stale JS/no-TS references in architecture docs.
+- Escape unterminated regex literal in `logger.ts` for Turbopack.
+- Set `minimumLockoutMinutes=0` in test seeds to avoid 60m default skew.
+- Anthropic error format compliance: catch blocks now return Anthropic error shape on `/v1/messages`.
+- Add missing error code fields in route handlers.
 
 ## v0.0.79 (2026-06-05)
 

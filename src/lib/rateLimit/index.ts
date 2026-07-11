@@ -9,7 +9,13 @@ export { initRateLimit };
 
 // ======== Response helpers (shared across backends) ========
 
-function rateLimitResponse(reason: string, retryAfterSeconds: number | undefined): Response {
+function rateLimitResponse(
+  reason: string,
+  retryAfterSeconds: number | undefined,
+  limit?: number,
+  remaining?: number,
+  reset?: number,
+): Response {
   const message =
     reason === "concurrent"
       ? "Too many concurrent requests for this API key"
@@ -21,6 +27,14 @@ function rateLimitResponse(reason: string, retryAfterSeconds: number | undefined
     "Retry-After": String(retryAfterSeconds || 1),
   };
 
+  if (limit !== undefined) {
+    headers["x-ratelimit-limit-requests"] = String(limit);
+    headers["x-ratelimit-remaining-requests"] = String(remaining ?? 0);
+    headers["x-ratelimit-reset-requests"] = String(reset ?? retryAfterSeconds ?? 1);
+    headers["Access-Control-Expose-Headers"] =
+      "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests";
+  }
+
   return new Response(
     JSON.stringify({
       error: {
@@ -31,6 +45,21 @@ function rateLimitResponse(reason: string, retryAfterSeconds: number | undefined
     }),
     { status: 429, headers },
   );
+}
+
+export function attachRateLimitHeaders(
+  res: Response,
+  info: { limit: number; remaining: number; reset: number },
+): Response {
+  if (!(res instanceof Response)) return res;
+  res.headers.set("x-ratelimit-limit-requests", String(info.limit));
+  res.headers.set("x-ratelimit-remaining-requests", String(info.remaining));
+  res.headers.set("x-ratelimit-reset-requests", String(info.reset));
+  res.headers.set(
+    "Access-Control-Expose-Headers",
+    "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests",
+  );
+  return res;
 }
 
 function wrapStreamingResponse(response: Response, release: () => void | Promise<void>): Response {
@@ -133,7 +162,14 @@ export async function checkRateLimitByKey(
     acquireRpm: (
       keyId: string,
       max: number,
-    ) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
+    ) => Promise<{
+      ok: boolean;
+      member?: string;
+      type?: string;
+      retryAfterSeconds?: number;
+      remaining?: number;
+      resetSeconds?: number;
+    }>;
     acquireConc: (
       keyId: string,
       max: number,
@@ -246,7 +282,14 @@ export async function withApiKeyRateLimit(
     acquireRpm: (
       keyId: string,
       max: number,
-    ) => Promise<{ ok: boolean; member?: string; type?: string; retryAfterSeconds?: number }>;
+    ) => Promise<{
+      ok: boolean;
+      member?: string;
+      type?: string;
+      retryAfterSeconds?: number;
+      remaining?: number;
+      resetSeconds?: number;
+    }>;
     acquireConc: (
       keyId: string,
       max: number,
@@ -265,7 +308,13 @@ export async function withApiKeyRateLimit(
 
     const rpmResult = await redisBackend.acquireRpm(apiKeyRecord.id, config.requestsPerMinute);
     if (!rpmResult.ok) {
-      return rateLimitResponse(rpmResult.type || "rpm", rpmResult.retryAfterSeconds);
+      return rateLimitResponse(
+        rpmResult.type || "rpm",
+        rpmResult.retryAfterSeconds,
+        config.requestsPerMinute,
+        0,
+        rpmResult.retryAfterSeconds,
+      );
     }
 
     if (!redisBackend.acquireConc) {
@@ -276,7 +325,13 @@ export async function withApiKeyRateLimit(
       try {
         await redisBackend.releaseRpm?.(apiKeyRecord.id, rpmResult.member);
       } catch {}
-      return rateLimitResponse(concResult.type || "concurrent", 1);
+      return rateLimitResponse(
+        concResult.type || "concurrent",
+        1,
+        config.requestsPerMinute,
+        rpmResult.remaining ?? 0,
+        rpmResult.resetSeconds ?? 0,
+      );
     }
 
     let release: (() => void | Promise<void>) | null = concResult.release
@@ -286,7 +341,11 @@ export async function withApiKeyRateLimit(
       const response = await handler();
       const finalResponse = finalizeResponse(response, release);
       release = null;
-      return finalResponse;
+      return attachRateLimitHeaders(finalResponse as Response, {
+        limit: config.requestsPerMinute,
+        remaining: rpmResult.remaining ?? 0,
+        reset: rpmResult.resetSeconds ?? 0,
+      });
     } catch (error) {
       if (release) await release();
       throw error;
@@ -305,18 +364,35 @@ export async function withApiKeyRateLimit(
       reason?: string;
       retryAfterSeconds?: number;
       release?: (() => void) | null;
+      remaining?: number;
+      resetSeconds?: number;
     };
   };
   const memBackend = backend as unknown as MemoryLike;
+  const config = getLimitConfigFromRecord(apiKeyRecord) ?? {
+    requestsPerMinute: 60,
+    concurrentRequests: 5,
+  };
   const permit = memBackend.acquirePermit(apiKeyRecord);
-  if (!permit.ok) return rateLimitResponse(permit.reason || "rpm", permit.retryAfterSeconds);
+  if (!permit.ok)
+    return rateLimitResponse(
+      permit.reason || "rpm",
+      permit.retryAfterSeconds,
+      config.requestsPerMinute,
+      0,
+      permit.retryAfterSeconds,
+    );
 
   let release: (() => void) | null = permit.release ?? null;
   try {
     const response = await handler();
     const finalResponse = finalizeResponse(response, release);
     release = null;
-    return finalResponse;
+    return attachRateLimitHeaders(finalResponse as Response, {
+      limit: config.requestsPerMinute,
+      remaining: permit.remaining ?? 0,
+      reset: permit.resetSeconds ?? 0,
+    });
   } catch (error) {
     if (release) release();
     throw error;

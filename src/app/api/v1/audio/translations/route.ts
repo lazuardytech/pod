@@ -19,5 +19,5 @@ export async function OPTIONS() {
  * Translates audio into English text. Shares the same STT pipeline as transcriptions.
  */
 export async function POST(request: any) {
-  return await withApiKeyRateLimit(request, () => handleStt(request));
+  return await withApiKeyRateLimit(request, () => handleStt(request, { translate: true }));
 }

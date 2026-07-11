@@ -14,32 +14,31 @@ src/
   lib/                Backend services (storage, cache, rate limiting, auth, tunnels)
   sse/                SSE chat orchestration layer
   shared/             UI components, Zustand stores, constants, utils
-  proxy.js            Next.js middleware (route matching)
-  dashboardGuard.js   Auth guard (JWT verification)
-  server-init.js      App initialization and global signal handlers
+  instrumentation.ts  Next.js 16 entry point (initializeApp + signal handlers)
+  server-init.ts      App initialization and global signal handlers
 ```
 
 ## Dashboard Pages
 
 All 15 dashboard pages are top-level — no `/dashboard` prefix.
 
-| Page            | Route              |
-| --------------- | ------------------ |
-| Endpoint        | `/endpoint`        |
-| LLM Providers   | `/providers`       |
-| Media Providers | `/media-providers` |
-| Combos          | `/combos`          |
-| Quota           | `/quota`           |
-| Usage           | `/usage`           |
-| Memory          | `/memory`          |
-| Cache           | `/cache`           |
-| Health          | `/health`          |
-| Logs            | `/logs`            |
-| Proxy Pools     | `/proxy-pools`     |
-| Settings        | `/settings`        |
-| Translator      | `/translator`      |
-| Basic Chat      | `/basic-chat`      |
-| Provider Nodes  | (via API)          |
+| Page            | Route               |
+| --------------- | ------------------- |
+| Endpoint        | `/endpoint`         |
+| LLM Providers   | `/providers`        |
+| Media Providers | `/media-providers`  |
+| Combos          | `/combos`           |
+| Quota           | `/quota`            |
+| Usage           | `/usage`            |
+| Memory          | `/memory`           |
+| Cache           | `/cache`            |
+| Health          | `/health`           |
+| Logs            | `/logs`             |
+| Proxy Pools     | `/proxy-pools`      |
+| Settings        | `/settings`         |
+| Translator      | `/translator`       |
+| Basic Chat      | `/basic-chat`       |
+| Pricing         | `/settings/pricing` |
 
 ## API Routes (26 groups)
 
@@ -73,56 +72,50 @@ All 15 dashboard pages are top-level — no `/dashboard` prefix.
 
 All mutation routes must use `parseJsonBody(request)`. All catch blocks returning client-facing JSON must use `sanitizeError(error)`.
 
-## Middleware & Auth
+## Auth
 
-| File                    | Role                                                                                                            |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `src/proxy.js`          | Next.js middleware — matches dashboard routes + stateful API routes                                             |
-| `src/dashboardGuard.js` | JWT verification via `jose`. Enforces auth on all matched routes. Supports JWT cookie + CLI token header bypass |
+Internal API routes self-authenticate via `routeAuth.ts`. There is no Next.js middleware — `proxy.ts` and `dashboardGuard.ts` have been removed. Auth rules:
 
-Key rules:
-
-- `src/proxy.js` and `src/dashboardGuard.js` route matchers must stay in sync
 - `/api/health` is always public
 - `/api/monitoring/health` respects `requireApiKey`
 - `/api/restart` and `/api/shutdown` require `SHUTDOWN_SECRET`
-- Always-protected routes: `/api/shutdown`, `/api/restart`, `/api/settings/database`, `/api/settings/migrate-sqlite`
+- `/v1/*` routes enforce API key auth when `requireApiKey` is enabled
 
 ## Backend Services (`src/lib/`)
 
-| Path                       | Purpose                                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------------------- |
-| `localDb.js`               | Primary database access layer (preferred entry point)                                     |
-| `sqlite/`                  | Connection management, schema, migrations                                                 |
-| `semanticCache.js`         | Semantic cache with memoryOwnerId-aware signatures (in-process LRU + per-instance SQLite) |
-| `cacheLayer.js`            | Cache abstraction layer                                                                   |
-| `usageDb.js`               | Usage tracking and billing data                                                           |
-| `requestDetailsDb.js`      | Observability request-detail storage                                                      |
-| `rateLimit/`               | Rate limiter (Redis when REDIS_URL exists, in-memory fallback)                            |
-| `memory/`                  | Memory pipeline (injection, extraction, persistence)                                      |
-| `tunnel/`                  | Cloudflared tunnel management                                                             |
-| `oauth/`                   | OAuth token refresh for Claude, Codex, Copilot, GitHub, etc.                              |
-| `shutdown.js`              | Graceful shutdown with queue flush                                                        |
-| `network/`                 | Network utilities                                                                         |
-| `security/`                | SSRF protection, URL validation                                                           |
-| `parseJsonBody.js`         | Safe JSON body parser for mutation routes                                                 |
-| `sanitizeError.js`         | Error sanitization for client-facing responses                                            |
-| `routeAuth.js`             | Route-level auth helpers                                                                  |
-| `validateUrl.js`           | URL validation with SSRF protection                                                       |
-| `consoleLogBuffer.js`      | Console log capture for dashboard                                                         |
-| `modelsDevSync.js`         | models.dev catalog sync                                                                   |
-| `disabledModelsDb.js`      | Disabled model tracking                                                                   |
-| `providerNormalization.js` | Provider name normalization                                                               |
-| `initCloudSync.js`         | Cloud sync initialization                                                                 |
-| `dataDir.js`               | Data directory resolution                                                                 |
+| Path                       | Purpose                                                        |
+| -------------------------- | -------------------------------------------------------------- |
+| `localDb.ts`               | Primary database access layer (preferred entry point)          |
+| `sqlite/`                  | Connection management, schema                                  |
+| `semanticCache.ts`         | Semantic cache with memoryOwnerId-aware signatures             |
+| `cacheLayer.ts`            | Cache abstraction layer                                        |
+| `usageDb.ts`               | Usage tracking and billing data                                |
+| `requestDetailsDb.ts`      | Observability request-detail storage                           |
+| `rateLimit/`               | Rate limiter (Redis when REDIS_URL exists, in-memory fallback) |
+| `memory/`                  | Memory pipeline (injection, extraction, persistence)           |
+| `tunnel/`                  | Cloudflared tunnel management                                  |
+| `oauth/`                   | OAuth token refresh for Claude, Codex, Copilot, GitHub, etc.   |
+| `shutdown.ts`              | Graceful shutdown with queue flush                             |
+| `network/`                 | Network utilities                                              |
+| `security/`                | Runtime secrets validation                                     |
+| `parseJsonBody.ts`         | Safe JSON body parser for mutation routes                      |
+| `sanitizeError.ts`         | Error sanitization for client-facing responses                 |
+| `routeAuth.ts`             | Internal API self-authentication                               |
+| `validateUrl.ts`           | URL validation with SSRF protection                            |
+| `consoleLogBuffer.ts`      | Console log capture for dashboard                              |
+| `modelsDevSync.ts`         | models.dev catalog sync                                        |
+| `disabledModelsDb.ts`      | Disabled model tracking                                        |
+| `providerNormalization.ts` | Provider name normalization                                    |
+| `initCloudSync.ts`         | Cloud sync initialization                                      |
+| `dataDir.ts`               | Data directory resolution                                      |
 
 ## SSE Orchestration (`src/sse/`)
 
 | Path        | Purpose                                                           |
 | ----------- | ----------------------------------------------------------------- |
 | `handlers/` | Chat handler: connection management, combo logic, streaming setup |
-| `services/` | SSE-specific services                                             |
-| `utils/`    | SSE utilities                                                     |
+| `services/` | SSE-specific services (model resolution, auth, token refresh)     |
+| `utils/`    | SSE logger                                                        |
 
 This layer sits between the API route and `open-sse/`. It manages the 100-connection cap, combo fallback logic, and model lock semantics before delegating to the engine.
 
@@ -131,23 +124,22 @@ This layer sits between the API route and `open-sse/`. It manages the 100-connec
 | Path          | Purpose                                                                                               |
 | ------------- | ----------------------------------------------------------------------------------------------------- |
 | `components/` | UI component library (ConfirmModal, headers, etc.)                                                    |
-| `constants/`  | Config, version (`config.js`), provider definitions (`providers.js`), model definitions (`models.js`) |
+| `constants/`  | Config, version (`config.ts`), provider definitions (`providers.ts`), model definitions (`models.ts`) |
 | `hooks/`      | Shared React hooks                                                                                    |
-| `services/`   | Shared client-side services                                                                           |
+| `services/`   | Shared client-side services (offline cache, cloud sync)                                               |
 | `utils/`      | Client-side utilities                                                                                 |
 
 ## Initialization
 
-`src/server-init.js` is the entry point:
+`src/instrumentation.ts` is the canonical startup path (Next.js 16):
 
-1. Registers global `unhandledRejection` and `uncaughtException` handlers
-2. Registers shutdown hook (kills cloudflared, cleans up DNS entries)
-3. Sets up signal handlers (SIGINT/SIGTERM)
-4. Calls `initializeApp()` from `shared/services/initializeApp.js`
+1. Calls `initializeApp()` at cold start in production
+2. Registers global `unhandledRejection` and `uncaughtException` handlers
+3. Sets up signal handlers (SIGINT/SIGTERM) with queue flush and cleanup
 
 ## Patterns
 
 - **Thin API routes**: Routes call into `lib/` services; no business logic in route handlers
-- **Zustand per domain**: Each domain (auth, chat, settings, providers) gets its own store
-- **PWA**: `src/app/manifest.webmanifest` is the source; service worker is registration-only (no auto-updates)
+- **Zustand per domain**: Each domain (auth, providers, theme, notifications, header) gets its own store
+- **PWA**: Service worker is registration-only (no auto-updates); offline reads via `offlineJsonCache`; writes queue via mutation stack
 - **Header actions**: Route through `headerActionStore`

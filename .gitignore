@@ -1,9 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# pi coding agent
+# coding agent config
 .pi
 .claude
 .commandcode
+.rwx
 .vscode
 
 # dependencies

@@ -1,6 +1,6 @@
-# Pod -- Product Requirements Document
+# Pod — Product Requirements Document
 
-**Version:** v0.0.81 | **Status:** Active development
+**Version:** v0.0.82 | **Status:** Active development
 
 ## Overview
 
@@ -18,7 +18,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 ### Provider Unification
 
 - OpenAI-compatible `/v1/*` endpoints: chat/completions, responses, embeddings, audio (speech, transcriptions, translations), images (generations, edits, variations), moderations, models (list, detail), files (upload, retrieve, delete)
-- Anthropic `/v1/messages` and Gemini `/v1beta/models` compatibility
+- Anthropic `/v1/messages` and `/v1/messages/count_tokens` compatibility
 - Ollama `/v1/api/chat` endpoint
 - 50+ providers across free, API-key, OAuth, and self-hosted categories
 - Auth types: API key, OAuth, cookie/session, local, service account
@@ -56,7 +56,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ### Dashboard
 
-- Dark-only, Linear-inspired UI (15 top-level pages, no /dashboard prefix)
+- Dark-only, Linear-inspired UI (15 top-level pages, no `/dashboard` prefix)
 - Provider health monitoring with real-time SSE updates
 - Model diagnostics and testing
 - Quota tracking with 3-level expand/collapse
@@ -79,15 +79,16 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ## Product Constraints
 
-- **Bun-only** -- never npm/pnpm
-- **Local open-sse fork** -- never replace with npm version, frozen as JS
-- **SQLite primary store** -- optional Redis for rate limiting
-- **Dark-only UI** -- no light mode
-- **Defensive by default** -- sanitized errors, safe streaming, crash guards
+- **Bun-only** — never npm/pnpm
+- **Local open-sse fork** — never replace with npm version, frozen as JS
+- **SQLite primary store** — optional Redis for rate limiting
+- **Dark-only UI** — no light mode
+- **Defensive by default** — sanitized errors, safe streaming, crash guards
 
 ## Operational Guarantees
 
 - **Abort-safe streaming**: Client disconnects return 499 (not 500); no unhandledRejection floods. SSE stream wrappers use `controller.close()` on abort. Global `unhandledRejection` handler classifies `node:_http_server` aborts as `[ClientDisconnect]` and dedupes within 1s.
+- **Chunked body reading**: Large request bodies (5MB+) are stream-read in chunks to prevent 9-15s stalls. `readBodyTextStream()` enforces the size cap mid-stream and returns 413 on overflow.
 - **Configurable body cap**: All mutation routes enforce a 50MB default body cap (env-tunable). 413 returned on overflow; no silent memory spikes.
 - **Compatibility first**: OpenAI/Anthropic error shapes, auth headers, streaming format, and tool calling match official specs. Any regression is a release blocker.
 - **Offline-first dashboard**: Reads degrade via `offlineJsonCache`; writes queue via mutation stack; only safe idempotent mutations queued.
@@ -96,7 +97,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 | Metric              | Value                                                                                         |
 | ------------------- | --------------------------------------------------------------------------------------------- |
-| Version             | v0.0.81                                                                                       |
+| Version             | v0.0.82                                                                                       |
 | Default port        | 20128                                                                                         |
 | SSE connection cap  | 100 concurrent                                                                                |
 | SSE idle timeout    | 5 minutes                                                                                     |
