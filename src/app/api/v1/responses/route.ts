@@ -13,14 +13,14 @@ async function ensureInitialized() {
   }
 }
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+};
+
 export async function OPTIONS() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "*",
-    },
-  });
+  return new Response(null, { headers: CORS_HEADERS });
 }
 
 type ChatCompletion = {
@@ -100,7 +100,7 @@ export async function POST(request: any) {
                 code: "invalid_request_error",
               },
             }),
-            { status: 400, headers: { "Content-Type": "application/json" } },
+            { status: 400, headers: { "Content-Type": "application/json", ...CORS_HEADERS } },
           );
         }
       } catch {
@@ -118,7 +118,7 @@ export async function POST(request: any) {
             const cc = (await result.json()) as ChatCompletion;
             const out = chatCompletionToResponse(cc, crypto.randomUUID());
             return new Response(JSON.stringify(out), {
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", ...CORS_HEADERS },
             });
           }
         }
