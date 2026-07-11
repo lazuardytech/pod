@@ -50,13 +50,17 @@ export async function DELETE(request: any, { params }: { params: any }) {
         { status: 401, headers: CORS_HEADERS },
       );
     }
+    const { file_id } = await params;
     return Response.json(
       {
-        id: (await params).file_id,
-        object: "file",
-        deleted: true,
+        error: {
+          message: `File '${file_id}' not found`,
+          type: "invalid_request_error",
+          param: null,
+          code: "file_not_found",
+        },
       },
-      { headers: CORS_HEADERS },
+      { status: 404, headers: CORS_HEADERS },
     );
   });
 }

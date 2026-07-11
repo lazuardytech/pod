@@ -39,8 +39,9 @@ function toLogLine(level: ConsoleLevel, args: unknown[]): string {
   return args.map(formatArg).join(" ");
 }
 
-// Strip ANSI escape codes so terminal colors don't bleed into UI
-const ANSI_RE = /\x1b\[[0-9;]*m/g;
+// Strip ANSI escape codes so terminal colors don't bleed into UI.
+// 0x1b (ESC) is built at runtime to avoid a control char in source.
+const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
 function stripAnsi(str: string): string {
   return str.replace(ANSI_RE, "");

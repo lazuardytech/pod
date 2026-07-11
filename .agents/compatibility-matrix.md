@@ -4,27 +4,27 @@ OpenAI-compatible and Anthropic-compatible behavior is Pod's primary sacred obje
 
 ## OpenAI Compatibility
 
-| Endpoint                        | Status    | Notes                                       |
-| ------------------------------- | --------- | ------------------------------------------- |
-| `GET /v1/models`                | Supported | CORS, auth, JSON shape                      |
-| `GET /v1/models/{slug}`         | Supported | Single model lookup                         |
-| `POST /v1/chat/completions`     | Supported | Streaming + non-streaming, tools, JSON mode |
-| `POST /v1/responses`            | Supported | Maps to same handler as chat                |
-| `POST /v1/responses/compact`    | Supported | Compact mode flag                           |
-| `POST /v1/embeddings`           | Supported |                                             |
-| `POST /v1/audio/speech`         | Supported | TTS passthrough                             |
-| `POST /v1/audio/transcriptions` | Supported | STT passthrough                             |
-| `POST /v1/audio/translations`   | Supported | Same as transcriptions                      |
-| `POST /v1/images/generations`   | Supported | Passthrough to provider                     |
-| `POST /v1/images/edits`         | **501**   | Not implemented                             |
-| `POST /v1/images/variations`    | **501**   | Not implemented                             |
-| `POST /v1/moderations`          | Supported | Mock — always unflagged                     |
-| `GET /v1/files`                 | Supported | Returns empty list                          |
-| `POST /v1/files`                | **501**   | Not implemented                             |
-| `GET /v1/files/{file_id}`       | Supported | Returns 404                                 |
-| `DELETE /v1/files/{file_id}`    | Supported | Returns `{ deleted: true }`                 |
-| `POST /v1/web/fetch`            | Supported | Web fetch utility                           |
-| `POST /v1/search`               | Supported | Web search utility                          |
+| Endpoint                        | Status    | Notes                                                                            |
+| ------------------------------- | --------- | -------------------------------------------------------------------------------- |
+| `GET /v1/models`                | Supported | CORS, auth, JSON shape                                                           |
+| `GET /v1/models/{slug}`         | Supported | Single model lookup                                                              |
+| `POST /v1/chat/completions`     | Supported | Streaming + non-streaming, tools, JSON mode                                      |
+| `POST /v1/responses`            | Supported | Maps to same handler as chat; CORS on non-streaming; `400` on unsupported shapes |
+| `POST /v1/responses/compact`    | Supported | Compact mode flag                                                                |
+| `POST /v1/embeddings`           | Supported |                                                                                  |
+| `POST /v1/audio/speech`         | Supported | TTS passthrough                                                                  |
+| `POST /v1/audio/transcriptions` | Supported | STT passthrough                                                                  |
+| `POST /v1/audio/translations`   | Supported | Same as transcriptions                                                           |
+| `POST /v1/images/generations`   | Supported | Passthrough to provider                                                          |
+| `POST /v1/images/edits`         | **501**   | Not implemented                                                                  |
+| `POST /v1/images/variations`    | **501**   | Not implemented                                                                  |
+| `POST /v1/moderations`          | Supported | Mock — always unflagged                                                          |
+| `GET /v1/files`                 | Supported | Returns empty list                                                               |
+| `POST /v1/files`                | **501**   | Not implemented                                                                  |
+| `GET /v1/files/{file_id}`       | Supported | Returns 404                                                                      |
+| `DELETE /v1/files/{file_id}`    | Supported | Returns `{ deleted: true }`                                                      |
+| `POST /v1/web/fetch`            | Supported | Web fetch utility                                                                |
+| `POST /v1/search`               | Supported | Web search utility                                                               |
 
 ### OpenAI Error Shape
 
@@ -36,7 +36,6 @@ Errors return `{ error: { message, type, param, code } }` with appropriate HTTP 
 - `response_format` — json_schema/json_object supported via translator, route-level schema validation not tested
 - `tool_choice` — `auto`, `none`, `required` supported; named function choice passes through
 - `max_completion_tokens` vs `max_tokens` — both accepted; `max_tokens` used internally, `max_completion_tokens` passed through for reasoning models
-- `/v1/messages` error format — returns OpenAI format `{ error: {...} }` instead of Anthropic format `{ type: "error", error: {...} }`. Works with Anthropic SDKs but not spec-compliant.
 
 ### Not Supported
 
@@ -54,7 +53,7 @@ Errors return `{ error: { message, type, param, code } }` with appropriate HTTP 
 
 ### Anthropic Error Shape
 
-Errors via same `{ error: { message, type, param, code } }` format through the generic error pipeline.
+Errors return OpenAI `{ error: { message, type, param, code } }` format. The `/v1/messages` route has catch blocks returning Anthropic format, but errors from `handleChat` core are still OpenAI-format. Works with Anthropic SDKs but not spec-compliant.
 
 ### Anthropic-Specific Features
 
@@ -64,10 +63,6 @@ Errors via same `{ error: { message, type, param, code } }` format through the g
 - Tool use (`tool_use` blocks) — supported
 - Streaming — supported (SSE with content_block_delta, content_block_start, etc.)
 - `metadata` — passed through
-
-### Partially Supported
-
-- Error format — errors return OpenAI `{ error: {...} }` shape, not Anthropic `{ type: "error", error: {...} }`. The `/v1/messages` route has catch blocks returning Anthropic format, but errors from `handleChat` core are still OpenAI-format.
 
 ### Not Supported
 
@@ -80,6 +75,7 @@ Errors via same `{ error: { message, type, param, code } }` format through the g
 | Behavior                                   | Status                                         |
 | ------------------------------------------ | ---------------------------------------------- |
 | API key via `Authorization: Bearer` header | Supported                                      |
+| API key via `x-api-key` header             | Supported                                      |
 | API key via query param                    | Not supported                                  |
 | API key validation                         | Required by default via `requireApiKey` config |
 
@@ -107,13 +103,13 @@ Testing status: route-contract tests cover chat completions, responses, embeddin
 
 ## Verification
 
-Compatibility proof was checked against:
+Compatibility verified against:
 
 - OpenAI API Reference (platform.openai.com/docs/api-reference/chat)
 - Anthropic Messages API (docs.anthropic.com/en/api/messages)
 - Existing route contract tests under tests/unit/
-- Response parsing tests in tests/unit/response-parsing.test.js
+- Response parsing tests in tests/unit/
 
 ## Version
 
-Last reviewed: 2026-07-07 | Pod v0.0.80
+Last reviewed: 2026-07-11 | Pod v0.0.82

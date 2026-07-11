@@ -400,7 +400,8 @@ async function installTailscaleWindows(log: (msg: string) => void) {
       } catch {
         /* ignore */
       }
-      c === 0 ? resolve() : reject(new Error(`msiexec failed (code ${c})`));
+      if (c === 0) resolve();
+      else reject(new Error(`msiexec failed (code ${c})`));
     });
     child.on("error", reject);
   });

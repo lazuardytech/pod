@@ -226,7 +226,7 @@ export async function handleForwardRaw(request: Request): Promise<Response> {
         "Access-Control-Allow-Origin": "*",
       },
     });
-  } catch (error) {
+  } catch {
     console.error("[FORWARD_RAW] Error occurred");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,

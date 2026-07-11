@@ -19,7 +19,7 @@ Each request passes through this pipeline. Fails early on missing credentials or
 | Media (speech/image/embed/search) | Deepgram, AssemblyAI, ElevenLabs, Voyage AI, SD WebUI, ComfyUI, Tavily, Brave Search, SearXNG, Fal.ai, Stability AI, Jina AI, and more                                                                                                                         |
 | Custom nodes                      | OpenAI-compatible, Anthropic-compatible, custom embedding nodes (added from dashboard)                                                                                                                                                                         |
 
-Provider definitions live in `src/shared/constants/providers.js`. Model catalogs in `src/shared/constants/models.js`.
+Provider definitions live in `src/shared/constants/providers.ts`. Model catalogs in `src/shared/constants/models.ts`.
 
 ## Auth Types
 
@@ -73,13 +73,14 @@ The translator is applied on every streaming response.
 
 ## Provider Rules
 
-| Rule                                                              | Rationale                           |
-| ----------------------------------------------------------------- | ----------------------------------- |
-| Vertex AI: never include `stream` in request body                 | Vertex handles streaming internally |
-| Vercel relay: timeout = pod timeout - 5s, retry once on 502/504   | Platform timeout guard              |
-| Kiro: retry body-gated on transient overload markers              | Avoid retrying permanent errors     |
-| Compatible-node rename: only for compatible/custom nodes          | Don't rename built-in providers     |
-| Thinking blocks: never emit `<think>`/`</think>` in content delta | Client compatibility                |
+| Rule                                                                                                                           | Rationale                           |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Vertex AI: never include `stream` in request body                                                                              | Vertex handles streaming internally |
+| Vercel relay: timeout = pod timeout - 5s, retry once on 502/504                                                                | Platform timeout guard              |
+| Kiro: retry body-gated on transient overload markers                                                                           | Avoid retrying permanent errors     |
+| Compatible-node rename: only for compatible/custom nodes                                                                       | Don't rename built-in providers     |
+| Thinking blocks: never emit `<think>`/`</think>` in content delta                                                              | Client compatibility                |
+| Outbound proxy: pools (http + Vercel relay) and SOCKS resolved via `src/lib/network/connectionProxy.ts` (pool → legacy → none) | Per-request egress control          |
 
 ## Account Lockout & Cooldown
 

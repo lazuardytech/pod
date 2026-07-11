@@ -56,7 +56,7 @@ describe("parseUpstreamError — extract error info from upstream responses", ()
   it("returns resetsAtMs from executor.parseError", async () => {
     const executor = {
       // parseError must be sync — async returns a Promise object which is truthy but not awaited
-      parseError: (res, body) => ({
+      parseError: (res, _body) => ({
         status: res.status,
         message: "custom error",
         resetsAtMs: Date.now() + 3600_000, // 1 hour

@@ -8,9 +8,9 @@ Historical `.agents/issues/` files may not reflect current code. Always cross-ch
 
 Upstream provider APIs change without notice. OAuth and cookie-based providers are especially volatile. Re-verify web/cookie providers frequently.
 
-## 3. Matcher Sync
+## 3. Auth Matcher Sync
 
-`src/proxy.js` and `src/dashboardGuard.js` route matchers can drift apart. When adding or modifying routes, update both files. Mismatched matchers cause auth bypass or 403 errors.
+When adding or modifying routes, ensure the auth matcher in `routeAuth.ts` covers new protected routes. Internal APIs self-authenticate — no middleware registered. Mismatched matchers cause auth bypass or 403 errors.
 
 ## 4. Streaming Fragility
 
@@ -30,11 +30,11 @@ Build warnings may not fail the build. Always verify after deploy that the app s
 
 ## 8. Thinking Blocks
 
-The Claude-to-OpenAI translator (`open-sse/translator/response/claude-to-openai.js`) must never emit `<thinking>` or `</thinking>` as content deltas. This causes client-side rendering bugs.
+The Claude-to-OpenAI translator (`open-sse/translator/response/claude-to-openai.js`) must never emit `<think>` or `</think>` as content deltas. This causes client-side rendering bugs.
 
 ## 9. Version Drift
 
-Version must be bumped in both `package.json` AND `src/shared/constants/config.js` (both `pkg.version` and `displayVersion`). Missing one causes inconsistent version display.
+Version must be bumped in both `package.json` AND `src/shared/constants/config.ts` (both `pkg.version` and `displayVersion`). Missing one causes inconsistent version display.
 
 ## 10. SSE Connection Cap
 
@@ -48,8 +48,6 @@ When a client disconnects mid-request (browser tab close, network drop, cancelle
 - SSE stream wrappers must use `controller.close()` (not `controller.error(err)`) on reader abort — `error()` re-emits to the response writer and surfaces as `unhandledRejection`.
 - The global `unhandledRejection` handler in `server-init.ts` / `instrumentation.ts` classifies `node:_http_server` origins as `[ClientDisconnect]` (not `[FATAL]`) and dedupes within a 1-second window.
 
-See `.agents/plans/fix-aborterror-spam-body-cap-hang` for the full fix reference.
-
 ### Cross-boundary trace: 20MB chat completion with client disconnect
 
 1. Client POSTs 20MB body, browser tab closes at t=1s.
@@ -57,3 +55,11 @@ See `.agents/plans/fix-aborterror-spam-body-cap-hang` for the full fix reference
 3. If abort detected → route returns 499, no log spam.
 4. If abort detected after body read (during upstream `fetch`) → `controller.close()` in SSE wrapper, global handler classifies as `[ClientDisconnect]`, dedupes if more than 5 in 1s.
 5. Server stays up. No `unhandledRejection`. No `[FATAL]` log.
+
+## 32. Large body latency on canary (Zeabur cold-start)
+
+The canary service at `pod-canary.zeabur.app` scales down to zero idle replicas. Cold start takes 15-30s for the first request. Subsequent requests are 0.3-0.5s. Prod (`pod.lazuardy.tech`) stays warm from constant traffic. Mitigation: add a cron/uptime monitor hitting `/api/health` every 5 minutes to keep the container warm, or disable scale-to-zero in Zeabur service config.
+
+## 33. `readBodyTextStream` vs `request.text()`
+
+Avoid raw `request.text()` for bodies > 1MB on Zeabur/Bun. The Node.js HTTP body parser can stall for 9-15s on large payloads, especially with `curl/8.x` User-Agent. Use `readBodyTextStream()` from `@/lib/parseJsonBody` instead — it reads chunk-by-chunk with an explicit size cap and returns 413 mid-stream on overflow.

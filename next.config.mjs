@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  serverExternalPackages: ["bun:sqlite"],
+  serverExternalPackages: ["bun:sqlite", "undici"],
   images: {
     unoptimized: true,
   },

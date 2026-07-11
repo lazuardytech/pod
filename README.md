@@ -52,13 +52,14 @@ Requires [bun](https://bun.sh) v1.3.14+.
 
 ```bash
 bun install
-bun run dev        # starts on http://localhost:20128
+bun run dev # starts on http://localhost:20128
 ```
 
 ## Operational Notes
 
 - **Body size cap**: Default 50MB per request. Override with `POD_MAX_REQUEST_BODY_BYTES` (and `POD_MAX_CHAT_BODY_BYTES` for chat routes). Requests exceeding the cap return `413 Payload Too Large`.
-- **Client disconnect handling**: Pod returns `499 Client Closed Request` on abrupt client disconnects (browser tab close, network drop, cancelled stream). No unhandled rejections, no log spam.
+- **Client disconnect handling**: Pod returns `499 Client Closed Request` on abrupt client disconnects (browser tab close, network drop, cancelled stream). `AbortError` at `node:_http_server` is classified as `[ClientDisconnect]` (not `[FATAL]`) and SSE wrappers call `controller.close()` on abort — no unhandled rejections, no log spam.
+- **Large-body latency**: Node's HTTP body parser can cause 9–15s stalls for bodies > 1MB (notably `curl/8.x`). Chat and sibling routes read via `readBodyTextStream()` (chunk-by-chunk with a size cap) to avoid the stall.
 - **Health checks**: `GET /api/health` is public. `GET /api/monitoring/health` requires an API key.
 
 ## Environment Variables
@@ -113,15 +114,15 @@ All endpoints accept `Authorization: Bearer <key>` or `x-api-key: <key>` when AP
 | `POST /v1/images/edits`          | OpenAI Image Edit      |
 | `POST /v1/images/variations`     | OpenAI Image Variation |
 | `POST /v1/moderations`           | OpenAI Moderations     |
-| `POST /v1/messages/count_tokens` | OpenAI Token Count     |
+| `POST /v1/messages/count_tokens` | Anthropic Token Count  |
 | `GET /v1/models`                 | OpenAI Model List      |
 | `GET /v1/models/{model}`         | OpenAI Model Detail    |
 | `POST /v1/files`                 | OpenAI File Upload     |
 | `DELETE /v1/files/{file_id}`     | OpenAI File Delete     |
 | `GET /v1/files/{file_id}`        | OpenAI File Retrieve   |
 | `POST /v1/api/chat`              | Ollama Chat            |
-
-Internal endpoints (dashboard, monitoring, health) are documented in `docs/API_INTERNAL.md`.
+| `POST /v1/search`                | Web Search             |
+| `POST /v1/web/fetch`             | URL Fetch              |
 
 ## Supported Providers
 
@@ -157,10 +158,9 @@ See [AGENTS.md](AGENTS.md) for project rules. Additional agent context in `.agen
 | ----------- | ------------------------------------------------ |
 | `src/`      | App layer (pages, API routes, lib, shared, SSE)  |
 | `open-sse/` | Local engine fork (routing, translation, stream) |
-| `cloud/`    | Cloudflare Worker backend                        |
+| `cloud/`    | Cloudflare Worker proxy backend                  |
 | `tests/`    | Vitest test suite (unit + smoke)                 |
 | `docker/`   | Dockerfile and docker-compose.yml                |
-| `docs/`     | Internal API reference                           |
 | `.agents/`  | Architecture, knowledge, issues, reports, plans  |
 
 ## License

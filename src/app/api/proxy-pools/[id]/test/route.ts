@@ -89,7 +89,7 @@ export async function POST(request: any, { params }: { params: any }) {
       testedAt: now,
     });
   } catch (error) {
-    console.log("Error testing proxy pool:", error);
-    return NextResponse.json({ error: "Failed to test proxy pool" }, { status: 500 });
+    console.error("Error testing proxy pool:", error);
+    return NextResponse.json({ error: sanitizeError(error) }, { status: 500 });
   }
 }

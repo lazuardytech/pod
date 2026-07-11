@@ -12,8 +12,8 @@ open-sse/
   services/         Model resolution, provider metadata, credential management, token refresh
   transformer/      Response transformation utilities
   translator/       Request/response format translation (OpenAI ↔ Claude ↔ Gemini)
-  utils/            Stream processing, error handling, proxy fetch patch
-  rtk/              Runtime kernel utilities
+  utils/            Stream processing, error handling, proxy fetch patch, RTK
+  rtk/              Real Talk tool_result compression subsystem
   index.js          Public API surface — re-exports for src/sse/ consumers
 ```
 
@@ -77,4 +77,5 @@ These guards are non-negotiable. Removing or weakening any of them risks process
 
 - **Upstream error before streaming**: Return structured JSON error immediately
 - **Mid-stream failure**: Degrade gracefully, never crash the process
+- **Client disconnect**: `AbortError` at `node:_http_server` (client disconnect) is classified as `[ClientDisconnect]`, not `[FATAL]`; SSE stream wrappers call `controller.close()` (not `controller.error(err)`) on reader abort
 - **Raw upstream bodies never leak**: `sanitizeError()` strips internal details

@@ -2,15 +2,15 @@
 
 ## Active Items
 
-| #   | Issue                         | Risk   | Notes                                                                                                |
-| --- | ----------------------------- | ------ | ---------------------------------------------------------------------------------------------------- |
-| 1   | **Provider API drift**        | High   | OAuth and cookie-based providers change frequently. Regular re-verification needed.                  |
-| 2   | **Matcher sync**              | Medium | `src/proxy.js` and `src/dashboardGuard.js` matchers must stay aligned.                               |
-| 3   | **Relay behavior**            | Medium | Cold starts, timeout races (relay timeout = pod timeout - 5s). First request after idle may be slow. |
-| 4   | **Multi-instance readiness**  | Low    | SQLite concurrent access, Redis dependency, lock semantics. Current design is single-instance.       |
-| 5   | **Offline queue correctness** | Medium | Only safe idempotent mutations queued. Verify correctness after any store change.                    |
-| 6   | **SSRF protection**           | Medium | Must block `0.0.0.0` and DNS-rebinding hosts. Re-verify after proxy changes.                         |
-| 7   | **Fork divergence**           | Low    | Pod intentionally diverged from upstream (9Router). No safe direct merges.                           |
+| #   | Issue                         | Risk   | Notes                                                                                                                |
+| --- | ----------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Provider API drift**        | High   | OAuth and cookie-based providers change frequently. Regular re-verification needed.                                  |
+| 2   | **Route auth sync**           | Medium | `routeAuth.ts` matchers must cover all protected routes. No middleware registered — internal APIs self-authenticate. |
+| 3   | **Relay behavior**            | Medium | Cold starts, timeout races (relay timeout = pod timeout - 5s). First request after idle may be slow.                 |
+| 4   | **Multi-instance readiness**  | Low    | SQLite concurrent access, Redis dependency, lock semantics. Current design is single-instance.                       |
+| 5   | **Offline queue correctness** | Medium | Only safe idempotent mutations queued. Verify correctness after any store change.                                    |
+| 6   | **SSRF protection**           | Medium | Must block `0.0.0.0` and DNS-rebinding hosts. Re-verify after proxy changes.                                         |
+| 7   | **Fork divergence**           | Low    | Pod intentionally diverged from upstream (9Router). No safe direct merges.                                           |
 
 ## Historical Context
 

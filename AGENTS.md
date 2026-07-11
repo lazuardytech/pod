@@ -4,7 +4,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Project Identity
 
-- **Project name**: pod, v0.0.81
+- **Project name**: pod, v0.0.82
 - **Runtime**: Bun + Next.js 16 (TS, strict mode)
 - **Engine**: open-sse/ (local fork, not npm, frozen as JS)
 - **Data**: SQLite at ~/.pod/pod.sqlite
@@ -31,6 +31,7 @@ Operational rules for AI agents working on the **Pod** project.
 1. sanitizeError(error) required in API catch blocks returning client-facing JSON.
 2. Use parseJsonBody(request) for mutation routes instead of raw request.json().
    Note: parseJsonBody throws on empty bodies (e.g. POST with no body). Routes accepting optional/no body should read via request.text() + guard instead.
+   Note: For large bodies, use `readBodyTextStream()` from `@/lib/parseJsonBody` instead — reads chunk-by-chunk with size cap, prevents stalls.
 3. Never return raw upstream error bodies to clients.
 4. /v1/models, /v1/models/{model}, and /v1beta/models must respect requireApiKey.
 5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
@@ -40,11 +41,11 @@ Operational rules for AI agents working on the **Pod** project.
 9. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
 10. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
 11. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
-12. Body size cap defaults to 50MB (env `POD_MAX_REQUEST_BODY_BYTES`); chat routes use `POD_MAX_CHAT_BODY_BYTES` (default inherits). Helpers `readBodyText()` (in `src/lib/parseJsonBody.ts`) and `getMaxRequestBodyBytes(stream)` (in `src/shared/constants/config.ts`) are the canonical entry points — raw `request.text()` / `request.json()` for mutation routes is forbidden.
+12. Body size cap defaults to 50MB (env `POD_MAX_REQUEST_BODY_BYTES`); chat routes use `POD_MAX_CHAT_BODY_BYTES` (default inherits). Helpers `readBodyText()` (in `src/lib/parseJsonBody.ts`), `readBodyTextStream()` (in `@/lib/parseJsonBody`), and `getMaxRequestBodyBytes(stream)` (in `src/shared/constants/config.ts`) are the canonical entry points — raw `request.text()` / `request.json()` for mutation routes is forbidden.
 
 ## Runtime Invariants
 
-1. SSE endpoints: 100-connection cap, 5-minute idle timeout.
+1. SSE endpoints: 100-connection cap, 5-minute idle timeout. Note: Node.js HTTP body parser can cause 9-15s stalls on `curl/8.x` User-Agent for bodies > 1MB. Mitigated via `readBodyTextStream()` in v0.0.82.
 2. Streaming requests remain cacheable when cache policy allows.
 3. Semantic cache signatures must include memoryOwnerId.
 4. SQLite cache TTL comparisons must use strftime('%Y-%m-%dT%H:%M:%SZ', 'now').
@@ -74,7 +75,7 @@ Operational rules for AI agents working on the **Pod** project.
 4. Keep https://www.google.com/generate_204 as relay health target.
 5. Kiro retry body-gated on transient overload markers.
 6. cloud/src/handlers/testClaude.ts is a 410 compatibility stub.
-7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js — do NOT emit <think> or </think> as content delta.
+7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js — do NOT emit `<think>` or `</think>` as content delta.
 
 ## Operations
 
@@ -90,6 +91,8 @@ Operational rules for AI agents working on the **Pod** project.
 10. PR convention: canary→main via PR only — never push canary changes directly to origin/main.
 11. Zeabur env changes take effect only on next restart/deploy — no auto-restart on env mutation.
 12. After any push to canary, verify deployment on Zeabur (build logs, `/api/health`, version endpoint) before considering the task complete.
+13. After PR merge to main, sync canary branch by resetting to main — both branches must remain at the same commit.
+14. Keep canary and prod Zeabur env settings (auth/requireApiKey, body caps, rate limits, secrets) identical to avoid behavioral drift. Each service has its own SQLite volume — auth state and requireApiKey must be configured per-service.
 
 ## Deployment Topology (Zeabur)
 
@@ -97,7 +100,6 @@ Operational rules for AI agents working on the **Pod** project.
 - Service `pod` (main, id `6a1b7ffff9a5b4afba15bc03`) -> `pod.lazuardy.tech` (Cloudflare-proxied), port 20140.
 - Service `pod-canary` (id `6a20333e1d0765dcfbb985da`) -> `pod-canary.zeabur.app`, port 20140.
 - In-project Redis service (id `service-6a2021e61d0765dcfbb9817e`) backs `REDIS_URL`.
-- In-project Freebuff service (id `service-6a1ee2be8197c9aa0ae2f263`) — docker-network alias `FREEBUFF_HOST`, not referenced in source.
 - `POD_HOST` (canary only) = prod service id; `POD_CANARY_HOST` (pod only) = canary service id. Used for canary <-> prod cross-calls.
 - `PORT=20140` in production overrides the Dockerfile default of 20128.
 
@@ -120,9 +122,9 @@ Before planning, fixing, or deploying:
 ## Verification Before Push
 
 ```bash
-bun run check    # oxfmt + oxlint + tsc --noEmit
+bun run check   # oxfmt + oxlint + tsc --noEmit
 bun run test:run # vitest run (verbose)
-bun run build    # NODE_ENV=production next build (turbopack)
+bun run build   # NODE_ENV=production next build (turbopack)
 ```
 
 ## Docs Map
@@ -136,7 +138,6 @@ bun run build    # NODE_ENV=production next build (turbopack)
 | .agents/issues/\*               | Historical audits and security analysis       |
 | .agents/reports/\*              | Release rollups & verification reports        |
 | .agents/plan/\*                 | Draft plans (migrations, optimization)        |
+| .agents/compatibility-matrix.md | API compatibility matrix (OpenAI + Anthropic) |
 | DESIGN.md                       | UI design system reference                    |
 | CHANGELOG.md                    | Release history                               |
-| docs/API_INTERNAL.md            | Internal dashboard API reference              |
-| .agents/compatibility-matrix.md | API compatibility matrix (OpenAI + Anthropic) |

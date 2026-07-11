@@ -1,6 +1,6 @@
 # Plan: voidzero.dev Tooling Adoption
 
-Status: planning · v0.0.79 · Branch: canary
+Status: completed
 
 Adopt Oxlint (and conditionally Oxfmt) from the VoidZero toolchain. Skip Vite 8, Rolldown, and Vite+ — Next.js 16 + Turbopack owns the dev/build pipeline. Keep Bun as the runtime and package manager; do not switch to npm/pnpm.
 
@@ -194,3 +194,17 @@ This plan does not extract anything; it only opens the door.
 - `vitest.config.mjs`: untouched by every phase; Vitest stays the test runner.
 - `.agents/knowledge/03-dev-workflow.md`: the pre-push gate (`bun run check && bun run test:run && bun run build`) is the success criterion.
 - `next.config.mjs`: unchanged; the Next/Turbopack boundary is out of scope.
+
+---
+
+## Closing note — shipped (2026)
+
+The plan shipped fully: **Oxlint + Oxfmt adoption is complete**, and **Biome and ESLint were removed** from the toolchain. The verify gate is now `bun run check` (oxfmt format + oxlint + `tsc --noEmit`). Phase 3's "optional" Oxfmt step became permanent, replacing the Biome formatter; the Biome linter itself was dropped in favor of Oxlint. `eslint.config.mjs` no longer exists on disk.
+
+Post-adoption `package.json` scripts:
+
+- `"format": "oxfmt --write ."`
+- `"check": "oxfmt --write . && oxlint . && bun x tsc --noEmit"`
+- `"lint": "oxlint ."`
+
+History above is preserved as-is for reference.

@@ -92,6 +92,7 @@ declare module "open-sse/handlers/sttCore.js" {
     model: string;
     formData?: FormData;
     credentials?: Record<string, unknown> | null;
+    translate?: boolean;
   }): Promise<SttResult>;
 }
 declare module "open-sse/handlers/ttsCore.js" {
@@ -105,6 +106,8 @@ declare module "open-sse/handlers/ttsCore.js" {
     responseFormat?: string;
     language?: string;
     credentials?: Record<string, unknown> | null;
+    voice?: string;
+    speed?: number;
   }): Promise<TtsResult>;
 }
 declare module "open-sse/handlers/fetch/index.js" {

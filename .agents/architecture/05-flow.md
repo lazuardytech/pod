@@ -13,9 +13,9 @@ Client POST /v1/chat/completions
 
 ### Step by step
 
-1. **API route**: Applies rate limiting via `src/lib/rateLimit/`, auth via `requireApiKey`. Returns `sanitizeError` on failure. Parses body via `parseJsonBody`.
+1. **API route**: Applies rate limiting via `src/lib/rateLimit/`, auth via `requireApiKey`. Returns `sanitizeError` on failure. Parses body via `parseJsonBody`; large bodies are read chunk-by-chunk through `readBodyTextStream()` to avoid the 9-15s body-parser stalls seen on `curl/8.x` for bodies > 1MB.
 
-2. **SSE handler** (`src/sse/handlers/chat.js`): Resolves model against provider config. Handles combo logic (fallback chains, round-robin). Enforces 100-connection cap and 5-minute idle timeout. Manages `modelLockCount_${model}` concurrency.
+2. **SSE handler** (`src/sse/handlers/chat.ts`): Resolves model against provider config. Handles combo logic (fallback chains, round-robin). Enforces 100-connection cap and 5-minute idle timeout. Manages `modelLockCount_${model}` concurrency.
 
 3. **open-sse engine**: Translates request to provider-native format. Dispatches to the correct executor. Pipes streaming response through TransformStream for format translation back to client format.
 
@@ -27,7 +27,7 @@ Client POST /v1/chat/completions
 Claude upstream -> thinking_delta events -> claude-to-openai translator -> reasoning_content delta -> client
 ```
 
-The translator converts Claude's `thinking_delta` into OpenAI-compatible `reasoning_content` fields and strips `<thinking>`/`</thinking>` markers from content deltas.
+The translator converts Claude's `thinking_delta` into OpenAI-compatible `reasoning_content` fields and strips `<think>`/`</think>` markers from content deltas.
 
 ## Non-Streaming
 
@@ -47,15 +47,16 @@ Combos define model groups with fallback and round-robin strategies. When a prov
 
 ## Failure Handling
 
-| Failure type                    | Response                                         |
-| ------------------------------- | ------------------------------------------------ |
-| Upstream error before streaming | Structured JSON error via `sanitizeError`        |
-| Mid-stream failure              | Graceful degradation (connection closes cleanly) |
-| Rate limit / overload           | Provider cooldown with exponential backoff       |
-| Auth failure                    | Early rejection before reaching provider         |
-| Vercel relay 502/504            | Retry once (timeout = pod timeout - 5s)          |
-| Kiro transient overload         | Body-gated retry on overload markers             |
-| Raw upstream error body         | Never returned to client (leak prevention)       |
+| Failure type                    | Response                                                              |
+| ------------------------------- | --------------------------------------------------------------------- |
+| Upstream error before streaming | Structured JSON error via `sanitizeError`                             |
+| Mid-stream failure              | Graceful degradation (connection closes cleanly)                      |
+| Rate limit / overload           | Provider cooldown with exponential backoff                            |
+| Auth failure                    | Early rejection before reaching provider                              |
+| Vercel relay 502/504            | Retry once (timeout = pod timeout - 5s)                               |
+| Kiro transient overload         | Body-gated retry on overload markers                                  |
+| Raw upstream error body         | Never returned to client (leak prevention)                            |
+| Client disconnect (AbortError)  | Classified `[ClientDisconnect]`; `controller.close()` on reader abort |
 
 ## Observability
 

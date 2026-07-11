@@ -1,6 +1,13 @@
 import { DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "../config/errorConfig.js";
 
 /**
+ * Shared Access-Control-Expose-Headers value for rate-limit headers.
+ * Defined once here to prevent drift across error.js and rateLimit/index.ts.
+ */
+export const RATE_LIMIT_EXPOSE_HEADERS =
+  "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests";
+
+/**
  * Build OpenAI-compatible error response body
  * @param {number} statusCode - HTTP status code
  * @param {string} message - Error message
@@ -35,6 +42,7 @@ export function errorResponse(statusCode, message) {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": RATE_LIMIT_EXPOSE_HEADERS,
     },
   });
 }

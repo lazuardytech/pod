@@ -20,7 +20,10 @@ const CREDENTIALED_PROVIDERS = new Set(
     .map(([id]) => id),
 );
 
-export async function handleStt(request: Request): Promise<Response> {
+export async function handleStt(
+  request: Request,
+  opts: { translate?: boolean } = {},
+): Promise<Response> {
   let formData: FormData;
   try {
     formData = await request.formData();
@@ -28,7 +31,10 @@ export async function handleStt(request: Request): Promise<Response> {
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid multipart form data");
   }
   const modelStr = formData.get("model") as string | null;
-  log.request("POST", `/v1/audio/transcriptions | ${modelStr}`);
+  log.request(
+    "POST",
+    `/v1/audio/transcriptions | ${modelStr}${opts.translate ? " | translate" : ""}`,
+  );
   const settings = await getSettings();
   if (settings.requireApiKey) {
     const apiKey = extractApiKey(request);
@@ -36,6 +42,13 @@ export async function handleStt(request: Request): Promise<Response> {
     const valid = await isValidApiKey(apiKey);
     if (!valid) return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");
   }
+  if (opts.translate && modelStr && !/^whisper(-1)?$/i.test(modelStr)) {
+    return errorResponse(
+      HTTP_STATUS.BAD_REQUEST,
+      "Translations are only supported with the whisper-1 model",
+    );
+  }
+  if (opts.translate) formData.delete("language");
   if (!modelStr) return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing model");
   if (!formData.get("file"))
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: file");
@@ -45,7 +58,7 @@ export async function handleStt(request: Request): Promise<Response> {
   const model = modelInfo.model;
   log.info("ROUTING", `Provider: ${provider}, Model: ${model}`);
   if (!CREDENTIALED_PROVIDERS.has(provider)) {
-    const result = await handleSttCore({ provider, model, formData });
+    const result = await handleSttCore({ provider, model, formData, translate: opts.translate });
     if (result.success === true) return result.response;
     return errorResponse(result.status || HTTP_STATUS.BAD_GATEWAY, result.error || "STT failed");
   }
@@ -80,6 +93,7 @@ export async function handleStt(request: Request): Promise<Response> {
       model,
       formData,
       credentials: credentials as Record<string, unknown>,
+      translate: opts.translate,
     });
     if (result.success === true) return result.response;
     const { shouldFallback } = await markAccountUnavailable(

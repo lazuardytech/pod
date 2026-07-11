@@ -171,7 +171,7 @@ async function handleSingleProviderSearch(
       }
       if (excludeConnectionIds.size === 0) {
         log.error("AUTH", `No credentials for provider: ${providerId}`);
-        return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${providerId}`);
+        return errorResponse(HTTP_STATUS.BAD_REQUEST, "Model not available");
       }
       log.warn("SEARCH", "No more accounts available", { provider: providerId });
       return errorResponse(

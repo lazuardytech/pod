@@ -161,7 +161,7 @@ export async function handleForward(request: Request): Promise<Response> {
         "Access-Control-Allow-Origin": "*",
       },
     });
-  } catch (error) {
+  } catch {
     console.error("[FORWARD] Error occurred");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,

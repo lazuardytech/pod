@@ -180,9 +180,13 @@ async function transcribeOpenAICompatible(cfg, file, model, token, formData) {
   const fd = new FormData();
   fd.append("file", file, file.name || "audio.wav");
   fd.append("model", model);
-  for (const k of ["language", "prompt", "response_format", "temperature"]) {
+  for (const k of ["prompt", "response_format", "temperature"]) {
     const v = formData.get(k);
     if (v !== null && v !== undefined && v !== "") fd.append(k, v);
+  }
+  if (!translate) {
+    const lang = formData.get("language");
+    if (lang !== null && lang !== undefined && lang !== "") fd.append("language", lang);
   }
   const res = await fetch(cfg.baseUrl, {
     method: "POST",
@@ -215,7 +219,7 @@ function jsonResponse(obj) {
  * STT core handler — dispatch by sttConfig.format.
  * @returns {Promise<{success, response, status?, error?}>}
  */
-export async function handleSttCore({ provider, model, formData, credentials }) {
+export async function handleSttCore({ provider, model, formData, credentials, translate }) {
   const file = formData.get("file");
   if (!file) return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: file");
 

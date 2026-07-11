@@ -34,7 +34,7 @@ cd docker && docker compose up -d
 
 ### Zeabur
 
-Production deployment at **pod.lazuardy.tech**.
+Production deployment at **pod.lazuardy.tech** (port 20140). Canary at **pod-canary.zeabur.app**.
 
 ### Local Development
 
@@ -52,23 +52,25 @@ Cloudflare handles TLS termination, DDoS protection, and edge caching.
 
 ## Key Files
 
-| File                  | Role                                                            |
-| --------------------- | --------------------------------------------------------------- |
-| `src/server-init.js`  | Global process handlers, shutdown hooks, app initialization     |
-| `src/lib/shutdown.js` | Graceful shutdown: signal handlers, queue flush, tunnel cleanup |
-| `src/lib/tunnel/`     | Cloudflared tunnel management                                   |
-| `src/lib/network/`    | Network utilities                                               |
-| `docker/`             | Dockerfile and docker-compose.yml                               |
-| `cloud/`              | Cloudflare Worker backend                                       |
+| File                     | Role                                                            |
+| ------------------------ | --------------------------------------------------------------- |
+| `src/instrumentation.ts` | Next.js 16 startup entry point                                  |
+| `src/server-init.ts`     | Global process handlers, shutdown hooks                         |
+| `src/lib/shutdown.ts`    | Graceful shutdown: signal handlers, queue flush, tunnel cleanup |
+| `src/lib/tunnel/`        | Cloudflared tunnel management                                   |
+| `src/lib/network/`       | Network utilities                                               |
+| `docker/`                | Dockerfile and docker-compose.yml                               |
+| `cloud/`                 | Cloudflare Worker backend                                       |
 
 ## Rules
 
-| Rule                    | Why                                                                    |
-| ----------------------- | ---------------------------------------------------------------------- |
-| SIGTERM forwarding      | Docker entrypoint must forward SIGTERM so cleanup handlers run         |
-| Serialized tunnel spawn | Cloudflared tunnels must start one at a time                           |
-| Non-fatal fetchData     | Tunnel startup treats fetchData() failures as non-fatal                |
-| Simple health semantics | `GET /api/health` is public; `/api/monitoring/health` requires API key |
+| Rule                    | Why                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| SIGTERM forwarding      | Docker entrypoint must forward SIGTERM so cleanup handlers run                                                |
+| Serialized tunnel spawn | Cloudflared tunnels must start one at a time                                                                  |
+| Non-fatal fetchData     | Tunnel startup treats fetchData() failures as non-fatal                                                       |
+| Simple health semantics | `GET /api/health` is public; `/api/monitoring/health` requires API key                                        |
+| Env-tunable body cap    | Request body cap defaults to 50MB via `POD_MAX_REQUEST_BODY_BYTES`; chat routes use `POD_MAX_CHAT_BODY_BYTES` |
 
 ## Watchlist
 

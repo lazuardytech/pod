@@ -4,7 +4,7 @@
 
 | Fact        | Value                                                                  |
 | ----------- | ---------------------------------------------------------------------- |
-| Version     | v0.0.79                                                                |
+| Version     | v0.0.82                                                                |
 | Stack       | Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite |
 | Port        | 20128                                                                  |
 | Deployed at | pod.lazuardy.tech (Zeabur, Cloudflare DNS)                             |
@@ -29,19 +29,17 @@
 | `cloud/`    | Cloudflare Worker backend                           |
 | `tests/`    | Vitest test suite (unit + smoke)                    |
 | `docker/`   | Dockerfile and docker-compose.yml                   |
-| `docs/`     | Internal API reference                              |
 | `.agents/`  | This documentation                                  |
 
 ## Key Entry Points
 
 | File                                | Role                                |
 | ----------------------------------- | ----------------------------------- |
-| `src/server-init.js`                | Server startup, signal handlers     |
-| `src/proxy.js`                      | Next.js middleware (route matching) |
-| `src/dashboardGuard.js`             | JWT auth guard                      |
+| `src/instrumentation.ts`            | Next.js 16 startup, signal handlers |
+| `src/server-init.ts`                | Global process handlers             |
 | `open-sse/index.js`                 | Engine public API                   |
-| `src/lib/localDb.js`                | Primary database access             |
-| `src/shared/constants/config.js`    | Version, app config                 |
-| `src/shared/constants/providers.js` | Provider definitions                |
+| `src/lib/localDb.ts`                | Primary database access             |
+| `src/shared/constants/config.ts`    | Version, app config                 |
+| `src/shared/constants/providers.ts` | Provider definitions                |
 | `AGENTS.md`                         | Operational rules                   |
 | `README.md`                         | Quick start and env reference       |

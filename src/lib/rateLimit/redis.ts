@@ -32,7 +32,7 @@ function withTimeout<T>(p: Promise<T>, opName: string): Promise<T> {
 }
 
 export type RpmResult =
-  | { ok: true; member: string }
+  | { ok: true; member: string; remaining: number; resetSeconds: number }
   | { ok: false; retryAfterSeconds: number; type: "rpm" | "concurrent" | "error" };
 
 export type ConcResult =
@@ -100,7 +100,11 @@ export class RedisBackend {
       // collision when two requests arrive in the same millisecond
       const member = `${String(now)}:${crypto.randomUUID().slice(0, 8)}`;
       await withTimeout(this.client.zadd(key, now, member), "zadd");
-      return { ok: true, member };
+      const remaining = Math.max(0, maxRpm - count);
+      const oldest = await withTimeout(this.client.zrange(key, 0, 0), "zrange");
+      const oldestTs = oldest && oldest.length > 0 ? Number(oldest[0]) : now;
+      const resetSeconds = Math.max(1, Math.ceil((oldestTs + WINDOW_MS - now) / 1000));
+      return { ok: true, member, remaining, resetSeconds };
     } catch (err) {
       console.warn("[RateLimit] Redis RPM error:", (err as Error)?.message || err);
       return { ok: false, retryAfterSeconds: 1, type: "error" };

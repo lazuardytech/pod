@@ -1,6 +1,11 @@
 # Plan: JavaScript → TypeScript Migration (Pod)
 
-Status: done
+Status: completed — historical
+
+> **Status: completed — repo is now TypeScript strict; `open-sse/` intentionally frozen as JS. Tooling is oxfmt + oxlint + tsc (Biome/ESLint removed).**
+>
+> The migration narrative below is preserved as history. **Tooling caveat:** inline commands and example diffs that still read `biome` / `eslint` / `eslint.config.mjs` were written before the VoidZero (oxfmt/oxlint) adoption and are now **historical** — the real gate is `bun run check` = oxfmt + oxlint + `tsc --noEmit`. References to `biome`/`eslint` reflect the tooling in use when this plan was authored, not the current setup.
+
 Scope: `src/`, `cloud/` ✅, `open-sse/` (frozen as JS — see Phase 9)
 Goal: end state is a strictly-typed, real type system across `src/`, with `tsc --noEmit --strict` green in CI.
 
@@ -151,12 +156,12 @@ For each file:
 
 **tsconfig strategy**: as above (`allowJs: true`, `checkJs: false`, `noEmit: true`, `strict: false`).
 
-**Risks**:
+**Risks** — _historical; references Biome/ESLint, replaced by oxfmt/oxlint_:
 
 - Biome formatter may reformat `.ts` files differently than `.js`. Verify `bun run check` (which runs `biome format --write`) still passes.
 - ESLint config from `eslint-config-next` may not understand `.ts` cleanly. Test one `.ts` file early to surface issues.
 
-**Script changes** (`package.json`):
+**Script changes** (`package.json`) — _historical; pre-oxfmt/oxlint_. Current gate is `"check": "oxfmt --write . && oxlint . && bun x tsc --noEmit"`:
 
 ```diff
 - "check": "biome format --write . && biome lint . && bun x eslint .",
@@ -510,7 +515,7 @@ Three options, in preference order:
 
 ## Final State and CI Gate
 
-After Phase 9:
+After Phase 9 — _historical script strings; current gate is `oxfmt --write . && oxlint . && bun x tsc --noEmit`_:
 
 ```diff
 - "check": "biome format --write . && biome lint . && bun x eslint ."
@@ -522,7 +527,7 @@ After Phase 9:
 - `allowJs: true`, `checkJs: true`, `noEmit: true`, `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: false` (the codebase has many `prop?: T` shapes that would explode under `exactOptionalPropertyTypes`; defer to a future PR).
 - `src/**/*.ts`, `src/**/*.tsx`, `src/**/*.js`, `src/**/*.jsx` are all checked.
 
-CI runs (in this order, all must pass):
+CI runs (in this order, all must pass) — _historical Biome/ESLint wording; current `bun run check` is oxfmt + oxlint + tsc_:
 
 1. `bun run check` — biome format + lint + eslint + tsc.
 2. `bun run test:run` — 1338+ tests (some new type tests added in Phase 1+).
@@ -554,7 +559,7 @@ Update `02-conventions.md`:
 3. **Bun-specific globals** — `Bun.RedisClient` (used in `src/lib/rateLimit/redis.js`), `Bun.serve` (not currently used in the main app but available), `bun:sqlite` (used via `next.config.mjs`'s `serverExternalPackages: ["bun:sqlite"]`). `@types/bun` covers all of these. The `bun:sqlite` import in `src/lib/sqlite/connection.js` does not have its own type declarations; use `// @ts-expect-error bun:sqlite has no upstream types` or add a `src/types/bun-sqlite.d.ts` ambient declaration.
 4. **next.config / JSX** — Next.js 16 + TS is well-trodden. No special handling. `next-env.d.ts` is auto-generated.
 5. **Bun import attributes** — `import pkg from "../../../package.json" with { type: "json" }` is supported in TS 5.3+ via `--moduleResolution bundler`. We have `bundler` set. Confirmed.
-6. **Biome formatter vs. TypeScript syntax** — Biome 2.4 supports TS. Watch for: optional chaining `?.`, nullish coalescing `??`, template literal types, and `as const` assertions. Run `biome format --write` after each migration PR to catch formatting drift.
+6. **Biome formatter vs. TypeScript syntax** — _historical; Biome replaced by Oxfmt_. Watch for: optional chaining `?.`, nullish coalescing `??`, template literal types, and `as const` assertions. Run `oxfmt --write` after each migration PR to catch formatting drift.
 7. **Standalone build** — `output: "standalone"` traces JS imports. After migrating to `.ts`, verify `bun run build` still produces a self-contained `.next/standalone/` directory. The `serverExternalPackages: ["bun:sqlite"]` config is unaffected.
 8. **Cloud Worker compile** — `wrangler` uses esbuild, not tsc. We add `tsc` to `cloud/` only as a check, not as the build pipeline. The Worker continues to be built by `wrangler deploy`.
 9. **`package.json` `with { type: "json" }`** — the codebase uses this in `src/shared/constants/config.js`. TS 5.3+ understands it under `moduleResolution: "bundler"`. If TS errors, fall back to `resolveJsonModule: true` (already set) and switch the import to `import pkg from "../../../package.json"`.
@@ -570,7 +575,7 @@ Each phase is a single PR. If a phase's `tsc --noEmit` or test suite fails in a 
 2. Is `@types/bun` the right type package, or do we use `bun-types`? As of Bun 1.3 (the version pinned in `packageManager`), `@types/bun` is the official replacement. Confirmed.
 3. `exactOptionalPropertyTypes`: deferred. Revisit after all phases land.
 
-## Verification Before Push (per phase)
+## Verification Before Push (per phase) — _historical; current `bun run check` is oxfmt + oxlint + tsc_
 
 ```bash
 bun run check      # biome + eslint + tsc

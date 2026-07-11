@@ -33,7 +33,7 @@ export type ApiKeyRecord = {
 };
 
 export type PermitResult =
-  | { ok: true; release: (() => void) | null }
+  | { ok: true; release: (() => void) | null; remaining: number; resetSeconds: number }
   | { ok: false; reason: "rpm" | "concurrent"; retryAfterSeconds: number };
 
 export class MemoryBackend {
@@ -71,7 +71,7 @@ export class MemoryBackend {
 
   acquirePermit(apiKeyRecord: ApiKeyRecord): PermitResult {
     const config = this.getLimitConfig(apiKeyRecord);
-    if (!config) return { ok: true, release: null };
+    if (!config) return { ok: true, release: null, remaining: 0, resetSeconds: 0 };
 
     const keyId = apiKeyRecord.id;
     const nowMs = Date.now();
@@ -122,6 +122,8 @@ export class MemoryBackend {
           else concurrentCounters.set(keyId, current);
         }
       },
+      remaining: Math.max(0, config.requestsPerMinute - bucket.count),
+      resetSeconds: Math.max(1, Math.ceil((bucket.windowStart + 60000 - nowMs) / 1000)),
     };
   }
 }
