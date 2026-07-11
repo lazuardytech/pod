@@ -2,9 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- OpenAI compatibility: emit standard CORS headers on `/v1/responses` for non-streaming requests, and return `400` on unsupported non-streaming usage.
+
 ### Fixed
 
 - Remove redundant `controller.close()` in `open-sse/handlers/chatCore.js` finally block — already closed in the success path.
+- Canary body-size latency: extend `readBodyTextStream()` chunk-by-chunk reads across additional large-body routes to avoid the 9–15s `curl/8.x` stall.
+- Redis rate-limit isolation: respect `RATELIMIT_KEY_PREFIX` so environments (e.g. canary/prod) keep separate namespaces.
+- Client disconnect: classify `AbortError` at `node:_http_server` as `[ClientDisconnect]` (not `[FATAL]`) and `controller.close()` on SSE reader abort — no unhandled rejections, no log spam.
+- Body size cap raised to 50MB default, env-tunable via `POD_MAX_REQUEST_BODY_BYTES` and `POD_MAX_CHAT_BODY_BYTES`.
 
 ## v0.0.82 (2026-07-11)
 

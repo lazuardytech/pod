@@ -338,7 +338,7 @@ describe("proxyAwareFetch — api.anthropic.com routing", () => {
 
     vi.doMock("open-sse/utils/proxyFetch.js", () => ({
       originalFetch: fetchMock,
-      proxyAwareFetch: async (url, options, proxyOptions) => {
+      proxyAwareFetch: async (url, options, _proxyOptions) => {
         // Simplified: just call originalFetch directly
         return await fetchMock(url, options);
       },

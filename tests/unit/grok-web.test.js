@@ -390,7 +390,7 @@ describe("GrokWebExecutor", () => {
   // ─── Streaming response ────────────────────────────────────────────────
 
   describe("streaming response", () => {
-    async function readSSEChunks(url, opts) {
+    async function readSSEChunks(_url, _opts) {
       const exec = new GrokWebExecutor();
       const { response } = await exec.execute({
         model: "grok-4",

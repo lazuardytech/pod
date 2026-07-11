@@ -59,3 +59,12 @@
 
 - Conventional Commits: `feat:`, `fix:`, `refactor:`, etc.
 - Small, verifiable changes
+
+## Verifying (tooling)
+
+- Format: `oxfmt` — replaces Biome's formatter.
+- Lint: `oxlint` — replaces ESLint.
+- Typecheck: `tsc --noEmit` (strict mode + `noUncheckedIndexedAccess`).
+- Test: `vitest` (`bun run test:run`).
+- Verify gate: `bun run check` (oxfmt + oxlint + `tsc --noEmit`), then `bun run test:run`, then `bun run build` (NODE_ENV=production next build). Biome and ESLint were removed.
+- Bun only — never npm/pnpm.

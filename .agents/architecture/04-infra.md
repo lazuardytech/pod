@@ -64,12 +64,13 @@ Cloudflare handles TLS termination, DDoS protection, and edge caching.
 
 ## Rules
 
-| Rule                    | Why                                                                    |
-| ----------------------- | ---------------------------------------------------------------------- |
-| SIGTERM forwarding      | Docker entrypoint must forward SIGTERM so cleanup handlers run         |
-| Serialized tunnel spawn | Cloudflared tunnels must start one at a time                           |
-| Non-fatal fetchData     | Tunnel startup treats fetchData() failures as non-fatal                |
-| Simple health semantics | `GET /api/health` is public; `/api/monitoring/health` requires API key |
+| Rule                    | Why                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| SIGTERM forwarding      | Docker entrypoint must forward SIGTERM so cleanup handlers run                                                |
+| Serialized tunnel spawn | Cloudflared tunnels must start one at a time                                                                  |
+| Non-fatal fetchData     | Tunnel startup treats fetchData() failures as non-fatal                                                       |
+| Simple health semantics | `GET /api/health` is public; `/api/monitoring/health` requires API key                                        |
+| Env-tunable body cap    | Request body cap defaults to 50MB via `POD_MAX_REQUEST_BODY_BYTES`; chat routes use `POD_MAX_CHAT_BODY_BYTES` |
 
 ## Watchlist
 

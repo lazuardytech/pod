@@ -1,6 +1,7 @@
 # Pod — Documentation Index
 
-**Version:** v0.0.82 | **Stack:** Bun + Next.js 16 (TS, strict mode) + open-sse (local JS fork) + SQLite | **Port:** 20128 | **Deployed at:** pod.lazuardy.tech
+> **pod · v0.0.82** · Bun + Next.js 16 + open-sse (local JS fork) + SQLite · port **20128** · [pod.lazuardy.tech](https://pod.lazuardy.tech)
+> Self-hosted AI gateway unifying 50+ LLM providers behind one OpenAI-compatible endpoint.
 
 ---
 
@@ -17,14 +18,14 @@
 
 ## Architecture Deep Dives
 
-| File                                                         | Covers                                                     |
-| ------------------------------------------------------------ | ---------------------------------------------------------- |
-| [architecture/00-engine.md](architecture/00-engine.md)       | open-sse engine: routing, translation, streaming, caching  |
-| [architecture/01-app.md](architecture/01-app.md)             | Next.js pages, API routes, middleware, PWA, stores         |
-| [architecture/02-providers.md](architecture/02-providers.md) | Provider config, auth types, executors, translators, retry |
-| [architecture/03-data.md](architecture/03-data.md)           | SQLite, Redis, offline cache, mutation queue               |
-| [architecture/04-infra.md](architecture/04-infra.md)         | Docker, Zeabur, Cloudflare, networking                     |
-| [architecture/05-flow.md](architecture/05-flow.md)           | End-to-end request flow: streaming, non-streaming, failure |
+| File                                                         | Covers                                                         |
+| ------------------------------------------------------------ | -------------------------------------------------------------- |
+| [architecture/00-engine.md](architecture/00-engine.md)       | open-sse engine: routing, translation, streaming, crash guards |
+| [architecture/01-app.md](architecture/01-app.md)             | Next.js pages, API routes, middleware, PWA, stores             |
+| [architecture/02-providers.md](architecture/02-providers.md) | Provider config, auth types, executors, translators, retry     |
+| [architecture/03-data.md](architecture/03-data.md)           | SQLite, Redis, offline cache, mutation queue                   |
+| [architecture/04-infra.md](architecture/04-infra.md)         | Docker, Zeabur, Cloudflare, networking                         |
+| [architecture/05-flow.md](architecture/05-flow.md)           | End-to-end request flow: streaming, non-streaming, failure     |
 
 ---
 
@@ -54,10 +55,12 @@
 
 ## Other Directories
 
-| Path     | Purpose                                                           |
-| -------- | ----------------------------------------------------------------- |
-| issues/  | Historical audit and security analysis — verify against live code |
-| reports/ | Release rollups and verification reports by version               |
-| plan/    | Draft plans (multi-instance optimization, JS-to-TS migration)     |
+| Path     | Purpose                                                             |
+| -------- | ------------------------------------------------------------------- |
+| issues/  | Historical audit and security analysis — verify against live code   |
+| reports/ | Release rollups and verification reports by version                 |
+| plan/    | Draft plans (multi-instance optimization, JS-to-TS migration, etc.) |
+
+---
 
 > **Note**: Issues files are historical snapshots. Always cross-check findings against live code before acting.

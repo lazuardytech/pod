@@ -77,4 +77,5 @@ These guards are non-negotiable. Removing or weakening any of them risks process
 
 - **Upstream error before streaming**: Return structured JSON error immediately
 - **Mid-stream failure**: Degrade gracefully, never crash the process
+- **Client disconnect**: `AbortError` at `node:_http_server` (client disconnect) is classified as `[ClientDisconnect]`, not `[FATAL]`; SSE stream wrappers call `controller.close()` (not `controller.error(err)`) on reader abort
 - **Raw upstream bodies never leak**: `sanitizeError()` strips internal details

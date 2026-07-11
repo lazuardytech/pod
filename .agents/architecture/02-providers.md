@@ -73,13 +73,14 @@ The translator is applied on every streaming response.
 
 ## Provider Rules
 
-| Rule                                                              | Rationale                           |
-| ----------------------------------------------------------------- | ----------------------------------- |
-| Vertex AI: never include `stream` in request body                 | Vertex handles streaming internally |
-| Vercel relay: timeout = pod timeout - 5s, retry once on 502/504   | Platform timeout guard              |
-| Kiro: retry body-gated on transient overload markers              | Avoid retrying permanent errors     |
-| Compatible-node rename: only for compatible/custom nodes          | Don't rename built-in providers     |
-| Thinking blocks: never emit `<think>`/`</think>` in content delta | Client compatibility                |
+| Rule                                                                                                                           | Rationale                           |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Vertex AI: never include `stream` in request body                                                                              | Vertex handles streaming internally |
+| Vercel relay: timeout = pod timeout - 5s, retry once on 502/504                                                                | Platform timeout guard              |
+| Kiro: retry body-gated on transient overload markers                                                                           | Avoid retrying permanent errors     |
+| Compatible-node rename: only for compatible/custom nodes                                                                       | Don't rename built-in providers     |
+| Thinking blocks: never emit `<think>`/`</think>` in content delta                                                              | Client compatibility                |
+| Outbound proxy: pools (http + Vercel relay) and SOCKS resolved via `src/lib/network/connectionProxy.ts` (pool → legacy → none) | Per-request egress control          |
 
 ## Account Lockout & Cooldown
 
