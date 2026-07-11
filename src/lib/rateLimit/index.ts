@@ -4,6 +4,7 @@
 import { getApiKeyByKey } from "@/lib/localDb";
 import { extractApiKey } from "@/sse/services/auth";
 import { getBackend, initRateLimit } from "./backend";
+import { RATE_LIMIT_EXPOSE_HEADERS } from "open-sse/utils/error.js";
 
 export { initRateLimit };
 
@@ -31,8 +32,7 @@ function rateLimitResponse(
     headers["x-ratelimit-limit-requests"] = String(limit);
     headers["x-ratelimit-remaining-requests"] = String(remaining ?? 0);
     headers["x-ratelimit-reset-requests"] = String(reset ?? retryAfterSeconds ?? 1);
-    headers["Access-Control-Expose-Headers"] =
-      "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests";
+    headers["Access-Control-Expose-Headers"] = RATE_LIMIT_EXPOSE_HEADERS;
   }
 
   return new Response(
@@ -55,10 +55,7 @@ export function attachRateLimitHeaders(
   res.headers.set("x-ratelimit-limit-requests", String(info.limit));
   res.headers.set("x-ratelimit-remaining-requests", String(info.remaining));
   res.headers.set("x-ratelimit-reset-requests", String(info.reset));
-  res.headers.set(
-    "Access-Control-Expose-Headers",
-    "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests",
-  );
+  res.headers.set("Access-Control-Expose-Headers", RATE_LIMIT_EXPOSE_HEADERS);
   return res;
 }
 
