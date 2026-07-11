@@ -4,9 +4,12 @@
 import { getApiKeyByKey } from "@/lib/localDb";
 import { extractApiKey } from "@/sse/services/auth";
 import { getBackend, initRateLimit } from "./backend";
-import { RATE_LIMIT_EXPOSE_HEADERS } from "open-sse/utils/error.js";
-
 export { initRateLimit };
+
+// ponytail: duplicated in open-sse/utils/error.js; tsc excludes open-sse/, so
+// cross-boundary import won't resolve. Inline here until open-sse is under tsc.
+export const RATE_LIMIT_EXPOSE_HEADERS =
+  "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests";
 
 // ======== Response helpers (shared across backends) ========
 
