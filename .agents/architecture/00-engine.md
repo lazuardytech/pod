@@ -7,7 +7,7 @@ The open-sse engine is a local fork (never the npm package) that handles provide
 ```
 open-sse/
   config/           Provider definitions, model catalogs, runtime constants
-  executors/        Provider-specific HTTP clients (20 executors)
+  executors/        Provider-specific HTTP clients (19 executors; base.js is a base class, index.js is a barrel)
   handlers/         Core chat handler: streaming and non-streaming paths
   services/         Model resolution, provider metadata, credential management, token refresh
   transformer/      Response transformation utilities

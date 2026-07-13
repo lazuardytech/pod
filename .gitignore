@@ -3,7 +3,12 @@
 # coding agent config
 .pi
 .claude
-.commandcode
+.opencode
+.mimocode
+.cursor
+.astro
+.codegraph
+mastracode
 .rwx
 .vscode
 

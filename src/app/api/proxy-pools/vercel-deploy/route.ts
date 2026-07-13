@@ -37,7 +37,7 @@ export default async function handler(req) {
     });
   }
 
-  const targetUrl = target.replace(/\\/$/, "") + relayPath;
+  const targetUrl = (target.endsWith("/") ? target.slice(0, -1) : target) + relayPath;
 
   // Read relay timeout from header (configurable at request time, no hardcoding)
   const timeoutMs = parseInt(req.headers.get("x-relay-timeout"), 10) || 0;

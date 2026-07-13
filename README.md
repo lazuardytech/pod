@@ -60,42 +60,44 @@ bun run dev # starts on http://localhost:20128
 - **Body size cap**: Default 50MB per request. Override with `POD_MAX_REQUEST_BODY_BYTES` (and `POD_MAX_CHAT_BODY_BYTES` for chat routes). Requests exceeding the cap return `413 Payload Too Large`.
 - **Client disconnect handling**: Pod returns `499 Client Closed Request` on abrupt client disconnects (browser tab close, network drop, cancelled stream). `AbortError` at `node:_http_server` is classified as `[ClientDisconnect]` (not `[FATAL]`) and SSE wrappers call `controller.close()` on abort — no unhandled rejections, no log spam.
 - **Large-body latency**: Node's HTTP body parser can cause 9–15s stalls for bodies > 1MB (notably `curl/8.x`). Chat and sibling routes read via `readBodyTextStream()` (chunk-by-chunk with a size cap) to avoid the stall.
-- **Health checks**: `GET /api/health` is public. `GET /api/monitoring/health` requires an API key.
+- **Health checks**: `GET /api/health`, `GET /api/monitoring/health`, and `GET /api/monitoring/health/stream` are all public reads (no auth).
 
 ## Environment Variables
 
-| Variable                          | Default                                 | Description                                                       |
-| --------------------------------- | --------------------------------------- | ----------------------------------------------------------------- |
-| `PORT`                            | `20128`                                 | HTTP port                                                         |
-| `DATA_DIR`                        | `~/.pod` locally, `/app/data` in Docker | SQLite data directory                                             |
-| `INITIAL_PASSWORD`                | `123456`                                | Initial dashboard login password. Change after first login.       |
-| `JWT_SECRET`                      | _(required)_                            | Secret for dashboard auth sessions                                |
-| `API_KEY_SECRET`                  | _(required)_                            | HMAC secret for generated Pod API keys                            |
-| `SHUTDOWN_SECRET`                 | _(none)_                                | Shared secret for `/api/restart` and `/api/shutdown`              |
-| `MACHINE_ID_SALT`                 | `endpoint-proxy-salt`                   | Salt for machine-bound identifiers                                |
-| `ENABLE_REQUEST_LOGS`             | `false`                                 | Enable request log capture at runtime                             |
-| `OBSERVABILITY_ENABLED`           | `true`                                  | Enable request-details observability storage                      |
-| `OBSERVABILITY_MAX_RECORDS`       | `200`                                   | Max request-detail rows retained                                  |
-| `OBSERVABILITY_BATCH_SIZE`        | `20`                                    | Buffered write batch size for request details                     |
-| `OBSERVABILITY_FLUSH_INTERVAL_MS` | `5000`                                  | Max delay before flushing buffered request details                |
-| `OBSERVABILITY_MAX_JSON_SIZE`     | `5`                                     | Max stored JSON payload size in KiB per request-detail blob       |
-| `AUTH_COOKIE_SECURE`              | `false`                                 | Force secure auth cookies                                         |
-| `REQUIRE_API_KEY`                 | `false`                                 | Require API keys on `/v1/*` routes and protected health endpoints |
-| `BASE_URL`                        | `http://localhost:20128`                | Internal base URL for self-referencing API calls                  |
-| `CLOUD_URL`                       | _(none)_                                | URL of self-hosted Cloudflare Worker (cloud deployment)           |
-| `NEXT_TELEMETRY_DISABLED`         | `1`                                     | Disable Next.js telemetry                                         |
-| `SEMANTIC_CACHE_MAX_BYTES`        | `4194304`                               | Semantic cache max size in bytes                                  |
-| `SEMANTIC_CACHE_MAX_SIZE`         | `100`                                   | Semantic cache max entries                                        |
-| `SEMANTIC_CACHE_TTL_MS`           | `1800000`                               | Semantic cache TTL (ms)                                           |
-| `PROMPT_CACHE_MAX_BYTES`          | `2097152`                               | Prompt cache max size in bytes                                    |
-| `PROMPT_CACHE_MAX_SIZE`           | `50`                                    | Prompt cache max entries                                          |
-| `PROMPT_CACHE_TTL_MS`             | `300000`                                | Prompt cache TTL (ms)                                             |
-| `REDIS_URL`                       | _(none)_                                | Redis connection URL for distributed rate limiting                |
-| `POD_MAX_REQUEST_BODY_BYTES`      | `52428800` (50MB)                       | Max request body bytes for non-chat routes                        |
-| `POD_MAX_CHAT_BODY_BYTES`         | inherits `POD_MAX_REQUEST_BODY_BYTES`   | Max request body bytes for chat/completions routes                |
-| `IFLOW_OAUTH_CLIENT_SECRET`       | _(optional)_                            | Required for iFlow OAuth flows or token refresh                   |
-| `QODER_OAUTH_CLIENT_ID`           | _(optional)_                            | Optional Qoder OAuth client ID override                           |
-| `QODER_OAUTH_CLIENT_SECRET`       | _(optional)_                            | Required for Qoder OAuth flows                                    |
+| Variable                          | Default                                 | Description                                                                |
+| --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| `PORT`                            | `20128`                                 | HTTP port                                                                  |
+| `DATA_DIR`                        | `~/.pod` locally, `/app/data` in Docker | SQLite data directory                                                      |
+| `INITIAL_PASSWORD`                | `123456`                                | Initial dashboard login password. Change after first login.                |
+| `JWT_SECRET`                      | _(required)_                            | Secret for dashboard auth sessions                                         |
+| `API_KEY_SECRET`                  | _(required)_                            | HMAC secret for generated Pod API keys                                     |
+| `SHUTDOWN_SECRET`                 | _(none)_                                | Shared secret for `/api/restart` and `/api/shutdown`                       |
+| `MACHINE_ID_SALT`                 | `endpoint-proxy-salt`                   | Salt for machine-bound identifiers                                         |
+| `ENABLE_REQUEST_LOGS`             | `false`                                 | Enable request log capture at runtime                                      |
+| `OBSERVABILITY_ENABLED`           | `true`                                  | Enable request-details observability storage                               |
+| `OBSERVABILITY_MAX_RECORDS`       | `200`                                   | Max request-detail rows retained                                           |
+| `OBSERVABILITY_BATCH_SIZE`        | `20`                                    | Buffered write batch size for request details                              |
+| `OBSERVABILITY_FLUSH_INTERVAL_MS` | `5000`                                  | Max delay before flushing buffered request details                         |
+| `OBSERVABILITY_MAX_JSON_SIZE`     | `5`                                     | Max stored JSON payload size in KiB per request-detail blob                |
+| `AUTH_COOKIE_SECURE`              | `false`                                 | Force secure auth cookies                                                  |
+| `REQUIRE_API_KEY`                 | `false`                                 | Require API keys on protected `/v1/*` endpoints                            |
+| `BASE_URL`                        | `http://localhost:20128`                | Internal base URL for self-referencing API calls                           |
+| `CLOUD_URL`                       | _(none)_                                | URL of self-hosted Cloudflare Worker (cloud deployment)                    |
+| `NEXT_TELEMETRY_DISABLED`         | `1`                                     | Disable Next.js telemetry                                                  |
+| `SEMANTIC_CACHE_MAX_BYTES`        | `4194304`                               | Semantic cache max size in bytes                                           |
+| `SEMANTIC_CACHE_MAX_SIZE`         | `100`                                   | Semantic cache max entries                                                 |
+| `SEMANTIC_CACHE_TTL_MS`           | `1800000`                               | Semantic cache TTL (ms)                                                    |
+| `PROMPT_CACHE_MAX_BYTES`          | `2097152`                               | Prompt cache max size in bytes                                             |
+| `PROMPT_CACHE_MAX_SIZE`           | `50`                                    | Prompt cache max entries                                                   |
+| `PROMPT_CACHE_TTL_MS`             | `300000`                                | Prompt cache TTL (ms)                                                      |
+| `REDIS_URL`                       | _(none)_                                | Redis connection URL for distributed rate limiting                         |
+| `RATELIMIT_KEY_PREFIX`            | _(empty)_                               | Redis key namespace prefix isolating Pod's rate-limit keys on shared Redis |
+| `RATELIMIT_REDIS_TIMEOUT_MS`      | `1000`                                  | Per-operation timeout (ms) wrapper for Redis rate-limit calls              |
+| `POD_MAX_REQUEST_BODY_BYTES`      | `52428800` (50MB)                       | Max request body bytes for non-chat routes                                 |
+| `POD_MAX_CHAT_BODY_BYTES`         | inherits `POD_MAX_REQUEST_BODY_BYTES`   | Max request body bytes for chat/completions routes                         |
+| `IFLOW_OAUTH_CLIENT_SECRET`       | _(optional)_                            | Required for iFlow OAuth flows or token refresh                            |
+| `QODER_OAUTH_CLIENT_ID`           | _(optional)_                            | Optional Qoder OAuth client ID override                                    |
+| `QODER_OAUTH_CLIENT_SECRET`       | _(optional)_                            | Required for Qoder OAuth flows                                             |
 
 ## API Endpoints
 

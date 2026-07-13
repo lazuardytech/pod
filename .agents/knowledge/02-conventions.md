@@ -47,7 +47,7 @@
 
 - Dashboard pages at top-level, no `/dashboard` prefix
 - `/api/health` is always public
-- `/api/monitoring/health` respects `requireApiKey`
+- `/api/monitoring/health` and `/api/monitoring/health/stream` are public reads (no auth), like `/api/health`
 - `/api/restart` and `/api/shutdown` require `SHUTDOWN_SECRET`
 
 ## Engine
