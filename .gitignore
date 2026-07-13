@@ -3,7 +3,6 @@
 # coding agent config
 .pi
 .claude
-.commandcode
 .opencode
 .mimocode
 .cursor
