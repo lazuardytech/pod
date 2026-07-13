@@ -48,7 +48,7 @@ All 15 dashboard pages are top-level — no `/dashboard` prefix.
 | `/v1beta/*`            | Gemini-compatible endpoints                                         |
 | `/api/auth`            | Dashboard authentication                                            |
 | `/api/health`          | Public health check                                                 |
-| `/api/monitoring/*`    | Monitoring health (API key required)                                |
+| `/api/monitoring/*`    | Monitoring health (public reads, no auth)                           |
 | `/api/providers`       | Provider CRUD                                                       |
 | `/api/provider-nodes`  | Custom node management                                              |
 | `/api/media-providers` | Media provider management                                           |
@@ -77,7 +77,7 @@ All mutation routes must use `parseJsonBody(request)`. All catch blocks returnin
 Internal API routes self-authenticate via `routeAuth.ts`. There is no Next.js middleware — `proxy.ts` and `dashboardGuard.ts` have been removed. Auth rules:
 
 - `/api/health` is always public
-- `/api/monitoring/health` respects `requireApiKey`
+- `/api/monitoring/health` and `/api/monitoring/health/stream` are public reads (no auth), like `/api/health`
 - `/api/restart` and `/api/shutdown` require `SHUTDOWN_SECRET`
 - `/v1/*` routes enforce API key auth when `requireApiKey` is enabled
 

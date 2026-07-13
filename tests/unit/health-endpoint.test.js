@@ -115,7 +115,7 @@ vi.mock("node:fs", () => ({
 
 import { buildHealthPayload } from "@/app/api/monitoring/health/_health.js";
 import { GET } from "@/app/api/monitoring/health/route.js";
-import { getSettings, validateApiKey } from "@/lib/localDb";
+import { getSettings } from "@/lib/localDb";
 
 describe("buildHealthPayload", () => {
   it("returns all expected top-level keys", async () => {
@@ -210,33 +210,32 @@ describe("buildHealthPayload", () => {
   });
 });
 
-describe("health endpoint auth", () => {
+describe("health endpoint is public", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns 401 when requireApiKey=true and no key provided", async () => {
+  it("returns 200 without any auth header (requireApiKey=true)", async () => {
     vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true, requireLogin: true });
     const request = new Request("http://localhost/api/monitoring/health");
     const response = await GET(request);
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.error).toBe("Unauthorized");
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("version");
   });
 
-  it("returns 401 when requireApiKey=true and invalid key", async () => {
+  it("returns 200 with an invalid key (public, no auth check)", async () => {
     vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true, requireLogin: true });
-    vi.mocked(validateApiKey).mockResolvedValue(false);
     const request = new Request("http://localhost/api/monitoring/health", {
       headers: { Authorization: "Bearer invalid-key" },
     });
     const response = await GET(request);
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
   });
 
   it("returns 200 when requireApiKey=true and valid key", async () => {
     vi.mocked(getSettings).mockResolvedValue({ requireApiKey: true, requireLogin: true });
-    vi.mocked(validateApiKey).mockResolvedValue(true);
     const request = new Request("http://localhost/api/monitoring/health", {
       headers: { Authorization: "Bearer valid-key" },
     });

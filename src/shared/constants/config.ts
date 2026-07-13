@@ -24,7 +24,7 @@ export function getMaxRequestBodyBytes(stream: boolean): number {
 }
 
 export const GITHUB_CONFIG = {
-  changelogUrl: "https://raw.githubusercontent.com/lazuardytech/pod/refs/heads/master/CHANGELOG.md",
+  changelogUrl: "https://raw.githubusercontent.com/lazuardytech/pod/refs/heads/canary/CHANGELOG.md",
 } as const;
 
 export const THEME_CONFIG = {

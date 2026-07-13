@@ -58,6 +58,7 @@ Pod uses a local-first storage model:
 - Duck-type checks (never `constructor.name` or `instanceof`) — breaks in minified builds
 - Redis RPM entries must stay unique per hit
 - If concurrent admission fails after RPM admission, release the RPM slot
+- Per-op Redis timeout via `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000ms) — bounds each Redis call so a slow/hung Redis fails fast to the in-memory fallback
 - Redis key isolation via `RATELIMIT_KEY_PREFIX` — namespaces rate-limit keys so multiple Pod instances can share one Redis without colliding
 
 ### Rate Limit Scope

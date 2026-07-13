@@ -3,6 +3,9 @@
 > **pod · v0.0.82** · Bun + Next.js 16 + open-sse (local JS fork) + SQLite · port **20128** · [pod.lazuardy.tech](https://pod.lazuardy.tech)
 > Self-hosted AI gateway unifying 50+ LLM providers behind one OpenAI-compatible endpoint.
 
+> **Last reviewed**: 2026-07-13.
+> **Freshness note**: As of this review, `/api/monitoring/health` and `/api/monitoring/health/stream` are **public reads** (no API key required), on par with `/api/health`. Do not trust older architecture or knowledge docs that claim these endpoints require authentication.
+
 ---
 
 ## Reading Order (New Contributors)
@@ -55,11 +58,11 @@
 
 ## Other Directories
 
-| Path     | Purpose                                                             |
-| -------- | ------------------------------------------------------------------- |
-| issues/  | Historical audit and security analysis — verify against live code   |
-| reports/ | Release rollups and verification reports by version                 |
-| plan/    | Draft plans (multi-instance optimization, JS-to-TS migration, etc.) |
+| Path     | Purpose                                                                                                                                                                                                                                                             |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| issues/  | Historical audit and security analysis — verify against live code                                                                                                                                                                                                   |
+| reports/ | Release rollups and verification reports by version                                                                                                                                                                                                                 |
+| plan/    | Draft plans: [js-to-ts-migration.md](plan/js-to-ts-migration.md), [openai-compat-fixes.md](plan/openai-compat-fixes.md), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) |
 
 ---
 

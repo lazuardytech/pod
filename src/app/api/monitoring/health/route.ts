@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
 import { sanitizeError } from "@/lib/sanitizeError";
-import { checkMonitoringAuth } from "./_auth";
 import { buildHealthPayload } from "./_health";
 export const dynamic = "force-dynamic";
 
-// GET /api/monitoring/health — full snapshot
+// GET /api/monitoring/health — full snapshot (public read).
 //
-// Auth (see _auth.js): API key (Bearer / x-api-key) OR dashboard JWT cookie.
-// The cookie path is what allows the in-app /health page to read this endpoint
-// without leaking the API key into the browser bundle.
-export async function GET(request: any) {
-  const unauthorized = await checkMonitoringAuth(request);
-  if (unauthorized) return unauthorized;
-
+// This is an unguarded dashboard read, consistent with /api/providers,
+// /api/usage/stats, and /api/settings. No auth header is required, so the
+// in-app /health page can read it without leaking the API key into the
+// browser bundle.
+export async function GET(_request: any) {
   try {
     const payload = await buildHealthPayload();
     return NextResponse.json(payload);

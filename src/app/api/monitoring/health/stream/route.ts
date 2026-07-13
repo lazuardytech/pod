@@ -1,6 +1,5 @@
 import { sanitizeError } from "@/lib/sanitizeError";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../_sseConnectionCap";
-import { checkMonitoringAuth } from "../_auth";
 import { buildHealthPayload } from "../_health";
 export const dynamic = "force-dynamic";
 
@@ -9,13 +8,10 @@ const ROUTE_PATH = "/api/monitoring/health/stream";
 /**
  * GET /api/monitoring/health/stream
  * SSE stream — pushes full health snapshot every 10s.
- * Auth (see ../_auth.js): API key (Bearer / x-api-key) OR dashboard JWT cookie.
+ * Public read (no auth), consistent with /api/monitoring/health and /api/health.
  * Max concurrent connections: 100 (enforced by _sseConnectionCap.js).
  */
 export async function GET(request: any) {
-  const unauthorized = await checkMonitoringAuth(request);
-  if (unauthorized) return unauthorized;
-
   // Enforce SSE connection cap
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;

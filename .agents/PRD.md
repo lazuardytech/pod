@@ -43,6 +43,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - Backend abstraction backs RPM + concurrent admission
 - Redis selected when `REDIS_URL` exists; otherwise in-memory fallback
 - `RATELIMIT_KEY_PREFIX` isolates Pod's Redis keys from other tenants/services on a shared Redis
+- `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000ms) bounds each Redis operation so a slow/hung Redis fails fast to the in-memory fallback
 - If concurrent admission fails after RPM admission, the RPM slot is released (no leaked counters)
 - Backend checks use duck typing, not `constructor.name` / `instanceof`
 
@@ -123,15 +124,15 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ## Key Numbers
 
-| Metric              | Value                                                                   |
-| ------------------- | ----------------------------------------------------------------------- |
-| Version             | v0.0.82                                                                 |
-| Default port        | 20128                                                                   |
-| Zeabur port         | 20140                                                                   |
-| SSE connection cap  | 100 concurrent                                                          |
-| SSE idle timeout    | 5 minutes                                                               |
-| Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES) |
-| Providers supported | 50+                                                                     |
-| Executors           | 20                                                                      |
-| API route groups    | 26                                                                      |
-| Dashboard pages     | 15 (top-level, no /dashboard prefix)                                    |
+| Metric              | Value                                                                      |
+| ------------------- | -------------------------------------------------------------------------- |
+| Version             | v0.0.82                                                                    |
+| Default port        | 20128                                                                      |
+| Zeabur port         | 20140                                                                      |
+| SSE connection cap  | 100 concurrent                                                             |
+| SSE idle timeout    | 5 minutes                                                                  |
+| Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES)    |
+| Providers supported | 50+                                                                        |
+| Executors           | 19 (provider executors; `base.js` is a base class, `index.js` is a barrel) |
+| API route groups    | 26                                                                         |
+| Dashboard pages     | 15 (top-level, no /dashboard prefix)                                       |

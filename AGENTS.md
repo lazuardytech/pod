@@ -34,7 +34,7 @@ Operational rules for AI agents working on the **Pod** project.
    Note: For large bodies, use `readBodyTextStream()` from `@/lib/parseJsonBody` instead — reads chunk-by-chunk with size cap, prevents stalls.
 3. Never return raw upstream error bodies to clients.
 4. /v1/models, /v1/models/{model}, and /v1beta/models must respect requireApiKey.
-5. /api/monitoring/health and /api/monitoring/health/stream respect requireApiKey; /api/health stays public.
+5. /api/monitoring/health and /api/monitoring/health/stream are public reads (no auth), like /api/health. /api/health stays public.
 6. /api/restart and /api/shutdown require SHUTDOWN_SECRET; return 403 in production (NODE_ENV=production).
 7. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
 8. Stateful internal APIs self-authenticate via routeAuth.ts — dashboardGuard.ts and proxy.ts were removed (no middleware.ts registered).
@@ -58,6 +58,8 @@ Operational rules for AI agents working on the **Pod** project.
 11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
 12. `src/instrumentation.ts` is the canonical startup path (Next.js 16) — runs `initializeApp()` + signal handlers in production; side-effect imports in layout.tsx for startup code have been removed.
 13. AbortError at `node:_http_server` (client disconnect) must be classified as `[ClientDisconnect]`, not `[FATAL]`. SSE stream wrappers use `controller.close()` (not `controller.error(err)`) on reader abort. See `.agents/knowledge/04-gotchas.md` item 31.
+14. `open-sse/` and `cloud/` are excluded from `tsc` (tsconfig `exclude`). Do NOT consume symbols exported from `open-sse/` in `src/` — tsc will not see them and the production build fails. Keep cross-boundary constants inlined in `src/` (e.g. rate-limit header constants in `src/lib/rateLimit/index.ts`).
+15. `next.config.mjs` `serverExternalPackages` must include `undici` (and `bun:sqlite`). undici v8 throws a bare `Error` when Turbopack bundles its top-level code into the standalone server chunk, breaking dynamic `import("undici")` in server routes (`src/app/api/proxy-pools/[id]/test/route.ts`) and `src/lib/network/`. Keep undici external (loaded from `node_modules` at runtime) — never bundle it.
 
 ## Rate Limiting
 
