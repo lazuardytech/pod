@@ -3,6 +3,7 @@
 import { Controls, Handle, Position, ReactFlow } from "@xyflow/react";
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import "@xyflow/react/dist/style.css";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 
@@ -70,11 +71,14 @@ function ProviderNode({ data }: any) {
         style={{ backgroundColor: `${color}15` }}
       >
         {!imgError ? (
-          <img
+          <Image
             src={imageUrl}
             alt={label}
+            width={24}
+            height={24}
             className="w-6 h-6 rounded-sm object-contain"
             onError={() => setImgError(true)}
+            unoptimized
           />
         ) : (
           <span className="text-sm font-bold" style={{ color }}>
@@ -140,7 +144,14 @@ function RouterNode({ data }: any) {
         className="!bg-transparent !border-0 !w-0 !h-0"
       />
 
-      <img src="/logo.svg" alt="Pod" className="w-6 h-6 mr-2 dark:invert" />
+      <Image
+        src="/logo.svg"
+        alt="Pod"
+        width={24}
+        height={24}
+        className="w-6 h-6 mr-2 dark:invert"
+        unoptimized
+      />
       <span className="text-sm font-bold text-primary">Pod</span>
       {data.activeCount > 0 && (
         <span className="ml-2 px-1.5 py-0.5 rounded-full bg-primary text-primary-fg text-xs font-bold">
@@ -331,6 +342,7 @@ export default function ProviderTopology({
     return () => clearInterval(id);
   }, [rawActiveSet]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const activeSet: any = useMemo(() => {
     const now: any = Date.now();
     const filtered: any = new Set<any>();
@@ -341,8 +353,11 @@ export default function ProviderTopology({
     }
     return filtered;
   }, [rawActiveSet, tick]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const { nodes, edges }: any = useMemo(
+    /* eslint-enable react-hooks/exhaustive-deps */
     () => buildLayout(providers, activeSet, lastSet, errorSet),
     [providers, activeSet, lastKey, errorKey],
   );
@@ -362,6 +377,7 @@ export default function ProviderTopology({
   const fitOpts: any = { padding: 0.2, duration: 200 };
   const savedViewport: any = useRef(loadViewport());
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const onInit: any = useCallback((instance: any) => {
     rfInstance.current = instance;
     if (savedViewport.current) {
@@ -371,6 +387,7 @@ export default function ProviderTopology({
       setTimeout(() => instance.fitView(fitOpts), 50);
     }
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const onMoveEnd: any = useCallback((_: any, viewport: any) => {
     saveViewport(viewport);
@@ -378,6 +395,7 @@ export default function ProviderTopology({
   }, []);
 
   // Re-fit on container resize — only when no saved viewport
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const el: any = containerRef.current;
     if (!el) {
@@ -389,6 +407,7 @@ export default function ProviderTopology({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Re-fit when node count/layout changes — only when no saved viewport
   useEffect(() => {

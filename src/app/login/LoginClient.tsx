@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button, Card, Input } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
@@ -85,7 +86,14 @@ export default function LoginClient() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center justify-center size-10 mb-4">
-            <img src="/logo.svg" alt="Pod" className="size-10 dark:invert" />
+            <Image
+              src="/logo.svg"
+              alt="Pod"
+              width={40}
+              height={40}
+              className="size-10 dark:invert"
+              unoptimized
+            />
           </div>
           <h1 className="font-brand text-[20px] font-[510] text-porcelain tracking-[-0.22px]">
             Pod

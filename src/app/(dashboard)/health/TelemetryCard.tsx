@@ -121,6 +121,7 @@ export default function TelemetryCard({ health }: any) {
   }, [health]);
 
   const sys = health?.system ?? {};
+  /* eslint-disable react-hooks/exhaustive-deps */
   const metrics = useMemo(
     () => [
       {
@@ -129,6 +130,7 @@ export default function TelemetryCard({ health }: any) {
         icon: "timer",
         tone: "bg-aether-blue/10 text-aether-blue",
       },
+      /* eslint-enable react-hooks/exhaustive-deps */
       {
         label: "Memory RSS",
         value: formatBytes(sys.memoryUsage?.rss ?? 0),

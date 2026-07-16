@@ -27,6 +27,8 @@ mastracode
 
 # next.js
 /.next/
+# generated per-build SW version (written by scripts/gen-sw-version.mjs)
+/public/sw-version.json
 /out/
 product
 # production

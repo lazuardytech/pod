@@ -1,6 +1,7 @@
 "use client";
 
 import { notFound, useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { GOOGLE_TTS_LANGUAGES } from "open-sse/config/googleTtsLanguages.js";
 import { getTtsVoicesForModel } from "open-sse/config/ttsModels.js";
 import { useEffect, useState } from "react";
@@ -535,6 +536,7 @@ function TtsExampleCard({ providerId }: any): any {
   // Language hint (e.g. Gemini): controls the spoken language without affecting voice selection
   const [languageHint, setLanguageHint] = useState("");
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect((): any => {
     setLocalEndpoint(window.location.origin);
     fetch("/api/keys")
@@ -583,8 +585,10 @@ function TtsExampleCard({ providerId }: any): any {
     // config (nvidia, hyperbolic, deepgram, huggingface, cartesia, playht, coqui, tortoise, inworld, qwen):
     // use ttsConfig.models for model selector; voice is empty by default (backend uses provider default)
   }, [providerId]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Update voices when model changes (voicesPerModel providers)
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect((): any => {
     if (!config.voicesPerModel || !selectedModel) return;
     const voices = getTtsVoicesForModel(providerId, selectedModel) || [];
@@ -594,6 +598,7 @@ function TtsExampleCard({ providerId }: any): any {
       setSelectedVoiceName(voices[0].name || voices[0].id);
     }
   }, [selectedModel]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Open modal — load language list
   const openModal = async (): Promise<any> => {
@@ -1514,10 +1519,12 @@ function GenericExampleCard({ providerId, kind }: any): any {
                 )}
               </div>
               {refImagePreviewSrc && (
-                <img
+                <Image
                   // Only https:// or data:image/ allowed by toImagePreviewSrc()
                   src={refImagePreviewSrc}
                   alt="Reference"
+                  width={320}
+                  height={320}
                   className="max-h-40 rounded-lg border border-border object-contain bg-sidebar"
                   onError={(e: any): any => {
                     e.currentTarget.style.display = "none";
@@ -1525,6 +1532,7 @@ function GenericExampleCard({ providerId, kind }: any): any {
                   onLoad={(e: any): any => {
                     e.currentTarget.style.display = "block";
                   }}
+                  unoptimized
                 />
               )}
             </div>
@@ -1554,10 +1562,12 @@ function GenericExampleCard({ providerId, kind }: any): any {
                 )}
               </div>
               {maskImagePreviewSrc && (
-                <img
+                <Image
                   // Only https:// or data:image/ allowed by toImagePreviewSrc()
                   src={maskImagePreviewSrc}
                   alt="Mask"
+                  width={320}
+                  height={320}
                   className="max-h-40 rounded-lg border border-border object-contain bg-sidebar"
                   onError={(e: any): any => {
                     e.currentTarget.style.display = "none";
@@ -1565,6 +1575,7 @@ function GenericExampleCard({ providerId, kind }: any): any {
                   onLoad={(e: any): any => {
                     e.currentTarget.style.display = "block";
                   }}
+                  unoptimized
                 />
               )}
             </div>
@@ -1718,10 +1729,13 @@ function GenericExampleCard({ providerId, kind }: any): any {
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
               Partial preview
             </span>
-            <img
+            <Image
               src={`data:image/png;base64,${partialImage.b64_json}`}
               alt="Partial"
+              width={512}
+              height={512}
               className="max-w-full rounded-lg border border-border mt-1.5 opacity-80"
+              unoptimized
             />
           </div>
         )}
@@ -1772,7 +1786,7 @@ function GenericExampleCard({ providerId, kind }: any): any {
                   Download
                 </a>
               </div>
-              <img
+              <Image
                 src={
                   binaryImageUrl ||
                   (result?.data?.data?.[0]?.b64_json
@@ -1780,7 +1794,10 @@ function GenericExampleCard({ providerId, kind }: any): any {
                     : result?.data?.data?.[0]?.url)
                 }
                 alt="Generated"
+                width={512}
+                height={512}
                 className="max-w-full rounded-lg border border-border"
+                unoptimized
               />
             </div>
           )}

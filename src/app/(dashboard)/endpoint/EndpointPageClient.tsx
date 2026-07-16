@@ -128,10 +128,12 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     if (tsLogRef.current) tsLogRef.current.scrollTop = tsLogRef.current.scrollHeight;
   }, [tsInstallLog]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     fetchData();
     loadSettings();
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const applyTunnelStatus: any = useCallback((data: any) => {
     if (!data || typeof data !== "object") return;

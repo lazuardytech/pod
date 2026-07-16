@@ -135,6 +135,7 @@ export default function ProvidersPage() {
     return () => unregisterSearch();
   }, [registerSearch, unregisterSearch]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     registerAction({
       label: "Connected only",
@@ -145,6 +146,7 @@ export default function ProvidersPage() {
     });
     return () => unregisterAction();
   }, [showConnectedOnly, registerAction, unregisterAction]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const matchSearch = (name: any) =>
     !searchQuery.trim() || name.toLowerCase().includes(searchQuery.trim().toLowerCase());

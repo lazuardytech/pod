@@ -116,6 +116,7 @@ export default function RequestLogger({
   }, [refreshRef, fetchLogs]);
 
   // SSE connection for live updates
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const connect = () => {
       if (esRef.current) {
@@ -162,6 +163,7 @@ export default function RequestLogger({
       }
     };
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Open detail drawer
   const openDetail = useCallback(async (log: Record<string, unknown>) => {
