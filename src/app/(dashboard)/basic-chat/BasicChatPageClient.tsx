@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Badge, Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
@@ -1048,10 +1049,13 @@ export default function BasicChatPageClient(): any {
                               rel="noreferrer"
                               className="overflow-hidden rounded-[18px] border border-white/10 bg-black/20"
                             >
-                              <img
+                              <Image
                                 src={attachment.dataUrl}
                                 alt={attachment.name}
+                                width={300}
+                                height={112}
                                 className="h-28 w-full object-cover"
+                                unoptimized
                               />
                             </a>
                           ))}

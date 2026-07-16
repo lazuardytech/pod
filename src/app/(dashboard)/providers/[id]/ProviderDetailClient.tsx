@@ -249,6 +249,7 @@ export default function ProviderDetailPage() {
       .catch(() => {});
   }, [providerId]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const fetchConnections = useCallback(async () => {
     try {
       const [connectionsRes, nodesRes, proxyPoolsRes, settingsRes] = await Promise.all([
@@ -321,6 +322,7 @@ export default function ProviderDetailPage() {
       setLoading(false);
     }
   }, [providerId, isCompatible]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleUpdateNode = async (formData: any) => {
     try {

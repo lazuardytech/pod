@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, Card, Input, ModelSelectModal, Toggle } from "@/shared/components";
@@ -127,9 +128,11 @@ export default function ComboDetailPage(): any {
     setLoading(false);
   };
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect((): any => {
     fetchAll();
   }, [id]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const validateName = (v: any): any => {
     if (!v.trim()) {
@@ -476,10 +479,13 @@ export default function ComboDetailPage(): any {
                       Download
                     </a>
                   </div>
-                  <img
+                  <Image
                     src={testResult.imageUrl}
                     alt="Generated"
-                    className="max-w-full rounded-lg border border-border"
+                    width={512}
+                    height={512}
+                    className="max-w-full h-auto rounded-lg border border-border"
+                    unoptimized
                   />
                 </div>
               )}

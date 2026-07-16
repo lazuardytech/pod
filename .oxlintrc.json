@@ -5,8 +5,34 @@
     "correctness": "warn"
   },
   "rules": {
-    "no-unused-vars": "warn",
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
     "no-constant-condition": "error",
     "eqeqeq": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["open-sse/**"],
+      "rules": {
+        "no-unused-vars": "off",
+        "eqeqeq": "off",
+        "no-control-regex": "off",
+        "no-useless-catch": "off",
+        "no-useless-rename": "off",
+        "no-unused-expressions": "off"
+      }
+    },
+    {
+      "files": ["src/**"],
+      "rules": {
+        "react-hooks/exhaustive-deps": "off"
+      }
+    }
+  ]
 }

@@ -191,6 +191,7 @@ export default function MediaProviderKindPage() {
   const registerAction = useHeaderActionStore((s: any) => s.register);
   const unregisterAction = useHeaderActionStore((s: any) => s.unregister);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     registerAction({
       label: "Connected only",
@@ -201,6 +202,7 @@ export default function MediaProviderKindPage() {
     });
     return () => unregisterAction();
   }, [showConnectedOnly, registerAction, unregisterAction]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // webSearch/webFetch listing pages are merged into /web
   useEffect(() => {

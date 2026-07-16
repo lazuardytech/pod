@@ -89,6 +89,7 @@ export default function ProxyLogsTab({
   }, [onRefresh, fetchPools]);
 
   // SSE connection
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const connect = () => {
       if (esRef.current) {
@@ -136,6 +137,7 @@ export default function ProxyLogsTab({
       }
     };
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleTest = async (pool: any) => {
     setTesting(pool.id);

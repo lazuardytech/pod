@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
@@ -294,7 +295,14 @@ export default function Sidebar({
               onClick={onClose}
             >
               <div className="flex items-center justify-center size-7 shrink-0">
-                <img src="/logo.svg" alt="Pod" className="size-7 dark:invert" />
+                <Image
+                  src="/logo.svg"
+                  alt="Pod"
+                  width={28}
+                  height={28}
+                  className="size-7 dark:invert"
+                  unoptimized
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-brand text-xl font-[590] text-porcelain tracking-[-0.2px] leading-none truncate">
@@ -312,7 +320,14 @@ export default function Sidebar({
               title={APP_CONFIG.name}
               className="flex items-center justify-center size-7 mx-auto"
             >
-              <img src="/logo.svg" alt="Pod" className="size-7 dark:invert" />
+              <Image
+                src="/logo.svg"
+                alt="Pod"
+                width={28}
+                height={28}
+                className="size-7 dark:invert"
+                unoptimized
+              />
             </Link>
           )}
 
