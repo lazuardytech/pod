@@ -1,8 +1,28 @@
-const SW_VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
+function resolveVersion() {
+  try {
+    if (typeof self !== "undefined" && self.location && self.location.href) {
+      const v = new URL(self.location.href).searchParams.get("v");
+      if (v) return v;
+    }
+  } catch {}
+  return "dev";
+}
 
-const SHELL_CACHE_NAME = `pod-shell-cache-${SW_VERSION}`;
-const STATIC_CACHE_NAME = `pod-static-cache-${SW_VERSION}`;
-const IMAGE_CACHE_NAME = `pod-image-cache-${SW_VERSION}`;
+let SW_VERSION = resolveVersion();
+
+// Cache names are keyed to the deploy/build hash (injected via the `?v=` query
+// at registration time), NOT the release semver. A new deploy therefore gets its
+// own cache namespace; `activate` evicts every prior namespace so a stale
+// app-shell (which references old `_next/static` chunk hashes) is dropped.
+function makeCacheNames(version) {
+  return {
+    shell: `pod-shell-cache-${version}`,
+    static: `pod-static-cache-${version}`,
+    image: `pod-image-cache-${version}`,
+  };
+}
+
+let CACHE = makeCacheNames(SW_VERSION);
 
 const OFFLINE_FALLBACK_URL = "/offline";
 const IMAGE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 31;
@@ -41,7 +61,6 @@ const SHELL_ROUTES = [
 ];
 
 const STATIC_PRECACHE = [
-  "/manifest.webmanifest",
   "/web-app-manifest-192x192.png",
   "/web-app-manifest-512x512.png",
   "/icons/icon-192.svg",
@@ -100,6 +119,15 @@ function hasSensitiveQuery(url) {
   return false;
 }
 
+function emptyAssetResponse(url) {
+  const path = url.pathname.toLowerCase();
+  const isJs = path.endsWith(".js") || path.endsWith(".mjs");
+  return new Response("", {
+    status: 200,
+    headers: { "Content-Type": isJs ? "application/javascript" : "text/css" },
+  });
+}
+
 async function fetchWithTimeout(request, timeoutMs) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -124,45 +152,62 @@ async function putWithTimestamp(cache, request, response) {
 }
 
 async function precacheShell() {
-  const shellCache = await caches.open(SHELL_CACHE_NAME);
-  const staticCache = await caches.open(STATIC_CACHE_NAME);
+  const shellCache = await caches.open(CACHE.shell);
+  const staticCache = await caches.open(CACHE.static);
 
-  let cachedCount = 0;
-
-  await Promise.all(
+  const shellResults = await Promise.all(
     SHELL_ROUTES.map(async (route) => {
       try {
         const response = await fetch(new Request(route, { cache: "reload" }));
         if (isCacheableResponse(response) && responseAllowsStorage(response)) {
           await shellCache.put(route, response);
-          cachedCount++;
+          return { route, ok: true };
         }
-      } catch {
-        // Ignore individual failures
+        return { route, ok: false, status: response ? response.status : 0 };
+      } catch (err) {
+        return { route, ok: false, error: String(err) };
       }
     }),
   );
 
-  await Promise.all(
+  const staticResults = await Promise.all(
     STATIC_PRECACHE.map(async (route) => {
       try {
         const response = await fetch(new Request(route, { cache: "reload" }));
         if (isCacheableResponse(response) && responseAllowsStorage(response)) {
           await staticCache.put(route, response);
+          return { route, ok: true };
         }
-      } catch {
-        // Ignore static precache failures.
+        return { route, ok: false, status: response ? response.status : 0 };
+      } catch (err) {
+        return { route, ok: false, error: String(err) };
       }
     }),
   );
 
-  if (cachedCount === 0) {
-    console.warn("[Pod SW] No shell routes cached — offline fallback will be empty");
+  // Surface (do not swallow) any routes we failed to precache so the failure
+  // is observable and correctable via warmShellCache on activate.
+  const shellFailed = shellResults.filter((r) => !r.ok);
+  const staticFailed = staticResults.filter((r) => !r.ok);
+
+  if (shellFailed.length > 0) {
+    console.warn(
+      `[Pod SW] precacheShell: ${shellFailed.length}/${SHELL_ROUTES.length} shell routes not cached`,
+      shellFailed,
+    );
   }
+  if (staticFailed.length > 0) {
+    console.warn(
+      `[Pod SW] precacheShell: ${staticFailed.length}/${STATIC_PRECACHE.length} static assets not cached`,
+      staticFailed,
+    );
+  }
+
+  return { shellResults, staticResults, shellFailed, staticFailed };
 }
 
 async function handleNavigationRequest(request) {
-  const shellCache = await caches.open(SHELL_CACHE_NAME);
+  const shellCache = await caches.open(CACHE.shell);
   const url = new URL(request.url);
 
   // ponytail: cache-first for instant navigation, bg refresh keeps cache fresh
@@ -209,7 +254,7 @@ async function handleNavigationRequest(request) {
 }
 
 async function handleStaticAssetRequest(request, url) {
-  const staticCache = await caches.open(STATIC_CACHE_NAME);
+  const staticCache = await caches.open(CACHE.static);
   const cached = await staticCache.match(request);
 
   if (!isFingerprintedAsset(url)) {
@@ -221,7 +266,9 @@ async function handleStaticAssetRequest(request, url) {
       return response;
     } catch {
       if (cached) return cached;
-      return Response.error();
+      // Graceful fallback: serve any cached copy, else an empty module, instead
+      // of a synthetic Response.error() (which surfaces to the page as net::ERR_FAILED).
+      return cached || emptyAssetResponse(url);
     }
   }
 
@@ -242,11 +289,13 @@ async function handleStaticAssetRequest(request, url) {
   const networkResponse = await networkFetch;
   if (networkResponse) return networkResponse;
 
-  return Response.error();
+  // Graceful fallback: a missing post-deploy chunk returns an empty module
+  // rather than Response.error(), so the page degrades instead of hard-failing.
+  return cached || emptyAssetResponse(url);
 }
 
 async function handleImageRequest(request) {
-  const imageCache = await caches.open(IMAGE_CACHE_NAME);
+  const imageCache = await caches.open(CACHE.image);
   const cached = await imageCache.match(request);
 
   if (cached) {
@@ -267,7 +316,7 @@ async function handleImageRequest(request) {
 }
 
 async function purgeExpiredImages() {
-  const imageCache = await caches.open(IMAGE_CACHE_NAME);
+  const imageCache = await caches.open(CACHE.image);
   const requests = await imageCache.keys();
 
   await Promise.all(
@@ -287,16 +336,11 @@ async function purgeExpiredImages() {
 }
 
 async function warmShellCache() {
-  // ponytail: on activate, proactively fill any shell routes that install-phase precache missed
-  // (cold Zeabur canary often causes install-time fetches to fail)
-  const shellCache = await caches.open(SHELL_CACHE_NAME);
-  const existing = new Set();
-  for (const key of await shellCache.keys()) {
-    existing.add(key.url.replace(self.location.origin, ""));
-  }
+  // ponytail: on activate, proactively (re)fill shell routes. Always overwrites
+  // existing entries so a stale same-version shell is corrected after a deploy.
+  const shellCache = await caches.open(CACHE.shell);
   await Promise.all(
     SHELL_ROUTES.map(async (route) => {
-      if (existing.has(route)) return;
       try {
         const response = await fetch(new Request(route));
         if (isCacheableResponse(response) && responseAllowsStorage(response)) {
@@ -309,52 +353,93 @@ async function warmShellCache() {
   );
 }
 
-self.addEventListener("install", (event) => {
-  // ponytail: skipWaiting so canary users don't need to hard-reload for updated SW
-  self.skipWaiting();
-  event.waitUntil(
-    (async () => {
-      await precacheShell();
-    })(),
-  );
-});
+function registerServiceWorker() {
+  if (typeof self === "undefined" || typeof self.addEventListener !== "function") return;
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      const expected = new Set([SHELL_CACHE_NAME, STATIC_CACHE_NAME, IMAGE_CACHE_NAME]);
-      const keys = await caches.keys();
-      await Promise.all(keys.filter((key) => !expected.has(key)).map((key) => caches.delete(key)));
-      await purgeExpiredImages();
-      await self.clients.claim();
-      // ponytail: warm after claim so first navigation isn't blocked
-      warmShellCache();
-    })(),
-  );
-});
+  self.addEventListener("install", (event) => {
+    // ponytail: skipWaiting so canary users don't need to hard-reload for updated SW
+    self.skipWaiting();
+    event.waitUntil(
+      (async () => {
+        const result = await precacheShell();
+        if (result.shellFailed.length > 0) {
+          console.warn(
+            "[Pod SW] install precache incomplete — warmShellCache will retry on activate",
+          );
+        }
+      })(),
+    );
+  });
 
-self.addEventListener("message", (_event) => {
-  // Reserved for future use. No auto-update message handling.
-});
+  self.addEventListener("activate", (event) => {
+    event.waitUntil(
+      (async () => {
+        const expected = new Set([CACHE.shell, CACHE.static, CACHE.image]);
+        const keys = await caches.keys();
+        // Evict every prior deploy's cache namespace so a stale app-shell
+        // (old `_next/static` chunk hashes) is dropped on update.
+        await Promise.all(
+          keys.filter((key) => !expected.has(key)).map((key) => caches.delete(key)),
+        );
+        await purgeExpiredImages();
+        await self.clients.claim();
+        // ponytail: warm after claim so first navigation isn't blocked
+        warmShellCache();
+      })(),
+    );
+  });
 
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET") return;
+  self.addEventListener("message", (_event) => {
+    // Reserved for future use. No auto-update message handling.
+  });
 
-  const url = new URL(request.url);
-  if (!isSameOrigin(url)) return;
+  self.addEventListener("fetch", (event) => {
+    const { request } = event;
+    if (request.method !== "GET") return;
 
-  if (isNavigationRequest(request, url)) {
-    event.respondWith(handleNavigationRequest(request));
-    return;
-  }
+    const url = new URL(request.url);
+    if (!isSameOrigin(url)) return;
 
-  if (isStaticAssetRequest(request, url)) {
-    event.respondWith(handleStaticAssetRequest(request, url));
-    return;
-  }
+    if (isNavigationRequest(request, url)) {
+      event.respondWith(handleNavigationRequest(request));
+      return;
+    }
 
-  if (isImageRequest(request, url)) {
-    event.respondWith(handleImageRequest(request));
-  }
-});
+    if (isStaticAssetRequest(request, url)) {
+      event.respondWith(handleStaticAssetRequest(request, url));
+      return;
+    }
+
+    if (isImageRequest(request, url)) {
+      event.respondWith(handleImageRequest(request));
+    }
+  });
+}
+
+registerServiceWorker();
+
+// Exposed for unit tests (vitest) in a Node context. Guarded so it is a no-op
+// in the browser service-worker runtime where `module` is undefined.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    resolveVersion,
+    makeCacheNames,
+    getCache: () => CACHE,
+    getVersion: () => SW_VERSION,
+    isNavigationRequest,
+    isStaticAssetRequest,
+    isImageRequest,
+    isFingerprintedAsset,
+    handleNavigationRequest,
+    handleStaticAssetRequest,
+    handleImageRequest,
+    precacheShell,
+    warmShellCache,
+    SHELL_ROUTES,
+    STATIC_PRECACHE,
+    setVersionForTest: (v) => {
+      SW_VERSION = v;
+      CACHE = makeCacheNames(v);
+    },
+  };
+}

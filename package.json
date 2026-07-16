@@ -5,11 +5,12 @@
   "description": "Pod web dashboard",
   "scripts": {
     "dev": "bun --bun next dev --turbopack --port 20128",
-    "build": "NODE_ENV=production bun --bun next build --turbopack",
+    "build": "NODE_ENV=production bun --bun next build --turbopack && bun run gen:sw-version",
+    "gen:sw-version": "bun run scripts/gen-sw-version.mjs",
     "start": "NODE_ENV=production bun ./.next/standalone/server.js",
     "format": "bun x oxfmt --write .",
-    "check": "bun x oxfmt --write . && bun x oxlint . && bun x tsc --noEmit",
-    "lint": "bun x oxlint .",
+    "check": "bun x oxfmt --write . && bun x oxlint . --deny-warnings && bun x tsc --noEmit",
+    "lint": "bun x oxlint . --deny-warnings",
     "test:run": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage --reporter=verbose"
   },
