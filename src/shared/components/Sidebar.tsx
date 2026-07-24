@@ -195,6 +195,7 @@ function NavItem({
   active,
   onClick,
   collapsed,
+  prefetch,
 }: {
   href: string;
   label?: string;
@@ -202,10 +203,12 @@ function NavItem({
   active?: boolean;
   onClick?: () => void;
   collapsed?: boolean;
+  /** Disable only for /usage — prefetch pulls react-day-picker CSS on every page (d422698). */
+  prefetch?: boolean;
 }) {
   return (
     <Link
-      prefetch={false}
+      prefetch={prefetch}
       href={href}
       onClick={onClick}
       title={collapsed ? label : undefined}
@@ -460,6 +463,7 @@ export default function Sidebar({
               <NavItem
                 key={item.href}
                 {...item}
+                prefetch={item.href === "/usage" ? false : undefined}
                 active={isActive(item.href)}
                 onClick={onClose}
                 collapsed={collapsed}

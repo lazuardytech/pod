@@ -58,7 +58,7 @@ When a client disconnects mid-request (browser tab close, network drop, cancelle
 
 ## 32. Large body latency on canary (Zeabur cold-start)
 
-The canary service at `pod-canary.zeabur.app` scales down to zero idle replicas. Cold start takes 15-30s for the first request. Subsequent requests are 0.3-0.5s. Prod (`pod.lazuardy.tech`) stays warm from constant traffic. Mitigation: add a cron/uptime monitor hitting `/api/health` every 5 minutes to keep the container warm, or disable scale-to-zero in Zeabur service config.
+The canary service at `pod-canary.zeabur.app` scales down to zero idle replicas. Cold start takes 15-30s for the first request. Subsequent requests are 0.3-0.5s. Prod (`pod.lazuardy.tech`) stays warm from constant traffic. Mitigation: add a cron/uptime monitor hitting `/api/health` every 5 minutes to keep the container warm, or disable scale-to-zero in Zeabur service config. Sidebar `prefetch` is enabled for all routes except `/usage` (see d422698); with `prefetch={false}` everywhere, soft nav after cold start waits for RSC + route chunks only on click.
 
 ## 33. `readBodyTextStream` vs `request.text()`
 
