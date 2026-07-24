@@ -95,9 +95,9 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ### Offline and PWA
 
-- Service worker for offline reads (offlineJsonCache via IndexedDB)
-- Offline mutation queue for safe idempotent writes
-- Installable PWA with web app manifest
+- Service worker (`public/sw.js`): network-first navigation with offline `/offline` fallback; no `Response.error()` on images; deploy-hash cache namespaces via `/sw-version.json`
+- Offline reads via `offlineJsonCache` (IndexedDB); mutation queue for safe idempotent writes
+- Installable PWA with web app manifest; registration-only lifecycle (no self-update UX)
 
 ## Non-Goals
 
@@ -120,7 +120,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - **Chunked body reading**: Large request bodies (5MB+) are stream-read in chunks to prevent 9-15s stalls. `readBodyTextStream()` enforces the size cap mid-stream and returns `413` on overflow.
 - **Configurable body cap**: All mutation routes enforce a 50MB default body cap (env-tunable). `413` returned on overflow; no silent memory spikes.
 - **Compatibility first**: OpenAI/Anthropic error shapes, auth headers, streaming format, and tool calling match official specs. Any regression is a release blocker.
-- **Offline-first dashboard**: Reads degrade via `offlineJsonCache`; writes queue via mutation stack; only safe idempotent mutations queued.
+- **Offline-capable dashboard**: SW network-first for documents; reads degrade via `offlineJsonCache`; writes queue via mutation stack; only safe idempotent mutations queued.
 
 ## Key Numbers
 

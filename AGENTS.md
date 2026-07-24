@@ -19,6 +19,7 @@ Operational rules for AI agents working on the **Pod** project.
 - `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode`, `.rwx` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`); do not commit those dirs.
 - open-sse/ has 19 provider executors (base.js is the base class, index.js is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live frozen in the `open-sse/` JS fork.
 - Path dirs with parentheses (e.g. `src/app/(dashboard)/`) break naive `sed 's/([0-9].*//'` patterns — use a paren-aware pattern when parsing `tsc` output.
+- Chrome `ERR_FAILED` interstitial after idle (fixed by hard reload) is often SW-side: `public/sw.js` must keep network-first navigation, never reject `respondWith`, and avoid `Response.error()` (esp. images); `ServiceWorkerRegistrar` must not blind `location.reload()` on every `controllerchange`. RSC/`?_rsc=` fetches are not SW-intercepted (idle CF/TLS is a separate failure mode).
 
 ## Project Identity
 
@@ -104,7 +105,7 @@ Operational rules for AI agents working on the **Pod** project.
 3. Tunnel startup must treat fetchData() as non-fatal.
 4. Cloudflared tunnel spawn must stay serialized.
 5. Docker entrypoint must forward SIGTERM to child processes.
-6. Service worker lifecycle is registration-only; Pod does not auto-update itself.
+6. Service worker lifecycle is registration-only (no auto-update UX). Keep network-first navigation in `public/sw.js`; never reject `respondWith` / never `Response.error()` on images; do not blind `location.reload()` on `controllerchange`.
 7. Offline reads use offlineJsonCache; offline writes use the mutation queue stack.
 8. Queue only safe, idempotent dashboard mutations.
 9. Git workflow: canary is active development branch; main is stable/release branch.

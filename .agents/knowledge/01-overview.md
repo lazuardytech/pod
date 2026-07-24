@@ -9,14 +9,14 @@
 | Port        | 20128                                                                  |
 | Deployed at | pod.lazuardy.tech (Zeabur, Cloudflare DNS)                             |
 | Data dir    | `~/.pod/pod.sqlite`                                                    |
-| Health      | `GET /api/health` (public)                                             |
+| Health      | `GET /api/health` + `/api/monitoring/health*` (public)                 |
 | License     | MIT                                                                    |
 
 ## Three Layers
 
 | Layer          | What                                            | Where       |
 | -------------- | ----------------------------------------------- | ----------- |
-| **App**        | Next.js pages, API routes, middleware, PWA      | `src/`      |
+| **App**        | Next.js pages, API routes, routeAuth, PWA       | `src/`      |
 | **Engine**     | Provider routing, format translation, streaming | `open-sse/` |
 | **Data & Ops** | SQLite, cache, rate limiting, tunnels           | `src/lib/`  |
 

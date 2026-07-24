@@ -22,6 +22,12 @@ bun run check && bun run test:run && bun run build
 
 All three must pass before pushing. No exceptions.
 
+SW shell-cache regression (when touching `public/sw.js` / registrar):
+
+```bash
+bun x vitest run tests/unit/swShellCache.test.js
+```
+
 ## Workflow Rules
 
 1. **Update docs from live code** — documentation reflects current codebase, not intentions

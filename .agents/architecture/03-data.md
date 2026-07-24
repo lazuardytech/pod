@@ -44,7 +44,7 @@ Pod uses a local-first storage model:
 
 - Browser-side read cache for dashboard data
 - Tag-based invalidation after safe mutations
-- Service worker integration
+- Complements SW shell caching (`public/sw.js` network-first navigations; see gotcha §34)
 
 ## Rate Limiting (`src/lib/rateLimit/`)
 

@@ -20,7 +20,7 @@ v0.0.82 — active development on `canary`, stable releases on `main`.
 - **Tunnel support** — Tailscale and Cloudflare tunnel integration
 - **Dashboard** — full web UI for providers, usage analytics, quota tracking, logs, and health (dark-only, Linear-inspired)
 - **Account lockout** — exponential cooldown on auth failures, visible on health
-- **PWA & offline-first** — installable dashboard with service worker caching, offline reads, mutation queue
+- **PWA & offline** — installable dashboard; network-first SW navigation with offline fallback; offlineJsonCache reads + mutation queue
 
 ## Quick Start
 
@@ -61,6 +61,7 @@ bun run dev # starts on http://localhost:20128
 - **Client disconnect handling**: Pod returns `499 Client Closed Request` on abrupt client disconnects (browser tab close, network drop, cancelled stream). `AbortError` at `node:_http_server` is classified as `[ClientDisconnect]` (not `[FATAL]`) and SSE wrappers call `controller.close()` on abort — no unhandled rejections, no log spam.
 - **Large-body latency**: Node's HTTP body parser can cause 9–15s stalls for bodies > 1MB (notably `curl/8.x`). Chat and sibling routes read via `readBodyTextStream()` (chunk-by-chunk with a size cap) to avoid the stall.
 - **Health checks**: `GET /api/health`, `GET /api/monitoring/health`, and `GET /api/monitoring/health/stream` are all public reads (no auth).
+- **Service worker**: Navigation is network-first (not cache-first). Never surface `Response.error()` for documents/images; registrar must not blind-reload on `controllerchange`. See `.agents/knowledge/04-gotchas.md` §34.
 
 ## Environment Variables
 
