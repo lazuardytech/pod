@@ -63,3 +63,13 @@ The canary service at `pod-canary.zeabur.app` scales down to zero idle replicas.
 ## 33. `readBodyTextStream` vs `request.text()`
 
 Avoid raw `request.text()` for bodies > 1MB on Zeabur/Bun. The Node.js HTTP body parser can stall for 9-15s on large payloads, especially with `curl/8.x` User-Agent. Use `readBodyTextStream()` from `@/lib/parseJsonBody` instead — it reads chunk-by-chunk with an explicit size cap and returns 413 mid-stream on overflow.
+
+## 34. ERR_FAILED after idle (SW vs network)
+
+Three failure classes look similar in the browser but need different fixes:
+
+1. **Service Worker (document / `/_next/static`)** — Navigation and static assets are intercepted by `public/sw.js`. A rejected `respondWith` promise or `Response.error()` surfaces as Chrome’s bare `ERR_FAILED` interstitial. Cmd+Shift+R often bypasses the SW for the document request and “fixes” the tab. Mitigation: network-first navigation, never reject `respondWith`, no `Response.error()` on images; avoid blind `location.reload()` on every `controllerchange` (SW already uses `skipWaiting` + `clients.claim`).
+
+2. **Idle browser ↔ Cloudflare connection** — Next.js RSC fetches (`?_rsc=`) and most `fetch()` calls are **not** handled by the SW. Soft reload can fail with `(failed)` and no HTTP status while hard reload opens a fresh connection. Classify in DevTools by request type and whether Size shows `from ServiceWorker`.
+
+3. **Canary cold-start vs prod warm** — `pod-canary.zeabur.app` can cold-start 15–30s after idle (see §32). Prod `pod.lazuardy.tech` is usually warm; correlate with `curl /api/health` at failure time before blaming the SW.

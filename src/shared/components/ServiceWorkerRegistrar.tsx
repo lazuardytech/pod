@@ -31,10 +31,6 @@ export default function ServiceWorkerRegistrar(): any {
     }
 
     let cancelled = false;
-    const onControllerChange = (): any => {
-      window.location.reload();
-    };
-    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
     (async () => {
       const version = await resolveSwVersion();
@@ -51,7 +47,6 @@ export default function ServiceWorkerRegistrar(): any {
 
     return (): any => {
       cancelled = true;
-      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
     };
   }, []);
 

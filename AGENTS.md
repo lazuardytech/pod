@@ -12,11 +12,11 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Learned Workspace Facts
 
-- This session: `/api/monitoring/health` + `/api/monitoring/health/stream` are now PUBLIC reads (auth guard removed, `src/app/api/monitoring/health/_auth.tsx` deleted) — consistent with `/api/health`. Health dashboard `/health` page fetches them unauthenticated; the old 401 caused the "Network unavailable. Showing cached health snapshot." toast on prod.
+- `/api/monitoring/health` + `/api/monitoring/health/stream` are PUBLIC reads (auth guard removed, `src/app/api/monitoring/health/_auth.tsx` deleted) — consistent with `/api/health`. Health dashboard `/health` fetches them unauthenticated; the old 401 caused the "Network unavailable. Showing cached health snapshot." toast on prod.
 - `changelogUrl` in `src/shared/constants/config.ts` uses `refs/heads/canary` (never `master` — dead branch 404s).
 - `src/app/api/proxy-pools/vercel-deploy/route.ts` trailing-slash trim uses a real `/\\/$/` regex (an earlier `/\\\\/$/` matched a backslash, producing `//<relayPath>`).
-- New rate-limit env added: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
-- `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`).
+- Rate-limit env: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
+- `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode`, `.rwx` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`); do not commit those dirs.
 - open-sse/ has 19 provider executors (base.js is the base class, index.js is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live frozen in the `open-sse/` JS fork.
 - Path dirs with parentheses (e.g. `src/app/(dashboard)/`) break naive `sed 's/([0-9].*//'` patterns — use a paren-aware pattern when parsing `tsc` output.
 

@@ -128,6 +128,21 @@ function emptyAssetResponse(url) {
   });
 }
 
+function emptyImageResponse(url) {
+  const path = url.pathname.toLowerCase();
+  let contentType = "image/png";
+  if (path.endsWith(".svg")) contentType = "image/svg+xml";
+  else if (path.endsWith(".webp")) contentType = "image/webp";
+  else if (path.endsWith(".gif")) contentType = "image/gif";
+  else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
+  else if (path.endsWith(".avif")) contentType = "image/avif";
+  else if (path.endsWith(".ico")) contentType = "image/x-icon";
+  return new Response("", {
+    status: 200,
+    headers: { "Content-Type": contentType },
+  });
+}
+
 async function fetchWithTimeout(request, timeoutMs) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -207,45 +222,37 @@ async function precacheShell() {
 }
 
 async function handleNavigationRequest(request) {
-  const shellCache = await caches.open(CACHE.shell);
-  const url = new URL(request.url);
-
-  // ponytail: cache-first for instant navigation, bg refresh keeps cache fresh
-  // Network-first (the previous design) caused 3-15s cold-start delay on idle Zeabur instances
-  const cached = await shellCache.match(request, { ignoreSearch: true });
-  if (cached) {
-    fetchWithTimeout(request, NAVIGATION_NETWORK_TIMEOUT_MS)
-      .then((response) => {
-        if (
-          response &&
-          isCacheableResponse(response) &&
-          responseAllowsStorage(response) &&
-          !hasSensitiveQuery(url)
-        ) {
-          shellCache.put(request, response.clone());
-        }
-      })
-      .catch(() => {});
-    return cached;
-  }
-
   try {
-    const response = await fetchWithTimeout(request, NAVIGATION_NETWORK_TIMEOUT_MS);
-    if (
-      isCacheableResponse(response) &&
-      responseAllowsStorage(response) &&
-      !hasSensitiveQuery(url)
-    ) {
-      await shellCache.put(request, response.clone());
+    const shellCache = await caches.open(CACHE.shell);
+    const url = new URL(request.url);
+
+    try {
+      const response = await fetchWithTimeout(request, NAVIGATION_NETWORK_TIMEOUT_MS);
+      if (
+        isCacheableResponse(response) &&
+        responseAllowsStorage(response) &&
+        !hasSensitiveQuery(url)
+      ) {
+        try {
+          await shellCache.put(request, response.clone());
+        } catch {
+          // Quota or put failure — still serve the network response.
+        }
+      }
+      return response;
+    } catch {
+      const cached = await shellCache.match(request, { ignoreSearch: true });
+      if (cached) return cached;
+
+      const fallback = await shellCache.match(OFFLINE_FALLBACK_URL);
+      if (fallback) return fallback;
+
+      return new Response("Offline", {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
     }
-    return response;
   } catch {
-    const cached = await shellCache.match(request, { ignoreSearch: true });
-    if (cached) return cached;
-
-    const fallback = await shellCache.match(OFFLINE_FALLBACK_URL);
-    if (fallback) return fallback;
-
     return new Response("Offline", {
       status: 503,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
@@ -295,6 +302,7 @@ async function handleStaticAssetRequest(request, url) {
 }
 
 async function handleImageRequest(request) {
+  const url = new URL(request.url);
   const imageCache = await caches.open(CACHE.image);
   const cached = await imageCache.match(request);
 
@@ -311,7 +319,7 @@ async function handleImageRequest(request) {
     return response;
   } catch {
     if (cached) return cached;
-    return Response.error();
+    return emptyImageResponse(url);
   }
 }
 

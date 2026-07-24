@@ -164,6 +164,22 @@ describe("SW app-shell stale-cache guard", () => {
     expect(html).not.toContain("deadbeef-v1");
   });
 
+  it("navigation handler does not throw on fetch abort and returns a non-error response", async () => {
+    const sw = await loadSw();
+    fetchImpl.mockImplementation(async () => {
+      const err = new Error("The operation was aborted");
+      err.name = "AbortError";
+      throw err;
+    });
+
+    const req = new Request("http://localhost/");
+    const res = await sw.handleNavigationRequest(req);
+
+    expect(res).toBeDefined();
+    expect(res.type).not.toBe("error");
+    expect(res.status).toBe(503);
+  });
+
   // Audit §5.2 — shell cache name must differ across builds (driven by ?v=).
   it("derives a per-build shell cache name", async () => {
     const a = await loadSw({ locationHref: "http://localhost/sw.js?v=build-aaa" });
