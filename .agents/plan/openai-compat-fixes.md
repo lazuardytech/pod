@@ -1,6 +1,6 @@
 # OpenAI-Compatible API Production-Readiness Fix Plan
 
-Status: planned · Branch: canary · Scope: bring Pod to production-grade OpenAI compatibility
+Status: largely shipped on canary (package remains v0.0.82; some commits titled “v0.0.83” never bumped package.json) · Branch: canary
 Audited: 2026-07-11 via code review + live black-box tests against https://pod.lazuardy.tech/v1
 
 ## Method

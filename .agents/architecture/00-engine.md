@@ -61,15 +61,15 @@ Each streaming response chunk passes through a TransformStream that applies form
 
 ## Invariants
 
-| Rule                                                         | Where enforced                  |
-| ------------------------------------------------------------ | ------------------------------- |
-| SSE connection cap: 100 concurrent                           | `src/sse/handlers/chat.js`      |
-| SSE idle timeout: 5 minutes                                  | `src/sse/handlers/chat.js`      |
-| Crash guard around stream processing                         | `open-sse/utils/stream.js`      |
-| Crash guard around chat core                                 | `open-sse/handlers/chatCore.js` |
-| Guarded peek-reader (inspect first chunk without consuming)  | `open-sse/handlers/chatCore.js` |
-| Transactional connection locking (`modelLockCount_${model}`) | `open-sse/handlers/chat.js`     |
-| Guarded fallback loop                                        | `src/sse/handlers/chat.js`      |
+| Rule                                                         | Where enforced                                  |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| SSE connection cap: 100 concurrent                           | `src/sse/handlers/chat.ts`                      |
+| SSE stream stall timeout: 5 minutes                          | `open-sse/utils/stream.js` (`STALL_TIMEOUT_MS`) |
+| Crash guard around stream processing                         | `open-sse/utils/stream.js`                      |
+| Crash guard around chat core                                 | `open-sse/handlers/chatCore.js`                 |
+| Guarded peek-reader (inspect first chunk without consuming)  | `open-sse/handlers/chatCore.js`                 |
+| Transactional connection locking (`modelLockCount_${model}`) | `open-sse/services/accountFallback.js`          |
+| Guarded fallback loop                                        | `src/sse/handlers/chat.ts`                      |
 
 These guards are non-negotiable. Removing or weakening any of them risks process crashes or stream corruption.
 

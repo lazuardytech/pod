@@ -8,10 +8,10 @@ Adopt Oxlint (and conditionally Oxfmt) from the VoidZero toolchain. Skip Vite 8,
 
 Pod's dev/build chain is owned by Next.js 16 (Turbopack). VoidZero's bundler-side tools (Vite 8, Rolldown, Vite+, tsdown) are inapplicable to a Next.js app. The two VoidZero tools that _are_ applicable are:
 
-- **Oxlint** — replaces the slow ESLint layer in `bun run check`.
-- **Oxfmt** — kept as a future option; Biome already formats and Pod is happy with it.
+- **Oxlint** — replaces ESLint; `bun run check` / `lint` use `--deny-warnings`.
+- **Oxfmt** — replaces Biome; shipped (see footer).
 
-Everything else in the VoidZero lineup is `skip` or `future` for Pod today.
+Everything else in the VoidZero lineup remains `skip` or `future` for Pod.
 
 ## Not applicable
 

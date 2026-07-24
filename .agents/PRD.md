@@ -106,6 +106,13 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - Not a multi-tenant SaaS (self-hosted single-tenant)
 - Not a replacement for provider-native SDKs
 
+## Deployment & Branches
+
+- `canary` = active development; `main` = stable (promote via PR only)
+- Zeabur: `pod` → `pod.lazuardy.tech` (port 20140); `pod-canary` → `pod-canary.zeabur.app`
+- Compatibility gate: [compatibility-matrix.md](compatibility-matrix.md)
+- Health: `/api/health` and `/api/monitoring/health*` are public reads
+
 ## Product Constraints
 
 - **Bun-only** — never npm/pnpm

@@ -145,8 +145,8 @@ bun install          # install dependencies
 bun run dev          # start dev server on :20128 (turbopack)
 bun run build        # production build (turbopack)
 bun run format       # oxfmt format
-bun run lint         # oxlint lint
-bun run check        # oxfmt + oxlint + tsc (--noEmit)
+bun run lint         # oxlint --deny-warnings
+bun run check        # oxfmt + oxlint --deny-warnings + tsc (--noEmit)
 bun run test:run     # vitest run (verbose)
 bun run test:coverage # vitest with coverage
 ```

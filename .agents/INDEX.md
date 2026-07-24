@@ -61,11 +61,12 @@
 
 ## Other Directories
 
-| Path     | Purpose                                                                                                                                                                                                                                                             |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| issues/  | Historical audit and security analysis — verify against live code                                                                                                                                                                                                   |
-| reports/ | Release rollups and verification reports by version                                                                                                                                                                                                                 |
-| plan/    | Draft plans: [js-to-ts-migration.md](plan/js-to-ts-migration.md), [openai-compat-fixes.md](plan/openai-compat-fixes.md), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) |
+| Path     | Purpose                                                                                                                                                                                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| issues/  | Historical audits — start at [issues/INDEX.md](issues/INDEX.md); verify against live code                                                                                                                                                                                      |
+| reports/ | Release rollups and verification reports by version                                                                                                                                                                                                                            |
+| plan/    | [js-to-ts-migration.md](plan/js-to-ts-migration.md) (completed), [openai-compat-fixes.md](plan/openai-compat-fixes.md), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) (completed) |
+| tests/   | SW seams: [../tests/SW-TEST-SEAM.md](../tests/SW-TEST-SEAM.md); unit `tests/unit/swShellCache.test.js`                                                                                                                                                                         |
 
 ---
 
