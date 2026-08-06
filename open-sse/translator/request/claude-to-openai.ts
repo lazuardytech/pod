@@ -4,9 +4,9 @@ import { register } from "../registry.js";
 
 // Convert Claude request to OpenAI format
 export function claudeToOpenAIRequest(model: any, body: any, stream: any) {
-  const result = {
+  const result: Record<string, any> = {
     model: model,
-    messages: [],
+    messages: [] as any[],
     stream: stream,
   };
 
@@ -81,7 +81,7 @@ function fixMissingToolResponses(messages: any) {
       const toolCallIds = msg.tool_calls.map((tc: any) => tc.id);
 
       // Collect all tool response IDs that IMMEDIATELY follow this assistant message
-      const respondedIds = new Set();
+      const respondedIds = new Set<any>();
       let insertPosition = i + 1;
       for (let j = i + 1; j < messages.length; j++) {
         const nextMsg = messages[j];
@@ -120,9 +120,9 @@ function convertClaudeMessage(msg: any) {
 
   // Array content
   if (Array.isArray(msg.content)) {
-    const parts = [];
-    const toolCalls = [];
-    const toolResults = [];
+    const parts: any[] = [];
+    const toolCalls: any[] = [];
+    const toolResults: any[] = [];
 
     for (const block of msg.content) {
       switch (block.type) {
@@ -187,9 +187,10 @@ function convertClaudeMessage(msg: any) {
 
     // If has tool calls, return assistant message with tool_calls
     if (toolCalls.length > 0) {
-      const result = { role: "assistant" };
+      const result: Record<string, any> = { role: "assistant" };
       if (parts.length > 0) {
-        result.content = parts.length === 1 && parts[0].type === "text" ? parts[0].text : parts;
+        result.content =
+          parts.length === 1 && (parts[0] as any).type === "text" ? (parts[0] as any).text : parts;
       }
       result.tool_calls = toolCalls;
       return result;

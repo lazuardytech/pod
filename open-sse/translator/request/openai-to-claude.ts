@@ -10,8 +10,8 @@ const CLAUDE_OAUTH_TOOL_PREFIX = "";
 // Convert OpenAI request to Claude format
 export function openaiToClaudeRequest(model: any, body: any, stream: any) {
   // Tool name mapping for Claude OAuth (capitalizedName → originalName)
-  const toolNameMap = new Map();
-  const result = {
+  const toolNameMap = new Map<any, any>();
+  const result: Record<string, any> = {
     model: model,
     max_tokens: adjustMaxTokens(body),
     stream: stream,
@@ -24,7 +24,7 @@ export function openaiToClaudeRequest(model: any, body: any, stream: any) {
 
   // Messages
   result.messages = [];
-  const systemParts = [];
+  const systemParts: any[] = [];
 
   if (body.messages && Array.isArray(body.messages)) {
     // Extract system messages
@@ -41,8 +41,8 @@ export function openaiToClaudeRequest(model: any, body: any, stream: any) {
 
     // Process messages with merging logic
     // CRITICAL: tool_result must be in separate message immediately after tool_use
-    let currentRole;
-    let currentParts = [];
+    let currentRole: any;
+    let currentParts: any[] = [];
 
     const flushCurrentMessage = () => {
       if (currentRole && currentParts.length > 0) {
@@ -192,7 +192,7 @@ Respond ONLY with the JSON object, no other text.`);
   // When client sends reasoning_effort (OpenAI format) but no explicit thinking block,
   // translate to Claude's native format.
   if (body.reasoning_effort && !result.thinking) {
-    const effortToBudget = {
+    const effortToBudget: Record<string, number> = {
       none: 0,
       low: 4096,
       medium: 8192,
@@ -218,7 +218,7 @@ Respond ONLY with the JSON object, no other text.`);
 
 // Get content blocks from single message
 function getContentBlocksFromMessage(msg: any, toolNameMap: any = new Map()) {
-  const blocks = [];
+  const blocks: any[] = [];
 
   if (msg.role === "tool") {
     blocks.push({

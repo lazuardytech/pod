@@ -4,9 +4,9 @@ import { register } from "../registry.js";
 
 // Convert Gemini request to OpenAI format
 export function geminiToOpenAIRequest(model: any, body: any, stream: any) {
-  const result = {
+  const result: Record<string, any> = {
     model: model,
-    messages: [],
+    messages: [] as any[],
     stream: stream,
   };
 
@@ -76,8 +76,8 @@ function convertGeminiContent(content: any) {
     return null;
   }
 
-  const parts = [];
-  const toolCalls = [];
+  const parts: any[] = [];
+  const toolCalls: any[] = [];
 
   for (const part of content.parts) {
     if (part.text !== undefined) {
@@ -116,9 +116,9 @@ function convertGeminiContent(content: any) {
   }
 
   if (toolCalls.length > 0) {
-    const result = { role: "assistant" };
+    const result: Record<string, any> = { role: "assistant" };
     if (parts.length > 0) {
-      result.content = parts.length === 1 ? parts[0].text : parts;
+      result.content = parts.length === 1 ? (parts[0] as any).text : parts;
     }
     result.tool_calls = toolCalls;
     return result;
@@ -127,7 +127,8 @@ function convertGeminiContent(content: any) {
   if (parts.length > 0) {
     return {
       role,
-      content: parts.length === 1 && parts[0].type === "text" ? parts[0].text : parts,
+      content:
+        parts.length === 1 && (parts[0] as any).type === "text" ? (parts[0] as any).text : parts,
     };
   }
 

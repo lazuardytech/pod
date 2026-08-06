@@ -18,7 +18,7 @@ function flattenText(content: any) {
   if (content == null) return "";
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
-    const parts = [];
+    const parts: any[] = [];
     for (const p of content) {
       if (typeof p === "string") parts.push(p);
       else if (p && typeof p === "object" && typeof p.text === "string") parts.push(p.text);
@@ -32,7 +32,7 @@ function toContentBlocks(content: any) {
   if (content == null) return [{ type: "text", text: "" }];
   if (typeof content === "string") return [{ type: "text", text: content }];
   if (Array.isArray(content)) {
-    const blocks = [];
+    const blocks: any[] = [];
     for (const part of content) {
       if (typeof part === "string") {
         blocks.push({ type: "text", text: part });
@@ -62,8 +62,8 @@ function safeParseJson(s: any) {
 }
 
 function convertMessages(messages: any = []) {
-  const out = [];
-  const systemTexts = [];
+  const out: any[] = [];
+  const systemTexts: any[] = [];
 
   for (const m of messages) {
     if (!m) continue;
@@ -121,7 +121,7 @@ function convertMessages(messages: any = []) {
 
 function convertTools(tools: any) {
   if (!Array.isArray(tools) || tools.length === 0) return undefined;
-  const result = [];
+  const result: any[] = [];
   for (const t of tools) {
     if (!t) continue;
     if (t.type === "function" && t.function) {
@@ -143,7 +143,7 @@ function convertTools(tools: any) {
 
 export function openaiToCommandCode(model: any, body: any, stream: any /* , credentials */) {
   const { messages, system } = convertMessages(body.messages);
-  const params = {
+  const params: Record<string, any> = {
     model,
     messages,
     stream: stream !== false,
@@ -177,4 +177,5 @@ export function openaiToCommandCode(model: any, body: any, stream: any /* , cred
   };
 }
 
-register(FORMATS.OPENAI, FORMATS.COMMANDCODE, openaiToCommandCode, null);
+// todo(ts): COMMANDCODE is a JS translator format not yet reflected in FORMATS' TS shape.
+register(FORMATS.OPENAI, (FORMATS as any).COMMANDCODE, openaiToCommandCode, null);

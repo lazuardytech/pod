@@ -35,7 +35,8 @@ function postProcessForVertex(body: any) {
 }
 
 export function openaiToVertexRequest(model: any, body: any, stream: any, credentials: any) {
-  const gemini = openaiToGeminiRequest(model, body, stream, credentials);
+  // todo(ts): request translator registry may pass credentials to JS-era translators.
+  const gemini = (openaiToGeminiRequest as any)(model, body, stream, credentials);
   const processed = postProcessForVertex(gemini);
   // Vertex AI does not accept `stream` in the request body — streaming is
   // controlled via the action suffix (:streamGenerateContent) and ?alt=sse.

@@ -29,8 +29,8 @@ export function openaiResponsesToOpenAIRequest(model: any, body: any, stream: an
   }
 
   // Group items by conversation turn
-  let currentAssistantMsg = null;
-  let pendingToolResults = [];
+  let currentAssistantMsg: any = null;
+  let pendingToolResults: any[] = [];
 
   const inputItems = normalizeResponsesInput(body.input);
   if (!inputItems) return body;
@@ -171,9 +171,9 @@ export function openaiToOpenAIResponsesRequest(model: any, body: any, stream: an
   // Body already in Responses API format (e.g. Cursor CLI calling /chat/completions with input[])
   if (body.input) return { ...body, model, stream: true };
 
-  const result = {
+  const result: Record<string, any> = {
     model,
-    input: [],
+    input: [] as any[],
     stream: true,
     store: false,
   };
@@ -267,7 +267,7 @@ export function openaiToOpenAIResponsesRequest(model: any, body: any, stream: an
   // message role: assistant"). This can happen when a user message with empty content
   // is skipped (content.length === 0 above) or when the client sends malformed input.
   if (result.input.length > 1) {
-    const merged = [result.input[0]];
+    const merged: any[] = [result.input[0]];
     for (let i = 1; i < result.input.length; i++) {
       const prev = merged[merged.length - 1];
       const curr = result.input[i];

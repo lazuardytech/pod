@@ -49,10 +49,10 @@ function normalizeToolCallId(id: any) {
 }
 
 function convertMessages(messages: any) {
-  const result = [];
+  const result: any[] = [];
 
   // Build a map of tool_call_id -> tool name from assistant tool calls
-  const toolCallMetaMap = new Map();
+  const toolCallMetaMap = new Map<any, any>();
   const rememberToolMeta = (toolCallId: any, toolName: any) => {
     if (!toolCallId) return;
     const name = toolName || "tool";
@@ -102,7 +102,7 @@ function convertMessages(messages: any) {
 
     if (msg.role === "user" || msg.role === "assistant") {
       if (msg.role === "user" && Array.isArray(msg.content)) {
-        const parts = [];
+        const parts: any[] = [];
         for (const block of msg.content) {
           if (!block || typeof block !== "object") continue;
           if (block.type === "text") {
@@ -129,7 +129,7 @@ function convertMessages(messages: any) {
       const content = extractContent(msg.content);
 
       if (msg.role === "assistant" && msg.tool_calls && msg.tool_calls.length > 0) {
-        const assistantMsg = { role: "assistant", content: content || "" };
+        const assistantMsg: Record<string, any> = { role: "assistant", content: content || "" };
         assistantMsg.tool_calls = msg.tool_calls.map((tc: any) => {
           const { index, ...rest } = tc || {};
           return rest;

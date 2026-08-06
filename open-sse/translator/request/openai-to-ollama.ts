@@ -16,7 +16,7 @@ import { register } from "../registry.js";
  * - tool role maps to tool (Ollama supports tool messages)
  */
 export function openaiToOllamaRequest(model: any, body: any, stream: any) {
-  const result = {
+  const result: Record<string, any> = {
     model: model,
     messages: normalizeMessages(body.messages),
     stream: stream,
@@ -62,8 +62,8 @@ export function openaiToOllamaRequest(model: any, body: any, stream: any) {
 function normalizeMessages(messages: any) {
   if (!Array.isArray(messages)) return messages;
 
-  const result = [];
-  const toolCallMap = new Map(); // Map tool_call_id -> tool_name
+  const result: any[] = [];
+  const toolCallMap = new Map<any, any>(); // Map tool_call_id -> tool_name
 
   // First pass: build tool_call_id -> tool_name map from assistant messages
   for (const msg of messages) {
@@ -127,7 +127,7 @@ function normalizeMessages(messages: any) {
     // Skip empty messages (except assistant)
     if (!content && role !== "assistant") continue;
 
-    const out = {
+    const out: Record<string, any> = {
       role: role,
       content: content,
     };
@@ -172,7 +172,7 @@ function normalizeContent(content: any) {
 function extractImagesFromContent(content: any) {
   if (!Array.isArray(content)) return [];
 
-  const images = [];
+  const images: any[] = [];
 
   for (const block of content) {
     if (!block || block.type !== "image_url") continue;

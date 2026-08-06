@@ -6,9 +6,9 @@ import { register } from "../registry.js";
 // Antigravity body: { project, model, userAgent, requestType, requestId, request: { contents, systemInstruction, tools, toolConfig, generationConfig, sessionId } }
 export function antigravityToOpenAIRequest(model: any, body: any, stream: any) {
   const req = body.request || body;
-  const result = {
+  const result: Record<string, any> = {
     model: model,
-    messages: [],
+    messages: [] as any[],
     stream: stream,
   };
 
@@ -96,7 +96,7 @@ export function antigravityToOpenAIRequest(model: any, body: any, stream: any) {
 function normalizeSchemaTypes(schema: any) {
   if (!schema || typeof schema !== "object") return schema;
 
-  const result = Array.isArray(schema) ? [...schema] : { ...schema };
+  const result: any = Array.isArray(schema) ? [...schema] : { ...schema };
 
   if (typeof result.type === "string") {
     result.type = result.type.toLowerCase();
@@ -106,7 +106,7 @@ function normalizeSchemaTypes(schema: any) {
   delete result.enumDescriptions;
 
   if (result.properties) {
-    const normalized = {};
+    const normalized: Record<string, any> = {};
     for (const [key, val] of Object.entries(result.properties)) {
       normalized[key] = normalizeSchemaTypes(val);
     }
@@ -130,9 +130,9 @@ function convertContent(content: any) {
     return null;
   }
 
-  const textParts = [];
-  const toolCalls = [];
-  const toolResults = [];
+  const textParts: any[] = [];
+  const toolCalls: any[] = [];
+  const toolResults: any[] = [];
   let reasoningContent = "";
 
   for (const part of content.parts) {
@@ -194,10 +194,12 @@ function convertContent(content: any) {
 
   // Assistant with tool calls
   if (toolCalls.length > 0) {
-    const msg = { role: "assistant" };
+    const msg: Record<string, any> = { role: "assistant" };
     if (textParts.length > 0) {
       msg.content =
-        textParts.length === 1 && textParts[0].type === "text" ? textParts[0].text : textParts;
+        textParts.length === 1 && (textParts[0] as any).type === "text"
+          ? (textParts[0] as any).text
+          : textParts;
     }
     if (reasoningContent) {
       msg.reasoning_content = reasoningContent;
@@ -208,10 +210,12 @@ function convertContent(content: any) {
 
   // Regular message
   if (textParts.length > 0 || reasoningContent) {
-    const msg = { role };
+    const msg: Record<string, any> = { role };
     if (textParts.length > 0) {
       msg.content =
-        textParts.length === 1 && textParts[0].type === "text" ? textParts[0].text : textParts;
+        textParts.length === 1 && (textParts[0] as any).type === "text"
+          ? (textParts[0] as any).text
+          : textParts;
     }
     if (reasoningContent) {
       msg.reasoning_content = reasoningContent;

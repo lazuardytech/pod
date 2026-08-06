@@ -39,11 +39,16 @@ function sanitizeGeminiFunctionName(name: any) {
 }
 
 // Core: Convert OpenAI request to Gemini format (base for all variants)
-function openaiToGeminiBase(model: any, body: any, stream: any, signature: any = DEFAULT_THINKING_AG_SIGNATURE) {
-  const result = {
+function openaiToGeminiBase(
+  model: any,
+  body: any,
+  stream: any,
+  signature: any = DEFAULT_THINKING_AG_SIGNATURE,
+) {
+  const result: Record<string, any> = {
     model: model,
-    contents: [],
-    generationConfig: {},
+    contents: [] as any[],
+    generationConfig: {} as Record<string, any>,
     safetySettings: DEFAULT_SAFETY_SETTINGS,
   };
 
@@ -62,7 +67,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
   }
 
   // Build tool_call_id -> name map
-  const tcID2Name = {};
+  const tcID2Name: Record<string, any> = {};
   if (body.messages && Array.isArray(body.messages)) {
     for (const msg of body.messages) {
       if (msg.role === "assistant" && msg.tool_calls) {
@@ -76,7 +81,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
   }
 
   // Build tool responses cache
-  const toolResponses = {};
+  const toolResponses: Record<string, any> = {};
   if (body.messages && Array.isArray(body.messages)) {
     for (const msg of body.messages) {
       if (msg.role === "tool" && msg.tool_call_id) {
@@ -88,7 +93,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
   // Convert messages
   if (body.messages && Array.isArray(body.messages)) {
     for (let i = 0; i < body.messages.length; i++) {
-      const msg = body.messages[i];
+      const msg = body.messages[i] as any;
       const role = msg.role;
       const content = msg.content;
 
@@ -103,7 +108,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
           result.contents.push({ role: "user", parts });
         }
       } else if (role === "assistant") {
-        const parts = [];
+        const parts: any[] = [];
 
         // Thinking/reasoning → thought part with signature
         if (msg.reasoning_content) {
@@ -125,7 +130,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
         }
 
         if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-          const toolCallIds = [];
+          const toolCallIds: any[] = [];
           for (const tc of msg.tool_calls) {
             if (tc.type !== "function") continue;
 
@@ -149,7 +154,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
           const hasActualResponses = toolCallIds.some((fid: any) => toolResponses[fid]);
 
           if (hasActualResponses) {
-            const toolParts = [];
+            const toolParts: any[] = [];
             for (const fid of toolCallIds) {
               if (!toolResponses[fid]) continue;
 
@@ -192,7 +197,7 @@ function openaiToGeminiBase(model: any, body: any, stream: any, signature: any =
 
   // Convert tools
   if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
-    const functionDeclarations = [];
+    const functionDeclarations: any[] = [];
     for (const t of body.tools) {
       // Check if already in Anthropic/Claude format (no type field, direct name/description/input_schema)
       if (t.name && t.input_schema) {
@@ -239,7 +244,13 @@ export function openaiToGeminiCLIRequest(model: any, body: any, stream: any) {
 
   // Add thinking config for CLI
   if (body.reasoning_effort) {
-    const budgetMap = { low: 1024, medium: 8192, high: 32768, xhigh: 32768, max: 65536 };
+    const budgetMap: Record<string, number> = {
+      low: 1024,
+      medium: 8192,
+      high: 32768,
+      xhigh: 32768,
+      max: 65536,
+    };
     const budget = budgetMap[body.reasoning_effort] || 8192;
     gemini.generationConfig.thinkingConfig = {
       thinkingBudget: budget,
@@ -278,7 +289,7 @@ export function openaiToGeminiCLIRequest(model: any, body: any, stream: any) {
 function wrapInCloudCodeEnvelope(model: any, geminiCLI: any, credentials: any = null, isAntigravity: any = false) {
   const projectId = credentials?.projectId || generateProjectId();
 
-  const envelope = {
+  const envelope: Record<string, any> = {
     project: projectId,
     model: model,
     userAgent: isAntigravity ? "antigravity" : "gemini-cli",
@@ -329,7 +340,7 @@ function wrapInCloudCodeEnvelope(model: any, geminiCLI: any, credentials: any = 
 function wrapInCloudCodeEnvelopeForClaude(model: any, claudeRequest: any, credentials: any = null) {
   const projectId = credentials?.projectId || generateProjectId();
 
-  const envelope = {
+  const envelope: Record<string, any> = {
     project: projectId,
     model: model,
     userAgent: "antigravity",
@@ -346,7 +357,7 @@ function wrapInCloudCodeEnvelopeForClaude(model: any, claudeRequest: any, creden
   };
 
   // Build tool_use id -> name map so functionResponse can use the correct name
-  const toolUseIdToName = {};
+  const toolUseIdToName: Record<string, any> = {};
   if (claudeRequest.messages && Array.isArray(claudeRequest.messages)) {
     for (const msg of claudeRequest.messages) {
       if (Array.isArray(msg.content)) {
@@ -362,7 +373,7 @@ function wrapInCloudCodeEnvelopeForClaude(model: any, claudeRequest: any, creden
   // Convert Claude messages to Gemini contents
   if (claudeRequest.messages && Array.isArray(claudeRequest.messages)) {
     for (const msg of claudeRequest.messages) {
-      const parts = [];
+      const parts: any[] = [];
 
       if (Array.isArray(msg.content)) {
         for (const block of msg.content) {
@@ -411,7 +422,7 @@ function wrapInCloudCodeEnvelopeForClaude(model: any, claudeRequest: any, creden
 
   // Convert Claude tools to Gemini functionDeclarations
   if (claudeRequest.tools && Array.isArray(claudeRequest.tools)) {
-    const functionDeclarations = [];
+    const functionDeclarations: any[] = [];
     for (const tool of claudeRequest.tools) {
       if (tool.name && tool.input_schema) {
         const cleanedSchema = cleanJSONSchemaForAntigravity(tool.input_schema);
@@ -431,7 +442,7 @@ function wrapInCloudCodeEnvelopeForClaude(model: any, claudeRequest: any, creden
   }
 
   // Add system instruction (Antigravity default - double injection + user system prompt)
-  const systemParts = [
+  const systemParts: any[] = [
     { text: ANTIGRAVITY_DEFAULT_SYSTEM },
     { text: `Please ignore the following [ignore]${ANTIGRAVITY_DEFAULT_SYSTEM}[/ignore]` },
   ];

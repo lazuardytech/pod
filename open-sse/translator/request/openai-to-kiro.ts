@@ -12,14 +12,14 @@ import { register } from "../registry.js";
  * Rules: system/tool/user -> user role, merge consecutive same roles
  */
 function convertMessages(messages: any, tools: any, model: any) {
-  const history = [];
-  let currentMessage = null;
+  const history: any[] = [];
+  let currentMessage: any = null;
 
-  let pendingUserContent = [];
-  let pendingAssistantContent = [];
-  let pendingToolResults = [];
-  let pendingImages = [];
-  let currentRole = null;
+  let pendingUserContent: any[] = [];
+  let pendingAssistantContent: any[] = [];
+  let pendingToolResults: any[] = [];
+  let pendingImages: any[] = [];
+  let currentRole: any = null;
 
   // Image support is pre-filtered by caps in translateRequest before reaching here
   const supportsImages = true;
@@ -27,7 +27,7 @@ function convertMessages(messages: any, tools: any, model: any) {
   const flushPending = () => {
     if (currentRole === "user") {
       const content = pendingUserContent.join("\n\n").trim() || "continue";
-      const userMsg = {
+      const userMsg: Record<string, any> = {
         userInputMessage: {
           content: content,
           modelId: "",
@@ -173,7 +173,7 @@ function convertMessages(messages: any, tools: any, model: any) {
     } else if (role === "assistant") {
       // Extract text content and tool uses
       let textContent = "";
-      let toolUses = [];
+      let toolUses: any[] = [];
 
       if (Array.isArray(msg.content)) {
         const textBlocks = msg.content.filter((c: any) => c.type === "text");
@@ -265,7 +265,7 @@ function convertMessages(messages: any, tools: any, model: any) {
   });
 
   // Merge consecutive user messages (Kiro requires alternating user/assistant)
-  const mergedHistory = [];
+  const mergedHistory: any[] = [];
   for (let i = 0; i < history.length; i++) {
     const current = history[i];
     if (
@@ -313,7 +313,7 @@ export function buildKiroPayload(model: any, body: any, stream: any, credentials
   const timestamp = new Date().toISOString();
   finalContent = `[Context: Current time is ${timestamp}]\n\n${finalContent}`;
 
-  const payload = {
+  const payload: Record<string, any> = {
     conversationState: {
       chatTriggerType: "MANUAL",
       conversationId: uuidv4(),
