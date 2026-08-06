@@ -136,7 +136,7 @@ function normalizeCodexTools(body: any) {
 }
 
 // Cache machine ID at module level (resolved once)
-let cachedMachineId = null;
+let cachedMachineId: any = null;
 getConsistentMachineId()
   .then((id: any) => {
     cachedMachineId = id;
@@ -506,7 +506,7 @@ export class CodexExecutor extends BaseExecutor {
     }
 
     // Normalize: UI/client sends "extra-high" but Codex API expects "xhigh"
-    const EFFORT_ALIASES = {
+    const EFFORT_ALIASES: Record<string, any> = {
       "extra-high": "xhigh",
       extrahigh: "xhigh",
       "very-high": "xhigh",

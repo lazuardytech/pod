@@ -166,7 +166,7 @@ export class KiroExecutor extends BaseExecutor {
     let chunkIndex = 0;
     const responseId = `chatcmpl-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
-    const state = {
+    const state: any = {
       endDetected: false,
       finishEmitted: false,
       hasToolCalls: false,
@@ -187,7 +187,7 @@ export class KiroExecutor extends BaseExecutor {
       });
     }
 
-    let upstreamReader = null;
+    let upstreamReader: any = null;
 
     // Event parsing logic - called from start() for each chunk
     const processChunk = async (chunk: any, controller: any) => {
@@ -434,7 +434,7 @@ export class KiroExecutor extends BaseExecutor {
             };
           }
 
-          const finishChunk = {
+          const finishChunk: any = {
             id: responseId,
             object: "chat.completion.chunk",
             created,
@@ -517,7 +517,7 @@ export class KiroExecutor extends BaseExecutor {
           // upstream reader already cancelled
         }
       },
-    });
+    } as any);
 
     return new Response(transformStream.readable, {
       status: response.status,
@@ -559,7 +559,7 @@ function parseEventFrame(data: any) {
     const headersLength = view.getUint32(4, false);
 
     // Parse headers
-    const headers = {};
+    const headers: Record<string, any> = {};
     let offset = 12; // After prelude
     const headerEnd = 12 + headersLength;
 

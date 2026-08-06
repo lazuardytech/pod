@@ -336,7 +336,7 @@ export class GithubExecutor extends BaseExecutor {
 
   async refreshGitHubToken(refreshToken: any, log: any, proxyOptions: any = null) {
     try {
-      const params = {
+      const params: Record<string, any> = {
         grant_type: "refresh_token",
         refresh_token: refreshToken,
         client_id: this.config.clientId,

@@ -51,7 +51,7 @@ function sanitizeQwenThinkingToolChoice(body: any) {
 
 function buildQwenUpstreamHeaders(credentials: any, stream: any = true) {
   const token = credentials?.apiKey || credentials?.accessToken || "";
-  const headers = {
+  const headers: Record<string, any> = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
     "User-Agent": QWEN_USER_AGENT,

@@ -16,11 +16,11 @@ import { BaseExecutor } from "./base.js";
  */
 export class CommandCodeExecutor extends BaseExecutor {
   constructor() {
-    super("commandcode", PROVIDERS.commandcode);
+    super("commandcode", (PROVIDERS as Record<string, any>).commandcode);
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers = {
+    const headers: Record<string, any> = {
       "Content-Type": "application/json",
       ...(this.config.headers || {}),
       "x-session-id": randomUUID(),

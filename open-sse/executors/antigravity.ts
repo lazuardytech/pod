@@ -224,8 +224,8 @@ export class AntigravityExecutor extends BaseExecutor {
     let lastStatus = 0;
     const MAX_AUTO_RETRIES = 3;
     const MAX_RETRY_AFTER_RETRIES = 3;
-    const retryAttemptsByUrl = {}; // Track retry attempts per URL
-    const retryAfterAttemptsByUrl = {}; // Track Retry-After retries per URL
+    const retryAttemptsByUrl: Record<string, any> = {}; // Track retry attempts per URL
+    const retryAfterAttemptsByUrl: Record<string, any> = {}; // Track Retry-After retries per URL
 
     for (let urlIndex = 0; urlIndex < fallbackCount; urlIndex++) {
       const url = this.buildUrl(model, stream, urlIndex);

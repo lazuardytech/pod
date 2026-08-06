@@ -342,7 +342,7 @@ function wrapQoderSSE(response: any, model: any) {
         doneEmitted = true;
       }
     },
-  });
+  } as any);
 
   const transformed = response.body.pipeThrough(transform);
   // Build a Response with passable headers; the streaming handler reads

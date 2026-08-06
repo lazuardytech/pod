@@ -7,6 +7,11 @@ const FETCH_CONNECT_TIMEOUT_MS = 15_000;
  * BaseExecutor - Base class for provider executors
  */
 export class BaseExecutor {
+  [key: string]: any;
+  provider: any;
+  config: any;
+  noAuth: any;
+
   constructor(provider: any, config: any) {
     this.provider = provider;
     this.config = config;
@@ -42,7 +47,7 @@ export class BaseExecutor {
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers = {
+    const headers: Record<string, any> = {
       "Content-Type": "application/json",
       ...this.config.headers,
     };
@@ -90,7 +95,7 @@ export class BaseExecutor {
   }
 
   // Override in subclass for provider-specific refresh
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null) {
+  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null): Promise<any> {
     return null;
   }
 
@@ -108,7 +113,7 @@ export class BaseExecutor {
     const fallbackCount = this.getFallbackCount();
     let lastError = null;
     let lastStatus = 0;
-    const retryAttemptsByUrl = {};
+    const retryAttemptsByUrl: Record<string, any> = {};
 
     // Merge default retry config with provider-specific config
     const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...this.config.retry };

@@ -8,10 +8,10 @@ import { BaseExecutor } from "./base.js";
 
 export class DefaultExecutor extends BaseExecutor {
   constructor(provider: any) {
-    super(provider, PROVIDERS[provider] || PROVIDERS.openai);
+    super(provider, (PROVIDERS as Record<string, any>)[provider] || PROVIDERS.openai);
   }
 
-  transformRequest(model: any, body: any) {
+  transformRequest(model: any, body: any, stream?: any, credentials?: any): any {
     let next = body;
     // For openai-compatible-* providers (DeepSeek, Ollama, custom local LLMs, etc.) that don't
     // natively support Structured Output, fall back: inject the schema into the system prompt
@@ -95,7 +95,7 @@ Respond ONLY with the JSON object, no other text.`;
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers = { "Content-Type": "application/json", ...this.config.headers };
+    const headers: Record<string, any> = { "Content-Type": "application/json", ...this.config.headers };
 
     switch (this.provider) {
       case "gemini":
@@ -229,10 +229,10 @@ Respond ONLY with the JSON object, no other text.`;
     return headers;
   }
 
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null) {
+  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null): Promise<any> {
     if (!credentials.refreshToken) return null;
 
-    const refreshers = {
+    const refreshers: Record<string, any> = {
       claude: () =>
         this.refreshWithJSON(
           OAUTH_ENDPOINTS.anthropic.token,

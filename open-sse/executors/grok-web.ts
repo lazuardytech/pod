@@ -5,7 +5,7 @@ const GROK_CHAT_API = PROVIDERS["grok-web"].baseUrl;
 const GROK_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
-const MODEL_MAP = {
+const MODEL_MAP: Record<string, any> = {
   "grok-3": { grokModel: "grok-3", modelMode: "MODEL_MODE_GROK_3", isThinking: false },
   "grok-3-mini": {
     grokModel: "grok-3",
@@ -78,7 +78,7 @@ function randomHex(bytes: any) {
 }
 
 function parseOpenAIMessages(messages: any) {
-  const extracted = [];
+  const extracted: any[] = [];
   for (const msg of messages) {
     let role = String(msg.role || "user");
     if (role === "developer") role = "system";
@@ -97,15 +97,15 @@ function parseOpenAIMessages(messages: any) {
 
   let lastUserIdx = -1;
   for (let i = extracted.length - 1; i >= 0; i--) {
-    if (extracted[i].role === "user") {
+    if (extracted[i]?.role === "user") {
       lastUserIdx = i;
       break;
     }
   }
 
-  const parts = [];
+  const parts: any[] = [];
   for (let i = 0; i < extracted.length; i++) {
-    const { role, text } = extracted[i];
+    const { role, text } = extracted[i] as any;
     parts.push(i === lastUserIdx ? text : `${role}: ${text}`);
   }
   return parts.join("\n\n");
@@ -327,7 +327,7 @@ async function buildNonStreamingResponse(
 ) {
   let fullContent = "";
   let fingerprint = "";
-  const thinkingParts = [];
+  const thinkingParts: any[] = [];
 
   for await (const chunk of extractContent(eventStream, isThinkingModel, signal)) {
     if (chunk.fingerprint) fingerprint = chunk.fingerprint;
@@ -348,7 +348,7 @@ async function buildNonStreamingResponse(
     else if (chunk.delta) fullContent += chunk.delta;
   }
 
-  const msg = { role: "assistant", content: fullContent };
+  const msg: any = { role: "assistant", content: fullContent };
   if (thinkingParts.length > 0) msg.reasoning_content = thinkingParts.join("\n");
 
   const promptTokens = Math.ceil(fullContent.length / 4);
@@ -439,7 +439,7 @@ export class GrokWebExecutor extends BaseExecutor {
 
     const traceId = randomHex(16);
     const spanId = randomHex(8);
-    const headers = {
+    const headers: Record<string, any> = {
       Accept: "*/*",
       "Accept-Encoding": "gzip, deflate, br, zstd",
       "Accept-Language": "en-US,en;q=0.9",

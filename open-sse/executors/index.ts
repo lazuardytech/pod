@@ -17,7 +17,7 @@ import { QoderExecutor } from "./qoder.js";
 import { QwenExecutor } from "./qwen.js";
 import { VertexExecutor } from "./vertex.js";
 
-const executors = {
+const executors: Record<string, any> = {
   antigravity: new AntigravityExecutor(),
   azure: new AzureExecutor(),
   "gemini-cli": new GeminiCLIExecutor(),
@@ -39,7 +39,7 @@ const executors = {
   commandcode: new CommandCodeExecutor(),
 };
 
-const defaultCache = new Map();
+const defaultCache = new Map<string, any>();
 
 export function getExecutor(provider: any) {
   if (executors[provider]) return executors[provider];

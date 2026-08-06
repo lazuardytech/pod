@@ -8,6 +8,8 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { estimateUsage } from "../utils/usageTracking.js";
 import { BaseExecutor } from "./base.js";
 
+declare const EdgeRuntime: any;
+
 // Detect cloud environment
 const isCloudEnv = () => {
   if (typeof caches !== "undefined" && typeof caches === "object") return true;
@@ -16,7 +18,7 @@ const isCloudEnv = () => {
 };
 
 // Lazy import http2 (only in Node.js environment)
-let http2 = null;
+let http2: any = null;
 if (!isCloudEnv()) {
   try {
     http2 = await import("node:http2");
@@ -168,8 +170,8 @@ export class CursorExecutor extends BaseExecutor {
     return new Promise((resolve: any, reject: any) => {
       const urlObj = new URL(url);
       const client = http2.connect(`https://${urlObj.host}`);
-      const chunks = [];
-      let responseHeaders = {};
+      const chunks: any[] = [];
+      let responseHeaders: Record<string, any> = {};
       let settled = false;
 
       // Ensure client is always closed on settle
@@ -239,7 +241,7 @@ export class CursorExecutor extends BaseExecutor {
         proxyOptions?.enabled === true ||
         proxyOptions?.connectionProxyEnabled === true ||
         !!proxyOptions?.vercelRelayUrl;
-      const response =
+      const response: any =
         http2 && !shouldForceFetch
           ? await this.makeHttp2Request(url, headers, transformedBody, signal)
           : await this.makeFetchRequest(url, headers, transformedBody, signal, proxyOptions);
@@ -292,8 +294,8 @@ export class CursorExecutor extends BaseExecutor {
 
     let offset = 0;
     let totalContent = "";
-    const toolCalls = [];
-    const toolCallsMap = new Map(); // Track streaming tool calls by ID
+    const toolCalls: any[] = [];
+    const toolCallsMap = new Map<any, any>(); // Track streaming tool calls by ID
     const finalizedIds = new Set();
     let frameCount = 0;
 
@@ -425,7 +427,7 @@ export class CursorExecutor extends BaseExecutor {
 
     debugLog(`[CURSOR BUFFER] Final toolCalls count: ${toolCalls.length}`);
 
-    const message = {
+    const message: any = {
       role: "assistant",
       content: totalContent || null,
     };
@@ -461,11 +463,11 @@ export class CursorExecutor extends BaseExecutor {
     const responseId = `chatcmpl-cursor-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
 
-    const chunks = [];
+    const chunks: any[] = [];
     let offset = 0;
     let totalContent = "";
-    const toolCalls = [];
-    const toolCallsMap = new Map(); // Track streaming tool calls by ID
+    const toolCalls: any[] = [];
+    const toolCallsMap = new Map<any, any>(); // Track streaming tool calls by ID
     const finalizedIds = new Set();
     const emittedToolCallIds = new Set();
     let frameCount = 0;
@@ -606,7 +608,7 @@ export class CursorExecutor extends BaseExecutor {
           }
         } else {
           // New tool call - assign index and add to map
-          const toolCallIndex = toolCalls.length;
+          const toolCallIndex: any = toolCalls.length;
           finalizedIds.add(tc.id);
           toolCalls.push({ ...tc, index: toolCallIndex });
           toolCallsMap.set(tc.id, { ...tc, index: toolCallIndex });
@@ -674,7 +676,7 @@ export class CursorExecutor extends BaseExecutor {
     for (const [id, tc] of toolCallsMap.entries()) {
       if (!finalizedIds.has(id)) {
         debugLog(`[CURSOR BUFFER SSE] Finalizing incomplete tool call: ${id}, isLast=${tc.isLast}`);
-        const toolCallIndex = toolCalls.length;
+        const toolCallIndex: any = toolCalls.length;
         toolCalls.push({
           id: tc.id,
           type: tc.type,

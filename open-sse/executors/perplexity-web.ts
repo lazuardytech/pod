@@ -6,7 +6,7 @@ const PPLX_API_VERSION = "2.18";
 const PPLX_USER_AGENT =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
-const MODEL_MAP = {
+const MODEL_MAP: Record<string, any> = {
   "pplx-auto": ["concise", "pplx_pro"],
   "pplx-sonar": ["copilot", "experimental"],
   "pplx-gpt": ["copilot", "gpt54"],
@@ -16,7 +16,7 @@ const MODEL_MAP = {
   "pplx-nemotron": ["copilot", "nv_nemotron_3_super"],
 };
 
-const THINKING_MAP = {
+const THINKING_MAP: Record<string, any> = {
   "pplx-gpt": "gpt54_thinking",
   "pplx-sonnet": "claude46sonnetthinking",
   "pplx-opus": "claude46opusthinking",
@@ -103,7 +103,7 @@ async function* readPplxSseEvents(body: any, signal: any) {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let dataLines = [];
+  let dataLines: any[] = [];
 
   function flush() {
     if (dataLines.length === 0) return null;
@@ -151,7 +151,7 @@ async function* readPplxSseEvents(body: any, signal: any) {
 
 function parseOpenAIMessages(messages: any) {
   let systemMsg = "";
-  const history = [];
+  const history: any[] = [];
   for (const msg of messages) {
     let role = String(msg.role || "user");
     if (role === "developer") role = "system";
@@ -211,8 +211,8 @@ function formatToolsHint(tools: any) {
 
 function buildQuery(parsed: any, followUpUuid: any, tools: any) {
   if (followUpUuid) return parsed.currentMsg;
-  const obj = {};
-  const instr = [];
+  const obj: any = {};
+  const instr: any[] = [];
   if (parsed.systemMsg.trim()) instr.push(parsed.systemMsg.trim());
   const toolsHint = formatToolsHint(tools);
   if (toolsHint) instr.push(toolsHint);
@@ -475,7 +475,7 @@ async function buildNonStreamingResponse(
   const skipReasoning = opts.skipReasoning === true;
   let fullAnswer = "";
   let respBackendUuid = null;
-  const thinkingParts = [];
+  const thinkingParts: any[] = [];
 
   for await (const chunk of extractContent(eventStream, signal)) {
     if (chunk.backendUuid) respBackendUuid = chunk.backendUuid;
@@ -502,7 +502,7 @@ async function buildNonStreamingResponse(
   sessionStore(history, currentMsg, fullAnswer, respBackendUuid);
 
   const reasoningContent = thinkingParts.length > 0 ? thinkingParts.join("\n") : undefined;
-  const msg = { role: "assistant", content: fullAnswer };
+  const msg: any = { role: "assistant", content: fullAnswer };
   if (reasoningContent) msg.reasoning_content = reasoningContent;
 
   const promptTokens = Math.ceil(currentMsg.length / 4);
@@ -578,7 +578,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
 
     const pplxBody = buildPplxRequestBody(query, pplxMode, modelPref, followUpUuid);
 
-    const headers = {
+    const headers: Record<string, any> = {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
       Origin: "https://www.perplexity.ai",
@@ -599,7 +599,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
       `Query to ${model} (pref=${modelPref}, mode=${pplxMode}), len=${query.length}`,
     );
 
-    const fetchOptions = { method: "POST", headers, body: JSON.stringify(pplxBody) };
+    const fetchOptions: any = { method: "POST", headers, body: JSON.stringify(pplxBody) };
     if (signal) fetchOptions.signal = signal;
 
     let response;

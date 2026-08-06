@@ -38,7 +38,7 @@ async function resolveProjectId(apiKey: any) {
  */
 export class VertexExecutor extends BaseExecutor {
   constructor(providerId: any = "vertex") {
-    super(providerId, PROVIDERS[providerId] || {});
+    super(providerId, (PROVIDERS as Record<string, any>)[providerId] || {});
   }
 
   buildUrl(model: any, stream: any, urlIndex: any = 0, credentials: any = null) {
@@ -76,7 +76,7 @@ export class VertexExecutor extends BaseExecutor {
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers = { "Content-Type": "application/json" };
+    const headers: Record<string, any> = { "Content-Type": "application/json" };
 
     // Only set Bearer token if using SA JSON flow (raw key goes in URL ?key=)
     if (credentials.accessToken) {

@@ -20,7 +20,7 @@ export class OpenCodeGoExecutor extends BaseExecutor {
 
   buildHeaders(credentials: any, stream: any = true) {
     const key = credentials?.apiKey || credentials?.accessToken;
-    const headers = { "Content-Type": "application/json" };
+    const headers: Record<string, any> = { "Content-Type": "application/json" };
 
     if (CLAUDE_FORMAT_MODELS.has(this._lastModel)) {
       headers["x-api-key"] = key;
