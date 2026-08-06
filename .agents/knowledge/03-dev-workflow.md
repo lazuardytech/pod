@@ -47,3 +47,10 @@ bun x vitest run tests/unit/swShellCache.test.js
 - `canary` is the active development branch
 - `main` is the stable/release branch
 - Conventional Commits format
+
+## Cursor Cloud
+
+- Workspace / Cloud environment default branch for development: **`canary`**
+- Install helper: `scripts/cloud-dev-install.sh`
+- Start helper: `scripts/cloud-dev-start.sh` (needs `JWT_SECRET` + `API_KEY_SECRET` from Secrets)
+- See AGENTS.md → **Cursor Cloud specific instructions**
