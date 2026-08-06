@@ -154,6 +154,7 @@ bun run build   # NODE_ENV=production next build (turbopack)
 - **Install (idempotent)**: `bash scripts/cloud-dev-install.sh` — ensures Bun 1.3.14+ and `bun install --frozen-lockfile`.
 - **Start**: `bash scripts/cloud-dev-start.sh` — `bun run dev` on port **20128**. Requires secrets `JWT_SECRET` and `API_KEY_SECRET` (Cursor environment Secrets tab). Optional: `SHUTDOWN_SECRET`, `INITIAL_PASSWORD`.
 - **Health check**: `curl -sf http://localhost:20128/api/health` → `{"ok":true}`; monitoring health is also public.
+- **Tests need Node ≥ 22.18 on PATH (not bun)**: `bun run test:run` runs vitest under `node` on purpose (a health test asserts `version.bun` is `null`, which only holds under node). The pre-provisioned `/exec-daemon/node` is v22.14.0 — too old for native `.mts` type-stripping — so it throws `Unknown file extension ".mts"` on `src/shared/utils/clineAuth.mts` (2 spurious failures). Prepend nvm's newer node first, e.g. `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`, then `bun run test:run` → all green. `bun run check`/`bun run build` are unaffected (they run under bun).
 - **Verify before push**: `bun run check && bun run test:run && bun run build`.
 - Do not commit `.env`; `.cursor/` is gitignored — configure Cloud environment via dashboard / `environment.json` proposal.
 
