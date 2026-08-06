@@ -53,4 +53,5 @@ bun x vitest run tests/unit/swShellCache.test.js
 - Workspace / Cloud environment default branch for development: **`canary`**
 - Install helper: `scripts/cloud-dev-install.sh`
 - Start helper: `scripts/cloud-dev-start.sh` (needs `JWT_SECRET` + `API_KEY_SECRET` from Secrets)
+- Ponytail skills: `.agents/skills/ponytail*` — `/ponytail lite|full|ultra`
 - See AGENTS.md → **Cursor Cloud specific instructions**
