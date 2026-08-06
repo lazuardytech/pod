@@ -32,7 +32,7 @@ const ALIASES = {
 };
 
 export function resolveFilter(name: any) {
-  return REGISTRY[name] || ALIASES[name] || null;
+  return (REGISTRY as Record<string, any>)[name] || (ALIASES as Record<string, any>)[name] || null;
 }
 
 export function allFilters() {

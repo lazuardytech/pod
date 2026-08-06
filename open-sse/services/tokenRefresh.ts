@@ -38,14 +38,14 @@ export function isUnrecoverableRefreshError(result: any) {
 
 // Get provider-specific refresh lead time, falls back to default buffer
 export function getRefreshLeadMs(provider: any) {
-  return REFRESH_LEAD_MS[provider] || TOKEN_EXPIRY_BUFFER_MS;
+  return (REFRESH_LEAD_MS as Record<string, any>)[provider] || TOKEN_EXPIRY_BUFFER_MS;
 }
 
 /**
  * Refresh OAuth access token using refresh token
  */
 export async function refreshAccessToken(provider: any, refreshToken: any, credentials: any, log: any) {
-  const config = PROVIDERS[provider];
+  const config = (PROVIDERS as Record<string, any>)[provider];
 
   if (!config || !config.refreshUrl) {
     log?.warn?.("TOKEN_REFRESH", `No refresh URL configured for provider: ${provider}`);
@@ -492,13 +492,13 @@ export async function refreshIflowToken(refreshToken: any, log: any) {
  */
 export async function refreshGitHubToken(refreshToken: any, log: any) {
   try {
-    const params = {
+    const params: Record<string, any> = {
       grant_type: "refresh_token",
       refresh_token: refreshToken,
       client_id: PROVIDERS.github.clientId,
     };
-    if (PROVIDERS.github.clientSecret) {
-      params.client_secret = PROVIDERS.github.clientSecret;
+    if ((PROVIDERS.github as any).clientSecret) {
+      params.client_secret = (PROVIDERS.github as any).clientSecret;
     }
 
     const response = await fetch(OAUTH_ENDPOINTS.github.token, {
@@ -619,8 +619,8 @@ async function _getAccessTokenInternal(provider: any, credentials: any, log: any
     case "antigravity":
       return await refreshGoogleToken(
         credentials.refreshToken,
-        PROVIDERS[provider].clientId,
-        PROVIDERS[provider].clientSecret,
+        (PROVIDERS as Record<string, any>)[provider].clientId,
+        (PROVIDERS as Record<string, any>)[provider].clientSecret,
         log,
       );
 
@@ -670,8 +670,8 @@ export async function refreshTokenByProvider(provider: any, credentials: any, lo
     case "antigravity":
       return refreshGoogleToken(
         credentials.refreshToken,
-        PROVIDERS[provider].clientId,
-        PROVIDERS[provider].clientSecret,
+        (PROVIDERS as Record<string, any>)[provider].clientId,
+        (PROVIDERS as Record<string, any>)[provider].clientSecret,
         log,
       );
     case "claude":
@@ -701,7 +701,7 @@ export async function refreshTokenByProvider(provider: any, credentials: any, lo
  * Format credentials for provider
  */
 export function formatProviderCredentials(provider: any, credentials: any, log: any) {
-  const config = PROVIDERS[provider];
+  const config = (PROVIDERS as Record<string, any>)[provider];
   if (!config) {
     log?.warn?.("TOKEN_REFRESH", `No configuration found for provider: ${provider}`);
     return null;
@@ -752,7 +752,7 @@ export function formatProviderCredentials(provider: any, credentials: any, log: 
  * Get all access tokens for a user
  */
 export async function getAllAccessTokens(userInfo: any, log: any) {
-  const results = {};
+  const results: Record<string, any> = {};
 
   if (userInfo.connections && Array.isArray(userInfo.connections)) {
     for (const connection of userInfo.connections) {

@@ -920,37 +920,37 @@ export const PROVIDER_MODELS = {
 
 // Helper functions
 export function getProviderModels(aliasOrId: any) {
-  return PROVIDER_MODELS[aliasOrId] || [];
+  return (PROVIDER_MODELS as Record<string, any>)[aliasOrId] || [];
 }
 
 export function getDefaultModel(aliasOrId: any) {
-  const models = PROVIDER_MODELS[aliasOrId];
+  const models = (PROVIDER_MODELS as Record<string, any>)[aliasOrId];
   return models?.[0]?.id || null;
 }
 
 export function isValidModel(aliasOrId: any, modelId: any, passthroughProviders: any = new Set()) {
   if (passthroughProviders.has(aliasOrId)) return true;
-  const models = PROVIDER_MODELS[aliasOrId];
+  const models = (PROVIDER_MODELS as Record<string, any>)[aliasOrId];
   if (!models) return false;
   return models.some((m: any) => m.id === modelId);
 }
 
 export function findModelName(aliasOrId: any, modelId: any) {
-  const models = PROVIDER_MODELS[aliasOrId];
+  const models = (PROVIDER_MODELS as Record<string, any>)[aliasOrId];
   if (!models) return modelId;
   const found = models.find((m: any) => m.id === modelId);
   return found?.name || modelId;
 }
 
 export function getModelTargetFormat(aliasOrId: any, modelId: any) {
-  const models = PROVIDER_MODELS[aliasOrId];
+  const models = (PROVIDER_MODELS as Record<string, any>)[aliasOrId];
   if (!models) return null;
   const found = models.find((m: any) => m.id === modelId);
   return found?.targetFormat || null;
 }
 
 export function getModelUpstreamId(aliasOrId: any, modelId: any) {
-  const models = PROVIDER_MODELS[aliasOrId];
+  const models = (PROVIDER_MODELS as Record<string, any>)[aliasOrId];
   const found = models?.find((m: any) => m.id === modelId);
   if (found?.upstreamModelId) return found.upstreamModelId;
   if (aliasOrId === "cx" && typeof modelId === "string" && modelId.endsWith(CODEX_REVIEW_SUFFIX)) {
@@ -960,7 +960,7 @@ export function getModelUpstreamId(aliasOrId: any, modelId: any) {
 }
 
 export function getModelQuotaFamily(aliasOrId: any, modelId: any) {
-  const models = PROVIDER_MODELS[aliasOrId];
+  const models = (PROVIDER_MODELS as Record<string, any>)[aliasOrId];
   const found = models?.find((m: any) => m.id === modelId);
   return found?.quotaFamily || "normal";
 }
@@ -986,17 +986,17 @@ const OAUTH_ALIASES = {
 
 // Derived from PROVIDERS — no need to maintain manually
 export const PROVIDER_ID_TO_ALIAS = Object.fromEntries(
-  Object.keys(PROVIDERS).map((id: any) => [id, OAUTH_ALIASES[id] || id]),
+  Object.keys(PROVIDERS).map((id: any) => [id, (OAUTH_ALIASES as Record<string, any>)[id] || id]),
 );
 
 export function getModelsByProviderId(providerId: any) {
-  const alias = PROVIDER_ID_TO_ALIAS[providerId] || providerId;
-  return PROVIDER_MODELS[alias] || [];
+  const alias = (PROVIDER_ID_TO_ALIAS as Record<string, any>)[providerId] || providerId;
+  return (PROVIDER_MODELS as Record<string, any>)[alias] || [];
 }
 
 // Get strip list for a model entry (explicit opt-in only)
 // Returns array of content types to strip, e.g. ["image", "audio"]
 export function getModelStrip(alias: any, modelId: any) {
-  const entry = PROVIDER_MODELS[alias]?.find((m: any) => m.id === modelId);
+  const entry = (PROVIDER_MODELS as Record<string, any>)[alias]?.find((m: any) => m.id === modelId);
   return entry?.strip || [];
 }

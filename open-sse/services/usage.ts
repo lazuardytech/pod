@@ -78,7 +78,7 @@ export async function getUsageForProvider(connection: any, proxyOptions: any = n
     case "iflow":
       return await getIflowUsage(accessToken);
     case "ollama":
-      return await getOllamaUsage(accessToken);
+      return await getOllamaUsage(accessToken, providerSpecificData);
     case "glm":
     case "glm-cn":
       return await getGlmUsage(apiKey, provider, proxyOptions);
@@ -268,8 +268,8 @@ async function getGeminiUsage(accessToken: any, providerSpecificData: any, proxy
       return { plan, message: `Gemini CLI quota error (${response.status}).` };
     }
 
-    const data = await response.json();
-    const quotas = {};
+    const data: any = await response.json();
+    const quotas: Record<string, any> = {};
 
     if (Array.isArray(data.buckets)) {
       for (const bucket of data.buckets) {
@@ -387,8 +387,8 @@ async function getAntigravityUsage(accessToken: any, providerSpecificData: any, 
       throw new Error(`Antigravity API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const quotas = {};
+    const data: any = await response.json();
+    const quotas: Record<string, any> = {};
 
     // Parse model quotas (inspired by vscode-antigravity-cockpit)
     if (data.models) {
@@ -509,8 +509,8 @@ async function getClaudeUsage(accessToken: any, proxyOptions: any = null) {
     );
 
     if (oauthResponse.ok) {
-      const data = await oauthResponse.json();
-      const quotas = {};
+      const data: any = await oauthResponse.json();
+      const quotas: Record<string, any> = {};
 
       // utilization = % USED (e.g. 87 means 87% used, 13% remaining)
       const hasUtilization = (window: any) =>
@@ -742,7 +742,7 @@ async function getCodexUsage(accessToken: any, proxyOptions: any = null) {
  */
 function parseKiroQuotaData(data: any) {
   const usageList = data.usageBreakdownList || [];
-  const quotaInfo = {};
+  const quotaInfo: Record<string, any> = {};
   const resetAt = parseResetTime(data.nextDateReset || data.resetDate);
 
   usageList.forEach((breakdown: any) => {
@@ -993,10 +993,10 @@ async function getGlmUsage(apiKey: any, provider: any, proxyOptions: any = null)
       return { message: `GLM quota API error (${response.status}).` };
     }
 
-    const json = await response.json();
-    const data = json?.data && typeof json.data === "object" ? json.data : {};
+    const json: any = await response.json();
+    const data: any = json?.data && typeof json.data === "object" ? json.data : {};
     const limits = Array.isArray(data.limits) ? data.limits : [];
-    const quotas = {};
+    const quotas: Record<string, any> = {};
 
     for (const limit of limits) {
       if (!limit || limit.type !== "TOKENS_LIMIT") continue;
@@ -1111,7 +1111,7 @@ async function getMiniMaxUsage(apiKey: any, provider: any, proxyOptions: any = n
       );
 
       const rawText = await response.text();
-      let payload = {};
+      let payload: Record<string, any> = {};
       if (rawText) {
         try {
           payload = JSON.parse(rawText);
@@ -1163,7 +1163,7 @@ async function getMiniMaxUsage(apiKey: any, provider: any, proxyOptions: any = n
 
       const capturedAtMs = Date.now();
       const countMeansRemaining = usageUrl.includes("/coding_plan/remains");
-      const quotas = {};
+      const quotas: Record<string, any> = {};
 
       const sessionModel = pickMiniMaxRepresentativeModel(textModels, getMiniMaxSessionTotal);
       if (sessionModel) {

@@ -269,7 +269,7 @@ export function getEarliestModelLockUntil(connection: any) {
   const now = Date.now();
   for (const [key, val] of Object.entries(connection)) {
     if (!key.startsWith(MODEL_LOCK_PREFIX) || !val) continue;
-    const t = new Date(val).getTime();
+    const t = new Date(val as any).getTime();
     if (t <= now) continue;
     if (!earliest || t < earliest) earliest = t;
   }
@@ -288,7 +288,7 @@ export function buildModelLockUpdate(model: any, cooldownMs: any) {
  * Build update object to clear all model locks on a connection.
  */
 export function buildClearModelLocksUpdate(connection: any) {
-  const cleared = {};
+  const cleared: Record<string, any> = {};
   for (const key of Object.keys(connection)) {
     if (key.startsWith(MODEL_LOCK_PREFIX)) cleared[key] = null;
     if (key.startsWith(MODEL_LOCK_COUNT_PREFIX)) cleared[key] = null;

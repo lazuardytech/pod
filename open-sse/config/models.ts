@@ -6,7 +6,7 @@ const DEFAULT_MODEL_INFO = {
   contextWindow: 200000,
 };
 
-export const MODEL_INFO = {};
+export const MODEL_INFO: Record<string, any> = {};
 
 export function getModelInfo(modelId: any) {
   return { ...DEFAULT_MODEL_INFO, ...MODEL_INFO[modelId] };

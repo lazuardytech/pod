@@ -39,10 +39,10 @@ export function buildOutput(input: any, _maxLines: any) {
   let npmWarnCount = 0;
   let npmDeprecatedCount = 0;
   let cargoCompileCount = 0;
-  let cargoCompileFirst = null;
-  let cargoCompileLast = null;
+  let cargoCompileFirst: string | null = null;
+  let cargoCompileLast: string | null = null;
   let warningCount = 0; // compiler warnings (cargo/rustc-style)
-  let prev = null;
+  let prev: string | null = null;
   let dupRun = 0;
 
   const flushNpmWarn = () => {

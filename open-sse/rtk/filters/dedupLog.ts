@@ -4,7 +4,7 @@ import { DEDUP_LINE_MAX } from "../constants.js";
 export function dedupLog(input: any) {
   const lines = input.split("\n");
   const out = [];
-  let prev = null;
+  let prev: string | null = null;
   let runCount = 0;
   let blankStreak = 0;
 

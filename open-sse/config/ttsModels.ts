@@ -17,7 +17,8 @@ const VOICES = {
   verse: { id: "verse", name: "Verse" },
 };
 
-const v = (...keys: any) => keys.map((k: any) => ({ ...VOICES[k], type: "tts" }));
+const v = (...keys: any) =>
+  keys.map((k: any) => ({ ...(VOICES as Record<string, any>)[k], type: "tts" }));
 
 // 9 voices for tts-1 / tts-1-hd
 const VOICES_STANDARD = v(
@@ -156,18 +157,19 @@ export const TTS_MODELS_CONFIG = {
 
 // ── Helper: get voices for a specific model ────────────────────────────────
 export function getTtsVoicesForModel(provider: any, modelId: any) {
-  const cfg = TTS_MODELS_CONFIG[provider];
+  const cfg = (TTS_MODELS_CONFIG as Record<string, any>)[provider];
   if (!cfg?.voices) return null;
   return cfg.voices[modelId] || cfg.allVoices || null;
 }
 
 // ── Build flat entries for PROVIDER_MODELS backward compat ─────────────────
 export function buildTtsProviderModels() {
-  const entries = {};
+  const entries: Record<string, any> = {};
   for (const [provider, cfg] of Object.entries(TTS_MODELS_CONFIG)) {
-    if (cfg.models) entries[`${provider}-tts-models`] = cfg.models;
-    if (cfg.allVoices) entries[`${provider}-tts-voices`] = cfg.allVoices;
-    if (cfg.defaults) entries[provider] = cfg.defaults;
+    const typedCfg = cfg as any;
+    if (typedCfg.models) entries[`${provider}-tts-models`] = typedCfg.models;
+    if (typedCfg.allVoices) entries[`${provider}-tts-voices`] = typedCfg.allVoices;
+    if (typedCfg.defaults) entries[provider] = typedCfg.defaults;
   }
   // Keep openai-tts-voices key pointing to full voice list for backward compat
   entries["openai-tts-voices"] = TTS_MODELS_CONFIG.openai.allVoices;

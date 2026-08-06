@@ -35,7 +35,7 @@ const PENDING_TTL_MS = 2 * 60 * 1000;
 /** How often the background sweep runs (10 min). */
 const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 
-let _cleanupTimer = null;
+let _cleanupTimer: any = null;
 
 /** Run one sweep immediately: evict stale cache entries and abort orphaned pending fetches. */
 export function cleanupNow() {

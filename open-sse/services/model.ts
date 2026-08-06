@@ -88,7 +88,7 @@ const ALIAS_TO_PROVIDER_ID = {
  * Resolve provider alias to provider ID
  */
 export function resolveProviderAlias(aliasOrId: any) {
-  return ALIAS_TO_PROVIDER_ID[aliasOrId] || aliasOrId;
+  return (ALIAS_TO_PROVIDER_ID as Record<string, any>)[aliasOrId] || aliasOrId;
 }
 
 /**
