@@ -28,7 +28,7 @@ export function createStreamController({
   const abortController = new AbortController();
   const startTime = Date.now();
   let disconnected = false;
-  let abortTimeout = null;
+  let abortTimeout: any = null;
 
   const logStream = (status: any) => {
     const duration = Date.now() - startTime;

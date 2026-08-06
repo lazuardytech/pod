@@ -95,8 +95,8 @@ export function handleBypassRequest(body: any, model: any, userAgent: any = "", 
   }
 
   return stream
-    ? createStreamingResponse(sourceFormat, model)
-    : createNonStreamingResponse(sourceFormat, model);
+    ? createStreamingResponse(sourceFormat, model, undefined)
+    : createNonStreamingResponse(sourceFormat, model, undefined);
 }
 
 const DEFAULT_BYPASS_TEXT = "CLI Command Execution: Clear Terminal";

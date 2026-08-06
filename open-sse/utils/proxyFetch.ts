@@ -178,7 +178,7 @@ async function patchedFetch(url: any, options: any = {}) {
 
 // Idempotency guard — only patch once to avoid wrapping multiple times
 if (globalThis.fetch !== patchedFetch) {
-  globalThis.fetch = patchedFetch;
+  globalThis.fetch = patchedFetch as any;
 }
 
 export default patchedFetch;

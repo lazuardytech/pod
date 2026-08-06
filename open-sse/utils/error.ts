@@ -1,5 +1,8 @@
 import { DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "../config/errorConfig.js";
 
+const ERROR_TYPES_MAP = ERROR_TYPES as Record<string | number, any>;
+const DEFAULT_ERROR_MESSAGES_MAP = DEFAULT_ERROR_MESSAGES as Record<string | number, any>;
+
 /**
  * Shared Access-Control-Expose-Headers value for rate-limit headers.
  * Defined once here to prevent drift across error.js and rateLimit/index.ts.
@@ -15,14 +18,14 @@ export const RATE_LIMIT_EXPOSE_HEADERS =
  */
 export function buildErrorBody(statusCode: any, message: any) {
   const errorInfo =
-    ERROR_TYPES[statusCode] ||
+    ERROR_TYPES_MAP[statusCode] ||
     (statusCode >= 500
       ? { type: "server_error", code: "internal_server_error" }
       : { type: "invalid_request_error", code: "" });
 
   return {
     error: {
-      message: message || DEFAULT_ERROR_MESSAGES[statusCode] || "An error occurred",
+      message: message || DEFAULT_ERROR_MESSAGES_MAP[statusCode] || "An error occurred",
       type: errorInfo.type,
       param: null,
       code: errorInfo.code,
@@ -80,7 +83,7 @@ export async function parseUpstreamError(response: any, executor: any = null) {
       if (parsed && typeof parsed === "object") {
         const msg =
           parsed.message ||
-          DEFAULT_ERROR_MESSAGES[response.status] ||
+          DEFAULT_ERROR_MESSAGES_MAP[response.status] ||
           `Upstream error: ${response.status}`;
         return {
           statusCode: parsed.status || response.status,
@@ -103,7 +106,7 @@ export async function parseUpstreamError(response: any, executor: any = null) {
 
   const messageStr = typeof message === "string" ? message : JSON.stringify(message);
   const finalMessage =
-    messageStr || DEFAULT_ERROR_MESSAGES[response.status] || `Upstream error: ${response.status}`;
+    messageStr || DEFAULT_ERROR_MESSAGES_MAP[response.status] || `Upstream error: ${response.status}`;
 
   return { statusCode: response.status, message: finalMessage };
 }
@@ -140,7 +143,7 @@ export function unavailableResponse(statusCode: any, message: any, retryAfter: a
   );
   const msg = `${message} (${retryAfterHuman})`;
   const errorInfo =
-    ERROR_TYPES[statusCode] ||
+    ERROR_TYPES_MAP[statusCode] ||
     (statusCode >= 500
       ? { type: "server_error", code: "internal_server_error" }
       : { type: "invalid_request_error", code: "unavailable" });

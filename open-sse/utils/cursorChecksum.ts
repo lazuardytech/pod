@@ -60,8 +60,9 @@ export function generateCursorChecksum(machineId: any) {
   // Jyh cipher obfuscation
   let t = 165;
   for (let i = 0; i < byteArray.length; i++) {
-    byteArray[i] = ((byteArray[i] ^ t) + (i % 256)) & 0xff;
-    t = byteArray[i];
+    const current = byteArray[i] as number;
+    byteArray[i] = ((current ^ t) + (i % 256)) & 0xff;
+    t = byteArray[i] as number;
   }
 
   // URL-safe base64 encode (without padding)
@@ -69,9 +70,9 @@ export function generateCursorChecksum(machineId: any) {
   let encoded = "";
 
   for (let i = 0; i < byteArray.length; i += 3) {
-    const a = byteArray[i];
-    const b = i + 1 < byteArray.length ? byteArray[i + 1] : 0;
-    const c = i + 2 < byteArray.length ? byteArray[i + 2] : 0;
+    const a = byteArray[i] as number;
+    const b = i + 1 < byteArray.length ? (byteArray[i + 1] as number) : 0;
+    const c = i + 2 < byteArray.length ? (byteArray[i + 2] as number) : 0;
 
     encoded += alphabet[a >> 2];
     encoded += alphabet[((a & 3) << 4) | (b >> 4)];

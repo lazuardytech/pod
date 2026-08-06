@@ -4,7 +4,7 @@
  */
 
 // Map of CLI tool identifiers to provider IDs they are "native" to
-const NATIVE_PAIRS = {
+const NATIVE_PAIRS: Record<string, string[]> = {
   claude: ["claude", "anthropic"],
   "gemini-cli": ["gemini-cli"],
   antigravity: ["antigravity"],

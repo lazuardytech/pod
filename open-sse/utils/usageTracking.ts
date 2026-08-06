@@ -64,7 +64,7 @@ export function filterUsageForFormat(usage: any, targetFormat: any) {
 
   // Helper to pick only defined fields from usage
   const pickFields = (fields: any) => {
-    const filtered = {};
+    const filtered: Record<string, any> = {};
     for (const field of fields) {
       if (usage[field] !== undefined) {
         filtered[field] = usage[field];
@@ -131,7 +131,7 @@ export function filterUsageForFormat(usage: any, targetFormat: any) {
 export function normalizeUsage(usage: any) {
   if (!usage || typeof usage !== "object" || Array.isArray(usage)) return null;
 
-  const normalized = {};
+  const normalized: Record<string, any> = {};
   const assignNumber = (key: any, value: any) => {
     if (value === undefined || value === null) return;
     const numeric = Number(value);

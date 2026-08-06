@@ -16,13 +16,13 @@ import {
 
 export { COLORS, formatSSE };
 
-function stripClaudeToolSuffixes(node: any) {
+function stripClaudeToolSuffixes(node: any): any {
   if (!node || typeof node !== "object") return node;
 
   if (Array.isArray(node)) {
     let changed = false;
-    const next = node.map((child: any) => {
-      const mapped = stripClaudeToolSuffixes(child);
+    const next: any[] = node.map((child: any): any => {
+      const mapped: any = stripClaudeToolSuffixes(child);
       if (mapped !== child) changed = true;
       return mapped;
     });
@@ -38,7 +38,7 @@ function stripClaudeToolSuffixes(node: any) {
   }
 
   let changed = false;
-  const next = {};
+  const next: Record<string, any> = {};
   for (const key of Object.keys(node)) {
     const mapped = stripClaudeToolSuffixes(node[key]);
     if (mapped !== node[key]) changed = true;
@@ -94,7 +94,7 @@ function extractReasoningSummaryText(value: any) {
  * (rather than top-level reasoning_summary) see the final summary.
  */
 function buildReasoningSummaryCompatChunk(chunk: any, summaryText: any) {
-  const compatChunk = {
+  const compatChunk: Record<string, any> = {
     id:
       typeof chunk.id === "string" && chunk.id.trim().length > 0
         ? chunk.id
@@ -168,14 +168,14 @@ export function createSSEStream(options: any = {}) {
   } = options;
 
   let buffer = "";
-  let usage = null;
-  let stallTimer = null;
-  let stallController = null;
+  let usage: any = null;
+  let stallTimer: any = null;
+  let stallController: any = null;
 
   // Per-stream decoder with stream:true to correctly handle multi-byte chars split across chunks
   const decoder = new TextDecoder("utf-8", { fatal: false });
 
-  const state =
+  const state: any =
     mode === STREAM_MODE.TRANSLATE
       ? { ...initState(sourceFormat), provider, toolNameMap, model }
       : null;
@@ -183,7 +183,7 @@ export function createSSEStream(options: any = {}) {
   let totalContentLength = 0;
   let accumulatedContent = "";
   let accumulatedThinking = "";
-  let ttftAt = null;
+  let ttftAt: any = null;
   let sawDone = false;
   const includeUsage = body?.stream_options?.include_usage === true;
 
@@ -439,7 +439,7 @@ export function createSSEStream(options: any = {}) {
           if (extracted) state.usage = extracted; // Keep original usage for logging
 
           // Translate: targetFormat -> openai -> sourceFormat
-          const translated = translateResponse(targetFormat, sourceFormat, parsed, state);
+          const translated: any = translateResponse(targetFormat, sourceFormat, parsed, state);
 
           // Log OpenAI intermediate chunks (if available)
           if (translated?._openaiIntermediate) {
@@ -550,7 +550,7 @@ export function createSSEStream(options: any = {}) {
           const decloaked = decloakSSELine(buffer, toolNameMap, allowSuffixFallback);
           const parsed = parseSSELine(decloaked.trim());
           if (parsed && !parsed.done) {
-            const translated = translateResponse(targetFormat, sourceFormat, parsed, state);
+            const translated: any = translateResponse(targetFormat, sourceFormat, parsed, state);
 
             if (translated?._openaiIntermediate) {
               for (const item of translated._openaiIntermediate) {
@@ -567,7 +567,7 @@ export function createSSEStream(options: any = {}) {
           }
         }
 
-        const flushed = translateResponse(targetFormat, sourceFormat, null, state);
+        const flushed: any = translateResponse(targetFormat, sourceFormat, null, state);
 
         if (flushed?._openaiIntermediate) {
           for (const item of flushed._openaiIntermediate) {

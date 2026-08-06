@@ -75,13 +75,13 @@ export function cloakClaudeTools(body: any) {
  * (content[] arrays), message history, and any nested envelope a future
  * Claude API revision might use.
  */
-export function decloakToolNames(node: any, toolNameMap: any) {
+export function decloakToolNames(node: any, toolNameMap: any): any {
   if (!toolNameMap?.size || !node || typeof node !== "object") return node;
 
   if (Array.isArray(node)) {
     let changed = false;
-    const next = node.map((child: any) => {
-      const mapped = decloakToolNames(child, toolNameMap);
+    const next: any[] = node.map((child: any): any => {
+      const mapped: any = decloakToolNames(child, toolNameMap);
       if (mapped !== child) changed = true;
       return mapped;
     });
@@ -96,7 +96,7 @@ export function decloakToolNames(node: any, toolNameMap: any) {
   }
 
   let changed = false;
-  const next = {};
+  const next: Record<string, any> = {};
   for (const key of Object.keys(node)) {
     const mapped = decloakToolNames(node[key], toolNameMap);
     if (mapped !== node[key]) changed = true;

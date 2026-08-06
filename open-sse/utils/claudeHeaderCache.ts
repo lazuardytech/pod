@@ -26,7 +26,7 @@ const CLAUDE_IDENTITY_HEADERS = [
   "arch",
 ];
 
-let cachedHeaders = null;
+let cachedHeaders: Record<string, any> | null = null;
 
 /**
  * Detect if request headers look like a real Claude Code client.
@@ -47,7 +47,7 @@ export function cacheClaudeHeaders(headers: any) {
   if (!headers || typeof headers !== "object") return;
   if (!isClaudeCodeClient(headers)) return;
 
-  const captured = {};
+  const captured: Record<string, any> = {};
   for (const key of CLAUDE_IDENTITY_HEADERS) {
     if (headers[key] !== undefined && headers[key] !== null) {
       captured[key] = headers[key];

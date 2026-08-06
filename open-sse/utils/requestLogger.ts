@@ -6,9 +6,9 @@ const isNode =
 const LOGGING_ENABLED =
   typeof process !== "undefined" && process.env?.ENABLE_REQUEST_LOGS === "true";
 
-let fs = null;
-let path = null;
-let LOGS_DIR = null;
+let fs: any = null;
+let path: any = null;
+let LOGS_DIR: any = null;
 
 // Lazy load Node.js modules (avoid top-level await)
 async function ensureNodeModules() {

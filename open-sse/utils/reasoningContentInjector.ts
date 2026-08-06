@@ -5,7 +5,7 @@
 const PLACEHOLDER = " ";
 
 const DEEPSEEK_V4_PRO = "deepseek-v4-pro";
-const DEEPSEEK_V4_PRO_ALIASES = {
+const DEEPSEEK_V4_PRO_ALIASES: Record<string, any> = {
   [`${DEEPSEEK_V4_PRO}-max`]: {
     thinkingType: "enabled",
     reasoningEffort: "max",
@@ -17,7 +17,7 @@ const DEEPSEEK_V4_PRO_ALIASES = {
 };
 
 // Provider-level rules: keyed by executor.provider
-const PROVIDER_RULES = {
+const PROVIDER_RULES: Record<string, any> = {
   deepseek: { scope: "all" },
 };
 

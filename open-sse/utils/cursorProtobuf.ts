@@ -857,7 +857,7 @@ function extractToolCall(toolCallData: any) {
   // Extract tool call ID
   if (toolCall.has(FIELD.TOOL_ID)) {
     const fullId = new TextDecoder().decode(toolCall.get(FIELD.TOOL_ID)[0].value);
-    toolCallId = fullId.split("\n")[0]; // Cursor returns multi-line ID, take first line
+    toolCallId = fullId.split("\n")[0] as string; // Cursor returns multi-line ID, take first line
   }
 
   // Extract tool name
