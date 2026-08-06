@@ -181,7 +181,7 @@ export function convertCommandCodeToOpenAI(chunk: any, state: any) {
     }
     case "finish": {
       const finishReason = state.finishReason || mapFinishReason(event.finishReason || "stop");
-      const finalChunk = makeChunk(state, {}, finishReason);
+      const finalChunk: Record<string, any> = makeChunk(state, {}, finishReason);
       const totalUsage = event.totalUsage || state.usage;
       if (totalUsage) {
         finalChunk.usage = {
@@ -212,4 +212,4 @@ export function convertCommandCodeToOpenAI(chunk: any, state: any) {
   return out.length ? out : null;
 }
 
-register(FORMATS.COMMANDCODE, FORMATS.OPENAI, null, convertCommandCodeToOpenAI);
+register((FORMATS as any).COMMANDCODE, FORMATS.OPENAI, null, convertCommandCodeToOpenAI);

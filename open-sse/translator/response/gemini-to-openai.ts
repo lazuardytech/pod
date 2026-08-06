@@ -230,7 +230,7 @@ export function geminiToOpenAIResponse(chunk: any, state: any) {
       finishReason = "tool_calls";
     }
 
-    const finalChunk = {
+    const finalChunk: Record<string, any> = {
       id: `chatcmpl-${state.messageId}`,
       object: "chat.completion.chunk",
       created: Math.floor(Date.now() / 1000),

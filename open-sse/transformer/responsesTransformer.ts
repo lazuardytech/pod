@@ -25,8 +25,8 @@ export function createResponsesLogger(model: any, logsDir: any = null) {
     return null;
   }
 
-  const inputEvents = [];
-  const outputEvents = [];
+  const inputEvents: any[] = [];
+  const outputEvents: any[] = [];
 
   return {
     logInput: (event: any) => {
@@ -52,7 +52,7 @@ export function createResponsesLogger(model: any, logsDir: any = null) {
  * @returns {TransformStream}
  */
 export function createResponsesApiTransformStream(logger: any = null) {
-  const state = {
+  const state: Record<string, any> = {
     seq: 0,
     responseId: `resp_${Date.now()}`,
     created: Math.floor(Date.now() / 1000),
@@ -254,7 +254,7 @@ export function createResponsesApiTransformStream(logger: any = null) {
         const dataMatch = msg.match(/^data:\s*(.+)$/m);
         if (!dataMatch) continue;
 
-        const dataStr = dataMatch[1].trim();
+        const dataStr = dataMatch[1]!.trim();
         if (dataStr === "[DONE]") continue;
 
         let parsed;

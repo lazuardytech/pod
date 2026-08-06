@@ -38,9 +38,9 @@ export function convertResponsesApiFormat(body: any) {
   }
 
   // Group items by conversation turn
-  let currentAssistantMsg = null;
-  const _pendingToolCalls = [];
-  let pendingToolResults = [];
+  let currentAssistantMsg: any = null;
+  const _pendingToolCalls: any[] = [];
+  let pendingToolResults: any[] = [];
 
   const inputItems = normalizeResponsesInput(body.input);
   if (!inputItems) return body;

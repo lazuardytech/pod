@@ -66,7 +66,7 @@ export function convertKiroToOpenAI(chunk: any, state: any) {
     const content = data.assistantResponseEvent?.content || data.content || "";
     if (!content) return null;
 
-    const openaiChunk = {
+    const openaiChunk: Record<string, any> = {
       id: state.responseId,
       object: "chat.completion.chunk",
       created: state.created,
@@ -93,7 +93,7 @@ export function convertKiroToOpenAI(chunk: any, state: any) {
     if (!content) return null;
 
     // Convert to thinking block format (Claude-style)
-    const openaiChunk = {
+    const openaiChunk: Record<string, any> = {
       id: state.responseId,
       object: "chat.completion.chunk",
       created: state.created,
@@ -156,7 +156,7 @@ export function convertKiroToOpenAI(chunk: any, state: any) {
   if (eventType === "messageStopEvent" || eventType === "done" || data.messageStopEvent) {
     state.finishReason = "stop"; // Mark for usage injection in stream.js
 
-    const openaiChunk = {
+    const openaiChunk: Record<string, any> = {
       id: state.responseId,
       object: "chat.completion.chunk",
       created: state.created,

@@ -143,7 +143,7 @@ export function translateRequest(
   if (provider === "claude") {
     const apiKey = credentials?.accessToken || credentials?.apiKey || null;
     if (apiKey?.includes("sk-ant-oat")) {
-      const { body: cloakedBody, toolNameMap } = cloakClaudeTools(result);
+      const { body: cloakedBody, toolNameMap } = cloakClaudeTools(result) as any;
       result = cloakedBody;
       if (toolNameMap?.size > 0) {
         result._toolNameMap = toolNameMap;
@@ -171,8 +171,8 @@ export function translateResponse(targetFormat: any, sourceFormat: any, chunk: a
     return [chunk];
   }
 
-  let results = [chunk];
-  let openaiResults = null; // Store OpenAI intermediate results
+  let results: any[] = [chunk];
+  let openaiResults: any[] | null = null; // Store OpenAI intermediate results
 
   // Step 1: target -> openai (if target is not openai)
   if (targetFormat !== FORMATS.OPENAI) {
@@ -191,7 +191,7 @@ export function translateResponse(targetFormat: any, sourceFormat: any, chunk: a
   if (sourceFormat !== FORMATS.OPENAI) {
     const fromOpenAI = responseRegistry.get(`${FORMATS.OPENAI}:${sourceFormat}`);
     if (fromOpenAI) {
-      const finalResults = [];
+      const finalResults: any[] = [];
       for (const r of results) {
         const converted = fromOpenAI(r, state);
         if (converted) {
@@ -204,7 +204,7 @@ export function translateResponse(targetFormat: any, sourceFormat: any, chunk: a
 
   // Attach OpenAI intermediate results for logging
   if (openaiResults && sourceFormat !== FORMATS.OPENAI && targetFormat !== FORMATS.OPENAI) {
-    results._openaiIntermediate = openaiResults;
+    (results as any)._openaiIntermediate = openaiResults;
   }
 
   return results;

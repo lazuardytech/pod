@@ -224,7 +224,7 @@ function mergeAllOf(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (obj.allOf && Array.isArray(obj.allOf)) {
-    const merged = {};
+    const merged: Record<string, any> = {};
 
     for (const item of obj.allOf) {
       if (item.properties) {

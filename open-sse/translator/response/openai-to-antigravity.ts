@@ -83,11 +83,11 @@ export function openaiToAntigravityResponse(chunk: any, state: any) {
   }
 
   // Build candidate
-  const candidate = { content: { role: "model", parts } };
+  const candidate: Record<string, any> = { content: { role: "model", parts } };
 
   // Finish reason mapping
   if (finishReason) {
-    const reasonMap = {
+    const reasonMap: Record<string, any> = {
       stop: "STOP",
       length: "MAX_TOKENS",
       tool_calls: "STOP",
@@ -97,7 +97,7 @@ export function openaiToAntigravityResponse(chunk: any, state: any) {
   }
 
   // Build response
-  const response = {
+  const response: Record<string, any> = {
     candidates: [candidate],
     modelVersion: state._modelVersion,
     responseId: state._responseId,

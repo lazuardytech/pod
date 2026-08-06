@@ -17,7 +17,7 @@ export function openaiToOpenAIResponsesResponse(chunk: any, state: any) {
 
   if (!chunk.choices?.length) return [];
 
-  const events = [];
+  const events: any[] = [];
   const nextSeq = () => ++state.seq;
 
   const emit = (eventType: any, data: any) => {
@@ -349,7 +349,7 @@ function sendCompleted(state: any, emit: any) {
 function flushEvents(state: any) {
   if (state.completedSent) return [];
 
-  const events = [];
+  const events: any[] = [];
   const nextSeq = () => ++state.seq;
   const emit = (eventType: any, data: any) => {
     data.sequence_number = nextSeq();
@@ -384,7 +384,7 @@ export function openaiResponsesToOpenAIResponse(chunk: any, state: any) {
     state.finishReasonSent = true;
     state.finishReason = finishReason;
 
-    const finalChunk = {
+    const finalChunk: Record<string, any> = {
       id: state.chatId || `chatcmpl-${Date.now()}`,
       object: "chat.completion.chunk",
       created: state.created || Math.floor(Date.now() / 1000),
@@ -581,7 +581,7 @@ export function openaiResponsesToOpenAIResponse(chunk: any, state: any) {
       state.finishReasonSent = true;
       state.finishReason = finishReason; // Mark for usage injection in stream.js
 
-      const finalChunk = {
+      const finalChunk: Record<string, any> = {
         id: state.chatId,
         object: "chat.completion.chunk",
         created: state.created,

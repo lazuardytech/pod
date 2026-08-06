@@ -143,7 +143,7 @@ export function claudeToOpenAIResponse(chunk: any, state: any) {
 
       if (chunk.delta?.stop_reason) {
         state.finishReason = convertStopReason(chunk.delta.stop_reason);
-        const finalChunk = {
+        const finalChunk: Record<string, any> = {
           id: `chatcmpl-${state.messageId}`,
           object: "chat.completion.chunk",
           created: Math.floor(Date.now() / 1000),

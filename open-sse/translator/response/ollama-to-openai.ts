@@ -71,7 +71,7 @@ export function ollamaToOpenAI(chunk: any, state: any) {
     state.accumulatedThinking = (state.accumulatedThinking || "") + thinking;
   }
 
-  const delta = {};
+  const delta: Record<string, any> = {};
   if (!state.ollama.sentRole) {
     delta.role = "assistant";
     state.ollama.sentRole = true;
@@ -138,7 +138,7 @@ export function ollamaBodyToOpenAI(body: any) {
   const thinking = msg.thinking || "";
   const toolCalls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
 
-  const message = { role: "assistant" };
+  const message: Record<string, any> = { role: "assistant" };
   if (content) message.content = content;
   if (thinking) message.reasoning_content = thinking;
   if (toolCalls.length > 0) message.tool_calls = convertToolCalls(toolCalls);
