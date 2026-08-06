@@ -128,7 +128,11 @@ function parseResetTime(resetValue: any) {
  * GitHub Copilot Usage
  * Uses GitHub accessToken (not copilotToken) to call copilot_internal/user API
  */
-async function getGitHubUsage(accessToken: any, providerSpecificData: any, proxyOptions: any = null) {
+async function getGitHubUsage(
+  accessToken: any,
+  providerSpecificData: any,
+  proxyOptions: any = null,
+) {
   try {
     if (!accessToken) {
       throw new Error("No GitHub access token available. Please re-authorize the connection.");
@@ -223,7 +227,11 @@ function formatGitHubQuotaSnapshot(quota: any) {
  * Uses retrieveUserQuota (same endpoint as `gemini /stats`) returning
  * per-model buckets with remainingFraction + resetTime.
  */
-async function getGeminiUsage(accessToken: any, providerSpecificData: any, proxyOptions: any = null) {
+async function getGeminiUsage(
+  accessToken: any,
+  providerSpecificData: any,
+  proxyOptions: any = null,
+) {
   if (!accessToken) {
     return { plan: "Free", message: "Gemini CLI access token not available." };
   }
@@ -334,7 +342,11 @@ async function getGeminiSubscriptionInfo(accessToken: any, proxyOptions: any = n
 /**
  * Antigravity Usage - Fetch quota from Google Cloud Code API
  */
-async function getAntigravityUsage(accessToken: any, providerSpecificData: any, proxyOptions: any = null) {
+async function getAntigravityUsage(
+  accessToken: any,
+  providerSpecificData: any,
+  proxyOptions: any = null,
+) {
   try {
     // Fetch subscription info once — reuse for both projectId and plan
     const subscriptionInfo = await getAntigravitySubscriptionInfo(accessToken, proxyOptions);
@@ -1055,10 +1067,19 @@ function pickMiniMaxRepresentativeModel(models: any, getTotal: any) {
   const withQuota = models.filter((m: any) => getTotal(m) > 0);
   const pool = withQuota.length > 0 ? withQuota : models;
   if (pool.length === 0) return null;
-  return pool.reduce((best: any, current: any) => (getTotal(current) > getTotal(best) ? current : best));
+  return pool.reduce((best: any, current: any) =>
+    getTotal(current) > getTotal(best) ? current : best,
+  );
 }
 
-function getMiniMaxResetAt(model: any, capturedAtMs: any, remainsSnake: any, remainsCamel: any, endSnake: any, endCamel: any) {
+function getMiniMaxResetAt(
+  model: any,
+  capturedAtMs: any,
+  remainsSnake: any,
+  remainsCamel: any,
+  endSnake: any,
+  endCamel: any,
+) {
   const remainsMs = Number(getMiniMaxField(model, remainsSnake, remainsCamel)) || 0;
   if (remainsMs > 0) return new Date(capturedAtMs + remainsMs).toISOString();
   return parseResetTime(getMiniMaxField(model, endSnake, endCamel));

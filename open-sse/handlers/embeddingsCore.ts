@@ -23,9 +23,7 @@ export interface EmbeddingsCoreParams {
  *
  * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
-export async function handleEmbeddingsCore(
-  params: EmbeddingsCoreParams,
-): Promise<EmbeddingsResult>;
+export async function handleEmbeddingsCore(params: EmbeddingsCoreParams): Promise<EmbeddingsResult>;
 export async function handleEmbeddingsCore({
   body,
   modelInfo,

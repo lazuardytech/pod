@@ -44,7 +44,12 @@ export function getRefreshLeadMs(provider: any) {
 /**
  * Refresh OAuth access token using refresh token
  */
-export async function refreshAccessToken(provider: any, refreshToken: any, credentials: any, log: any) {
+export async function refreshAccessToken(
+  provider: any,
+  refreshToken: any,
+  credentials: any,
+  log: any,
+) {
   const config = (PROVIDERS as Record<string, any>)[provider];
 
   if (!config || !config.refreshUrl) {
@@ -148,7 +153,12 @@ export async function refreshClaudeOAuthToken(refreshToken: any, log: any) {
 /**
  * Specialized refresh for Google providers (Gemini, Antigravity)
  */
-export async function refreshGoogleToken(refreshToken: any, clientId: any, clientSecret: any, log: any) {
+export async function refreshGoogleToken(
+  refreshToken: any,
+  clientId: any,
+  clientSecret: any,
+  log: any,
+) {
   try {
     const response = await fetch(OAUTH_ENDPOINTS.google.token, {
       method: "POST",

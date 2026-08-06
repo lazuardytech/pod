@@ -373,7 +373,9 @@ export function cleanJSONSchemaForAntigravity(schema: any) {
     if (!obj || typeof obj !== "object") return;
 
     if (obj.required && Array.isArray(obj.required) && obj.properties) {
-      const validRequired = obj.required.filter((field: any) => Object.hasOwn(obj.properties, field));
+      const validRequired = obj.required.filter((field: any) =>
+        Object.hasOwn(obj.properties, field),
+      );
       if (validRequired.length === 0) {
         delete obj.required;
       } else {

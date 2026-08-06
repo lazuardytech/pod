@@ -17,7 +17,7 @@ Operational rules for AI agents working on the **Pod** project.
 - `src/app/api/proxy-pools/vercel-deploy/route.ts` trailing-slash trim uses a real `/\\/$/` regex (an earlier `/\\\\/$/` matched a backslash, producing `//<relayPath>`).
 - Rate-limit env: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
 - `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode`, `.rwx` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`); do not commit those dirs.
-- open-sse/ has 19 provider executors (base.js is the base class, index.js is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live frozen in the `open-sse/` JS fork.
+- open-sse/ has 19 provider executors (base.ts is the base class, index.ts is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live in the typed `open-sse/` fork.
 - Path dirs with parentheses (e.g. `src/app/(dashboard)/`) break naive `sed 's/([0-9].*//'` patterns — use a paren-aware pattern when parsing `tsc` output.
 - Chrome `ERR_FAILED` interstitial after idle (fixed by hard reload) is often SW-side: `public/sw.js` must keep network-first navigation, never reject `respondWith`, and avoid `Response.error()` (esp. images); `ServiceWorkerRegistrar` must not blind `location.reload()` on every `controllerchange`. RSC/`?_rsc=` fetches are not SW-intercepted (idle CF/TLS is a separate failure mode).
 
@@ -25,7 +25,7 @@ Operational rules for AI agents working on the **Pod** project.
 
 - **Project name**: pod, v0.0.82
 - **Runtime**: Bun + Next.js 16 (TS, strict mode)
-- **Engine**: open-sse/ (local fork, not npm, frozen as JS)
+- **Engine**: open-sse/ (local fork, not npm, TypeScript)
 - **Data**: SQLite at ~/.pod/pod.sqlite
 - **Port**: 20128
 - **Health**: GET /api/health (public)
@@ -71,13 +71,13 @@ Operational rules for AI agents working on the **Pod** project.
 5. Connection locking must stay transactional.
 6. Preserve modelLockCount\_${model} semantics.
 7. Keep the guarded fallback loop in src/sse/handlers/chat.ts.
-8. Keep the outer crash guard in open-sse/utils/stream.js.
-9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
-10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
+8. Keep the outer crash guard in open-sse/utils/stream.ts.
+9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.ts.
+10. open-sse/ is TypeScript (strict, included in `tsc`). Keep `.js` import path suffixes (ESM/bundler convention). Do not replace the local fork with the npm package.
 11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
 12. `src/instrumentation.ts` is the canonical startup path (Next.js 16) — runs `initializeApp()` + signal handlers in production; side-effect imports in layout.tsx for startup code have been removed.
 13. AbortError at `node:_http_server` (client disconnect) must be classified as `[ClientDisconnect]`, not `[FATAL]`. SSE stream wrappers use `controller.close()` (not `controller.error(err)`) on reader abort. See `.agents/knowledge/04-gotchas.md` item 31.
-14. `open-sse/` and `cloud/` are excluded from `tsc` (tsconfig `exclude`). Do NOT consume symbols exported from `open-sse/` in `src/` — tsc will not see them and the production build fails. Keep cross-boundary constants inlined in `src/` (e.g. rate-limit header constants in `src/lib/rateLimit/index.ts`).
+14. `cloud/` remains excluded from root `tsc` (has its own tsconfig). `open-sse/` is included. Prefer importing typed symbols from `open-sse/`; keep cross-boundary constants inlined in `src/` when bundling constraints require it (e.g. rate-limit headers).
 15. `next.config.mjs` `serverExternalPackages` must include `undici` (and `bun:sqlite`). undici v8 throws a bare `Error` when Turbopack bundles its top-level code into the standalone server chunk, breaking dynamic `import("undici")` in server routes (`src/app/api/proxy-pools/[id]/test/route.ts`) and `src/lib/network/`. Keep undici external (loaded from `node_modules` at runtime) — never bundle it.
 
 ## Rate Limiting
@@ -96,7 +96,7 @@ Operational rules for AI agents working on the **Pod** project.
 4. Keep https://www.google.com/generate_204 as relay health target.
 5. Kiro retry body-gated on transient overload markers.
 6. cloud/src/handlers/testClaude.ts is a 410 compatibility stub.
-7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js — do NOT emit `<think>` or `</think>` as content delta.
+7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.ts — do NOT emit `<think>` or `</think>` as content delta.
 
 ## Operations
 

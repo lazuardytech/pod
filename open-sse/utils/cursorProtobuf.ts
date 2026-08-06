@@ -542,7 +542,9 @@ export function encodeRequest(
         Array.isArray(nextMsg?.tool_results) &&
         nextMsg.tool_results.length > 0;
       const currentIds = new Set(
-        msg.tool_results.map((tr: any) => tr?.tool_call_id).filter((id: any) => typeof id === "string"),
+        msg.tool_results
+          .map((tr: any) => tr?.tool_call_id)
+          .filter((id: any) => typeof id === "string"),
       );
       const nextIds = new Set(
         (nextMsg?.tool_results || [])

@@ -286,7 +286,12 @@ export function openaiToGeminiCLIRequest(model: any, body: any, stream: any) {
 }
 
 // Wrap Gemini CLI format in Cloud Code wrapper
-function wrapInCloudCodeEnvelope(model: any, geminiCLI: any, credentials: any = null, isAntigravity: any = false) {
+function wrapInCloudCodeEnvelope(
+  model: any,
+  geminiCLI: any,
+  credentials: any = null,
+  isAntigravity: any = false,
+) {
   const projectId = credentials?.projectId || generateProjectId();
 
   const envelope: Record<string, any> = {
@@ -475,7 +480,12 @@ function isClaudeModel(model: any) {
 }
 
 // OpenAI -> Antigravity (Sandbox Cloud Code with wrapper)
-export function openaiToAntigravityRequest(model: any, body: any, stream: any, credentials: any = null) {
+export function openaiToAntigravityRequest(
+  model: any,
+  body: any,
+  stream: any,
+  credentials: any = null,
+) {
   if (isClaudeModel(model)) {
     const claudeRequest = openaiToClaudeRequestForAntigravity(model, body, stream);
     return wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials);

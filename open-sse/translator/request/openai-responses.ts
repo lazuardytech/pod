@@ -17,7 +17,12 @@ const clampCallId = (id: any) =>
 /**
  * Convert OpenAI Responses API request to OpenAI Chat Completions format
  */
-export function openaiResponsesToOpenAIRequest(model: any, body: any, stream: any, credentials: any) {
+export function openaiResponsesToOpenAIRequest(
+  model: any,
+  body: any,
+  stream: any,
+  credentials: any,
+) {
   if (!body.input) return body;
 
   const result = { ...body };
@@ -167,7 +172,12 @@ function normalizeToolParameters(params: any) {
 /**
  * Convert OpenAI Chat Completions to OpenAI Responses API format
  */
-export function openaiToOpenAIResponsesRequest(model: any, body: any, stream: any, credentials: any) {
+export function openaiToOpenAIResponsesRequest(
+  model: any,
+  body: any,
+  stream: any,
+  credentials: any,
+) {
   // Body already in Responses API format (e.g. Cursor CLI calling /chat/completions with input[])
   if (body.input) return { ...body, model, stream: true };
 

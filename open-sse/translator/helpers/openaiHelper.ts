@@ -83,7 +83,9 @@ export function filterToOpenAIFormat(body: any) {
 
     if (typeof msg.content === "string") return msg.content.trim() !== "";
     if (Array.isArray(msg.content)) {
-      return msg.content.some((b: any) => (b.type === "text" && b.text?.trim()) || b.type !== "text");
+      return msg.content.some(
+        (b: any) => (b.type === "text" && b.text?.trim()) || b.type !== "text",
+      );
     }
     return true;
   });

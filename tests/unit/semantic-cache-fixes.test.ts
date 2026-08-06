@@ -54,7 +54,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const chatCoreSrc = readFileSync(
-  resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js"),
+  resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.ts"),
   "utf8",
 );
 

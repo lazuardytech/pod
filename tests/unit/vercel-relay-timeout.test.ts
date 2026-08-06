@@ -201,7 +201,7 @@ describe("chatCore — Vercel relay 504 detection (Fix 2)", () => {
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 
     // Verify the 504 detection code exists in chatCore.js
-    const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js");
+    const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.ts");
     const source = fs.readFileSync(chatCorePath, "utf8");
     expect(source).toContain("[VERCEL-RELAY-TIMEOUT]");
     expect(source).toContain("Vercel relay timeout — function exceeded platform limit");
@@ -215,7 +215,7 @@ describe("chatCore — Vercel relay 504 detection (Fix 2)", () => {
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 
     // Verify the condition in source includes the vercelRelayUrl guard
-    const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js");
+    const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.ts");
     const source = fs.readFileSync(chatCorePath, "utf8");
     expect(source).toContain(
       "providerResponse && providerResponse.status === 504 && proxyOptions.vercelRelayUrl",
@@ -230,7 +230,7 @@ describe("chatCore — one-shot retry on 502/504 (Fix 4)", () => {
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 
     // Verify retry code exists in source
-    const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.js");
+    const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.ts");
     const source = fs.readFileSync(chatCorePath, "utf8");
     expect(source).toContain("[VERCEL-RELAY-RETRY]");
     expect(source).toContain("Retrying upstream request after relay 502/504");

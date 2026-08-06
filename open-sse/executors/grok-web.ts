@@ -184,7 +184,14 @@ function sseChunk(data: any) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
-function buildStreamingResponse(eventStream: any, model: any, cid: any, created: any, isThinkingModel: any, signal: any) {
+function buildStreamingResponse(
+  eventStream: any,
+  model: any,
+  cid: any,
+  created: any,
+  isThinkingModel: any,
+  signal: any,
+) {
   const encoder = new TextEncoder();
   return new ReadableStream({
     async start(controller: any) {

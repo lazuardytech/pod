@@ -4,45 +4,14 @@ import { FORMATS } from "./formats.js";
 import { prepareClaudeRequest } from "./helpers/claudeHelper.js";
 import { filterToOpenAIFormat } from "./helpers/openaiHelper.js";
 import { ensureToolCallIds, fixMissingToolResponses } from "./helpers/toolCallHelper.js";
-import { createRequire } from "node:module";
-import {
-  register,
-  requestRegistry,
-  responseRegistry,
-} from "./registry.js";
+import { register, requestRegistry, responseRegistry } from "./registry.js";
+// Side-effect: register all translators (via registry.ts — no circular init).
+import "./loaders.js";
 
 export { register };
 
-const require = createRequire(import.meta.url);
-
-
-let initialized = false;
-
 function ensureInitialized() {
-  if (initialized) return;
-  initialized = true;
-
-  require("./request/claude-to-openai.js");
-  require("./request/openai-to-claude.js");
-  require("./request/gemini-to-openai.js");
-  require("./request/openai-to-gemini.js");
-  require("./request/openai-to-vertex.js");
-  require("./request/antigravity-to-openai.js");
-  require("./request/openai-responses.js");
-  require("./request/openai-to-kiro.js");
-  require("./request/openai-to-cursor.js");
-  require("./request/openai-to-ollama.js");
-  require("./request/openai-to-commandcode.js");
-
-  require("./response/claude-to-openai.js");
-  require("./response/openai-to-claude.js");
-  require("./response/gemini-to-openai.js");
-  require("./response/openai-to-antigravity.js");
-  require("./response/openai-responses.js");
-  require("./response/kiro-to-openai.js");
-  require("./response/cursor-to-openai.js");
-  require("./response/ollama-to-openai.js");
-  require("./response/commandcode-to-openai.js");
+  // no-op: translators register at module load via ./loaders.js
 }
 
 // Strip specific content types from messages (explicit opt-in via strip[] in PROVIDER_MODELS)

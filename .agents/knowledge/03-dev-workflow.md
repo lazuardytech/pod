@@ -25,7 +25,7 @@ All three must pass before pushing. No exceptions.
 SW shell-cache regression (when touching `public/sw.js` / registrar):
 
 ```bash
-bun x vitest run tests/unit/swShellCache.test.js
+bun x vitest run tests/unit/swShellCache.test.ts
 ```
 
 ## Workflow Rules

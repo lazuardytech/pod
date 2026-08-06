@@ -62,8 +62,7 @@ export const refreshTokenByProvider = (
 export const formatProviderCredentials = (
   provider: string,
   credentials: AnyCreds,
-): AnyCreds | null =>
-  _formatProviderCredentials(provider, credentials, log);
+): AnyCreds | null => _formatProviderCredentials(provider, credentials, log);
 export const getAllAccessTokens = (userInfo: unknown): unknown =>
   _getAllAccessTokens(userInfo, log);
 export function releaseConnection(connectionId: string): void {

@@ -325,7 +325,13 @@ export function estimateUsage(body: any, contentLength: any, targetFormat: any =
 /**
  * Log usage with cache info (green color)
  */
-export function logUsage(provider: any, usage: any, model: any = null, connectionId: any = null, apiKey: any = null) {
+export function logUsage(
+  provider: any,
+  usage: any,
+  model: any = null,
+  connectionId: any = null,
+  apiKey: any = null,
+) {
   if (!usage || typeof usage !== "object") return;
 
   const p = provider?.toUpperCase() || "UNKNOWN";

@@ -114,7 +114,9 @@ export async function parseUpstreamError(response: any, executor: any = null) {
 
   const messageStr = typeof message === "string" ? message : JSON.stringify(message);
   const finalMessage =
-    messageStr || DEFAULT_ERROR_MESSAGES_MAP[response.status] || `Upstream error: ${response.status}`;
+    messageStr ||
+    DEFAULT_ERROR_MESSAGES_MAP[response.status] ||
+    `Upstream error: ${response.status}`;
 
   return { statusCode: response.status, message: finalMessage };
 }
@@ -144,7 +146,12 @@ export function createErrorResult(statusCode: any, message: any, resetsAtMs: any
  * @param {string} retryAfterHuman - Human-readable retry info e.g. "reset after 30s"
  * @returns {Response}
  */
-export function unavailableResponse(statusCode: any, message: any, retryAfter: any, retryAfterHuman: any) {
+export function unavailableResponse(
+  statusCode: any,
+  message: any,
+  retryAfter: any,
+  retryAfterHuman: any,
+) {
   const retryAfterSec = Math.max(
     Math.ceil((new Date(retryAfter).getTime() - Date.now()) / 1000),
     1,

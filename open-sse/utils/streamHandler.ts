@@ -138,7 +138,11 @@ export function createDisconnectAwareStream(transformStream: any, streamControll
  * @param {TransformStream} transformStream - Transform stream for SSE
  * @param {object} streamController - Stream controller from createStreamController
  */
-export function pipeWithDisconnect(providerResponse: any, transformStream: any, streamController: any) {
+export function pipeWithDisconnect(
+  providerResponse: any,
+  transformStream: any,
+  streamController: any,
+) {
   const transformedBody = providerResponse.body.pipeThrough(transformStream);
   return createDisconnectAwareStream(
     {

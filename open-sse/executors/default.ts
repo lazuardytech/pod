@@ -95,7 +95,10 @@ Respond ONLY with the JSON object, no other text.`;
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers: Record<string, any> = { "Content-Type": "application/json", ...this.config.headers };
+    const headers: Record<string, any> = {
+      "Content-Type": "application/json",
+      ...this.config.headers,
+    };
 
     switch (this.provider) {
       case "gemini":
@@ -113,7 +116,10 @@ Respond ONLY with the JSON object, no other text.`;
           // Remove Title-Case static keys that conflict with incoming lowercase cached keys
           for (const lcKey of Object.keys(cached)) {
             // Build the Title-Case equivalent: "anthropic-version" → "Anthropic-Version"
-            const titleKey = lcKey.replace(/(^|-)([a-z])/g, (_: any, sep: any, c: any) => sep + c.toUpperCase());
+            const titleKey = lcKey.replace(
+              /(^|-)([a-z])/g,
+              (_: any, sep: any, c: any) => sep + c.toUpperCase(),
+            );
 
             // Special handling for Anthropic-Beta to preserve required flags like OAuth
             if (lcKey === "anthropic-beta") {

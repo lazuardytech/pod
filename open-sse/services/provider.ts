@@ -215,7 +215,12 @@ export function buildProviderUrl(provider: any, model: any, stream: any = true, 
 }
 
 // Build provider headers
-export function buildProviderHeaders(provider: any, credentials: any, stream: any = true, body: any = null) {
+export function buildProviderHeaders(
+  provider: any,
+  credentials: any,
+  stream: any = true,
+  body: any = null,
+) {
   const config = getProviderConfig(provider);
   const headers = {
     "Content-Type": "application/json",

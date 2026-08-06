@@ -8,7 +8,12 @@ import { formatSSE } from "./stream.js";
  * Check for bypass patterns - return fake response without calling provider
  * Only works for Claude CLI requests
  */
-export function handleBypassRequest(body: any, model: any, userAgent: any = "", ccFilterNaming: any = false) {
+export function handleBypassRequest(
+  body: any,
+  model: any,
+  userAgent: any = "",
+  ccFilterNaming: any = false,
+) {
   if (!userAgent.includes("claude-cli")) return null;
   if (!body.messages?.length) return null;
 

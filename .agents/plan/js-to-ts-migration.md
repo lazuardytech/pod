@@ -2,6 +2,8 @@
 
 Status: completed — historical
 
+> **Update 2026-08-06**: `open-sse/` and `tests/` have been migrated to TypeScript on `cursor/p1`. The freeze decision below is historical.
+
 > **Status: completed — repo is now TypeScript strict; `open-sse/` intentionally frozen as JS. Tooling is oxfmt + oxlint + tsc (Biome/ESLint removed).**
 >
 > The migration narrative below is preserved as history. **Tooling caveat:** inline commands and example diffs that still read `biome` / `eslint` / `eslint.config.mjs` were written before the VoidZero (oxfmt/oxlint) adoption and are now **historical** — the real gate is `bun run check` = oxfmt + oxlint + `tsc --noEmit`. References to `biome`/`eslint` reflect the tooling in use when this plan was authored, not the current setup.

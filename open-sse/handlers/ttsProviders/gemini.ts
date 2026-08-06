@@ -69,8 +69,8 @@ export default {
       throw new Error(err?.error?.message || `Gemini TTS failed: ${res.status}`);
     }
     const data = await res.json();
-    const b64 = data?.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.data)?.inlineData
-      ?.data;
+    const b64 = data?.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.data)
+      ?.inlineData?.data;
     if (!b64) {
       const reason =
         data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || "unknown";

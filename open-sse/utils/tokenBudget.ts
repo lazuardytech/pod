@@ -26,7 +26,10 @@ function raiseTokenField(body: any, field: any, minimum: any, log: any, provider
   );
 }
 
-export function reserveReasoningTokenBudget(body: any, { provider, model, targetFormat, log }: any = {}) {
+export function reserveReasoningTokenBudget(
+  body: any,
+  { provider, model, targetFormat, log }: any = {},
+) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return body;
   if (!shouldReserveReasoningBudget(provider, targetFormat)) return body;
 

@@ -14,7 +14,13 @@ function walk(dir, out = []) {
 }
 
 function annotateSource(fileName, sourceText) {
-  const sf = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
+  const sf = ts.createSourceFile(
+    fileName,
+    sourceText,
+    ts.ScriptTarget.ESNext,
+    true,
+    ts.ScriptKind.TS,
+  );
   const edits = [];
 
   const visitParams = (params) => {

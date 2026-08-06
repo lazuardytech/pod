@@ -35,7 +35,12 @@ export async function throwUpstreamError(res: any) {
 }
 
 // Parse `model` string as "modelId/voiceId" — match against known model list (longest prefix wins)
-export function parseModelVoice(model: any, defaultModel: any = "", defaultVoice: any = "", knownModels: any = []) {
+export function parseModelVoice(
+  model: any,
+  defaultModel: any = "",
+  defaultVoice: any = "",
+  knownModels: any = [],
+) {
   if (!model) return { modelId: defaultModel, voiceId: defaultVoice };
   const known = knownModels
     .map((m: any) => m.id || m)

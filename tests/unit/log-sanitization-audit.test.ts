@@ -15,7 +15,7 @@ describe("logging audit regressions", () => {
   });
 
   it("does not log raw Antigravity error messages", () => {
-    const source = read("open-sse/services/usage.js");
+    const source = read("open-sse/services/usage.ts");
     expect(source).not.toContain('console.error("[Antigravity Usage] Error:", error.message);');
     expect(source).not.toContain(
       'console.error("[Antigravity Subscription] Error:", error.message);',
@@ -37,7 +37,7 @@ describe("logging audit regressions", () => {
   });
 
   it("does not log provider or model identifiers in audited chatCore error lines", () => {
-    const source = read("open-sse/handlers/chatCore.js");
+    const source = read("open-sse/handlers/chatCore.ts");
 
     expect(source).not.toContain("[VERCEL-RELAY-RETRY] ${provider}/${model}");
     expect(source).not.toContain("[TIMEOUT] ${provider}/${model}");
@@ -47,7 +47,7 @@ describe("logging audit regressions", () => {
   });
 
   it("does not log raw SSE-to-JSON conversion error messages", () => {
-    const source = read("open-sse/handlers/chatCore/sseToJsonHandler.js");
+    const source = read("open-sse/handlers/chatCore/sseToJsonHandler.ts");
 
     expect(source).not.toContain(
       'console.error("[ChatCore] Responses API SSE→JSON failed:", err?.message || String(err));',
@@ -58,9 +58,9 @@ describe("logging audit regressions", () => {
   });
 
   it("does not log new provider, model, connection, or raw error details from the follow-up audit", () => {
-    const proxyFetchSource = read("open-sse/utils/proxyFetch.js");
-    const nonStreamingSource = read("open-sse/handlers/chatCore/nonStreamingHandler.js");
-    const streamHandlerSource = read("open-sse/utils/streamHandler.js");
+    const proxyFetchSource = read("open-sse/utils/proxyFetch.ts");
+    const nonStreamingSource = read("open-sse/handlers/chatCore/nonStreamingHandler.ts");
+    const streamHandlerSource = read("open-sse/utils/streamHandler.ts");
     const providerLimitUtilsSource = read(
       "src/app/(dashboard)/usage/components/ProviderLimits/utils.tsx",
     );
