@@ -11,6 +11,21 @@ export {
   VOICE_FETCHERS,
 } from "./ttsProviders/index.js";
 
+export type TtsResult =
+  | { success: true; response: Response }
+  | { success: false; status: number; error: string };
+
+export interface TtsCoreParams {
+  provider: string;
+  model: string;
+  input: string;
+  responseFormat?: string;
+  language?: string;
+  credentials?: Record<string, unknown> | null;
+  voice?: string;
+  speed?: number;
+}
+
 // ── Response Formatter (DRY) ───────────────────────────────────
 function createTtsResponse(base64Audio: any, format: any, responseFormat: any) {
   const audioBuffer = Buffer.from(base64Audio, "base64");
@@ -48,6 +63,7 @@ function createTtsResponse(base64Audio: any, format: any, responseFormat: any) {
  *
  * @returns {Promise<{success, response, status?, error?}>}
  */
+export async function handleTtsCore(params: TtsCoreParams): Promise<TtsResult>;
 export async function handleTtsCore({
   provider,
   model,

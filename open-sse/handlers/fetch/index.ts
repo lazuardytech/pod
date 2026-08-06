@@ -4,6 +4,22 @@
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_FORMAT = "markdown";
 
+export type FetchResult =
+  | { success: true; data: unknown; response?: Response }
+  | { success: false; status: number; error: string };
+
+export interface FetchCoreParams {
+  url: string;
+  format?: string;
+  maxCharacters?: number;
+  provider: string;
+  providerConfig: unknown;
+  credentials: Record<string, unknown> | null;
+  log: any;
+  onCredentialsRefreshed?: (newCreds: Record<string, unknown>) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+}
+
 /**
  * @typedef {Object} FetchResult
  * @property {boolean} success
@@ -93,6 +109,7 @@ async function readJsonOrText(res: any) {
  * @param {Function} [params.log]
  * @returns {Promise<FetchResult>}
  */
+export async function handleFetchCore(params: FetchCoreParams): Promise<FetchResult>;
 export async function handleFetchCore({
   url,
   format,

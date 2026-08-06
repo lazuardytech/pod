@@ -56,7 +56,7 @@ export async function handleChat(
     }
     const _exhaustive: never = bodyResult;
     void _exhaustive;
-    return errorResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal error");
+    return errorResponse(HTTP_STATUS.SERVER_ERROR, "Internal error");
   }
   let body: Record<string, any>;
   try {
@@ -400,7 +400,7 @@ async function handleSingleModelChat(
       );
       excludeConnectionIds.add(credentials?.connectionId || "unknown");
       lastError = (err as { message?: string })?.message || "Unexpected error";
-      lastStatus = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      lastStatus = HTTP_STATUS.SERVER_ERROR;
       continue;
     }
   }

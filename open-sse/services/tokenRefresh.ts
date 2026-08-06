@@ -662,7 +662,7 @@ async function _getAccessTokenInternal(provider: any, credentials: any, log: any
 /**
  * Refresh token by provider type (helper for handlers)
  */
-export async function refreshTokenByProvider(provider: any, credentials: any, log: any) {
+export async function refreshTokenByProvider(provider: any, credentials: any, log: any = null) {
   if (!credentials.refreshToken) return null;
 
   switch (provider) {

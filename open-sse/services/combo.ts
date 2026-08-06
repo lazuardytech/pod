@@ -16,6 +16,16 @@ import { checkFallbackError, formatRetryAfter } from "./accountFallback.js";
  */
 const comboRotationState = new Map();
 
+export interface ComboChatParams {
+  body: Record<string, any>;
+  models: string[];
+  handleSingleModel: (body: Record<string, any>, model: string) => Promise<Response>;
+  log: any;
+  comboName?: string;
+  comboStrategy?: string;
+  comboStickyLimit?: number | string;
+}
+
 function normalizeStickyLimit(stickyLimit: any) {
   const parsed = Number.parseInt(stickyLimit, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
@@ -74,7 +84,7 @@ export function getRotatedModels(models: any, comboName: any, strategy: any, sti
  * Reset in-memory rotation state when combo/settings change
  * @param {string} [comboName] - Combo name to reset; omit to clear all
  */
-export function resetComboRotation(comboName: any) {
+export function resetComboRotation(comboName?: any) {
   if (comboName) comboRotationState.delete(comboName);
   else comboRotationState.clear();
 }
@@ -200,6 +210,7 @@ export function injectComboSystemPrompt(body: any, systemPrompt: any) {
  * @param {number|string} [options.comboStickyLimit=1] - Requests per combo model before switching
  * @returns {Promise<Response>}
  */
+export async function handleComboChat(params: ComboChatParams): Promise<Response>;
 export async function handleComboChat({
   body,
   models,

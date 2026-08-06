@@ -6,6 +6,18 @@ import { createErrorResult } from "../utils/error.js";
 // todo(ts): preserve the JS-era free variable until STT translate flow is typed.
 declare const translate: any;
 
+export type SttResult =
+  | { success: true; response: Response }
+  | { success: false; status: number; error: string };
+
+export interface SttCoreParams {
+  provider: string;
+  model: string;
+  formData?: FormData;
+  credentials?: Record<string, unknown> | null;
+  translate?: boolean;
+}
+
 // Build auth headers from sttConfig + token
 function buildAuthHeaders(cfg: any, token: any) {
   if (!token) return {};
@@ -239,6 +251,7 @@ function jsonResponse(obj: any) {
  * STT core handler — dispatch by sttConfig.format.
  * @returns {Promise<{success, response, status?, error?}>}
  */
+export async function handleSttCore(params: SttCoreParams): Promise<SttResult>;
 export async function handleSttCore({ provider, model, formData, credentials, translate }: any) {
   const file = formData.get("file");
   if (!file)

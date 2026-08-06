@@ -29,21 +29,21 @@ export const refreshAccessToken = (
   provider: string,
   refreshToken: string,
   credentials: AnyCreds,
-): Promise<AnyCreds> => _refreshAccessToken(provider, refreshToken, credentials, log);
-export const refreshClaudeOAuthToken = (refreshToken: string): Promise<AnyCreds> =>
+): Promise<AnyCreds | null> => _refreshAccessToken(provider, refreshToken, credentials, log);
+export const refreshClaudeOAuthToken = (refreshToken: string): Promise<AnyCreds | null> =>
   _refreshClaudeOAuthToken(refreshToken, log);
 export const refreshGoogleToken = (
   refreshToken: string,
   clientId: string,
   clientSecret: string,
-): Promise<AnyCreds> => _refreshGoogleToken(refreshToken, clientId, clientSecret, log);
-export const refreshQwenToken = (refreshToken: string): Promise<AnyCreds> =>
+): Promise<AnyCreds | null> => _refreshGoogleToken(refreshToken, clientId, clientSecret, log);
+export const refreshQwenToken = (refreshToken: string): Promise<AnyCreds | null> =>
   _refreshQwenToken(refreshToken, log);
-export const refreshCodexToken = (refreshToken: string): Promise<AnyCreds> =>
+export const refreshCodexToken = (refreshToken: string): Promise<AnyCreds | null> =>
   _refreshCodexToken(refreshToken, log);
-export const refreshIflowToken = (refreshToken: string): Promise<AnyCreds> =>
+export const refreshIflowToken = (refreshToken: string): Promise<AnyCreds | null> =>
   _refreshIflowToken(refreshToken, log);
-export const refreshGitHubToken = (refreshToken: string): Promise<AnyCreds> =>
+export const refreshGitHubToken = (refreshToken: string): Promise<AnyCreds | null> =>
   _refreshGitHubToken(refreshToken, log);
 export const refreshCopilotToken = (
   githubAccessToken: string,
@@ -52,14 +52,17 @@ export const refreshCopilotToken = (
 export const refreshKiroToken = (
   refreshToken: string,
   providerSpecificData: AnyCreds | undefined,
-): Promise<AnyCreds> => _refreshKiroToken(refreshToken, providerSpecificData, log);
+): Promise<AnyCreds | null> => _refreshKiroToken(refreshToken, providerSpecificData, log);
 export const getAccessToken = (provider: string, credentials: AnyCreds): Promise<AnyCreds> =>
   _getAccessToken(provider, credentials, log);
 export const refreshTokenByProvider = (
   provider: string,
   credentials: AnyCreds,
-): Promise<AnyCreds> => _refreshTokenByProvider(provider, credentials, log);
-export const formatProviderCredentials = (provider: string, credentials: AnyCreds): string =>
+): Promise<AnyCreds | null> => _refreshTokenByProvider(provider, credentials, log);
+export const formatProviderCredentials = (
+  provider: string,
+  credentials: AnyCreds,
+): AnyCreds | null =>
   _formatProviderCredentials(provider, credentials, log);
 export const getAllAccessTokens = (userInfo: unknown): unknown =>
   _getAllAccessTokens(userInfo, log);

@@ -11,6 +11,20 @@ import { buildSearchRequest } from "./callers.js";
 import { handleChatSearch } from "./chatSearch.js";
 import { normalizeSearchResponse } from "./normalizers.js";
 
+export type SearchResult =
+  | { success: true; response: Response }
+  | { success: false; status: number; error: string };
+
+export interface SearchCoreParams {
+  body: Record<string, any>;
+  provider: any;
+  providerConfig?: any;
+  credentials: Record<string, unknown> | null;
+  log: any;
+  onCredentialsRefreshed?: (newCreds: Record<string, unknown>) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+}
+
 const GLOBAL_TIMEOUT_MS = 15000;
 const NON_RETRIABLE = new Set([400, 401, 403, 404]);
 
@@ -217,6 +231,7 @@ async function tryDedicatedProvider({
  * @param {object|null} options.credentials  Provider credentials
  * @param {object}   [options.log]           Logger
  */
+export async function handleSearchCore(params: SearchCoreParams): Promise<SearchResult>;
 export async function handleSearchCore({ body, provider, providerConfig, credentials, log }: any) {
   const globalStartTime = Date.now();
 

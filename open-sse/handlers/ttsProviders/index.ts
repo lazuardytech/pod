@@ -40,7 +40,7 @@ export async function synthesizeViaConfig(provider: any, text: any, model: any, 
 }
 
 // Voice fetchers (used by /api/media-providers/tts/voices route)
-export const VOICE_FETCHERS = {
+export const VOICE_FETCHERS: Record<string, (apiKey?: string) => Promise<any>> = {
   "edge-tts": fetchEdgeTtsVoices,
   "local-device": fetchLocalDeviceVoices,
   elevenlabs: fetchElevenLabsVoices,

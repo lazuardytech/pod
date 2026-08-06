@@ -5,6 +5,21 @@ import { createErrorResult, formatProviderError, parseUpstreamError } from "../u
 import { urlToBase64 } from "./imageProviders/_base.js";
 import { getImageAdapter } from "./imageProviders/index.js";
 
+export type ImageGenResult =
+  | { success: true; response: Response }
+  | { success: false; status: number; error: string };
+
+export interface ImageGenCoreParams {
+  body: Record<string, any>;
+  modelInfo: { provider: string; model: string };
+  credentials: Record<string, any> | null;
+  log?: any;
+  binaryOutput?: boolean;
+  streamToClient?: boolean;
+  onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+}
+
 function serializeRequestBody(requestBody: any) {
   if (typeof FormData !== "undefined" && requestBody instanceof FormData) return requestBody;
   if (typeof requestBody === "string") return requestBody;
@@ -26,6 +41,9 @@ function serializeRequestBody(requestBody: any) {
  * @param {function} [options.onRequestSuccess]
  * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
+export async function handleImageGenerationCore(
+  params: ImageGenCoreParams,
+): Promise<ImageGenResult>;
 export async function handleImageGenerationCore({
   body,
   modelInfo,

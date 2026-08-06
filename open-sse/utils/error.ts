@@ -3,6 +3,14 @@ import { DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "../config/errorConfig.js";
 const ERROR_TYPES_MAP = ERROR_TYPES as Record<string | number, any>;
 const DEFAULT_ERROR_MESSAGES_MAP = DEFAULT_ERROR_MESSAGES as Record<string | number, any>;
 
+export type ErrorResult = {
+  success: false;
+  status: number;
+  error: string;
+  resetsAtMs?: number | null;
+  response: Response;
+};
+
 /**
  * Shared Access-Control-Expose-Headers value for rate-limit headers.
  * Defined once here to prevent drift across error.js and rateLimit/index.ts.
@@ -118,14 +126,14 @@ export async function parseUpstreamError(response: any, executor: any = null) {
  * @param {number} [resetsAtMs] - Optional precise cooldown expiry (ms epoch) for provider-specific quota errors
  * @returns {{ success: false, status: number, error: string, response: Response, resetsAtMs?: number }}
  */
-export function createErrorResult(statusCode: any, message: any, resetsAtMs: any) {
+export function createErrorResult(statusCode: any, message: any, resetsAtMs: any): ErrorResult {
   return {
     success: false,
     status: statusCode,
     error: message,
     resetsAtMs,
     response: errorResponse(statusCode, message),
-  };
+  } as ErrorResult;
 }
 
 /**

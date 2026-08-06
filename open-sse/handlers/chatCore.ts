@@ -93,6 +93,34 @@ import { reserveReasoningTokenBudget } from "../utils/tokenBudget.js";
 import { handleNonStreamingResponse } from "./chatCore/nonStreamingHandler.js";
 import { buildOnStreamComplete, handleStreamingResponse } from "./chatCore/streamingHandler.js";
 
+export type ChatCoreResult =
+  | { success: true; response: Response }
+  | { success: false; status: number; error: string; resetsAtMs?: number | null };
+
+export interface ChatCoreParams {
+  body: Record<string, any>;
+  modelInfo: { provider: string; model: string };
+  credentials: Record<string, any> | null;
+  log: any;
+  onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+  onDisconnect?: () => Promise<void> | void;
+  clientRawRequest?: unknown;
+  connectionId: string;
+  userAgent?: string;
+  apiKey?: string | null;
+  ccFilterNaming?: boolean;
+  rtkEnabled?: boolean;
+  cavemanEnabled?: boolean;
+  cavemanLevel?: string;
+  sourceFormatOverride?: string | null;
+  providerThinking?: unknown;
+  contentFilterMessage?: string | null;
+  chatSettings?: Record<string, any>;
+  memoryOwnerId?: string | null;
+  comboName?: string | null;
+}
+
 const MAX_SEMANTIC_CACHE_BYTES = 512 * 1024;
 const MEMORY_EXTRACTION_TEXT_LIMIT = 64 * 1024;
 // Skip cacheability check for request bodies larger than this to avoid a
@@ -200,6 +228,7 @@ function extractTokensSaved(usage: any) {
  * @param {object} options.credentials - Provider credentials
  * @param {string} options.sourceFormatOverride - Override detected source format (e.g. "openai-responses")
  */
+export async function handleChatCore(params: ChatCoreParams): Promise<ChatCoreResult>;
 export async function handleChatCore({
   body,
   modelInfo,

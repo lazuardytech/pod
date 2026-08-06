@@ -4,12 +4,28 @@ import { refreshWithRetry } from "../services/tokenRefresh.js";
 import { createErrorResult, formatProviderError, parseUpstreamError } from "../utils/error.js";
 import { getEmbeddingAdapter } from "./embeddingProviders/index.js";
 
+export type EmbeddingsResult =
+  | { success: true; response: Response }
+  | { success: false; status: number; error: string };
+
+export interface EmbeddingsCoreParams {
+  body: Record<string, any>;
+  modelInfo: { provider: string; model: string };
+  credentials: Record<string, any> | null;
+  log: any;
+  onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+}
+
 /**
  * Core embeddings handler — orchestrator only. Provider-specific URL/headers/body/normalize
  * live in `./embeddingProviders/{id}.js`.
  *
  * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
+export async function handleEmbeddingsCore(
+  params: EmbeddingsCoreParams,
+): Promise<EmbeddingsResult>;
 export async function handleEmbeddingsCore({
   body,
   modelInfo,
