@@ -23,10 +23,14 @@ export async function handleEmbeddingsCore({
   // Validate input
   const input = body.input;
   if (!input) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: input");
+    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: input", undefined);
   }
   if (typeof input !== "string" && !Array.isArray(input)) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "input must be a string or array of strings");
+    return createErrorResult(
+      HTTP_STATUS.BAD_REQUEST,
+      "input must be a string or array of strings",
+      undefined,
+    );
   }
 
   const adapter = getEmbeddingAdapter(provider);
@@ -34,6 +38,7 @@ export async function handleEmbeddingsCore({
     return createErrorResult(
       HTTP_STATUS.BAD_REQUEST,
       `Provider '${provider}' does not support embeddings.`,
+      undefined,
     );
   }
 
@@ -61,7 +66,7 @@ export async function handleEmbeddingsCore({
   } catch (error: any) {
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
     log?.debug?.("EMBEDDINGS", `Fetch error: ${errMsg}`);
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg, undefined);
   }
 
   // Handle 401/403 — try token refresh (skip for noAuth providers)
@@ -102,14 +107,18 @@ export async function handleEmbeddingsCore({
     const { statusCode, message } = await parseUpstreamError(providerResponse);
     const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
     log?.debug?.("EMBEDDINGS", `Provider error: ${errMsg}`);
-    return createErrorResult(statusCode, errMsg);
+    return createErrorResult(statusCode, errMsg, undefined);
   }
 
   let responseBody;
   try {
     responseBody = await providerResponse.json();
   } catch {
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, `Invalid JSON response from ${provider}`);
+    return createErrorResult(
+      HTTP_STATUS.BAD_GATEWAY,
+      `Invalid JSON response from ${provider}`,
+      undefined,
+    );
   }
 
   if (onRequestSuccess) await onRequestSuccess();

@@ -35,7 +35,7 @@ function pickAssistantMessageForChatCompletion(output: any) {
  * Used when provider forces streaming but client wants non-streaming.
  */
 export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
-  const chunks = [];
+  const chunks: any[] = [];
 
   for (const line of String(rawSSE || "").split("\n")) {
     const trimmed = line.trim();
@@ -52,11 +52,11 @@ export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
   if (chunks.length === 0) return null;
 
   const first = chunks[0];
-  const contentParts = [];
-  const reasoningParts = [];
-  const toolCallMap = new Map(); // index -> { id, type, function: { name, arguments } }
+  const contentParts: any[] = [];
+  const reasoningParts: any[] = [];
+  const toolCallMap = new Map<any, any>(); // index -> { id, type, function: { name, arguments } }
   let finishReason = "stop";
-  let usage = null;
+  let usage: any = null;
 
   for (const chunk of chunks) {
     const choice = chunk?.choices?.[0];
@@ -87,16 +87,18 @@ export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
     }
   }
 
-  const message = {
+  const message: any = {
     role: "assistant",
     content: contentParts.join("") || (toolCallMap.size > 0 ? null : ""),
   };
   if (reasoningParts.length > 0) message.reasoning_content = reasoningParts.join("");
   if (toolCallMap.size > 0) {
-    message.tool_calls = [...toolCallMap.entries()].sort((a: any, b: any) => a[0] - b[0]).map(([, tc]: any) => tc);
+    message.tool_calls = [...toolCallMap.entries()]
+      .sort((a: any, b: any) => a[0] - b[0])
+      .map(([, tc]: any) => tc);
   }
 
-  const result = {
+  const result: any = {
     id: first.id || `chatcmpl-${Date.now()}`,
     object: "chat.completion",
     created: first.created || Math.floor(Date.now() / 1000),
@@ -155,7 +157,7 @@ export async function handleForcedSSEToJson({
   const isCodexResponsesApi = provider === "codex" || sourceFormat === FORMATS.OPENAI_RESPONSES;
   if (isCodexResponsesApi) {
     try {
-      const jsonResponse = await convertResponsesStreamToJson(providerResponse.body);
+      const jsonResponse: any = await convertResponsesStreamToJson(providerResponse.body);
       if (onRequestSuccess) await onRequestSuccess();
 
       const usage = jsonResponse.usage || {};
@@ -212,7 +214,7 @@ export async function handleForcedSSEToJson({
       // Build client-format response
       const inTokens = usage.input_tokens || 0;
       const outTokens = usage.output_tokens || 0;
-      let finalResp;
+      let finalResp: any;
 
       // Extract tool calls from Responses API output (function_call items)
       const funcCallItems = (jsonResponse.output || []).filter(
@@ -255,7 +257,10 @@ export async function handleForcedSSEToJson({
           },
         };
       } else {
-        const message = { role: "assistant", content: textContent || (hasToolCalls ? null : "") };
+        const message: any = {
+          role: "assistant",
+          content: textContent || (hasToolCalls ? null : ""),
+        };
         if (hasToolCalls) message.tool_calls = toolCalls;
         const finishReason = hasToolCalls
           ? "tool_calls"
@@ -293,6 +298,7 @@ export async function handleForcedSSEToJson({
       return createErrorResult(
         HTTP_STATUS.BAD_GATEWAY,
         "Failed to convert streaming response to JSON",
+        undefined,
       );
     }
   }
@@ -305,6 +311,7 @@ export async function handleForcedSSEToJson({
       return createErrorResult(
         HTTP_STATUS.BAD_GATEWAY,
         "Invalid SSE response for non-streaming request",
+        undefined,
       );
 
     if (onRequestSuccess) await onRequestSuccess();
@@ -360,6 +367,7 @@ export async function handleForcedSSEToJson({
     return createErrorResult(
       HTTP_STATUS.BAD_GATEWAY,
       "Failed to convert streaming response to JSON",
+      undefined,
     );
   }
 }

@@ -8,7 +8,7 @@ export const sleep = (ms: any) => new Promise((r: any) => setTimeout(r, ms));
 // Map OpenAI size to provider-specific aspect ratio
 export function sizeToAspectRatio(size: any) {
   if (!size || typeof size !== "string") return "1:1";
-  const map = {
+  const map: Record<string, any> = {
     "1024x1024": "1:1",
     "1024x1792": "9:16",
     "1792x1024": "16:9",

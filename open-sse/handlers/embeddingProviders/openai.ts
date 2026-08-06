@@ -1,7 +1,7 @@
 // OpenAI-compatible embeddings adapter (most providers)
 import { bearerAuth } from "./_base.js";
 
-const ENDPOINTS = {
+const ENDPOINTS: Record<string, any> = {
   openai: "https://api.openai.com/v1/embeddings",
   openrouter: "https://openrouter.ai/api/v1/embeddings",
   mistral: "https://api.mistral.ai/v1/embeddings",
@@ -18,7 +18,10 @@ export default function createOpenAIEmbeddingAdapter(providerId: any) {
   return {
     buildUrl: () => ENDPOINTS[providerId],
     buildHeaders: (creds: any) => {
-      const headers = { "Content-Type": "application/json", ...bearerAuth(creds) };
+      const headers: Record<string, any> = {
+        "Content-Type": "application/json",
+        ...bearerAuth(creds),
+      };
       if (providerId === "openrouter") {
         headers["HTTP-Referer"] = "https://endpoint-proxy.local";
         headers["X-Title"] = "Endpoint Proxy";
@@ -26,7 +29,7 @@ export default function createOpenAIEmbeddingAdapter(providerId: any) {
       return headers;
     },
     buildBody: (model: any, { input, encoding_format, dimensions }: any) => {
-      const body = { model, input };
+      const body: Record<string, any> = { model, input };
       if (encoding_format) body.encoding_format = encoding_format;
       if (dimensions != null && dimensions !== "") {
         const dim = Number(dimensions);

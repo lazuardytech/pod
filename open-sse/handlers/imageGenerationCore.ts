@@ -39,7 +39,7 @@ export async function handleImageGenerationCore({
   const { provider, model } = modelInfo;
 
   if (!body.prompt) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: prompt");
+    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: prompt", undefined);
   }
 
   const adapter = getImageAdapter(provider);
@@ -47,6 +47,7 @@ export async function handleImageGenerationCore({
     return createErrorResult(
       HTTP_STATUS.BAD_REQUEST,
       `Provider '${provider}' does not support image generation`,
+      undefined,
     );
   }
 
@@ -62,6 +63,7 @@ export async function handleImageGenerationCore({
     return createErrorResult(
       HTTP_STATUS.BAD_REQUEST,
       error.message || `Invalid ${provider} image request`,
+      undefined,
     );
   }
 
@@ -80,7 +82,7 @@ export async function handleImageGenerationCore({
   } catch (error: any) {
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
     log?.debug?.("IMAGE", `Fetch error: ${errMsg}`);
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg, undefined);
   }
 
   // Handle 401/403 — try token refresh (skipped for noAuth providers)
@@ -123,7 +125,7 @@ export async function handleImageGenerationCore({
     const { statusCode, message } = await parseUpstreamError(providerResponse);
     const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
     log?.debug?.("IMAGE", `Provider error: ${errMsg}`);
-    return createErrorResult(statusCode, errMsg);
+    return createErrorResult(statusCode, errMsg, undefined);
   }
 
   // Parse provider response — adapter may override (codex SSE / async polling / binary)
@@ -151,6 +153,7 @@ export async function handleImageGenerationCore({
     return createErrorResult(
       HTTP_STATUS.BAD_GATEWAY,
       parseError.message || `Invalid response from ${provider}`,
+      undefined,
     );
   }
 

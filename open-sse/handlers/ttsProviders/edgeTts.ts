@@ -5,8 +5,8 @@ import { UA } from "./_base.js";
 const REFRESH_MS = 5 * 60 * 1000; // token TTL ~1h, refresh early
 const VOICES_TTL = 24 * 60 * 60 * 1000;
 
-const cache = { token: null, tokenTime: 0 };
-let _voicesCache = null;
+const cache: Record<string, any> = { token: null, tokenTime: 0 };
+let _voicesCache: any = null;
 let _voicesCacheTime = 0;
 
 async function getToken() {
@@ -21,7 +21,7 @@ async function getToken() {
   const html = await res.text();
   const match = html.match(/params_AbusePreventionHelper\s*=\s*\[([^,]+),([^,]+),/);
   if (!match) throw new Error("Failed to parse Bing token");
-  cache.token = { key: match[1], token: match[2].replace(/"/g, ""), cookie };
+  cache.token = { key: match[1], token: (match[2] as any).replace(/"/g, ""), cookie };
   cache.tokenTime = now;
   return cache.token;
 }

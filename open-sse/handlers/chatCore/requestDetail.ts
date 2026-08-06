@@ -29,7 +29,7 @@ const OPTIONAL_PARAMS = [
 ];
 
 export function extractRequestConfig(body: any, stream: any) {
-  const config = { messages: body.messages || [], model: body.model, stream };
+  const config: Record<string, any> = { messages: body.messages || [], model: body.model, stream };
   for (const param of OPTIONAL_PARAMS) {
     if (body[param] !== undefined) config[param] = body[param];
   }

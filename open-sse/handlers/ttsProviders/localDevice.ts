@@ -7,16 +7,16 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-let _voicesCache = null;
+let _voicesCache: any = null;
 
 async function fetchVoicesMac() {
   const { stdout } = await execFileAsync("say", ["-v", "?"]);
-  const voices = [];
+  const voices: any[] = [];
   for (const line of stdout.split("\n")) {
     const m = line.match(/^([^\s].*?)\s{2,}([a-z]{2}_[A-Z]{2})/);
     if (!m) continue;
-    const name = m[1].trim();
-    const locale = m[2].trim();
+    const name = (m[1] as any).trim();
+    const locale = (m[2] as any).trim();
     const lang = locale.split("_")[0];
     const country = locale.split("_")[1];
     voices.push({ id: name, name, locale, lang, country, gender: "" });
@@ -42,7 +42,12 @@ async function fetchVoicesWin() {
   return list.map((v: any) => {
     const culture = v.Culture || "en-US";
     const [lang, country = ""] = culture.split("-");
-    const genderMap = { 1: "Male", 2: "Female", Male: "Male", Female: "Female" };
+    const genderMap: Record<string, any> = {
+      1: "Male",
+      2: "Female",
+      Male: "Male",
+      Female: "Female",
+    };
     return {
       id: v.Name,
       name: v.Name,

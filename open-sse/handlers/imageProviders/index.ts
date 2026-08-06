@@ -13,7 +13,7 @@ import runwayml from "./runwayml.js";
 import sdwebui from "./sdwebui.js";
 import stabilityAi from "./stabilityAi.js";
 
-const ADAPTERS = {
+const ADAPTERS: Record<string, any> = {
   openai: createOpenAIAdapter("openai"),
   minimax: createOpenAIAdapter("minimax"),
   openrouter: createOpenAIAdapter("openrouter"),

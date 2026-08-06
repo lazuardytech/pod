@@ -11,7 +11,7 @@ import openai from "./openai.js";
 import openrouter from "./openrouter.js";
 
 // Special providers with custom synthesize() logic
-const SPECIAL_ADAPTERS = {
+const SPECIAL_ADAPTERS: Record<string, any> = {
   "google-tts": googleTts,
   "edge-tts": edgeTts,
   "local-device": localDevice,
@@ -30,7 +30,7 @@ export async function synthesizeViaConfig(provider: any, text: any, model: any, 
   const { AI_PROVIDERS } = await import("@/shared/constants/providers");
   const cfg = AI_PROVIDERS[provider]?.ttsConfig;
   if (!cfg) return null;
-  const handler = FORMAT_HANDLERS[cfg.format];
+  const handler = (FORMAT_HANDLERS as Record<string, any>)[cfg.format];
   if (!handler) return null;
   const apiKey = credentials?.apiKey;
   if (cfg.authType !== "none" && !apiKey) throw new Error(`${provider} API key required`);

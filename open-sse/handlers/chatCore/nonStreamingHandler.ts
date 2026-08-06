@@ -18,7 +18,11 @@ import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
 /**
  * Translate non-streaming response body from provider format → OpenAI format.
  */
-export function translateNonStreamingResponse(responseBody: any, targetFormat: any, sourceFormat: any) {
+export function translateNonStreamingResponse(
+  responseBody: any,
+  targetFormat: any,
+  sourceFormat: any,
+) {
   if (targetFormat === sourceFormat || targetFormat === FORMATS.OPENAI) return responseBody;
 
   // Gemini / Antigravity
@@ -36,7 +40,7 @@ export function translateNonStreamingResponse(responseBody: any, targetFormat: a
     const usage = response.usageMetadata || responseBody.usageMetadata;
     let textContent = "",
       reasoningContent = "";
-    const toolCalls = [];
+    const toolCalls: any[] = [];
 
     if (content?.parts) {
       for (const part of content.parts) {
@@ -55,7 +59,7 @@ export function translateNonStreamingResponse(responseBody: any, targetFormat: a
       }
     }
 
-    const message = { role: "assistant" };
+    const message: any = { role: "assistant" };
     if (textContent) message.content = textContent;
     if (reasoningContent) message.reasoning_content = reasoningContent;
     if (toolCalls.length > 0) message.tool_calls = toolCalls;
@@ -64,7 +68,7 @@ export function translateNonStreamingResponse(responseBody: any, targetFormat: a
     let finishReason = (candidate.finishReason || "stop").toLowerCase();
     if (finishReason === "stop" && toolCalls.length > 0) finishReason = "tool_calls";
 
-    const result = {
+    const result: any = {
       id: `chatcmpl-${response.responseId || Date.now()}`,
       object: "chat.completion",
       created: Math.floor(new Date(response.createTime || Date.now()).getTime() / 1000),
@@ -91,7 +95,7 @@ export function translateNonStreamingResponse(responseBody: any, targetFormat: a
 
     let textContent = "",
       thinkingContent = "";
-    const toolCalls = [];
+    const toolCalls: any[] = [];
 
     for (const block of responseBody.content) {
       if (block.type === "text") {
@@ -109,7 +113,7 @@ export function translateNonStreamingResponse(responseBody: any, targetFormat: a
       }
     }
 
-    const message = { role: "assistant" };
+    const message: any = { role: "assistant" };
     if (textContent) message.content = textContent;
     if (thinkingContent) message.reasoning_content = thinkingContent;
     if (toolCalls.length > 0) message.tool_calls = toolCalls;
@@ -119,7 +123,7 @@ export function translateNonStreamingResponse(responseBody: any, targetFormat: a
     if (finishReason === "end_turn") finishReason = "stop";
     if (finishReason === "tool_use") finishReason = "tool_calls";
 
-    const result = {
+    const result: any = {
       id: `chatcmpl-${responseBody.id || Date.now()}`,
       object: "chat.completion",
       created: Math.floor(Date.now() / 1000),
@@ -212,6 +216,7 @@ export async function handleNonStreamingResponse({
       return createErrorResult(
         HTTP_STATUS.BAD_GATEWAY,
         `Failed to parse Codex response from ${provider}`,
+        undefined,
       );
     }
   } else if (isSSE) {
@@ -222,6 +227,7 @@ export async function handleNonStreamingResponse({
       return createErrorResult(
         HTTP_STATUS.BAD_GATEWAY,
         "Invalid SSE response for non-streaming request",
+        undefined,
       );
     }
     responseBody = parsed;
@@ -231,7 +237,11 @@ export async function handleNonStreamingResponse({
     } catch {
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
       console.error("[ChatCore] Failed to parse JSON response");
-      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, `Invalid JSON response from ${provider}`);
+      return createErrorResult(
+        HTTP_STATUS.BAD_GATEWAY,
+        `Invalid JSON response from ${provider}`,
+        undefined,
+      );
     }
   }
 

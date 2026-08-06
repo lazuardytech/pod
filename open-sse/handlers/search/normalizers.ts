@@ -262,7 +262,7 @@ function normalizeSearxng(data: any, _query: any, _searchType: any) {
   return { results, totalResults: results.length };
 }
 
-const NORMALIZERS = {
+const NORMALIZERS: Record<string, any> = {
   serper: normalizeSerper,
   "brave-search": normalizeBrave,
   exa: normalizeExa,

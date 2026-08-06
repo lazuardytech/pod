@@ -137,7 +137,7 @@ async function tortoise({ baseUrl, text, voiceId }: any) {
 
 // OpenAI-compatible upstream (qwen3-tts, etc.)
 async function openaiCompat({ baseUrl, apiKey, text, modelId, voiceId }: any) {
-  const headers = { "Content-Type": "application/json" };
+  const headers: Record<string, any> = { "Content-Type": "application/json" };
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
   const res = await fetch(baseUrl, {
     method: "POST",

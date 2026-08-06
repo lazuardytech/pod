@@ -60,7 +60,7 @@ function addOptionalFields(target: any, body: any, append: any) {
 }
 
 async function buildJsonBody(body: any) {
-  const req = { prompt: body.prompt, ...getDimensions(body) };
+  const req: Record<string, any> = { prompt: body.prompt, ...getDimensions(body) };
 
   addOptionalFields(req, body, (target: any, key: any, value: any) => {
     target[key] = value;
@@ -137,7 +137,7 @@ export default {
   },
 
   buildHeaders: (creds: any, requestBody: any) => {
-    const headers = {};
+    const headers: Record<string, any> = {};
     const isMultipart = typeof FormData !== "undefined" && requestBody instanceof FormData;
     if (!isMultipart) {
       headers["Content-Type"] = "application/json";

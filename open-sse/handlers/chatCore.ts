@@ -27,7 +27,8 @@ function buildCacheHitSSEResponse(cached: any, model: any) {
   const encoder = new TextEncoder();
   const sseStream = new ReadableStream({
     start(controller: any) {
-      const emit = (obj: any) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+      const emit = (obj: any) =>
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       emit({
         id: cachedId,
         object: "chat.completion.chunk",
@@ -299,7 +300,7 @@ export async function handleChatCore({
 
   // Semantic cache pre-check with thundering herd protection
   let cacheSignature = null;
-  let resolveInFlight = null;
+  let resolveInFlight: any = null;
   const messages = body.messages ?? body.input;
   // generateSignature already handles large payloads by hashing only the last
   // 64KB tail (SIGNATURE_MAX_BYTES), so no need to skip cache for large bodies.
@@ -414,6 +415,7 @@ export async function handleChatCore({
       return createErrorResult(
         HTTP_STATUS.BAD_REQUEST,
         `Failed to translate request for ${sourceFormat} → ${targetFormat}`,
+        undefined,
       );
     }
     toolNameMap = translatedBody._toolNameMap;
@@ -479,7 +481,7 @@ export async function handleChatCore({
     model,
   });
 
-  const proxyOptions = {
+  const proxyOptions: Record<string, any> = {
     connectionProxyEnabled: credentials?.providerSpecificData?.connectionProxyEnabled === true,
     connectionProxyUrl: credentials?.providerSpecificData?.connectionProxyUrl || "",
     connectionNoProxy: credentials?.providerSpecificData?.connectionNoProxy || "",
@@ -647,10 +649,11 @@ export async function handleChatCore({
         isUpstreamTimeoutError(error)
           ? `Upstream request timed out after ${upstreamTimeoutMs}ms`
           : "Request aborted",
+        undefined,
       );
     }
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
+    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg, undefined);
   }
 
   // Fix 2: Detect Vercel platform 504 — free-tier hard-kills functions at 10s.
@@ -663,6 +666,7 @@ export async function handleChatCore({
     return createErrorResult(
       HTTP_STATUS.GATEWAY_TIMEOUT,
       "Vercel relay timeout — function exceeded platform limit",
+      undefined,
     );
   }
 
@@ -839,7 +843,11 @@ export async function handleChatCore({
       reader = providerResponse.body.getReader();
     } catch (e: any) {
       log?.error?.("CHAT_CORE", `Failed to get reader from provider stream: ${e.message}`);
-      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Failed to read provider stream");
+      return createErrorResult(
+        HTTP_STATUS.BAD_GATEWAY,
+        "Failed to read provider stream",
+        undefined,
+      );
     }
     const peekResult = await reader.read().catch((e: any) => {
       log?.error?.(
@@ -894,10 +902,8 @@ export async function handleChatCore({
 
               const errMsg = parsed.error.message || "Upstream error";
               const statusCode =
-                parsed.error.code === "content_filter"
-                  ? HTTP_STATUS.UNPROCESSABLE_ENTITY || 422
-                  : HTTP_STATUS.BAD_GATEWAY;
-              return createErrorResult(statusCode, errMsg);
+                parsed.error.code === "content_filter" ? 422 : HTTP_STATUS.BAD_GATEWAY;
+              return createErrorResult(statusCode, errMsg, undefined);
             }
           } catch {
             // not JSON, continue

@@ -59,7 +59,7 @@ export async function handleTtsCore({
   speed,
 }: any) {
   if (!input?.trim()) {
-    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: input");
+    return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: input", undefined);
   }
 
   try {
@@ -83,8 +83,13 @@ export async function handleTtsCore({
     return createErrorResult(
       HTTP_STATUS.BAD_REQUEST,
       `Provider '${provider}' does not support TTS via this route.`,
+      undefined,
     );
   } catch (err: any) {
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, err.message || "TTS synthesis failed");
+    return createErrorResult(
+      HTTP_STATUS.BAD_GATEWAY,
+      err.message || "TTS synthesis failed",
+      undefined,
+    );
   }
 }

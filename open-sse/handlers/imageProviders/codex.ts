@@ -13,7 +13,7 @@ function decodeAccountId(idToken: any) {
   try {
     const parts = String(idToken || "").split(".");
     if (parts.length !== 3) return null;
-    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const b64 = (parts[1] as any).replace(/-/g, "+").replace(/_/g, "/");
     const pad = (4 - (b64.length % 4)) % 4;
     const payload = JSON.parse(Buffer.from(b64 + "=".repeat(pad), "base64").toString("utf8"));
     return payload?.["https://api.openai.com/auth"]?.chatgpt_account_id || null;
@@ -33,7 +33,7 @@ function toDataUrl(input: any) {
 }
 
 function buildContent(prompt: any, refs: any, detail: any = CODEX_REF_DETAIL) {
-  const content = [];
+  const content: any[] = [];
   refs.forEach((url: any, index: any) => {
     content.push({ type: "input_text", text: `<image name=image${index + 1}>` });
     content.push({ type: "input_image", image_url: url, detail });
@@ -169,7 +169,7 @@ export default {
     };
   },
   buildBody: (model: any, body: any) => {
-    const refs = [];
+    const refs: any[] = [];
     if (Array.isArray(body.images))
       body.images.forEach((i: any) => {
         const u = toDataUrl(i);
@@ -178,7 +178,7 @@ export default {
     const single = toDataUrl(body.image);
     if (single) refs.push(single);
     const detail = body.image_detail || CODEX_REF_DETAIL;
-    const imgTool = {
+    const imgTool: Record<string, any> = {
       type: "image_generation",
       output_format: (body.output_format || "png").toLowerCase(),
     };

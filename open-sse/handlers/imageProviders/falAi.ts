@@ -11,7 +11,7 @@ export default {
     return { "Content-Type": "application/json", Authorization: `Key ${key}` };
   },
   buildBody: (_model: any, body: any) => {
-    const req = { prompt: body.prompt, num_images: body.n || 1 };
+    const req: Record<string, any> = { prompt: body.prompt, num_images: body.n || 1 };
     if (body.size) req.image_size = sizeToAspectRatio(body.size);
     if (body.image) req.image_url = body.image;
     return req;

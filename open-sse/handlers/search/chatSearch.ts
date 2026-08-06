@@ -41,7 +41,7 @@ function normalizeCitation(c: any) {
  * Provider-specific configuration map. All providers must implement:
  * { endpoint, defaultModel, buildBody, buildHeaders, extractAnswer }
  */
-const CHAT_SEARCH_CONFIG = {
+const CHAT_SEARCH_CONFIG: Record<string, any> = {
   gemini: {
     endpoint: (model: any) =>
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -76,7 +76,7 @@ const CHAT_SEARCH_CONFIG = {
     endpoint: () => "https://api.openai.com/v1/chat/completions",
     defaultModel: "gpt-4o-mini",
     buildBody: (query: any, model: any) => {
-      const body = {
+      const body: Record<string, any> = {
         model,
         messages: [{ role: "user", content: query }],
       };
@@ -123,7 +123,7 @@ const CHAT_SEARCH_CONFIG = {
       // /v1/responses returns output[] array of message/tool blocks
       const output = Array.isArray(data?.output) ? data.output : [];
       let text = "";
-      const citations = [];
+      const citations: any[] = [];
       for (const item of output) {
         const parts = Array.isArray(item?.content) ? item.content : [];
         for (const p of parts) {
@@ -163,7 +163,7 @@ const CHAT_SEARCH_CONFIG = {
       const msg = data?.choices?.[0]?.message || {};
       const text = msg.content || "";
       const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
-      const citations = [];
+      const citations: any[] = [];
       for (const call of calls) {
         const argStr = call?.function?.arguments;
         if (!argStr) continue;
@@ -260,7 +260,14 @@ const CHAT_SEARCH_CONFIG = {
  * @param {{info?:Function, warn?:Function, error?:Function}} [params.log]
  * @returns {Promise<{success:boolean, status?:number, error?:string, data?:object}>}
  */
-export async function handleChatSearch({ provider, query, maxResults, model, credentials, log }: any) {
+export async function handleChatSearch({
+  provider,
+  query,
+  maxResults,
+  model,
+  credentials,
+  log,
+}: any) {
   const startTime = Date.now();
   const cfg = CHAT_SEARCH_CONFIG[provider];
 

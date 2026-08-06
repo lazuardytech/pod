@@ -8,7 +8,7 @@ export default {
   async: true,
   buildUrl: () => SUBMIT_URL,
   buildHeaders: (creds: any) => {
-    const headers = { "Content-Type": "application/json" };
+    const headers: Record<string, any> = { "Content-Type": "application/json" };
     const key = creds?.apiKey || creds?.accessToken;
     if (key) headers["Authorization"] = `Bearer ${key}`;
     return headers;
@@ -16,7 +16,7 @@ export default {
   buildBody: (_model: any, body: any) => {
     const ratio = sizeToAspectRatio(body.size);
     const isEdit = !!(body.image || (Array.isArray(body.images) && body.images.length));
-    const req = {
+    const req: Record<string, any> = {
       prompt: body.prompt,
       type: isEdit ? "IMAGETOIAMGE" : "TEXTTOIAMGE",
       numImages: body.n || 1,

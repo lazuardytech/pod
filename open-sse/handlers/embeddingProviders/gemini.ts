@@ -15,7 +15,7 @@ export default {
   buildHeaders: () => ({ "Content-Type": "application/json" }),
   buildBody: (model: any, { input, dimensions }: any = {}) => {
     const m = modelPath(model);
-    let outputDimensionality;
+    let outputDimensionality: any;
     if (dimensions != null && dimensions !== "") {
       const dim = Number(dimensions);
       if (Number.isFinite(dim) && dim > 0) outputDimensionality = dim;

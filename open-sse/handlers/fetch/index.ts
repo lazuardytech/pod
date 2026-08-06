@@ -21,14 +21,14 @@ const DEFAULT_FORMAT = "markdown";
 // Strip non-ASCII chars from header values (HTTP headers must be ByteString).
 function sanitizeHeaders(headers: any) {
   if (!headers) return headers;
-  const out = {};
+  const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(headers)) {
     out[k] = typeof v === "string" ? v.replace(/[^\x00-\xFF]/g, "").trim() : v;
   }
   return out;
 }
 
-async function tryFetch(url: any, init: any, timeoutMs: any) {
+async function tryFetch(url: any, init: any, timeoutMs: any): Promise<any> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -54,7 +54,7 @@ function truncate(text: any, max: any) {
 
 function parseJinaTitle(text: any) {
   const m = String(text || "").match(/^\s*#\s+(.+)$/m);
-  return m ? m[1].trim() : null;
+  return m ? (m[1] as any).trim() : null;
 }
 
 function buildData({ provider, url, title, format, text, costUsd, responseMs, upstreamMs }: any) {
@@ -204,7 +204,15 @@ async function runFirecrawl({
   };
 }
 
-async function runJina({ url, fmt, timeoutMs, apiKey, maxCharacters, costPerQuery, startedAt }: any) {
+async function runJina({
+  url,
+  fmt,
+  timeoutMs,
+  apiKey,
+  maxCharacters,
+  costPerQuery,
+  startedAt,
+}: any) {
   const target = `https://r.jina.ai/${encodeURIComponent(url)}`;
   const upstreamStart = Date.now();
   const r = await tryFetch(
@@ -244,7 +252,15 @@ async function runJina({ url, fmt, timeoutMs, apiKey, maxCharacters, costPerQuer
   };
 }
 
-async function runTavily({ url, fmt, timeoutMs, apiKey, maxCharacters, costPerQuery, startedAt }: any) {
+async function runTavily({
+  url,
+  fmt,
+  timeoutMs,
+  apiKey,
+  maxCharacters,
+  costPerQuery,
+  startedAt,
+}: any) {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.tavily.com/extract",
@@ -288,7 +304,15 @@ async function runTavily({ url, fmt, timeoutMs, apiKey, maxCharacters, costPerQu
   };
 }
 
-async function runExa({ url, fmt, timeoutMs, apiKey, maxCharacters, costPerQuery, startedAt }: any) {
+async function runExa({
+  url,
+  fmt,
+  timeoutMs,
+  apiKey,
+  maxCharacters,
+  costPerQuery,
+  startedAt,
+}: any) {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.exa.ai/contents",

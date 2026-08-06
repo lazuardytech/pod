@@ -17,7 +17,7 @@ const OPENAI_COMPAT_PROVIDERS = [
   "jina-ai",
 ];
 
-const ADAPTERS = {
+const ADAPTERS: Record<string, any> = {
   ...Object.fromEntries(
     OPENAI_COMPAT_PROVIDERS.map((id: any) => [id, createOpenAIEmbeddingAdapter(id)]),
   ),

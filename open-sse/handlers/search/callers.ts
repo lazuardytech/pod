@@ -108,7 +108,7 @@ export function toPageNumber(offset: any, maxResults: any) {
 
 function buildSerperRequest(config: any, params: any) {
   const endpoint = params.searchType === "news" ? "/news" : "/search";
-  const body = { q: params.query, num: params.maxResults };
+  const body: Record<string, any> = { q: params.query, num: params.maxResults };
   if (params.country) body.gl = params.country.toLowerCase();
   if (params.language) body.hl = params.language;
   return {
@@ -137,7 +137,7 @@ function buildBraveRequest(config: any, params: any) {
 
 function buildExaRequest(config: any, params: any) {
   const { includes, excludes } = parseDomainFilter(params.domainFilter);
-  const body = {
+  const body: Record<string, any> = {
     query: params.query,
     numResults: params.maxResults,
     type: "auto",
@@ -159,7 +159,7 @@ function buildExaRequest(config: any, params: any) {
 
 function buildTavilyRequest(config: any, params: any) {
   const { includes, excludes } = parseDomainFilter(params.domainFilter);
-  const body = {
+  const body: Record<string, any> = {
     query: params.query,
     max_results: params.maxResults,
     topic: params.searchType === "news" ? "news" : "general",
@@ -192,7 +192,7 @@ function buildGooglePseRequest(config: any, params: any) {
   if (params.country) qp.set("gl", params.country.toLowerCase());
   if (params.language) qp.set("hl", params.language);
   if (params.timeRange && params.timeRange !== "any") {
-    const dateRestrictMap = { day: "d1", week: "w1", month: "m1", year: "y1" };
+    const dateRestrictMap: Record<string, any> = { day: "d1", week: "w1", month: "m1", year: "y1" };
     const dateRestrict = dateRestrictMap[params.timeRange];
     if (dateRestrict) qp.set("dateRestrict", dateRestrict);
   }
@@ -219,7 +219,7 @@ function buildLinkupRequest(config: any, params: any) {
       ? requestedDepth
       : "standard";
 
-  const body = {
+  const body: Record<string, any> = {
     q: params.query,
     depth,
     outputType: "searchResults",
@@ -334,7 +334,7 @@ function buildSearxngRequest(config: any, params: any) {
 
 // ── Dispatcher ──────────────────────────────────────────────────────────
 
-const BUILDERS = {
+const BUILDERS: Record<string, any> = {
   serper: buildSerperRequest,
   "brave-search": buildBraveRequest,
   exa: buildExaRequest,

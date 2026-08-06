@@ -6,7 +6,7 @@ const BASE_URL = "https://api-inference.huggingface.co/models";
 export default {
   buildUrl: (model: any) => `${BASE_URL}/${model}`,
   buildHeaders: (creds: any) => {
-    const headers = { "Content-Type": "application/json" };
+    const headers: Record<string, any> = { "Content-Type": "application/json" };
     const key = creds?.apiKey || creds?.accessToken;
     if (key) headers["Authorization"] = `Bearer ${key}`;
     return headers;

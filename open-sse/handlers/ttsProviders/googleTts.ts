@@ -2,7 +2,7 @@
 import { UA } from "./_base.js";
 
 const REFRESH_MS = 11 * 60 * 1000;
-const cache = { token: null, tokenTime: 0 };
+const cache: Record<string, any> = { token: null, tokenTime: 0 };
 let _idx = 0;
 
 async function getToken() {
@@ -39,7 +39,7 @@ export default {
       "soc-device": 1,
       _reqid: reqId,
       rt: "c",
-    });
+    } as any);
     const payload = [cleanText, lang, null, "undefined", [0]];
     const body = new URLSearchParams();
     body.append("f.req", JSON.stringify([[[rpcId, JSON.stringify(payload), null, "generic"]]]));
@@ -56,7 +56,7 @@ export default {
     );
     if (!res.ok) throw new Error(`Google TTS failed: ${res.status}`);
     const data = await res.text();
-    const split = JSON.parse(data.split("\n")[3]);
+    const split = JSON.parse(data.split("\n")[3] as any);
     const base64 = JSON.parse(split[0][2])[0];
     if (!base64 || base64.length < 100) throw new Error("Google TTS returned empty audio");
     return { base64, format: "mp3" };

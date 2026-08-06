@@ -21,7 +21,10 @@ export default {
     };
   },
   buildBody: (model: any, body: any) => {
-    const req = { prompt: body.prompt, output_format: (body.output_format || "png").toLowerCase() };
+    const req: Record<string, any> = {
+      prompt: body.prompt,
+      output_format: (body.output_format || "png").toLowerCase(),
+    };
     if (body.size) req.aspect_ratio = sizeToAspectRatio(body.size);
     if (body.style) req.style_preset = body.style;
     if (model.includes("sd3")) req.model = model;

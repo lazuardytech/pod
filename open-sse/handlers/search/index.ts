@@ -48,7 +48,7 @@ function sanitizeQuery(query: any) {
 // Strip non-ASCII chars from header values (HTTP headers must be ByteString).
 function sanitizeHeaders(headers: any) {
   if (!headers) return headers;
-  const out = {};
+  const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(headers)) {
     out[k] = typeof v === "string" ? v.replace(/[^\x00-\xFF]/g, "").trim() : v;
   }

@@ -11,7 +11,7 @@ export default {
     return { "Content-Type": "application/json", "x-key": key };
   },
   buildBody: (_model: any, body: any) => {
-    const req = { prompt: body.prompt };
+    const req: Record<string, any> = { prompt: body.prompt };
     if (body.size) {
       const [w, h] = body.size.split("x").map(Number);
       if (w) req.width = w;

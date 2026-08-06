@@ -64,7 +64,7 @@ export async function handleResponsesCore({
   // Case 1: Client wants non-streaming, but got SSE (provider forced it, e.g., Codex)
   if (!clientRequestedStreaming && contentType.includes("text/event-stream")) {
     try {
-      const jsonResponse = await convertResponsesStreamToJson(response.body);
+      const jsonResponse = await convertResponsesStreamToJson(response.body as any);
 
       return {
         success: true,
@@ -90,7 +90,7 @@ export async function handleResponsesCore({
   // Case 2: Client wants streaming, got SSE - transform it
   if (clientRequestedStreaming && contentType.includes("text/event-stream")) {
     const transformStream = createResponsesApiTransformStream(null);
-    const transformedBody = response.body.pipeThrough(transformStream);
+    const transformedBody = (response.body as any).pipeThrough(transformStream);
 
     return {
       success: true,
