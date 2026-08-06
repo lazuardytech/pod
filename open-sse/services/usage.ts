@@ -402,7 +402,7 @@ async function getAntigravityUsage(accessToken: any, providerSpecificData: any, 
         "gpt-oss-120b-medium",
       ];
 
-      for (const [modelKey, info] of Object.entries(data.models)) {
+      for (const [modelKey, info] of Object.entries(data.models as Record<string, any>)) {
         // Skip models without quota info
         if (!info.quotaInfo) {
           continue;
@@ -1089,7 +1089,7 @@ async function getMiniMaxUsage(apiKey: any, provider: any, proxyOptions: any = n
     return { message: "MiniMax API key not available." };
   }
 
-  const usageUrls = MINIMAX_USAGE_URLS[provider] || [];
+  const usageUrls = (MINIMAX_USAGE_URLS as Record<string, any>)[provider] || [];
   let lastErrorMessage = "";
 
   for (let index = 0; index < usageUrls.length; index += 1) {
