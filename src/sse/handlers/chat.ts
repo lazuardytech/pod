@@ -126,7 +126,7 @@ export async function handleChat(
   );
   if (bypassResponse) {
     if ("response" in bypassResponse && bypassResponse.response) return bypassResponse.response;
-    return bypassResponse as Response;
+    return bypassResponse as unknown as Response;
   }
   const comboInfo = await getComboInfo(modelStr);
   if (comboInfo) {

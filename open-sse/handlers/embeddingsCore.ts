@@ -33,7 +33,7 @@ export async function handleEmbeddingsCore({
   log,
   onCredentialsRefreshed,
   onRequestSuccess,
-}: any) {
+}: any): Promise<any> {
   const { provider, model } = modelInfo;
 
   // Validate input

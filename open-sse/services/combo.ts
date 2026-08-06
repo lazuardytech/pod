@@ -219,7 +219,7 @@ export async function handleComboChat({
   comboName,
   comboStrategy,
   comboStickyLimit = 1,
-}: any) {
+}: any): Promise<any> {
   // Apply rotation strategy if enabled
   const rotatedModels = getRotatedModels(models, comboName, comboStrategy, comboStickyLimit);
 

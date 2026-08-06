@@ -251,7 +251,7 @@ export async function handleChatCore({
   chatSettings,
   memoryOwnerId,
   comboName,
-}: any) {
+}: any): Promise<any> {
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
   const pipelineSessionId =

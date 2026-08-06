@@ -232,7 +232,13 @@ async function tryDedicatedProvider({
  * @param {object}   [options.log]           Logger
  */
 export async function handleSearchCore(params: SearchCoreParams): Promise<SearchResult>;
-export async function handleSearchCore({ body, provider, providerConfig, credentials, log }: any) {
+export async function handleSearchCore({
+  body,
+  provider,
+  providerConfig,
+  credentials,
+  log,
+}: any): Promise<any> {
   const globalStartTime = Date.now();
 
   // 1. Sanitize query

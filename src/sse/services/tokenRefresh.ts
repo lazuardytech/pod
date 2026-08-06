@@ -217,7 +217,9 @@ async function _doCheckAndRefresh(provider: string, credentials: AnyCreds): Prom
   }
   return creds;
 }
-export async function refreshGitHubAndCopilotTokens(credentials: AnyCreds): Promise<AnyCreds> {
+export async function refreshGitHubAndCopilotTokens(
+  credentials: AnyCreds,
+): Promise<AnyCreds | null> {
   const newGitHubCreds = await refreshGitHubToken(credentials.refreshToken);
   if (!newGitHubCreds?.accessToken) return newGitHubCreds;
   const copilotToken = await refreshCopilotToken(newGitHubCreds.accessToken);

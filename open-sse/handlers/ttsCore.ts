@@ -73,7 +73,7 @@ export async function handleTtsCore({
   language,
   voice,
   speed,
-}: any) {
+}: any): Promise<any> {
   if (!input?.trim()) {
     return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: input", undefined);
   }

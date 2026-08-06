@@ -252,7 +252,13 @@ function jsonResponse(obj: any) {
  * @returns {Promise<{success, response, status?, error?}>}
  */
 export async function handleSttCore(params: SttCoreParams): Promise<SttResult>;
-export async function handleSttCore({ provider, model, formData, credentials, translate }: any) {
+export async function handleSttCore({
+  provider,
+  model,
+  formData,
+  credentials,
+  translate,
+}: any): Promise<any> {
   const file = formData.get("file");
   if (!file)
     return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: file", undefined);

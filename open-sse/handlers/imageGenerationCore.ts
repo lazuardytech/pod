@@ -53,7 +53,7 @@ export async function handleImageGenerationCore({
   binaryOutput = false,
   onCredentialsRefreshed,
   onRequestSuccess,
-}: any) {
+}: any): Promise<any> {
   const { provider, model } = modelInfo;
 
   if (!body.prompt) {

@@ -118,7 +118,7 @@ export async function handleFetchCore({
   providerConfig,
   credentials,
   log,
-}: any) {
+}: any): Promise<any> {
   if (!url || typeof url !== "string") {
     return { success: false, status: 400, error: "url is required" };
   }
