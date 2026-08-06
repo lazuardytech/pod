@@ -148,6 +148,15 @@ bun run test:run # vitest run (verbose)
 bun run build   # NODE_ENV=production next build (turbopack)
 ```
 
+## Cursor Cloud specific instructions
+
+- **Default development branch**: `canary` (active). `main` is stable/release only — promote via PR.
+- **Install (idempotent)**: `bash scripts/cloud-dev-install.sh` — ensures Bun 1.3.14+ and `bun install --frozen-lockfile`.
+- **Start**: `bash scripts/cloud-dev-start.sh` — `bun run dev` on port **20128**. Requires secrets `JWT_SECRET` and `API_KEY_SECRET` (Cursor environment Secrets tab). Optional: `SHUTDOWN_SECRET`, `INITIAL_PASSWORD`.
+- **Health check**: `curl -sf http://localhost:20128/api/health` → `{"ok":true}`; monitoring health is also public.
+- **Verify before push**: `bun run check && bun run test:run && bun run build`.
+- Do not commit `.env`; `.cursor/` is gitignored — configure Cloud environment via dashboard / `environment.json` proposal.
+
 ## Docs Map
 
 | Path                            | Purpose                                       |
