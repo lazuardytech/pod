@@ -156,6 +156,7 @@ bun run build   # NODE_ENV=production next build (turbopack)
 - **Health check**: `curl -sf http://localhost:20128/api/health` → `{"ok":true}`; monitoring health is also public.
 - **Tests need Node ≥ 22.18 on PATH (not bun)**: `bun run test:run` runs vitest under `node` on purpose (a health test asserts `version.bun` is `null`, which only holds under node). The pre-provisioned `/exec-daemon/node` is v22.14.0 — too old for native `.mts` type-stripping — so it throws `Unknown file extension ".mts"` on `src/shared/utils/clineAuth.mts` (2 spurious failures). Prepend nvm's newer node first, e.g. `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`, then `bun run test:run` → all green. `bun run check`/`bun run build` are unaffected (they run under bun).
 - **Verify before push**: `bun run check && bun run test:run && bun run build`.
+- **Ponytail skills**: vendored at `.agents/skills/{ponytail,ponytail-review,ponytail-audit,ponytail-debt,ponytail-gain,ponytail-help}/` (Cloud discovers `.agents/skills/`; `.cursor/` is gitignored). Invoke `/ponytail lite|full|ultra` (default **full**). Stop: `stop ponytail` / `normal mode`. Upstream: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
 - Do not commit `.env`; `.cursor/` is gitignored — configure Cloud environment via dashboard / `environment.json` proposal.
 
 ## Docs Map
@@ -163,6 +164,7 @@ bun run build   # NODE_ENV=production next build (turbopack)
 | Path                            | Purpose                                       |
 | ------------------------------- | --------------------------------------------- |
 | .agents/INDEX.md                | Documentation index and reading order         |
+| .agents/skills/\*               | Cursor agent skills (ponytail suite)          |
 | .agents/PRD.md                  | Product requirements document                 |
 | .agents/architecture/\*         | System design deep dives                      |
 | .agents/knowledge/\*            | Working knowledge (gotchas, conventions)      |
