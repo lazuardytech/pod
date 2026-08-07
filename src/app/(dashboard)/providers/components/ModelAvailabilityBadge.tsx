@@ -13,7 +13,23 @@ import LucideIcon from "@/shared/components/LucideIcon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/components";
 
-const STATUS_CONFIG: any = {
+type AvailabilityStatus = "available" | "cooldown" | "unavailable" | "unknown";
+
+type StatusConfigEntry = { icon: string; color: string; label: string };
+
+type AvailabilityModel = {
+  provider?: string;
+  model: string;
+  status: AvailabilityStatus | string;
+};
+
+type AvailabilityPayload = {
+  models?: AvailabilityModel[];
+  unavailableCount?: number;
+  error?: unknown;
+};
+
+const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
   available: { icon: "check_circle", color: "#22c55e", label: "Available" },
   cooldown: { icon: "schedule", color: "#f59e0b", label: "Cooldown" },
   unavailable: { icon: "error", color: "#ef4444", label: "Unavailable" },
@@ -21,17 +37,17 @@ const STATUS_CONFIG: any = {
 };
 
 export default function ModelAvailabilityBadge() {
-  const [data, setData]: any = useState<any>(null);
-  const [loading, setLoading]: any = useState(true);
-  const [expanded, setExpanded]: any = useState(false);
-  const [clearing, setClearing]: any = useState<any>(null);
-  const ref: any = useRef<any>(null);
+  const [data, setData] = useState<AvailabilityPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [clearing, setClearing] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
 
-  const fetchStatus: any = useCallback(async () => {
+  const fetchStatus = useCallback(async () => {
     try {
-      const res: any = await fetch("/api/models/availability");
+      const res = await fetch("/api/models/availability");
       if (res.ok) {
-        const json: any = await res.json();
+        const json = (await res.json()) as AvailabilityPayload;
         setData(json);
       }
     } catch {
@@ -42,17 +58,17 @@ export default function ModelAvailabilityBadge() {
   }, []);
 
   useEffect(() => {
-    let closed: any = false;
-    let reconnectTimer: any = null;
-    let es: any = null;
+    let closed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let es: EventSource | null = null;
 
-    const connect: any = () => {
+    const connect = () => {
       if (closed) return;
       es = new EventSource("/api/models/availability/stream");
 
-      es.onmessage = (event: any) => {
+      es.onmessage = (event: MessageEvent<string>) => {
         try {
-          const payload: any = JSON.parse(event.data);
+          const payload = JSON.parse(event.data) as AvailabilityPayload;
           if (payload?.error) return;
           setData(payload);
           setLoading(false);
@@ -62,7 +78,7 @@ export default function ModelAvailabilityBadge() {
       };
 
       es.onerror = () => {
-        es.close();
+        es?.close();
         fetchStatus().catch(() => {});
         if (!closed) reconnectTimer = setTimeout(connect, 3000);
       };
@@ -80,17 +96,17 @@ export default function ModelAvailabilityBadge() {
 
   // Close popover on outside click
   useEffect(() => {
-    const handleClick: any = (e: any) => {
-      if (ref.current && !ref.current.contains(e.target)) setExpanded(false);
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setExpanded(false);
     };
     if (expanded) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [expanded]);
 
-  const handleClearCooldown: any = async (provider: any, model: any) => {
+  const handleClearCooldown = async (provider: string, model: string) => {
     setClearing(`${provider}:${model}`);
     try {
-      const res: any = await fetch("/api/models/availability", {
+      const res = await fetch("/api/models/availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clearCooldown", provider, model }),
@@ -110,17 +126,16 @@ export default function ModelAvailabilityBadge() {
 
   if (loading) return null;
 
-  const models: any = data?.models || [];
-  const unavailableCount: any =
-    data?.unavailableCount || models.filter((m: any) => m.status !== "available").length;
-  const isHealthy: any = unavailableCount === 0;
+  const models = data?.models || [];
+  const unavailableCount =
+    data?.unavailableCount || models.filter((m) => m.status !== "available").length;
+  const isHealthy = unavailableCount === 0;
 
   // Group unhealthy models by provider
-  // todo(ts): grouped buckets are untyped; widen to any until the API surfaces a shared shape
-  const byProvider: any = {};
-  models.forEach((m: any) => {
+  const byProvider: Record<string, AvailabilityModel[]> = {};
+  models.forEach((m) => {
     if (m.status === "available") return;
-    const key: any = m.provider || "unknown";
+    const key = m.provider || "unknown";
     if (!byProvider[key]) byProvider[key] = [];
     byProvider[key].push(m);
   });
@@ -168,17 +183,15 @@ export default function ModelAvailabilityBadge() {
               </p>
             ) : (
               <div className="flex flex-col gap-2.5">
-                {Object.entries(byProvider).map(([provider, provModels]: any) => (
+                {Object.entries(byProvider).map(([provider, provModels]) => (
                   <div key={provider}>
                     <p className="text-xs font-semibold text-text-main mb-1.5 capitalize">
                       {provider}
                     </p>
                     <div className="flex flex-col gap-1">
-                      {(
-                        provModels as Array<{ provider: string; model: string; status: string }>
-                      ).map((m: any) => {
-                        const status: any = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;
-                        const isClearing: any = clearing === `${m.provider}:${m.model}`;
+                      {provModels.map((m) => {
+                        const status = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown!;
+                        const isClearing = clearing === `${m.provider}:${m.model}`;
                         return (
                           <div
                             key={`${m.provider}-${m.model}`}
@@ -198,7 +211,9 @@ export default function ModelAvailabilityBadge() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleClearCooldown(m.provider, m.model)}
+                                onClick={() =>
+                                  handleClearCooldown(m.provider || "unknown", m.model)
+                                }
                                 disabled={isClearing}
                                 className="text-[10px] ml-2"
                               >

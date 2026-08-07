@@ -1,13 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
 import { cn } from "@/shared/utils/cn";
 
 const LEVEL_RE = /\[(LOG|INFO|WARN|ERROR|DEBUG)\]/i;
 
-const LEVEL_STYLES: Record<string, any> = {
+type LevelStyle = { badge: string; text: string };
+type LogEntry = { line: string; receivedAt: string };
+type ConsoleStreamMessage =
+  | { type: "init"; logs: Array<string | LogEntry> }
+  | { type: "line"; line: string | LogEntry }
+  | { type: "clear" };
+
+const LEVEL_STYLES: Record<string, LevelStyle> = {
   LOG: { badge: "bg-emerald/10 text-emerald border-emerald/20", text: "text-emerald" },
   INFO: {
     badge: "bg-aether-blue/10 text-aether-blue border-aether-blue/20",
@@ -21,16 +28,16 @@ const LEVEL_STYLES: Record<string, any> = {
   DEBUG: { badge: "bg-amethyst/10 text-amethyst border-amethyst/20", text: "text-amethyst" },
 };
 
-const LEVEL_ORDER: Record<string, any> = { DEBUG: 0, LOG: 1, INFO: 2, WARN: 3, ERROR: 4 };
+const LEVEL_ORDER: Record<string, number> = { DEBUG: 0, LOG: 1, INFO: 2, WARN: 3, ERROR: 4 };
 
-function parseLevel(line: any) {
+function parseLevel(line: string) {
   const m = line.match(LEVEL_RE);
-  return m ? m[1].toUpperCase() : "LOG";
+  return m ? m[1]!.toUpperCase() : "LOG";
 }
 
-function parseTimestamp(line: any) {
+function parseTimestamp(line: string) {
   const m = line.match(/^\[(\d{2}:\d{2}:\d{2}(?:\.\d+)?)\]/);
-  return m ? m[1] : null;
+  return m ? m[1]! : null;
 }
 
 function nowTs() {
@@ -42,20 +49,30 @@ function nowTs() {
   });
 }
 
-function wrapLine(line: any) {
+function wrapLine(line: string | LogEntry): LogEntry {
   return typeof line === "string" ? { line, receivedAt: nowTs() } : line;
 }
 
-function stripLevel(line: any) {
+function stripLevel(line: string) {
   return line.replace(LEVEL_RE, "").trim();
 }
 
-function LogLine({ entry, idx, onCopy, copied }: any) {
+function LogLine({
+  entry,
+  idx,
+  onCopy,
+  copied,
+}: {
+  entry: string | LogEntry;
+  idx: number;
+  onCopy: (line: string, idx: number) => void;
+  copied: number | null;
+}) {
   const line = typeof entry === "string" ? entry : entry.line;
   const receivedAt = typeof entry === "object" ? entry.receivedAt : null;
   const level = parseLevel(line);
   const ts = parseTimestamp(line) || receivedAt || "—";
-  const style = LEVEL_STYLES[level] || LEVEL_STYLES.LOG;
+  const style = LEVEL_STYLES[level] ?? LEVEL_STYLES.LOG!;
   const text = stripLevel(line);
 
   return (
@@ -97,15 +114,21 @@ export default function ConsoleLogClient({
   clearRef,
   live = true,
   refreshRef,
-}: any) {
-  const [logs, setLogs] = useState<any[]>([]);
+}: {
+  autoScroll: boolean;
+  setAutoScroll: (v: boolean) => void;
+  clearRef?: MutableRefObject<(() => void) | null>;
+  live?: boolean;
+  refreshRef?: MutableRefObject<(() => void) | null>;
+}) {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [connected, setConnected] = useState(false);
   const [levelFilter, setLevelFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [copied, setCopied] = useState<any>(null);
-  const [lastUpdated, setLastUpdated] = useState<any>(null);
-  const scrollRef = useRef<any>(null);
-  const esRef = useRef<any>(null);
+  const [copied, setCopied] = useState<number | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const esRef = useRef<EventSource | null>(null);
   const liveRef = useRef(live);
 
   // Keep liveRef in sync
@@ -140,7 +163,7 @@ export default function ConsoleLogClient({
     if (refreshRef) refreshRef.current = handleRefresh;
   }, [refreshRef, handleRefresh]);
 
-  const handleCopy = useCallback((line: any, idx: any) => {
+  const handleCopy = useCallback((line: string, idx: number) => {
     navigator.clipboard?.writeText(line).catch(() => {});
     setCopied(idx);
     setTimeout(() => setCopied(null), 2000);
@@ -155,8 +178,8 @@ export default function ConsoleLogClient({
       setLastUpdated(new Date());
     };
 
-    es.onmessage = (e: any) => {
-      const msg = JSON.parse(e.data);
+    es.onmessage = (e: MessageEvent<string>) => {
+      const msg = JSON.parse(e.data) as ConsoleStreamMessage;
       if (msg.type === "init") {
         setLogs(msg.logs.slice(-CONSOLE_LOG_CONFIG.maxLines).map(wrapLine));
         setLastUpdated(new Date());
@@ -168,7 +191,7 @@ export default function ConsoleLogClient({
         });
       } else if (msg.type === "line") {
         if (!liveRef.current) return;
-        setLogs((prev: any) => {
+        setLogs((prev) => {
           const next = [...prev, wrapLine(msg.line)];
           return next.length > CONSOLE_LOG_CONFIG.maxLines
             ? next.slice(-CONSOLE_LOG_CONFIG.maxLines)
@@ -191,7 +214,7 @@ export default function ConsoleLogClient({
     }
   }, [logs, autoScroll]);
 
-  const filtered = logs.filter((entry: any) => {
+  const filtered = logs.filter((entry) => {
     const line = typeof entry === "string" ? entry : entry.line;
     const level = parseLevel(line);
     if (levelFilter !== "all") {
@@ -204,9 +227,8 @@ export default function ConsoleLogClient({
 
   const counts = {
     total: logs.length,
-    error: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "ERROR")
-      .length,
-    warn: logs.filter((e: any) => parseLevel(typeof e === "string" ? e : e.line) === "WARN").length,
+    error: logs.filter((e) => parseLevel(typeof e === "string" ? e : e.line) === "ERROR").length,
+    warn: logs.filter((e) => parseLevel(typeof e === "string" ? e : e.line) === "WARN").length,
   };
 
   return (
@@ -225,14 +247,14 @@ export default function ConsoleLogClient({
               aria-label="Search console logs"
               type="text"
               value={search}
-              onChange={(e: any) => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search console logs..."
               className="w-full h-7 pl-8 pr-3 rounded-[6px] border border-charcoal-grey bg-deep-slate text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/30 transition-colors duration-100"
               name="search"
             />
           </div>
           <div className="flex items-center gap-1">
-            {LEVEL_FILTERS.map((f: any) => (
+            {LEVEL_FILTERS.map((f) => (
               <button
                 key={f.key}
                 onClick={() => setLevelFilter(f.key)}
@@ -285,7 +307,7 @@ export default function ConsoleLogClient({
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto custom-scrollbar py-2"
-          onScroll={(e: any) => {
+          onScroll={(e) => {
             const el = e.currentTarget;
             const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
             if (!atBottom && autoScroll) setAutoScroll(false);
@@ -299,7 +321,7 @@ export default function ConsoleLogClient({
               </p>
             </div>
           ) : (
-            filtered.map((entry: any, i: any) => (
+            filtered.map((entry, i) => (
               <LogLine key={i} entry={entry} idx={i} onCopy={handleCopy} copied={copied} />
             ))
           )}
