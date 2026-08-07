@@ -20,9 +20,6 @@ const nextConfig = {
   turbopack: {
     // Keep server-only node modules out of browser bundles.
     resolveAlias: {
-      "../*.js": "../*.ts",
-      "./*.js": "./*.ts",
-      "open-sse/*.js": "./open-sse/*.ts",
       fs: { browser: "./src/lib/empty-module.ts" },
       path: { browser: "./src/lib/empty-module.ts" },
       "node:fs": { browser: "./src/lib/empty-module.ts" },
