@@ -116,7 +116,7 @@ export function convertCommandCodeToOpenAI(chunk: any, state: any) {
     case "tool-input-start": {
       const id = event.id || event.toolCallId || `call_${Date.now()}_${state.toolIndex}`;
       let idx = state.toolIndexById.get(id);
-      if (idx == null) {
+      if (idx === null || idx === undefined) {
         idx = state.toolIndex++;
         state.toolIndexById.set(id, idx);
       }
@@ -139,7 +139,7 @@ export function convertCommandCodeToOpenAI(chunk: any, state: any) {
     case "tool-input-delta": {
       const id = event.id || event.toolCallId;
       const idx = state.toolIndexById.get(id);
-      if (idx == null) break;
+      if (idx === null || idx === undefined) break;
       const delta = {
         tool_calls: [
           {

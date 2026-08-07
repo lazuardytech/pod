@@ -217,7 +217,7 @@ Respond ONLY with the JSON object, no other text.`);
 }
 
 // Get content blocks from single message
-function getContentBlocksFromMessage(msg: any, toolNameMap: any = new Map()) {
+function getContentBlocksFromMessage(msg: any, _toolNameMap: any = new Map()) {
   const blocks: any[] = [];
 
   if (msg.role === "tool") {
@@ -276,7 +276,7 @@ function getContentBlocksFromMessage(msg: any, toolNameMap: any = new Map()) {
           });
         } else if (part.type === "thinking") {
           // Include thinking block but strip cache_control (not allowed on thinking blocks)
-          const { cache_control, ...thinkingBlock } = part;
+          const { cache_control: _cache_control, ...thinkingBlock } = part;
           blocks.push(thinkingBlock);
         }
       }
@@ -355,7 +355,7 @@ function sanitizeToolArguments(toolName: any, input: any) {
   // Drop empty/whitespace `pages` — it's optional and only meaningful for PDF.
   if (typeof out.pages === "string" && out.pages.trim() === "") {
     delete out.pages;
-  } else if (out.pages == null) {
+  } else if (out.pages === null || out.pages === undefined) {
     delete out.pages;
   }
   // Coerce numeric string bounds so Claude's clamp doesn't trip on "100" vs 100.

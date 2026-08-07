@@ -378,7 +378,15 @@ export class QoderExecutor extends BaseExecutor {
   //   - body encoded with QoderEncodeBody before signing
   //   - COSY headers built from the *encoded* body bytes
   //   - response stream re-wrapped from {statusCodeValue, body} to OpenAI SSE
-  async execute({ model, body, stream: _stream, credentials, signal, log, proxyOptions = null }: any) {
+  async execute({
+    model,
+    body,
+    stream: _stream,
+    credentials,
+    signal,
+    log,
+    proxyOptions = null,
+  }: any) {
     const url = this.buildUrl();
 
     const psd = credentials?.providerSpecificData || {};

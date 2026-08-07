@@ -11,7 +11,7 @@ import { register } from "../registry.js";
  * Since CursorExecutor.transformProtobufToSSE/JSON already emits OpenAI chunks,
  * this is a passthrough translator (similar to Kiro pattern)
  */
-export function convertCursorToOpenAI(chunk: any, state: any) {
+export function convertCursorToOpenAI(chunk: any, _state: any) {
   if (!chunk) return null;
 
   // If chunk is already in OpenAI format (from executor transform), return as-is

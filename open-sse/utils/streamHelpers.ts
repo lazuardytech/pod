@@ -125,10 +125,10 @@ function cleanUsagePayload(payload: any) {
 
   if ("usage" in cleaned) {
     if (cleaned.usage === null) {
-      const { usage, ...payloadWithoutUsage } = cleaned;
+      const { usage: _usage, ...payloadWithoutUsage } = cleaned;
       cleaned = payloadWithoutUsage;
     } else if (typeof cleaned.usage === "object" && cleaned.usage.perf_metrics === null) {
-      const { perf_metrics, ...usageWithoutPerf } = cleaned.usage;
+      const { perf_metrics: _perf_metrics, ...usageWithoutPerf } = cleaned.usage;
       cleaned = { ...cleaned, usage: usageWithoutPerf };
     }
   }

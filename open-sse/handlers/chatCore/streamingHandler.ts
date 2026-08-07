@@ -111,7 +111,7 @@ export function handleStreamingResponse({
   requestStartTime,
   connectionId,
   apiKey,
-  clientRawRequest: _clientRawRequest,
+  clientRawRequest,
   onRequestSuccess,
   reqLogger,
   toolNameMap,
@@ -175,7 +175,7 @@ export function buildOnStreamComplete({
   stream,
   finalBody,
   translatedBody,
-  clientRawRequest,
+  clientRawRequest: _clientRawRequest,
 }: any) {
   const streamDetailId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 

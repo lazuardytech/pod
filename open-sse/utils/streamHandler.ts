@@ -29,7 +29,7 @@ function errorMessage(error: unknown) {
 export function createStreamController({
   onDisconnect,
   onError,
-  log,
+  log: _log,
   provider: _provider,
   model: _model,
 }: any = {}) {
