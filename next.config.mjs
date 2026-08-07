@@ -18,6 +18,9 @@ const nextConfig = {
     ],
   },
   turbopack: {
+    resolveExtensionAlias: {
+      ".js": [".ts", ".tsx", ".js"],
+    },
     // Keep server-only node modules out of browser bundles.
     resolveAlias: {
       fs: { browser: "./src/lib/empty-module.ts" },
