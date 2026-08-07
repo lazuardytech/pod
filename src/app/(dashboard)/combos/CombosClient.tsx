@@ -32,7 +32,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
-import type { ChangeEvent, CSSProperties, KeyboardEvent, MouseEvent, ReactNode } from "react";
+import type { ChangeEvent, KeyboardEvent, MouseEvent } from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
 
 type ComboStrategy = { fallbackStrategy?: string; [key: string]: unknown };

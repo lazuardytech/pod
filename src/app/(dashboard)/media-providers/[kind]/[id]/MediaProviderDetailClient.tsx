@@ -4,14 +4,7 @@ import { notFound, useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { GOOGLE_TTS_LANGUAGES } from "open-sse/config/googleTtsLanguages.js";
 import { getTtsVoicesForModel } from "open-sse/config/ttsModels.js";
-import {
-  useEffect,
-  useState,
-  type ReactNode,
-  type ChangeEvent,
-  type MouseEvent,
-  type SyntheticEvent,
-} from "react";
+import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import ConnectionsCard from "@/app/(dashboard)/providers/components/ConnectionsCard";
 import ModelsCard from "@/app/(dashboard)/providers/components/ModelsCard";
 import {
@@ -2267,11 +2260,11 @@ function SttExampleCard({ providerId }: { providerId: string }) {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
               Response{" "}
-              {result != null && latency != null && (
+              {result !== null && latency !== null && (
                 <span className="font-normal normal-case">&#9889; {latency}ms</span>
               )}
             </span>
-            {result != null && (
+            {result !== null && (
               <button
                 onClick={() => copyRes(resultStr)}
                 className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"

@@ -1,5 +1,4 @@
 "use client";
-import type { ChangeEvent } from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import Badge from "@/shared/components/Badge";

@@ -640,7 +640,7 @@ export default function ProviderLimits() {
     const disabledSet = new Set<string>(disabledModels[providerAlias] || []);
     const enabledQuotas = quotas.filter((q: QuotaItem) => {
       const key = q.modelKey || q.name;
-      return key != null && !disabledSet.has(key);
+      return typeof key === "string" && !disabledSet.has(key);
     });
     const totalUsed = enabledQuotas.reduce((s: number, q: QuotaItem) => s + (q.used || 0), 0);
     const totalLimit = enabledQuotas.reduce((s: number, q: QuotaItem) => s + (q.total || 0), 0);

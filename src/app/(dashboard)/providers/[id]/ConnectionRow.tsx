@@ -196,7 +196,7 @@ export default function ConnectionRow({
                 Proxy
               </Badge>
             )}
-            {isCooldown && connection.isActive !== false && modelLockUntil != null && (
+            {isCooldown && connection.isActive !== false && modelLockUntil !== null && (
               <CooldownTimer until={String(modelLockUntil)} />
             )}
             {connection.lastError && connection.isActive !== false && (

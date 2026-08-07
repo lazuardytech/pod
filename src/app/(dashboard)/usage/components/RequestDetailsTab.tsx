@@ -550,7 +550,7 @@ export default function RequestDetailsTab() {
                 </pre>
               </CollapsibleSection>
 
-              {selectedDetail.providerRequest != null ? (
+              {selectedDetail.providerRequest !== null ? (
                 <CollapsibleSection title="2. Provider Request (Translated)" icon="translate">
                   <pre className="max-h-[300px] max-w-full overflow-auto rounded-lg border border-black/5 bg-black/5 p-3 font-mono text-xs text-text-main dark:border-white/5 dark:bg-white/5 sm:p-4">
                     {JSON.stringify(selectedDetail.providerRequest, null, 2)}
@@ -558,7 +558,7 @@ export default function RequestDetailsTab() {
                 </CollapsibleSection>
               ) : null}
 
-              {selectedDetail.providerResponse != null ? (
+              {selectedDetail.providerResponse !== null ? (
                 <CollapsibleSection title="3. Provider Response (Raw)" icon="data_object">
                   <pre className="max-h-[300px] max-w-full overflow-auto rounded-lg border border-black/5 bg-black/5 p-3 font-mono text-xs text-text-main dark:border-white/5 dark:bg-white/5 sm:p-4">
                     {typeof selectedDetail.providerResponse === "object"

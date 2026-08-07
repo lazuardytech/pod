@@ -394,7 +394,7 @@ export default function BasicChatPageClient() {
 
           const staticModels = getModelsByProviderId(providerId)
             .map((model) => normalizeStaticModel(model, connection))
-            .filter((m): m is ChatModel => m != null);
+            .filter((m): m is ChatModel => m !== null);
           group.models.push(...staticModels);
         }
 
@@ -408,7 +408,7 @@ export default function BasicChatPageClient() {
               if (!response.ok) return { connection, models: [] };
               const models = parseProviderModelsPayload(data)
                 .map((model) => normalizeLiveModel(model, connection))
-                .filter((m): m is ChatModel => m != null);
+                .filter((m): m is ChatModel => m !== null);
               return { connection, models };
             } catch {
               return { connection, models: [] };
