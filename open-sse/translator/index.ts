@@ -43,7 +43,9 @@ function asTranslatedResponseResults(
 }
 
 function ensureInitialized(): void {
-  // no-op: translators register at module load via ./loaders.js
+  if (requestRegistry.size === 0 || responseRegistry.size === 0) {
+    throw new Error("Translator registry is empty; loader side-effect imports did not run.");
+  }
 }
 
 // Strip specific content types from messages (explicit opt-in via strip[] in PROVIDER_MODELS)

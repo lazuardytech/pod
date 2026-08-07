@@ -1,3 +1,4 @@
+// Optional scoped check; root tsc remains the release source of truth.
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {

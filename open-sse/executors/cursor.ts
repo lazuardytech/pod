@@ -8,12 +8,12 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { estimateUsage } from "../utils/usageTracking.js";
 import { BaseExecutor } from "./base.js";
 
-declare const EdgeRuntime: any;
+type EdgeRuntimeGlobal = typeof globalThis & { EdgeRuntime?: unknown };
 
 // Detect cloud environment
 const isCloudEnv = () => {
   if (typeof caches !== "undefined" && typeof caches === "object") return true;
-  if (typeof EdgeRuntime !== "undefined") return true;
+  if (typeof (globalThis as EdgeRuntimeGlobal).EdgeRuntime !== "undefined") return true;
   return false;
 };
 
