@@ -206,7 +206,7 @@ export function getDatabase(): SqliteDatabase {
 
   // Under Bun, better-sqlite3 (native N-API) is unsupported — use the
   // built-in `bun:sqlite` instead. `bun:sqlite` is marked as a server
-  // external package in next.config.mjs, so the runtime resolves it via
+  // external package in next.config.ts, so the runtime resolves it via
   // createRequire at call time.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const DatabaseCtor: any =

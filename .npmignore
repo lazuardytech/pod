@@ -20,8 +20,8 @@ CLIProxyAPI/
 .gitignore
 .env*
 jsconfig.json
-postcss.config.mjs
-next.config.mjs
+postcss.config.ts
+next.config.ts
 tsconfig.json
 
 # Build artifacts that shouldn't be published

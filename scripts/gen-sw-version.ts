@@ -1,16 +1,18 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-function readBuildId() {
+function readBuildId(): string {
   try {
     if (existsSync(".next/BUILD_ID")) {
       const id = readFileSync(".next/BUILD_ID", "utf8").trim();
       if (id) return id;
     }
-  } catch {}
+  } catch {
+    return "";
+  }
   return "";
 }
 
-function generateId() {
+function generateId(): string {
   return Math.random().toString(36).slice(2, 12);
 }
 

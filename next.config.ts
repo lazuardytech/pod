@@ -1,5 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["bun:sqlite", "undici"],
   images: {
@@ -7,7 +8,7 @@ const nextConfig = {
   },
   env: {},
   outputFileTracingExcludes: {
-    "/*": ["./next.config.mjs"],
+    "/*": ["./next.config.ts"],
     "/api/tunnel/**": [
       "./.agents/**/*",
       "./cloud/**/*",
