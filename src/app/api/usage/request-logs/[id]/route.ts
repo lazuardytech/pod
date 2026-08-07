@@ -10,7 +10,7 @@ import { getDatabase } from "@/lib/sqlite/connection";
  * 2. Fuzzy match by model + timestamp within ±5min window
  * 3. Fuzzy match by timestamp only within ±5min window (no model filter)
  */
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const db = getDatabase();
@@ -20,7 +20,7 @@ export async function GET(request: any, { params }: { params: any }) {
       return NextResponse.json({ error: "Log entry not found" }, { status: 404 });
     }
 
-    let detail: any = null;
+    let detail: Record<string, unknown> | null = null;
 
     try {
       // Strategy 1: direct details_id link (future-proof)
@@ -44,7 +44,7 @@ export async function GET(request: any, { params }: { params: any }) {
 
           // Strategy 2: match by model + timestamp
           const model = logRow.model && logRow.model !== "-" ? logRow.model : null;
-          let candidates: any[] = [];
+          let candidates: unknown[] = [];
 
           if (model) {
             candidates = db
@@ -71,10 +71,13 @@ export async function GET(request: any, { params }: { params: any }) {
 
           if (candidates.length > 0) {
             // Pick closest by absolute time delta
-            let best = candidates[0];
-            let bestDelta = Math.abs(new Date(best.timestamp).getTime() - logDate.getTime());
-            for (const c of candidates.slice(1)) {
-              const delta = Math.abs(new Date(c.timestamp).getTime() - logDate.getTime());
+            type Cand = Record<string, unknown> & { timestamp?: string; data?: string };
+            let best = candidates[0] as Cand;
+            let bestDelta = Math.abs(
+              new Date(String(best.timestamp)).getTime() - logDate.getTime(),
+            );
+            for (const c of candidates.slice(1) as Cand[]) {
+              const delta = Math.abs(new Date(String(c.timestamp)).getTime() - logDate.getTime());
               if (delta < bestDelta) {
                 bestDelta = delta;
                 best = c;
@@ -91,7 +94,7 @@ export async function GET(request: any, { params }: { params: any }) {
     let payload: Record<string, unknown> = {};
     if (detail) {
       try {
-        payload = JSON.parse(detail.data || "{}");
+        payload = JSON.parse(String(detail.data || "{}"));
       } catch {}
     }
 

@@ -18,7 +18,7 @@ export async function OPTIONS() {
 /**
  * POST /v1/web/fetch - Web URL fetch/extract endpoint
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   const { response } = await requireValidApiKey(request);
   if (response) return response;
 

@@ -8,14 +8,16 @@ import { sanitizeError } from "@/lib/sanitizeError";
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
 
-function countryName(code: any) {
+function countryName(code: string | undefined) {
+  if (!code) return "";
   try {
     return LOCALE_NAMES.of(code);
   } catch {
     return code;
   }
 }
-function langName(code: any) {
+function langName(code: string | undefined) {
+  if (!code) return "";
   try {
     return LANG_NAMES.of(code);
   } catch {
@@ -30,7 +32,7 @@ function langName(code: any) {
  *   ?lang=en     (optional filter by lang code)
  *   ?apiKey=xxx  (required for elevenlabs)
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get("provider") || "edge-tts";
@@ -54,7 +56,7 @@ export async function GET(request: any) {
     let voices;
 
     if (provider === "local-device") {
-      voices = raw.map((item: any) => {
+      voices = raw.map((item: Record<string, unknown>) => {
         const v = item as Record<string, unknown>;
         return {
           id: v.id,
@@ -68,7 +70,7 @@ export async function GET(request: any) {
         };
       });
     } else if (useElevenShape) {
-      voices = raw.map((item: any) => {
+      voices = raw.map((item: Record<string, unknown>) => {
         const v = item as Record<string, unknown>;
         const labels = asApiRecord(v.labels);
         const language = asString(labels.language) || "en";
@@ -86,7 +88,7 @@ export async function GET(request: any) {
       });
     } else {
       // edge-tts (default)
-      voices = raw.map((item: any) => {
+      voices = raw.map((item: Record<string, unknown>) => {
         const v = item as Record<string, unknown>;
         const locale = asString(v.Locale);
         const [lang, country] = locale.split("-");
@@ -106,7 +108,7 @@ export async function GET(request: any) {
     }
 
     // Apply filter
-    if (langFilter) voices = voices.filter((v: any) => v.lang === langFilter);
+    if (langFilter) voices = voices.filter((v) => v.lang === langFilter);
 
     // Group by language
     const byLang = {};

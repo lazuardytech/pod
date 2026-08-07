@@ -57,6 +57,7 @@ declare global {
   // Cloudflare Workers Cache Storage API (only present in cloud mode).
   // `typeof caches !== "undefined"` is the runtime check used across the
   // src/lib DB layer to detect cloud mode.
+  // todo(ts): EdgeRuntime CacheStorage ambient — Keep loose across Node/Workers.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   var caches: any;
 

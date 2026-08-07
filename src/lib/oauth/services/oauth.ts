@@ -7,11 +7,21 @@ import { spinner as createSpinner } from "../utils/ui";
 /**
  * Generic OAuth Authorization Code Flow with PKCE
  */
-// todo(ts): the per-provider `config` object is structurally a CodeConfig (with
-// authorizeUrl, tokenUrl, clientId, codeChallengeMethod). Until we centralize
-// the config union (ClaudeConfig | CodexConfig | …) we accept it loosely.
+// Loose structural config shared by PKCE OAuth providers.
+// Extra provider fields are allowed via structural typing at construction sites.
+export type LooseOAuthConfig = {
+  clientId: string;
+  authorizeUrl?: string;
+  tokenUrl?: string;
+  codeChallengeMethod?: string;
+  scopes?: string[] | string;
+  scope?: string;
+};
+
 export class OAuthService {
-  constructor(public config: any) {}
+  // todo(ts): per-provider configs are a union (ClaudeConfig | CodexConfig | …);
+  // accept the shared PKCE shape plus extras without poisoning known fields.
+  constructor(public config: LooseOAuthConfig) {}
 
   /**
    * Build authorization URL
@@ -28,7 +38,7 @@ export class OAuthService {
       redirect_uri: redirectUri,
       state: state,
       code_challenge: codeChallenge,
-      code_challenge_method: this.config.codeChallengeMethod,
+      code_challenge_method: this.config.codeChallengeMethod || "S256",
       ...extraParams,
     });
 
@@ -117,7 +127,7 @@ export class OAuthService {
             code_verifier: codeVerifier,
           });
 
-    const response = await fetch(this.config.tokenUrl, {
+    const response = await fetch(String(this.config.tokenUrl ?? ""), {
       method: "POST",
       headers: {
         "Content-Type": contentType,

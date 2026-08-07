@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
  * SSE stream that pushes request log updates as they arrive.
  * Detects: new entries (maxId change) AND status changes (PENDING → SUCCESS/FAILED).
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   let closed = false;
   let lastSig = "";
 
@@ -15,23 +15,23 @@ export async function GET(request: any) {
 
   // Signature includes maxId + all PENDING row IDs + status hash
   // so any status change (PENDING→SUCCESS/FAILED) triggers an update
-  function buildSig(logs: any) {
-    const maxId = logs.length > 0 ? logs[0].id : 0;
+  function buildSig(logs: Array<{ id?: string; status?: string | string[] }> = []) {
+    const maxId = logs.length > 0 ? logs[0]?.id : 0;
     const pendingIds = logs
-      .filter((l: any) => l.status?.includes("PENDING"))
-      .map((l: any) => l.id)
+      .filter((l) => l.status?.includes("PENDING"))
+      .map((l) => l.id)
       .join(",");
     // Hash recent statuses to catch any status change
     const statusHash = logs
       .slice(0, 50)
-      .map((l: any) => `${l.id}:${l.status}`)
+      .map((l) => `${l.id}:${l.status}`)
       .join("|");
     return `${maxId}|${pendingIds}|${statusHash}`;
   }
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data: any) => {
+      const send = (data: unknown) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -41,7 +41,7 @@ export async function GET(request: any) {
       // Initial snapshot
       try {
         const logs = await getRecentLogsStructured(300);
-        lastSig = buildSig(logs);
+        lastSig = buildSig(logs as unknown as Array<{ id?: string; status?: string }>);
         send({ type: "init", logs });
       } catch {
         send({ type: "init", logs: [] });
@@ -53,7 +53,7 @@ export async function GET(request: any) {
         if (closed) return;
         try {
           const logs = await getRecentLogsStructured(300);
-          const sig = buildSig(logs);
+          const sig = buildSig(logs as unknown as Array<{ id?: string; status?: string }>);
           if (sig !== lastSig) {
             lastSig = sig;
             send({ type: "update", logs });

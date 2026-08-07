@@ -23,7 +23,7 @@ const PREFIX_BY_TYPE = {
 
 const ID_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
-function isCustomNode(node: any) {
+function isCustomNode(node: { id?: string; type?: string; apiType?: string } | null | undefined) {
   if (!node) return false;
   return (
     isOpenAICompatibleProvider(node.id) ||
@@ -33,7 +33,7 @@ function isCustomNode(node: any) {
 }
 
 // PATCH /api/provider-nodes/[id]/rename - Rename a custom provider node's identifier
-export async function PATCH(request: any, { params }: { params: any }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: oldId } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);

@@ -19,7 +19,7 @@ async function buildStatusPayload() {
  * GET /api/tunnel/status/stream
  * SSE stream for tunnel/tailscale status updates.
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;
 
@@ -41,7 +41,7 @@ export async function GET(request: any) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (payload: any) => {
+      const send = (payload: unknown) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`event: status\ndata: ${JSON.stringify(payload)}\n\n`));

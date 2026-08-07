@@ -60,6 +60,7 @@ export interface SqliteDatabase {
   exec(sql: string): unknown;
   pragma?(s: string): unknown;
   prepare(sql: string): {
+    // todo(ts): better-sqlite3 / bun:sqlite Statement row shapes are ambient FFI
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     all(...params: unknown[]): any[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,10 +68,7 @@ export interface SqliteDatabase {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     run(...params: unknown[]): any;
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  transaction<T extends (...args: any[]) => any>(
-    fn: T,
-  ): T & {
+  transaction<T>(fn: T): T & {
     default?: T;
     deferred?: T;
     exclusive?: T;
@@ -208,11 +206,12 @@ export function getDatabase(): SqliteDatabase {
   // built-in `bun:sqlite` instead. `bun:sqlite` is marked as a server
   // external package in next.config.ts, so the runtime resolves it via
   // createRequire at call time.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const DatabaseCtor: any =
+  // todo(ts): bun:sqlite / better-sqlite3 constructors are ambient FFI across runtimes
+  type SqliteDatabaseCtor = new (filename: string) => SqliteDatabase;
+  const DatabaseCtor: SqliteDatabaseCtor =
     typeof Bun !== "undefined"
-      ? (require("bun:sqlite") as { Database: new (filename: string) => unknown }).Database
-      : require("better-sqlite3");
+      ? (require("bun:sqlite") as { Database: SqliteDatabaseCtor }).Database
+      : (require("better-sqlite3") as SqliteDatabaseCtor);
 
   const db: SqliteDatabase = new DatabaseCtor(SQLITE_FILE) as SqliteDatabase;
   applyPragmas(db);

@@ -1,18 +1,25 @@
+import type { ExecutorCredentials } from "open-sse/executors/base.js";
 // Ensure proxyFetch is loaded to patch (globalThis as Record<string, any>).fetch
 import "open-sse/index.js";
 
 import { getExecutor } from "open-sse/executors/index.js";
 import { getUsageForProvider } from "open-sse/services/usage.js";
-import { getProviderConnectionById, updateProviderConnection } from "@/lib/localDb";
+import {
+  getProviderConnectionById,
+  updateProviderConnection,
+  type ProviderConnection,
+} from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
 
 // Detect auth-expired messages returned by usage providers instead of throwing
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
-function isAuthExpiredMessage(usage: any) {
-  if (!usage?.message) return false;
-  const msg = usage.message.toLowerCase();
+function isAuthExpiredMessage(usage: unknown) {
+  if (!usage || typeof usage !== "object" || !("message" in usage)) return false;
+  const raw = (usage as { message?: unknown }).message;
+  if (typeof raw !== "string" || !raw) return false;
+  const msg = raw.toLowerCase();
   return AUTH_EXPIRED_PATTERNS.some((p) => msg.includes(p));
 }
 
@@ -22,21 +29,26 @@ function isAuthExpiredMessage(usage: any) {
  * @returns Promise<{ connection, refreshed: boolean }>
  */
 async function refreshAndUpdateCredentials(
-  connection: any,
+  connection: ProviderConnection,
   force = false,
   proxyOptions: Record<string, unknown> | null = null,
 ) {
-  const executor = getExecutor(connection.provider);
+  const executor = getExecutor(String(connection.provider));
 
   // Build credentials object from connection
-  const credentials = {
-    accessToken: connection.accessToken,
-    refreshToken: connection.refreshToken,
-    expiresAt: connection.expiresAt || connection.tokenExpiresAt,
-    providerSpecificData: connection.providerSpecificData,
+  const psd = (connection.providerSpecificData ?? {}) as Record<string, unknown>;
+  const credentials: ExecutorCredentials = {
+    accessToken: connection.accessToken as string | undefined,
+    refreshToken: connection.refreshToken as string | undefined,
+    expiresAt: (connection.expiresAt || connection.tokenExpiresAt) as
+      | string
+      | number
+      | Date
+      | undefined,
+    providerSpecificData: psd as ExecutorCredentials["providerSpecificData"],
     // For GitHub
-    copilotToken: connection.providerSpecificData?.copilotToken,
-    copilotTokenExpiresAt: connection.providerSpecificData?.copilotTokenExpiresAt,
+    copilotToken: psd.copilotToken as string | undefined,
+    copilotTokenExpiresAt: psd.copilotTokenExpiresAt as string | number | Date | undefined,
   };
 
   // Check if refresh is needed (skip when force=true)
@@ -85,17 +97,17 @@ async function refreshAndUpdateCredentials(
   // Handle provider-specific data (copilotToken for GitHub, etc.)
   if (refreshResult.copilotToken || refreshResult.copilotTokenExpiresAt) {
     updateData.providerSpecificData = {
-      ...connection.providerSpecificData,
+      ...((connection.providerSpecificData ?? {}) as Record<string, unknown>),
       copilotToken: refreshResult.copilotToken,
       copilotTokenExpiresAt: refreshResult.copilotTokenExpiresAt,
     };
   }
 
   // Update database
-  await updateProviderConnection(connection.id, updateData);
+  await updateProviderConnection(String(connection.id), updateData);
 
   // Return updated connection
-  const updatedConnection = {
+  const updatedConnection: ProviderConnection = {
     ...connection,
     ...updateData,
   };
@@ -161,7 +173,7 @@ export async function GET(
     }
 
     // Fetch usage from provider API
-    let usage = await getUsageForProvider(connection, proxyOptions as unknown as never);
+    let usage = await getUsageForProvider(connection as never, proxyOptions as never);
 
     // If provider returned an auth-expired message instead of throwing,
     // force-refresh token and retry once (OAuth only)
@@ -173,7 +185,7 @@ export async function GET(
           proxyOptions as Record<string, unknown>,
         );
         connection = retryResult.connection;
-        usage = await getUsageForProvider(connection, proxyOptions as unknown as never);
+        usage = await getUsageForProvider(connection as never, proxyOptions as never);
       } catch {
         console.warn("[Usage] Force refresh failed");
       }

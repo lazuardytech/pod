@@ -13,7 +13,7 @@ const GITLAB_DEFAULT_BASE = "https://gitlab.com";
  * POST /api/oauth/gitlab/pat
  * Authenticate GitLab Duo with a Personal Access Token (PAT)
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

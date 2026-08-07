@@ -8,14 +8,14 @@ import { createProxyPool } from "@/models";
 
 const VERCEL_API = "https://api.vercel.com";
 
-function sanitizeProxyPool(pool: any) {
+function sanitizeProxyPool(pool: Record<string, unknown> | null | undefined) {
   if (!pool) return pool;
   const sanitized = { ...pool };
   delete sanitized.relayAuthToken;
   return sanitized;
 }
 
-function createRelayFunctionCode(relayAuthToken: any) {
+function createRelayFunctionCode(relayAuthToken: string) {
   return `
 const RELAY_AUTH_TOKEN = ${JSON.stringify(relayAuthToken)};
 
@@ -81,7 +81,11 @@ export default async function handler(req) {
 `;
 }
 
-async function pollDeployment(deploymentId: any, token: any, maxMs: number = 120000) {
+async function pollDeployment(
+  deploymentId: string,
+  token: string,
+  maxMs: number = 120000,
+): Promise<Record<string, unknown>> {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     const res = await fetch(`${VERCEL_API}/v13/deployments/${deploymentId}`, {
@@ -98,7 +102,7 @@ async function pollDeployment(deploymentId: any, token: any, maxMs: number = 120
 }
 
 // POST /api/proxy-pools/vercel-deploy
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -168,8 +172,8 @@ export async function POST(request: any) {
     });
 
     // Poll until deployment is ready
-    const ready = await pollDeployment(deploymentId, vercelToken);
-    const deployUrl = `https://${ready.url}`;
+    const ready = await pollDeployment(asString(deploymentId), asString(vercelToken));
+    const deployUrl = `https://${asString((ready as Record<string, unknown>).url)}`;
 
     // Validate the deploy URL returned by Vercel before storing
     const urlCheck = validateFetchUrl(deployUrl);
@@ -189,7 +193,7 @@ export async function POST(request: any) {
     });
 
     return NextResponse.json(
-      { proxyPool: sanitizeProxyPool(proxyPool), deployUrl },
+      { proxyPool: sanitizeProxyPool(proxyPool as Record<string, unknown>), deployUrl },
       { status: 201 },
     );
   } catch (error) {

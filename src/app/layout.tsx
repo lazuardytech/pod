@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { DM_Sans, IBM_Plex_Mono, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -65,7 +66,7 @@ const themeInitScript = `
   })();
 `;
 
-export default function RootLayout({ children }: any) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} ${dmSans.variable} dark`}>
       <head>

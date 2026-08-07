@@ -8,14 +8,14 @@ import { OAuthService } from "./oauth";
  */
 export class GitHubService extends OAuthService {
   constructor() {
-    super(GITHUB_CONFIG);
+    super(GITHUB_CONFIG as import("./oauth").LooseOAuthConfig & Record<string, unknown>);
   }
 
   /**
    * Get device code for GitHub authentication
    */
   // todo(ts): device code response shape from GitHub — keep loose.
-  async getDeviceCode(): Promise<any> {
+  async getDeviceCode(): Promise<Record<string, unknown>> {
     const response = await fetch(`${GITHUB_CONFIG.deviceCodeUrl}`, {
       method: "POST",
       headers: {
@@ -106,7 +106,7 @@ export class GitHubService extends OAuthService {
    * Get Copilot token using GitHub access token
    */
   // todo(ts): Copilot token response shape — keep loose.
-  async getCopilotToken(accessToken: string): Promise<any> {
+  async getCopilotToken(accessToken: string): Promise<Record<string, unknown>> {
     const response = await fetch(`${GITHUB_CONFIG.copilotTokenUrl}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -128,7 +128,7 @@ export class GitHubService extends OAuthService {
    * Get user info using GitHub access token
    */
   // todo(ts): GitHub API user response — keep loose.
-  async getUserInfo(accessToken: string): Promise<any> {
+  async getUserInfo(accessToken: string): Promise<Record<string, unknown>> {
     const response = await fetch(`${GITHUB_CONFIG.userInfoUrl}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -155,9 +155,9 @@ export class GitHubService extends OAuthService {
     accessToken: string;
     copilotToken: string;
     refreshToken: null;
-    expiresIn: any;
+    expiresIn: number | string | null;
     userInfo: { id: string; login: string; name: string; email: string };
-    copilotTokenInfo: any;
+    copilotTokenInfo: Record<string, unknown>;
   }> {
     try {
       // Get device code
@@ -165,29 +165,30 @@ export class GitHubService extends OAuthService {
 
       // Poll for access token
       const tokenResponse = await this.pollAccessToken(
-        deviceResponse.device_code,
-        deviceResponse.verification_uri,
-        deviceResponse.user_code,
+        String(deviceResponse.device_code ?? ""),
+        String(deviceResponse.verification_uri ?? ""),
+        String(deviceResponse.user_code ?? ""),
       );
 
       // Get Copilot token
-      const copilotToken = await this.getCopilotToken(tokenResponse.access_token);
+      const accessToken = String(tokenResponse.access_token ?? "");
+      const copilotToken = await this.getCopilotToken(accessToken);
 
       // Get user info
-      const userInfo = await this.getUserInfo(tokenResponse.access_token);
+      const userInfo = await this.getUserInfo(accessToken);
 
-      console.log(`\n✅ Successfully authenticated as ${userInfo.login}`);
+      console.log(`\n✅ Successfully authenticated as ${String(userInfo.login ?? "")}`);
 
       return {
-        accessToken: tokenResponse.access_token,
-        copilotToken: copilotToken.token,
+        accessToken,
+        copilotToken: String(copilotToken.token ?? ""),
         refreshToken: null, // GitHub device flow doesn't return refresh token
-        expiresIn: copilotToken.expires_at,
+        expiresIn: (copilotToken.expires_at as string | number | null) ?? null,
         userInfo: {
-          id: userInfo.id,
-          login: userInfo.login,
-          name: userInfo.name,
-          email: userInfo.email,
+          id: String(userInfo.id ?? ""),
+          login: String(userInfo.login ?? ""),
+          name: String(userInfo.name ?? ""),
+          email: String(userInfo.email ?? ""),
         },
         copilotTokenInfo: copilotToken,
       };

@@ -13,7 +13,7 @@ function ensureDir() {
   }
 }
 
-export function loadState(): any {
+export function loadState(): Record<string, unknown> | null {
   try {
     if (fs.existsSync(/*turbopackIgnore: true*/ STATE_FILE)) {
       return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ STATE_FILE, "utf8")) as Record<
@@ -27,7 +27,7 @@ export function loadState(): any {
   return null;
 }
 
-export function saveState(state: any) {
+export function saveState(state: Record<string, unknown>) {
   ensureDir();
   fs.writeFileSync(/*turbopackIgnore: true*/ STATE_FILE, JSON.stringify(state, null, 2));
 }

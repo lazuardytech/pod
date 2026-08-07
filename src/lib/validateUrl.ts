@@ -67,7 +67,7 @@ export function validateFetchUrl(
   url: unknown,
   options: ValidateFetchUrlOptions = {},
 ): ValidateFetchUrlResult {
-  const { allowPrivate = false } = options ?? ({} as any);
+  const { allowPrivate = false } = options ?? {};
   if (!url || typeof url !== "string") {
     return { ok: false, error: "URL is required" };
   }

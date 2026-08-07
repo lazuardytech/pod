@@ -5,7 +5,7 @@ const CONN_LOCK_UNTIL_KEY = "connectionLockUntil";
 const CONN_LOCK_COUNT_KEY = "connectionLockCount";
 const CONN_LOCK_REASON_KEY = "connectionLockReason";
 
-function getActiveModelLocks(connection: any) {
+function getActiveModelLocks(connection: Record<string, unknown> | { [key: string]: unknown }) {
   const now = Date.now();
   return Object.entries(connection)
     .filter(([key, value]) => key.startsWith(MODEL_LOCK_PREFIX) && value)
@@ -18,11 +18,11 @@ function getActiveModelLocks(connection: any) {
     .filter((lock) => lock.active);
 }
 
-function getActiveConnectionLock(connection: any) {
+function getActiveConnectionLock(connection: Record<string, unknown> | { [key: string]: unknown }) {
   const until = connection[CONN_LOCK_UNTIL_KEY];
   if (!until) return null;
   const now = Date.now();
-  if (new Date(until).getTime() <= now) return null;
+  if (new Date(String(until)).getTime() <= now) return null;
   return {
     until,
     count: connection[CONN_LOCK_COUNT_KEY] || 1,

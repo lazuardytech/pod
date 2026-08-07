@@ -12,7 +12,7 @@ const langNames = new Intl.DisplayNames(["en"], { type: "language" });
  * Returns { languages, byLang } grouped by language - same format as edge-tts
  * Uses direct DB read (no mutex) to avoid blocking on concurrent TTS requests
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const langFilter = searchParams.get("lang");
@@ -41,13 +41,13 @@ export async function GET(request: any) {
         }[];
       }
     > = {};
-    const addToLang = (code: any, voice: any) => {
+    const addToLang = (code: string, voice: Record<string, unknown>) => {
       if (!byLang[code]) {
         byLang[code] = {
           code,
           name: (() => {
             try {
-              return langNames.of(code);
+              return langNames.of(code) || code;
             } catch {
               return code;
             }
@@ -56,11 +56,14 @@ export async function GET(request: any) {
         };
       }
       // Avoid duplicate voice in same lang
-      if (!byLang[code].voices.find((v: any) => v.id === voice.voice_id)) {
-        byLang[code].voices.push({
-          id: voice.voice_id,
-          name: (voice as Record<string, unknown>).name as string,
-          gender: voice.labels?.gender || "",
+      const bucket = byLang[code]!;
+      const voiceId = String(voice.voice_id ?? "");
+      if (!bucket.voices.find((v) => v.id === voiceId)) {
+        const labels = (voice.labels ?? {}) as Record<string, unknown>;
+        bucket.voices.push({
+          id: voiceId,
+          name: String(voice.name ?? ""),
+          gender: String(labels.gender ?? ""),
           lang: code,
           // premade voices are free; professional library voices added to account may require paid plan
           free_users_allowed: voice.category === "premade" || voice.is_owner === true,

@@ -3,7 +3,7 @@ import fs from "fs";
 import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/sanitizeError";
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const file = searchParams.get("file");

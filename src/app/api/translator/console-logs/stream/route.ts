@@ -4,12 +4,12 @@ export const dynamic = "force-dynamic";
 
 initConsoleLogCapture();
 
-export async function GET(request: any) {
+export async function GET(request: Request) {
   const encoder = new TextEncoder();
   const emitter = getConsoleEmitter();
   const state: {
     closed: boolean;
-    send: ((line: any) => void) | null;
+    send: ((line: string) => void) | null;
     sendClear: (() => void) | null;
     keepalive: ReturnType<typeof setInterval> | null;
   } = { closed: false, send: null, sendClear: null, keepalive: null };

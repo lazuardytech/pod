@@ -5,7 +5,7 @@ import { sanitizeError } from "@/lib/sanitizeError";
 const KILO_MODELS_URL = "https://api.kilo.ai/api/gateway/models";
 
 // In-memory cache with TTL
-let cachedModels: any = null;
+let cachedModels: Array<{ id: string; name: string }> | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -31,8 +31,8 @@ export async function GET() {
     const allModels = json.data || [];
 
     const freeModels = allModels
-      .filter((m: any) => m.isFree === true)
-      .map((m: any) => ({
+      .filter((m: Record<string, unknown>) => m.isFree === true)
+      .map((m: Record<string, unknown>) => ({
         id: m.id,
         name: (m as Record<string, unknown>).name,
         isFree: true,

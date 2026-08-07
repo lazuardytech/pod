@@ -1,10 +1,10 @@
+import { asString, proxyTestError } from "@/app/api/_types";
 import { NextResponse } from "next/server";
-import { proxyTestError } from "@/app/api/_types";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProxyPoolById, updateProxyPool } from "@/models";
 
-function buildRelayHeaders(proxyPool: any) {
+function buildRelayHeaders(proxyPool: Record<string, unknown>) {
   const headers: Record<string, string> = {
     "x-relay-target": "https://www.google.com",
     "x-relay-path": "/generate_204",
@@ -13,19 +13,19 @@ function buildRelayHeaders(proxyPool: any) {
   };
 
   if (proxyPool?.relayAuthToken) {
-    headers["x-relay-auth"] = proxyPool.relayAuthToken;
+    headers["x-relay-auth"] = asString(proxyPool.relayAuthToken);
   }
 
   return headers;
 }
 
-async function testVercelRelay(proxyPool: any, timeoutMs: number = 10000) {
+async function testVercelRelay(proxyPool: Record<string, unknown>, timeoutMs: number = 10000) {
   const controller = new AbortController();
   const startedAt = Date.now();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const { fetch: undiciFetch } = await import("undici");
-    const res = await undiciFetch(proxyPool.proxyUrl, {
+    const res = await undiciFetch(asString(proxyPool.proxyUrl), {
       method: "GET",
       headers: buildRelayHeaders(proxyPool),
       signal: controller.signal,
@@ -48,7 +48,7 @@ async function testVercelRelay(proxyPool: any, timeoutMs: number = 10000) {
 }
 
 // POST /api/proxy-pools/[id]/test - Test proxy pool entry
-export async function POST(request: any, { params }: { params: any }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const proxyPool = await getProxyPoolById(id);
@@ -59,7 +59,7 @@ export async function POST(request: any, { params }: { params: any }) {
 
     const result =
       proxyPool.type === "vercel"
-        ? await testVercelRelay(proxyPool)
+        ? await testVercelRelay(proxyPool as Record<string, unknown>)
         : await testProxyUrl({ proxyUrl: proxyPool.proxyUrl });
     const now = new Date().toISOString();
 

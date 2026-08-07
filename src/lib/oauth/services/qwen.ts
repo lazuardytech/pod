@@ -1,6 +1,6 @@
 import open from "open";
 import { getServerCredentials } from "../config/index";
-import { QWEN_CONFIG } from "../constants/oauth";
+import { QWEN_CONFIG, type QwenConfig } from "../constants/oauth";
 import { generatePKCE } from "../utils/pkce";
 import { spinner as createSpinner } from "../utils/ui";
 
@@ -9,7 +9,7 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses Device Code Flow with PKCE
  */
 export class QwenService {
-  public config: any;
+  public config: QwenConfig;
 
   constructor() {
     this.config = QWEN_CONFIG;
@@ -19,7 +19,7 @@ export class QwenService {
    * Request device code
    */
   // todo(ts): device code response shape — keep loose.
-  async requestDeviceCode(codeChallenge: string): Promise<any> {
+  async requestDeviceCode(codeChallenge: string): Promise<Record<string, unknown>> {
     const response = await fetch(this.config.deviceCodeUrl, {
       method: "POST",
       headers: {
@@ -46,7 +46,11 @@ export class QwenService {
    * Poll for token
    */
   // todo(ts): token response shape — keep loose.
-  async pollForToken(deviceCode: string, codeVerifier: string, interval: number = 5): Promise<any> {
+  async pollForToken(
+    deviceCode: string,
+    codeVerifier: string,
+    interval: number = 5,
+  ): Promise<Record<string, unknown>> {
     const maxAttempts = 60; // 5 minutes
     const pollInterval = interval * 1000;
 
@@ -92,7 +96,7 @@ export class QwenService {
    * Save Qwen tokens to server
    */
   // todo(ts): token shape is provider-specific — keep loose.
-  async saveTokens(tokens: any): Promise<any> {
+  async saveTokens(tokens: Record<string, unknown>): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/qwen`, {
@@ -143,18 +147,18 @@ export class QwenService {
 
       // Open browser
       if (deviceData.verification_uri_complete) {
-        await open(deviceData.verification_uri_complete);
+        await open(String(deviceData.verification_uri_complete));
       } else {
-        await open(deviceData.verification_uri);
+        await open(String(deviceData.verification_uri ?? ""));
       }
 
       spinner.start("Waiting for authorization...");
 
       // Poll for token
       const tokens = await this.pollForToken(
-        deviceData.device_code,
+        String(deviceData.device_code ?? ""),
         codeVerifier,
-        deviceData.interval || 5,
+        Number(deviceData.interval || 5),
       );
 
       spinner.text = "Saving tokens to server...";

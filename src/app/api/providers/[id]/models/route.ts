@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
-import { asString } from "@/app/api/_types";
+import { asApiRecord, asString } from "@/app/api/_types";
 import { GEMINI_CONFIG } from "@/lib/oauth/constants/oauth";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { sanitizeError } from "@/lib/sanitizeError";
@@ -17,24 +17,30 @@ import {
 
 const GEMINI_CLI_MODELS_URL = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels";
 
-const parseOpenAIStyleModels = (data: any) => {
-  if (Array.isArray(data)) return data;
-  return data?.data || data?.models || data?.results || [];
+type ModelRow = Record<string, unknown> & { id?: unknown; name?: unknown };
+
+const parseOpenAIStyleModels = (data: unknown): ModelRow[] => {
+  if (Array.isArray(data)) return data as ModelRow[];
+  const rec = asApiRecord(data);
+  const list = rec.data ?? rec.models ?? rec.results;
+  return Array.isArray(list) ? (list as ModelRow[]) : [];
 };
 
-const parseGeminiCliModels = (data: any) => {
-  if (Array.isArray(data?.models)) {
-    return data.models
-      .map((item: any) => {
-        const id = item?.id || item?.model || item?.name;
+const parseGeminiCliModels = (data: unknown): ModelRow[] => {
+  const rec = asApiRecord(data);
+  if (Array.isArray(rec.models)) {
+    return rec.models
+      .map((item: unknown) => {
+        const row = asApiRecord(item);
+        const id = row.id || row.model || row.name;
         if (!id) return null;
-        return { id, name: item?.displayName || item?.name || id };
+        return { id, name: row.displayName || row.name || id } as ModelRow;
       })
-      .filter(Boolean);
+      .filter(Boolean) as ModelRow[];
   }
 
-  if (data?.models && typeof data.models === "object") {
-    return Object.entries(data.models)
+  if (rec.models && typeof rec.models === "object") {
+    return Object.entries(rec.models as Record<string, unknown>)
       .filter(([, info]) => !(info as Record<string, unknown>)?.isInternal)
       .map(([id, info]) => {
         const modelInfo = info as Record<string, unknown>;
@@ -48,11 +54,11 @@ const parseGeminiCliModels = (data: any) => {
   return [];
 };
 
-const appendCodexReviewModels = (models: any) =>
-  models.flatMap((model: any) => {
-    const id = model?.id || model?.slug || model?.model || model?.name;
+const appendCodexReviewModels = (models: ModelRow[]) =>
+  models.flatMap((model) => {
+    const id = String(model?.id || model?.slug || model?.model || model?.name || "");
     if (!id) return [];
-    const name = model?.display_name || model?.displayName || model?.name || id;
+    const name = String(model?.display_name || model?.displayName || model?.name || id);
     const normalized = { ...model, id, name };
     const isChatModel = (model?.type || "llm") !== "image" && !id.toLowerCase().includes("embed");
     if (!isChatModel || id.endsWith("-review")) return [normalized];
@@ -68,9 +74,9 @@ const appendCodexReviewModels = (models: any) =>
     ];
   });
 
-const parseCodexModels = (data: any) => appendCodexReviewModels(parseOpenAIStyleModels(data));
+const parseCodexModels = (data: unknown) => appendCodexReviewModels(parseOpenAIStyleModels(data));
 
-const createOpenAIModelsConfig = (url: any) => ({
+const createOpenAIModelsConfig = (url: string) => ({
   url,
   method: "GET",
   headers: { "Content-Type": "application/json" },
@@ -79,9 +85,11 @@ const createOpenAIModelsConfig = (url: any) => ({
   parseResponse: parseOpenAIStyleModels,
 });
 
-const resolveQwenModelsUrl = (connection: any) => {
+const resolveQwenModelsUrl = (
+  connection: { providerSpecificData?: unknown } | Record<string, unknown>,
+) => {
   const fallback = "https://portal.qwen.ai/v1/models";
-  const raw = connection?.providerSpecificData?.resourceUrl;
+  const raw = asApiRecord(connection?.providerSpecificData).resourceUrl;
   if (!raw || typeof raw !== "string") return fallback;
   const value = raw.trim();
   if (!value) return fallback;
@@ -101,14 +109,14 @@ const PROVIDER_MODELS_CONFIG = {
       "Content-Type": "application/json",
     },
     authHeader: "x-api-key",
-    parseResponse: (data: any) => data.data || [],
+    parseResponse: (data: unknown) => asApiRecord(data).data || [],
   },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/models",
     method: "GET",
     headers: { "Content-Type": "application/json" },
     authQuery: "key", // Use query param for API key
-    parseResponse: (data: any) => data.models || [],
+    parseResponse: (data: unknown) => asApiRecord(data).models || [],
   },
   qwen: {
     url: "https://portal.qwen.ai/v1/models",
@@ -116,7 +124,7 @@ const PROVIDER_MODELS_CONFIG = {
     headers: { "Content-Type": "application/json" },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data: any) => data.data || [],
+    parseResponse: (data: unknown) => asApiRecord(data).data || [],
   },
   codex: {
     url: "https://chatgpt.com/backend-api/codex/models?client_version=1.0.0",
@@ -133,7 +141,7 @@ const PROVIDER_MODELS_CONFIG = {
     authHeader: "Authorization",
     authPrefix: "Bearer ",
     body: {},
-    parseResponse: (data: any) => data.models || [],
+    parseResponse: (data: unknown) => asApiRecord(data).models || [],
   },
   github: {
     url: "https://api.githubcopilot.com/models",
@@ -147,13 +155,14 @@ const PROVIDER_MODELS_CONFIG = {
     },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data: any) => {
-      if (!data?.data) return [];
+    parseResponse: (data: unknown) => {
+      const rec = asApiRecord(data);
+      if (!Array.isArray(rec.data)) return [];
       // Filter out embeddings, non-chat models, and disabled models
-      return data.data
-        .filter((m: any) => m.capabilities?.type === "chat")
-        .filter((m: any) => m.policy?.state !== "disabled") // Only return explicitly enabled models
-        .map((m: any) => ({
+      return (rec.data as ModelRow[])
+        .filter((m) => asApiRecord(m.capabilities).type === "chat")
+        .filter((m) => asApiRecord(m.policy).state !== "disabled") // Only return explicitly enabled models
+        .map((m) => ({
           id: m.id,
           name: m.name || m.id,
           version: m.version,
@@ -172,7 +181,7 @@ const PROVIDER_MODELS_CONFIG = {
       "Content-Type": "application/json",
     },
     authHeader: "x-api-key",
-    parseResponse: (data: any) => data.data || [],
+    parseResponse: (data: unknown) => asApiRecord(data).data || [],
   },
 
   alicode: {
@@ -181,7 +190,7 @@ const PROVIDER_MODELS_CONFIG = {
     headers: { "Content-Type": "application/json" },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data: any) => data.data || [],
+    parseResponse: (data: unknown) => asApiRecord(data).data || [],
   },
   "alicode-intl": {
     url: "https://coding-intl.dashscope.aliyuncs.com/v1/models",
@@ -189,7 +198,7 @@ const PROVIDER_MODELS_CONFIG = {
     headers: { "Content-Type": "application/json" },
     authHeader: "Authorization",
     authPrefix: "Bearer ",
-    parseResponse: (data: any) => data.data || [],
+    parseResponse: (data: unknown) => asApiRecord(data).data || [],
   },
   "volcengine-ark": createOpenAIModelsConfig(
     "https://ark.cn-beijing.volces.com/api/coding/v3/models",
@@ -382,7 +391,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const projectId = connection.projectId || psd.projectId;
       const body = projectId ? { project: projectId } : {};
 
-      const fetchModels = async (token: any) => {
+      const fetchModels = async (token: string) => {
         const response = await fetch(GEMINI_CLI_MODELS_URL, {
           method: "POST",
           headers: {
@@ -399,7 +408,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       let warning;
 
       try {
-        let response = await fetchModels(accessToken);
+        let response = await fetchModels(asString(accessToken));
 
         // Attempt refresh on 401/403 when refresh token exists
         if (!response.ok && (response.status === 401 || response.status === 403) && refreshToken) {
@@ -502,7 +511,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     // Build request URL
     let url = cfg.url ?? "";
     if (connection.provider === "qwen") {
-      url = resolveQwenModelsUrl(connection);
+      url = resolveQwenModelsUrl(connection as { providerSpecificData?: unknown });
     }
     if (cfg.authQuery) {
       url += `?${cfg.authQuery}=${token}`;

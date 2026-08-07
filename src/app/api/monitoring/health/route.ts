@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // /api/usage/stats, and /api/settings. No auth header is required, so the
 // in-app /health page can read it without leaking the API key into the
 // browser bundle.
-export async function GET(_request: any) {
+export async function GET(_request: Request) {
   try {
     const payload = await buildHealthPayload();
     return NextResponse.json(payload);

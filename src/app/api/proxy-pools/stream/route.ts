@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
  * GET /api/proxy-pools/stream
  * SSE stream that pushes proxy pool updates every 3s.
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   let closed = false;
   let lastSig = "";
 
@@ -14,7 +14,7 @@ export async function GET(request: any) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data: any) => {
+      const send = (data: unknown) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
@@ -24,9 +24,7 @@ export async function GET(request: any) {
       // Initial snapshot
       try {
         const pools = await getProxyPools();
-        lastSig = JSON.stringify(
-          pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`),
-        );
+        lastSig = JSON.stringify(pools.map((p) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`));
         send({ type: "init", pools });
       } catch {
         send({ type: "init", pools: [] });
@@ -41,7 +39,7 @@ export async function GET(request: any) {
         try {
           const pools = await getProxyPools();
           const sig = JSON.stringify(
-            pools.map((p: any) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`),
+            pools.map((p) => `${p.id}:${p.isActive}:${p.updatedAt ?? ""}`),
           );
           if (sig !== lastSig) {
             lastSig = sig;

@@ -9,7 +9,7 @@ import { createProviderConnection } from "@/models";
  * POST /api/oauth/iflow/cookie
  * Body: { cookie: "BXAuth=xxx; ..." }
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

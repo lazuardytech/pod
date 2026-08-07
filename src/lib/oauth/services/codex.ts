@@ -40,7 +40,7 @@ export class CodexService extends OAuthService {
   /**
    * Save Codex tokens to server
    */
-  async saveTokens(tokens: any): Promise<any> {
+  async saveTokens(tokens: Record<string, unknown>): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/codex`, {
@@ -76,7 +76,7 @@ export class CodexService extends OAuthService {
 
       // Start local server for callback (use fixed port 1455 like real Codex CLI)
       const fixedPort = 1455;
-      let callbackParams: any = null;
+      let callbackParams: Record<string, string> | null = null;
       const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       }, fixedPort);
