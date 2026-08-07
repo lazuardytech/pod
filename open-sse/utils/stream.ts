@@ -240,7 +240,7 @@ export function createSSEStream(options: any = {}) {
         buffer = lines.pop() || "";
 
         for (let i = 0; i < lines.length; i++) {
-          lines[i] = decloakSSELine(lines[i], toolNameMap, allowSuffixFallback);
+          lines[i] = decloakSSELine(lines[i] ?? "", toolNameMap, allowSuffixFallback);
         }
 
         for (const line of lines) {
