@@ -170,9 +170,13 @@ export class AntigravityExecutor extends BaseExecutor {
       ...requestWithoutTools
     } = antigravityBody.request || {};
     const generationConfig = { ...(requestWithoutTools.generationConfig || {}) };
-    if (generationConfig.maxOutputTokens > MAX_ANTIGRAVITY_OUTPUT_TOKENS) {
+    if (
+      typeof generationConfig.maxOutputTokens === "number" &&
+      generationConfig.maxOutputTokens > MAX_ANTIGRAVITY_OUTPUT_TOKENS
+    ) {
       generationConfig.maxOutputTokens = MAX_ANTIGRAVITY_OUTPUT_TOKENS;
     }
+    const hasTools = (tools?.length || 0) > 0;
 
     const transformedRequest = {
       ...requestWithoutTools,
@@ -183,7 +187,7 @@ export class AntigravityExecutor extends BaseExecutor {
         antigravityBody.request?.sessionId ||
         deriveSessionId(credentials?.email || credentials?.connectionId),
       safetySettings: undefined,
-      ...(tools?.length > 0 && { toolConfig: { functionCallingConfig: { mode: "VALIDATED" } } }),
+      ...(hasTools && { toolConfig: { functionCallingConfig: { mode: "VALIDATED" } } }),
     };
 
     return {
@@ -229,9 +233,9 @@ export class AntigravityExecutor extends BaseExecutor {
       log?.info?.("TOKEN", "Antigravity refreshed");
 
       return {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || credentials.refreshToken,
-        expiresIn: tokens.expires_in,
+        accessToken: tokens.access_token as string | undefined,
+        refreshToken: (tokens.refresh_token || credentials.refreshToken) as string | undefined,
+        expiresIn: tokens.expires_in as string | number | undefined,
         projectId: credentials.projectId,
       };
     } catch (error: unknown) {
@@ -364,12 +368,13 @@ export class AntigravityExecutor extends BaseExecutor {
             }
           }
 
+          const retryAfterAttempts = retryAfterAttemptsByUrl[urlIndex] || 0;
           if (
             retryMs &&
             retryMs <= MAX_RETRY_AFTER_MS &&
-            retryAfterAttemptsByUrl[urlIndex] < MAX_RETRY_AFTER_RETRIES
+            retryAfterAttempts < MAX_RETRY_AFTER_RETRIES
           ) {
-            retryAfterAttemptsByUrl[urlIndex]++;
+            retryAfterAttemptsByUrl[urlIndex] = retryAfterAttempts + 1;
             log?.debug?.(
               "RETRY",
               `${response.status} with Retry-After: ${Math.ceil(retryMs / 1000)}s, waiting... (${retryAfterAttemptsByUrl[urlIndex]}/${MAX_RETRY_AFTER_RETRIES})`,
@@ -380,12 +385,13 @@ export class AntigravityExecutor extends BaseExecutor {
           }
 
           // Auto retry only for 429 when retryMs is 0 or undefined
+          const retryAttempts = retryAttemptsByUrl[urlIndex] || 0;
           if (
             response.status === HTTP_STATUS.RATE_LIMITED &&
             (!retryMs || retryMs === 0) &&
-            retryAttemptsByUrl[urlIndex] < MAX_AUTO_RETRIES
+            retryAttempts < MAX_AUTO_RETRIES
           ) {
-            retryAttemptsByUrl[urlIndex]++;
+            retryAttemptsByUrl[urlIndex] = retryAttempts + 1;
             // Exponential backoff: 2s, 4s, 8s...
             const backoffMs = Math.min(
               1000 * 2 ** retryAttemptsByUrl[urlIndex],
@@ -525,7 +531,7 @@ export class AntigravityExecutor extends BaseExecutor {
         request: {
           ...body.request,
           tools: [{ functionDeclarations: allDeclarations }],
-          contents: cloakedContents || body.request.contents,
+          contents: cloakedContents || body.request?.contents,
         },
       },
       toolNameMap,

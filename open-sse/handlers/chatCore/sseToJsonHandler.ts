@@ -9,16 +9,106 @@ type ForcedSSEToJsonResult =
   | { success: true; response: Response }
   | ReturnType<typeof createErrorResult>;
 
+type UsageInfo = Record<string, unknown> & {
+  completion_tokens?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  prompt_tokens?: number;
+};
+
+type ResponsesContentItem = { text?: string; type?: string };
+
+type ResponsesOutputItem = {
+  arguments?: unknown;
+  call_id?: string;
+  content?: ResponsesContentItem[];
+  name?: string;
+  type?: string;
+};
+
+type ResponsesJson = {
+  created_at?: number;
+  id?: string;
+  model?: string;
+  output?: ResponsesOutputItem[];
+  status?: string;
+  usage?: UsageInfo;
+};
+
+type ChatToolCall = {
+  function: { arguments: string; name: string };
+  id: string;
+  type: "function";
+};
+
+type ChatDeltaToolCall = {
+  function?: { arguments?: string; name?: string };
+  id?: string;
+  index?: number;
+};
+
+type ChatStreamChunk = {
+  choices?: {
+    delta?: {
+      content?: string;
+      reasoning_content?: string;
+      tool_calls?: ChatDeltaToolCall[];
+    };
+    finish_reason?: string;
+  }[];
+  created?: number;
+  id?: string;
+  model?: string;
+  usage?: UsageInfo;
+};
+
+type ChatCompletionResponse = {
+  choices: {
+    finish_reason: string;
+    index: number;
+    message: {
+      content: string | null;
+      reasoning_content?: string;
+      role: "assistant";
+      tool_calls?: ChatToolCall[];
+    };
+  }[];
+  created: number;
+  id: string;
+  model: string;
+  object: "chat.completion";
+  usage?: UsageInfo;
+};
+
+type ForcedSSEToJsonParams = {
+  apiKey?: string;
+  appendLog: (entry: { detailsId: string; status: string; tokens: UsageInfo }) => void;
+  body: Record<string, unknown>;
+  clientRawRequest?: { endpoint?: string };
+  connectionId?: string;
+  finalBody?: unknown;
+  model: string;
+  onFinalJsonResponse?: (response: unknown, usage: unknown) => void;
+  onRequestSuccess?: () => Promise<void> | void;
+  provider: string;
+  providerResponse: Response;
+  requestStartTime: number;
+  sourceFormat: string;
+  stream: boolean;
+  trackDone: () => void;
+  translatedBody?: unknown;
+};
+
 function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
 
-function textFromResponsesMessageItem(item: any) {
+function textFromResponsesMessageItem(item: ResponsesOutputItem) {
   if (!item?.content || !Array.isArray(item.content)) return "";
-  const byType = item.content.find((c: any) => c.type === "output_text");
+  const byType = item.content.find((c) => c.type === "output_text");
   if (typeof byType?.text === "string") return byType.text;
-  const anyText = item.content.find((c: any) => typeof c.text === "string");
-  if (typeof anyText?.text === "string") return anyText.text;
+  const textItem = item.content.find((c) => typeof c.text === "string");
+  if (typeof textItem?.text === "string") return textItem.text;
   return "";
 }
 
@@ -26,15 +116,18 @@ function textFromResponsesMessageItem(item: any) {
  * Codex / Responses API may emit many alternating reasoning + message items.
  * Early message blocks often have empty output_text; the user-visible answer is usually in the last non-empty message.
  */
-function pickAssistantMessageForChatCompletion(output: any) {
+function pickAssistantMessageForChatCompletion(output: unknown) {
   if (!Array.isArray(output)) return { msgItem: null, textContent: null };
-  const messages = output.filter((item: any) => item?.type === "message");
+  const messages = (output as ResponsesOutputItem[]).filter((item) => item?.type === "message");
   if (messages.length === 0) return { msgItem: null, textContent: null };
   for (let i = messages.length - 1; i >= 0; i--) {
-    const text = textFromResponsesMessageItem(messages[i]);
-    if (text.length > 0) return { msgItem: messages[i], textContent: text };
+    const message = messages[i];
+    if (!message) continue;
+    const text = textFromResponsesMessageItem(message);
+    if (text.length > 0) return { msgItem: message, textContent: text };
   }
   const last = messages[messages.length - 1];
+  if (!last) return { msgItem: null, textContent: null };
   return { msgItem: last, textContent: textFromResponsesMessageItem(last) };
 }
 
@@ -42,8 +135,8 @@ function pickAssistantMessageForChatCompletion(output: any) {
  * Parse OpenAI-style SSE text into a single chat completion JSON.
  * Used when provider forces streaming but client wants non-streaming.
  */
-export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
-  const chunks: any[] = [];
+export function parseSSEToOpenAIResponse(rawSSE: unknown, fallbackModel: string) {
+  const chunks: ChatStreamChunk[] = [];
 
   for (const line of String(rawSSE || "").split("\n")) {
     const trimmed = line.trim();
@@ -51,7 +144,7 @@ export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
     const payload = trimmed.slice(5).trim();
     if (!payload || payload === "[DONE]") continue;
     try {
-      chunks.push(JSON.parse(payload));
+      chunks.push(JSON.parse(payload) as ChatStreamChunk);
     } catch {
       /* ignore malformed lines */
     }
@@ -59,12 +152,12 @@ export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
 
   if (chunks.length === 0) return null;
 
-  const first = chunks[0];
-  const contentParts: any[] = [];
-  const reasoningParts: any[] = [];
-  const toolCallMap = new Map<any, any>(); // index -> { id, type, function: { name, arguments } }
+  const first = chunks[0]!;
+  const contentParts: string[] = [];
+  const reasoningParts: string[] = [];
+  const toolCallMap = new Map<number, ChatToolCall>(); // index -> { id, type, function: { name, arguments } }
   let finishReason = "stop";
-  let usage: any = null;
+  let usage: UsageInfo | null = null;
 
   for (const chunk of chunks) {
     const choice = chunk?.choices?.[0];
@@ -88,6 +181,7 @@ export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
           });
         }
         const existing = toolCallMap.get(idx);
+        if (!existing) continue;
         if (tc.id) existing.id = tc.id;
         if (tc.function?.name) existing.function.name += tc.function.name;
         if (tc.function?.arguments) existing.function.arguments += tc.function.arguments;
@@ -95,18 +189,16 @@ export function parseSSEToOpenAIResponse(rawSSE: any, fallbackModel: any) {
     }
   }
 
-  const message: any = {
+  const message: ChatCompletionResponse["choices"][number]["message"] = {
     role: "assistant",
     content: contentParts.join("") || (toolCallMap.size > 0 ? null : ""),
   };
   if (reasoningParts.length > 0) message.reasoning_content = reasoningParts.join("");
   if (toolCallMap.size > 0) {
-    message.tool_calls = [...toolCallMap.entries()]
-      .sort((a: any, b: any) => a[0] - b[0])
-      .map(([, tc]: any) => tc);
+    message.tool_calls = [...toolCallMap.entries()].sort((a, b) => a[0] - b[0]).map(([, tc]) => tc);
   }
 
-  const result: any = {
+  const result: ChatCompletionResponse = {
     id: first.id || `chatcmpl-${Date.now()}`,
     object: "chat.completion",
     created: first.created || Math.floor(Date.now() / 1000),
@@ -145,7 +237,7 @@ export async function handleForcedSSEToJson({
   trackDone,
   appendLog,
   onFinalJsonResponse,
-}: any): Promise<ForcedSSEToJsonResult | null> {
+}: ForcedSSEToJsonParams): Promise<ForcedSSEToJsonResult | null> {
   const contentType = providerResponse.headers.get("content-type") || "";
   const isSSE =
     contentType.includes("text/event-stream") || (contentType === "" && provider === "codex");
@@ -165,7 +257,9 @@ export async function handleForcedSSEToJson({
   const isCodexResponsesApi = provider === "codex" || sourceFormat === FORMATS.OPENAI_RESPONSES;
   if (isCodexResponsesApi) {
     try {
-      const jsonResponse: any = await convertResponsesStreamToJson(providerResponse.body);
+      const jsonResponse = (await convertResponsesStreamToJson(
+        providerResponse.body,
+      )) as ResponsesJson;
       if (onRequestSuccess) await onRequestSuccess();
 
       const usage = jsonResponse.usage || {};
@@ -224,17 +318,17 @@ export async function handleForcedSSEToJson({
       // Build client-format response
       const inTokens = usage.input_tokens || 0;
       const outTokens = usage.output_tokens || 0;
-      let finalResp: any;
+      let finalResp: unknown;
 
       // Extract tool calls from Responses API output (function_call items)
       const funcCallItems = (jsonResponse.output || []).filter(
-        (item: any) => item.type === "function_call",
+        (item) => item.type === "function_call",
       );
-      const toolCalls = funcCallItems.map((item: any, idx: any) => ({
+      const toolCalls: ChatToolCall[] = funcCallItems.map((item, idx) => ({
         id: item.call_id || `call_${item.name}_${Date.now()}_${idx}`,
         type: "function",
         function: {
-          name: item.name,
+          name: item.name as string,
           arguments:
             typeof item.arguments === "string"
               ? item.arguments
@@ -267,7 +361,7 @@ export async function handleForcedSSEToJson({
           },
         };
       } else {
-        const message: any = {
+        const message: ChatCompletionResponse["choices"][number]["message"] = {
           role: "assistant",
           content: textContent || (hasToolCalls ? null : ""),
         };
@@ -292,7 +386,11 @@ export async function handleForcedSSEToJson({
       }
 
       try {
-        onFinalJsonResponse?.(finalResp, finalResp?.usage || usage || null);
+        const finalUsage =
+          finalResp && typeof finalResp === "object" && "usage" in finalResp
+            ? (finalResp as { usage?: unknown }).usage
+            : undefined;
+        onFinalJsonResponse?.(finalResp, finalUsage || usage || null);
       } catch {
         // best effort
       }
@@ -367,7 +465,7 @@ export async function handleForcedSSEToJson({
     // expose a dedicated thinking panel can always consume it.
 
     try {
-      onFinalJsonResponse?.(parsed, usage || parsed?.usage || null);
+      onFinalJsonResponse?.(parsed, usage || parsed.usage || null);
     } catch {
       // best effort
     }

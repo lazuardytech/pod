@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Token Usage Tracking - Extract, normalize, estimate and log token usage
  */
@@ -10,18 +9,23 @@ type UsageRecord = Record<string, unknown> & {
   cache_creation_input_tokens?: number;
   cache_read_input_tokens?: number;
   cached_tokens?: number;
+  cachedContentTokenCount?: number;
   candidatesTokenCount?: number;
   completion_tokens?: number;
-  completion_tokens_details?: Record<string, unknown>;
+  completion_tokens_details?: Record<string, unknown> & { reasoning_tokens?: number };
   estimated?: unknown;
+  eval_count?: number;
   input_tokens?: number;
+  input_tokens_details?: Record<string, unknown> & { cached_tokens?: number };
   output_tokens?: number;
+  output_tokens_details?: Record<string, unknown> & { reasoning_tokens?: number };
   promptTokenCount?: number;
   prompt_eval_count?: number;
   prompt_cache_hit_tokens?: number;
   prompt_tokens?: number;
   prompt_tokens_details?: { cached_tokens?: number };
   reasoning_tokens?: number;
+  thoughtsTokenCount?: number;
   totalTokenCount?: number;
   total_tokens?: number;
   usage?: UsageRecord;
@@ -69,7 +73,7 @@ function getTimeString() {
 
 /**
  * Add buffer tokens to usage to prevent context errors
- * @param {object} usage - Usage object (any format)
+ * @param {object} usage - Usage object from a provider format
  * @returns {object} Usage with buffer added
  */
 export function addBufferToUsage(usage: unknown) {
@@ -161,7 +165,7 @@ export function filterUsageForFormat(usage: unknown, targetFormat: FormatId | st
     fields = formatFields.default;
   }
 
-  return pickFields(fields);
+  return pickFields(fields || formatFields.default!);
 }
 
 /**
@@ -226,7 +230,7 @@ export function hasValidUsage(usage: unknown) {
 }
 
 /**
- * Extract usage from any format (Claude, OpenAI, Gemini, Responses API)
+ * Extract usage from provider formats (Claude, OpenAI, Gemini, Responses API)
  */
 export function extractUsage(chunk: unknown) {
   if (!isRecord(chunk)) return null;
@@ -421,12 +425,22 @@ export function logUsage(
     cache_creation_input_tokens: cacheCreation || 0,
     reasoning_tokens: reasoning || 0,
   };
-  saveRequestUsage({ model, provider, connectionId, tokens, apiKey: apiKey || undefined }).catch(
-    () => {
-      // Best-effort usage persistence; never fail stream completion on metrics writes.
-    },
-  );
-  appendRequestLog({ model, provider, connectionId, tokens, status: "SUCCESS" }).catch(() => {
+  saveRequestUsage({
+    model: model || undefined,
+    provider: provider || undefined,
+    connectionId: connectionId || undefined,
+    tokens,
+    apiKey: apiKey || undefined,
+  }).catch(() => {
+    // Best-effort usage persistence; never fail stream completion on metrics writes.
+  });
+  appendRequestLog({
+    model: model || undefined,
+    provider: provider || undefined,
+    connectionId: connectionId || undefined,
+    tokens,
+    status: "SUCCESS",
+  }).catch(() => {
     // Best-effort request log; never fail stream completion on metrics writes.
   });
 }

@@ -50,6 +50,9 @@ type FinishChunk = {
   object: string;
   usage?: UsagePayload;
 };
+type KiroTransformer = Transformer<Uint8Array, Uint8Array> & {
+  cancel(reason: unknown): void;
+};
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -293,9 +296,11 @@ export class KiroExecutor extends BaseExecutor {
         if (!state.totalContentLength) state.totalContentLength = 0;
         if (!state.contextUsagePercentage) state.contextUsagePercentage = 0;
 
+        const payloadRecord = event.payload && !Array.isArray(event.payload) ? event.payload : null;
+
         // Handle assistantResponseEvent
-        if (eventType === "assistantResponseEvent" && event.payload?.content) {
-          const content = String(event.payload.content);
+        if (eventType === "assistantResponseEvent" && payloadRecord?.content) {
+          const content = String(payloadRecord.content);
           state.totalContentLength += content.length;
 
           const chunk = {
@@ -316,8 +321,8 @@ export class KiroExecutor extends BaseExecutor {
         }
 
         // Handle codeEvent
-        if (eventType === "codeEvent" && event.payload?.content) {
-          const content = String(event.payload.content);
+        if (eventType === "codeEvent" && payloadRecord?.content) {
+          const content = String(payloadRecord.content);
           const chunk = {
             id: responseId,
             object: "chat.completion.chunk",
@@ -388,7 +393,7 @@ export class KiroExecutor extends BaseExecutor {
                 new TextEncoder().encode(`data: ${JSON.stringify(startChunk)}\n\n`),
               );
             } else {
-              toolIndex = state.seenToolIds.get(toolCallId);
+              toolIndex = state.seenToolIds.get(toolCallId) ?? state.toolCallIndex++;
             }
 
             if (toolInput !== undefined) {
@@ -455,8 +460,8 @@ export class KiroExecutor extends BaseExecutor {
         }
 
         // Handle contextUsageEvent to extract contextUsagePercentage
-        if (eventType === "contextUsageEvent" && event.payload?.contextUsagePercentage) {
-          state.contextUsagePercentage = Number(event.payload.contextUsagePercentage);
+        if (eventType === "contextUsageEvent" && payloadRecord?.contextUsagePercentage) {
+          state.contextUsagePercentage = Number(payloadRecord.contextUsagePercentage);
           // Mark that we received context usage event
           state.hasContextUsage = true;
         }
@@ -469,7 +474,7 @@ export class KiroExecutor extends BaseExecutor {
         // Handle metricsEvent for token usage
         if (eventType === "metricsEvent") {
           // Extract usage data from metricsEvent payload
-          const metrics = event.payload?.metricsEvent || event.payload;
+          const metrics = payloadRecord?.metricsEvent || payloadRecord;
           if (metrics && typeof metrics === "object") {
             const metricsRecord = metrics as JsonRecord;
             const inputTokens = Number(metricsRecord.inputTokens || 0);
@@ -542,9 +547,10 @@ export class KiroExecutor extends BaseExecutor {
       }
     };
 
-    const transformStream = new TransformStream<Uint8Array, Uint8Array>({
+    const responseBody = response.body;
+    const transformer: KiroTransformer = {
       start(controller) {
-        upstreamReader = response.body.getReader();
+        upstreamReader = responseBody.getReader();
         (async () => {
           try {
             while (true) {
@@ -597,7 +603,9 @@ export class KiroExecutor extends BaseExecutor {
           // upstream reader already cancelled
         }
       },
-    });
+    };
+
+    const transformStream = new TransformStream<Uint8Array, Uint8Array>(transformer);
 
     return new Response(transformStream.readable, {
       status: response.status,
@@ -648,7 +656,7 @@ function parseEventFrame(data: Uint8Array): EventFrame | null {
     const headerEnd = 12 + headersLength;
 
     while (offset < headerEnd && offset < data.length) {
-      const nameLen = data[offset];
+      const nameLen = data[offset] ?? 0;
       offset++;
       if (offset + nameLen > data.length) break;
 
@@ -660,7 +668,7 @@ function parseEventFrame(data: Uint8Array): EventFrame | null {
 
       if (headerType === 7) {
         // String type
-        const valueLen = (data[offset] << 8) | data[offset + 1];
+        const valueLen = ((data[offset] ?? 0) << 8) | (data[offset + 1] ?? 0);
         offset += 2;
         if (offset + valueLen > data.length) break;
 

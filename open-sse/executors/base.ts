@@ -20,11 +20,14 @@ export type ExecutorCredentials = {
   accessToken?: string;
   apiKey?: string;
   connectionId?: string;
+  copilotTokenExpiresAt?: string | number | Date;
   copilotToken?: string;
   email?: string;
+  expiresIn?: string | number;
   expiresAt?: string | number | Date;
   projectId?: string;
   providerSpecificData?: ExecutorProviderData;
+  rawHeaders?: Record<string, string>;
   refreshToken?: string;
   [key: string]: unknown;
 };

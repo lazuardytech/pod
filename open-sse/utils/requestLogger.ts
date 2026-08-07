@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Check if running in Node.js environment (has fs module)
 const isNode =
   typeof process !== "undefined" && process.versions?.node && typeof window === "undefined";
@@ -13,7 +12,24 @@ type HeaderRecord = Record<string, unknown>;
 type HeadersLike = {
   entries: () => Iterable<[string, unknown]>;
 };
-type RequestLogger = ReturnType<typeof createNoOpLogger>;
+type RequestLogger = {
+  readonly sessionPath: string | null;
+  appendConvertedChunk(chunk?: string | Uint8Array): void;
+  appendOpenAIChunk(chunk?: string | Uint8Array): void;
+  appendProviderChunk(chunk?: string | Uint8Array): void;
+  logClientRawRequest(endpoint?: unknown, body?: unknown, headers?: HeaderRecord): void;
+  logConvertedResponse(body?: unknown): void;
+  logError(error?: unknown, requestBody?: unknown): void;
+  logOpenAIRequest(body?: unknown): void;
+  logProviderResponse(
+    status?: unknown,
+    statusText?: unknown,
+    headers?: HeaderRecord | HeadersLike | null,
+    body?: unknown,
+  ): void;
+  logRawRequest(body?: unknown, headers?: HeaderRecord): void;
+  logTargetRequest(url?: unknown, headers?: HeaderRecord, body?: unknown): void;
+};
 type ErrorLogOptions = {
   error?: unknown;
   model?: unknown;
@@ -127,7 +143,7 @@ function maskSensitiveHeaders(headers: HeaderRecord | HeadersLike | null | undef
 }
 
 // No-op logger when logging is disabled
-function createNoOpLogger() {
+function createNoOpLogger(): RequestLogger {
   return {
     sessionPath: null,
     logClientRawRequest() {},
@@ -169,7 +185,7 @@ export async function createRequestLogger(
     },
 
     // 1. Log client raw request (before any conversion)
-    logClientRawRequest(endpoint: string, body: unknown, headers: HeaderRecord = {}) {
+    logClientRawRequest(endpoint: unknown, body: unknown, headers: HeaderRecord = {}) {
       writeJsonFile(sessionPath, "1_req_client.json", {
         timestamp: new Date().toISOString(),
         endpoint,
@@ -196,7 +212,7 @@ export async function createRequestLogger(
     },
 
     // 4. Log target format request (openai → target)
-    logTargetRequest(url: string | undefined, headers: HeaderRecord, body: unknown) {
+    logTargetRequest(url: unknown, headers: HeaderRecord = {}, body: unknown) {
       writeJsonFile(sessionPath, "4_req_target.json", {
         timestamp: new Date().toISOString(),
         url,
@@ -207,8 +223,8 @@ export async function createRequestLogger(
 
     // 5. Log provider response (for non-streaming or error)
     logProviderResponse(
-      status: number,
-      statusText: string,
+      status: unknown,
+      statusText: unknown,
       headers: HeaderRecord | HeadersLike | null | undefined,
       body: unknown,
     ) {
@@ -227,7 +243,7 @@ export async function createRequestLogger(
     },
 
     // 5. Append streaming chunk to provider response
-    appendProviderChunk(chunk: string | Uint8Array) {
+    appendProviderChunk(chunk: string | Uint8Array = "") {
       if (!fs || !path || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "5_res_provider.txt");
@@ -238,7 +254,7 @@ export async function createRequestLogger(
     },
 
     // 6. Append OpenAI intermediate chunks (target → openai)
-    appendOpenAIChunk(chunk: string | Uint8Array) {
+    appendOpenAIChunk(chunk: string | Uint8Array = "") {
       if (!fs || !path || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "6_res_openai.txt");
@@ -257,7 +273,7 @@ export async function createRequestLogger(
     },
 
     // 7. Append streaming chunk to converted response
-    appendConvertedChunk(chunk: string | Uint8Array) {
+    appendConvertedChunk(chunk: string | Uint8Array = "") {
       if (!fs || !path || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "7_res_client.txt");

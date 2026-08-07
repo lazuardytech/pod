@@ -307,7 +307,7 @@ function mergeChunksToResponse(chunks: unknown[], sourceFormat: string) {
  */
 function createOpenAIStreamingChunks(completeResponse: OpenAIResponse) {
   const { id, created, model, choices } = completeResponse;
-  const content = choices[0].message.content;
+  const content = choices[0]!.message.content;
 
   return [
     // Chunk with content

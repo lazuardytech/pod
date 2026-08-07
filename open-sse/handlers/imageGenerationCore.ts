@@ -74,7 +74,7 @@ export async function handleImageGenerationCore({
   let requestBody;
 
   try {
-    url = adapter.buildUrl(model, credentials);
+    url = adapter.buildUrl(model, credentials) as string;
     requestBody = await adapter.buildBody(model, body);
     headers = adapter.buildHeaders(credentials, requestBody, model, body);
   } catch (error: any) {
@@ -125,7 +125,7 @@ export async function handleImageGenerationCore({
       try {
         const retryBody = await adapter.buildBody(model, body);
         const retryHeaders = adapter.buildHeaders(credentials, retryBody, model, body);
-        const retryUrl = adapter.buildUrl(model, credentials);
+        const retryUrl = adapter.buildUrl(model, credentials) as string;
         providerResponse = await fetch(retryUrl, {
           method: "POST",
           headers: retryHeaders,
@@ -161,8 +161,10 @@ export async function handleImageGenerationCore({
         body,
       });
       // Codex streaming case: returns an SSE Response directly
-      if (parsed?.sseResponse) {
-        return { success: true, response: parsed.sseResponse };
+      const parsedRecord =
+        parsed && typeof parsed === "object" ? (parsed as { sseResponse?: Response }) : {};
+      if (parsedRecord.sseResponse) {
+        return { success: true, response: parsedRecord.sseResponse };
       }
     } else {
       parsed = await providerResponse.json();
@@ -178,7 +180,10 @@ export async function handleImageGenerationCore({
   if (onRequestSuccess) await onRequestSuccess();
 
   // Normalize → OpenAI-compatible shape
-  const normalized = adapter.normalize(parsed, body.prompt);
+  const normalized = adapter.normalize(parsed, body.prompt) as {
+    created?: unknown;
+    data?: Array<{ b64_json?: string; url?: string }>;
+  };
 
   // Already in OpenAI shape? skip re-normalize
   const finalBody = normalized.created && Array.isArray(normalized.data) ? normalized : parsed;

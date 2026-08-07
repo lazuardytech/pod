@@ -131,8 +131,9 @@ export async function getProjectIdForConnection(connectionId: string, accessToke
   }
 
   // Deduplicate concurrent fetches for the same connection
-  if (pendingFetches.has(connectionId)) {
-    return pendingFetches.get(connectionId).promise;
+  const pendingFetch = pendingFetches.get(connectionId);
+  if (pendingFetch) {
+    return pendingFetch.promise;
   }
 
   // Each fetch gets its own AbortController so it can be canceled via removeConnection()

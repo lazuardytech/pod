@@ -219,7 +219,7 @@ export function buildProviderUrl(
   model: string,
   stream: boolean = true,
   options: ProviderOptions = {},
-) {
+): string {
   if (isOpenAICompatible(provider)) {
     const apiType = getOpenAICompatibleType(provider);
     const baseUrl = options?.baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl;
@@ -257,7 +257,7 @@ export function buildProviderUrl(
     }
 
     case "codex":
-      return config.baseUrl;
+      return config.baseUrl as string;
 
     case "qwen": {
       const baseUrl = buildQwenBaseUrl(options?.qwenResourceUrl, config.baseUrl);
@@ -265,7 +265,7 @@ export function buildProviderUrl(
     }
 
     case "github":
-      return config.baseUrl;
+      return config.baseUrl as string;
 
     case "glm":
     case "kimi":
@@ -274,7 +274,7 @@ export function buildProviderUrl(
       return `${config.baseUrl}?beta=true`;
 
     default:
-      return config.baseUrl;
+      return config.baseUrl as string;
   }
 }
 
@@ -286,7 +286,7 @@ export function buildProviderHeaders(
   _body: unknown = null,
 ) {
   const config = getProviderConfig(provider);
-  const headers: Record<string, string> = {
+  const headers: Record<string, string | undefined> = {
     "Content-Type": "application/json",
     ...config.headers,
   };
@@ -365,7 +365,10 @@ export function buildProviderHeaders(
         break;
 
       case "cline":
-        Object.assign(headers, buildClineHeaders(credentials.apiKey || credentials.accessToken));
+        Object.assign(
+          headers,
+          buildClineHeaders(String(credentials.apiKey || credentials.accessToken)),
+        );
         break;
 
       case "glm":

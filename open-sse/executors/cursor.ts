@@ -1,4 +1,3 @@
-// @ts-nocheck
 import zlib from "node:zlib";
 import type { IncomingHttpHeaders } from "node:http2";
 import { PROVIDERS } from "../config/providers.js";
@@ -18,6 +17,7 @@ import {
 
 type EdgeRuntimeGlobal = typeof globalThis & { EdgeRuntime?: unknown };
 type Http2Module = typeof import("node:http2");
+type CursorBuffer = Buffer<ArrayBufferLike>;
 type CursorCredentials = ExecutorCredentials & {
   providerSpecificData?: ExecutorCredentials["providerSpecificData"] & {
     ghostMode?: boolean;
@@ -36,7 +36,7 @@ type CursorRequestBody = {
   tools?: Array<Record<string, unknown>>;
 };
 type CursorTransportResponse = {
-  body: Buffer;
+  body: CursorBuffer;
   headers: Record<string, unknown>;
   status: number;
 };
@@ -103,7 +103,7 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function decompressPayload(payload: Buffer, flags: number) {
+function decompressPayload(payload: CursorBuffer, flags: number): CursorBuffer {
   // Check if payload is JSON error (starts with {"error")
   if (payload.length > 10 && payload[0] === 0x7b && payload[1] === 0x22) {
     try {
@@ -295,7 +295,7 @@ export class CursorExecutor extends BaseExecutor {
         "end",
         finish(() => {
           resolve({
-            status: responseHeaders[":status"],
+            status: responseHeaders[":status"] as number,
             headers: responseHeaders,
             body: Buffer.concat(chunks),
           });
@@ -381,7 +381,7 @@ export class CursorExecutor extends BaseExecutor {
     }
   }
 
-  transformProtobufToJSON(buffer: Buffer, model: string, body: unknown) {
+  transformProtobufToJSON(buffer: CursorBuffer, model: string, body: unknown) {
     const responseId = `chatcmpl-cursor-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
 
@@ -402,7 +402,7 @@ export class CursorExecutor extends BaseExecutor {
         break;
       }
 
-      const flags = buffer[offset];
+      const flags = buffer[offset] ?? 0;
       const length = buffer.readUInt32BE(offset + 1);
 
       debugLog(
@@ -416,7 +416,7 @@ export class CursorExecutor extends BaseExecutor {
         break;
       }
 
-      let payload = buffer.slice(offset + 5, offset + 5 + length);
+      let payload: CursorBuffer = buffer.slice(offset + 5, offset + 5 + length) as CursorBuffer;
       offset += 5 + length;
       frameCount++;
 
@@ -558,7 +558,7 @@ export class CursorExecutor extends BaseExecutor {
     });
   }
 
-  transformProtobufToSSE(buffer: Buffer, model: string, body: unknown) {
+  transformProtobufToSSE(buffer: CursorBuffer, model: string, body: unknown) {
     const responseId = `chatcmpl-cursor-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
 
@@ -581,7 +581,7 @@ export class CursorExecutor extends BaseExecutor {
         break;
       }
 
-      const flags = buffer[offset];
+      const flags = buffer[offset] ?? 0;
       const length = buffer.readUInt32BE(offset + 1);
 
       debugLog(
@@ -595,7 +595,7 @@ export class CursorExecutor extends BaseExecutor {
         break;
       }
 
-      let payload = buffer.slice(offset + 5, offset + 5 + length);
+      let payload: CursorBuffer = buffer.slice(offset + 5, offset + 5 + length) as CursorBuffer;
       offset += 5 + length;
       frameCount++;
 

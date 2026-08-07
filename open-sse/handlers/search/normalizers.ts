@@ -5,8 +5,86 @@
  * Each normalizer maps a provider-specific response into the unified SearchResult shape.
  */
 
+type SearchResultInput = {
+  author?: string | null;
+  favicon_url?: string | null;
+  full_text?: string;
+  image_url?: string | null;
+  published_at?: string | null;
+  score?: number;
+  snippet?: string;
+  source_type?: string | null;
+  text_format?: string;
+  title?: string;
+  url?: string;
+};
+
+type SearchRawItem = SearchResultInput & {
+  age?: string;
+  category?: string;
+  content?: string;
+  date?: string;
+  description?: string;
+  engine?: string;
+  engines?: string[];
+  favicon?: string;
+  highlights?: string[];
+  html?: string;
+  image?: string;
+  imageUrl?: string;
+  img_src?: string;
+  link?: string;
+  markdown?: string;
+  meta_url?: { favicon?: string };
+  name?: string;
+  pagemap?: {
+    cse_image?: { src?: string }[];
+    cse_thumbnail?: { src?: string }[];
+    metatags?: Record<string, string>[];
+  };
+  page_age?: string;
+  publishedDate?: string;
+  published_date?: string;
+  raw_content?: string;
+  snippets?: unknown[];
+  source?: string;
+  thumbnail?: string;
+  thumbnail_url?: string;
+  text?: string;
+  type?: string;
+};
+
+type SearchProviderData = {
+  items?: unknown[];
+  news?: unknown;
+  organic?: unknown;
+  organic_results?: unknown[];
+  queries?: { request?: { totalResults?: string | number }[] };
+  results?: unknown;
+  search_information?: { total_results?: string | number };
+  searchInformation?: { totalResults?: string | number };
+  searchParameters?: { totalResults?: number };
+  top_stories?: unknown[];
+  web?: { results?: unknown[]; totalCount?: unknown };
+};
+
+type NormalizedSearchResponse = { results: ReturnType<typeof makeResult>[]; totalResults: unknown };
+type SearchNormalizer = (
+  data: SearchProviderData,
+  query: string,
+  searchType: string,
+) => NormalizedSearchResponse;
+
+function asSearchProviderData(data: unknown): SearchProviderData {
+  return data && typeof data === "object" ? (data as SearchProviderData) : {};
+}
+
+function asSearchRawItems(items: unknown): SearchRawItem[] {
+  return Array.isArray(items) ? (items as SearchRawItem[]) : [];
+}
+
 /** Build a unified SearchResult object. */
-function makeResult(providerId: any, item: any, idx: any, now: any) {
+function makeResult(providerId: string, item: SearchResultInput, idx: number, now: string) {
   const url = item.url || "";
   return {
     title: item.title || "",
@@ -31,11 +109,11 @@ function makeResult(providerId: any, item: any, idx: any, now: any) {
   };
 }
 
-function normalizeSerper(data: any, _query: any, searchType: any) {
+function normalizeSerper(data: SearchProviderData, _query: string, searchType: string) {
   const now = new Date().toISOString();
   const items = searchType === "news" ? data.news : data.organic;
   if (!Array.isArray(items)) return { results: [], totalResults: null };
-  const results = items.map((item: any, idx: any) =>
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "serper",
       {
@@ -52,12 +130,14 @@ function normalizeSerper(data: any, _query: any, searchType: any) {
   return { results, totalResults: typeof total === "number" ? total : null };
 }
 
-function normalizeBrave(data: any, _query: any, searchType: any) {
+function normalizeBrave(data: SearchProviderData, _query: string, searchType: string) {
   const now = new Date().toISOString();
-  const container = searchType === "news" ? data.news || data : data.web;
+  const container = (searchType === "news" ? data.news || data : data.web) as
+    | { results?: unknown[]; totalCount?: unknown }
+    | undefined;
   const items = container?.results;
   if (!Array.isArray(items)) return { results: [], totalResults: null };
-  const results = items.map((item: any, idx: any) =>
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "brave-search",
       {
@@ -74,11 +154,11 @@ function normalizeBrave(data: any, _query: any, searchType: any) {
   return { results, totalResults: container?.totalCount ?? null };
 }
 
-function normalizeExa(data: any, _query: any, _searchType: any) {
+function normalizeExa(data: SearchProviderData, _query: string, _searchType: string) {
   const now = new Date().toISOString();
   const items = data.results;
   if (!Array.isArray(items)) return { results: [], totalResults: null };
-  const results = items.map((item: any, idx: any) =>
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "exa",
       {
@@ -100,11 +180,11 @@ function normalizeExa(data: any, _query: any, _searchType: any) {
   return { results, totalResults: results.length };
 }
 
-function normalizeTavily(data: any, _query: any, _searchType: any) {
+function normalizeTavily(data: SearchProviderData, _query: string, _searchType: string) {
   const now = new Date().toISOString();
   const items = data.results;
   if (!Array.isArray(items)) return { results: [], totalResults: null };
-  const results = items.map((item: any, idx: any) =>
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "tavily",
       {
@@ -123,10 +203,10 @@ function normalizeTavily(data: any, _query: any, _searchType: any) {
   return { results, totalResults: results.length };
 }
 
-function normalizeGooglePse(data: any, _query: any, _searchType: any) {
+function normalizeGooglePse(data: SearchProviderData, _query: string, _searchType: string) {
   const now = new Date().toISOString();
-  const items = Array.isArray(data.items) ? data.items : [];
-  const results = items.map((item: any, idx: any) =>
+  const items = asSearchRawItems(data.items);
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "google-pse",
       {
@@ -148,10 +228,10 @@ function normalizeGooglePse(data: any, _query: any, _searchType: any) {
   return { results, totalResults: Number.isFinite(total) ? total : null };
 }
 
-function normalizeLinkup(data: any, _query: any, _searchType: any) {
+function normalizeLinkup(data: SearchProviderData, _query: string, _searchType: string) {
   const now = new Date().toISOString();
-  const items = Array.isArray(data.results) ? data.results : [];
-  const results = items.map((item: any, idx: any) =>
+  const items = asSearchRawItems(data.results);
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "linkup",
       {
@@ -170,14 +250,14 @@ function normalizeLinkup(data: any, _query: any, _searchType: any) {
   return { results, totalResults: results.length };
 }
 
-function normalizeSearchApi(data: any, _query: any, _searchType: any) {
+function normalizeSearchApi(data: SearchProviderData, _query: string, _searchType: string) {
   const now = new Date().toISOString();
   const items = Array.isArray(data.organic_results)
     ? data.organic_results
     : Array.isArray(data.top_stories)
       ? data.top_stories
       : [];
-  const results = items.map((item: any, idx: any) =>
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "searchapi",
       {
@@ -198,14 +278,17 @@ function normalizeSearchApi(data: any, _query: any, _searchType: any) {
   return { results, totalResults: Number.isFinite(total) ? total : results.length };
 }
 
-function normalizeYouCom(data: any, _query: any, searchType: any) {
+function normalizeYouCom(data: SearchProviderData, _query: string, searchType: string) {
   const now = new Date().toISOString();
-  const container = data?.results && typeof data.results === "object" ? data.results : undefined;
+  const container =
+    data?.results && typeof data.results === "object"
+      ? (data.results as { news?: unknown[]; web?: unknown[] })
+      : undefined;
   const section = searchType === "news" ? container?.news || [] : container?.web || [];
-  const items = Array.isArray(section) ? section : [];
-  const results = items.map((item: any, idx: any) => {
+  const items = asSearchRawItems(section);
+  const results = asSearchRawItems(items).map((item, idx) => {
     const firstSnippet = Array.isArray(item.snippets)
-      ? item.snippets.find((v: any) => typeof v === "string")
+      ? item.snippets.find((v) => typeof v === "string")
       : null;
     const livecrawlText =
       typeof item.markdown === "string"
@@ -239,10 +322,10 @@ function normalizeYouCom(data: any, _query: any, searchType: any) {
   return { results, totalResults: results.length };
 }
 
-function normalizeSearxng(data: any, _query: any, _searchType: any) {
+function normalizeSearxng(data: SearchProviderData, _query: string, _searchType: string) {
   const now = new Date().toISOString();
-  const items = Array.isArray(data.results) ? data.results : [];
-  const results = items.map((item: any, idx: any) =>
+  const items = asSearchRawItems(data.results);
+  const results = asSearchRawItems(items).map((item, idx) =>
     makeResult(
       "searxng",
       {
@@ -262,7 +345,7 @@ function normalizeSearxng(data: any, _query: any, _searchType: any) {
   return { results, totalResults: results.length };
 }
 
-const NORMALIZERS: Record<string, any> = {
+const NORMALIZERS: Record<string, SearchNormalizer> = {
   serper: normalizeSerper,
   "brave-search": normalizeBrave,
   exa: normalizeExa,
@@ -278,7 +361,14 @@ const NORMALIZERS: Record<string, any> = {
  * Dispatch to the appropriate normalizer based on providerId.
  * @returns {{results: Array, totalResults: number|null}}
  */
-export function normalizeSearchResponse(providerId: any, data: any, query: any, searchType: any) {
+export function normalizeSearchResponse(
+  providerId: string,
+  data: unknown,
+  query: string,
+  searchType: string,
+) {
   const fn = NORMALIZERS[providerId];
-  return fn ? fn(data, query, searchType) : { results: [], totalResults: null };
+  return fn
+    ? fn(asSearchProviderData(data), query, searchType)
+    : { results: [], totalResults: null };
 }

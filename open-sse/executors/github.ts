@@ -42,6 +42,9 @@ type ChatRequestBody = JsonRecord & {
   temperature?: unknown;
   thinking?: unknown;
 };
+type GithubCredentials = ExecutorCredentials & {
+  copilotTokenExpiresAt?: string | number | Date;
+};
 type CopilotTokenResponse = {
   expires_at?: unknown;
   token?: unknown;
@@ -117,8 +120,10 @@ export class GithubExecutor extends BaseExecutor {
         // Add to system message
         const systemIdx = chatBody.messages.findIndex((m) => m.role === "system");
         if (systemIdx >= 0) {
-          chatBody.messages[systemIdx].content =
-            systemInstruction + "\n\n" + chatBody.messages[systemIdx].content;
+          const systemMsg = chatBody.messages[systemIdx];
+          if (systemMsg) {
+            systemMsg.content = systemInstruction + "\n\n" + systemMsg.content;
+          }
         } else {
           chatBody.messages.unshift({ role: "system", content: systemInstruction });
         }
@@ -130,11 +135,15 @@ export class GithubExecutor extends BaseExecutor {
           .pop();
         if (lastUserIdx !== undefined && lastUserIdx >= 0) {
           const userMsg = chatBody.messages[lastUserIdx];
-          const userContent =
-            typeof userMsg.content === "string" ? userMsg.content : JSON.stringify(userMsg.content);
-          userMsg.content =
-            "Respond with ONLY raw JSON (no markdown, no backticks, no code blocks): " +
-            userContent;
+          if (userMsg) {
+            const userContent =
+              typeof userMsg.content === "string"
+                ? userMsg.content
+                : JSON.stringify(userMsg.content);
+            userMsg.content =
+              "Respond with ONLY raw JSON (no markdown, no backticks, no code blocks): " +
+              userContent;
+          }
         }
       }
     }
@@ -233,7 +242,7 @@ export class GithubExecutor extends BaseExecutor {
 
     // Only use /responses for models that are explicitly known to need it (e.g. gpt codex models)
     if (this.knownCodexModels.has(model)) {
-      log?.debug("GITHUB", `Using cached /responses route for ${model}`);
+      log?.debug?.("GITHUB", `Using cached /responses route for ${model}`);
       return this.executeWithResponsesEndpoint(options);
     }
 
@@ -256,7 +265,7 @@ export class GithubExecutor extends BaseExecutor {
         errorBody.includes("not accessible via the /chat/completions endpoint") ||
         errorBody.includes("The requested model is not supported")
       ) {
-        log?.warn("GITHUB", `Model ${model} requires /responses. Switching...`);
+        log?.warn?.("GITHUB", `Model ${model} requires /responses. Switching...`);
         this.knownCodexModels.add(model);
         return this.executeWithResponsesEndpoint(options);
       }
@@ -279,7 +288,7 @@ export class GithubExecutor extends BaseExecutor {
 
     const transformedBody = openaiToOpenAIResponsesRequest(model, body, stream, credentials);
 
-    log?.debug("GITHUB", "Sending translated request to /responses");
+    log?.debug?.("GITHUB", "Sending translated request to /responses");
 
     const response = await proxyAwareFetch(
       url,
@@ -390,7 +399,10 @@ export class GithubExecutor extends BaseExecutor {
       }
       const data = (await response.json()) as CopilotTokenResponse;
       log?.info?.("TOKEN", "Copilot token refreshed");
-      return { token: data.token, expiresAt: data.expires_at };
+      return {
+        token: data.token as string | undefined,
+        expiresAt: data.expires_at as string | number | undefined,
+      };
     } catch (error: unknown) {
       log?.error?.("TOKEN", `Copilot refresh error: ${errorMessage(error)}`);
       return null;
@@ -428,9 +440,9 @@ export class GithubExecutor extends BaseExecutor {
       const tokens = (await response.json()) as GithubTokenResponse;
       log?.info?.("TOKEN", "GitHub token refreshed");
       return {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || refreshToken,
-        expiresIn: tokens.expires_in,
+        accessToken: tokens.access_token as string | undefined,
+        refreshToken: (tokens.refresh_token || refreshToken) as string | undefined,
+        expiresIn: tokens.expires_in as string | number | undefined,
       };
     } catch (error: unknown) {
       log?.error?.("TOKEN", `GitHub refresh error: ${errorMessage(error)}`);
@@ -476,7 +488,7 @@ export class GithubExecutor extends BaseExecutor {
     return null;
   }
 
-  needsRefresh(credentials: ExecutorCredentials) {
+  needsRefresh(credentials: GithubCredentials) {
     // Always refresh if no copilotToken
     if (!credentials.copilotToken) return true;
 
@@ -487,8 +499,10 @@ export class GithubExecutor extends BaseExecutor {
         expiresAtMs = expiresAtMs * 1000; // Convert seconds to ms
       } else if (typeof expiresAtMs === "string") {
         expiresAtMs = new Date(expiresAtMs).getTime();
+      } else if (expiresAtMs instanceof Date) {
+        expiresAtMs = expiresAtMs.getTime();
       }
-      if (expiresAtMs - Date.now() < 5 * 60 * 1000) return true;
+      if (typeof expiresAtMs === "number" && expiresAtMs - Date.now() < 5 * 60 * 1000) return true;
     }
     return super.needsRefresh(credentials);
   }

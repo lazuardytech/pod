@@ -32,15 +32,53 @@
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
+type SearchProviderConfig = {
+  id: string;
+  baseUrl: string;
+  method?: string;
+};
+
+type ContentOptions = {
+  snippet?: boolean;
+  full_page?: boolean;
+  format?: string;
+  max_characters?: number;
+};
+
+type SearchRequestParams = {
+  query: string;
+  searchType: string;
+  maxResults: number;
+  token?: string;
+  country?: string;
+  language?: string;
+  timeRange?: string;
+  offset?: number;
+  domainFilter?: string[];
+  contentOptions?: ContentOptions;
+  providerOptions?: Record<string, unknown>;
+  providerSpecificData?: Record<string, unknown>;
+};
+
+type BuiltSearchRequest = {
+  init: RequestInit;
+  url: string;
+};
+
+type SearchRequestBuilder = (
+  config: SearchProviderConfig,
+  params: SearchRequestParams,
+) => BuiltSearchRequest;
+
 /**
  * Split domain filter into includes / excludes (excludes prefixed with "-").
  * @param {string[]} [domainFilter]
  * @returns {{includes: string[], excludes: string[]}}
  */
-export function parseDomainFilter(domainFilter: any) {
+export function parseDomainFilter(domainFilter?: string[]) {
   if (!domainFilter?.length) return { includes: [], excludes: [] };
-  const includes = domainFilter.filter((d: any) => !d.startsWith("-"));
-  const excludes = domainFilter.filter((d: any) => d.startsWith("-")).map((d: any) => d.slice(1));
+  const includes = domainFilter.filter((d) => !d.startsWith("-"));
+  const excludes = domainFilter.filter((d) => d.startsWith("-")).map((d) => d.slice(1));
   return { includes, excludes };
 }
 
@@ -50,7 +88,7 @@ export function parseDomainFilter(domainFilter: any) {
  * @param {string} key
  * @returns {string|undefined}
  */
-export function getProviderSetting(params: any, key: any) {
+export function getProviderSetting(params: SearchRequestParams, key: string) {
   const fromOptions = params.providerOptions?.[key];
   if (typeof fromOptions === "string" && fromOptions.trim().length > 0) {
     return fromOptions.trim();
@@ -68,7 +106,7 @@ export function getProviderSetting(params: any, key: any) {
  * @param {SearchRequestParams} params
  * @returns {string}
  */
-export function resolveBaseUrl(config: any, params: any) {
+export function resolveBaseUrl(config: SearchProviderConfig, params: SearchRequestParams) {
   const override = getProviderSetting(params, "baseUrl");
   return (override || config.baseUrl).replace(/\/+$/, "");
 }
@@ -81,7 +119,7 @@ export function resolveBaseUrl(config: any, params: any) {
  * @param {SearchRequestParams} params
  * @returns {string}
  */
-function resolveSearxngBaseUrl(config: any, params: any) {
+function resolveSearxngBaseUrl(config: SearchProviderConfig, params: SearchRequestParams) {
   const override = getProviderSetting(params, "baseUrl");
   if (override) return override.replace(/\/+$/, "");
 
@@ -99,29 +137,29 @@ function resolveSearxngBaseUrl(config: any, params: any) {
  * @param {number} maxResults
  * @returns {number|undefined}
  */
-export function toPageNumber(offset: any, maxResults: any) {
+export function toPageNumber(offset: number | undefined, maxResults: number) {
   if (typeof offset !== "number" || offset <= 0 || maxResults <= 0) return undefined;
   return Math.floor(offset / maxResults) + 1;
 }
 
 // ── Provider Request Builders ───────────────────────────────────────────
 
-function buildSerperRequest(config: any, params: any) {
+function buildSerperRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const endpoint = params.searchType === "news" ? "/news" : "/search";
-  const body: Record<string, any> = { q: params.query, num: params.maxResults };
+  const body: Record<string, unknown> = { q: params.query, num: params.maxResults };
   if (params.country) body.gl = params.country.toLowerCase();
   if (params.language) body.hl = params.language;
   return {
     url: `${resolveBaseUrl(config, params)}${endpoint}`,
     init: {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": params.token },
+      headers: { "Content-Type": "application/json", "X-API-Key": params.token } as HeadersInit,
       body: JSON.stringify(body),
     },
   };
 }
 
-function buildBraveRequest(config: any, params: any) {
+function buildBraveRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const endpoint = params.searchType === "news" ? "/news/search" : "/web/search";
   const qp = new URLSearchParams({ q: params.query, count: String(params.maxResults) });
   if (params.country) qp.set("country", params.country);
@@ -130,14 +168,14 @@ function buildBraveRequest(config: any, params: any) {
     url: `${resolveBaseUrl(config, params)}${endpoint}?${qp}`,
     init: {
       method: "GET",
-      headers: { Accept: "application/json", "X-Subscription-Token": params.token },
+      headers: { Accept: "application/json", "X-Subscription-Token": params.token } as HeadersInit,
     },
   };
 }
 
-function buildExaRequest(config: any, params: any) {
+function buildExaRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const { includes, excludes } = parseDomainFilter(params.domainFilter);
-  const body: Record<string, any> = {
+  const body: Record<string, unknown> = {
     query: params.query,
     numResults: params.maxResults,
     type: "auto",
@@ -151,15 +189,15 @@ function buildExaRequest(config: any, params: any) {
     url: resolveBaseUrl(config, params),
     init: {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": params.token },
+      headers: { "Content-Type": "application/json", "x-api-key": params.token } as HeadersInit,
       body: JSON.stringify(body),
     },
   };
 }
 
-function buildTavilyRequest(config: any, params: any) {
+function buildTavilyRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const { includes, excludes } = parseDomainFilter(params.domainFilter);
-  const body: Record<string, any> = {
+  const body: Record<string, unknown> = {
     query: params.query,
     max_results: params.maxResults,
     topic: params.searchType === "news" ? "news" : "general",
@@ -177,7 +215,7 @@ function buildTavilyRequest(config: any, params: any) {
   };
 }
 
-function buildGooglePseRequest(config: any, params: any) {
+function buildGooglePseRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const apiKey = params.token;
   const cx = getProviderSetting(params, "cx");
   if (!apiKey || !cx) {
@@ -192,7 +230,12 @@ function buildGooglePseRequest(config: any, params: any) {
   if (params.country) qp.set("gl", params.country.toLowerCase());
   if (params.language) qp.set("hl", params.language);
   if (params.timeRange && params.timeRange !== "any") {
-    const dateRestrictMap: Record<string, any> = { day: "d1", week: "w1", month: "m1", year: "y1" };
+    const dateRestrictMap: Record<string, string> = {
+      day: "d1",
+      week: "w1",
+      month: "m1",
+      year: "y1",
+    };
     const dateRestrict = dateRestrictMap[params.timeRange];
     if (dateRestrict) qp.set("dateRestrict", dateRestrict);
   }
@@ -208,7 +251,7 @@ function buildGooglePseRequest(config: any, params: any) {
   };
 }
 
-function buildLinkupRequest(config: any, params: any) {
+function buildLinkupRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const apiKey = params.token;
   if (!apiKey) throw new Error("Linkup Search requires an API key");
 
@@ -219,7 +262,7 @@ function buildLinkupRequest(config: any, params: any) {
       ? requestedDepth
       : "standard";
 
-  const body: Record<string, any> = {
+  const body: Record<string, unknown> = {
     q: params.query,
     depth,
     outputType: "searchResults",
@@ -249,7 +292,7 @@ function buildLinkupRequest(config: any, params: any) {
   };
 }
 
-function buildSearchApiRequest(config: any, params: any) {
+function buildSearchApiRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const apiKey = params.token;
   if (!apiKey) throw new Error("SearchAPI requires an API key");
 
@@ -273,7 +316,7 @@ function buildSearchApiRequest(config: any, params: any) {
   };
 }
 
-function buildYouComRequest(config: any, params: any) {
+function buildYouComRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const apiKey = params.token;
   if (!apiKey) throw new Error("You.com Search requires an API key");
 
@@ -309,7 +352,7 @@ function buildYouComRequest(config: any, params: any) {
   };
 }
 
-function buildSearxngRequest(config: any, params: any) {
+function buildSearxngRequest(config: SearchProviderConfig, params: SearchRequestParams) {
   const baseUrl = resolveSearxngBaseUrl(config, params);
   const url = baseUrl.endsWith("/search") ? baseUrl : `${baseUrl}/search`;
   const qp = new URLSearchParams({
@@ -334,7 +377,7 @@ function buildSearxngRequest(config: any, params: any) {
 
 // ── Dispatcher ──────────────────────────────────────────────────────────
 
-const BUILDERS: Record<string, any> = {
+const BUILDERS: Record<string, SearchRequestBuilder> = {
   serper: buildSerperRequest,
   "brave-search": buildBraveRequest,
   exa: buildExaRequest,
@@ -353,7 +396,10 @@ const BUILDERS: Record<string, any> = {
  * @param {SearchRequestParams} params
  * @returns {{url: string, init: RequestInit}}
  */
-export function buildSearchRequest(provider: any, params: any) {
+export function buildSearchRequest(
+  provider: SearchProviderConfig,
+  params: SearchRequestParams,
+): BuiltSearchRequest {
   const builder = BUILDERS[provider.id];
   if (builder) return builder(provider, params);
 
