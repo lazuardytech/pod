@@ -1,12 +1,73 @@
 import { PROVIDERS } from "../config/providers.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorExecuteOptions,
+  type ExecutorExecuteResult,
+  type ExecutorHeaders,
+} from "./base.js";
 
 const PPLX_SSE_ENDPOINT = PROVIDERS["perplexity-web"].baseUrl;
 const PPLX_API_VERSION = "2.18";
 const PPLX_USER_AGENT =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
-const MODEL_MAP: Record<string, any> = {
+type PplxModelMap = Record<string, readonly [string, string]>;
+type JsonRecord = Record<string, unknown>;
+type HistoryItem = { role: "user" | "assistant"; content: string };
+type OpenAIContentPart = { type?: string; text?: unknown };
+type OpenAIMessage = { role?: string; content?: string | OpenAIContentPart[] | unknown };
+type ParsedMessages = { systemMsg: string; history: HistoryItem[]; currentMsg: string };
+type SessionEntry = { backendUuid: string; ts: number };
+type PplxPlanStep = {
+  read_results_content?: { urls?: string[] };
+  search_web_content?: { queries?: { query?: string }[] };
+  step_type?: string;
+};
+type PplxBlock = {
+  intended_usage?: string;
+  markdown_block?: { chunks?: string[]; progress?: string };
+  plan_block?: { goals?: { description?: string }[]; steps?: PplxPlanStep[] };
+};
+type PplxEvent = JsonRecord & {
+  backend_uuid?: string;
+  blocks?: PplxBlock[];
+  error_code?: unknown;
+  error_message?: unknown;
+  final?: boolean;
+  status?: string;
+  text?: string;
+};
+type PplxContentChunk = {
+  answer?: string;
+  backendUuid?: string;
+  delta?: string;
+  done?: boolean;
+  error?: unknown;
+  thinking?: string;
+};
+type PplxStreamOptions = { skipReasoning?: boolean };
+type AssistantMessage = { role: "assistant"; content: string; reasoning_content?: string };
+type PplxBody = JsonRecord & {
+  messages?: OpenAIMessage[];
+  reasoning_effort?: unknown;
+  thinking?: unknown;
+  tools?: unknown;
+};
+type PplxClientHeaders = Headers | Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asPplxBody(value: unknown): PplxBody {
+  return isRecord(value) ? value : {};
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+const MODEL_MAP: PplxModelMap = {
   "pplx-auto": ["concise", "pplx_pro"],
   "pplx-sonar": ["copilot", "experimental"],
   "pplx-gpt": ["copilot", "gpt54"],
@@ -16,7 +77,7 @@ const MODEL_MAP: Record<string, any> = {
   "pplx-nemotron": ["copilot", "nv_nemotron_3_super"],
 };
 
-const THINKING_MAP: Record<string, any> = {
+const THINKING_MAP: Record<string, string> = {
   "pplx-gpt": "gpt54_thinking",
   "pplx-sonnet": "claude46sonnetthinking",
   "pplx-opus": "claude46opusthinking",
@@ -34,7 +95,7 @@ const SESSION_MAX_AGE_MS = 30 * 60 * 1000;
 const SESSION_MAX_ENTRIES = 200;
 const SESSION_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 
-const sessionCache = new Map();
+const sessionCache = new Map<string, SessionEntry>();
 
 const _cleanupInterval = setInterval(() => {
   const now = Date.now();
@@ -47,8 +108,8 @@ const _cleanupInterval = setInterval(() => {
 if (_cleanupInterval.unref) _cleanupInterval.unref();
 
 // FNV-1a hash for session key lookup
-function sessionKey(history: any) {
-  const parts = history.map((h: any) => `${h.role}:${h.content}`).join("\n");
+function sessionKey(history: readonly HistoryItem[]) {
+  const parts = history.map((h) => `${h.role}:${h.content}`).join("\n");
   let hash = 0x811c9dc5;
   for (let i = 0; i < parts.length; i++) {
     hash ^= parts.charCodeAt(i);
@@ -57,7 +118,7 @@ function sessionKey(history: any) {
   return hash.toString(16).padStart(8, "0");
 }
 
-function sessionLookup(history: any) {
+function sessionLookup(history: readonly HistoryItem[]) {
   if (history.length === 0) return null;
   const key = sessionKey(history);
   const entry = sessionCache.get(key);
@@ -69,7 +130,12 @@ function sessionLookup(history: any) {
   return entry.backendUuid;
 }
 
-function sessionStore(history: any, currentMsg: any, responseText: any, backendUuid: any) {
+function sessionStore(
+  history: readonly HistoryItem[],
+  currentMsg: string,
+  responseText: string,
+  backendUuid: string | null | undefined,
+) {
   if (!backendUuid) return;
   const full = [
     ...history,
@@ -79,12 +145,12 @@ function sessionStore(history: any, currentMsg: any, responseText: any, backendU
   const key = sessionKey(full);
   if (sessionCache.size >= SESSION_MAX_ENTRIES) {
     const firstKey = sessionCache.keys().next().value;
-    sessionCache.delete(firstKey);
+    if (firstKey !== undefined) sessionCache.delete(firstKey);
   }
   sessionCache.set(key, { backendUuid, ts: Date.now() });
 }
 
-function cleanResponse(text: any, strip: any = true) {
+function cleanResponse(text: string, strip = true) {
   let t = text;
   t = t.replace(XML_DECL_RE, "");
   t = t.replace(CITATION_RE, "");
@@ -99,20 +165,24 @@ function cleanResponse(text: any, strip: any = true) {
   return t;
 }
 
-async function* readPplxSseEvents(body: any, signal: any) {
+async function* readPplxSseEvents(
+  body: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
+): AsyncGenerator<PplxEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let dataLines: any[] = [];
+  let dataLines: string[] = [];
 
-  function flush() {
+  function flush(): PplxEvent | "done" | null {
     if (dataLines.length === 0) return null;
     const payload = dataLines.join("\n");
     dataLines = [];
     const trimmed = payload.trim();
     if (!trimmed || trimmed === "[DONE]") return "done";
     try {
-      return JSON.parse(trimmed);
+      const parsed = JSON.parse(trimmed) as unknown;
+      return isRecord(parsed) ? (parsed as PplxEvent) : null;
     } catch {
       return null;
     }
@@ -149,9 +219,9 @@ async function* readPplxSseEvents(body: any, signal: any) {
   }
 }
 
-function parseOpenAIMessages(messages: any) {
+function parseOpenAIMessages(messages: readonly OpenAIMessage[]): ParsedMessages {
   let systemMsg = "";
-  const history: any[] = [];
+  const history: HistoryItem[] = [];
   for (const msg of messages) {
     let role = String(msg.role || "user");
     if (role === "developer") role = "system";
@@ -159,8 +229,8 @@ function parseOpenAIMessages(messages: any) {
     if (typeof msg.content === "string") content = msg.content;
     else if (Array.isArray(msg.content)) {
       content = msg.content
-        .filter((c: any) => c.type === "text")
-        .map((c: any) => String(c.text || ""))
+        .filter((c) => c.type === "text")
+        .map((c) => String(c.text || ""))
         .join(" ");
     }
     if (!content.trim()) continue;
@@ -168,13 +238,18 @@ function parseOpenAIMessages(messages: any) {
     else if (role === "user" || role === "assistant") history.push({ role, content });
   }
   let currentMsg = "";
-  if (history.length > 0 && history[history.length - 1].role === "user") {
-    currentMsg = history.pop().content;
+  if (history.at(-1)?.role === "user") {
+    currentMsg = history.pop()?.content ?? "";
   }
   return { systemMsg, history, currentMsg };
 }
 
-function buildPplxRequestBody(query: any, mode: any, modelPref: any, followUpUuid: any) {
+function buildPplxRequestBody(
+  query: string,
+  mode: string,
+  modelPref: string,
+  followUpUuid: string | null,
+) {
   const tz = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
   return {
     query_str: query,
@@ -198,21 +273,23 @@ function buildPplxRequestBody(query: any, mode: any, modelPref: any, followUpUui
   };
 }
 
-function formatToolsHint(tools: any) {
+function formatToolsHint(tools: unknown) {
   if (!Array.isArray(tools) || tools.length === 0) return "";
-  const lines = tools.map((t: any) => {
-    const fn = t?.function || t || {};
-    const name = fn.name || "unnamed";
-    const desc = (fn.description || "").split("\n")[0].slice(0, 200);
+  const lines = tools.map((tool) => {
+    const record = isRecord(tool) ? tool : {};
+    const fn = isRecord(record.function) ? record.function : record;
+    const name = typeof fn.name === "string" && fn.name ? fn.name : "unnamed";
+    const desc =
+      typeof fn.description === "string" ? fn.description.split("\n")[0].slice(0, 200) : "";
     return `- ${name}: ${desc}`;
   });
   return `Available tools (reference only, cannot invoke):\n${lines.join("\n")}`;
 }
 
-function buildQuery(parsed: any, followUpUuid: any, tools: any) {
+function buildQuery(parsed: ParsedMessages, followUpUuid: string | null, tools: unknown) {
   if (followUpUuid) return parsed.currentMsg;
-  const obj: any = {};
-  const instr: any[] = [];
+  const obj: JsonRecord = {};
+  const instr: string[] = [];
   if (parsed.systemMsg.trim()) instr.push(parsed.systemMsg.trim());
   const toolsHint = formatToolsHint(tools);
   if (toolsHint) instr.push(toolsHint);
@@ -225,11 +302,14 @@ function buildQuery(parsed: any, followUpUuid: any, tools: any) {
   return json.length > 96000 ? json.slice(-96000) : json;
 }
 
-async function* extractContent(eventStream: any, signal: any) {
+async function* extractContent(
+  eventStream: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
+): AsyncGenerator<PplxContentChunk> {
   let fullAnswer = "";
-  let backendUuid = null;
+  let backendUuid: string | null = null;
   let seenLen = 0;
-  const seenThinking = new Set();
+  const seenThinking = new Set<string>();
 
   for await (const event of readPplxSseEvents(eventStream, signal)) {
     if (event.error_code || event.error_message) {
@@ -238,7 +318,7 @@ async function* extractContent(eventStream: any, signal: any) {
     }
     if (event.backend_uuid) backendUuid = event.backend_uuid;
 
-    const blocks = event.blocks ?? [];
+    const blocks = (event.blocks ?? []) as PplxBlock[];
     for (const block of blocks) {
       const usage = block.intended_usage ?? "";
 
