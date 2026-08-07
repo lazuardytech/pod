@@ -3,7 +3,45 @@
  */
 
 import { appendRequestLog, saveRequestUsage } from "@/lib/usageDb";
-import { FORMATS } from "../translator/formats.js";
+import { FORMATS, type FormatId } from "../translator/formats.js";
+
+type UsageRecord = Record<string, unknown> & {
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+  cached_tokens?: number;
+  candidatesTokenCount?: number;
+  completion_tokens?: number;
+  completion_tokens_details?: Record<string, unknown>;
+  estimated?: unknown;
+  input_tokens?: number;
+  output_tokens?: number;
+  promptTokenCount?: number;
+  prompt_eval_count?: number;
+  prompt_cache_hit_tokens?: number;
+  prompt_tokens?: number;
+  prompt_tokens_details?: { cached_tokens?: number };
+  reasoning_tokens?: number;
+  totalTokenCount?: number;
+  total_tokens?: number;
+  usage?: UsageRecord;
+};
+type ResponseChunk = UsageRecord & {
+  done?: boolean;
+  response?: { usage?: UsageRecord; usageMetadata?: UsageRecord };
+  type?: string;
+  usageMetadata?: UsageRecord;
+};
+type TokenSummary = {
+  cache_creation_input_tokens: number;
+  cache_read_input_tokens: number;
+  completion_tokens: number;
+  prompt_tokens: number;
+  reasoning_tokens: number;
+};
+
+function isRecord(value: unknown): value is UsageRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 // ANSI color codes
 export const COLORS = {
@@ -33,8 +71,8 @@ function getTimeString() {
  * @param {object} usage - Usage object (any format)
  * @returns {object} Usage with buffer added
  */
-export function addBufferToUsage(usage: any) {
-  if (!usage || typeof usage !== "object") return usage;
+export function addBufferToUsage(usage: unknown) {
+  if (!isRecord(usage)) return usage;
 
   const result = { ...usage };
 
@@ -59,12 +97,12 @@ export function addBufferToUsage(usage: any) {
   return result;
 }
 
-export function filterUsageForFormat(usage: any, targetFormat: any) {
-  if (!usage || typeof usage !== "object") return usage;
+export function filterUsageForFormat(usage: unknown, targetFormat: FormatId | string) {
+  if (!isRecord(usage)) return usage;
 
   // Helper to pick only defined fields from usage
-  const pickFields = (fields: any) => {
-    const filtered: Record<string, any> = {};
+  const pickFields = (fields: readonly string[]) => {
+    const filtered: Record<string, unknown> = {};
     for (const field of fields) {
       if (usage[field] !== undefined) {
         filtered[field] = usage[field];
@@ -128,11 +166,11 @@ export function filterUsageForFormat(usage: any, targetFormat: any) {
 /**
  * Normalize usage object - ensure all values are valid numbers
  */
-export function normalizeUsage(usage: any) {
-  if (!usage || typeof usage !== "object" || Array.isArray(usage)) return null;
+export function normalizeUsage(usage: unknown) {
+  if (!isRecord(usage)) return null;
 
-  const normalized: Record<string, any> = {};
-  const assignNumber = (key: any, value: any) => {
+  const normalized: UsageRecord = {};
+  const assignNumber = (key: string, value: unknown) => {
     if (value === undefined || value === null) return;
     const numeric = Number(value);
     if (Number.isFinite(numeric)) normalized[key] = numeric;
@@ -163,8 +201,8 @@ export function normalizeUsage(usage: any) {
  * Valid = has at least one token field with value > 0
  * Invalid = empty object {}, null, undefined, no token fields, or all zeros
  */
-export function hasValidUsage(usage: any) {
-  if (!usage || typeof usage !== "object") return false;
+export function hasValidUsage(usage: unknown) {
+  if (!isRecord(usage)) return false;
 
   // Check for any known token field with value > 0
   const tokenFields = [
@@ -189,26 +227,26 @@ export function hasValidUsage(usage: any) {
 /**
  * Extract usage from any format (Claude, OpenAI, Gemini, Responses API)
  */
-export function extractUsage(chunk: any) {
-  if (!chunk || typeof chunk !== "object") return null;
+export function extractUsage(chunk: unknown) {
+  if (!isRecord(chunk)) return null;
+  const typedChunk = chunk as ResponseChunk;
 
   // Claude format (message_delta event)
-  if (chunk.type === "message_delta" && chunk.usage && typeof chunk.usage === "object") {
+  if (typedChunk.type === "message_delta" && isRecord(typedChunk.usage)) {
     return normalizeUsage({
-      prompt_tokens: chunk.usage.input_tokens || 0,
-      completion_tokens: chunk.usage.output_tokens || 0,
-      cache_read_input_tokens: chunk.usage.cache_read_input_tokens,
-      cache_creation_input_tokens: chunk.usage.cache_creation_input_tokens,
+      prompt_tokens: typedChunk.usage.input_tokens || 0,
+      completion_tokens: typedChunk.usage.output_tokens || 0,
+      cache_read_input_tokens: typedChunk.usage.cache_read_input_tokens,
+      cache_creation_input_tokens: typedChunk.usage.cache_creation_input_tokens,
     });
   }
 
   // OpenAI Responses API format (response.completed or response.done)
   if (
-    (chunk.type === "response.completed" || chunk.type === "response.done") &&
-    chunk.response?.usage &&
-    typeof chunk.response.usage === "object"
+    (typedChunk.type === "response.completed" || typedChunk.type === "response.done") &&
+    isRecord(typedChunk.response?.usage)
   ) {
-    const usage = chunk.response.usage;
+    const usage = typedChunk.response.usage;
     const cachedTokens = usage.input_tokens_details?.cached_tokens;
     return normalizeUsage({
       prompt_tokens: usage.input_tokens || usage.prompt_tokens || 0,
@@ -220,33 +258,34 @@ export function extractUsage(chunk: any) {
   }
 
   // OpenAI format (also covers DeepSeek which uses prompt_cache_hit_tokens)
-  if (chunk.usage && typeof chunk.usage === "object" && chunk.usage.prompt_tokens !== undefined) {
+  if (isRecord(typedChunk.usage) && typedChunk.usage.prompt_tokens !== undefined) {
     return normalizeUsage({
-      prompt_tokens: chunk.usage.prompt_tokens,
-      completion_tokens: chunk.usage.completion_tokens || 0,
+      prompt_tokens: typedChunk.usage.prompt_tokens,
+      completion_tokens: typedChunk.usage.completion_tokens || 0,
       cached_tokens:
-        chunk.usage.prompt_tokens_details?.cached_tokens || chunk.usage.prompt_cache_hit_tokens,
-      reasoning_tokens: chunk.usage.completion_tokens_details?.reasoning_tokens,
-      prompt_tokens_details: chunk.usage.prompt_tokens_details,
-      completion_tokens_details: chunk.usage.completion_tokens_details,
+        typedChunk.usage.prompt_tokens_details?.cached_tokens ||
+        typedChunk.usage.prompt_cache_hit_tokens,
+      reasoning_tokens: typedChunk.usage.completion_tokens_details?.reasoning_tokens,
+      prompt_tokens_details: typedChunk.usage.prompt_tokens_details,
+      completion_tokens_details: typedChunk.usage.completion_tokens_details,
     });
   }
 
   // Ollama format (done=true chunk with prompt_eval_count/eval_count)
   if (
-    chunk.done === true &&
-    (chunk.prompt_eval_count !== undefined || chunk.eval_count !== undefined)
+    typedChunk.done === true &&
+    (typedChunk.prompt_eval_count !== undefined || typedChunk.eval_count !== undefined)
   ) {
     return normalizeUsage({
-      prompt_tokens: chunk.prompt_eval_count || 0,
-      completion_tokens: chunk.eval_count || 0,
+      prompt_tokens: typedChunk.prompt_eval_count || 0,
+      completion_tokens: typedChunk.eval_count || 0,
     });
   }
 
   // Gemini format (Antigravity)
   // Antigravity wraps usageMetadata inside response: { response: { usageMetadata: {...} } }
-  const usageMeta = chunk.usageMetadata || chunk.response?.usageMetadata;
-  if (usageMeta && typeof usageMeta === "object") {
+  const usageMeta = typedChunk.usageMetadata || typedChunk.response?.usageMetadata;
+  if (isRecord(usageMeta)) {
     return normalizeUsage({
       prompt_tokens: usageMeta.promptTokenCount || 0,
       completion_tokens: usageMeta.candidatesTokenCount || 0,
@@ -263,8 +302,8 @@ export function extractUsage(chunk: any) {
  * Estimate input tokens from request body
  * Calculate total body size for more accurate estimation
  */
-export function estimateInputTokens(body: any) {
-  if (!body || typeof body !== "object") return 0;
+export function estimateInputTokens(body: unknown) {
+  if (!isRecord(body)) return 0;
 
   try {
     // Calculate total body size (includes messages, tools, system, thinking config, etc.)
@@ -282,7 +321,7 @@ export function estimateInputTokens(body: any) {
 /**
  * Estimate output tokens from content length
  */
-export function estimateOutputTokens(contentLength: any) {
+export function estimateOutputTokens(contentLength: number) {
   if (!contentLength || contentLength <= 0) return 0;
   return Math.max(1, Math.floor(contentLength / 4));
 }
@@ -293,7 +332,11 @@ export function estimateOutputTokens(contentLength: any) {
  * @param {number} outputTokens - Output/completion tokens
  * @param {string} targetFormat - Target format from FORMATS
  */
-export function formatUsage(inputTokens: any, outputTokens: any, targetFormat: any) {
+export function formatUsage(
+  inputTokens: number,
+  outputTokens: number,
+  targetFormat: FormatId | string,
+) {
   // Claude format uses input_tokens/output_tokens
   if (targetFormat === FORMATS.CLAUDE) {
     return addBufferToUsage({
@@ -318,7 +361,11 @@ export function formatUsage(inputTokens: any, outputTokens: any, targetFormat: a
  * @param {number} contentLength - Content length for output token estimation
  * @param {string} targetFormat - Target format from FORMATS constant
  */
-export function estimateUsage(body: any, contentLength: any, targetFormat: any = FORMATS.OPENAI) {
+export function estimateUsage(
+  body: unknown,
+  contentLength: number,
+  targetFormat: FormatId | string = FORMATS.OPENAI,
+) {
   return formatUsage(estimateInputTokens(body), estimateOutputTokens(contentLength), targetFormat);
 }
 
@@ -326,13 +373,13 @@ export function estimateUsage(body: any, contentLength: any, targetFormat: any =
  * Log usage with cache info (green color)
  */
 export function logUsage(
-  provider: any,
-  usage: any,
-  model: any = null,
-  connectionId: any = null,
-  apiKey: any = null,
+  provider: string | null | undefined,
+  usage: unknown,
+  model: string | null = null,
+  connectionId: string | null = null,
+  apiKey: string | null = null,
 ) {
-  if (!usage || typeof usage !== "object") return;
+  if (!isRecord(usage)) return;
 
   const p = provider?.toUpperCase() || "UNKNOWN";
 
@@ -366,7 +413,7 @@ export function logUsage(
   console.log(msg);
 
   // Save to usage DB
-  const tokens = {
+  const tokens: TokenSummary = {
     prompt_tokens: inTokens,
     completion_tokens: outTokens,
     cache_read_input_tokens: cacheRead || 0,

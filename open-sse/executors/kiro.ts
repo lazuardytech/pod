@@ -4,7 +4,51 @@ import { PROVIDERS } from "../config/providers.js";
 import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.js";
 import { refreshKiroToken } from "../services/tokenRefresh.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { BaseExecutor, type ExecutorHeaders, type RetryEntry } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorCredentials,
+  type ExecutorExecuteOptions,
+  type ExecutorHeaders,
+  type ExecutorLogger,
+  type ExecutorProxyOptions,
+  type RetryEntry,
+} from "./base.js";
+
+type JsonRecord = Record<string, unknown>;
+type UsagePayload = {
+  completion_tokens: number;
+  prompt_tokens: number;
+  total_tokens: number;
+};
+type KiroStreamState = {
+  contextUsagePercentage: number;
+  endDetected: boolean;
+  finishEmitted: boolean;
+  hasContextUsage: boolean;
+  hasMeteringEvent: boolean;
+  hasToolCalls: boolean;
+  messageStopEvent: boolean;
+  seenToolIds: Map<string, number>;
+  toolCallIndex: number;
+  totalContentLength: number;
+  usage?: UsagePayload;
+};
+type EventFrame = {
+  headers: Record<string, string>;
+  payload: JsonRecord | JsonRecord[] | null;
+};
+type FinishChunk = {
+  choices: Array<{
+    delta: JsonRecord;
+    finish_reason: string;
+    index: number;
+  }>;
+  created: number;
+  id: string;
+  model: string;
+  object: string;
+  usage?: UsagePayload;
+};
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -23,7 +67,7 @@ export class KiroExecutor extends BaseExecutor {
     super("kiro", PROVIDERS.kiro);
   }
 
-  buildHeaders(credentials: any, _stream: any = true) {
+  buildHeaders(credentials: ExecutorCredentials, _stream: boolean = true) {
     const headers: ExecutorHeaders = {
       ...this.config.headers,
       "Amz-Sdk-Request": "attempt=1; max=3",
@@ -37,7 +81,12 @@ export class KiroExecutor extends BaseExecutor {
     return headers;
   }
 
-  transformRequest(model: any, body: any, _stream: any, _credentials: any) {
+  transformRequest(
+    _model: string,
+    body: unknown,
+    _stream: boolean,
+    _credentials: ExecutorCredentials,
+  ) {
     return body;
   }
 
@@ -55,7 +104,15 @@ export class KiroExecutor extends BaseExecutor {
    * Delay uses exponential backoff with jitter: base * 2^attempt * (0.5..1.5)
    * to avoid synchronized retries hammering an already-degraded upstream.
    */
-  async execute({ model, body, stream, credentials, signal, log, proxyOptions = null }: any) {
+  async execute({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log,
+    proxyOptions = null,
+  }: ExecutorExecuteOptions) {
     const url = this.buildUrl(model, stream, 0);
     const transformedBody = this.transformRequest(model, body, stream, credentials);
 
@@ -78,8 +135,8 @@ export class KiroExecutor extends BaseExecutor {
     };
 
     // Abort-aware sleep helper
-    const sleep = (ms: any, signal: any) =>
-      new Promise((resolve: any, reject: any) => {
+    const sleep = (ms: number, signal: AbortSignal | undefined) =>
+      new Promise<void>((resolve, reject) => {
         const timer = setTimeout(resolve, ms);
         if (signal) {
           const onAbort = () => {
@@ -91,7 +148,7 @@ export class KiroExecutor extends BaseExecutor {
       });
 
     // Calculate jittered delay: exponential backoff with 50%–150% jitter
-    const jitteredDelay = (baseMs: any, attempt: any) => {
+    const jitteredDelay = (baseMs: number, attempt: number) => {
       const exponential = baseMs * 2 ** attempt;
       const capped = Math.min(exponential, transientRetry.maxDelayMs || 8000);
       return Math.round(capped * (0.5 + Math.random()));
@@ -174,17 +231,17 @@ export class KiroExecutor extends BaseExecutor {
    * Transform AWS EventStream binary response to SSE text stream
    * Using TransformStream instead of ReadableStream.pull() to avoid Workers timeout
    */
-  transformEventStreamToSSE(response: any, model: any) {
+  transformEventStreamToSSE(response: Response, model: string) {
     let buffer = new Uint8Array(0);
     let chunkIndex = 0;
     const responseId = `chatcmpl-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
-    const state: any = {
+    const state: KiroStreamState = {
       endDetected: false,
       finishEmitted: false,
       hasToolCalls: false,
       toolCallIndex: 0,
-      seenToolIds: new Map(),
+      seenToolIds: new Map<string, number>(),
       messageStopEvent: false,
       hasMeteringEvent: false,
       hasContextUsage: false,
@@ -200,10 +257,13 @@ export class KiroExecutor extends BaseExecutor {
       });
     }
 
-    let upstreamReader: any = null;
+    let upstreamReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
     // Event parsing logic - called from start() for each chunk
-    const processChunk = async (chunk: any, controller: any) => {
+    const processChunk = async (
+      chunk: Uint8Array,
+      controller: TransformStreamDefaultController<Uint8Array>,
+    ) => {
       // Append to buffer
       const newBuffer = new Uint8Array(buffer.length + chunk.length);
       newBuffer.set(buffer);
@@ -234,7 +294,7 @@ export class KiroExecutor extends BaseExecutor {
 
         // Handle assistantResponseEvent
         if (eventType === "assistantResponseEvent" && event.payload?.content) {
-          const content = event.payload.content;
+          const content = String(event.payload.content);
           state.totalContentLength += content.length;
 
           const chunk = {
@@ -256,6 +316,7 @@ export class KiroExecutor extends BaseExecutor {
 
         // Handle codeEvent
         if (eventType === "codeEvent" && event.payload?.content) {
+          const content = String(event.payload.content);
           const chunk = {
             id: responseId,
             object: "chat.completion.chunk",
@@ -264,7 +325,7 @@ export class KiroExecutor extends BaseExecutor {
             choices: [
               {
                 index: 0,
-                delta: { content: event.payload.content },
+                delta: { content },
                 finish_reason: null,
               },
             ],
@@ -280,11 +341,15 @@ export class KiroExecutor extends BaseExecutor {
           const toolUses = Array.isArray(toolUse) ? toolUse : [toolUse];
 
           for (const singleToolUse of toolUses) {
-            const toolCallId = singleToolUse.toolUseId || `call_${Date.now()}`;
-            const toolName = singleToolUse.name || "";
-            const toolInput = singleToolUse.input;
+            const toolUseRecord = singleToolUse as JsonRecord;
+            const toolCallId =
+              typeof toolUseRecord.toolUseId === "string"
+                ? toolUseRecord.toolUseId
+                : `call_${Date.now()}`;
+            const toolName = typeof toolUseRecord.name === "string" ? toolUseRecord.name : "";
+            const toolInput = toolUseRecord.input;
 
-            let toolIndex;
+            let toolIndex: number;
             const isNewTool = !state.seenToolIds.has(toolCallId);
 
             if (isNewTool) {
@@ -390,7 +455,7 @@ export class KiroExecutor extends BaseExecutor {
 
         // Handle contextUsageEvent to extract contextUsagePercentage
         if (eventType === "contextUsageEvent" && event.payload?.contextUsagePercentage) {
-          state.contextUsagePercentage = event.payload.contextUsagePercentage;
+          state.contextUsagePercentage = Number(event.payload.contextUsagePercentage);
           // Mark that we received context usage event
           state.hasContextUsage = true;
         }
@@ -405,8 +470,9 @@ export class KiroExecutor extends BaseExecutor {
           // Extract usage data from metricsEvent payload
           const metrics = event.payload?.metricsEvent || event.payload;
           if (metrics && typeof metrics === "object") {
-            const inputTokens = metrics.inputTokens || 0;
-            const outputTokens = metrics.outputTokens || 0;
+            const metricsRecord = metrics as JsonRecord;
+            const inputTokens = Number(metricsRecord.inputTokens || 0);
+            const outputTokens = Number(metricsRecord.outputTokens || 0);
 
             if (inputTokens > 0 || outputTokens > 0) {
               state.usage = {
@@ -447,7 +513,7 @@ export class KiroExecutor extends BaseExecutor {
             };
           }
 
-          const finishChunk: any = {
+          const finishChunk: FinishChunk = {
             id: responseId,
             object: "chat.completion.chunk",
             created,
@@ -475,8 +541,8 @@ export class KiroExecutor extends BaseExecutor {
       }
     };
 
-    const transformStream = new TransformStream({
-      start(controller: any) {
+    const transformStream = new TransformStream<Uint8Array, Uint8Array>({
+      start(controller) {
         upstreamReader = response.body.getReader();
         (async () => {
           try {
@@ -497,7 +563,7 @@ export class KiroExecutor extends BaseExecutor {
         // No-op - reading and parsing handled in start()
       },
 
-      flush(controller: any) {
+      flush(controller) {
         // Emit finish chunk if not already sent
         if (!state.finishEmitted) {
           state.finishEmitted = true;
@@ -521,7 +587,7 @@ export class KiroExecutor extends BaseExecutor {
         controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
       },
 
-      cancel(reason: any) {
+      cancel(reason) {
         try {
           if (upstreamReader && typeof upstreamReader.cancel === "function") {
             upstreamReader.cancel(reason);
@@ -530,7 +596,7 @@ export class KiroExecutor extends BaseExecutor {
           // upstream reader already cancelled
         }
       },
-    } as any);
+    });
 
     return new Response(transformStream.readable, {
       status: response.status,
@@ -543,7 +609,11 @@ export class KiroExecutor extends BaseExecutor {
     });
   }
 
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null) {
+  async refreshCredentials(
+    credentials: ExecutorCredentials,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ) {
     if (!credentials.refreshToken) return null;
 
     try {
@@ -566,13 +636,13 @@ export class KiroExecutor extends BaseExecutor {
 /**
  * Parse AWS EventStream frame
  */
-function parseEventFrame(data: any) {
+function parseEventFrame(data: Uint8Array): EventFrame | null {
   try {
     const view = new DataView(data.buffer, data.byteOffset);
     const headersLength = view.getUint32(4, false);
 
     // Parse headers
-    const headers: Record<string, any> = {};
+    const headers: Record<string, string> = {};
     let offset = 12; // After prelude
     const headerEnd = 12 + headersLength;
 
@@ -605,7 +675,7 @@ function parseEventFrame(data: any) {
     const payloadStart = 12 + headersLength;
     const payloadEnd = data.length - 4; // Exclude message CRC
 
-    let payload = null;
+    let payload: JsonRecord | JsonRecord[] | null = null;
     if (payloadEnd > payloadStart) {
       const payloadStr = new TextDecoder().decode(data.slice(payloadStart, payloadEnd));
 
@@ -615,7 +685,7 @@ function parseEventFrame(data: any) {
       }
 
       try {
-        payload = JSON.parse(payloadStr);
+        payload = JSON.parse(payloadStr) as JsonRecord | JsonRecord[];
       } catch (parseError: unknown) {
         // Log parse error for debugging
         console.warn(

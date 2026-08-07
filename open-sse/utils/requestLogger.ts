@@ -6,12 +6,39 @@ const isNode =
 const LOGGING_ENABLED =
   typeof process !== "undefined" && process.env?.ENABLE_REQUEST_LOGS === "true";
 
-let fs: any = null;
-let path: any = null;
-let LOGS_DIR: any = null;
+type FsModule = typeof import("node:fs");
+type PathModule = typeof import("node:path");
+type HeaderRecord = Record<string, unknown>;
+type HeadersLike = {
+  entries: () => Iterable<[string, unknown]>;
+};
+type RequestLogger = ReturnType<typeof createNoOpLogger>;
+type ErrorLogOptions = {
+  error?: unknown;
+  model?: unknown;
+  requestBody?: unknown;
+  url?: unknown;
+};
+
+let fs: FsModule | null = null;
+let path: PathModule | null = null;
+let LOGS_DIR: string | null = null;
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isHeadersLike(value: unknown): value is HeadersLike {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "entries" in value &&
+    typeof (value as { entries?: unknown }).entries === "function"
+  );
+}
+
+function errorStack(error: unknown) {
+  return error instanceof Error ? error.stack : undefined;
 }
 
 // Lazy load Node.js modules (avoid top-level await)
@@ -29,8 +56,8 @@ async function ensureNodeModules() {
 }
 
 // Format timestamp for folder name: 20251228_143045_123
-function formatTimestamp(date: any = new Date()) {
-  const pad = (n: any) => String(n).padStart(2, "0");
+function formatTimestamp(date: Date = new Date()) {
+  const pad = (n: number) => String(n).padStart(2, "0");
   const y = date.getFullYear();
   const m = pad(date.getMonth() + 1);
   const d = pad(date.getDate());
@@ -42,9 +69,9 @@ function formatTimestamp(date: any = new Date()) {
 }
 
 // Create log session folder: {sourceFormat}_{targetFormat}_{model}_{timestamp}
-async function createLogSession(sourceFormat: any, targetFormat: any, model: any) {
+async function createLogSession(sourceFormat: string, targetFormat: string, model: string) {
   await ensureNodeModules();
-  if (!fs || !LOGS_DIR) return null;
+  if (!fs || !path || !LOGS_DIR) return null;
 
   try {
     if (!fs.existsSync(LOGS_DIR)) {
@@ -66,8 +93,8 @@ async function createLogSession(sourceFormat: any, targetFormat: any, model: any
 }
 
 // Write JSON file
-function writeJsonFile(sessionPath: any, filename: any, data: any) {
-  if (!fs || !sessionPath) return;
+function writeJsonFile(sessionPath: string | null, filename: string, data: unknown) {
+  if (!fs || !path || !sessionPath) return;
 
   try {
     const filePath = path.join(sessionPath, filename);
@@ -78,7 +105,7 @@ function writeJsonFile(sessionPath: any, filename: any, data: any) {
 }
 
 // Mask sensitive data in headers (DISABLED - keep full token for testing)
-function maskSensitiveHeaders(headers: any) {
+function maskSensitiveHeaders(headers: HeaderRecord | HeadersLike | null | undefined) {
   if (!headers) return {};
   return { ...headers };
 
@@ -122,7 +149,11 @@ function createNoOpLogger() {
  * @param {string} model - Model name
  * @returns {Promise<object>} Promise that resolves to logger object with methods to log each stage
  */
-export async function createRequestLogger(sourceFormat: any, targetFormat: any, model: any) {
+export async function createRequestLogger(
+  sourceFormat: string,
+  targetFormat: string,
+  model: string,
+): Promise<RequestLogger> {
   // Return no-op logger if logging is disabled
   if (!LOGGING_ENABLED) {
     return createNoOpLogger();
@@ -137,7 +168,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 1. Log client raw request (before any conversion)
-    logClientRawRequest(endpoint: any, body: any, headers: any = {}) {
+    logClientRawRequest(endpoint: string, body: unknown, headers: HeaderRecord = {}) {
       writeJsonFile(sessionPath, "1_req_client.json", {
         timestamp: new Date().toISOString(),
         endpoint,
@@ -147,7 +178,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 2. Log raw request from client (after initial conversion like responsesApi)
-    logRawRequest(body: any, headers: any = {}) {
+    logRawRequest(body: unknown, headers: HeaderRecord = {}) {
       writeJsonFile(sessionPath, "2_req_source.json", {
         timestamp: new Date().toISOString(),
         headers: maskSensitiveHeaders(headers),
@@ -156,7 +187,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 3. Log OpenAI intermediate format (source → openai)
-    logOpenAIRequest(body: any) {
+    logOpenAIRequest(body: unknown) {
       writeJsonFile(sessionPath, "3_req_openai.json", {
         timestamp: new Date().toISOString(),
         body,
@@ -164,7 +195,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 4. Log target format request (openai → target)
-    logTargetRequest(url: any, headers: any, body: any) {
+    logTargetRequest(url: string | undefined, headers: HeaderRecord, body: unknown) {
       writeJsonFile(sessionPath, "4_req_target.json", {
         timestamp: new Date().toISOString(),
         url,
@@ -174,14 +205,19 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 5. Log provider response (for non-streaming or error)
-    logProviderResponse(status: any, statusText: any, headers: any, body: any) {
+    logProviderResponse(
+      status: number,
+      statusText: string,
+      headers: HeaderRecord | HeadersLike | null | undefined,
+      body: unknown,
+    ) {
       const filename = "5_res_provider.json";
       writeJsonFile(sessionPath, filename, {
         timestamp: new Date().toISOString(),
         status,
         statusText,
         headers: headers
-          ? typeof headers.entries === "function"
+          ? isHeadersLike(headers)
             ? Object.fromEntries(headers.entries())
             : headers
           : {},
@@ -190,8 +226,8 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 5. Append streaming chunk to provider response
-    appendProviderChunk(chunk: any) {
-      if (!fs || !sessionPath) return;
+    appendProviderChunk(chunk: string | Uint8Array) {
+      if (!fs || !path || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "5_res_provider.txt");
         fs.appendFileSync(filePath, chunk);
@@ -201,8 +237,8 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 6. Append OpenAI intermediate chunks (target → openai)
-    appendOpenAIChunk(chunk: any) {
-      if (!fs || !sessionPath) return;
+    appendOpenAIChunk(chunk: string | Uint8Array) {
+      if (!fs || !path || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "6_res_openai.txt");
         fs.appendFileSync(filePath, chunk);
@@ -212,7 +248,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 7. Log converted response to client (for non-streaming)
-    logConvertedResponse(body: any) {
+    logConvertedResponse(body: unknown) {
       writeJsonFile(sessionPath, "7_res_client.json", {
         timestamp: new Date().toISOString(),
         body,
@@ -220,8 +256,8 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 7. Append streaming chunk to converted response
-    appendConvertedChunk(chunk: any) {
-      if (!fs || !sessionPath) return;
+    appendConvertedChunk(chunk: string | Uint8Array) {
+      if (!fs || !path || !sessionPath) return;
       try {
         const filePath = path.join(sessionPath, "7_res_client.txt");
         fs.appendFileSync(filePath, chunk);
@@ -231,11 +267,11 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
     },
 
     // 6. Log error
-    logError(error: any, requestBody: any = null) {
+    logError(error: unknown, requestBody: unknown = null) {
       writeJsonFile(sessionPath, "6_error.json", {
         timestamp: new Date().toISOString(),
-        error: error?.message || String(error),
-        stack: error?.stack,
+        error: errorMessage(error),
+        stack: errorStack(error),
         requestBody,
       });
     },
@@ -245,8 +281,8 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
 // Legacy functions for backward compatibility
 export function logRequest() {}
 export function logResponse() {}
-export function logError(provider: any, { error, url, model, requestBody }: any) {
-  if (!fs || !LOGS_DIR) return;
+export function logError(provider: string, { error, url, model, requestBody }: ErrorLogOptions) {
+  if (!fs || !path || !LOGS_DIR) return;
 
   try {
     if (!fs.existsSync(LOGS_DIR)) {
@@ -262,8 +298,8 @@ export function logError(provider: any, { error, url, model, requestBody }: any)
       provider,
       model,
       url,
-      error: error?.message || String(error),
-      stack: error?.stack,
+      error: errorMessage(error),
+      stack: errorStack(error),
       requestBody,
     };
 

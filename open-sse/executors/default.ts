@@ -4,26 +4,75 @@ import { PROVIDERS } from "../config/providers.js";
 import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { injectReasoningContent } from "../utils/reasoningContentInjector.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorCredentials,
+  type ExecutorHeaders,
+  type ExecutorLogger,
+  type ExecutorProxyOptions,
+} from "./base.js";
+
+type JsonRecord = Record<string, unknown>;
+type ChatMessage = JsonRecord & {
+  content?: string | Array<string | { text?: unknown }>;
+  role?: string;
+};
+type RefreshResult = {
+  accessToken?: unknown;
+  expiresIn?: unknown;
+  refreshToken?: unknown;
+};
+type OAuthTokenPayload = {
+  access_token?: unknown;
+  expires_in?: unknown;
+  refresh_token?: unknown;
+};
+type ClineRefreshPayload = {
+  accessToken?: unknown;
+  expiresAt?: unknown;
+  refreshToken?: unknown;
+};
+
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
+
+function asChatMessages(value: unknown): ChatMessage[] {
+  return Array.isArray(value) ? (value as ChatMessage[]) : [];
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
 
 export class DefaultExecutor extends BaseExecutor {
-  constructor(provider: any) {
-    super(provider, (PROVIDERS as Record<string, any>)[provider] || PROVIDERS.openai);
+  constructor(provider: string) {
+    super(
+      provider,
+      (PROVIDERS as Record<string, typeof PROVIDERS.openai>)[provider] || PROVIDERS.openai,
+    );
   }
 
-  transformRequest(model: any, body: any, _stream?: any, _credentials?: any): any {
-    let next = body;
+  transformRequest(
+    model: string,
+    body: unknown,
+    _stream?: boolean,
+    _credentials?: ExecutorCredentials,
+  ): unknown {
+    let next = asRecord(body);
+    const responseFormat = asRecord(next.response_format);
+    const jsonSchema = asRecord(responseFormat.json_schema);
     // For openai-compatible-* providers (DeepSeek, Ollama, custom local LLMs, etc.) that don't
     // natively support Structured Output, fall back: inject the schema into the system prompt
     // and downgrade response_format to json_object so the model still produces valid JSON.
     // Native OpenAI / first-party providers keep their json_schema as-is.
     if (
       this.provider?.startsWith?.("openai-compatible-") &&
-      next?.response_format?.type === "json_schema" &&
-      next.response_format.json_schema?.schema
+      responseFormat.type === "json_schema" &&
+      jsonSchema.schema
     ) {
-      const schema = next.response_format.json_schema.schema;
-      const schemaName = next.response_format.json_schema.name || "response";
+      const schema = jsonSchema.schema;
+      const schemaName = asString(jsonSchema.name) || "response";
       const schemaInstruction = `You must respond with valid JSON matching this JSON schema ("${schemaName}"):
 \`\`\`json
 ${JSON.stringify(schema, null, 2)}
@@ -32,24 +81,27 @@ Respond ONLY with the JSON object, no other text.`;
 
       next = { ...next };
       next.response_format = { type: "json_object" };
-      next.messages = Array.isArray(next.messages) ? [...next.messages] : [];
+      next.messages = [...asChatMessages(next.messages)];
+      const messages = next.messages as ChatMessage[];
 
       // Prepend a system message (or merge into the first one) so the schema is in front.
-      const firstSystemIdx = next.messages.findIndex((m: any) => m?.role === "system");
+      const firstSystemIdx = messages.findIndex((m) => m?.role === "system");
       if (firstSystemIdx === -1) {
-        next.messages.unshift({ role: "system", content: schemaInstruction });
+        messages.unshift({ role: "system", content: schemaInstruction });
       } else {
-        const sys = next.messages[firstSystemIdx];
+        const sys = messages[firstSystemIdx];
         const existing =
           typeof sys.content === "string"
             ? sys.content
             : Array.isArray(sys.content)
               ? sys.content
-                  .map((c: any) => (typeof c === "string" ? c : c?.text || ""))
+                  .map((c) =>
+                    typeof c === "string" ? c : typeof c?.text === "string" ? c.text : "",
+                  )
                   .filter(Boolean)
                   .join("\n")
               : "";
-        next.messages[firstSystemIdx] = {
+        messages[firstSystemIdx] = {
           ...sys,
           content: existing ? `${existing}\n\n${schemaInstruction}` : schemaInstruction,
         };
@@ -58,7 +110,12 @@ Respond ONLY with the JSON object, no other text.`;
     return injectReasoningContent({ provider: this.provider, model, body: next });
   }
 
-  buildUrl(model: any, stream: any, urlIndex: any = 0, credentials: any = null) {
+  buildUrl(
+    model: string,
+    stream: boolean,
+    urlIndex: number = 0,
+    credentials: ExecutorCredentials | null = null,
+  ): string | undefined {
     if (this.provider?.startsWith?.("openai-compatible-")) {
       const baseUrl = credentials?.providerSpecificData?.baseUrl || "https://api.openai.com/v1";
       const normalized = baseUrl.replace(/\/$/, "");
@@ -94,8 +151,8 @@ Respond ONLY with the JSON object, no other text.`;
     }
   }
 
-  buildHeaders(credentials: any, stream: any = true) {
-    const headers: Record<string, any> = {
+  buildHeaders(credentials: ExecutorCredentials, stream: boolean = true): ExecutorHeaders {
+    const headers: ExecutorHeaders = {
       "Content-Type": "application/json",
       ...this.config.headers,
     };
@@ -118,7 +175,7 @@ Respond ONLY with the JSON object, no other text.`;
             // Build the Title-Case equivalent: "anthropic-version" → "Anthropic-Version"
             const titleKey = lcKey.replace(
               /(^|-)([a-z])/g,
-              (_: any, sep: any, c: any) => sep + c.toUpperCase(),
+              (_match: string, sep: string, c: string) => sep + c.toUpperCase(),
             );
 
             // Special handling for Anthropic-Beta to preserve required flags like OAuth
@@ -127,13 +184,13 @@ Respond ONLY with the JSON object, no other text.`;
               const staticFlags = new Set(
                 staticBetaStr
                   .split(",")
-                  .map((f: any) => f.trim())
+                  .map((f) => f.trim())
                   .filter(Boolean),
               );
               const cachedFlags = new Set(
                 cached[lcKey]
                   .split(",")
-                  .map((f: any) => f.trim())
+                  .map((f) => f.trim())
                   .filter(Boolean),
               );
 
@@ -217,8 +274,8 @@ Respond ONLY with the JSON object, no other text.`;
           if (headers[betaKey]) {
             const filtered = headers[betaKey]
               .split(",")
-              .map((s: any) => s.trim())
-              .filter((f: any) => f && f !== "claude-code-20250219")
+              .map((s) => s.trim())
+              .filter((f) => f && f !== "claude-code-20250219")
               .join(",");
             if (filtered) {
               headers[betaKey] = filtered;
@@ -234,10 +291,14 @@ Respond ONLY with the JSON object, no other text.`;
     return headers;
   }
 
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null): Promise<any> {
+  async refreshCredentials(
+    credentials: ExecutorCredentials,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     if (!credentials.refreshToken) return null;
 
-    const refreshers: Record<string, any> = {
+    const refreshers: Record<string, () => Promise<RefreshResult | null>> = {
       claude: () =>
         this.refreshWithJSON(
           OAUTH_ENDPOINTS.anthropic.token,
@@ -284,13 +345,20 @@ Respond ONLY with the JSON object, no other text.`;
       const result = await refresher();
       if (result) log?.info?.("TOKEN", `${this.provider} refreshed`);
       return result;
-    } catch (error: any) {
-      log?.error?.("TOKEN", `${this.provider} refresh error: ${error.message}`);
+    } catch (error: unknown) {
+      log?.error?.(
+        "TOKEN",
+        `${this.provider} refresh error: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
 
-  async refreshWithJSON(url: any, body: any, proxyOptions: any = null) {
+  async refreshWithJSON(
+    url: string,
+    body: JsonRecord,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     const response = await proxyAwareFetch(
       url,
       {
@@ -301,7 +369,7 @@ Respond ONLY with the JSON object, no other text.`;
       proxyOptions,
     );
     if (!response.ok) return null;
-    const tokens = await response.json();
+    const tokens = (await response.json()) as OAuthTokenPayload;
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || body.refresh_token,
@@ -309,7 +377,11 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshWithForm(url: any, params: any, proxyOptions: any = null) {
+  async refreshWithForm(
+    url: string,
+    params: Record<string, string>,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     const response = await proxyAwareFetch(
       url,
       {
@@ -323,7 +395,7 @@ Respond ONLY with the JSON object, no other text.`;
       proxyOptions,
     );
     if (!response.ok) return null;
-    const tokens = await response.json();
+    const tokens = (await response.json()) as OAuthTokenPayload;
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || params.refresh_token,
@@ -331,7 +403,10 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshIflow(refreshToken: any, proxyOptions: any = null) {
+  async refreshIflow(
+    refreshToken: string,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     if (!PROVIDERS.iflow.clientSecret) return null;
 
     const basicAuth = btoa(`${PROVIDERS.iflow.clientId}:${PROVIDERS.iflow.clientSecret}`);
@@ -354,7 +429,7 @@ Respond ONLY with the JSON object, no other text.`;
       proxyOptions,
     );
     if (!response.ok) return null;
-    const tokens = await response.json();
+    const tokens = (await response.json()) as OAuthTokenPayload;
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || refreshToken,
@@ -362,7 +437,10 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshGoogle(refreshToken: any, proxyOptions: any = null) {
+  async refreshGoogle(
+    refreshToken: string,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     const response = await proxyAwareFetch(
       OAUTH_ENDPOINTS.google.token,
       {
@@ -374,14 +452,14 @@ Respond ONLY with the JSON object, no other text.`;
         body: new URLSearchParams({
           grant_type: "refresh_token",
           refresh_token: refreshToken,
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
-        } as any),
+          client_id: this.config.clientId || "",
+          client_secret: this.config.clientSecret || "",
+        }),
       },
       proxyOptions,
     );
     if (!response.ok) return null;
-    const tokens = await response.json();
+    const tokens = (await response.json()) as OAuthTokenPayload;
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || refreshToken,
@@ -389,7 +467,10 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshKiro(refreshToken: any, proxyOptions: any = null) {
+  async refreshKiro(
+    refreshToken: string,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     const response = await proxyAwareFetch(
       PROVIDERS.kiro.tokenUrl,
       {
@@ -404,7 +485,11 @@ Respond ONLY with the JSON object, no other text.`;
       proxyOptions,
     );
     if (!response.ok) return null;
-    const tokens = await response.json();
+    const tokens = (await response.json()) as {
+      accessToken?: unknown;
+      expiresIn?: unknown;
+      refreshToken?: unknown;
+    };
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken || refreshToken,
@@ -412,7 +497,10 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshCline(refreshToken: any, proxyOptions: any = null) {
+  async refreshCline(
+    refreshToken: string,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     const response = await proxyAwareFetch(
       "https://api.cline.bot/api/v1/auth/refresh",
       {
@@ -426,12 +514,13 @@ Respond ONLY with the JSON object, no other text.`;
       await response.text().catch(() => "");
       return null;
     }
-    const payload = await response.json();
-    const data = payload?.data || payload;
+    const payload = asRecord(await response.json());
+    const data = asRecord(payload.data || payload) as ClineRefreshPayload;
     const expiresAtIso = data?.expiresAt;
-    const expiresIn = expiresAtIso
-      ? Math.max(1, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000))
-      : undefined;
+    const expiresIn =
+      typeof expiresAtIso === "string"
+        ? Math.max(1, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000))
+        : undefined;
     return {
       accessToken: data?.accessToken,
       refreshToken: data?.refreshToken || refreshToken,
@@ -439,7 +528,10 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshKimiCoding(refreshToken: any, proxyOptions: any = null) {
+  async refreshKimiCoding(
+    refreshToken: string,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<RefreshResult | null> {
     const kimiHeaders = buildKimiHeaders();
     const response = await proxyAwareFetch(
       "https://auth.kimi.com/api/oauth/token",
@@ -459,7 +551,7 @@ Respond ONLY with the JSON object, no other text.`;
       proxyOptions,
     );
     if (!response.ok) return null;
-    const tokens = await response.json();
+    const tokens = (await response.json()) as OAuthTokenPayload;
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || refreshToken,
@@ -467,7 +559,10 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshKilocode(_refreshToken: any, _proxyOptions: any = null) {
+  async refreshKilocode(
+    _refreshToken: string,
+    _proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<null> {
     // Kilocode uses device code flow, no refresh token support
     return null;
   }

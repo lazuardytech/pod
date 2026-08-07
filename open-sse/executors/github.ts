@@ -7,7 +7,57 @@ import { openaiToOpenAIResponsesRequest } from "../translator/request/openai-res
 import { openaiResponsesToOpenAIResponse } from "../translator/response/openai-responses.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { formatSSE, parseSSELine } from "../utils/streamHelpers.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorCredentials,
+  type ExecutorExecuteOptions,
+  type ExecutorExecuteResult,
+  type ExecutorHeaders,
+  type ExecutorLogger,
+  type ExecutorProxyOptions,
+} from "./base.js";
+
+type JsonRecord = Record<string, unknown>;
+type ContentPart = JsonRecord & {
+  content?: unknown;
+  image_url?: unknown;
+  text?: unknown;
+  type?: string;
+};
+type ChatMessage = JsonRecord & {
+  content?: string | ContentPart[] | null;
+  role?: string;
+};
+type ChatRequestBody = JsonRecord & {
+  max_completion_tokens?: unknown;
+  max_tokens?: unknown;
+  messages?: ChatMessage[];
+  model?: string;
+  reasoning_effort?: unknown;
+  response_format?: {
+    json_schema?: { schema?: unknown };
+    type?: string;
+  };
+  temperature?: unknown;
+  thinking?: unknown;
+};
+type CopilotTokenResponse = {
+  expires_at?: unknown;
+  token?: unknown;
+};
+type GithubTokenResponse = {
+  access_token?: unknown;
+  expires_in?: unknown;
+  refresh_token?: unknown;
+};
+
+function asChatBody(body: unknown): ChatRequestBody {
+  return body && typeof body === "object" && !Array.isArray(body) ? (body as ChatRequestBody) : {};
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export class GithubExecutor extends BaseExecutor {
   private knownCodexModels: Set<string>;
@@ -17,11 +67,11 @@ export class GithubExecutor extends BaseExecutor {
     this.knownCodexModels = new Set();
   }
 
-  buildUrl(_model: any, _stream: any, _urlIndex: any = 0) {
+  buildUrl(_model: string, _stream: boolean, _urlIndex: number = 0) {
     return this.config.baseUrl;
   }
 
-  buildHeaders(credentials: any, stream: any = true) {
+  buildHeaders(credentials: ExecutorCredentials, stream: boolean = true): ExecutorHeaders {
     const token = credentials.copilotToken || credentials.accessToken;
     return {
       Authorization: `Bearer ${token}`,
@@ -43,16 +93,17 @@ export class GithubExecutor extends BaseExecutor {
   // Sanitize messages for GitHub Copilot /chat/completions endpoint.
   // The endpoint only accepts 'text' and 'image_url' content part types.
   // Tool-related content (tool_use, tool_result, thinking) must be serialized as text.
-  sanitizeMessagesForChatCompletions(body: any) {
-    if (!body?.messages) return body;
+  sanitizeMessagesForChatCompletions(body: unknown) {
+    const chatBody = asChatBody(body);
+    if (!chatBody?.messages) return body;
 
-    const sanitized = { ...body };
+    const sanitized = { ...chatBody };
 
     // Handle response_format for Claude models via GitHub
     // GitHub's internal translation doesn't respect response_format, so we inject it as a system prompt
     // AND prepend a reminder to the last user message for maximum effectiveness
-    if (body.response_format && body.model?.includes("claude")) {
-      const responseFormat = body.response_format;
+    if (chatBody.response_format && chatBody.model?.includes("claude")) {
+      const responseFormat = chatBody.response_format;
       let systemInstruction = "";
       if (responseFormat.type === "json_schema" && responseFormat.json_schema?.schema) {
         systemInstruction =
@@ -63,21 +114,21 @@ export class GithubExecutor extends BaseExecutor {
       }
       if (systemInstruction) {
         // Add to system message
-        const systemIdx = body.messages.findIndex((m: any) => m.role === "system");
+        const systemIdx = chatBody.messages.findIndex((m) => m.role === "system");
         if (systemIdx >= 0) {
-          body.messages[systemIdx].content =
-            systemInstruction + "\n\n" + body.messages[systemIdx].content;
+          chatBody.messages[systemIdx].content =
+            systemInstruction + "\n\n" + chatBody.messages[systemIdx].content;
         } else {
-          body.messages.unshift({ role: "system", content: systemInstruction });
+          chatBody.messages.unshift({ role: "system", content: systemInstruction });
         }
 
         // Also prepend to the last user message as a reminder
-        const lastUserIdx = body.messages
-          .map((m: any, i: any) => (m.role === "user" ? i : -1))
-          .filter((i: any) => i >= 0)
+        const lastUserIdx = chatBody.messages
+          .map((m, i) => (m.role === "user" ? i : -1))
+          .filter((i) => i >= 0)
           .pop();
-        if (lastUserIdx >= 0) {
-          const userMsg = body.messages[lastUserIdx];
+        if (lastUserIdx !== undefined && lastUserIdx >= 0) {
+          const userMsg = chatBody.messages[lastUserIdx];
           const userContent =
             typeof userMsg.content === "string" ? userMsg.content : JSON.stringify(userMsg.content);
           userMsg.content =
@@ -86,7 +137,7 @@ export class GithubExecutor extends BaseExecutor {
         }
       }
     }
-    sanitized.messages = body.messages.map((msg: any) => {
+    sanitized.messages = chatBody.messages.map((msg) => {
       // assistant messages with only tool_calls have content: null — leave as-is
       if (!msg.content) return msg;
 
@@ -96,14 +147,14 @@ export class GithubExecutor extends BaseExecutor {
       // Array content: filter/convert unsupported part types
       if (Array.isArray(msg.content)) {
         const cleanContent = msg.content
-          .map((part: any) => {
+          .map((part) => {
             if (part.type === "text") return part;
             if (part.type === "image_url") return part;
             // Serialize tool_use, tool_result, thinking, etc. as text
             const text = part.text || part.content || JSON.stringify(part);
             return { type: "text", text: typeof text === "string" ? text : JSON.stringify(text) };
           })
-          .filter((part: any) => part.text !== ""); // remove empty text parts
+          .filter((part) => part.text !== ""); // remove empty text parts
 
         // If all content was stripped (e.g. only tool_result with no text), drop content
         return { ...msg, content: cleanContent.length > 0 ? cleanContent : null };
@@ -116,12 +167,12 @@ export class GithubExecutor extends BaseExecutor {
   }
 
   // Newer OpenAI models (gpt-5+, o1, o3, o4) require max_completion_tokens instead of max_tokens
-  requiresMaxCompletionTokens(model: any) {
+  requiresMaxCompletionTokens(model: string) {
     return /gpt-5|o[134]-/i.test(model);
   }
 
   // Some models (like gpt-5.4) don't support the temperature parameter
-  supportsTemperature(model: any) {
+  supportsTemperature(model: string) {
     // gpt-5.4 and similar newer models don't support temperature
     return !/gpt-5\.4/i.test(model);
   }
@@ -129,14 +180,14 @@ export class GithubExecutor extends BaseExecutor {
   // GitHub Copilot /chat/completions rejects Claude-style thinking payloads
   // (OpenClaw sends thinking: { type: "enabled" } → upstream 400).
   // GPT-5 family on Copilot DOES honor reasoning_effort, so only strip for Claude. (#713)
-  supportsThinking(model: any) {
+  supportsThinking(model: string) {
     return !/claude/i.test(model);
   }
 
   // reasoning_effort works for GPT-5 family AND Claude Opus 4.6 / Sonnet 4.6
   // on GitHub Copilot. Only strip for models that don't support it:
   // Claude Haiku 4.5, Claude Opus 4.7 (rejected upstream).
-  supportsReasoningEffort(model: any) {
+  supportsReasoningEffort(model: string) {
     const m = model.toLowerCase();
     // Claude models that DO support reasoning_effort
     if (/claude.*opus.*4\.6/i.test(m) || /claude.*sonnet.*4\.6/i.test(m)) return true;
@@ -146,8 +197,13 @@ export class GithubExecutor extends BaseExecutor {
     return true;
   }
 
-  transformRequest(model: any, body: any, _stream: any, _credentials: any) {
-    const transformed = { ...body };
+  transformRequest(
+    model: string,
+    body: unknown,
+    _stream: boolean,
+    _credentials: ExecutorCredentials,
+  ) {
+    const transformed = { ...asChatBody(body) };
     if (this.requiresMaxCompletionTokens(model) && transformed.max_tokens !== undefined) {
       transformed.max_completion_tokens = transformed.max_tokens;
       delete transformed.max_tokens;
@@ -171,7 +227,7 @@ export class GithubExecutor extends BaseExecutor {
     return transformed;
   }
 
-  async execute(options: any) {
+  async execute(options: ExecutorExecuteOptions): Promise<ExecutorExecuteResult> {
     const { model, log } = options;
 
     // Only use /responses for models that are explicitly known to need it (e.g. gpt codex models)
@@ -216,7 +272,7 @@ export class GithubExecutor extends BaseExecutor {
     signal,
     log,
     proxyOptions = null,
-  }: any) {
+  }: ExecutorExecuteOptions): Promise<ExecutorExecuteResult> {
     const url = this.config.responsesUrl;
     const headers = this.buildHeaders(credentials, stream);
 
@@ -246,7 +302,7 @@ export class GithubExecutor extends BaseExecutor {
     let buffer = "";
 
     const transformStream = new TransformStream({
-      async transform(chunk: any, controller: any) {
+      async transform(chunk: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
         buffer += decoder.decode(chunk, { stream: true });
         const lines = buffer.split("\n");
 
@@ -271,7 +327,7 @@ export class GithubExecutor extends BaseExecutor {
           }
         }
       },
-      flush(controller: any) {
+      flush(controller: TransformStreamDefaultController<Uint8Array>) {
         if (buffer.trim()) {
           const parsed = parseSSELine(buffer.trim());
           if (parsed && !parsed.done) {
@@ -306,7 +362,11 @@ export class GithubExecutor extends BaseExecutor {
     };
   }
 
-  async refreshCopilotToken(githubAccessToken: any, log: any, proxyOptions: any = null) {
+  async refreshCopilotToken(
+    githubAccessToken: string | undefined,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ) {
     try {
       const response = await proxyAwareFetch(
         "https://api.github.com/copilot_internal/v2/token",
@@ -327,24 +387,28 @@ export class GithubExecutor extends BaseExecutor {
         log?.error?.("TOKEN", `Copilot token refresh failed: ${response.status} ${errorText}`);
         return null;
       }
-      const data = await response.json();
+      const data = (await response.json()) as CopilotTokenResponse;
       log?.info?.("TOKEN", "Copilot token refreshed");
       return { token: data.token, expiresAt: data.expires_at };
-    } catch (error: any) {
-      log?.error?.("TOKEN", `Copilot refresh error: ${error.message}`);
+    } catch (error: unknown) {
+      log?.error?.("TOKEN", `Copilot refresh error: ${errorMessage(error)}`);
       return null;
     }
   }
 
-  async refreshGitHubToken(refreshToken: any, log: any, proxyOptions: any = null) {
+  async refreshGitHubToken(
+    refreshToken: string,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ) {
     try {
-      const params: Record<string, any> = {
+      const params: Record<string, string> = {
         grant_type: "refresh_token",
         refresh_token: refreshToken,
-        client_id: this.config.clientId,
+        client_id: String(this.config.clientId),
       };
       if (this.config.clientSecret) {
-        params.client_secret = this.config.clientSecret;
+        params.client_secret = String(this.config.clientSecret);
       }
 
       const response = await proxyAwareFetch(
@@ -360,20 +424,24 @@ export class GithubExecutor extends BaseExecutor {
         proxyOptions,
       );
       if (!response.ok) return null;
-      const tokens = await response.json();
+      const tokens = (await response.json()) as GithubTokenResponse;
       log?.info?.("TOKEN", "GitHub token refreshed");
       return {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token || refreshToken,
         expiresIn: tokens.expires_in,
       };
-    } catch (error: any) {
-      log?.error?.("TOKEN", `GitHub refresh error: ${error.message}`);
+    } catch (error: unknown) {
+      log?.error?.("TOKEN", `GitHub refresh error: ${errorMessage(error)}`);
       return null;
     }
   }
 
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null) {
+  async refreshCredentials(
+    credentials: ExecutorCredentials,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ) {
     let copilotResult = await this.refreshCopilotToken(credentials.accessToken, log, proxyOptions);
 
     if (!copilotResult && credentials.refreshToken) {
@@ -407,7 +475,7 @@ export class GithubExecutor extends BaseExecutor {
     return null;
   }
 
-  needsRefresh(credentials: any) {
+  needsRefresh(credentials: ExecutorCredentials) {
     // Always refresh if no copilotToken
     if (!credentials.copilotToken) return true;
 

@@ -1,6 +1,56 @@
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mts";
 import { PROVIDERS } from "../config/providers.js";
 
+type JsonRecord = Record<string, unknown>;
+type ProviderCredentials = {
+  accessToken?: string;
+  apiKey?: string;
+  copilotToken?: string;
+  providerSpecificData?: JsonRecord;
+};
+type ProviderOptions = {
+  baseUrl?: string;
+  baseUrlIndex?: number;
+  qwenResourceUrl?: string;
+};
+type ProviderConfig = {
+  baseUrl?: string;
+  baseUrls?: string[];
+  format?: string;
+  headers?: Record<string, string>;
+  [key: string]: unknown;
+};
+type MessageContentPart = {
+  image_url?: { url?: unknown };
+  source?: { type?: unknown };
+  type?: string;
+};
+type Message = {
+  content?: unknown;
+  role?: string;
+};
+type RequestBody = JsonRecord & {
+  anthropic_version?: unknown;
+  contents?: unknown;
+  frequency_penalty?: unknown;
+  input?: unknown;
+  logit_bias?: unknown;
+  logprobs?: unknown;
+  messages?: Message[];
+  model?: unknown;
+  n?: unknown;
+  presence_penalty?: unknown;
+  reasoning_effort?: unknown;
+  request?: { contents?: unknown };
+  response_format?: unknown;
+  stream_options?: unknown;
+  system?: unknown;
+  thinking?: { type?: unknown };
+  top_logprobs?: unknown;
+  user?: unknown;
+  userAgent?: unknown;
+};
+
 const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
 const OPENAI_COMPATIBLE_DEFAULTS = {
   baseUrl: "https://api.openai.com/v1",
@@ -11,31 +61,35 @@ const ANTHROPIC_COMPATIBLE_DEFAULTS = {
   baseUrl: "https://api.anthropic.com/v1",
 };
 
-function isOpenAICompatible(provider: any) {
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
+
+function isOpenAICompatible(provider: unknown): provider is string {
   return typeof provider === "string" && provider.startsWith(OPENAI_COMPATIBLE_PREFIX);
 }
 
-function isAnthropicCompatible(provider: any) {
+function isAnthropicCompatible(provider: unknown): provider is string {
   return typeof provider === "string" && provider.startsWith(ANTHROPIC_COMPATIBLE_PREFIX);
 }
 
-function getOpenAICompatibleType(provider: any) {
+function getOpenAICompatibleType(provider: string) {
   if (!isOpenAICompatible(provider)) return "chat";
   return provider.includes("responses") ? "responses" : "chat";
 }
 
-function buildOpenAICompatibleUrl(baseUrl: any, apiType: any) {
+function buildOpenAICompatibleUrl(baseUrl: string, apiType: string) {
   const normalized = baseUrl.replace(/\/$/, "");
   const path = apiType === "responses" ? "/responses" : "/chat/completions";
   return `${normalized}${path}`;
 }
 
-function buildAnthropicCompatibleUrl(baseUrl: any) {
+function buildAnthropicCompatibleUrl(baseUrl: string) {
   const normalized = baseUrl.replace(/\/$/, "");
   return `${normalized}/messages`;
 }
 
-function buildQwenBaseUrl(resourceUrl: any, fallbackBaseUrl: any) {
+function buildQwenBaseUrl(resourceUrl: unknown, fallbackBaseUrl: string | undefined) {
   const fallback = (fallbackBaseUrl || "").replace(/\/chat\/completions$/, "");
   const raw = typeof resourceUrl === "string" ? resourceUrl.trim() : "";
   if (!raw) return fallback;
@@ -46,7 +100,7 @@ function buildQwenBaseUrl(resourceUrl: any, fallbackBaseUrl: any) {
 }
 
 // Detect request format from body structure
-export function detectFormat(body: any) {
+export function detectFormat(body: RequestBody) {
   // OpenAI Responses API: has input (array or string) instead of messages[]
   // The Responses API accepts both input as array and input as a plain string
   if (
@@ -90,11 +144,14 @@ export function detectFormat(body: any) {
 
     // If content is array, check if it follows Claude structure
     if (firstMsg?.content && Array.isArray(firstMsg.content)) {
-      const firstContent = firstMsg.content[0];
+      const firstContent = firstMsg.content[0] as MessageContentPart | undefined;
 
       // Claude format has specific types: text, image, tool_use, tool_result
       // OpenAI multimodal has: text, image_url (note the difference)
-      if (firstContent?.type === "text" && !body.model?.includes("/")) {
+      if (
+        firstContent?.type === "text" &&
+        !(typeof body.model === "string" && body.model.includes("/"))
+      ) {
         // Could be Claude or OpenAI multimodal
         // Check for Claude-specific fields
         if (body.system || body.anthropic_version) {
@@ -102,17 +159,17 @@ export function detectFormat(body: any) {
         }
         // Check if image format is Claude (source.type) vs OpenAI (image_url.url)
         const hasClaudeImage = firstMsg.content.some(
-          (c: any) => c.type === "image" && c.source?.type === "base64",
+          (c: MessageContentPart) => c.type === "image" && c.source?.type === "base64",
         );
         const hasOpenAIImage = firstMsg.content.some(
-          (c: any) => c.type === "image_url" && c.image_url?.url,
+          (c: MessageContentPart) => c.type === "image_url" && c.image_url?.url,
         );
         if (hasClaudeImage) return "claude";
         if (hasOpenAIImage) return "openai";
 
         // If still unclear, check for tool format
         const hasClaudeTool = firstMsg.content.some(
-          (c: any) => c.type === "tool_use" || c.type === "tool_result",
+          (c: MessageContentPart) => c.type === "tool_use" || c.type === "tool_result",
         );
         if (hasClaudeTool) return "claude";
       }
@@ -130,7 +187,7 @@ export function detectFormat(body: any) {
 }
 
 // Get provider config
-export function getProviderConfig(provider: any) {
+export function getProviderConfig(provider: string): ProviderConfig {
   if (isOpenAICompatible(provider)) {
     const apiType = getOpenAICompatibleType(provider);
     return {
@@ -146,17 +203,22 @@ export function getProviderConfig(provider: any) {
       baseUrl: ANTHROPIC_COMPATIBLE_DEFAULTS.baseUrl,
     };
   }
-  return (PROVIDERS as Record<string, any>)[provider] || PROVIDERS.openai;
+  return (PROVIDERS as Record<string, ProviderConfig>)[provider] || PROVIDERS.openai;
 }
 
 // Get number of fallback URLs for provider (for retry logic)
-export function getProviderFallbackCount(provider: any) {
+export function getProviderFallbackCount(provider: string) {
   const config = getProviderConfig(provider);
   return config.baseUrls?.length || 1;
 }
 
 // Build provider URL
-export function buildProviderUrl(provider: any, model: any, stream: any = true, options: any = {}) {
+export function buildProviderUrl(
+  provider: string,
+  model: string,
+  stream: boolean = true,
+  options: ProviderOptions = {},
+) {
   if (isOpenAICompatible(provider)) {
     const apiType = getOpenAICompatibleType(provider);
     const baseUrl = options?.baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl;
@@ -185,7 +247,8 @@ export function buildProviderUrl(provider: any, model: any, stream: any = true, 
     case "antigravity": {
       // Use baseUrlIndex from options or default to 0
       const urlIndex = options?.baseUrlIndex || 0;
-      const baseUrl = config.baseUrls[urlIndex] || config.baseUrls[0];
+      const baseUrls = config.baseUrls || [];
+      const baseUrl = baseUrls[urlIndex] || baseUrls[0];
       const path = stream
         ? "/v1internal:streamGenerateContent?alt=sse"
         : "/v1internal:generateContent";
@@ -216,13 +279,13 @@ export function buildProviderUrl(provider: any, model: any, stream: any = true, 
 
 // Build provider headers
 export function buildProviderHeaders(
-  provider: any,
-  credentials: any,
-  stream: any = true,
-  _body: any = null,
+  provider: string,
+  credentials: ProviderCredentials,
+  stream: boolean = true,
+  _body: unknown = null,
 ) {
   const config = getProviderConfig(provider);
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...config.headers,
   };
@@ -282,7 +345,7 @@ export function buildProviderHeaders(
         // Generate a UUID for x-request-id (Cloudflare Workers compatible)
         headers["x-request-id"] = crypto.randomUUID
           ? crypto.randomUUID()
-          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c: any) => {
+          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c: string) => {
               const r = (Math.random() * 16) | 0;
               const v = c === "x" ? r : (r & 0x3) | 0x8;
               return v.toString(16);
@@ -332,7 +395,7 @@ export function buildProviderHeaders(
 }
 
 // Get target format for provider
-export function getTargetFormat(provider: any) {
+export function getTargetFormat(provider: string) {
   if (isOpenAICompatible(provider)) {
     return getOpenAICompatibleType(provider) === "responses" ? "openai-responses" : "openai";
   }
@@ -344,25 +407,30 @@ export function getTargetFormat(provider: any) {
 }
 
 // Check if last message is from user
-export function isLastMessageFromUser(body: any) {
-  const messages = body.messages || body.contents;
+export function isLastMessageFromUser(body: RequestBody) {
+  const messages = Array.isArray(body.messages)
+    ? body.messages
+    : Array.isArray(body.contents)
+      ? (body.contents as Message[])
+      : [];
   if (!messages?.length) return true;
   const lastMsg = messages[messages.length - 1];
   return lastMsg?.role === "user";
 }
 
 // Check if request has thinking config
-export function hasThinkingConfig(body: any) {
+export function hasThinkingConfig(body: RequestBody) {
   return !!(body.reasoning_effort || body.thinking?.type === "enabled");
 }
 
 // Normalize thinking config based on last message role
 // - If lastMessage is not user → remove thinking config
 // - If lastMessage is user AND has thinking config → keep it (force enable)
-export function normalizeThinkingConfig(body: any) {
+export function normalizeThinkingConfig(body: RequestBody) {
+  const mutableBody = asRecord(body) as RequestBody;
   if (!isLastMessageFromUser(body)) {
-    delete body.reasoning_effort;
-    delete body.thinking;
+    delete mutableBody.reasoning_effort;
+    delete mutableBody.thinking;
   }
-  return body;
+  return mutableBody;
 }

@@ -11,10 +11,73 @@ import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { cleanJSONSchemaForAntigravity } from "../translator/helpers/geminiHelper.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { deriveSessionId } from "../utils/sessionManager.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorCredentials,
+  type ExecutorExecuteOptions,
+  type ExecutorHeaders,
+  type ExecutorLogger,
+  type ExecutorProxyOptions,
+} from "./base.js";
+
+type JsonRecord = Record<string, unknown>;
+type FunctionDeclaration = JsonRecord & {
+  name: string;
+  parameters?: JsonRecord;
+};
+type ToolGroup = {
+  functionDeclarations?: FunctionDeclaration[];
+};
+type ContentPart = JsonRecord & {
+  functionCall?: { name: string; [key: string]: unknown };
+  functionResponse?: { name: string; [key: string]: unknown };
+  text?: unknown;
+  thought?: unknown;
+  thoughtSignature?: unknown;
+};
+type Content = JsonRecord & {
+  parts?: ContentPart[];
+  role?: string;
+};
+type AntigravityRequest = JsonRecord & {
+  contents?: Content[];
+  generationConfig?: JsonRecord & { maxOutputTokens?: number };
+  sessionId?: string;
+  toolConfig?: unknown;
+  tools?: ToolGroup[];
+};
+type AntigravityBody = JsonRecord & {
+  project?: string;
+  request?: AntigravityRequest;
+  requestId?: string;
+  requestType?: string;
+  userAgent?: string;
+};
+type AntigravityCredentials = ExecutorCredentials & {
+  connectionId?: string;
+  email?: string;
+  projectId?: string;
+};
+type OAuthTokenPayload = {
+  access_token?: unknown;
+  expires_in?: unknown;
+  refresh_token?: unknown;
+};
+type CloakResult = {
+  cloakedBody: AntigravityBody;
+  toolNameMap: Map<string, string> | null;
+};
+
+function asAntigravityBody(body: unknown): AntigravityBody {
+  return body && typeof body === "object" && !Array.isArray(body) ? (body as AntigravityBody) : {};
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
 
 // Sanitize function name: Gemini requires [a-zA-Z_][a-zA-Z0-9_.:\-]{0,63}
-function sanitizeFunctionName(name: any) {
+function sanitizeFunctionName(name: string) {
   if (!name) return "_unknown";
   let s = name.replace(/[^a-zA-Z0-9_.:-]/g, "_");
   if (!/^[a-zA-Z_]/.test(s)) s = "_" + s;
@@ -29,14 +92,18 @@ export class AntigravityExecutor extends BaseExecutor {
     super("antigravity", PROVIDERS.antigravity);
   }
 
-  buildUrl(model: any, stream: any, urlIndex: any = 0) {
+  buildUrl(_model: string, stream: boolean, urlIndex: number = 0) {
     const baseUrls = this.getBaseUrls();
     const baseUrl = baseUrls[urlIndex] || baseUrls[0];
     const action = stream ? "streamGenerateContent?alt=sse" : "generateContent";
     return `${baseUrl}/v1internal:${action}`;
   }
 
-  buildHeaders(credentials: any, stream: any = true, sessionId: any = null) {
+  buildHeaders(
+    credentials: ExecutorCredentials,
+    stream: boolean = true,
+    sessionId: string | null = null,
+  ): ExecutorHeaders {
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${credentials.accessToken}`,
@@ -47,18 +114,24 @@ export class AntigravityExecutor extends BaseExecutor {
     };
   }
 
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(
+    model: string,
+    body: unknown,
+    _stream: boolean,
+    credentials: AntigravityCredentials,
+  ): AntigravityBody {
+    const antigravityBody = asAntigravityBody(body);
     const projectId = credentials?.projectId || this.generateProjectId();
 
     // Fix contents for Claude models via Antigravity
-    const contents = body.request?.contents?.map((c: any) => {
+    const contents = antigravityBody.request?.contents?.map((c) => {
       let role = c.role;
       // functionResponse must be role "user" for Claude models
-      if (c.parts?.some((p: any) => p.functionResponse)) {
+      if (c.parts?.some((p) => p.functionResponse)) {
         role = "user";
       }
       // Strip thought-only parts, keep thoughtSignature on functionCall parts (Gemini 3+ requires it)
-      const parts = c.parts?.filter((p: any) => {
+      const parts = c.parts?.filter((p) => {
         if (p.thought && !p.functionCall) return false;
         if (p.thoughtSignature && !p.functionCall && !p.text) return false;
         return true;
@@ -70,12 +143,12 @@ export class AntigravityExecutor extends BaseExecutor {
     });
 
     // Sanitize tool schemas and function names before sending to Antigravity.
-    let tools = body.request?.tools;
+    let tools = antigravityBody.request?.tools;
 
     if (tools && tools.length > 0) {
       // Merge all groups into a single functionDeclarations group (Gemini expects 1 group)
-      const allDeclarations = tools.flatMap((group: any) =>
-        (group.functionDeclarations || []).map((fn: any) => ({
+      const allDeclarations = tools.flatMap((group) =>
+        (group.functionDeclarations || []).map((fn) => ({
           ...fn,
           name: sanitizeFunctionName(fn.name),
           parameters: fn.parameters
@@ -94,7 +167,7 @@ export class AntigravityExecutor extends BaseExecutor {
       tools: _originalTools,
       toolConfig: _originalToolConfig,
       ...requestWithoutTools
-    } = body.request || {};
+    } = antigravityBody.request || {};
     const generationConfig = { ...(requestWithoutTools.generationConfig || {}) };
     if (generationConfig.maxOutputTokens > MAX_ANTIGRAVITY_OUTPUT_TOKENS) {
       generationConfig.maxOutputTokens = MAX_ANTIGRAVITY_OUTPUT_TOKENS;
@@ -106,13 +179,14 @@ export class AntigravityExecutor extends BaseExecutor {
       ...(contents && { contents }),
       ...(tools && { tools }),
       sessionId:
-        body.request?.sessionId || deriveSessionId(credentials?.email || credentials?.connectionId),
+        antigravityBody.request?.sessionId ||
+        deriveSessionId(credentials?.email || credentials?.connectionId),
       safetySettings: undefined,
       ...(tools?.length > 0 && { toolConfig: { functionCallingConfig: { mode: "VALIDATED" } } }),
     };
 
     return {
-      ...body,
+      ...antigravityBody,
       project: projectId,
       model: model,
       userAgent: "antigravity",
@@ -122,7 +196,11 @@ export class AntigravityExecutor extends BaseExecutor {
     };
   }
 
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null) {
+  async refreshCredentials(
+    credentials: ExecutorCredentials,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ) {
     if (!credentials.refreshToken) return null;
 
     try {
@@ -137,16 +215,16 @@ export class AntigravityExecutor extends BaseExecutor {
           body: new URLSearchParams({
             grant_type: "refresh_token",
             refresh_token: credentials.refreshToken,
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret,
-          } as any),
+            client_id: String(this.config.clientId),
+            client_secret: String(this.config.clientSecret),
+          }),
         },
         proxyOptions,
       );
 
       if (!response.ok) return null;
 
-      const tokens = await response.json();
+      const tokens = (await response.json()) as OAuthTokenPayload;
       log?.info?.("TOKEN", "Antigravity refreshed");
 
       return {
@@ -155,8 +233,8 @@ export class AntigravityExecutor extends BaseExecutor {
         expiresIn: tokens.expires_in,
         projectId: credentials.projectId,
       };
-    } catch (error: any) {
-      log?.error?.("TOKEN", `Antigravity refresh error: ${error.message}`);
+    } catch (error: unknown) {
+      log?.error?.("TOKEN", `Antigravity refresh error: ${errorMessage(error)}`);
       return null;
     }
   }
@@ -171,7 +249,7 @@ export class AntigravityExecutor extends BaseExecutor {
     return crypto.randomUUID() + Date.now().toString();
   }
 
-  parseRetryHeaders(headers: any) {
+  parseRetryHeaders(headers: Headers | null) {
     if (!headers?.get) return null;
 
     const retryAfter = headers.get("retry-after");
@@ -204,10 +282,10 @@ export class AntigravityExecutor extends BaseExecutor {
 
   // Parse retry time from Antigravity error message body
   // Format: "Your quota will reset after 2h7m23s" or "1h30m" or "45m" or "30s"
-  parseRetryFromErrorMessage(errorMessage: any) {
-    if (!errorMessage || typeof errorMessage !== "string") return null;
+  parseRetryFromErrorMessage(message: unknown) {
+    if (!message || typeof message !== "string") return null;
 
-    const match = errorMessage.match(/reset after (\d+h)?(\d+m)?(\d+s)?/i);
+    const match = message.match(/reset after (\d+h)?(\d+m)?(\d+s)?/i);
     if (!match) return null;
 
     let totalMs = 0;
@@ -218,18 +296,31 @@ export class AntigravityExecutor extends BaseExecutor {
     return totalMs > 0 ? totalMs : null;
   }
 
-  async execute({ model, body, stream, credentials, signal, log, proxyOptions = null }: any) {
+  async execute({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log,
+    proxyOptions = null,
+  }: ExecutorExecuteOptions) {
     const fallbackCount = this.getFallbackCount();
-    let lastError = null;
+    let lastError: unknown = null;
     let lastStatus = 0;
     const MAX_AUTO_RETRIES = 3;
     const MAX_RETRY_AFTER_RETRIES = 3;
-    const retryAttemptsByUrl: Record<string, any> = {}; // Track retry attempts per URL
-    const retryAfterAttemptsByUrl: Record<string, any> = {}; // Track Retry-After retries per URL
+    const retryAttemptsByUrl: Record<number, number> = {}; // Track retry attempts per URL
+    const retryAfterAttemptsByUrl: Record<number, number> = {}; // Track Retry-After retries per URL
 
     for (let urlIndex = 0; urlIndex < fallbackCount; urlIndex++) {
       const url = this.buildUrl(model, stream, urlIndex);
-      const transformedBody = this.transformRequest(model, body, stream, credentials);
+      const transformedBody = this.transformRequest(
+        model,
+        body,
+        stream,
+        credentials as AntigravityCredentials,
+      );
       const sessionId = transformedBody.request?.sessionId;
       const headers = this.buildHeaders(credentials, stream, sessionId);
 
@@ -267,7 +358,7 @@ export class AntigravityExecutor extends BaseExecutor {
               const errorJson = JSON.parse(errorBody);
               const errorMessage = errorJson?.error?.message || errorJson?.message || "";
               retryMs = this.parseRetryFromErrorMessage(errorMessage);
-            } catch (_e: any) {
+            } catch {
               // Ignore parse errors, will fall back to exponential backoff
             }
           }
@@ -282,7 +373,7 @@ export class AntigravityExecutor extends BaseExecutor {
               "RETRY",
               `${response.status} with Retry-After: ${Math.ceil(retryMs / 1000)}s, waiting... (${retryAfterAttemptsByUrl[urlIndex]}/${MAX_RETRY_AFTER_RETRIES})`,
             );
-            await new Promise((resolve: any) => setTimeout(resolve, retryMs));
+            await new Promise<void>((resolve) => setTimeout(resolve, retryMs));
             urlIndex--;
             continue;
           }
@@ -303,7 +394,7 @@ export class AntigravityExecutor extends BaseExecutor {
               "RETRY",
               `429 auto retry ${retryAttemptsByUrl[urlIndex]}/${MAX_AUTO_RETRIES} after ${backoffMs / 1000}s`,
             );
-            await new Promise((resolve: any) => setTimeout(resolve, backoffMs));
+            await new Promise<void>((resolve) => setTimeout(resolve, backoffMs));
             urlIndex--;
             continue;
           }
@@ -326,7 +417,7 @@ export class AntigravityExecutor extends BaseExecutor {
         }
 
         return { response, url, headers, transformedBody };
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error;
         if (urlIndex + 1 < fallbackCount) {
           log?.debug?.("RETRY", `Error on ${url}, trying fallback ${urlIndex + 1}`);
@@ -345,16 +436,16 @@ export class AntigravityExecutor extends BaseExecutor {
    * - Inject AG default decoy tools after client tools
    * Returns { cloakedBody, toolNameMap } where toolNameMap maps suffixed → original
    */
-  static cloakTools(body: any, clientTool: any = null) {
+  static cloakTools(body: AntigravityBody, clientTool: string | null = null): CloakResult {
     const tools = body.request?.tools;
     if (!tools || tools.length === 0) {
       return { cloakedBody: body, toolNameMap: null };
     }
 
     const isCopilot = clientTool === "github-copilot";
-    const toolNameMap = new Map();
-    const clientDeclarations = [];
-    const decoyNames = new Set(AG_DECOY_TOOLS.map((tool: any) => tool.name));
+    const toolNameMap = new Map<string, string>();
+    const clientDeclarations: FunctionDeclaration[] = [];
+    const decoyNames = new Set(AG_DECOY_TOOLS.map((tool) => tool.name));
 
     // First: collect renamed client tools
     for (const toolGroup of tools) {
@@ -385,8 +476,8 @@ export class AntigravityExecutor extends BaseExecutor {
     }
 
     // Client tools first, then AG decoy tools
-    const allDeclarations = [];
-    const seenNames = new Set();
+    const allDeclarations: FunctionDeclaration[] = [];
+    const seenNames = new Set<string>();
     for (const decl of [...clientDeclarations, ...AG_DECOY_TOOLS]) {
       if (!decl?.name || seenNames.has(decl.name)) continue;
       seenNames.add(decl.name);
@@ -394,10 +485,10 @@ export class AntigravityExecutor extends BaseExecutor {
     }
 
     // Rename tool names in conversation history (contents)
-    const cloakedContents = body.request?.contents?.map((msg: any) => {
+    const cloakedContents = body.request?.contents?.map((msg) => {
       if (!msg.parts) return msg;
 
-      const cloakedParts = msg.parts.map((part: any) => {
+      const cloakedParts = msg.parts.map((part) => {
         // Rename functionCall.name
         if (part.functionCall && !AG_DEFAULT_TOOLS.has(part.functionCall.name)) {
           return {

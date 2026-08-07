@@ -5,27 +5,46 @@ import { initState, translateResponse } from "../translator/index.js";
 import { formatSSE } from "./stream.js";
 
 type BypassResult = { success: true; response: Response };
+type JsonRecord = Record<string, unknown>;
+type TextPart = {
+  text?: unknown;
+  type?: string;
+};
+type BypassMessage = {
+  content?: string | TextPart[];
+  role?: string;
+};
+type BypassBody = JsonRecord & {
+  messages?: BypassMessage[];
+  stream?: boolean;
+  system?: string | TextPart[];
+};
+type OpenAIResponse = ReturnType<typeof createOpenAIResponse>;
+
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
 
 /**
  * Check for bypass patterns - return fake response without calling provider
  * Only works for Claude CLI requests
  */
 export function handleBypassRequest(
-  body: any,
-  model: any,
-  userAgent: any = "",
-  ccFilterNaming: any = false,
+  body: BypassBody,
+  model: string,
+  userAgent: string = "",
+  ccFilterNaming: boolean = false,
 ): BypassResult | null {
   if (!userAgent.includes("claude-cli")) return null;
   if (!body.messages?.length) return null;
 
   const messages = body.messages;
-  const getText = (content: any) => {
+  const getText = (content: unknown) => {
     if (typeof content === "string") return content;
     if (Array.isArray(content)) {
       return content
-        .filter((c: any) => c.type === "text")
-        .map((c: any) => c.text)
+        .filter((c): c is TextPart => asRecord(c).type === "text")
+        .map((c) => (typeof c.text === "string" ? c.text : ""))
         .join(" ");
     }
     return "";
@@ -36,7 +55,8 @@ export function handleBypassRequest(
 
   // Pattern 1: Title extraction (assistant message = "{")
   const lastMsg = messages[messages.length - 1];
-  if (lastMsg?.role === "assistant" && lastMsg.content?.[0]?.text === "{") {
+  const firstContentPart = Array.isArray(lastMsg?.content) ? lastMsg.content[0] : undefined;
+  if (lastMsg?.role === "assistant" && firstContentPart?.text === "{") {
     shouldBypass = true;
   }
 
@@ -58,9 +78,9 @@ export function handleBypassRequest(
 
   // Pattern 4: Skip patterns
   if (!shouldBypass && SKIP_PATTERNS?.length) {
-    const userMessages = messages.filter((m: any) => m.role === "user");
-    const userText = userMessages.map((m: any) => getText(m.content)).join(" ");
-    if (SKIP_PATTERNS.some((p: any) => userText.includes(p))) {
+    const userMessages = messages.filter((m) => m.role === "user");
+    const userText = userMessages.map((m) => getText(m.content)).join(" ");
+    if (SKIP_PATTERNS.some((p) => userText.includes(p))) {
       shouldBypass = true;
     }
   }
@@ -68,12 +88,12 @@ export function handleBypassRequest(
   // Pattern 5: CC naming request (topic title extraction by Claude Code CLI)
   // Claude format: system is top-level body.system field, not inside messages
   if (!shouldBypass && ccFilterNaming) {
-    const systemMsg = messages.find((m: any) => m.role === "system");
+    const systemMsg = messages.find((m) => m.role === "system");
     const systemFromMessages = getText(systemMsg?.content);
     const systemFromBody = Array.isArray(body.system)
       ? body.system
-          .filter((s: any) => s.type === "text")
-          .map((s: any) => s.text)
+          .filter((s) => s.type === "text")
+          .map((s) => (typeof s.text === "string" ? s.text : ""))
           .join(" ")
       : typeof body.system === "string"
         ? body.system
@@ -92,7 +112,7 @@ export function handleBypassRequest(
 
   // For naming bypass, generate title from user message
   if (namingBypass) {
-    const userMsg = messages.find((m: any) => m.role === "user");
+    const userMsg = messages.find((m) => m.role === "user");
     const userText = getText(userMsg?.content);
     const title = userText.trim().split(/\s+/).slice(0, 3).join(" ");
     const namingText = JSON.stringify({ isNewTopic: true, title });
@@ -111,7 +131,7 @@ const DEFAULT_BYPASS_TEXT = "CLI Command Execution: Clear Terminal";
 /**
  * Create OpenAI standard format response
  */
-function createOpenAIResponse(model: any, text: any = DEFAULT_BYPASS_TEXT) {
+function createOpenAIResponse(model: string, text: string = DEFAULT_BYPASS_TEXT) {
   const id = `chatcmpl-${Date.now()}`;
   const created = Math.floor(Date.now() / 1000);
 
@@ -142,7 +162,11 @@ function createOpenAIResponse(model: any, text: any = DEFAULT_BYPASS_TEXT) {
  * Create non-streaming response with translation
  * Use translator to convert OpenAI → sourceFormat
  */
-function createNonStreamingResponse(sourceFormat: any, model: any, text: any): BypassResult {
+function createNonStreamingResponse(
+  sourceFormat: string,
+  model: string,
+  text?: string,
+): BypassResult {
   const openaiResponse = createOpenAIResponse(model, text);
 
   // If sourceFormat is OpenAI, return directly
@@ -196,7 +220,7 @@ function createNonStreamingResponse(sourceFormat: any, model: any, text: any): B
  * Create streaming response with translation
  * Use translator to convert OpenAI chunks → sourceFormat
  */
-function createStreamingResponse(sourceFormat: any, model: any, text: any): BypassResult {
+function createStreamingResponse(sourceFormat: string, model: string, text?: string): BypassResult {
   const openaiResponse = createOpenAIResponse(model, text);
   const state = initState(sourceFormat);
   state.model = model;
@@ -244,7 +268,7 @@ function createStreamingResponse(sourceFormat: any, model: any, text: any): Bypa
  * Merge translated chunks into final response object (for non-streaming)
  * Takes the last complete chunk as the final response
  */
-function mergeChunksToResponse(chunks: any, sourceFormat: any) {
+function mergeChunksToResponse(chunks: unknown[], sourceFormat: string) {
   if (!chunks || chunks.length === 0) {
     return createOpenAIResponse("unknown");
   }
@@ -255,18 +279,20 @@ function mergeChunksToResponse(chunks: any, sourceFormat: any) {
 
   // For Claude format, find the message_stop or final message
   if (sourceFormat === FORMATS.CLAUDE) {
-    const messageStop = chunks.find((c: any) => c.type === "message_stop");
+    const messageStop = chunks.find((c) => asRecord(c).type === "message_stop");
     if (messageStop) {
       // Reconstruct complete message from chunks
-      const _contentDelta = chunks.find((c: any) => c.type === "content_block_delta");
-      const messageDelta = chunks.find((c: any) => c.type === "message_delta");
-      const messageStart = chunks.find((c: any) => c.type === "message_start");
+      const _contentDelta = chunks.find((c) => asRecord(c).type === "content_block_delta");
+      const messageDelta = asRecord(chunks.find((c) => asRecord(c).type === "message_delta"));
+      const messageStart = asRecord(chunks.find((c) => asRecord(c).type === "message_start"));
 
-      if (messageStart?.message) {
+      if (messageStart.message) {
         finalChunk = messageStart.message;
         // Merge usage if available
-        if (messageDelta?.usage) {
-          finalChunk.usage = messageDelta.usage;
+        const finalChunkRecord = asRecord(finalChunk);
+        if (messageDelta.usage) {
+          finalChunkRecord.usage = messageDelta.usage;
+          finalChunk = finalChunkRecord;
         }
       }
     }
@@ -278,7 +304,7 @@ function mergeChunksToResponse(chunks: any, sourceFormat: any) {
 /**
  * Create OpenAI streaming chunks from complete response
  */
-function createOpenAIStreamingChunks(completeResponse: any) {
+function createOpenAIStreamingChunks(completeResponse: OpenAIResponse) {
   const { id, created, model, choices } = completeResponse;
   const content = choices[0].message.content;
 
