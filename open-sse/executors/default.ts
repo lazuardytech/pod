@@ -11,7 +11,7 @@ export class DefaultExecutor extends BaseExecutor {
     super(provider, (PROVIDERS as Record<string, any>)[provider] || PROVIDERS.openai);
   }
 
-  transformRequest(model: any, body: any, stream?: any, credentials?: any): any {
+  transformRequest(model: any, body: any, _stream?: any, _credentials?: any): any {
     let next = body;
     // For openai-compatible-* providers (DeepSeek, Ollama, custom local LLMs, etc.) that don't
     // natively support Structured Output, fall back: inject the schema into the system prompt
@@ -151,7 +151,6 @@ Respond ONLY with the JSON object, no other text.`;
           }
           Object.assign(headers, cached);
         }
-        credentials.apiKey;
         if (credentials.apiKey) {
           headers["x-api-key"] = credentials.apiKey;
         } else {
@@ -468,7 +467,7 @@ Respond ONLY with the JSON object, no other text.`;
     };
   }
 
-  async refreshKilocode(refreshToken: any, proxyOptions: any = null) {
+  async refreshKilocode(_refreshToken: any, _proxyOptions: any = null) {
     // Kilocode uses device code flow, no refresh token support
     return null;
   }

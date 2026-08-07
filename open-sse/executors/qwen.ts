@@ -92,7 +92,7 @@ export class QwenExecutor extends DefaultExecutor {
     return buildQwenUpstreamHeaders(credentials, stream);
   }
 
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(model: any, body: any, stream: any, _credentials: any) {
     let next = body && typeof body === "object" ? { ...body } : body;
     if (
       stream &&

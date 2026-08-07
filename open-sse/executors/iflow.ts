@@ -84,7 +84,7 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {object} credentials - Provider credentials
    * @returns {string} API URL
    */
-  buildUrl(model: any, stream: any, urlIndex: any = 0, credentials: any = null) {
+  buildUrl(_model: any, _stream: any, _urlIndex: any = 0, _credentials: any = null) {
     return this.config.baseUrl;
   }
 
@@ -96,7 +96,7 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {object} credentials - Provider credentials
    * @returns {object} Transformed body
    */
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(model: any, body: any, stream: any, _credentials: any) {
     // Inject stream_options for streaming requests to get usage data
     if (stream && body.messages && !body.stream_options) {
       body.stream_options = { include_usage: true };
