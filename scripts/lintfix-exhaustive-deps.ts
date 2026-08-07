@@ -57,7 +57,9 @@ for (const file of files) {
   }
 
   let lines = readFileSync(file, "utf8").split("\n");
-  lines = lines.filter((line) => !nextLineRe.test(line) && !disableRe.test(line) && !enableRe.test(line));
+  lines = lines.filter(
+    (line) => !nextLineRe.test(line) && !disableRe.test(line) && !enableRe.test(line),
+  );
 
   const hookLines: number[] = [];
   const seen = new Set<number>();

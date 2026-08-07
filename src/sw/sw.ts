@@ -400,7 +400,9 @@ function registerServiceWorker(): void {
         const keys = await caches.keys();
         // Evict every prior deploy's cache namespace so a stale app-shell
         // (old `_next/static` chunk hashes) is dropped on update.
-        await Promise.all(keys.filter((key) => !expected.has(key)).map((key) => caches.delete(key)));
+        await Promise.all(
+          keys.filter((key) => !expected.has(key)).map((key) => caches.delete(key)),
+        );
         await purgeExpiredImages();
         await sw.clients.claim();
         // ponytail: warm after claim so first navigation isn't blocked

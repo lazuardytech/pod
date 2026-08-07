@@ -7,7 +7,10 @@ const generatedHeader = `// Generated from ${sourceFile} by scripts/build-sw.ts;
 
 const source = await readFile(sourceFile, "utf8");
 const transpiler = new Bun.Transpiler({ loader: "ts", target: "browser" });
-const compiled = transpiler.transformSync(source).replace(/^\/\/\/ <reference .*$/gm, "").trimStart();
+const compiled = transpiler
+  .transformSync(source)
+  .replace(/^\/\/\/ <reference .*$/gm, "")
+  .trimStart();
 
 await mkdir(dirname(outputFile), { recursive: true });
 await writeFile(outputFile, `${generatedHeader}\n${compiled}`);
