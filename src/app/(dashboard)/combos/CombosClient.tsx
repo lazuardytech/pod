@@ -32,6 +32,100 @@ import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
+import type { ChangeEvent, CSSProperties, KeyboardEvent, MouseEvent, ReactNode } from "react";
+import type { DragEndEvent } from "@dnd-kit/core";
+
+type ComboStrategy = { fallbackStrategy?: string; [key: string]: unknown };
+
+type ComboItem = {
+  id: string;
+  name: string;
+  models?: string[];
+  kind?: string;
+  systemPrompt?: string;
+  contentFilterMessage?: string;
+  modelId?: string;
+  [key: string]: unknown;
+};
+
+type ActiveProvider = {
+  id: string;
+  provider: string;
+  name?: string | null;
+  [key: string]: unknown;
+};
+
+type ConfirmVariant = "default" | "danger" | "warning" | string;
+
+type ConfirmDialogState = {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: (() => void) | null;
+  variant: ConfirmVariant;
+};
+
+type ComboFormData = {
+  name: string;
+  models: string[];
+  systemPrompt?: string | null;
+  contentFilterMessage?: string | null;
+  modelId?: string | null;
+  [key: string]: unknown;
+};
+
+type TestStatus = "ok" | "error" | null;
+
+type ComboTestResults = Record<string, TestStatus>;
+
+interface SortableComboListProps {
+  combos: ComboItem[];
+  copied: string | null;
+  onCopy: (text: string, id: string) => void;
+  onEdit: (combo: ComboItem) => void;
+  onDelete: (id: string) => void;
+  comboStrategies: Record<string, ComboStrategy>;
+  onToggleRoundRobin: (comboName: string, enabled: boolean) => void;
+  onTest: (combo: ComboItem) => void;
+  testingComboId: string | null;
+  comboTestResults: ComboTestResults;
+  onDragEnd: (event: DragEndEvent) => void;
+}
+
+interface ComboCardProps {
+  combo: ComboItem;
+  copied: string | null;
+  onCopy: (text: string, id: string) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  roundRobinEnabled: boolean;
+  onToggleRoundRobin: (enabled: boolean) => void;
+  onTest: () => void;
+  isTesting: boolean;
+  testStatus?: TestStatus;
+  dragHandleProps?: Record<string, unknown>;
+}
+
+interface ModelItemProps {
+  index: number;
+  model: string;
+  isFirst: boolean;
+  isLast: boolean;
+  onEdit: (val: string) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+}
+
+interface ComboFormModalProps {
+  isOpen: boolean;
+  combo?: ComboItem | null;
+  onClose: () => void;
+  onSave: (data: ComboFormData) => void | Promise<void>;
+  activeProviders: ActiveProvider[];
+  kindFilter?: string | null;
+}
+
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 const CACHE_COMBOS = "combos:list";
@@ -40,47 +134,51 @@ const CACHE_SETTINGS = "combos:settings";
 const MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
 export default function CombosPage() {
-  const [combos, setCombos] = useState<any[]>([]);
+  const [combos, setCombos] = useState<ComboItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingCombo, setEditingCombo] = useState<any>(null);
-  const [activeProviders, setActiveProviders] = useState<any[]>([]);
-  const [comboStrategies, setComboStrategies] = useState<Record<string, any>>({});
+  const [editingCombo, setEditingCombo] = useState<ComboItem | null>(null);
+  const [activeProviders, setActiveProviders] = useState<ActiveProvider[]>([]);
+  const [comboStrategies, setComboStrategies] = useState<Record<string, ComboStrategy>>({});
   const { copied, copy } = useCopyToClipboard();
-  const [testingComboId, setTestingComboId] = useState<any>(null);
-  const [comboTestResults, setComboTestResults] = useState({});
+  const [testingComboId, setTestingComboId] = useState<string | null>(null);
+  const [comboTestResults, setComboTestResults] = useState<ComboTestResults>({});
   const [testingAll, setTestingAll] = useState(false);
 
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     title: "",
     message: "",
-    onConfirm: null as (() => void) | null,
+    onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
-    setConfirmDialog({ open: true, title, message, onConfirm, variant });
+  const openConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    variant: ConfirmVariant = "default",
+  ) => setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({
+    setConfirmDialog((prev) => ({
       ...prev,
       open: false,
-      onConfirm: null as (() => void) | null,
+      onConfirm: null,
     }));
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const applyCombos = (data: any) => {
-    const payload = data as { combos?: any[] };
-    setCombos((payload?.combos || []).filter((c: any) => !c.kind));
+  const applyCombos = (data: unknown) => {
+    const payload = data as { combos?: ComboItem[] };
+    setCombos((payload?.combos || []).filter((c) => !c.kind));
   };
-  const applyProviders = (data: any) => {
-    const payload = data as { connections?: any[] };
+  const applyProviders = (data: unknown) => {
+    const payload = data as { connections?: ActiveProvider[] };
     setActiveProviders(payload?.connections || []);
   };
-  const applySettings = (data: any) => {
-    const payload = data as { comboStrategies?: Record<string, any> };
+  const applySettings = (data: unknown) => {
+    const payload = data as { comboStrategies?: Record<string, ComboStrategy> };
     setComboStrategies(payload?.comboStrategies || {});
   };
 
@@ -119,7 +217,7 @@ export default function CombosPage() {
     }
   };
 
-  const handleCreate = async (data: any) => {
+  const handleCreate = async (data: ComboFormData) => {
     try {
       const res = await fetch("/api/combos", {
         method: "POST",
@@ -138,7 +236,7 @@ export default function CombosPage() {
     }
   };
 
-  const handleUpdate = async (id: any, data: any) => {
+  const handleUpdate = async (id: string, data: ComboFormData) => {
     try {
       const res = await fetch(`/api/combos/${id}`, {
         method: "PUT",
@@ -157,23 +255,23 @@ export default function CombosPage() {
     }
   };
 
-  const handleDelete = async (id: any) => {
+  const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/combos/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setCombos(combos.filter((c: any) => c.id !== id));
+        setCombos(combos.filter((c) => c.id !== id));
       }
     } catch (error) {
       console.error("Error deleting combo:", error);
     }
   };
 
-  const handleDragEnd = async (event: any) => {
-    const { active, over } = event ?? ({} as any);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = combos.findIndex((c: any) => c.id === active.id);
-    const newIndex = combos.findIndex((c: any) => c.id === over.id);
+    const oldIndex = combos.findIndex((c) => c.id === active.id);
+    const newIndex = combos.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(combos, oldIndex, newIndex);
     setCombos(reordered);
 
@@ -181,7 +279,7 @@ export default function CombosPage() {
       await fetch("/api/combos", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order: reordered.map((c: any) => c.id) }),
+        body: JSON.stringify({ order: reordered.map((c) => c.id) }),
       });
     } catch (error) {
       console.error("Error saving combo order:", error);
@@ -205,11 +303,11 @@ export default function CombosPage() {
         });
         const data = await res.json();
         const ok = data?.ok ? "ok" : "error";
-        setComboTestResults((prev: any) => ({ ...prev, [combo.id]: ok }));
+        setComboTestResults((prev) => ({ ...prev, [combo.id]: ok }));
         if (ok === "ok") passed++;
         else failed++;
       } catch {
-        setComboTestResults((prev: any) => ({ ...prev, [combo.id]: "error" }));
+        setComboTestResults((prev) => ({ ...prev, [combo.id]: "error" }));
         failed++;
       }
     }
@@ -219,10 +317,10 @@ export default function CombosPage() {
     else toast.warning(`${passed} passed, ${failed} failed`);
   };
 
-  const handleTestCombo = async (combo: any) => {
+  const handleTestCombo = async (combo: ComboItem) => {
     if (!combo.models?.length) return;
     setTestingComboId(combo.id);
-    setComboTestResults((prev: any) => ({ ...prev, [combo.id]: null }));
+    setComboTestResults((prev) => ({ ...prev, [combo.id]: null }));
     try {
       const model = combo.models[0];
       const res = await fetch("/api/models/test", {
@@ -231,18 +329,18 @@ export default function CombosPage() {
         body: JSON.stringify({ model }),
       });
       const data = await res.json();
-      setComboTestResults((prev: any) => ({
+      setComboTestResults((prev) => ({
         ...prev,
         [combo.id]: data?.ok ? "ok" : "error",
       }));
     } catch {
-      setComboTestResults((prev: any) => ({ ...prev, [combo.id]: "error" }));
+      setComboTestResults((prev) => ({ ...prev, [combo.id]: "error" }));
     } finally {
       setTestingComboId(null);
     }
   };
 
-  const handleToggleRoundRobin = async (comboName: any, enabled: any) => {
+  const handleToggleRoundRobin = async (comboName: string, enabled: boolean) => {
     try {
       const updated = { ...comboStrategies };
       if (enabled) {
@@ -324,8 +422,8 @@ export default function CombosPage() {
           combos={combos}
           copied={copied}
           onCopy={copy}
-          onEdit={(combo: any) => setEditingCombo(combo)}
-          onDelete={(id: any) =>
+          onEdit={(combo) => setEditingCombo(combo)}
+          onDelete={(id) =>
             openConfirm(
               "Delete Combo",
               "Are you sure you want to delete this combo?",
@@ -372,7 +470,9 @@ export default function CombosPage() {
         isOpen={!!editingCombo}
         combo={editingCombo}
         onClose={() => setEditingCombo(null)}
-        onSave={(data: any) => handleUpdate(editingCombo.id, data)}
+        onSave={(data: ComboFormData) => {
+          if (editingCombo) void handleUpdate(editingCombo.id, data);
+        }}
         activeProviders={activeProviders}
       />
     </div>
@@ -391,7 +491,7 @@ function SortableComboList({
   testingComboId,
   comboTestResults,
   onDragEnd,
-}: any) {
+}: SortableComboListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -399,9 +499,9 @@ function SortableComboList({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={combos.map((c: any) => c.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={combos.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-4">
-          {combos.map((combo: any) => (
+          {combos.map((combo) => (
             <SortableComboCard
               key={combo.id}
               combo={combo}
@@ -410,7 +510,7 @@ function SortableComboList({
               onEdit={() => onEdit(combo)}
               onDelete={() => onDelete(combo.id)}
               roundRobinEnabled={comboStrategies[combo.name]?.fallbackStrategy === "round-robin"}
-              onToggleRoundRobin={(enabled: any) => onToggleRoundRobin(combo.name, enabled)}
+              onToggleRoundRobin={(enabled) => onToggleRoundRobin(combo.name, enabled)}
               onTest={() => onTest(combo)}
               isTesting={testingComboId === combo.id}
               testStatus={comboTestResults[combo.id]}
@@ -422,7 +522,7 @@ function SortableComboList({
   );
 }
 
-function SortableComboCard(props: any) {
+function SortableComboCard(props: ComboCardProps) {
   const {
     attributes,
     listeners,
@@ -464,7 +564,7 @@ function ComboCard({
   isTesting,
   testStatus,
   dragHandleProps,
-}: any) {
+}: ComboCardProps) {
   return (
     <Card padding="sm" className="group">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -484,10 +584,10 @@ function ComboCard({
           <div className="min-w-0 flex-1">
             <code className="block truncate font-mono text-sm font-medium">{combo.name}</code>
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
-              {combo.models.length === 0 ? (
+              {(combo.models?.length ?? 0) === 0 ? (
                 <span className="text-xs text-text-muted italic">No models</span>
               ) : (
-                combo.models.slice(0, 3).map((model: any, index: any) => (
+                (combo.models || []).slice(0, 3).map((model, index) => (
                   <code
                     key={index}
                     className="max-w-full truncate rounded bg-black/5 px-1.5 py-0.5 font-mono text-[10px] text-text-muted dark:bg-white/5 sm:max-w-[220px]"
@@ -496,8 +596,10 @@ function ComboCard({
                   </code>
                 ))
               )}
-              {combo.models.length > 3 && (
-                <span className="text-[10px] text-text-muted">+{combo.models.length - 3} more</span>
+              {(combo.models?.length ?? 0) > 3 && (
+                <span className="text-[10px] text-text-muted">
+                  +{(combo.models?.length ?? 0) - 3} more
+                </span>
               )}
             </div>
           </div>
@@ -513,7 +615,7 @@ function ComboCard({
 
           <div className="grid grid-cols-4 gap-1 sm:flex">
             <button
-              onClick={(e: any) => {
+              onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 onTest?.();
               }}
@@ -542,7 +644,7 @@ function ComboCard({
               <span className="text-[10px] leading-tight">Test</span>
             </button>
             <button
-              onClick={(e: any) => {
+              onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 onCopy(combo.name, `combo-${combo.id}`);
               }}
@@ -579,7 +681,16 @@ function ComboCard({
 }
 
 // Inline editable model item
-function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onRemove }: any) {
+function ModelItem({
+  index,
+  model,
+  isFirst,
+  isLast,
+  onEdit,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: ModelItemProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(model);
 
@@ -590,7 +701,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
     setEditing(false);
   };
 
-  const handleKeyDown = (e: any) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") commit();
     if (e.key === "Escape") {
       setDraft(model);
@@ -611,7 +722,7 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
           aria-label="Model value"
           autoFocus
           value={draft}
-          onChange={(e: any) => setDraft(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
           className="min-w-0 flex-1 rounded border border-primary/40 bg-white px-1.5 py-0.5 font-mono text-xs text-text-main outline-none dark:bg-black/20"
@@ -668,10 +779,10 @@ function ComboFormModal({
   onSave,
   activeProviders,
   kindFilter = null,
-}: any) {
+}: ComboFormModalProps) {
   // Initialize state with combo values - key prop on parent handles reset on remount
   const [name, setName] = useState(combo?.name || "");
-  const [models, setModels] = useState(combo?.models || []);
+  const [models, setModels] = useState<string[]>(combo?.models || []);
   const [systemPrompt, setSystemPrompt] = useState(combo?.systemPrompt || "");
   const [modelId, setModelId] = useState(combo?.modelId || "");
   const [contentFilterMessage, setContentFilterMessage] = useState(
@@ -680,7 +791,7 @@ function ComboFormModal({
   const [showModelSelect, setShowModelSelect] = useState(false);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState("");
-  const [modelAliases, setModelAliases] = useState({});
+  const [modelAliases, setModelAliases] = useState<Record<string, string>>({});
 
   const fetchModalData = async () => {
     try {
@@ -697,7 +808,7 @@ function ComboFormModal({
     if (isOpen) fetchModalData();
   }, [isOpen]);
 
-  const validateName = (value: any) => {
+  const validateName = (value: string) => {
     if (!value.trim()) {
       setNameError("Name is required");
       return false;
@@ -710,38 +821,53 @@ function ComboFormModal({
     return true;
   };
 
-  const handleNameChange = (e: any) => {
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setName(value);
     if (value) validateName(value);
     else setNameError("");
   };
 
-  const handleAddModel = (model: any) => {
-    if (!models.includes(model.value)) {
-      setModels([...models, model.value]);
-    }
+  const handleAddModel = (model: unknown) => {
+    const value =
+      typeof model === "string"
+        ? model
+        : model && typeof model === "object" && "value" in model
+          ? String((model as { value?: unknown }).value ?? "")
+          : "";
+    if (!value || models.includes(value)) return;
+    setModels([...models, value]);
   };
 
-  const handleDeselectModel = (model: any) => {
-    setModels(models.filter((m: any) => m !== model.value));
+  const handleDeselectModel = (model: unknown) => {
+    const value =
+      model && typeof model === "object" && "value" in model
+        ? String((model as { value?: unknown }).value ?? "")
+        : String(model);
+    setModels(models.filter((m) => m !== value));
   };
 
-  const handleRemoveModel = (index: any) => {
-    setModels(models.filter((_: any, i: any) => i !== index));
+  const handleRemoveModel = (index: number) => {
+    setModels(models.filter((_, i) => i !== index));
   };
 
-  const handleMoveUp = (index: any) => {
+  const handleMoveUp = (index: number) => {
     if (index === 0) return;
     const newModels = [...models];
-    [newModels[index - 1], newModels[index]] = [newModels[index], newModels[index - 1]];
+    const a = newModels[index - 1]!;
+    const b = newModels[index]!;
+    newModels[index - 1] = b;
+    newModels[index] = a;
     setModels(newModels);
   };
 
-  const handleMoveDown = (index: any) => {
+  const handleMoveDown = (index: number) => {
     if (index === models.length - 1) return;
     const newModels = [...models];
-    [newModels[index], newModels[index + 1]] = [newModels[index + 1], newModels[index]];
+    const a = newModels[index]!;
+    const b = newModels[index + 1]!;
+    newModels[index] = b;
+    newModels[index + 1] = a;
     setModels(newModels);
   };
 
@@ -790,14 +916,14 @@ function ComboFormModal({
               </div>
             ) : (
               <div className="flex max-h-[55vh] min-w-0 flex-col gap-1 overflow-y-auto sm:max-h-[350px]">
-                {models.map((model: any, index: any) => (
+                {models.map((model, index) => (
                   <ModelItem
                     key={index}
                     index={index}
                     model={model}
                     isFirst={index === 0}
                     isLast={index === models.length - 1}
-                    onEdit={(newVal: any) => {
+                    onEdit={(newVal) => {
                       const updated = [...models];
                       updated[index] = newVal;
                       setModels(updated);
@@ -829,7 +955,7 @@ function ComboFormModal({
                 </>
               }
               value={modelId}
-              onChange={(e: any) => setModelId(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setModelId(e.target.value)}
               placeholder="e.g. melma-zen"
             />
             <p className="text-[10px] text-text-muted mt-0.5">
@@ -847,7 +973,7 @@ function ComboFormModal({
                 </>
               }
               value={contentFilterMessage}
-              onChange={(e: any) => setContentFilterMessage(e.target.value.slice(0, 2000))}
+              onChange={(e) => setContentFilterMessage(e.target.value.slice(0, 2000))}
               placeholder="e.g. I'm sorry, I can't help with that."
             />
             <p className="text-[10px] text-text-muted mt-0.5">
@@ -874,7 +1000,7 @@ function ComboFormModal({
             <textarea
               id="combo-system-prompt"
               value={systemPrompt}
-              onChange={(e: any) => setSystemPrompt(e.target.value.slice(0, SYSTEM_PROMPT_MAX))}
+              onChange={(e) => setSystemPrompt(e.target.value.slice(0, SYSTEM_PROMPT_MAX))}
               placeholder="Optional system prompt injected into every request routed through this combo (max 50000 chars)."
               rows={6}
               className="w-full rounded-[6px] border border-charcoal-grey bg-deep-slate px-3 py-2 text-[13px] text-porcelain placeholder:text-fog-grey outline-none focus:border-porcelain/30 resize-y min-h-[96px] transition-colors duration-100"

@@ -10,8 +10,45 @@ import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 
+type ParsedModelEntry = { providerId: string; model: string };
+
+type MediaCombo = {
+  id: string;
+  name: string;
+  kind?: string;
+  models?: string[];
+  [key: string]: unknown;
+};
+
+type ProviderConn = {
+  id: string;
+  provider: string;
+  name?: string | null;
+  isActive?: boolean;
+  [key: string]: unknown;
+};
+
+type ConfirmVariant = "default" | "danger" | "warning" | string;
+
+type ConfirmDialogState = {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: (() => void) | null;
+  variant: ConfirmVariant;
+};
+
+type TestResultState = {
+  json?: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  latencyMs?: number;
+};
+
+type ApiKeyRow = { key?: string; isActive?: boolean };
+
 // Parse "providerId/model" or just "providerId" → { providerId, model }
-function parseModelEntry(entry: any): any {
+function parseModelEntry(entry: unknown): ParsedModelEntry {
   if (typeof entry !== "string") return { providerId: "", model: "" };
   const idx = entry.indexOf("/");
   if (idx < 0) return { providerId: entry, model: "" };
@@ -20,78 +57,82 @@ function parseModelEntry(entry: any): any {
 
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
-const KIND_LABELS: Record<string, any> = {
+const KIND_LABELS: Record<string, string> = {
   webSearch: "Web Search",
   webFetch: "Web Fetch",
   image: "Text to Image",
   tts: "Text To Speech",
 };
 
-const EXAMPLE_PATHS: Record<string, any> = {
+const EXAMPLE_PATHS: Record<string, string> = {
   webSearch: "/v1/search",
   webFetch: "/v1/web/fetch",
   image: "/v1/images/generations",
   tts: "/v1/audio/speech",
 };
 
-const EXAMPLE_BODIES: Record<string, any> = {
-  webSearch: (n: any): any => ({
+const EXAMPLE_BODIES: Record<string, (n: string) => Record<string, unknown>> = {
+  webSearch: (n) => ({
     model: n,
     query: "What is the latest news about AI?",
     search_type: "web",
     max_results: 5,
   }),
-  webFetch: (n: any): any => ({ model: n, url: "https://example.com", format: "markdown" }),
-  image: (n: any): any => ({
+  webFetch: (n) => ({ model: n, url: "https://example.com", format: "markdown" }),
+  image: (n) => ({
     model: n,
     prompt: "A cute cat playing piano",
     n: 1,
     size: "1024x1024",
   }),
-  tts: (n: any): any => ({ model: n, input: "Hello, this is a test.", voice: "alloy" }),
+  tts: (n) => ({ model: n, input: "Hello, this is a test.", voice: "alloy" }),
 };
 
 // Map combo.kind → listing route to go back to
-function getListingHref(kind: any): any {
+function getListingHref(kind: string): string {
   if (kind === "webSearch" || kind === "webFetch") return "/media-providers/web";
   return `/media-providers/${kind}`;
 }
 
-export default function ComboDetailPage(): any {
+export default function ComboDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [combo, setCombo] = useState<any>(null);
+  const [combo, setCombo] = useState<MediaCombo | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
-  const [providers, setProviders] = useState<any[]>([]);
+  const [providers, setProviders] = useState<string[]>([]);
   const [roundRobin, setRoundRobin] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+  const [testResult, setTestResult] = useState<TestResultState | null>(null);
   const [testError, setTestError] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [connections, setConnections] = useState<any[]>([]);
-  const [modelAliases, setModelAliases] = useState({});
+  const [connections, setConnections] = useState<ProviderConn[]>([]);
+  const [modelAliases, setModelAliases] = useState<Record<string, string>>({});
 
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     title: "",
     message: "",
-    onConfirm: null as (() => void) | null,
+    onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default"): any =>
-    setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = (): any =>
-    setConfirmDialog((prev: any): any => ({
+  const openConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    variant: ConfirmVariant = "default",
+  ) => setConfirmDialog({ open: true, title, message, onConfirm, variant });
+  const closeConfirm = () =>
+    setConfirmDialog((prev) => ({
       ...prev,
       open: false,
-      onConfirm: null as (() => void) | null,
+      onConfirm: null,
     }));
 
-  const fetchAll = async (): Promise<any> => {
+  const fetchAll = async () => {
     try {
       const [comboRes, settingsRes, logsRes, keysRes, connsRes, aliasesRes] = await Promise.all([
         fetch(`/api/combos/${id}`, { cache: "no-store" }),
@@ -104,7 +145,7 @@ export default function ComboDetailPage(): any {
       if (aliasesRes.ok) setModelAliases((await aliasesRes.json()).aliases || {});
       if (keysRes.ok) {
         const k = await keysRes.json();
-        setApiKey((k.keys || []).find((x: any): any => x.isActive !== false)?.key || "");
+        setApiKey(((k.keys || []) as ApiKeyRow[]).find((x) => x.isActive !== false)?.key || "");
       }
       if (connsRes.ok) setConnections((await connsRes.json()).connections || []);
       if (!comboRes.ok) {
@@ -112,15 +153,17 @@ export default function ComboDetailPage(): any {
         setLoading(false);
         return;
       }
-      const c = await comboRes.json();
+      const c = (await comboRes.json()) as MediaCombo;
       setCombo(c);
       setName(c.name);
-      setProviders(c.models || []);
+      setProviders((c.models as string[]) || []);
       const s = settingsRes.ok ? await settingsRes.json() : {};
       setRoundRobin(s.comboStrategies?.[c.name]?.fallbackStrategy === "round-robin");
       const allLogs = logsRes.ok ? await logsRes.json() : [];
       setLogs(
-        allLogs.filter((l: any): any => typeof l === "string" && l.includes(c.name)).slice(0, 50),
+        (allLogs as unknown[])
+          .filter((l): l is string => typeof l === "string" && l.includes(c.name))
+          .slice(0, 50),
       );
     } catch {
       /* noop */
@@ -129,12 +172,12 @@ export default function ComboDetailPage(): any {
   };
 
   /* eslint-disable react-hooks/exhaustive-deps */
-  useEffect((): any => {
+  useEffect(() => {
     fetchAll();
   }, [id]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
-  const validateName = (v: any): any => {
+  const validateName = (v: string): boolean => {
     if (!v.trim()) {
       setNameError("Name is required");
       return false;
@@ -147,7 +190,7 @@ export default function ComboDetailPage(): any {
     return true;
   };
 
-  const saveCombo = async (patch: any): Promise<any> => {
+  const saveCombo = async (patch: Record<string, unknown>): Promise<boolean> => {
     const res = await fetch(`/api/combos/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -161,45 +204,59 @@ export default function ComboDetailPage(): any {
     return true;
   };
 
-  const handleSaveName = async (): Promise<any> => {
+  const handleSaveName = async () => {
     if (!validateName(name)) return;
-    if (name === combo.name) return;
+    if (!combo || name === combo.name) return;
     const ok = await saveCombo({ name });
     if (ok) await fetchAll();
   };
 
-  const handleAddModel = async (model: any): Promise<any> => {
-    const value = model?.value || model;
+  const handleAddModel = async (model: unknown) => {
+    const value =
+      typeof model === "string"
+        ? model
+        : model && typeof model === "object" && "value" in model
+          ? String((model as { value?: unknown }).value ?? "")
+          : "";
     if (!value || providers.includes(value)) return;
     const next = [...providers, value];
     setProviders(next);
     await saveCombo({ models: next });
   };
 
-  const handleDeselectModel = async (model: any): Promise<any> => {
-    const value = model?.value || model;
+  const handleDeselectModel = async (model: unknown) => {
+    const value =
+      typeof model === "string"
+        ? model
+        : model && typeof model === "object" && "value" in model
+          ? String((model as { value?: unknown }).value ?? "")
+          : "";
     if (!value || !providers.includes(value)) return;
-    const next = providers.filter((p: any): any => p !== value);
+    const next = providers.filter((p) => p !== value);
     setProviders(next);
     await saveCombo({ models: next });
   };
 
-  const handleRemoveProvider = async (idx: any): Promise<any> => {
-    const next = providers.filter((_: any, i: any): any => i !== idx);
+  const handleRemoveProvider = async (idx: number) => {
+    const next = providers.filter((_, i) => i !== idx);
     setProviders(next);
     await saveCombo({ models: next });
   };
 
-  const handleMove = async (idx: any, dir: any): Promise<any> => {
+  const handleMove = async (idx: number, dir: number) => {
     const next = [...providers];
     const swap = idx + dir;
     if (swap < 0 || swap >= next.length) return;
-    [next[idx], next[swap]] = [next[swap], next[idx]];
+    const a = next[idx]!;
+    const b = next[swap]!;
+    next[idx] = b;
+    next[swap] = a;
     setProviders(next);
     await saveCombo({ models: next });
   };
 
-  const handleToggleRoundRobin = async (enabled: any): Promise<any> => {
+  const handleToggleRoundRobin = async (enabled: boolean) => {
+    if (!combo) return;
     setRoundRobin(enabled);
     const settingsRes = await fetch("/api/settings", { cache: "no-store" });
     const s = settingsRes.ok ? await settingsRes.json() : {};
@@ -213,12 +270,14 @@ export default function ComboDetailPage(): any {
     });
   };
 
-  const handleDelete = async (): Promise<any> => {
+  const handleDelete = async () => {
+    if (!combo?.kind) return;
     const res = await fetch(`/api/combos/${id}`, { method: "DELETE" });
     if (res.ok) router.push(getListingHref(combo.kind));
   };
 
-  const handleTest = async (): Promise<any> => {
+  const handleTest = async () => {
+    if (!combo?.kind) return;
     setTesting(true);
     setTestResult(null);
     setTestError("");
@@ -235,8 +294,10 @@ export default function ComboDetailPage(): any {
     const start = Date.now();
     try {
       const path = EXAMPLE_PATHS[combo.kind];
-      const body = EXAMPLE_BODIES[combo.kind](combo.name);
-      const headers: Record<string, any> = { "Content-Type": "application/json" };
+      const bodyFn = EXAMPLE_BODIES[combo.kind];
+      if (!path || !bodyFn) return;
+      const body = bodyFn(combo.name);
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       const res = await fetch(`/api${path}`, {
         method: "POST",
@@ -245,7 +306,7 @@ export default function ComboDetailPage(): any {
       });
       const latencyMs = Date.now() - start;
       if (!res.ok) {
-        const d = await res.json().catch((): any => ({}));
+        const d = await res.json().catch(() => ({}));
         setTestError(d?.error?.message || d?.error || `HTTP ${res.status}`);
         setTestResult({ json: JSON.stringify(d, null, 2), latencyMs });
         return;
@@ -271,17 +332,17 @@ export default function ComboDetailPage(): any {
         : first?.url || "";
       setTestResult({ json: JSON.stringify(maskB64(data), null, 2), imageUrl, latencyMs });
     } catch (e) {
-      setTestError((e as any).message || "Network error");
+      setTestError(e instanceof Error ? e.message : "Network error");
     }
     setTesting(false);
   };
 
   // Mask large b64_json strings to keep JSON view readable
-  function maskB64(obj: any): any {
+  function maskB64(obj: unknown): unknown {
     if (!obj || typeof obj !== "object") return obj;
     if (Array.isArray(obj)) return obj.map(maskB64);
-    const out: Record<string, any> = {};
-    for (const [k, v] of Object.entries(obj)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
       out[k] =
         k === "b64_json" && typeof v === "string" && v.length > 100
           ? `<${v.length} chars base64>`
@@ -294,16 +355,16 @@ export default function ComboDetailPage(): any {
   if (!combo) return notFound();
 
   const kindLabel =
-    KIND_LABELS[combo.kind] ||
-    MEDIA_PROVIDER_KINDS.find((k: any): any => k.id === combo.kind)?.label ||
+    (combo.kind && KIND_LABELS[combo.kind]) ||
+    MEDIA_PROVIDER_KINDS.find((k) => k.id === combo.kind)?.label ||
     "Combo";
-  const examplePath = EXAMPLE_PATHS[combo.kind];
-  const exampleBody =
-    combo.kind && EXAMPLE_BODIES[combo.kind] ? EXAMPLE_BODIES[combo.kind](combo.name) : null;
+  const examplePath = combo.kind ? EXAMPLE_PATHS[combo.kind] : undefined;
+  const exampleBodyFn = combo.kind ? EXAMPLE_BODIES[combo.kind] : undefined;
+  const exampleBody = exampleBodyFn ? exampleBodyFn(combo.name) : null;
   const curlExample = examplePath
     ? `curl -X POST http://localhost:20128${examplePath} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${apiKey || "YOUR_KEY"}" \\\n  -d '${JSON.stringify(exampleBody)}'`
     : "";
-  const backHref = getListingHref(combo.kind);
+  const backHref = getListingHref(combo.kind || "");
 
   return (
     <div className="flex flex-col gap-6">
@@ -324,7 +385,7 @@ export default function ComboDetailPage(): any {
         <Button
           variant="outline"
           icon="delete"
-          onClick={(): any =>
+          onClick={() =>
             openConfirm(
               "Delete Combo",
               `Delete combo "${combo?.name}"? This cannot be undone.`,
@@ -346,7 +407,7 @@ export default function ComboDetailPage(): any {
             <Input
               label="Combo Name"
               value={name}
-              onChange={(e: any): any => {
+              onChange={(e) => {
                 setName(e.target.value);
                 validateName(e.target.value);
               }}
@@ -376,7 +437,7 @@ export default function ComboDetailPage(): any {
               Tried in order (top-down) or rotated when round-robin is on.
             </p>
           </div>
-          <Button size="sm" icon="add" onClick={(): any => setShowPicker(true)}>
+          <Button size="sm" icon="add" onClick={() => setShowPicker(true)}>
             Add Provider
           </Button>
         </div>
@@ -386,7 +447,7 @@ export default function ComboDetailPage(): any {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {providers.map((entry: any, idx: any): any => {
+            {providers.map((entry, idx) => {
               const { providerId, model } = parseModelEntry(entry);
               const p = AI_PROVIDERS[providerId];
               return (
@@ -413,7 +474,7 @@ export default function ComboDetailPage(): any {
                   </div>
                   <div className="flex items-center gap-0.5">
                     <button
-                      onClick={(): any => handleMove(idx, -1)}
+                      onClick={() => handleMove(idx, -1)}
                       disabled={idx === 0}
                       className={`p-1 rounded ${idx === 0 ? "text-text-muted/20" : "text-text-muted hover:text-primary hover:bg-black/5"}`}
                       title="Move up"
@@ -421,7 +482,7 @@ export default function ComboDetailPage(): any {
                       <LucideIcon name="arrow_upward" className="text-[16px]" />
                     </button>
                     <button
-                      onClick={(): any => handleMove(idx, 1)}
+                      onClick={() => handleMove(idx, 1)}
                       disabled={idx === providers.length - 1}
                       className={`p-1 rounded ${idx === providers.length - 1 ? "text-text-muted/20" : "text-text-muted hover:text-primary hover:bg-black/5"}`}
                       title="Move down"
@@ -429,7 +490,7 @@ export default function ComboDetailPage(): any {
                       <LucideIcon name="arrow_downward" className="text-[16px]" />
                     </button>
                     <button
-                      onClick={(): any => handleRemoveProvider(idx)}
+                      onClick={() => handleRemoveProvider(idx)}
                       className="p-1 rounded text-text-muted hover:text-red-500 hover:bg-red-500/10"
                       title="Remove"
                     >
@@ -528,7 +589,7 @@ export default function ComboDetailPage(): any {
 
       <ModelSelectModal
         isOpen={showPicker}
-        onClose={(): any => setShowPicker(false)}
+        onClose={() => setShowPicker(false)}
         onSelect={handleAddModel}
         onDeselect={handleDeselectModel}
         activeProviders={connections}
@@ -543,7 +604,7 @@ export default function ComboDetailPage(): any {
         isOpen={confirmDialog.open}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        onConfirm={(): any => {
+        onConfirm={() => {
           confirmDialog.onConfirm?.();
           closeConfirm();
         }}

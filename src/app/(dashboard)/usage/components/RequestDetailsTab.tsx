@@ -13,22 +13,76 @@ import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { cn } from "@/shared/utils/cn";
 
-const OFFLINE_USAGE_PROVIDERS_CACHE_KEY: any = "usage:providers:list";
-const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY: any = "usage:provider-nodes";
-const OFFLINE_USAGE_DETAILS_CACHE_KEY: any = "usage:request-details";
-const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
-const DEFAULT_PAGE_SIZE: any = 20;
+import type { ReactNode } from "react";
 
-let providerNameCache: any = null;
-let providerNodesCache: any = null;
+type ProviderNameCache = Record<string, string | { name?: string } | undefined>;
+
+type UsageProvider = { id: string; name: string };
+
+type TokenInfo = {
+  prompt_tokens?: number;
+  input_tokens?: number;
+  cached_tokens?: number;
+  cache_read_input_tokens?: number;
+  completion_tokens?: number;
+  output_tokens?: number;
+};
+
+type LatencyInfo = { ttft?: number; total?: number };
+
+type RequestDetail = {
+  id?: string;
+  timestamp?: string | number;
+  model?: string;
+  provider?: string;
+  status?: string;
+  tokens?: TokenInfo;
+  latency?: LatencyInfo;
+  request?: unknown;
+  providerRequest?: unknown;
+  providerResponse?: unknown;
+  response?: unknown;
+  error?: unknown;
+  [key: string]: unknown;
+};
+
+type PaginationState = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+type FiltersState = {
+  provider: string;
+  startDate: Date | null;
+  endDate: Date | null;
+};
+
+interface CollapsibleSectionProps {
+  title: string;
+  children?: ReactNode;
+  defaultOpen?: boolean;
+  icon?: string | null;
+}
+
+const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:list";
+const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY = "usage:provider-nodes";
+const OFFLINE_USAGE_DETAILS_CACHE_KEY = "usage:request-details";
+const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
+const DEFAULT_PAGE_SIZE = 20;
+
+let providerNameCache: ProviderNameCache | null = null;
+let providerNodesCache: Record<string, string> | null = null;
 
 async function fetchProviderNames() {
   if (providerNameCache && providerNodesCache) {
     return { providerNameCache, providerNodesCache, source: "memory" };
   }
 
-  const applyNodesData: any = (nodesData: any) => {
-    const nodes: any = nodesData?.nodes || [];
+  const applyNodesData = (nodesData: unknown) => {
+    const payload = nodesData as { nodes?: Array<{ id: string; name: string }> };
+    const nodes = payload?.nodes || [];
     providerNodesCache = {};
     for (const node of nodes) {
       providerNodesCache[node.id] = node.name;
@@ -39,7 +93,7 @@ async function fetchProviderNames() {
     };
   };
 
-  const result: any = await loadJsonStaleWhileRevalidate({
+  const result = await loadJsonStaleWhileRevalidate({
     url: "/api/provider-nodes",
     cacheKey: OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY,
     maxStaleMs: OFFLINE_MAX_STALE_MS,
@@ -50,11 +104,11 @@ async function fetchProviderNames() {
   return { providerNameCache, providerNodesCache, source: result.source };
 }
 
-function getProviderName(providerId: any, cache: any) {
+function getProviderName(providerId: string | undefined, cache: ProviderNameCache | null) {
   if (!providerId) return providerId;
   if (!cache) return providerId;
 
-  const cached: any = cache[providerId];
+  const cached = cache[providerId];
 
   if (typeof cached === "string") {
     return cached;
@@ -64,12 +118,17 @@ function getProviderName(providerId: any, cache: any) {
     return cached.name;
   }
 
-  const providerConfig: any = getProviderByAlias(providerId) || AI_PROVIDERS[providerId];
+  const providerConfig = getProviderByAlias(providerId) || AI_PROVIDERS[providerId];
   return providerConfig?.name || providerId;
 }
 
-function CollapsibleSection({ title, children, defaultOpen = false, icon = null }: any) {
-  const [isOpen, setIsOpen]: any = useState(defaultOpen);
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+  icon = null,
+}: CollapsibleSectionProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
     <div className="border border-black/5 dark:border-white/5 rounded-lg overflow-hidden">
@@ -96,55 +155,59 @@ function CollapsibleSection({ title, children, defaultOpen = false, icon = null 
   );
 }
 
-function getInputTokens(tokens: any) {
-  const prompt: any = tokens?.prompt_tokens || tokens?.input_tokens || 0;
-  const cache: any = tokens?.cached_tokens || tokens?.cache_read_input_tokens || 0;
+function getInputTokens(tokens?: TokenInfo) {
+  const prompt = tokens?.prompt_tokens || tokens?.input_tokens || 0;
+  const cache = tokens?.cached_tokens || tokens?.cache_read_input_tokens || 0;
   return prompt < cache ? cache : prompt;
 }
 
 export default function RequestDetailsTab() {
-  const [details, setDetails]: any = useState<any[]>([]);
-  const [fetchError, setFetchError]: any = useState<any>(null);
-  const [pagination, setPagination]: any = useState({
+  const [details, setDetails] = useState<RequestDetail[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
     pageSize: 20,
     totalItems: 0,
     totalPages: 0,
   });
-  const [loading, setLoading]: any = useState(false);
-  const [selectedDetail, setSelectedDetail]: any = useState<any>(null);
-  const [isDrawerOpen, setIsDrawerOpen]: any = useState(false);
-  const [providers, setProviders]: any = useState<any[]>([]);
-  const [providerNameCache, setProviderNameCache]: any = useState<any>(null);
-  const [filters, setFilters]: any = useState({
+  const [loading, setLoading] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<RequestDetail | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [providers, setProviders] = useState<UsageProvider[]>([]);
+  const [providerNameCache, setProviderNameCache] = useState<ProviderNameCache | null>(null);
+  const [filters, setFilters] = useState<FiltersState>({
     provider: "",
     startDate: null,
     endDate: null,
   });
-  const offlineNoticeShownRef: any = useRef(false);
+  const offlineNoticeShownRef = useRef(false);
 
-  const notifyOfflineCache: any = useCallback(() => {
+  const notifyOfflineCache = useCallback(() => {
     if (offlineNoticeShownRef.current) return;
     offlineNoticeShownRef.current = true;
     toast.info("Network unavailable. Showing cached request data.");
   }, []);
 
-  const clearOfflineCacheNotice: any = useCallback(() => {
+  const clearOfflineCacheNotice = useCallback(() => {
     offlineNoticeShownRef.current = false;
   }, []);
 
-  const fetchProviders: any = useCallback(async () => {
+  const fetchProviders = useCallback(async () => {
     try {
-      const [providersResult, namesResult]: any = await Promise.allSettled([
+      const [providersResult, namesResult] = await Promise.allSettled([
         loadJsonStaleWhileRevalidate({
           url: "/api/usage/providers",
           cacheKey: OFFLINE_USAGE_PROVIDERS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
           onCacheData: (data: unknown) => {
-            setProviders((data as { providers?: unknown[] })?.providers || []);
+            setProviders(
+              ((data as { providers?: UsageProvider[] })?.providers || []) as UsageProvider[],
+            );
           },
           onFreshData: (data: unknown) => {
-            setProviders((data as { providers?: unknown[] })?.providers || []);
+            setProviders(
+              ((data as { providers?: UsageProvider[] })?.providers || []) as UsageProvider[],
+            );
           },
         }),
         fetchProviderNames(),
@@ -154,7 +217,7 @@ export default function RequestDetailsTab() {
         setProviderNameCache(namesResult.value.providerNameCache);
       }
 
-      const sources: any = [];
+      const sources: Array<string | undefined> = [];
       if (providersResult.status === "fulfilled") sources.push(providersResult.value?.source);
       if (namesResult.status === "fulfilled") sources.push(namesResult.value?.source);
 
@@ -165,18 +228,19 @@ export default function RequestDetailsTab() {
     }
   }, [clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const applyRequestDetailsData: any = useCallback((data: any) => {
-    setDetails(data?.details || []);
-    if (data?.pagination) {
-      setPagination((prev: any) => ({ ...prev, ...data.pagination }));
+  const applyRequestDetailsData = useCallback((data: unknown) => {
+    const payload = data as { details?: RequestDetail[]; pagination?: Partial<PaginationState> };
+    setDetails(payload?.details || []);
+    if (payload?.pagination) {
+      setPagination((prev) => ({ ...prev, ...payload.pagination }));
     }
   }, []);
 
-  const fetchDetails: any = useCallback(async () => {
+  const fetchDetails = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
 
-    const isDefaultSnapshot: any =
+    const isDefaultSnapshot =
       pagination.page === 1 &&
       pagination.pageSize === DEFAULT_PAGE_SIZE &&
       !filters.provider &&
@@ -184,7 +248,7 @@ export default function RequestDetailsTab() {
       !filters.endDate;
 
     try {
-      const params: any = new URLSearchParams({
+      const params = new URLSearchParams({
         page: pagination.page.toString(),
         pageSize: pagination.pageSize.toString(),
       });
@@ -193,7 +257,7 @@ export default function RequestDetailsTab() {
       if (filters.endDate) params.append("endDate", filters.endDate.toISOString());
 
       if (isDefaultSnapshot) {
-        const result: any = await loadJsonStaleWhileRevalidate({
+        const result = await loadJsonStaleWhileRevalidate({
           url: `/api/usage/request-details?${params.toString()}`,
           cacheKey: OFFLINE_USAGE_DETAILS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
@@ -205,17 +269,17 @@ export default function RequestDetailsTab() {
         return;
       }
 
-      const res: any = await fetch(`/api/usage/request-details?${params.toString()}`);
+      const res = await fetch(`/api/usage/request-details?${params.toString()}`);
       if (!res.ok) {
-        const err: any = await res.json().catch(() => ({}));
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const data: any = await res.json();
+      const data = await res.json();
       applyRequestDetailsData(data);
       clearOfflineCacheNotice();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to fetch request details:", error);
-      setFetchError((error as any).message || "Failed to fetch request details");
+      setFetchError(error instanceof Error ? error.message : "Failed to fetch request details");
     } finally {
       setLoading(false);
     }
@@ -236,20 +300,20 @@ export default function RequestDetailsTab() {
     fetchDetails();
   }, [fetchDetails]);
 
-  const handleViewDetail: any = (detail: any) => {
+  const handleViewDetail = (detail: RequestDetail) => {
     setSelectedDetail(detail);
     setIsDrawerOpen(true);
   };
 
-  const handlePageChange: any = (newPage: any) => {
-    setPagination((prev: any) => ({ ...prev, page: newPage }));
+  const handlePageChange = (newPage: number) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
-  const handlePageSizeChange: any = (newPageSize: any) => {
-    setPagination((prev: any) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPagination((prev) => ({ ...prev, pageSize: newPageSize, page: 1 }));
   };
 
-  const handleClearFilters: any = () => {
+  const handleClearFilters = () => {
     setFilters({ provider: "", startDate: null, endDate: null });
   };
 
@@ -264,7 +328,7 @@ export default function RequestDetailsTab() {
             <Select
               id="provider-filter"
               value={filters.provider || "__all__"}
-              onChange={(e: any) =>
+              onChange={(e) =>
                 setFilters({
                   ...filters,
                   provider: e.target.value === "__all__" ? "" : e.target.value,
@@ -272,7 +336,7 @@ export default function RequestDetailsTab() {
               }
               options={[
                 { value: "__all__", label: "All Providers" },
-                ...providers.map((provider: any) => ({ value: provider.id, label: provider.name })),
+                ...providers.map((provider) => ({ value: provider.id, label: provider.name })),
               ]}
               placeholder="Select provider"
               className="w-full min-w-0"
@@ -288,7 +352,7 @@ export default function RequestDetailsTab() {
             <label className="text-sm font-medium text-text-main">Start Date</label>
             <DatePicker
               value={filters.startDate}
-              onChange={(date: any) => setFilters({ ...filters, startDate: date })}
+              onChange={(date: Date | null) => setFilters({ ...filters, startDate: date })}
               placeholder="Pick start date"
             />
           </div>
@@ -297,7 +361,7 @@ export default function RequestDetailsTab() {
             <label className="text-sm font-medium text-text-main">End Date</label>
             <DatePicker
               value={filters.endDate}
-              onChange={(date: any) => setFilters({ ...filters, endDate: date })}
+              onChange={(date: Date | null) => setFilters({ ...filters, endDate: date })}
               placeholder="Pick end date"
             />
           </div>
@@ -365,14 +429,14 @@ export default function RequestDetailsTab() {
                   </td>
                 </tr>
               ) : (
-                details.map((detail: any, index: any) => (
+                details.map((detail, index) => (
                   <tr
                     key={`${detail.id}-${index}`}
                     onClick={() => handleViewDetail(detail)}
                     className="border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
                   >
                     <td className="whitespace-nowrap p-4 text-sm text-text-main">
-                      {new Date(detail.timestamp).toLocaleString()}
+                      {new Date(detail.timestamp ?? Date.now()).toLocaleString()}
                     </td>
                     <td className="max-w-[260px] truncate p-4 font-mono text-sm text-text-main">
                       {detail.model}
@@ -434,7 +498,7 @@ export default function RequestDetailsTab() {
               <div>
                 <span className="text-text-muted">Timestamp:</span>{" "}
                 <span className="text-text-main">
-                  {new Date(selectedDetail.timestamp).toLocaleString()}
+                  {new Date(selectedDetail.timestamp ?? Date.now()).toLocaleString()}
                 </span>
               </div>
               <div>
@@ -486,47 +550,56 @@ export default function RequestDetailsTab() {
                 </pre>
               </CollapsibleSection>
 
-              {selectedDetail.providerRequest && (
+              {selectedDetail.providerRequest != null ? (
                 <CollapsibleSection title="2. Provider Request (Translated)" icon="translate">
                   <pre className="max-h-[300px] max-w-full overflow-auto rounded-lg border border-black/5 bg-black/5 p-3 font-mono text-xs text-text-main dark:border-white/5 dark:bg-white/5 sm:p-4">
                     {JSON.stringify(selectedDetail.providerRequest, null, 2)}
                   </pre>
                 </CollapsibleSection>
-              )}
+              ) : null}
 
-              {selectedDetail.providerResponse && (
+              {selectedDetail.providerResponse != null ? (
                 <CollapsibleSection title="3. Provider Response (Raw)" icon="data_object">
                   <pre className="max-h-[300px] max-w-full overflow-auto rounded-lg border border-black/5 bg-black/5 p-3 font-mono text-xs text-text-main dark:border-white/5 dark:bg-white/5 sm:p-4">
                     {typeof selectedDetail.providerResponse === "object"
                       ? JSON.stringify(selectedDetail.providerResponse, null, 2)
-                      : selectedDetail.providerResponse}
+                      : String(selectedDetail.providerResponse ?? "")}
                   </pre>
                 </CollapsibleSection>
-              )}
+              ) : null}
 
               <CollapsibleSection
                 title="4. Client Response (Final)"
                 defaultOpen={true}
                 icon="output"
               >
-                {selectedDetail.response?.thinking && (
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-text-main mb-2 flex items-center gap-2 text-xs uppercase tracking-wide opacity-70">
-                      <LucideIcon name="psychology" className="text-[16px]" />
-                      Thinking Process
-                    </h4>
-                    <pre className="max-h-[200px] max-w-full overflow-auto rounded-lg border border-amber-200 bg-amber-50 p-3 font-mono text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 sm:p-4">
-                      {selectedDetail.response.thinking}
-                    </pre>
-                  </div>
-                )}
+                {(() => {
+                  const resp = selectedDetail.response as
+                    | { thinking?: string; content?: string }
+                    | undefined;
+                  return (
+                    <>
+                      {resp?.thinking && (
+                        <div className="mb-4">
+                          <h4 className="font-semibold text-text-main mb-2 flex items-center gap-2 text-xs uppercase tracking-wide opacity-70">
+                            <LucideIcon name="psychology" className="text-[16px]" />
+                            Thinking Process
+                          </h4>
+                          <pre className="max-h-[200px] max-w-full overflow-auto rounded-lg border border-amber-200 bg-amber-50 p-3 font-mono text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100 sm:p-4">
+                            {resp.thinking}
+                          </pre>
+                        </div>
+                      )}
 
-                <h4 className="font-semibold text-text-main mb-2 text-xs uppercase tracking-wide opacity-70">
-                  Content
-                </h4>
-                <pre className="max-h-[300px] max-w-full overflow-auto rounded-lg border border-black/5 bg-black/5 p-3 font-mono text-xs text-text-main dark:border-white/5 dark:bg-white/5 sm:p-4">
-                  {selectedDetail.response?.content || "[No content]"}
-                </pre>
+                      <h4 className="font-semibold text-text-main mb-2 text-xs uppercase tracking-wide opacity-70">
+                        Content
+                      </h4>
+                      <pre className="max-h-[300px] max-w-full overflow-auto rounded-lg border border-black/5 bg-black/5 p-3 font-mono text-xs text-text-main dark:border-white/5 dark:bg-white/5 sm:p-4">
+                        {resp?.content || "[No content]"}
+                      </pre>
+                    </>
+                  );
+                })()}
               </CollapsibleSection>
             </div>
           </div>
