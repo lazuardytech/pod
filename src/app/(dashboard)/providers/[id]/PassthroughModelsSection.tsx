@@ -1,9 +1,11 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
+
+type TestStatus = "ok" | "error" | undefined;
 
 function PassthroughModelRow({
   modelId,
@@ -14,7 +16,16 @@ function PassthroughModelRow({
   onTest = undefined,
   testStatus = undefined,
   isTesting = false,
-}: any) {
+}: {
+  modelId: string;
+  fullModel: string;
+  copied?: string | null;
+  onCopy: (value: string, key: string) => void;
+  onDeleteAlias: () => void;
+  onTest?: () => void;
+  testStatus?: TestStatus;
+  isTesting?: boolean;
+}) {
   const borderColor =
     testStatus === "ok"
       ? "border-green-500/40"
@@ -109,25 +120,32 @@ export default function PassthroughModelsSection({
   onCopy,
   onSetAlias,
   onDeleteAlias,
-}: any) {
+}: {
+  providerAlias: string;
+  modelAliases: Record<string, string>;
+  copied?: string | null;
+  onCopy: (value: string, key: string) => void;
+  onSetAlias: (modelId: string, alias: string) => void | Promise<void>;
+  onDeleteAlias: (alias: string) => void;
+}) {
   const [newModel, setNewModel] = useState("");
   const [adding, setAdding] = useState(false);
 
   // Filter aliases for this provider - models are persisted via alias
   const providerAliases = Object.entries(modelAliases).filter(
-    ([, model]: any) => typeof model === "string" && model.startsWith(`${providerAlias}/`),
+    ([, model]) => typeof model === "string" && model.startsWith(`${providerAlias}/`),
   );
 
-  const allModels = providerAliases.map(([alias, fullModel]: any) => ({
+  const allModels = providerAliases.map(([alias, fullModel]) => ({
     modelId: String(fullModel).replace(`${providerAlias}/`, ""),
     fullModel: String(fullModel),
     alias: String(alias),
   }));
 
   // Generate default alias from modelId (last part after /)
-  const generateDefaultAlias = (modelId: any) => {
+  const generateDefaultAlias = (modelId: string) => {
     const parts = modelId.split("/");
-    return parts[parts.length - 1];
+    return parts[parts.length - 1] ?? modelId;
   };
 
   const handleAdd = async () => {
@@ -170,8 +188,8 @@ export default function PassthroughModelsSection({
             id="new-model-input"
             type="text"
             value={newModel}
-            onChange={(e: any) => setNewModel(e.target.value)}
-            onKeyDown={(e: any) => e.key === "Enter" && handleAdd()}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewModel(e.target.value)}
+            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleAdd()}
             placeholder="anthropic/claude-3-opus"
             className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
           />
@@ -184,7 +202,7 @@ export default function PassthroughModelsSection({
       {/* Models list */}
       {allModels.length > 0 && (
         <div className="flex flex-col gap-3">
-          {allModels.map(({ modelId, fullModel, alias }: any) => (
+          {allModels.map(({ modelId, fullModel, alias }) => (
             <PassthroughModelRow
               key={fullModel}
               modelId={modelId}

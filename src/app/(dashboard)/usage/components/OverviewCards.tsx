@@ -3,15 +3,22 @@
 import PropTypes from "prop-types";
 import Card from "@/shared/components/Card";
 
-const fmt = (n: any) => new Intl.NumberFormat().format(n || 0);
-const fmtCost = (n: any) => {
+const fmt = (n: number | null | undefined) => new Intl.NumberFormat().format(n || 0);
+const fmtCost = (n: number | null | undefined) => {
   const v = n || 0;
   // Round up to 2 decimal places
   const rounded = Math.ceil(v * 100) / 100;
   return `$${rounded.toFixed(2)}`;
 };
 
-export default function OverviewCards({ stats }: any) {
+type OverviewStats = {
+  totalRequests?: number;
+  totalPromptTokens?: number;
+  totalCompletionTokens?: number;
+  totalCost?: number;
+};
+
+export default function OverviewCards({ stats }: { stats: OverviewStats }) {
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 sm:gap-4">
       <Card className="flex min-w-0 flex-col gap-1 px-4 py-3">

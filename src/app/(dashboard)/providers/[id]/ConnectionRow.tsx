@@ -6,6 +6,33 @@ import { Badge, Toggle } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import CooldownTimer from "./CooldownTimer";
 
+type ProxyPoolOption = {
+  id: string;
+  name?: string;
+  proxyUrl?: string;
+  noProxy?: string;
+  isActive?: boolean;
+};
+
+type ConnectionRowItem = {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  displayName?: string;
+  testStatus?: string;
+  isActive?: boolean;
+  lastError?: string;
+  priority?: number | null;
+  globalPriority?: number | null;
+  providerSpecificData?: {
+    proxyPoolId?: string | null;
+    connectionProxyEnabled?: boolean;
+    connectionProxyUrl?: string;
+    connectionNoProxy?: string;
+  };
+  [key: string]: unknown;
+};
+
 export default function ConnectionRow({
   connection,
   proxyPools,
@@ -14,22 +41,23 @@ export default function ConnectionRow({
   onUpdateProxy,
   onEdit,
   onDelete,
-}: any) {
+}: {
+  connection: ConnectionRowItem;
+  proxyPools?: ProxyPoolOption[];
+  isOAuth: boolean;
+  onToggleActive: (checked: boolean) => void;
+  onUpdateProxy?: (poolId: string | null) => void | Promise<void>;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const [showProxyDropdown, setShowProxyDropdown] = useState(false);
   const [updatingProxy, setUpdatingProxy] = useState(false);
-  const proxyDropdownRef = useRef<any>(null);
+  const proxyDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  const proxyPoolMap = new Map((proxyPools || []).map((pool: any) => [pool.id, pool]));
+  const proxyPoolMap = new Map((proxyPools || []).map((pool) => [pool.id, pool]));
   const boundProxyPoolId = connection.providerSpecificData?.proxyPoolId || null;
   const boundProxyPool = boundProxyPoolId
-    ? (proxyPoolMap.get(boundProxyPoolId) as
-        | {
-            name?: string;
-            proxyUrl?: string;
-            noProxy?: string;
-            isActive?: boolean;
-          }
-        | undefined)
+    ? (proxyPoolMap.get(boundProxyPoolId) as ProxyPoolOption | undefined)
     : null;
   const hasLegacyProxy =
     connection.providerSpecificData?.connectionProxyEnabled === true &&
@@ -46,7 +74,7 @@ export default function ConnectionRow({
   let maskedProxyUrl = "";
   if (boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl) {
     const rawProxyUrl =
-      boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl;
+      boundProxyPool?.proxyUrl || connection.providerSpecificData?.connectionProxyUrl || "";
     try {
       const parsed = new URL(rawProxyUrl);
       maskedProxyUrl = `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
@@ -70,8 +98,8 @@ export default function ConnectionRow({
     if (!showProxyDropdown) {
       return undefined;
     }
-    const handler = (e: any) => {
-      if (proxyDropdownRef.current && !proxyDropdownRef.current.contains(e.target)) {
+    const handler = (e: MouseEvent) => {
+      if (proxyDropdownRef.current && !proxyDropdownRef.current.contains(e.target as Node)) {
         setShowProxyDropdown(false);
       }
     };
@@ -79,17 +107,18 @@ export default function ConnectionRow({
     return () => document.removeEventListener("mousedown", handler);
   }, [showProxyDropdown]);
 
-  const handleSelectProxy = async (poolId: any) => {
+  const handleSelectProxy = async (poolId: string) => {
     setUpdatingProxy(true);
     try {
-      await onUpdateProxy(poolId === "__none__" ? null : poolId);
+      await onUpdateProxy?.(poolId === "__none__" ? null : poolId);
     } finally {
       setUpdatingProxy(false);
       setShowProxyDropdown(false);
     }
   };
 
-  const isEmail = (v: any) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  const isEmail = (v: unknown): v is string =>
+    typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const displayName = isOAuth
     ? isEmail(connection.email)
       ? connection.email
@@ -104,9 +133,9 @@ export default function ConnectionRow({
   // Get earliest model lock timestamp (useEffect handles the Date.now() comparison)
   const modelLockUntil =
     Object.entries(connection)
-      .filter(([k]: any) => k.startsWith("modelLock_"))
-      .map(([, v]: any) => v)
-      .filter((v: any) => !!v)
+      .filter(([k]) => k.startsWith("modelLock_"))
+      .map(([, v]) => v)
+      .filter((v) => !!v)
       .sort()[0] || null;
 
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -114,9 +143,9 @@ export default function ConnectionRow({
     const checkCooldown = () => {
       const until =
         Object.entries(connection)
-          .filter(([k]: any) => k.startsWith("modelLock_"))
-          .map(([, v]: any) => v)
-          .filter((v: any) => v && new Date(String(v)).getTime() > Date.now())
+          .filter(([k]) => k.startsWith("modelLock_"))
+          .map(([, v]) => v)
+          .filter((v) => v && new Date(String(v)).getTime() > Date.now())
           .sort()[0] || null;
       setIsCooldown(!!until);
     };
@@ -167,8 +196,8 @@ export default function ConnectionRow({
                 Proxy
               </Badge>
             )}
-            {isCooldown && connection.isActive !== false && (
-              <CooldownTimer until={modelLockUntil} />
+            {isCooldown && connection.isActive !== false && modelLockUntil != null && (
+              <CooldownTimer until={String(modelLockUntil)} />
             )}
             {connection.lastError && connection.isActive !== false && (
               <span
@@ -214,7 +243,7 @@ export default function ConnectionRow({
           {(proxyPools || []).length > 0 && (
             <div className="relative" ref={proxyDropdownRef}>
               <button
-                onClick={() => setShowProxyDropdown((v: any) => !v)}
+                onClick={() => setShowProxyDropdown((v) => !v)}
                 className={`flex w-full flex-col items-center rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
               >
@@ -232,7 +261,7 @@ export default function ConnectionRow({
                   >
                     None
                   </button>
-                  {(proxyPools || []).map((pool: any) => (
+                  {(proxyPools || []).map((pool) => (
                     <button
                       key={pool.id}
                       onClick={() => handleSelectProxy(pool.id)}

@@ -9,22 +9,46 @@ import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache
 const OFFLINE_USAGE_CHART_CACHE_KEY = "usage:chart";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
-const fmtNum = (n: any) => {
+type ChartPoint = {
+  label?: string;
+  requests?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  cost?: number;
+  tokens?: number;
+  [key: string]: string | number | undefined;
+};
+
+type MetricKey = "requests" | "promptTokens" | "completionTokens" | "cost";
+
+type MetricTotals = Record<MetricKey, number>;
+
+const fmtNum = (n: number | null | undefined) => {
   if (!n && n !== 0) return "—";
   return new Intl.NumberFormat().format(Math.round(n));
 };
 
-const fmtCost = (n: any) => `$${(n || 0).toFixed(2)}`;
+const fmtCost = (n: number | null | undefined) => `$${(n || 0).toFixed(2)}`;
 
-const PERIOD_UNIT: Record<string, any> = {
+const PERIOD_UNIT: Record<string, string> = {
   "24h": "Today",
   "7d": "per Week",
   "30d": "per Month",
   "90d": "per Quarter",
 };
 
-function Sparkline({ data, field, color, fmt }: any) {
-  const values = data.map((d: any) => d[field] ?? 0);
+function Sparkline({
+  data,
+  field,
+  color,
+  fmt,
+}: {
+  data: ChartPoint[];
+  field: MetricKey;
+  color: string;
+  fmt: (n: number | null | undefined) => string;
+}) {
+  const values = data.map((d) => Number(d[field] ?? 0));
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = Math.max(1, max - min);
@@ -33,7 +57,7 @@ function Sparkline({ data, field, color, fmt }: any) {
   const PAD = 0;
 
   const points = values
-    .map((v: any, i: any) => {
+    .map((v, i) => {
       const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
       const y = H - PAD - ((v - min) / range) * (H - PAD * 2 - 2) - 1;
       return `${x.toFixed(2)},${y.toFixed(2)}`;
@@ -42,7 +66,7 @@ function Sparkline({ data, field, color, fmt }: any) {
 
   const areaPoints = `${PAD},${H} ${points} ${W - PAD},${H}`;
 
-  const [hovered, setHovered] = useState<any>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
     <div className="relative w-full">
@@ -64,7 +88,7 @@ function Sparkline({ data, field, color, fmt }: any) {
           vectorEffect="non-scaling-stroke"
         />
         {/* Hover dots */}
-        {values.map((v: any, i: any) => {
+        {values.map((v, i) => {
           const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
           const y = H - PAD - ((v - min) / range) * (H - PAD * 2 - 2) - 1;
           return (
@@ -82,7 +106,7 @@ function Sparkline({ data, field, color, fmt }: any) {
           );
         })}
         {/* Invisible hover targets */}
-        {values.map((v: any, i: any) => {
+        {values.map((_v, i) => {
           const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
           return (
             <rect
@@ -100,14 +124,20 @@ function Sparkline({ data, field, color, fmt }: any) {
       {/* Tooltip */}
       {hovered !== null && data[hovered] && (
         <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-deep-slate border border-charcoal-grey rounded-[4px] px-2 py-0.5 text-[10px] text-porcelain whitespace-nowrap pointer-events-none z-10">
-          {data[hovered].label}: {fmt(data[hovered][field] ?? 0)}
+          {data[hovered].label}: {fmt(Number(data[hovered][field] ?? 0))}
         </div>
       )}
     </div>
   );
 }
 
-const METRICS = [
+const METRICS: Array<{
+  key: MetricKey;
+  label: string;
+  icon: string;
+  color: string;
+  fmt: (n: number | null | undefined) => string;
+}> = [
   {
     key: "requests",
     label: "Total Requests",
@@ -138,8 +168,8 @@ const METRICS = [
   },
 ];
 
-export default function MetricsLineChart({ period = "7d" }: any) {
-  const [data, setData] = useState<any[]>([]);
+export default function MetricsLineChart({ period = "7d" }: { period?: string }) {
+  const [data, setData] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const offlineNoticeShownRef = useRef(false);
 
@@ -160,11 +190,11 @@ export default function MetricsLineChart({ period = "7d" }: any) {
         url: `/api/usage/chart?period=${period}`,
         cacheKey: `${OFFLINE_USAGE_CHART_CACHE_KEY}:${period}`,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
-        onCacheData: (chartData: any) => {
-          setData(Array.isArray(chartData) ? chartData : []);
+        onCacheData: (chartData) => {
+          setData(Array.isArray(chartData) ? (chartData as ChartPoint[]) : []);
         },
-        onFreshData: (chartData: any) => {
-          setData(Array.isArray(chartData) ? chartData : []);
+        onFreshData: (chartData) => {
+          setData(Array.isArray(chartData) ? (chartData as ChartPoint[]) : []);
         },
       });
       if (result.source === "cache") notifyOfflineCache();
@@ -179,8 +209,8 @@ export default function MetricsLineChart({ period = "7d" }: any) {
     fetchData();
   }, [fetchData]);
 
-  const totals = data.reduce(
-    (acc: any, d: any) => ({
+  const totals = data.reduce<MetricTotals>(
+    (acc, d) => ({
       requests: acc.requests + (d.requests ?? 0),
       promptTokens: acc.promptTokens + (d.promptTokens ?? 0),
       completionTokens: acc.completionTokens + (d.completionTokens ?? 0),
@@ -193,7 +223,7 @@ export default function MetricsLineChart({ period = "7d" }: any) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {METRICS.map((m: any) => (
+      {METRICS.map((m) => (
         <div
           key={m.key}
           className="rounded-[6px] border border-charcoal-grey bg-graphite overflow-hidden flex flex-col"

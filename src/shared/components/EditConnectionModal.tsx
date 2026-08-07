@@ -21,9 +21,9 @@ export default function EditConnectionModal({
   isOpen?: boolean;
   connection?: {
     id?: string;
-    name?: string;
-    email?: string;
-    priority?: number;
+    name?: string | null;
+    email?: string | null;
+    priority?: number | null;
     provider?: string;
     authType?: string;
     providerSpecificData?: {
@@ -32,7 +32,8 @@ export default function EditConnectionModal({
       deployment?: string;
       organization?: string;
       accountId?: string;
-    };
+      [key: string]: unknown;
+    } | null;
   } | null;
   proxyPools?: unknown;
   onSave?: (data: Record<string, unknown>) => void | Promise<void>;

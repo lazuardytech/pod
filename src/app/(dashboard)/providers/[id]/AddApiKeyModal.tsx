@@ -1,8 +1,24 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Badge, Button, Input, Modal, Select } from "@/shared/components";
+
+type ProxyPoolOption = {
+  id: string;
+  name: string;
+};
+
+type ApiKeySavePayload = {
+  name: string;
+  apiKey: string;
+  priority: number;
+  proxyPoolId: string | null;
+  testStatus: string;
+  providerSpecificData?: Record<string, unknown>;
+};
+
+type ValidationResult = "success" | "failed" | null;
 
 export default function AddApiKeyModal({
   isOpen,
@@ -17,7 +33,20 @@ export default function AddApiKeyModal({
   error,
   onSave,
   onClose,
-}: any) {
+}: {
+  isOpen: boolean;
+  provider?: string | null;
+  providerName?: string;
+  isCompatible?: boolean;
+  isAnthropic?: boolean;
+  authType?: string;
+  authHint?: string;
+  website?: string;
+  proxyPools?: ProxyPoolOption[];
+  error?: string | null;
+  onSave: (data: ApiKeySavePayload) => void | Promise<void>;
+  onClose: () => void;
+}) {
   const NONE_PROXY_POOL_VALUE = "__none__";
   const isOllamaLocal = provider === "ollama-local";
   const isCookie = authType === "cookie";
@@ -46,7 +75,7 @@ export default function AddApiKeyModal({
   });
   const [cloudflareData, setCloudflareData] = useState({ accountId: "" });
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult>(null);
   const [saving, setSaving] = useState(false);
 
   const buildProviderSpecificData = () => {
@@ -79,7 +108,7 @@ export default function AddApiKeyModal({
           providerSpecificData: buildProviderSpecificData(),
         }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { valid?: boolean };
       setValidationResult(data.valid ? "success" : "failed");
     } catch {
       setValidationResult("failed");
@@ -110,7 +139,7 @@ export default function AddApiKeyModal({
             providerSpecificData: buildProviderSpecificData(),
           }),
         });
-        const data = await res.json();
+        const data = (await res.json()) as { valid?: boolean };
         isValid = !!data.valid;
         setValidationResult(isValid ? "success" : "failed");
       } catch {
@@ -144,7 +173,9 @@ export default function AddApiKeyModal({
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, name: e.target.value })
+          }
           placeholder={isOllamaLocal ? "Ollama Local" : "Production Key"}
         />
         {isOllamaLocal && (
@@ -152,7 +183,9 @@ export default function AddApiKeyModal({
             <Input
               label="Ollama Host URL"
               value={formData.ollamaHostUrl}
-              onChange={(e: any) => setFormData({ ...formData, ollamaHostUrl: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setFormData({ ...formData, ollamaHostUrl: e.target.value })
+              }
               placeholder="http://localhost:11434"
               className="flex-1"
             />
@@ -169,7 +202,9 @@ export default function AddApiKeyModal({
               label={credentialLabel}
               type={isCookie ? "text" : "password"}
               value={formData.apiKey}
-              onChange={(e: any) => setFormData({ ...formData, apiKey: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setFormData({ ...formData, apiKey: e.target.value })
+              }
               placeholder={credentialPlaceholder}
               className="flex-1"
             />
@@ -220,7 +255,7 @@ export default function AddApiKeyModal({
             <Input
               label="Account ID"
               value={cloudflareData.accountId}
-              onChange={(e: any) =>
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setCloudflareData({ ...cloudflareData, accountId: e.target.value })
               }
               placeholder="abc123def456..."
@@ -245,25 +280,33 @@ export default function AddApiKeyModal({
               <Input
                 label="Azure Endpoint"
                 value={azureData.azureEndpoint}
-                onChange={(e: any) => setAzureData({ ...azureData, azureEndpoint: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setAzureData({ ...azureData, azureEndpoint: e.target.value })
+                }
                 placeholder="https://your-resource.openai.azure.com"
               />
               <Input
                 label="Deployment Name"
                 value={azureData.deployment}
-                onChange={(e: any) => setAzureData({ ...azureData, deployment: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setAzureData({ ...azureData, deployment: e.target.value })
+                }
                 placeholder="gpt-4"
               />
               <Input
                 label="API Version"
                 value={azureData.apiVersion}
-                onChange={(e: any) => setAzureData({ ...azureData, apiVersion: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setAzureData({ ...azureData, apiVersion: e.target.value })
+                }
                 placeholder="2024-10-01-preview"
               />
               <Input
                 label="Organization"
                 value={azureData.organization}
-                onChange={(e: any) => setAzureData({ ...azureData, organization: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setAzureData({ ...azureData, organization: e.target.value })
+                }
                 placeholder="Organization ID"
               />
             </div>
@@ -274,7 +317,7 @@ export default function AddApiKeyModal({
           label="Priority"
           type="number"
           value={formData.priority}
-          onChange={(e: any) =>
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
             setFormData({ ...formData, priority: Number.parseInt(e.target.value) || 1 })
           }
         />
@@ -282,10 +325,12 @@ export default function AddApiKeyModal({
         <Select
           label="Proxy Pool"
           value={formData.proxyPoolId}
-          onChange={(e: any) => setFormData({ ...formData, proxyPoolId: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+            setFormData({ ...formData, proxyPoolId: e.target.value })
+          }
           options={[
             { value: NONE_PROXY_POOL_VALUE, label: "None" },
-            ...(proxyPools || []).map((pool: any) => ({ value: pool.id, label: pool.name })),
+            ...(proxyPools || []).map((pool) => ({ value: pool.id, label: pool.name })),
           ]}
           placeholder="None"
         />

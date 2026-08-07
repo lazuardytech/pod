@@ -30,8 +30,8 @@ export default function AddCustomEmbeddingModal({
 }: {
   isOpen?: boolean;
   onClose?: () => void;
-  onCreated?: (node: unknown) => void;
-  onSaved?: (node: unknown) => void;
+  onCreated?: (node: EmbeddingNode) => void;
+  onSaved?: (node: EmbeddingNode) => void;
   node?: EmbeddingNode | null;
 }) {
   const isEdit = !!node;
@@ -82,8 +82,9 @@ export default function AddCustomEmbeddingModal({
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        if (isEdit) onSaved?.(data.node);
-        else onCreated?.(data.node);
+        const savedNode = data.node as EmbeddingNode;
+        if (isEdit) onSaved?.(savedNode);
+        else onCreated?.(savedNode);
         toast.success(isEdit ? "Embedding node saved" : "Embedding node created");
       } else {
         toast.error(

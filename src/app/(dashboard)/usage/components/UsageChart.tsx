@@ -14,16 +14,23 @@ import {
 import Card from "@/shared/components/Card";
 import SegmentedControl from "@/shared/components/SegmentedControl";
 
-const fmtTokens = (n: any) => {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n || 0);
+type ChartPoint = {
+  label?: string;
+  tokens?: number;
+  cost?: number;
 };
 
-const fmtCost = (n: any) => `$${(n || 0).toFixed(2)}`;
+const fmtTokens = (n: number | null | undefined) => {
+  const value = n || 0;
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+  return String(value);
+};
 
-export default function UsageChart({ period = "7d" }: any) {
-  const [data, setData] = useState<any[]>([]);
+const fmtCost = (n: number | null | undefined) => `$${(n || 0).toFixed(2)}`;
+
+export default function UsageChart({ period = "7d" }: { period?: string }) {
+  const [data, setData] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("tokens");
 
@@ -32,7 +39,7 @@ export default function UsageChart({ period = "7d" }: any) {
     try {
       const res = await fetch(`/api/usage/chart?period=${period}`);
       if (res.ok) {
-        const json = await res.json();
+        const json = (await res.json()) as ChartPoint[];
         setData(json);
       }
     } catch (e) {
@@ -46,7 +53,7 @@ export default function UsageChart({ period = "7d" }: any) {
     fetchData();
   }, [fetchData]);
 
-  const hasData = data.some((d: any) => d.tokens > 0 || d.cost > 0);
+  const hasData = data.some((d) => (d.tokens ?? 0) > 0 || (d.cost ?? 0) > 0);
 
   return (
     <Card className="flex min-w-0 flex-col gap-3 p-3 sm:p-4">
@@ -104,8 +111,10 @@ export default function UsageChart({ period = "7d" }: any) {
                 borderRadius: "8px",
                 fontSize: "12px",
               }}
-              formatter={(value: any, name: any) =>
-                name === "tokens" ? [fmtTokens(value), "Tokens"] : [fmtCost(value), "Cost"]
+              formatter={(value, name) =>
+                name === "tokens"
+                  ? [fmtTokens(Number(value)), "Tokens"]
+                  : [fmtCost(Number(value)), "Cost"]
               }
             />
             {viewMode === "tokens" ? (

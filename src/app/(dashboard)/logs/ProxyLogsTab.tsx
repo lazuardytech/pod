@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type MouseEvent as ReactMouseEvent,
+  type SetStateAction,
+} from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
-function TypeBadge({ type }: any) {
-  const styles: Record<string, any> = {
+function TypeBadge({ type }: { type?: string }) {
+  const styles: Record<string, string> = {
     http: "bg-aether-blue/10 text-aether-blue border-aether-blue/20",
     vercel: "bg-amethyst/10 text-amethyst border-amethyst/20",
   };
@@ -14,7 +23,7 @@ function TypeBadge({ type }: any) {
     <span
       className={cn(
         "inline-flex items-center px-1.5 py-0.5 rounded-[4px] border text-[10px] font-[590] uppercase",
-        styles[type] ?? "bg-deep-slate text-fog-grey border-charcoal-grey",
+        styles[type ?? ""] ?? "bg-deep-slate text-fog-grey border-charcoal-grey",
       )}
     >
       {type || "http"}
@@ -22,7 +31,7 @@ function TypeBadge({ type }: any) {
   );
 }
 
-function StatusBadge({ active }: any) {
+function StatusBadge({ active }: { active?: boolean }) {
   return (
     <span
       className={cn(
@@ -44,6 +53,31 @@ import {
   LogDrawerHeader,
 } from "@/shared/components/LogDrawer";
 
+type ProxyPool = {
+  id: string;
+  name?: string;
+  proxyUrl?: string;
+  type?: string;
+  isActive?: boolean;
+  boundConnectionCount?: number;
+  username?: string;
+  noProxy?: string;
+};
+
+type TestResult = {
+  ok: boolean;
+  message: string;
+} | null;
+
+type ProxyLogsTabProps = {
+  sortBy?: string;
+  setSortBy?: Dispatch<SetStateAction<string>>;
+  live?: boolean;
+  setLive?: Dispatch<SetStateAction<boolean>>;
+  onRefresh?: MutableRefObject<(() => Promise<void>) | null>;
+  onCountChange?: (count: number) => void;
+};
+
 export default function ProxyLogsTab({
   sortBy: _sortBy,
   setSortBy: _setSortBy,
@@ -51,16 +85,16 @@ export default function ProxyLogsTab({
   setLive: _setLive,
   onRefresh,
   onCountChange,
-}: any) {
+}: ProxyLogsTabProps) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
-  const [testing, setTesting] = useState<any>(null);
-  const [testResults, setTestResults] = useState<Record<string, any>>({});
-  const [selectedPool, setSelectedPool] = useState<any>(null);
-  const [internalPools, setInternalPools] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+  const [selectedPool, setSelectedPool] = useState<ProxyPool | null>(null);
+  const [internalPools, setInternalPools] = useState<ProxyPool[]>([]);
   const [_connected, setConnected] = useState(false);
 
-  const esRef = useRef<any>(null);
+  const esRef = useRef<EventSource | null>(null);
   const liveRef = useRef(live);
 
   useEffect(() => {
@@ -74,12 +108,12 @@ export default function ProxyLogsTab({
     try {
       const res = await fetch("/api/proxy-pools?includeUsage=true");
       if (!res.ok) throw new Error("Failed to fetch proxy pools");
-      const data = await res.json();
+      const data = (await res.json()) as { proxyPools?: ProxyPool[] };
       const newPools = data.proxyPools ?? [];
       setInternalPools(newPools);
       if (onCountChange) onCountChange(newPools.length);
     } catch (err) {
-      setError((err as any).message);
+      setError(err instanceof Error ? err.message : String(err));
     }
   }, [onCountChange]);
 
@@ -105,9 +139,12 @@ export default function ProxyLogsTab({
         setError(null);
       };
 
-      es.onmessage = (e: any) => {
+      es.onmessage = (e: MessageEvent<string>) => {
         try {
-          const msg = JSON.parse(e.data);
+          const msg = JSON.parse(e.data) as {
+            type?: string;
+            pools?: ProxyPool[];
+          };
           if (msg.type === "init" || msg.type === "update") {
             if (!liveRef.current && msg.type === "update") return;
             const pools = msg.pools ?? [];
@@ -139,20 +176,20 @@ export default function ProxyLogsTab({
   }, []);
   /* eslint-enable react-hooks/exhaustive-deps */
 
-  const handleTest = async (pool: any) => {
+  const handleTest = async (pool: ProxyPool) => {
     setTesting(pool.id);
-    setTestResults((prev: any) => ({ ...prev, [pool.id]: null }));
+    setTestResults((prev) => ({ ...prev, [pool.id]: null }));
     try {
       const res = await fetch(`/api/proxy-pools/${pool.id}/test`, { method: "POST" });
-      const data = await res.json();
-      setTestResults((prev: any) => ({
+      const data = (await res.json()) as { message?: string; error?: string };
+      setTestResults((prev) => ({
         ...prev,
         [pool.id]: res.ok
           ? { ok: true, message: data.message ?? "Connection successful" }
           : { ok: false, message: data.error ?? "Test failed" },
       }));
     } catch {
-      setTestResults((prev: any) => ({
+      setTestResults((prev) => ({
         ...prev,
         [pool.id]: { ok: false, message: "Request failed" },
       }));
@@ -234,7 +271,7 @@ export default function ProxyLogsTab({
                 </tr>
               </thead>
               <tbody>
-                {activePools.map((pool: any) => (
+                {activePools.map((pool) => (
                   <>
                     <tr
                       key={pool.id}
@@ -289,16 +326,16 @@ export default function ProxyLogsTab({
                           <div
                             className={cn(
                               "flex items-center gap-2 text-[11px] px-2.5 py-1.5 rounded-[4px]",
-                              testResults[pool.id].ok
+                              testResults[pool.id]?.ok
                                 ? "bg-emerald/8 text-emerald border border-emerald/20"
                                 : "bg-warning-red/8 text-warning-red border border-warning-red/20",
                             )}
                           >
                             <LucideIcon
-                              name={testResults[pool.id].ok ? "check_circle" : "error"}
+                              name={testResults[pool.id]?.ok ? "check_circle" : "error"}
                               className="text-[13px]"
                             />
-                            {testResults[pool.id].message}
+                            {testResults[pool.id]?.message}
                           </div>
                         </td>
                       </tr>
@@ -357,23 +394,23 @@ export default function ProxyLogsTab({
                   <div
                     className={cn(
                       "flex items-center gap-2 text-[11px] px-2.5 py-1.5 rounded-[4px]",
-                      testResults[selectedPool.id].ok
+                      testResults[selectedPool.id]?.ok
                         ? "bg-emerald/8 text-emerald border border-emerald/20"
                         : "bg-warning-red/8 text-warning-red border border-warning-red/20",
                     )}
                   >
                     <LucideIcon
-                      name={testResults[selectedPool.id].ok ? "check_circle" : "error"}
+                      name={testResults[selectedPool.id]?.ok ? "check_circle" : "error"}
                       className="text-[13px]"
                     />
-                    {testResults[selectedPool.id].message}
+                    {testResults[selectedPool.id]?.message}
                   </div>
                 </DetailSection>
               )}
 
               <div className="pt-2">
                 <button
-                  onClick={(e: any) => {
+                  onClick={(e: ReactMouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     handleTest(selectedPool);
                   }}

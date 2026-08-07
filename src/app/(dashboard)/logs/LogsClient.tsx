@@ -1,7 +1,15 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import RequestLogger from "@/shared/components/RequestLogger";
 import SegmentedControl from "@/shared/components/SegmentedControl";
@@ -38,7 +46,17 @@ function RequestLogsToolbar({
   filterProvider,
   setFilterProvider,
   providerOptions,
-}: any) {
+}: {
+  sortBy: string;
+  setSortBy: Dispatch<SetStateAction<string>>;
+  onRefresh: () => void;
+  refreshing: boolean;
+  recording: boolean;
+  setRecording: Dispatch<SetStateAction<boolean>>;
+  filterProvider: string;
+  setFilterProvider: Dispatch<SetStateAction<string>>;
+  providerOptions: string[];
+}) {
   return (
     <div className="flex items-center gap-2">
       {providerOptions.length > 0 && (
@@ -48,7 +66,7 @@ function RequestLogsToolbar({
           onValueChange={setFilterProvider}
           options={[
             { value: "all", label: "All Providers" },
-            ...providerOptions.map((p: any) => ({ value: p, label: p })),
+            ...providerOptions.map((p) => ({ value: p, label: p })),
           ]}
           triggerClassName="h-7 w-[130px] rounded-[6px] bg-deep-slate px-2 text-[12px] shadow-none"
           contentClassName="min-w-[130px]"
@@ -73,7 +91,7 @@ function RequestLogsToolbar({
         <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
-        onClick={() => setRecording((v: any) => !v)}
+        onClick={() => setRecording((v) => !v)}
         title={recording ? "Pause recording" : "Resume recording"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -94,7 +112,23 @@ function RequestLogsToolbar({
   );
 }
 
-function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setLive, count }: any) {
+function ProxyLogsToolbar({
+  sortBy,
+  setSortBy,
+  onRefresh,
+  refreshing,
+  live,
+  setLive,
+  count,
+}: {
+  sortBy: string;
+  setSortBy: Dispatch<SetStateAction<string>>;
+  onRefresh: () => void;
+  refreshing: boolean;
+  live: boolean;
+  setLive: Dispatch<SetStateAction<boolean>>;
+  count: number;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-[11px] text-fog-grey">{count} configured</span>
@@ -117,7 +151,7 @@ function ProxyLogsToolbar({ sortBy, setSortBy, onRefresh, refreshing, live, setL
         <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
-        onClick={() => setLive((v: any) => !v)}
+        onClick={() => setLive((v) => !v)}
         title={live ? "Pause live" : "Resume live"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -143,7 +177,15 @@ function ConsoleToolbar({
   refreshing,
   live,
   setLive,
-}: any) {
+}: {
+  autoScroll: boolean;
+  setAutoScroll: Dispatch<SetStateAction<boolean>>;
+  onClear: () => void;
+  onRefresh: () => void;
+  refreshing: boolean;
+  live: boolean;
+  setLive: Dispatch<SetStateAction<boolean>>;
+}) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -155,7 +197,7 @@ function ConsoleToolbar({
         <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
       </button>
       <button
-        onClick={() => setLive((v: any) => !v)}
+        onClick={() => setLive((v) => !v)}
         title={live ? "Pause live" : "Resume live"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -170,7 +212,7 @@ function ConsoleToolbar({
         {live ? "Live" : "Paused"}
       </button>
       <button
-        onClick={() => setAutoScroll((v: any) => !v)}
+        onClick={() => setAutoScroll((v) => !v)}
         title={autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"}
         className={cn(
           "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
@@ -204,9 +246,9 @@ function LogsInner() {
   const [sortBy, setSortBy] = useState("newest");
   const [recording, setRecording] = useState(true);
   const [filterProvider, setFilterProvider] = useState("all");
-  const [providerOptions, setProviderOptions] = useState<any[]>([]);
+  const [providerOptions, setProviderOptions] = useState<string[]>([]);
   const [requestRefreshing, setRequestRefreshing] = useState(false);
-  const refreshRef = useRef<any>(null);
+  const refreshRef = useRef<(() => Promise<void> | void) | null>(null);
 
   // ProxyLogsTab lifted state
   const [proxySortBy, setProxySortBy] = useState("newest");
@@ -217,7 +259,7 @@ function LogsInner() {
   });
   const [proxyCount, setProxyCount] = useState(0);
   const [proxyRefreshing, setProxyRefreshing] = useState(false);
-  const proxyRefreshRef = useRef<any>(null);
+  const proxyRefreshRef = useRef<(() => Promise<void>) | null>(null);
 
   // ConsoleLogClient lifted state
   const [autoScroll, setAutoScroll] = useState(true);
@@ -227,8 +269,8 @@ function LogsInner() {
     return stored === null ? true : stored === "true";
   });
   const [consoleRefreshing, setConsoleRefreshing] = useState(false);
-  const clearRef = useRef<any>(null);
-  const consoleRefreshRef = useRef<any>(null);
+  const clearRef = useRef<(() => void) | null>(null);
+  const consoleRefreshRef = useRef<(() => Promise<void> | void) | null>(null);
 
   // Persist live toggle states
   useEffect(() => {
@@ -266,7 +308,7 @@ function LogsInner() {
     }
   };
 
-  const setTab = (key: any) => {
+  const setTab = (key: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", key);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -278,7 +320,7 @@ function LogsInner() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Pill tabs */}
         <SegmentedControl
-          options={TABS.map((tab: any) => ({ value: tab.key, label: tab.label, icon: tab.icon }))}
+          options={TABS.map((tab) => ({ value: tab.key, label: tab.label, icon: tab.icon }))}
           value={activeTab}
           onChange={setTab}
           size="sm"
@@ -332,7 +374,7 @@ function LogsInner() {
             setSortBy={setSortBy}
             recording={recording}
             setRecording={setRecording}
-            refreshRef={refreshRef}
+            refreshRef={refreshRef as MutableRefObject<(() => Promise<void> | void) | null>}
             filterProvider={filterProvider}
             setFilterProvider={setFilterProvider}
             onProvidersChange={setProviderOptions}

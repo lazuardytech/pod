@@ -18,13 +18,13 @@ import Image from "next/image";
 import "@xyflow/react/dist/style.css";
 import { AI_PROVIDERS, type ProviderDefinition } from "@/shared/constants/providers";
 
-type TopologyProvider = {
+export type TopologyProvider = {
   id?: string;
   provider: string;
   name?: string;
 };
 
-type ActiveRequest = {
+export type ActiveRequest = {
   provider?: string;
   model?: string;
   account?: string;
