@@ -1,6 +1,11 @@
 // Codex (ChatGPT Plus/Pro) image generation via Responses API + SSE
 import { randomUUID } from "node:crypto";
-import { type ImageParseContext, type ImageRequestBody, type ProviderCredentials, nowSec } from "./_base.js";
+import {
+  type ImageParseContext,
+  type ImageRequestBody,
+  type ProviderCredentials,
+  nowSec,
+} from "./_base.js";
 
 const CODEX_RESPONSES_URL = "https://chatgpt.com/backend-api/codex/responses";
 const CODEX_USER_AGENT = "codex-imagen/0.2.6";
@@ -47,7 +52,11 @@ function toDataUrl(input: unknown) {
   return `data:image/png;base64,${input}`;
 }
 
-function buildContent(prompt: string | undefined, refs: string[], detail: string = CODEX_REF_DETAIL) {
+function buildContent(
+  prompt: string | undefined,
+  refs: string[],
+  detail: string = CODEX_REF_DETAIL,
+) {
   const content: CodexContent[] = [];
   refs.forEach((url, index) => {
     content.push({ type: "input_text", text: `<image name=image${index + 1}>` });
@@ -59,7 +68,11 @@ function buildContent(prompt: string | undefined, refs: string[], detail: string
 }
 
 // Parse Codex SSE stream → final base64 image. Optional callbacks for client streaming.
-async function parseStream(response: Response, log: ImageParseContext["log"], callbacks: CodexCallbacks = {}) {
+async function parseStream(
+  response: Response,
+  log: ImageParseContext["log"],
+  callbacks: CodexCallbacks = {},
+) {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -126,7 +139,11 @@ async function parseStream(response: Response, log: ImageParseContext["log"], ca
 }
 
 // SSE Response that pipes codex progress + partial + done events to client
-function buildSseResponse(providerResponse: Response, log: ImageParseContext["log"], onSuccess: ImageParseContext["onRequestSuccess"]) {
+function buildSseResponse(
+  providerResponse: Response,
+  log: ImageParseContext["log"],
+  onSuccess: ImageParseContext["onRequestSuccess"],
+) {
   const stream = new ReadableStream({
     async start(controller: ReadableStreamDefaultController<Uint8Array>) {
       const enc = new TextEncoder();
@@ -147,7 +164,7 @@ function buildSseResponse(providerResponse: Response, log: ImageParseContext["lo
           if (onSuccess) await onSuccess();
           send("done", { created: nowSec(), data: [{ b64_json: b64 }] });
         }
-       } catch (err: unknown) {
+      } catch (err: unknown) {
         send("error", { message: err instanceof Error ? err.message : "Stream failed" });
       } finally {
         controller.close();
@@ -214,7 +231,10 @@ export default {
     };
   },
   // Custom: codex parses SSE → either pipe to client or collect b64
-  async parseResponse(response: Response, { log, streamToClient, onRequestSuccess }: ImageParseContext) {
+  async parseResponse(
+    response: Response,
+    { log, streamToClient, onRequestSuccess }: ImageParseContext,
+  ) {
     if (streamToClient) {
       return { sseResponse: buildSseResponse(response, log, onRequestSuccess) };
     }
