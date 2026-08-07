@@ -924,12 +924,13 @@ export async function getUsageStats(period: string = "all"): Promise<UsageStatsR
   const db = getDatabase();
   const { getProviderConnections, getApiKeys, getProviderNodes } = await import("@/lib/localDb");
 
-  let allConnections: any[] = [];
+  let allConnections: import("@/lib/localDb").ProviderConnection[] = [];
   try {
     allConnections = await getProviderConnections();
   } catch {}
   const connectionMap: Record<string, string> = {};
-  for (const c of allConnections) connectionMap[c.id] = c.name || c.email || c.id;
+  for (const c of allConnections)
+    connectionMap[c.id] = c.name || (typeof c.email === "string" ? c.email : null) || c.id;
 
   const providerNodeNameMap: Record<string, string> = {};
   try {

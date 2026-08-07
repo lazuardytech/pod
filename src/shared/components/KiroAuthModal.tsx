@@ -13,16 +13,18 @@ export default function KiroAuthModal({
   onMethodSelect,
   onClose,
 }: {
-  isOpen?: any;
-  onMethodSelect?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  onMethodSelect?: (
+    method: string,
+    config?: { startUrl?: string; region?: string; provider?: string },
+  ) => void;
+  onClose?: () => void;
 }) {
-  const [selectedMethod, setSelectedMethod] = useState<any>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [idcStartUrl, setIdcStartUrl] = useState("");
   const [idcRegion, setIdcRegion] = useState("us-east-1");
   const [refreshToken, setRefreshToken] = useState("");
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [autoDetecting, setAutoDetecting] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);
@@ -56,7 +58,7 @@ export default function KiroAuthModal({
     autoDetect();
   }, [selectedMethod, isOpen]);
 
-  const handleMethodSelect = (method: any) => {
+  const handleMethodSelect = (method: string) => {
     setSelectedMethod(method);
     setError(null);
   };
@@ -89,9 +91,9 @@ export default function KiroAuthModal({
       }
 
       // Success - notify parent to refresh connections
-      onMethodSelect("import");
+      onMethodSelect?.("import");
     } catch (err) {
-      setError((err as any).message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setImporting(false);
     }
@@ -102,11 +104,11 @@ export default function KiroAuthModal({
       setError("Please enter your IDC start URL");
       return;
     }
-    onMethodSelect("idc", { startUrl: idcStartUrl.trim(), region: idcRegion });
+    onMethodSelect?.("idc", { startUrl: idcStartUrl.trim(), region: idcRegion });
   };
 
-  const handleSocialLogin = (provider: any) => {
-    onMethodSelect("social", { provider });
+  const handleSocialLogin = (provider: string) => {
+    onMethodSelect?.("social", { provider });
   };
 
   return (
@@ -119,7 +121,7 @@ export default function KiroAuthModal({
 
             {/* AWS Builder ID */}
             <button
-              onClick={() => onMethodSelect("builder-id")}
+              onClick={() => onMethodSelect?.("builder-id")}
               className="w-full p-4 text-left border border-border rounded-lg hover:bg-sidebar transition-colors"
             >
               <div className="flex items-start gap-3">
@@ -206,7 +208,7 @@ export default function KiroAuthModal({
               </label>
               <Input
                 value={idcStartUrl}
-                onChange={(e: any) => setIdcStartUrl(e.target.value)}
+                onChange={(e) => setIdcStartUrl(e.target.value)}
                 placeholder="https://your-org.awsapps.com/start"
                 className="font-mono text-sm"
               />
@@ -219,7 +221,7 @@ export default function KiroAuthModal({
               <label className="block text-sm font-medium mb-2">AWS Region</label>
               <Input
                 value={idcRegion}
-                onChange={(e: any) => setIdcRegion(e.target.value)}
+                onChange={(e) => setIdcRegion(e.target.value)}
                 placeholder="us-east-1"
                 className="font-mono text-sm"
               />
@@ -352,7 +354,7 @@ export default function KiroAuthModal({
                   </label>
                   <Input
                     value={refreshToken}
-                    onChange={(e: any) => setRefreshToken(e.target.value)}
+                    onChange={(e) => setRefreshToken(e.target.value)}
                     placeholder="Token will be auto-filled..."
                     className="font-mono text-sm"
                   />

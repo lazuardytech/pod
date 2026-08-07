@@ -15,6 +15,6 @@ export async function OPTIONS() {
 }
 
 /** POST /v1/audio/transcriptions - OpenAI Whisper compatible STT */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   return await withApiKeyRateLimit(request, () => handleStt(request));
 }

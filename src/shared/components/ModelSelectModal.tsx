@@ -246,11 +246,11 @@ export default function ModelSelectModal({
         let combined = aliasModels;
         if (kindFilter && TYPED_KINDS.has(kindFilter)) {
           combined = getModelsByProviderId(providerId)
-            .filter((m: Record<string, unknown>) => m.type === kindFilter)
-            .map((m: Record<string, unknown>) => ({
+            .filter((m) => m.type === kindFilter)
+            .map((m) => ({
               id: m.id,
               name: m.name,
-              value: `${alias}/${m.id as string}`,
+              value: `${alias}/${m.id}`,
               type: m.type,
             }));
           // Fallback: provider-as-model when no hardcoded models match (tts/image/webFetch only)

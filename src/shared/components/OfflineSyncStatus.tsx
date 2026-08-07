@@ -7,7 +7,15 @@ import {
   getOfflineMutationQueueLength,
 } from "@/shared/services/offlineMutationQueue";
 
-function formatStatusText({ isOnline, pendingCount, syncing }: any) {
+function formatStatusText({
+  isOnline,
+  pendingCount,
+  syncing,
+}: {
+  isOnline: boolean;
+  pendingCount: number;
+  syncing: boolean;
+}) {
   if (syncing) return "Syncing queued changes...";
   if (!isOnline) {
     if (pendingCount > 0)
@@ -61,8 +69,9 @@ export default function OfflineSyncStatus() {
       refreshPendingCount().catch(() => {});
     };
 
-    const onQueueChanged = (event: any) => {
-      const nextCount = Number(event?.detail?.queueLength ?? event?.detail?.remaining);
+    const onQueueChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ queueLength?: number; remaining?: number }>).detail;
+      const nextCount = Number(detail?.queueLength ?? detail?.remaining);
       if (Number.isFinite(nextCount)) {
         setPendingCount(nextCount);
       } else {

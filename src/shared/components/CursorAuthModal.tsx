@@ -1,4 +1,5 @@
 "use client";
+import type { ChangeEvent } from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/shared/components";
@@ -13,14 +14,13 @@ export default function CursorAuthModal({
   onSuccess,
   onClose,
 }: {
-  isOpen?: any;
-  onSuccess?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) {
   const [accessToken, setAccessToken] = useState("");
   const [machineId, setMachineId] = useState("");
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [autoDetecting, setAutoDetecting] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);
@@ -89,9 +89,9 @@ export default function CursorAuthModal({
       }
 
       onSuccess?.();
-      onClose();
+      onClose?.();
     } catch (err) {
-      setError((err as any).message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setImporting(false);
     }
@@ -165,7 +165,7 @@ export default function CursorAuthModal({
               <textarea
                 aria-label="Access token"
                 value={accessToken}
-                onChange={(e: any) => setAccessToken(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setAccessToken(e.target.value)}
                 placeholder="Access token will be auto-filled..."
                 rows={3}
                 className="w-full px-3 py-2 text-sm font-mono border border-border rounded-lg bg-background focus:outline-none focus:border-primary resize-none"
@@ -180,7 +180,7 @@ export default function CursorAuthModal({
               </label>
               <Input
                 value={machineId}
-                onChange={(e: any) => setMachineId(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setMachineId(e.target.value)}
                 placeholder="Machine ID will be auto-filled..."
                 className="font-mono text-sm"
               />

@@ -1,9 +1,16 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Button } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
+
+type TestStatus = "ok" | "error" | undefined;
+
+type CompatibleConnection = {
+  id: string;
+  isActive?: boolean;
+};
 
 function CompatibleModelRow({
   modelId,
@@ -14,7 +21,16 @@ function CompatibleModelRow({
   onTest,
   testStatus,
   isTesting,
-}: any) {
+}: {
+  modelId: string;
+  fullModel: string;
+  copied?: string | null;
+  onCopy: (value: string, key: string) => void;
+  onDeleteAlias: () => void;
+  onTest?: () => void;
+  testStatus?: TestStatus;
+  isTesting?: boolean;
+}) {
   const borderColor =
     testStatus === "ok"
       ? "border-green-500/40"
@@ -97,27 +113,37 @@ export default function CompatibleModelsSection({
   onDeleteAlias,
   connections,
   isAnthropic,
-}: any) {
+}: {
+  providerStorageAlias: string;
+  providerDisplayAlias: string;
+  modelAliases: Record<string, string>;
+  copied?: string | null;
+  onCopy: (value: string, key: string) => void;
+  onSetAlias: (modelId: string, alias: string, providerAlias: string) => void | Promise<void>;
+  onDeleteAlias: (alias: string) => void;
+  connections: CompatibleConnection[];
+  isAnthropic?: boolean;
+}) {
   const [newModel, setNewModel] = useState("");
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [testingModelIds, setTestingModelIds] = useState(new Set());
-  const [modelTestResults, setModelTestResults] = useState<Record<string, any>>({});
+  const [testingModelIds, setTestingModelIds] = useState<Set<string>>(new Set());
+  const [modelTestResults, setModelTestResults] = useState<Record<string, TestStatus>>({});
 
-  const handleTestModel = async (modelId: any) => {
-    setTestingModelIds((prev: any) => new Set([...prev, modelId]));
+  const handleTestModel = async (modelId: string) => {
+    setTestingModelIds((prev) => new Set([...prev, modelId]));
     try {
       const res = await fetch("/api/models/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
       });
-      const data = await res.json();
-      setModelTestResults((prev: any) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+      const data = (await res.json()) as { ok?: boolean };
+      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
     } catch {
-      setModelTestResults((prev: any) => ({ ...prev, [modelId]: "error" }));
+      setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
     } finally {
-      setTestingModelIds((prev: any) => {
+      setTestingModelIds((prev) => {
         const next = new Set(prev);
         next.delete(modelId);
         return next;
@@ -126,21 +152,21 @@ export default function CompatibleModelsSection({
   };
 
   const providerAliases = Object.entries(modelAliases).filter(
-    ([, model]: any) => typeof model === "string" && model.startsWith(`${providerStorageAlias}/`),
+    ([, model]) => typeof model === "string" && model.startsWith(`${providerStorageAlias}/`),
   );
 
-  const allModels = providerAliases.map(([alias, fullModel]: any) => ({
+  const allModels = providerAliases.map(([alias, fullModel]) => ({
     modelId: String(fullModel).replace(`${providerStorageAlias}/`, ""),
     fullModel: String(fullModel),
     alias: String(alias),
   }));
 
-  const generateDefaultAlias = (modelId: any) => {
+  const generateDefaultAlias = (modelId: string) => {
     const parts = modelId.split("/");
-    return parts[parts.length - 1];
+    return parts[parts.length - 1] ?? modelId;
   };
 
-  const resolveAlias = (modelId: any) => {
+  const resolveAlias = (modelId: string) => {
     const fullModel = `${providerStorageAlias}/${modelId}`;
     // Skip if this exact model already has an alias
     if (Object.values(modelAliases).includes(fullModel)) return null;
@@ -175,13 +201,16 @@ export default function CompatibleModelsSection({
 
   const handleImport = async () => {
     if (importing) return;
-    const activeConnection = connections.find((conn: any) => conn.isActive !== false);
+    const activeConnection = connections.find((conn) => conn.isActive !== false);
     if (!activeConnection) return;
 
     setImporting(true);
     try {
       const res = await fetch(`/api/providers/${activeConnection.id}/models`);
-      const data = await res.json();
+      const data = (await res.json()) as {
+        error?: string;
+        models?: Array<{ id?: string; name?: string; model?: string }>;
+      };
       if (!res.ok) {
         alert(data.error || "Failed to import models");
         return;
@@ -210,7 +239,7 @@ export default function CompatibleModelsSection({
     }
   };
 
-  const canImport = connections.some((conn: any) => conn.isActive !== false);
+  const canImport = connections.some((conn) => conn.isActive !== false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -231,8 +260,8 @@ export default function CompatibleModelsSection({
             id="new-compatible-model-input"
             type="text"
             value={newModel}
-            onChange={(e: any) => setNewModel(e.target.value)}
-            onKeyDown={(e: any) => e.key === "Enter" && handleAdd()}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setNewModel(e.target.value)}
+            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleAdd()}
             placeholder={isAnthropic ? "claude-3-opus-20240229" : "gpt-4o"}
             className="w-full h-8 px-3 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
           />
@@ -257,9 +286,9 @@ export default function CompatibleModelsSection({
 
       {allModels.length > 0 && (
         <div className="flex flex-col gap-3">
-          {allModels.map(({ modelId, fullModel, alias }: any) => (
+          {allModels.map(({ modelId, fullModel: _fullModel, alias }) => (
             <CompatibleModelRow
-              key={fullModel}
+              key={_fullModel}
               modelId={modelId}
               fullModel={`${providerDisplayAlias}/${modelId}`}
               copied={copied}

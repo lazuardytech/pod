@@ -1,11 +1,11 @@
 "use client";
 
-import { calculatePercentage, formatResetTime } from "./utils";
+import { calculatePercentage, formatResetTime, type NormalizedQuota } from "./utils";
 
 /**
  * Format reset time display (Today, 12:00 PM)
  */
-function formatResetTimeDisplay(resetTime: any) {
+function formatResetTimeDisplay(resetTime: string | Date | null | undefined) {
   if (!resetTime) return null;
 
   try {
@@ -39,7 +39,7 @@ function formatResetTimeDisplay(resetTime: any) {
 /**
  * Get color classes based on remaining percentage
  */
-function getColorClasses(remainingPercentage: any) {
+function getColorClasses(remainingPercentage: number) {
   if (remainingPercentage > 70) {
     return {
       text: "text-green-600 dark:text-green-400",
@@ -70,7 +70,13 @@ function getColorClasses(remainingPercentage: any) {
 /**
  * Quota Table Component - Table-based display for quota data
  */
-export default function QuotaTable({ quotas = [], compact = false }: any) {
+export default function QuotaTable({
+  quotas = [],
+  compact = false,
+}: {
+  quotas?: NormalizedQuota[];
+  compact?: boolean;
+}) {
   if (!quotas || quotas.length === 0) {
     return null;
   }
@@ -84,7 +90,7 @@ export default function QuotaTable({ quotas = [], compact = false }: any) {
     <div className="overflow-x-auto">
       <table className="w-full table-fixed text-left">
         <tbody>
-          {quotas.map((quota: any, index: any) => {
+          {quotas.map((quota, index) => {
             const remaining =
               quota.remainingPercentage !== undefined
                 ? Math.round(quota.remainingPercentage)

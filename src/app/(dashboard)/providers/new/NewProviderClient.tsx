@@ -2,17 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ComponentType, type ReactNode, useState } from "react";
+import {
+  type ChangeEvent,
+  type ComponentType,
+  type FormEvent,
+  type ReactNode,
+  useState,
+} from "react";
 import { Button, Card, Input, Select, Toggle } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
 
-const providerOptions = Object.values(AI_PROVIDERS).map((p: any) => ({
+const providerOptions = Object.values(AI_PROVIDERS).map((p) => ({
   value: p.id,
   label: p.name,
 }));
 
-const authMethodOptions = Object.values(AUTH_METHODS).map((m: any) => ({
+const authMethodOptions = Object.values(AUTH_METHODS).map((m) => ({
   value: m.id,
   label: m.name,
 }));
@@ -21,10 +27,20 @@ const CardSection = (
   Card as typeof Card & { Section: ComponentType<{ children?: ReactNode; className?: string }> }
 ).Section;
 
+type FormData = {
+  provider: string;
+  authMethod: string;
+  apiKey: string;
+  displayName: string;
+  isActive: boolean;
+};
+
+type FormField = keyof FormData;
+
 export default function NewProviderPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     provider: "",
     authMethod: "apikey",
     apiKey: "",
@@ -33,10 +49,10 @@ export default function NewProviderPage() {
   });
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
-  const handleChange = (field: any, value: any) => {
-    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  const handleChange = <K extends FormField>(field: K, value: FormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev: any) => ({ ...prev, [field]: null }));
+      setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
 
@@ -50,7 +66,7 @@ export default function NewProviderPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -65,7 +81,7 @@ export default function NewProviderPage() {
       if (response.ok) {
         router.push("/providers");
       } else {
-        const data = await response.json();
+        const data = (await response.json()) as { error?: string };
         setErrors({ submit: data.error || "Failed to create provider" });
       }
     } catch (_error) {
@@ -95,7 +111,9 @@ export default function NewProviderPage() {
             label="Provider"
             options={providerOptions}
             value={formData.provider}
-            onChange={(e: any) => handleChange("provider", e.target.value)}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              handleChange("provider", e.target.value)
+            }
             placeholder="Select a provider"
             error={errors.provider}
             required
@@ -124,7 +142,7 @@ export default function NewProviderPage() {
               Authentication Method <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-3">
-              {authMethodOptions.map((method: any) => (
+              {authMethodOptions.map((method) => (
                 <button
                   key={method.value}
                   type="button"
@@ -149,7 +167,9 @@ export default function NewProviderPage() {
               type="password"
               placeholder="Enter your API key"
               value={formData.apiKey}
-              onChange={(e: any) => handleChange("apiKey", e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                handleChange("apiKey", e.target.value)
+              }
               error={errors.apiKey}
               hint="Your API key will be encrypted and stored securely."
               required
@@ -173,14 +193,16 @@ export default function NewProviderPage() {
             label="Display Name"
             placeholder="e.g., Production API, Dev Environment"
             value={formData.displayName}
-            onChange={(e: any) => handleChange("displayName", e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              handleChange("displayName", e.target.value)
+            }
             hint="Optional. A friendly name to identify this configuration."
           />
 
           {/* Active Toggle */}
           <Toggle
             checked={formData.isActive}
-            onChange={(checked: any) => handleChange("isActive", checked)}
+            onChange={(checked) => handleChange("isActive", checked)}
             label="Active"
             description="Enable this provider for use in your applications"
           />

@@ -1,5 +1,22 @@
 "use client";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/shared/utils/cn";
+
+type ToggleSize = {
+  track: string;
+  thumb: string;
+  translate: string;
+};
+
+type ToggleProps = {
+  checked?: boolean;
+  onChange?: (checked: boolean) => void;
+  label?: ReactNode;
+  description?: ReactNode;
+  disabled?: boolean;
+  size?: string;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLDivElement>, "onChange" | "children">;
 
 export default function Toggle({
   checked = false,
@@ -10,17 +27,8 @@ export default function Toggle({
   size = "md",
   className,
   ...rest
-}: {
-  checked?: boolean;
-  onChange?: any;
-  label?: any;
-  description?: any;
-  disabled?: boolean;
-  size?: string;
-  className?: any;
-  [key: string]: any;
-}) {
-  const sizes: Record<string, any> = {
+}: ToggleProps) {
+  const sizes: Record<string, ToggleSize> = {
     sm: { track: "w-7 h-4", thumb: "size-3", translate: "translate-x-3" },
     md: { track: "w-9 h-5", thumb: "size-4", translate: "translate-x-4" },
     lg: { track: "w-11 h-6", thumb: "size-5", translate: "translate-x-5" },
@@ -29,6 +37,8 @@ export default function Toggle({
   const handleClick = () => {
     if (!disabled && onChange) onChange(!checked);
   };
+
+  const sizeCfg = sizes[size] ?? sizes.md!;
 
   return (
     <div
@@ -50,7 +60,7 @@ export default function Toggle({
           "transition-colors duration-150 ease-in-out",
           "focus:outline-none focus-visible:ring-1 focus-visible:ring-porcelain/50",
           checked ? "bg-porcelain" : "bg-gunmetal border border-charcoal-grey",
-          sizes[size].track,
+          sizeCfg.track,
           disabled && "cursor-not-allowed",
         )}
       >
@@ -58,8 +68,8 @@ export default function Toggle({
           className={cn(
             "pointer-events-none inline-block rounded-full shadow-sm",
             "transform transition duration-150 ease-in-out",
-            checked ? `${sizes[size].translate} bg-pitch-black` : "translate-x-0.5 bg-storm-cloud",
-            sizes[size].thumb,
+            checked ? `${sizeCfg.translate} bg-pitch-black` : "translate-x-0.5 bg-storm-cloud",
+            sizeCfg.thumb,
             "mt-0.5",
           )}
         />

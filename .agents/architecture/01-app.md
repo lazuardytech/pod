@@ -141,5 +141,5 @@ This layer sits between the API route and `open-sse/`. It manages the 100-connec
 
 - **Thin API routes**: Routes call into `lib/` services; no business logic in route handlers
 - **Zustand per domain**: Each domain (auth, providers, theme, notifications, header) gets its own store
-- **PWA**: Service worker is registration-only (no auto-updates); offline reads via `offlineJsonCache`; writes queue via mutation stack
+- **PWA**: SW registration-only (no auto-update UX). `public/sw.js` is **network-first** for navigations (offline `/offline` fallback); never reject `respondWith` / never `Response.error()` on images; `ServiceWorkerRegistrar` must not blind-reload on `controllerchange`. Offline reads via `offlineJsonCache`; writes via mutation queue. See gotcha §34.
 - **Header actions**: Route through `headerActionStore`

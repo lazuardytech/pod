@@ -1,0 +1,390 @@
+/**
+ * Search Dispatcher — routes /v1/search requests to dedicated search APIs
+ * or chat-based LLM search wrappers, with retry-friendly error envelope.
+ *
+ * Dependency map:
+ *   provider.searchConfig    → dedicated search API (callers + normalizers)
+ *   provider.searchViaChat   → wrap chat-completions (chatSearch.js)
+ */
+
+import { buildSearchRequest } from "./callers.js";
+import { handleChatSearch } from "./chatSearch.js";
+import { normalizeSearchResponse } from "./normalizers.js";
+
+export type SearchResult =
+  | { success: true; response: Response; data?: unknown }
+  | { success: false; status: number; error: string; response?: Response };
+
+type SearchRequestBody = Record<string, unknown> & {
+  query: string;
+  search_type?: string;
+  max_results?: number;
+  country?: string;
+  language?: string;
+  time_range?: string;
+  offset?: number;
+  domain_filter?: string[];
+  content_options?: {
+    snippet?: boolean;
+    full_page?: boolean;
+    format?: string;
+    max_characters?: number;
+  };
+  provider_options?: Record<string, unknown>;
+};
+type SearchProvider = { id: string; searchViaChat?: { defaultModel?: string } };
+type DedicatedSearchConfig = Record<string, unknown> & {
+  baseUrl?: string;
+  authType?: string;
+  defaultMaxResults?: number;
+  maxMaxResults?: number;
+  searchTypes?: string[];
+  timeoutMs?: number;
+};
+type SearchLog = {
+  error?: (...args: unknown[]) => void;
+  info?: (...args: unknown[]) => void;
+  warn?: (...args: unknown[]) => void;
+};
+type SearchCredentials = {
+  accessToken?: string;
+  apiKey?: string;
+  providerSpecificData?: Record<string, unknown>;
+} | null;
+
+export interface SearchCoreParams {
+  body: SearchRequestBody;
+  provider: SearchProvider;
+  providerConfig?: DedicatedSearchConfig;
+  credentials: Record<string, unknown> | null;
+  log: unknown;
+  onCredentialsRefreshed?: (newCreds: Record<string, unknown>) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+}
+
+const GLOBAL_TIMEOUT_MS = 15000;
+const NON_RETRIABLE = new Set([400, 401, 403, 404]);
+
+const LOCALHOST_URL_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?/i;
+
+function hasInvalidControlChar(text: string) {
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 127) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function stripNonAscii(text: string) {
+  let clean = "";
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) <= 255) clean += text[i] ?? "";
+  }
+  return clean;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function formatSearxngError({
+  status,
+  statusText = "",
+  text = "",
+  fetchUrl = "",
+}: {
+  fetchUrl?: string;
+  status: number;
+  statusText?: string;
+  text?: string;
+}) {
+  const endpointLabel = fetchUrl
+    ? fetchUrl.split("?")[0] || "configured endpoint"
+    : "configured endpoint";
+  if (status === 403) {
+    return `searxng returned 403 from ${endpointLabel}. This instance may block JSON API requests (format=json). Use a SearXNG instance that allows JSON or run your own instance.`;
+  }
+  if (status === 429) {
+    return `searxng rate-limited request (429) from ${endpointLabel}. Try another instance or reduce request frequency.`;
+  }
+  const detail = text || statusText || "upstream error";
+  return `searxng returned ${status} from ${endpointLabel}: ${detail.slice(0, 200)}`;
+}
+
+function formatSearxngNetworkError({ err, fetchUrl = "" }: { err: unknown; fetchUrl?: string }) {
+  const endpointLabel = fetchUrl
+    ? fetchUrl.split("?")[0] || "configured endpoint"
+    : "configured endpoint";
+  if (LOCALHOST_URL_RE.test(endpointLabel)) {
+    return `Unable to connect to ${endpointLabel}. Start SearXNG locally on that URL or set provider_options.baseUrl to a reachable SearXNG instance.`;
+  }
+  return `searxng connection error at ${endpointLabel}: ${err instanceof Error ? err.message : "network error"}`;
+}
+
+/** Normalize and validate query string. */
+function sanitizeQuery(
+  query: string,
+): { clean: string; error?: undefined } | { clean?: undefined; error: string } {
+  if (hasInvalidControlChar(query)) return { error: "Query contains invalid control characters" };
+  const clean = query.normalize("NFKC").trim().replace(/\s+/g, " ");
+  if (!clean) return { error: "Query is empty after normalization" };
+  return { clean };
+}
+
+// Strip non-ASCII chars from header values (HTTP headers must be ByteString).
+function sanitizeHeaders(headers: HeadersInit | undefined) {
+  if (!headers) return headers;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers)) {
+    out[k] = typeof v === "string" ? stripNonAscii(v).trim() : v;
+  }
+  return out;
+}
+
+/** Build a JSON Response wrapper used by the auth layer. */
+function jsonResponse(payload: unknown, status: number = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+}
+
+/** Wrap an error result with a Response object so the auth wrapper can return it directly. */
+function errorResult(status: number, error: string): SearchResult {
+  return {
+    success: false,
+    status,
+    error,
+    response: jsonResponse({ error: { message: error, code: status } }, status),
+  };
+}
+
+/** Wrap a success payload. */
+function successResult(data: unknown): SearchResult {
+  return { success: true, data, response: jsonResponse(data, 200) };
+}
+
+/**
+ * Run a single dedicated search provider attempt.
+ * @returns {Promise<{success:boolean, status?:number, error?:string, data?:object}>}
+ */
+async function tryDedicatedProvider({
+  provider,
+  providerConfig,
+  body,
+  credentials,
+  log,
+  globalStartTime,
+}: {
+  provider: SearchProvider;
+  providerConfig: DedicatedSearchConfig;
+  body: SearchRequestBody;
+  credentials: SearchCredentials;
+  log: SearchLog;
+  globalStartTime: number;
+}) {
+  const startTime = Date.now();
+  const token = credentials?.apiKey || credentials?.accessToken || undefined;
+
+  if (providerConfig.authType !== "none" && !token) {
+    return { success: false, status: 401, error: `No credentials for provider: ${provider.id}` };
+  }
+
+  const params = {
+    query: body.query,
+    searchType: body.search_type || providerConfig.searchTypes?.[0] || "web",
+    maxResults: Math.min(
+      body.max_results || providerConfig.defaultMaxResults || 5,
+      providerConfig.maxMaxResults || 100,
+    ),
+    token,
+    country: body.country,
+    language: body.language,
+    timeRange: body.time_range,
+    offset: body.offset,
+    domainFilter: body.domain_filter,
+    contentOptions: body.content_options,
+    providerOptions: body.provider_options,
+    providerSpecificData: credentials?.providerSpecificData,
+  };
+
+  let url, init;
+  try {
+    ({ url, init } = buildSearchRequest(
+      { id: provider.id, baseUrl: String(providerConfig.baseUrl || ""), ...providerConfig },
+      params,
+    ));
+  } catch (err: unknown) {
+    return {
+      success: false,
+      status: 400,
+      error: errorMessage(err) || `Invalid request for ${provider.id}`,
+    };
+  }
+
+  // Timeout = min(provider timeout, remaining global)
+  const remaining = GLOBAL_TIMEOUT_MS - (Date.now() - globalStartTime);
+  const timeout = Math.min(providerConfig.timeoutMs || 10000, Math.max(remaining, 1000));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  log?.info?.(
+    "SEARCH",
+    `${provider.id} | "${params.query.slice(0, 80)}" | type=${params.searchType}`,
+  );
+
+  try {
+    const resp = await fetch(url, {
+      ...init,
+      headers: sanitizeHeaders(init.headers as HeadersInit | undefined),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => {
+        // Best-effort upstream error body read.
+        return "";
+      });
+      log?.error?.("SEARCH", `${provider.id} ${resp.status}: ${errText.slice(0, 200)}`);
+      if (provider.id === "searxng") {
+        return {
+          success: false,
+          status: resp.status,
+          error: formatSearxngError({
+            status: resp.status,
+            statusText: resp.statusText,
+            text: errText,
+            fetchUrl: url,
+          }),
+        };
+      }
+      return {
+        success: false,
+        status: resp.status,
+        error: `${provider.id} returned ${resp.status}: ${errText.slice(0, 200)}`,
+      };
+    }
+    const data = await resp.json();
+    const normalized = normalizeSearchResponse(provider.id, data, params.query, params.searchType);
+    const results = normalized.results.slice(0, params.maxResults);
+    const duration = Date.now() - startTime;
+
+    return {
+      success: true,
+      data: {
+        provider: provider.id,
+        query: params.query,
+        results,
+        answer: null,
+        usage: { queries_used: 1, search_cost_usd: providerConfig.costPerQuery || 0 },
+        metrics: {
+          response_time_ms: duration,
+          upstream_latency_ms: duration,
+          total_results_available: normalized.totalResults,
+        },
+        errors: [],
+      },
+    };
+  } catch (err: unknown) {
+    clearTimeout(timer);
+    const isTimeout = isAbortError(err);
+    const status = isTimeout ? 504 : 502;
+    const message = errorMessage(err);
+    log?.error?.("SEARCH", `${provider.id} ${isTimeout ? "timeout" : "error"}: ${message}`);
+    if (provider.id === "searxng" && !isTimeout) {
+      return {
+        success: false,
+        status,
+        error: formatSearxngNetworkError({ err, fetchUrl: url }),
+      };
+    }
+    return {
+      success: false,
+      status,
+      error: `${provider.id} ${isTimeout ? "timeout" : "error"}: ${message}`,
+    };
+  }
+}
+
+/**
+ * Core search handler. Dispatches to dedicated API or chat-based LLM.
+ * Same calling convention as handleEmbeddingsCore: returns `{success, response, status?, error?}`.
+ *
+ * @param {object}   options
+ * @param {object}   options.body            Sanitized body from auth wrapper
+ * @param {object}   options.provider        Provider entry from AI_PROVIDERS
+ * @param {object}   [options.providerConfig] Provider's searchConfig (if dedicated)
+ * @param {object|null} options.credentials  Provider credentials
+ * @param {object}   [options.log]           Logger
+ */
+export async function handleSearchCore({
+  body,
+  provider,
+  providerConfig,
+  credentials,
+  log,
+}: SearchCoreParams): Promise<SearchResult> {
+  const globalStartTime = Date.now();
+  const typedLog = log as SearchLog;
+
+  // 1. Sanitize query
+  const { clean, error: sanitizeError } = sanitizeQuery(body.query || "");
+  if (sanitizeError) return errorResult(400, sanitizeError);
+  const normalizedBody: SearchRequestBody = { ...body, query: clean || "" };
+
+  // 2. Route: dedicated search API takes priority over chat-based
+  let result;
+  if (providerConfig) {
+    result = await tryDedicatedProvider({
+      provider,
+      providerConfig,
+      body: normalizedBody,
+      credentials,
+      log: typedLog,
+      globalStartTime,
+    });
+  } else if (provider.searchViaChat) {
+    result = await handleChatSearch({
+      provider: provider.id,
+      query: clean,
+      maxResults: normalizedBody.max_results,
+      model: provider.searchViaChat.defaultModel,
+      credentials,
+      log: typedLog,
+    });
+  } else {
+    return errorResult(400, `Provider ${provider.id} does not support web search`);
+  }
+
+  if (result.success) return successResult(result.data);
+
+  // 3. Failover within global timeout for retriable errors
+  if (
+    !NON_RETRIABLE.has(result.status || 0) &&
+    Date.now() - globalStartTime < GLOBAL_TIMEOUT_MS &&
+    provider.searchViaChat &&
+    providerConfig
+  ) {
+    typedLog?.warn?.(
+      "SEARCH",
+      `${provider.id} dedicated failed (${result.status}), falling back to chat-based search`,
+    );
+    const fallback = await handleChatSearch({
+      provider: provider.id,
+      query: clean,
+      maxResults: normalizedBody.max_results,
+      model: provider.searchViaChat.defaultModel,
+      credentials,
+      log: typedLog,
+    });
+    if (fallback.success) return successResult(fallback.data);
+  }
+
+  return errorResult(result.status || 502, result.error || "Search failed");
+}

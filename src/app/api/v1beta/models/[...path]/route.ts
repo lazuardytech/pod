@@ -42,7 +42,7 @@ export async function OPTIONS() {
  * The upstream handleChat returns OpenAI SSE format; we transform it to
  * Gemini SSE format on the fly via transformOpenAISSEToGeminiSSE().
  */
-export async function POST(request: any, { params }: { params: any }) {
+export async function POST(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   await ensureInitialized();
 
   try {
@@ -72,8 +72,8 @@ export async function POST(request: any, { params }: { params: any }) {
 
     if (path.length >= 2) {
       // Format: /v1beta/models/provider/model:generateContent
-      const provider = path[0];
-      const modelAction = path[1];
+      const provider = path[0] ?? "";
+      const modelAction = path[1] ?? "";
       action = modelAction.includes(":streamGenerateContent")
         ? ":streamGenerateContent"
         : ":generateContent";
@@ -83,7 +83,7 @@ export async function POST(request: any, { params }: { params: any }) {
       model = provider + "/" + modelName;
     } else {
       // Format: /v1beta/models/model:generateContent
-      const modelAction = path[0];
+      const modelAction = path[0] ?? "";
       action = modelAction.includes(":streamGenerateContent")
         ? ":streamGenerateContent"
         : ":generateContent";
@@ -136,12 +136,25 @@ export async function POST(request: any, { params }: { params: any }) {
  * @param {string} model       - resolved model string (e.g. "gemini-pro-high")
  * @param {boolean} stream     - whether to stream (from URL action)
  */
-function convertGeminiToInternal(geminiBody: any, model: any, stream: any) {
-  const messages: any[] = [];
+type GeminiPart = { text?: string; thought?: boolean; [key: string]: unknown };
+type GeminiContent = { role?: string; parts?: GeminiPart[]; [key: string]: unknown };
+type GeminiBody = {
+  systemInstruction?: GeminiContent;
+  contents?: GeminiContent[];
+  generationConfig?: {
+    maxOutputTokens?: number;
+    temperature?: number;
+    topP?: number;
+  };
+  [key: string]: unknown;
+};
+
+function convertGeminiToInternal(geminiBody: GeminiBody, model: string, stream: boolean) {
+  const messages: Array<{ role: string; content: string }> = [];
 
   // Convert system instruction
   if (geminiBody.systemInstruction) {
-    const systemText = geminiBody.systemInstruction.parts?.map((p: any) => p.text).join("\n") || "";
+    const systemText = geminiBody.systemInstruction.parts?.map((p) => p.text).join("\n") || "";
     if (systemText) {
       messages.push({ role: "system", content: systemText });
     }
@@ -151,7 +164,7 @@ function convertGeminiToInternal(geminiBody: any, model: any, stream: any) {
   if (geminiBody.contents) {
     for (const content of geminiBody.contents) {
       const role = content.role === "model" ? "assistant" : "user";
-      const text = content.parts?.map((p: any) => p.text).join("\n") || "";
+      const text = content.parts?.map((p) => p.text).join("\n") || "";
       messages.push({ role, content: text });
     }
   }
@@ -187,7 +200,7 @@ const FINISH_REASON_MAP = {
  *   data: {"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP","index":0}],"usageMetadata":{...}}
  *   (stream closes — no [DONE])
  */
-function transformOpenAISSEToGeminiSSE(upstreamResponse: any, model: any) {
+function transformOpenAISSEToGeminiSSE(upstreamResponse: Response, model: string) {
   if (!upstreamResponse.ok || !upstreamResponse.body) {
     return upstreamResponse;
   }
@@ -221,7 +234,7 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse: any, model: any) {
 
         const delta = choice.delta || {};
 
-        const parts: any[] = [];
+        const parts: GeminiPart[] = [];
         if (delta.reasoning_content) {
           parts.push({ text: delta.reasoning_content, thought: true });
         }
@@ -284,7 +297,7 @@ function transformOpenAISSEToGeminiSSE(upstreamResponse: any, model: any) {
  * Convert an OpenAI chat.completion JSON response into a Gemini
  * GenerateContentResponse so that Gemini CLI can parse it.
  */
-async function convertOpenAIResponseToGemini(response: any, model: any) {
+async function convertOpenAIResponseToGemini(response: Response, model: string) {
   if (!response.ok) return response;
 
   let body;
@@ -314,7 +327,7 @@ async function convertOpenAIResponseToGemini(response: any, model: any) {
 
   const { message, finish_reason } = choice ?? ({} as Record<string, unknown>);
 
-  const parts: any[] = [];
+  const parts: GeminiPart[] = [];
   if (message.reasoning_content) {
     parts.push({ text: message.reasoning_content, thought: true });
   }

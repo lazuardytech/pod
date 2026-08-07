@@ -24,34 +24,30 @@ async function resolveSwVersion(): Promise<string> {
  * Registers the service worker for offline caching.
  * No auto-update detection — Pod does not self-update.
  */
-export default function ServiceWorkerRegistrar(): any {
-  useEffect((): any => {
+export default function ServiceWorkerRegistrar(): null {
+  useEffect(() => {
     if (!("serviceWorker" in navigator)) {
       return undefined;
     }
 
     let cancelled = false;
-    const onControllerChange = (): any => {
-      window.location.reload();
-    };
-    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
     (async () => {
       const version = await resolveSwVersion();
       if (cancelled) return;
       navigator.serviceWorker
         .register(`/sw.js?v=${encodeURIComponent(version)}`, { scope: "/" })
-        .catch((err): any => {
-          console.warn("[Pod] Service Worker registration failed:", err?.message || err);
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn("[Pod] Service Worker registration failed:", message || err);
           try {
             localStorage.setItem("pod:sw:registration-failed", "1");
           } catch {}
         });
     })();
 
-    return (): any => {
+    return () => {
       cancelled = true;
-      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
     };
   }, []);
 

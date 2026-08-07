@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import open from "open";
 import { getServerCredentials } from "../config/index";
-import { GEMINI_CONFIG, getOAuthClientMetadata } from "../constants/oauth";
+import { GEMINI_CONFIG, type GeminiConfig, getOAuthClientMetadata } from "../constants/oauth";
 import { startLocalServer } from "../utils/server";
 import { spinner as createSpinner } from "../utils/ui";
 
@@ -10,7 +10,7 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses standard OAuth2 Authorization Code flow (no PKCE)
  */
 export class GeminiCLIService {
-  public config: any;
+  public config: GeminiConfig;
 
   constructor() {
     this.config = GEMINI_CONFIG;
@@ -37,7 +37,7 @@ export class GeminiCLIService {
    * Exchange authorization code for tokens
    */
   // todo(ts): token response shape varies per Google OAuth endpoint — keep loose.
-  async exchangeCode(code: string, redirectUri: string): Promise<any> {
+  async exchangeCode(code: string, redirectUri: string): Promise<Record<string, unknown>> {
     const response = await fetch(this.config.tokenUrl, {
       method: "POST",
       headers: {
@@ -106,7 +106,7 @@ export class GeminiCLIService {
    * Get user info from Google
    */
   // todo(ts): Google userinfo endpoint response varies — keep loose.
-  async getUserInfo(accessToken: string): Promise<any> {
+  async getUserInfo(accessToken: string): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.config.userInfoUrl}?alt=json`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -126,7 +126,11 @@ export class GeminiCLIService {
    * Save Gemini CLI tokens to server
    */
   // todo(ts): token/userInfo shapes are provider-specific — keep loose.
-  async saveTokens(tokens: any, userInfo: any, projectId: string): Promise<any> {
+  async saveTokens(
+    tokens: Record<string, unknown>,
+    userInfo: Record<string, unknown>,
+    projectId: string,
+  ): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/gemini-cli`, {
@@ -164,7 +168,7 @@ export class GeminiCLIService {
       spinner.text = "Starting local server...";
 
       // Start local server for callback
-      let callbackParams: any = null;
+      let callbackParams: Record<string, string> | null = null;
       const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       });
@@ -203,27 +207,32 @@ export class GeminiCLIService {
 
       close();
 
-      if (callbackParams?.error) {
-        throw new Error(callbackParams.error_description || callbackParams.error);
+      if (!callbackParams) {
+        throw new Error("No authorization callback received");
+      }
+      const cp: Record<string, string> = callbackParams;
+      if (cp.error) {
+        throw new Error(cp.error_description || cp.error);
       }
 
-      if (!callbackParams?.code) {
+      if (!cp.code) {
         throw new Error("No authorization code received");
       }
 
       spinner.start("Exchanging code for tokens...");
 
-      const tokens = await this.exchangeCode(callbackParams.code, redirectUri);
+      const tokens = await this.exchangeCode(cp.code, redirectUri);
+      const accessToken = String(tokens.access_token ?? "");
 
       spinner.text = "Fetching user info...";
 
       // Get user info
-      const userInfo = await this.getUserInfo(tokens.access_token);
+      const userInfo = await this.getUserInfo(accessToken);
 
       spinner.text = "Fetching project ID...";
 
       // Fetch project ID
-      const projectId = await this.fetchProjectId(tokens.access_token);
+      const projectId = await this.fetchProjectId(accessToken);
 
       spinner.text = "Saving tokens to server...";
 

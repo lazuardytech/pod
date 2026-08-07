@@ -1,4 +1,5 @@
 "use client";
+import type { ReactNode } from "react";
 import { useEffect } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
@@ -17,12 +18,11 @@ function PayloadSection({
   icon,
   data,
 }: {
-  title?: any;
-  icon?: any;
-  data?: any;
-  [key: string]: any;
+  title?: ReactNode;
+  icon?: string;
+  data?: unknown;
 }) {
-  if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
+  if (!data || (typeof data === "object" && Object.keys(data as object).length === 0)) return null;
   return (
     <DetailSection title={title} icon={icon}>
       <JsonBlock data={data} />
@@ -35,10 +35,9 @@ function TokenPill({
   value,
   color,
 }: {
-  label?: any;
-  value?: any;
-  color?: any;
-  [key: string]: any;
+  label?: ReactNode;
+  value?: number | string | null;
+  color?: string;
 }) {
   if (value === null || value === undefined) return null;
   return (
@@ -54,6 +53,43 @@ function TokenPill({
   );
 }
 
+type RequestLog = {
+  timestamp?: string;
+  model?: string;
+  provider?: string;
+  account?: string;
+  status?: string;
+  combo?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+};
+
+type RequestDetailLatency = {
+  total?: number;
+  totalMs?: number;
+  ttfb?: number;
+};
+
+type RequestDetailTokens = {
+  prompt_tokens?: number;
+  input_tokens?: number;
+  completion_tokens?: number;
+  output_tokens?: number;
+  cache_read_input_tokens?: number;
+  cached_tokens?: number;
+  cache_creation_input_tokens?: number;
+  reasoning_tokens?: number;
+};
+
+type RequestDetail = {
+  latency?: number | RequestDetailLatency;
+  tokens?: RequestDetailTokens;
+  request?: Record<string, unknown>;
+  providerRequest?: Record<string, unknown>;
+  providerResponse?: Record<string, unknown>;
+  response?: Record<string, unknown>;
+};
+
 /**
  * RequestLogDetail — right-side drawer showing full detail for a request log entry.
  * Props:
@@ -68,16 +104,15 @@ export default function RequestLogDetail({
   loading,
   onClose,
 }: {
-  log?: any;
-  detail?: any;
-  loading?: any;
-  onClose?: any;
-  [key: string]: any;
+  log?: RequestLog | null;
+  detail?: RequestDetail | null;
+  loading?: boolean;
+  onClose?: () => void;
 }) {
   // Close on Escape
   useEffect(() => {
-    const handler = (e: any) => {
-      if (e.key === "Escape") onClose();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -97,9 +132,10 @@ export default function RequestLogDetail({
         ? "text-aether-blue"
         : "text-fog-grey";
 
+  const latencyObj = detail?.latency && typeof detail.latency === "object" ? detail.latency : null;
   const latencyMs =
-    detail?.latency?.total ??
-    detail?.latency?.totalMs ??
+    latencyObj?.total ??
+    latencyObj?.totalMs ??
     (typeof detail?.latency === "number" ? detail.latency : null);
 
   const tokens = detail?.tokens ?? {};
@@ -167,8 +203,8 @@ export default function RequestLogDetail({
         {latencyMs !== null && latencyMs !== undefined && (
           <DetailSection title="Latency" icon="speed">
             <DetailRow label="Total" value={`${latencyMs.toLocaleString()}ms`} mono />
-            {detail?.latency?.ttfb !== null && detail?.latency?.ttfb !== undefined && (
-              <DetailRow label="TTFB" value={`${detail.latency.ttfb.toLocaleString()}ms`} mono />
+            {latencyObj?.ttfb !== null && latencyObj?.ttfb !== undefined && (
+              <DetailRow label="TTFB" value={`${latencyObj.ttfb.toLocaleString()}ms`} mono />
             )}
           </DetailSection>
         )}

@@ -20,7 +20,33 @@ const STRATEGY_OPTIONS = [
 
 const PAGE_LIMIT = 20;
 
-function toDateLabel(value: any) {
+type ConfirmDialogState = {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: (() => void) | null;
+  variant: string;
+};
+
+type MemoryApiKey = { id: string; name?: string | null };
+
+type MemoryEntryRow = {
+  id: string;
+  type?: string;
+  key?: string;
+  content?: string;
+  apiKeyId?: string;
+  createdAt?: string;
+};
+
+type MemoryListState = {
+  data: MemoryEntryRow[];
+  total: number;
+  totalPages: number;
+  stats: { total: number; byType: Record<string, number> };
+};
+
+function toDateLabel(value: string | number | Date | null | undefined) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
@@ -31,22 +57,26 @@ export default function MemoryClient() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [deletingId, setDeletingId] = useState<any>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [clearingAll, setClearingAll] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     title: "",
     message: "",
-    onConfirm: null as (() => void) | null,
+    onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
-    setConfirmDialog({ open: true, title, message, onConfirm, variant });
+  const openConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    variant = "default",
+  ) => setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({
+    setConfirmDialog((prev) => ({
       ...prev,
       open: false,
-      onConfirm: null as (() => void) | null,
+      onConfirm: null,
     }));
 
   const [settings, setSettings] = useState({
@@ -56,7 +86,7 @@ export default function MemoryClient() {
     strategy: "hybrid",
   });
 
-  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [apiKeys, setApiKeys] = useState<MemoryApiKey[]>([]);
   const [filters, setFilters] = useState({
     q: "",
     apiKeyId: "",
@@ -68,7 +98,7 @@ export default function MemoryClient() {
     type: "",
   });
   const [page, setPage] = useState(1);
-  const [memoryData, setMemoryData] = useState({
+  const [memoryData, setMemoryData] = useState<MemoryListState>({
     data: [],
     total: 0,
     totalPages: 1,
@@ -86,7 +116,7 @@ export default function MemoryClient() {
   }, [filters, page]);
 
   const loadData = useCallback(
-    async (isInitial: any = false) => {
+    async (isInitial = false) => {
       if (isInitial) setLoading(true);
       else setRefreshing(true);
       try {
@@ -122,7 +152,7 @@ export default function MemoryClient() {
           setApiKeys(keysPayload.keys);
         }
       } catch (error) {
-        toast.error((error as any)?.message || "Failed to load memory data");
+        toast.error((error as Error)?.message || "Failed to load memory data");
       } finally {
         if (isInitial) setLoading(false);
         else setRefreshing(false);
@@ -169,15 +199,15 @@ export default function MemoryClient() {
       toast.success("Memory settings updated");
       await loadData(false);
     } catch (error) {
-      toast.error((error as any)?.message || "Failed to save memory settings");
+      toast.error((error as Error)?.message || "Failed to save memory settings");
     } finally {
       setSavingSettings(false);
     }
   };
 
-  const handleToggleMemoryEnabled = async (enabled: any) => {
+  const handleToggleMemoryEnabled = async (enabled: boolean) => {
     const previous = settings.enabled;
-    setSettings((prev: any) => ({ ...prev, enabled }));
+    setSettings((prev) => ({ ...prev, enabled }));
     setSavingSettings(true);
     try {
       const res = await fetch("/api/settings/memory", {
@@ -194,14 +224,14 @@ export default function MemoryClient() {
       toast.success(`Memory ${enabled ? "enabled" : "disabled"}`);
       await loadData(false);
     } catch (error) {
-      setSettings((prev: any) => ({ ...prev, enabled: previous }));
-      toast.error((error as any)?.message || "Failed to update memory state");
+      setSettings((prev) => ({ ...prev, enabled: previous }));
+      toast.error((error as Error)?.message || "Failed to update memory state");
     } finally {
       setSavingSettings(false);
     }
   };
 
-  const handleDeleteMemory = async (id: any) => {
+  const handleDeleteMemory = async (id: string) => {
     if (!id) return;
 
     setDeletingId(id);
@@ -214,7 +244,7 @@ export default function MemoryClient() {
       toast.success("Memory deleted");
       await loadData(false);
     } catch (error) {
-      toast.error((error as any)?.message || "Failed to delete memory");
+      toast.error((error as Error)?.message || "Failed to delete memory");
     } finally {
       setDeletingId(null);
     }
@@ -238,7 +268,7 @@ export default function MemoryClient() {
       setPage(1);
       await loadData(false);
     } catch (error) {
-      toast.error((error as any)?.message || "Failed to clear memories");
+      toast.error((error as Error)?.message || "Failed to clear memories");
     } finally {
       setClearingAll(false);
     }
@@ -253,8 +283,7 @@ export default function MemoryClient() {
     });
   };
 
-  // todo(ts): byType payload is untyped; cast through any until the API has a shared shape
-  const typeStats: any = memoryData.stats?.byType || {};
+  const typeStats = memoryData.stats?.byType || {};
   const currentCount = memoryData.data.length;
 
   return (
@@ -289,9 +318,7 @@ export default function MemoryClient() {
             label="Strategy"
             value={settings.strategy}
             options={STRATEGY_OPTIONS}
-            onChange={(event: any) =>
-              setSettings((prev: any) => ({ ...prev, strategy: event.target.value }))
-            }
+            onChange={(event) => setSettings((prev) => ({ ...prev, strategy: event.target.value }))}
           />
 
           <Input
@@ -300,8 +327,8 @@ export default function MemoryClient() {
             min="0"
             max="16000"
             value={settings.maxTokens}
-            onChange={(event: any) =>
-              setSettings((prev: any) => ({ ...prev, maxTokens: event.target.value }))
+            onChange={(event) =>
+              setSettings((prev) => ({ ...prev, maxTokens: event.target.value }))
             }
           />
 
@@ -311,8 +338,8 @@ export default function MemoryClient() {
             min="1"
             max="365"
             value={settings.retentionDays}
-            onChange={(event: any) =>
-              setSettings((prev: any) => ({ ...prev, retentionDays: event.target.value }))
+            onChange={(event) =>
+              setSettings((prev) => ({ ...prev, retentionDays: event.target.value }))
             }
           />
         </div>
@@ -338,9 +365,7 @@ export default function MemoryClient() {
           <Input
             label="Search"
             value={draftFilters.q}
-            onChange={(event: any) =>
-              setDraftFilters((prev: any) => ({ ...prev, q: event.target.value }))
-            }
+            onChange={(event) => setDraftFilters((prev) => ({ ...prev, q: event.target.value }))}
             placeholder="Search memory content..."
             icon="search"
           />
@@ -348,9 +373,9 @@ export default function MemoryClient() {
             label="API Key"
             placeholder="All API Keys"
             value={draftFilters.apiKeyId}
-            options={apiKeys.map((key: any) => ({ value: key.id, label: key.name || key.id }))}
-            onChange={(event: any) =>
-              setDraftFilters((prev: any) => ({ ...prev, apiKeyId: event.target.value }))
+            options={apiKeys.map((key) => ({ value: key.id, label: key.name || key.id }))}
+            onChange={(event) =>
+              setDraftFilters((prev) => ({ ...prev, apiKeyId: event.target.value }))
             }
           />
           <Select
@@ -358,9 +383,7 @@ export default function MemoryClient() {
             placeholder="All Types"
             value={draftFilters.type}
             options={MEMORY_TYPE_OPTIONS}
-            onChange={(event: any) =>
-              setDraftFilters((prev: any) => ({ ...prev, type: event.target.value }))
-            }
+            onChange={(event) => setDraftFilters((prev) => ({ ...prev, type: event.target.value }))}
           />
           <div className="flex items-end">
             <Button icon="filter_alt" onClick={handleApplyFilters} className="w-full">
@@ -379,7 +402,7 @@ export default function MemoryClient() {
 
         {loading ? (
           <div className="flex flex-col gap-3">
-            {[1, 2, 3].map((i: any) => (
+            {[1, 2, 3].map((i) => (
               <CardSkeleton key={i} />
             ))}
           </div>
@@ -401,7 +424,7 @@ export default function MemoryClient() {
                 </tr>
               </thead>
               <tbody>
-                {memoryData.data.map((entry: any) => (
+                {memoryData.data.map((entry) => (
                   <tr key={entry.id} className="border-t border-border-subtle align-top">
                     <td className="px-3 py-2">
                       <Badge variant="primary" size="sm">
@@ -452,7 +475,7 @@ export default function MemoryClient() {
               size="sm"
               variant="secondary"
               disabled={page <= 1}
-              onClick={() => setPage((prev: any) => prev - 1)}
+              onClick={() => setPage((prev) => prev - 1)}
             >
               Prev
             </Button>
@@ -460,7 +483,7 @@ export default function MemoryClient() {
               size="sm"
               variant="secondary"
               disabled={page >= memoryData.totalPages}
-              onClick={() => setPage((prev: any) => prev + 1)}
+              onClick={() => setPage((prev) => prev + 1)}
             >
               Next
             </Button>
@@ -505,7 +528,7 @@ export default function MemoryClient() {
   );
 }
 
-function StatCard({ label, value }: any) {
+function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2">
       <p className="text-xs text-text-muted">{label}</p>

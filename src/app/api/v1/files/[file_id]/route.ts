@@ -14,7 +14,7 @@ export async function OPTIONS() {
 /**
  * GET /v1/files/{file_id} - Retrieve file metadata
  */
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ file_id: string }> }) {
   return await withApiKeyRateLimit(request, async () => {
     const apiKey = extractApiKey(request);
     if (!apiKey) {
@@ -41,7 +41,10 @@ export async function GET(request: any, { params }: { params: any }) {
 /**
  * DELETE /v1/files/{file_id} - Delete a file
  */
-export async function DELETE(request: any, { params }: { params: any }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ file_id: string }> },
+) {
   return await withApiKeyRateLimit(request, async () => {
     const apiKey = extractApiKey(request);
     if (!apiKey) {

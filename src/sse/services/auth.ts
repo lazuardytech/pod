@@ -306,7 +306,7 @@ export async function markAccountUnavailable(
   }
   let shouldFallback: boolean;
   let cooldownMs: number;
-  let newBackoffLevel: number;
+  let newBackoffLevel: number | undefined;
   if (resetsAtMs && resetsAtMs > Date.now()) {
     shouldFallback = true;
     cooldownMs = Math.min(resetsAtMs - Date.now(), MAX_RATE_LIMIT_COOLDOWN_MS);

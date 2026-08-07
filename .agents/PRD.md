@@ -95,9 +95,9 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ### Offline and PWA
 
-- Service worker for offline reads (offlineJsonCache via IndexedDB)
-- Offline mutation queue for safe idempotent writes
-- Installable PWA with web app manifest
+- Service worker (`public/sw.js`): network-first navigation with offline `/offline` fallback; no `Response.error()` on images; deploy-hash cache namespaces via `/sw-version.json`
+- Offline reads via `offlineJsonCache` (IndexedDB); mutation queue for safe idempotent writes
+- Installable PWA with web app manifest; registration-only lifecycle (no self-update UX)
 
 ## Non-Goals
 
@@ -106,10 +106,17 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - Not a multi-tenant SaaS (self-hosted single-tenant)
 - Not a replacement for provider-native SDKs
 
+## Deployment & Branches
+
+- `canary` = active development; `main` = stable (promote via PR only)
+- Zeabur: `pod` → `pod.lazuardy.tech` (port 20140); `pod-canary` → `pod-canary.zeabur.app`
+- Compatibility gate: [compatibility-matrix.md](compatibility-matrix.md)
+- Health: `/api/health` and `/api/monitoring/health*` are public reads
+
 ## Product Constraints
 
 - **Bun-only** — never npm/pnpm
-- **Local open-sse fork** — never replace with npm version, frozen as JS
+- **Local open-sse fork** — never replace with npm version; TypeScript, included in root `tsc`
 - **SQLite primary store** — optional Redis for rate limiting
 - **Dark-only UI** — no light mode
 - **Defensive by default** — sanitized errors, safe streaming, crash guards
@@ -120,7 +127,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - **Chunked body reading**: Large request bodies (5MB+) are stream-read in chunks to prevent 9-15s stalls. `readBodyTextStream()` enforces the size cap mid-stream and returns `413` on overflow.
 - **Configurable body cap**: All mutation routes enforce a 50MB default body cap (env-tunable). `413` returned on overflow; no silent memory spikes.
 - **Compatibility first**: OpenAI/Anthropic error shapes, auth headers, streaming format, and tool calling match official specs. Any regression is a release blocker.
-- **Offline-first dashboard**: Reads degrade via `offlineJsonCache`; writes queue via mutation stack; only safe idempotent mutations queued.
+- **Offline-capable dashboard**: SW network-first for documents; reads degrade via `offlineJsonCache`; writes queue via mutation stack; only safe idempotent mutations queued.
 
 ## Key Numbers
 
@@ -133,6 +140,6 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 | SSE idle timeout    | 5 minutes                                                                  |
 | Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES)    |
 | Providers supported | 50+                                                                        |
-| Executors           | 19 (provider executors; `base.js` is a base class, `index.js` is a barrel) |
+| Executors           | 19 (provider executors; `base.ts` is a base class, `index.ts` is a barrel) |
 | API route groups    | 26                                                                         |
 | Dashboard pages     | 15 (top-level, no /dashboard prefix)                                       |

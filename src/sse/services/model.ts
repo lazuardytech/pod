@@ -18,20 +18,23 @@ export async function resolveModelAlias(
 export async function getModelInfo(modelStr: string): Promise<ModelInfo> {
   const parsed = parseModel(modelStr);
   if (!parsed.isAlias) {
+    const model = parsed.model ?? "";
     const openaiNodes = await getProviderNodes({ type: "openai-compatible" });
     const m1 = openaiNodes.find((n) => n.prefix === parsed.providerAlias);
-    if (m1) return { provider: m1.id, model: parsed.model };
+    if (m1) return { provider: m1.id, model };
     const anthropicNodes = await getProviderNodes({ type: "anthropic-compatible" });
     const m2 = anthropicNodes.find((n) => n.prefix === parsed.providerAlias);
-    if (m2) return { provider: m2.id, model: parsed.model };
+    if (m2) return { provider: m2.id, model };
     const embNodes = await getProviderNodes({ type: "custom-embedding" });
     const m3 = embNodes.find((n) => n.prefix === parsed.providerAlias);
-    if (m3) return { provider: m3.id, model: parsed.model };
-    return { provider: parsed.provider, model: parsed.model };
+    if (m3) return { provider: m3.id, model };
+    return { provider: parsed.provider, model };
   }
-  const combo = await getComboByName(parsed.model);
-  if (combo) return { provider: null, model: parsed.model };
-  return getModelInfoCore(modelStr, getModelAliases);
+  const model = parsed.model ?? "";
+  const combo = await getComboByName(model);
+  if (combo) return { provider: null, model };
+  const core = await getModelInfoCore(modelStr, getModelAliases);
+  return { provider: core.provider, model: core.model ?? "" };
 }
 export async function getComboModels(modelStr: string): Promise<string[] | null> {
   if (modelStr.includes("/")) return null;

@@ -35,7 +35,7 @@ function getAuthGroup(providerId: string, connection?: { authType?: string; prov
   return "apikey";
 }
 
-function isCompatibleProvider(providerId: any) {
+function isCompatibleProvider(providerId: string) {
   return (
     typeof providerId === "string" &&
     (providerId.startsWith(OPENAI_COMPATIBLE_PREFIX) ||
@@ -44,7 +44,7 @@ function isCompatibleProvider(providerId: any) {
 }
 
 // POST /api/providers/test-batch - Test multiple connections by group
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -57,21 +57,17 @@ export async function POST(request: any) {
 
     const allConnections = await getProviderConnections({ isActive: true });
 
-    let connectionsToTest: any[] = [];
+    let connectionsToTest: import("@/lib/localDb").ProviderConnection[] = [];
     if (mode === "provider" && providerId) {
-      connectionsToTest = allConnections.filter((c: any) => c.provider === providerId);
+      connectionsToTest = allConnections.filter((c) => c.provider === providerId);
     } else if (mode === "oauth") {
-      connectionsToTest = allConnections.filter(
-        (c: any) => getAuthGroup(c.provider, c) === "oauth",
-      );
+      connectionsToTest = allConnections.filter((c) => getAuthGroup(c.provider, c) === "oauth");
     } else if (mode === "free") {
-      connectionsToTest = allConnections.filter((c: any) => getAuthGroup(c.provider, c) === "free");
+      connectionsToTest = allConnections.filter((c) => getAuthGroup(c.provider, c) === "free");
     } else if (mode === "apikey") {
-      connectionsToTest = allConnections.filter(
-        (c: any) => getAuthGroup(c.provider, c) === "apikey",
-      );
+      connectionsToTest = allConnections.filter((c) => getAuthGroup(c.provider, c) === "apikey");
     } else if (mode === "compatible") {
-      connectionsToTest = allConnections.filter((c: any) => isCompatibleProvider(c.provider));
+      connectionsToTest = allConnections.filter((c) => isCompatibleProvider(c.provider));
     } else if (mode === "all") {
       connectionsToTest = allConnections;
     } else {
@@ -91,7 +87,7 @@ export async function POST(request: any) {
       });
     }
 
-    const results: any[] = [];
+    const results: Array<{ valid?: boolean; [key: string]: unknown }> = [];
     for (const conn of connectionsToTest) {
       try {
         const data = (await testSingleConnection(conn.id)) as Record<string, unknown>;
@@ -100,7 +96,7 @@ export async function POST(request: any) {
           connectionId: conn.id,
           connectionName: conn.name || conn.email || conn.provider,
           authType: conn.authType || getAuthGroup(conn.provider, conn),
-          valid: data.valid,
+          valid: Boolean(data.valid),
           latencyMs: data.latencyMs || 0,
           error: data.error || null,
           diagnosis: data.diagnosis || null,
@@ -135,8 +131,8 @@ export async function POST(request: any) {
       testedAt: new Date().toISOString(),
       summary: {
         total: results.length,
-        passed: results.filter((r: any) => r.valid).length,
-        failed: results.filter((r: any) => !r.valid).length,
+        passed: results.filter((r) => r.valid).length,
+        failed: results.filter((r) => !r.valid).length,
       },
     });
   } catch (error) {

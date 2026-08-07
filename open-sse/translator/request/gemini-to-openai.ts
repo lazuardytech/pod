@@ -1,0 +1,152 @@
+// @ts-nocheck
+import { FORMATS } from "../formats.js";
+import { adjustMaxTokens } from "../helpers/maxTokensHelper.js";
+import { register } from "../registry.js";
+
+// Convert Gemini request to OpenAI format
+export function geminiToOpenAIRequest(model: unknown, body: unknown, stream: unknown) {
+  const result: Record<string, unknown> = {
+    model: model,
+    messages: [] as unknown[],
+    stream: stream,
+  };
+
+  // Generation config
+  if (body.generationConfig) {
+    const config = body.generationConfig;
+    if (config.maxOutputTokens) {
+      const tempBody = { max_tokens: config.maxOutputTokens, tools: body.tools };
+      result.max_tokens = adjustMaxTokens(tempBody);
+    }
+    if (config.temperature !== undefined) {
+      result.temperature = config.temperature;
+    }
+    if (config.topP !== undefined) {
+      result.top_p = config.topP;
+    }
+  }
+
+  // System instruction
+  if (body.systemInstruction) {
+    const systemText = extractGeminiText(body.systemInstruction);
+    if (systemText) {
+      result.messages.push({
+        role: "system",
+        content: systemText,
+      });
+    }
+  }
+
+  // Convert contents to messages
+  if (body.contents && Array.isArray(body.contents)) {
+    for (const content of body.contents) {
+      const converted = convertGeminiContent(content);
+      if (converted) {
+        result.messages.push(converted);
+      }
+    }
+  }
+
+  // Tools
+  if (body.tools && Array.isArray(body.tools)) {
+    result.tools = [];
+    for (const tool of body.tools) {
+      if (tool.functionDeclarations) {
+        for (const func of tool.functionDeclarations) {
+          result.tools.push({
+            type: "function",
+            function: {
+              name: func.name,
+              description: func.description || "",
+              parameters: func.parameters || { type: "object", properties: {} },
+            },
+          });
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+// Convert Gemini content to OpenAI message
+function convertGeminiContent(content: unknown) {
+  const role = content.role === "user" ? "user" : "assistant";
+
+  if (!content.parts || !Array.isArray(content.parts)) {
+    return null;
+  }
+
+  const parts: unknown[] = [];
+  const toolCalls: unknown[] = [];
+
+  for (const part of content.parts) {
+    if (part.text !== undefined) {
+      parts.push({ type: "text", text: part.text });
+    }
+
+    if (part.inlineData) {
+      parts.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+        },
+      });
+    }
+
+    if (part.functionCall) {
+      toolCalls.push({
+        id: `call_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "function",
+        function: {
+          name: part.functionCall.name,
+          arguments: JSON.stringify(part.functionCall.args || {}),
+        },
+      });
+    }
+
+    if (part.functionResponse) {
+      return {
+        role: "tool",
+        tool_call_id: part.functionResponse.id || part.functionResponse.name,
+        content: JSON.stringify(
+          part.functionResponse.response?.result || part.functionResponse.response || {},
+        ),
+      };
+    }
+  }
+
+  if (toolCalls.length > 0) {
+    const result: Record<string, unknown> = { role: "assistant" };
+    if (parts.length > 0) {
+      result.content = parts.length === 1 ? (parts[0] as unknown).text : parts;
+    }
+    result.tool_calls = toolCalls;
+    return result;
+  }
+
+  if (parts.length > 0) {
+    return {
+      role,
+      content:
+        parts.length === 1 && (parts[0] as unknown).type === "text"
+          ? (parts[0] as unknown).text
+          : parts,
+    };
+  }
+
+  return null;
+}
+
+// Extract text from Gemini content
+function extractGeminiText(content: unknown) {
+  if (typeof content === "string") return content;
+  if (content.parts && Array.isArray(content.parts)) {
+    return content.parts.map((p: unknown) => p.text || "").join("");
+  }
+  return "";
+}
+
+// Register
+register(FORMATS.GEMINI, FORMATS.OPENAI, geminiToOpenAIRequest, null);
+register(FORMATS.GEMINI_CLI, FORMATS.OPENAI, geminiToOpenAIRequest, null);

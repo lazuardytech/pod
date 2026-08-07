@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { DashboardLayout } from "@/shared/components";
 
 export const metadata = {
@@ -7,6 +8,6 @@ export const metadata = {
   },
 };
 
-export default function DashboardRootLayout({ children }: any) {
+export default function DashboardRootLayout({ children }: { children: ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
 }

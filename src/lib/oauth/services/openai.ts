@@ -34,7 +34,11 @@ export class OpenAIService extends OAuthService {
    * Exchange OpenAI authorization code for tokens
    */
   // todo(ts): token response shape from OpenAI — keep loose.
-  async exchangeOpenAICode(code: string, redirectUri: string, codeVerifier: string): Promise<any> {
+  async exchangeOpenAICode(
+    code: string,
+    redirectUri: string,
+    codeVerifier: string,
+  ): Promise<Record<string, unknown>> {
     const response = await fetch(OPENAI_CONFIG.tokenUrl, {
       method: "POST",
       headers: {
@@ -62,7 +66,7 @@ export class OpenAIService extends OAuthService {
    * Save OpenAI tokens to server
    */
   // todo(ts): token shape is provider-specific — keep loose.
-  async saveTokens(tokens: any): Promise<any> {
+  async saveTokens(tokens: Record<string, unknown>): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/openai`, {

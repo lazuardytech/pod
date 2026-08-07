@@ -2,6 +2,8 @@
 
 Status: completed — historical
 
+> **Update 2026-08-06**: `open-sse/` and `tests/` have been migrated to TypeScript on `cursor/p1`. The freeze decision below is historical.
+
 > **Status: completed — repo is now TypeScript strict; `open-sse/` intentionally frozen as JS. Tooling is oxfmt + oxlint + tsc (Biome/ESLint removed).**
 >
 > The migration narrative below is preserved as history. **Tooling caveat:** inline commands and example diffs that still read `biome` / `eslint` / `eslint.config.mjs` were written before the VoidZero (oxfmt/oxlint) adoption and are now **historical** — the real gate is `bun run check` = oxfmt + oxlint + `tsc --noEmit`. References to `biome`/`eslint` reflect the tooling in use when this plan was authored, not the current setup.
@@ -326,18 +328,18 @@ For each file:
 
 ## Phase 5 — SSE orchestration (`src/sse/`)
 
-**Goal**: type the SSE layer that bridges typed routes to the (still-JS) `open-sse/` engine.
+**Goal**: type the SSE layer that bridges typed routes to the `open-sse/` engine.
 
 **Scope**: `src/sse/handlers/{chat,embeddings,fetch,imageGeneration,search,stt,tts}.js`, `src/sse/services/{auth,model,tokenRefresh}.js`, `src/sse/utils/logger.js`.
 
-**tsconfig strategy**: still `checkJs: false` globally. `open-sse/**` is excluded from the project `tsconfig.json`.
+**Historical tsconfig strategy**: during Phase 5, `checkJs: false` stayed global. Current state: `open-sse/**/*.ts` is included in the project `tsconfig.json`.
 
 **Type strategy**:
 
 - `handlers/chat.ts`:
   - `export async function handleChat(request: Request, clientRawRequest?: unknown): Promise<Response>`.
   - Use the `OpenAIChatRequest` type from `src/app/api/v1/_types.ts` for the parsed body.
-  - At the `import "open-sse/index.js"` boundary, the engine is JS. Add a `src/sse/open-sse.d.ts` ambient declaration that types the public API we use (`handleChatCore`, `detectFormatByEndpoint`, etc.) based on what `open-sse/index.js` re-exports. Keep the declarations tight — only the symbols `src/sse/` actually calls.
+  - Historical note: this phase originally used an ambient `src/sse/open-sse.d.ts` boundary. Current state: `open-sse/index.ts` is typed directly, and imports keep `.js` suffixes only for ESM/bundler resolution.
 - `services/auth.ts`: `extractApiKey(request: Request): Promise<string | null>`, `isValidApiKey(key: string): Promise<boolean>`, `getProviderCredentials(providerId: string): Promise<ProviderCredentials | null>`.
 - `services/model.ts`: `getModelInfo(modelId: string): Promise<ModelInfo | null>`, `getComboInfo(comboId: string): Promise<ComboInfo | null>`.
 - `services/tokenRefresh.ts`: typed as `checkAndRefreshToken(provider: ProviderId, credentials: Credentials): Promise<Credentials>`.
@@ -345,13 +347,13 @@ For each file:
 
 **Risks**:
 
-- The crash guards in `open-sse/utils/stream.js` and `open-sse/handlers/chatCore.js`, and the guarded peek-reader in `chatCore.js`, are not in scope (they're in `open-sse/`, not `src/sse/`). The plan does **not** weaken them.
-- The combo fallback logic in `handlers/chat.ts` (Phase 5) calls into `open-sse/services/combo.js` which is still JS. The ambient declaration must match the runtime behavior — verify by reading `open-sse/services/combo.js` and `index.js` before writing the `.d.ts`.
+- The crash guards in `open-sse/utils/stream.ts` and `open-sse/handlers/chatCore.ts`, and the guarded peek-reader in `chatCore.ts`, are not in scope for SSE orchestration changes. The plan does **not** weaken them.
+- The combo fallback logic in `handlers/chat.ts` calls into `open-sse/services/combo.ts`; verify behavior against the typed source before changing this boundary.
 
 **Exit criteria**:
 
 - All `src/sse/**` files converted.
-- `src/sse/open-sse.d.ts` covers all imported symbols.
+- `open-sse/index.ts` covers all imported symbols.
 - `tsc --noEmit` clean.
 - All 1338 tests pass.
 - `bun run build` succeeds.
@@ -478,7 +480,7 @@ Same phased approach: Phase 8.1 = tooling, 8.2 = small utils, 8.3 = handlers, 8.
 - `Request`, `Response`, `URL` come from `@cloudflare/workers-types`.
 - `KVNamespace`, `D1Database`, `R2Bucket` come from the same package.
 - The Worker has its own `src/lib/cloud/localDb.js` (the lowdb in-memory stub — verify by reading `cloud/src/handlers/testClaude.js` and the `stubs/` dir). It is intentionally a separate type universe from `src/lib/localDb.ts`. Do not unify.
-- `open-sse/handlers/testClaude.js` is a 410 stub (AGENTS.md rule). It stays as JS in `open-sse/`, but the cloud side that calls it (`cloud/src/handlers/...`) gets typed.
+- `open-sse/handlers/testClaude.ts` is a 410 stub (AGENTS.md rule); the cloud side that calls it (`cloud/src/handlers/...`) is typed separately.
 
 **Risks**:
 
@@ -500,16 +502,16 @@ Same phased approach: Phase 8.1 = tooling, 8.2 = small utils, 8.3 = handlers, 8.
 
 Three options, in preference order:
 
-1. **Recommended: freeze `open-sse/` as JS.** Convert only the **ambient declarations** in `src/sse/open-sse.d.ts` (Phase 5) to describe the public API. Add a `tsconfig.exclude` entry to make it explicit. Reasons: high migration cost, low day-to-day churn from this repo (it's a fork synced from upstream), most of its surface is consumed through `src/sse/` which is now fully typed.
-2. **Convert incrementally with `allowJs: true` only.** Same shape as the main app. Useful if the fork starts seeing internal feature work. The translator and handler cores still need `any`-grade escape hatches for the streaming transforms.
-3. **Skip entirely.** Same as (1) but without the ambient `.d.ts`. Callers use `unknown` and cast at use sites. Worst of both worlds.
+1. **Chosen current state: migrate `open-sse/` to TypeScript.** The engine now has `.ts` source, no ambient `src/sse/open-sse.d.ts`, and root `tsc` includes `open-sse/**/*.ts`.
+2. **Historical alternative: keep JS with `allowJs: true` only.** This was useful while the fork was still untyped.
+3. **Historical alternative: defer engine typing entirely.** This was rejected by the completed migration.
 
 **Exit criteria** (assuming option 1):
 
 - Documented in `.agents/plan/js-to-ts-migration.md` (this file) under "Final State".
-- `tsconfig.json` excludes `open-sse/**` explicitly.
-- `src/sse/open-sse.d.ts` exists and is referenced from `src/sse/**` (it should be, after Phase 5).
-- AGENTS.md "Project Identity" updated to: `Bun + Next.js 16 + TypeScript (src/, cloud/), open-sse fork stays JS`.
+- `tsconfig.json` includes `open-sse/**/*.ts`.
+- `src/sse/open-sse.d.ts` has been deleted; imports resolve to typed `open-sse/*.ts` source.
+- AGENTS.md "Project Identity" says the engine is the local TypeScript `open-sse/` fork.
 
 **Effort**: small (decision + docs).
 
@@ -539,7 +541,7 @@ In `Project Identity`:
 
 ```diff
 - - Runtime: Bun + Next.js 16 (JS, no TS)
-+ - Runtime: Bun + Next.js 16 + TypeScript (src/, cloud/); open-sse/ stays JS
++ - Runtime: Bun + Next.js 16 + TypeScript (src/, open-sse/, cloud/)
 ```
 
 In `Non-Negotiable Rules`:
@@ -554,8 +556,8 @@ Update `02-conventions.md`:
 
 ## Risks Specific to This Project
 
-1. **Dynamic proxy patterns in `open-sse/handlers/chat.js` and `open-sse/translator/`** — not in scope (Phase 9 freezes as JS). The TS path interacts only through `src/sse/open-sse.d.ts`. If `open-sse/` is later migrated, expect significant `any` use at provider boundaries.
-2. **Web Streams / `TransformStream` API surface** — `lib.dom.d.ts` covers `ReadableStream`, `WritableStream`, `TransformStream`, `TransformStreamDefaultController`. The codebase uses these in `src/sse/` (readable stream pumps) and `open-sse/translator/` (transform pipelines). For `open-sse/`, freezing as JS sidesteps the question.
+1. **Dynamic proxy patterns in `open-sse/handlers/chatCore.ts` and `open-sse/translator/`** — now typed in the engine. Expect narrow `unknown`/validated boundaries where provider payloads vary.
+2. **Web Streams / `TransformStream` API surface** — `lib.dom.d.ts` covers `ReadableStream`, `WritableStream`, `TransformStream`, `TransformStreamDefaultController`. The codebase uses these in `src/sse/` (readable stream pumps) and `open-sse/translator/` (transform pipelines).
 3. **Bun-specific globals** — `Bun.RedisClient` (used in `src/lib/rateLimit/redis.js`), `Bun.serve` (not currently used in the main app but available), `bun:sqlite` (used via `next.config.mjs`'s `serverExternalPackages: ["bun:sqlite"]`). `@types/bun` covers all of these. The `bun:sqlite` import in `src/lib/sqlite/connection.js` does not have its own type declarations; use `// @ts-expect-error bun:sqlite has no upstream types` or add a `src/types/bun-sqlite.d.ts` ambient declaration.
 4. **next.config / JSX** — Next.js 16 + TS is well-trodden. No special handling. `next-env.d.ts` is auto-generated.
 5. **Bun import attributes** — `import pkg from "../../../package.json" with { type: "json" }` is supported in TS 5.3+ via `--moduleResolution bundler`. We have `bundler` set. Confirmed.

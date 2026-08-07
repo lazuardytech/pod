@@ -12,19 +12,20 @@ Operational rules for AI agents working on the **Pod** project.
 
 ## Learned Workspace Facts
 
-- This session: `/api/monitoring/health` + `/api/monitoring/health/stream` are now PUBLIC reads (auth guard removed, `src/app/api/monitoring/health/_auth.tsx` deleted) — consistent with `/api/health`. Health dashboard `/health` page fetches them unauthenticated; the old 401 caused the "Network unavailable. Showing cached health snapshot." toast on prod.
+- `/api/monitoring/health` + `/api/monitoring/health/stream` are PUBLIC reads (auth guard removed, `src/app/api/monitoring/health/_auth.tsx` deleted) — consistent with `/api/health`. Health dashboard `/health` fetches them unauthenticated; the old 401 caused the "Network unavailable. Showing cached health snapshot." toast on prod.
 - `changelogUrl` in `src/shared/constants/config.ts` uses `refs/heads/canary` (never `master` — dead branch 404s).
 - `src/app/api/proxy-pools/vercel-deploy/route.ts` trailing-slash trim uses a real `/\\/$/` regex (an earlier `/\\\\/$/` matched a backslash, producing `//<relayPath>`).
-- New rate-limit env added: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
-- `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`).
-- open-sse/ has 19 provider executors (base.js is the base class, index.js is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live frozen in the `open-sse/` JS fork.
+- Rate-limit env: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
+- `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode`, `.rwx` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`); do not commit those dirs.
+- open-sse/ has 19 provider executors (base.ts is the base class, index.ts is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live in the typed `open-sse/` fork.
 - Path dirs with parentheses (e.g. `src/app/(dashboard)/`) break naive `sed 's/([0-9].*//'` patterns — use a paren-aware pattern when parsing `tsc` output.
+- Chrome `ERR_FAILED` interstitial after idle (fixed by hard reload) is often SW-side: `public/sw.js` must keep network-first navigation, never reject `respondWith`, and avoid `Response.error()` (esp. images); `ServiceWorkerRegistrar` must not blind `location.reload()` on every `controllerchange`. RSC/`?_rsc=` fetches are not SW-intercepted (idle CF/TLS is a separate failure mode).
 
 ## Project Identity
 
 - **Project name**: pod, v0.0.82
 - **Runtime**: Bun + Next.js 16 (TS, strict mode)
-- **Engine**: open-sse/ (local fork, not npm, frozen as JS)
+- **Engine**: open-sse/ (local fork, not npm, TypeScript)
 - **Data**: SQLite at ~/.pod/pod.sqlite
 - **Port**: 20128
 - **Health**: GET /api/health (public)
@@ -70,14 +71,14 @@ Operational rules for AI agents working on the **Pod** project.
 5. Connection locking must stay transactional.
 6. Preserve modelLockCount\_${model} semantics.
 7. Keep the guarded fallback loop in src/sse/handlers/chat.ts.
-8. Keep the outer crash guard in open-sse/utils/stream.js.
-9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.js.
-10. open-sse/ is frozen as JS — do NOT convert open-sse/ source files. Type surface via src/sse/open-sse.d.ts.
+8. Keep the outer crash guard in open-sse/utils/stream.ts.
+9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.ts.
+10. open-sse/ is TypeScript (strict, included in `tsc`). Keep `.js` import path suffixes (ESM/bundler convention). Do not replace the local fork with the npm package.
 11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
 12. `src/instrumentation.ts` is the canonical startup path (Next.js 16) — runs `initializeApp()` + signal handlers in production; side-effect imports in layout.tsx for startup code have been removed.
 13. AbortError at `node:_http_server` (client disconnect) must be classified as `[ClientDisconnect]`, not `[FATAL]`. SSE stream wrappers use `controller.close()` (not `controller.error(err)`) on reader abort. See `.agents/knowledge/04-gotchas.md` item 31.
-14. `open-sse/` and `cloud/` are excluded from `tsc` (tsconfig `exclude`). Do NOT consume symbols exported from `open-sse/` in `src/` — tsc will not see them and the production build fails. Keep cross-boundary constants inlined in `src/` (e.g. rate-limit header constants in `src/lib/rateLimit/index.ts`).
-15. `next.config.mjs` `serverExternalPackages` must include `undici` (and `bun:sqlite`). undici v8 throws a bare `Error` when Turbopack bundles its top-level code into the standalone server chunk, breaking dynamic `import("undici")` in server routes (`src/app/api/proxy-pools/[id]/test/route.ts`) and `src/lib/network/`. Keep undici external (loaded from `node_modules` at runtime) — never bundle it.
+14. `cloud/` remains excluded from root `tsc` (has its own tsconfig). `open-sse/` is included. Prefer importing typed symbols from `open-sse/`; keep cross-boundary constants inlined in `src/` when bundling constraints require it (e.g. rate-limit headers).
+15. `next.config.ts` `serverExternalPackages` must include `undici` (and `bun:sqlite`). undici v8 throws a bare `Error` when Turbopack bundles its top-level code into the standalone server chunk, breaking dynamic `import("undici")` in server routes (`src/app/api/proxy-pools/[id]/test/route.ts`) and `src/lib/network/`. Keep undici external (loaded from `node_modules` at runtime) — never bundle it.
 
 ## Rate Limiting
 
@@ -95,7 +96,7 @@ Operational rules for AI agents working on the **Pod** project.
 4. Keep https://www.google.com/generate_204 as relay health target.
 5. Kiro retry body-gated on transient overload markers.
 6. cloud/src/handlers/testClaude.ts is a 410 compatibility stub.
-7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.js — do NOT emit `<think>` or `</think>` as content delta.
+7. Thinking block leak fix: open-sse/translator/response/claude-to-openai.ts — do NOT emit `<think>` or `</think>` as content delta.
 
 ## Operations
 
@@ -104,7 +105,7 @@ Operational rules for AI agents working on the **Pod** project.
 3. Tunnel startup must treat fetchData() as non-fatal.
 4. Cloudflared tunnel spawn must stay serialized.
 5. Docker entrypoint must forward SIGTERM to child processes.
-6. Service worker lifecycle is registration-only; Pod does not auto-update itself.
+6. Service worker lifecycle is registration-only (no auto-update UX). Keep network-first navigation in `public/sw.js`; never reject `respondWith` / never `Response.error()` on images; do not blind `location.reload()` on `controllerchange`.
 7. Offline reads use offlineJsonCache; offline writes use the mutation queue stack.
 8. Queue only safe, idempotent dashboard mutations.
 9. Git workflow: canary is active development branch; main is stable/release branch.
@@ -147,11 +148,24 @@ bun run test:run # vitest run (verbose)
 bun run build   # NODE_ENV=production next build (turbopack)
 ```
 
+## Cursor Cloud specific instructions
+
+- **Default development branch**: `canary` (active). `main` is stable/release only — promote via PR.
+- **Install (idempotent)**: `bash scripts/cloud-dev-install.sh` — ensures Bun 1.3.14+ and `bun install --frozen-lockfile`.
+- **Start**: `bash scripts/cloud-dev-start.sh` — `bun run dev` on port **20128**. Requires secrets `JWT_SECRET` and `API_KEY_SECRET` (Cursor environment Secrets tab). Optional: `SHUTDOWN_SECRET`, `INITIAL_PASSWORD`.
+- **Health check**: `curl -sf http://localhost:20128/api/health` → `{"ok":true}`; monitoring health is also public.
+- **Tests need Node ≥ 22.18 on PATH (not bun)**: `bun run test:run` runs vitest under `node` on purpose (a health test asserts `version.bun` is `null`, which only holds under node). The pre-provisioned `/exec-daemon/node` is v22.14.0 — too old for native `.mts` type-stripping — so it throws `Unknown file extension ".mts"` on `src/shared/utils/clineAuth.mts` (2 spurious failures). Prepend nvm's newer node first, e.g. `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`, then `bun run test:run` → all green. `bun run check`/`bun run build` are unaffected (they run under bun).
+- **Build**: `bun run build` first generates ignored `open-sse/**/*.js` shims from TypeScript sources; Docker's existing `COPY /app/open-sse` relies on those shims for standalone Bun runtime resolution of `.js` ESM specifiers.
+- **Verify before push**: `bun run check && bun run test:run && bun run build`.
+- **Ponytail skills**: vendored at `.agents/skills/{ponytail,ponytail-review,ponytail-audit,ponytail-debt,ponytail-gain,ponytail-help}/` (Cloud discovers `.agents/skills/`; `.cursor/` is gitignored). Invoke `/ponytail lite|full|ultra` (default **full**). Stop: `stop ponytail` / `normal mode`. Upstream: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
+- Do not commit `.env`; `.cursor/` is gitignored — configure Cloud environment via dashboard / `environment.json` proposal.
+
 ## Docs Map
 
 | Path                            | Purpose                                       |
 | ------------------------------- | --------------------------------------------- |
 | .agents/INDEX.md                | Documentation index and reading order         |
+| .agents/skills/\*               | Cursor agent skills (ponytail suite)          |
 | .agents/PRD.md                  | Product requirements document                 |
 | .agents/architecture/\*         | System design deep dives                      |
 | .agents/knowledge/\*            | Working knowledge (gotchas, conventions)      |

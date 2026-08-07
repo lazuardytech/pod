@@ -13,7 +13,10 @@ function isLLMProvider(id: string) {
   return p.serviceKinds.includes("llm");
 }
 
-import ProviderTopology from "@/app/(dashboard)/usage/components/ProviderTopology";
+import ProviderTopology, {
+  type ActiveRequest,
+  type TopologyProvider,
+} from "@/app/(dashboard)/usage/components/ProviderTopology";
 import UsageChart from "@/app/(dashboard)/usage/components/UsageChart";
 import UsageTable, { fmt, fmtTime } from "@/app/(dashboard)/usage/components/UsageTable";
 import Badge from "./Badge";
@@ -275,7 +278,7 @@ interface UsageStatsShape {
   byApiKey?: Record<string, unknown>;
   byEndpoint?: Record<string, unknown>;
   pending?: Record<string, unknown>;
-  activeRequests?: unknown[];
+  activeRequests?: ActiveRequest[];
   recentRequests?: Record<string, unknown>[];
   errorProvider?: string;
 }
@@ -300,7 +303,7 @@ export default function UsageStats({
   const [fetching, setFetching] = useState(false);
   const [tableView, setTableView] = useState("model");
   const [viewMode, setViewMode] = useState("costs");
-  const [providers, setProviders] = useState<Record<string, unknown>[]>([]);
+  const [providers, setProviders] = useState<TopologyProvider[]>([]);
   const [periodLocal, setPeriodLocal] = useState("7d");
   const offlineNoticeShownRef = useRef(false);
   const hasLoadedStatsRef = useRef(false);
@@ -319,24 +322,27 @@ export default function UsageStats({
 
   const applyConnectedProviders = useCallback((payload: Record<string, unknown>) => {
     const seen = new Set<string>();
-    const unique = ((payload?.connections as Record<string, unknown>[]) || []).filter(
-      (c: Record<string, unknown>) => {
+    const unique = ((payload?.connections as Record<string, unknown>[]) || [])
+      .filter((c: Record<string, unknown>) => {
         if (c.isActive === false) return false;
         if (!isLLMProvider(c.provider as string)) return false;
         if (seen.has(c.provider as string)) return false;
         seen.add(c.provider as string);
         return true;
-      },
-    );
+      })
+      .map(
+        (c: Record<string, unknown>): TopologyProvider => ({
+          id: typeof c.id === "string" ? c.id : undefined,
+          provider: String(c.provider),
+          name: typeof c.name === "string" ? c.name : undefined,
+        }),
+      );
 
-    const noAuthProviders = Object.values(FREE_PROVIDERS)
-      .filter(
-        (p: Record<string, unknown>) =>
-          p.noAuth && !seen.has(p.id as string) && isLLMProvider(p.id as string),
-      )
-      .map((p: Record<string, unknown>) => ({ provider: p.id, name: p.name }));
+    const noAuthProviders: TopologyProvider[] = Object.values(FREE_PROVIDERS)
+      .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))
+      .map((p) => ({ provider: p.id, name: p.name }));
 
-    setProviders([...unique, ...noAuthProviders] as Record<string, unknown>[]);
+    setProviders([...unique, ...noAuthProviders]);
   }, []);
 
   // Fetch connected providers once, deduplicate by provider type

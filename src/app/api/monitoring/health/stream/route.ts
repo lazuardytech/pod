@@ -11,7 +11,7 @@ const ROUTE_PATH = "/api/monitoring/health/stream";
  * Public read (no auth), consistent with /api/monitoring/health and /api/health.
  * Max concurrent connections: 100 (enforced by _sseConnectionCap.js).
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   // Enforce SSE connection cap
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;
@@ -30,7 +30,7 @@ export async function GET(request: any) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data: any) => {
+      const send = (data: unknown) => {
         if (closed) return;
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));

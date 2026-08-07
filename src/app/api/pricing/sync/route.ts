@@ -21,7 +21,7 @@ export async function GET() {
 
 // POST — trigger immediate sync or control periodic sync
 // Body (optional): { action: "start" | "stop" | "sync", intervalMs?: number }
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     let body: Record<string, unknown> = {};
     const bodyResult = await readBodyText(request as Request, {

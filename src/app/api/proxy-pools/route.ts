@@ -3,14 +3,14 @@ import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
 
-function sanitizeProxyPool(pool: any) {
+function sanitizeProxyPool(pool: Record<string, unknown> | null | undefined) {
   if (!pool) return pool;
   const sanitized = { ...pool };
   delete sanitized.relayAuthToken;
   return sanitized;
 }
 
-function toBoolean(value: any) {
+function toBoolean(value: unknown) {
   if (value === "true") return true;
   if (value === "false") return false;
   return undefined;
@@ -37,11 +37,13 @@ function normalizeProxyPoolInput(body: Record<string, unknown> = {}) {
   return { name, proxyUrl, noProxy, isActive, strictProxy, type };
 }
 
-function buildUsageMap(connections: any[] = []) {
-  const usageMap = new Map();
+function buildUsageMap(connections: unknown[] = []) {
+  const usageMap = new Map<string, number>();
 
   for (const connection of connections) {
-    const proxyPoolId = connection?.providerSpecificData?.proxyPoolId;
+    const psd = (connection as { providerSpecificData?: { proxyPoolId?: string } } | null)
+      ?.providerSpecificData;
+    const proxyPoolId = psd?.proxyPoolId;
     if (!proxyPoolId) continue;
 
     usageMap.set(proxyPoolId, (usageMap.get(proxyPoolId) || 0) + 1);
@@ -51,7 +53,7 @@ function buildUsageMap(connections: any[] = []) {
 }
 
 // GET /api/proxy-pools - List proxy pools
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const isActive = toBoolean(searchParams.get("isActive"));
@@ -72,7 +74,7 @@ export async function GET(request: any) {
     const usageMap = buildUsageMap(connections);
 
     const enrichedProxyPools = proxyPools.map((pool) => ({
-      ...sanitizeProxyPool(pool),
+      ...sanitizeProxyPool(pool as Record<string, unknown>),
       boundConnectionCount: usageMap.get(pool.id) || 0,
     }));
 
@@ -84,7 +86,7 @@ export async function GET(request: any) {
 }
 
 // POST /api/proxy-pools - Create proxy pool
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -96,7 +98,10 @@ export async function POST(request: any) {
     }
 
     const proxyPool = await createProxyPool(normalized);
-    return NextResponse.json({ proxyPool: sanitizeProxyPool(proxyPool) }, { status: 201 });
+    return NextResponse.json(
+      { proxyPool: sanitizeProxyPool(proxyPool as Record<string, unknown>) },
+      { status: 201 },
+    );
   } catch (error) {
     console.log("Error creating proxy pool:", error);
     return NextResponse.json({ error: "Failed to create proxy pool" }, { status: 500 });

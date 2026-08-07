@@ -18,6 +18,6 @@ export async function OPTIONS() {
  * POST /v1/audio/translations - OpenAI Whisper compatible audio translation
  * Translates audio into English text. Shares the same STT pipeline as transcriptions.
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   return await withApiKeyRateLimit(request, () => handleStt(request, { translate: true }));
 }

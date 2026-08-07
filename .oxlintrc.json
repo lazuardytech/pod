@@ -18,17 +18,6 @@
   },
   "overrides": [
     {
-      "files": ["open-sse/**"],
-      "rules": {
-        "no-unused-vars": "off",
-        "eqeqeq": "off",
-        "no-control-regex": "off",
-        "no-useless-catch": "off",
-        "no-useless-rename": "off",
-        "no-unused-expressions": "off"
-      }
-    },
-    {
       "files": ["src/**"],
       "rules": {
         "react-hooks/exhaustive-deps": "off"

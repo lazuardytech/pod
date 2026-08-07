@@ -2,7 +2,7 @@ import { getActiveRequests, getUsageStats, statsEmitter } from "@/lib/usageDb";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: any) {
+export async function GET(request: Request) {
   const encoder = new TextEncoder();
   const state: {
     closed: boolean;
@@ -64,7 +64,7 @@ export async function GET(request: any) {
         // Push lightweight update immediately from cache
         if (state.cachedStats) {
           getActiveRequests()
-            .then((result: any) => {
+            .then((result: Record<string, unknown>) => {
               if (state.closed) return;
               const { activeRequests, recentRequests, errorProvider } = result || {};
               const quickStats = {

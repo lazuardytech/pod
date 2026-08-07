@@ -1,7 +1,17 @@
 "use client";
+import type { ReactNode } from "react";
 import { useEffect } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
+
+type DrawerProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+  title?: ReactNode;
+  children?: ReactNode;
+  width?: string;
+  className?: string;
+};
 
 export default function Drawer({
   isOpen,
@@ -10,15 +20,7 @@ export default function Drawer({
   children,
   width = "md",
   className,
-}: {
-  isOpen?: any;
-  onClose?: any;
-  title?: any;
-  children?: any;
-  width?: string;
-  className?: any;
-  [key: string]: any;
-}) {
+}: DrawerProps) {
   const widths: Record<string, string> = {
     sm: "w-[400px]",
     md: "w-[500px]",
@@ -39,8 +41,8 @@ export default function Drawer({
   }, [isOpen]);
 
   useEffect(() => {
-    const handleEscape = (e: any) => {
-      if (e.key === "Escape" && isOpen) onClose();
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) onClose?.();
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);

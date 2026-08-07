@@ -1,10 +1,11 @@
+import type { ExecutorCredentials } from "open-sse/executors/base.js";
 import { getExecutor, refreshTokenByProvider } from "open-sse/index.js";
-import { asApiRecord, asString } from "@/app/api/_types";
+import { asApiRecord, asOptionalString, asString } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 
-function buildForwardHeaders(response: any, stream: any) {
+function buildForwardHeaders(response: Response, stream: boolean) {
   const headers = new Headers();
   const contentType = response.headers.get("content-type");
   const cacheControl = response.headers.get("cache-control");
@@ -35,7 +36,7 @@ function buildForwardHeaders(response: any, stream: any) {
   return headers;
 }
 
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [json, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -61,18 +62,21 @@ export async function POST(request: any) {
       );
     }
 
-    const credentials = {
-      apiKey: connection.apiKey,
-      accessToken: connection.accessToken,
-      refreshToken: connection.refreshToken,
-      copilotToken: connection.copilotToken,
-      projectId: connection.projectId,
-      providerSpecificData: connection.providerSpecificData,
+    const credentials: ExecutorCredentials = {
+      apiKey: asOptionalString(connection.apiKey),
+      accessToken: asOptionalString(connection.accessToken),
+      refreshToken: asOptionalString(connection.refreshToken),
+      copilotToken: asOptionalString(connection.copilotToken),
+      projectId: asOptionalString(connection.projectId),
+      providerSpecificData:
+        connection.providerSpecificData &&
+        typeof connection.providerSpecificData === "object" &&
+        !Array.isArray(connection.providerSpecificData)
+          ? (connection.providerSpecificData as ExecutorCredentials["providerSpecificData"])
+          : undefined,
     };
 
-    const executor = getExecutor(provider) as {
-      execute: (opts: Record<string, unknown>) => Promise<{ response: Response }>;
-    };
+    const executor = getExecutor(provider);
     const reqBody = asApiRecord(requestBody);
     const stream = reqBody.stream === true;
 
@@ -80,10 +84,10 @@ export async function POST(request: any) {
 
     // Auto-refresh token on 401/403 and retry (same as chatCore.js)
     if (response.status === 401 || response.status === 403) {
-      const newCredentials = (await refreshTokenByProvider(provider, credentials)) as Record<
-        string,
-        unknown
-      > | null;
+      const newCredentials = (await refreshTokenByProvider(
+        provider,
+        credentials,
+      )) as ExecutorCredentials | null;
       if (newCredentials?.accessToken || newCredentials?.copilotToken) {
         Object.assign(credentials, newCredentials);
         ({ response } = await executor.execute({ model, body: requestBody, stream, credentials }));

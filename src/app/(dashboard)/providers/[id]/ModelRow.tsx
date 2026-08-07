@@ -1,6 +1,13 @@
 import PropTypes from "prop-types";
 import LucideIcon from "@/shared/components/LucideIcon";
 
+type ModelInfo = {
+  id: string;
+  name?: string;
+};
+
+type TestStatus = string | null | undefined;
+
 export default function ModelRow({
   model,
   fullModel,
@@ -16,19 +23,19 @@ export default function ModelRow({
   onDisable,
   onSetAlias: _onSetAlias,
 }: {
-  model: any;
-  fullModel?: any;
-  alias?: any;
-  copied?: any;
-  onCopy?: any;
-  testStatus?: any;
-  isCustom?: any;
-  isFree?: any;
-  onDeleteAlias?: any;
-  onTest?: any;
-  isTesting?: any;
-  onDisable?: any;
-  onSetAlias?: any;
+  model: ModelInfo;
+  fullModel?: string;
+  alias?: string;
+  copied?: string | null;
+  onCopy?: (value: string, key: string) => void;
+  testStatus?: TestStatus;
+  isCustom?: boolean;
+  isFree?: boolean;
+  onDeleteAlias?: () => void;
+  onTest?: () => void;
+  isTesting?: boolean;
+  onDisable?: () => void;
+  onSetAlias?: (modelId: string, alias: string) => void;
 }) {
   const borderColor = isTesting
     ? "border-border"
@@ -94,7 +101,7 @@ export default function ModelRow({
         )}
         <div className="relative shrink-0 group/btn">
           <button
-            onClick={() => onCopy(fullModel, `model-${model.id}`)}
+            onClick={() => onCopy?.(fullModel ?? "", `model-${model.id}`)}
             className="rounded p-0.5 text-text-muted hover:bg-sidebar hover:text-primary"
           >
             <LucideIcon

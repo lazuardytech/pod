@@ -503,7 +503,7 @@ export default function OAuthModal({
                 <p className="text-sm font-medium mb-2">Step 1: Open this URL in your browser</p>
                 <div className="flex gap-2">
                   <Input
-                    value={authData?.authUrl || ""}
+                    value={typeof authData?.authUrl === "string" ? authData.authUrl : ""}
                     readOnly
                     className="flex-1 font-mono text-xs"
                   />

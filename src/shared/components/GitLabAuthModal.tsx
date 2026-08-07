@@ -11,7 +11,7 @@ const GITLAB_COM = "https://gitlab.com";
  * Only allows http/https schemes to prevent javascript: XSS.
  * Falls back to GITLAB_COM if the URL is invalid or uses a disallowed scheme.
  */
-function sanitizeGitLabUrl(url: any) {
+function sanitizeGitLabUrl(url: string | null | undefined) {
   const trimmed = (url || "").trim() || GITLAB_COM;
   try {
     const parsed = new URL(trimmed);
@@ -40,21 +40,24 @@ export default function GitLabAuthModal({
   onSuccess,
   onClose,
 }: {
-  isOpen?: any;
-  providerInfo?: any;
-  onSuccess?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  providerInfo?: { name: string };
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) {
-  const [mode, setMode] = useState<any>(null); // null | "oauth" | "pat"
+  const [mode, setMode] = useState<"oauth" | "pat" | null>(null);
   const [baseUrl, setBaseUrl] = useState(GITLAB_COM);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [pat, setPat] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showOAuth, setShowOAuth] = useState(false);
-  const [oauthMeta, setOauthMeta] = useState<any>(null);
+  const [oauthMeta, setOauthMeta] = useState<{
+    baseUrl: string;
+    clientId: string;
+    clientSecret: string;
+  } | null>(null);
 
   // Pre-compute sanitized base URL for href attributes (prevents XSS)
   // sanitizeGitLabUrl() only allows http/https, falls back to GITLAB_COM
@@ -74,7 +77,7 @@ export default function GitLabAuthModal({
 
   const handleClose = () => {
     reset();
-    onClose();
+    onClose?.();
   };
 
   const handleOAuthStart = () => {
@@ -109,7 +112,7 @@ export default function GitLabAuthModal({
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError((err as any).message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -188,19 +191,19 @@ export default function GitLabAuthModal({
             <Input
               label="GitLab Base URL"
               value={baseUrl}
-              onChange={(e: any) => setBaseUrl(e.target.value)}
+              onChange={(e) => setBaseUrl(e.target.value)}
               placeholder={GITLAB_COM}
             />
             <Input
               label="Client ID"
               value={clientId}
-              onChange={(e: any) => setClientId(e.target.value)}
+              onChange={(e) => setClientId(e.target.value)}
               placeholder="Your OAuth application client ID"
             />
             <Input
               label="Client Secret (optional for PKCE)"
               value={clientSecret}
-              onChange={(e: any) => setClientSecret(e.target.value)}
+              onChange={(e) => setClientSecret(e.target.value)}
               placeholder="Leave empty for public PKCE app"
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -242,13 +245,13 @@ export default function GitLabAuthModal({
             <Input
               label="GitLab Base URL"
               value={baseUrl}
-              onChange={(e: any) => setBaseUrl(e.target.value)}
+              onChange={(e) => setBaseUrl(e.target.value)}
               placeholder={GITLAB_COM}
             />
             <Input
               label="Personal Access Token"
               value={pat}
-              onChange={(e: any) => setPat(e.target.value)}
+              onChange={(e) => setPat(e.target.value)}
               placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
               type="password"
             />

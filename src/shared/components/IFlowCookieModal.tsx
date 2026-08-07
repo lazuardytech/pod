@@ -12,14 +12,13 @@ export default function IFlowCookieModal({
   onSuccess,
   onClose,
 }: {
-  isOpen?: any;
-  onSuccess?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) {
   const [cookie, setCookie] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
@@ -50,7 +49,7 @@ export default function IFlowCookieModal({
         handleClose();
       }, 1500);
     } catch (err) {
-      setError((err as any).message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

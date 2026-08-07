@@ -25,7 +25,10 @@ import { createProviderConnection } from "@/models";
 
 // GET /api/oauth/[provider]/authorize - Generate auth URL
 // GET /api/oauth/[provider]/device-code - Request device code (for device_code flow)
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ provider: string; action: string }> },
+) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -142,7 +145,10 @@ export async function GET(request: any, { params }: { params: any }) {
 
 // POST /api/oauth/[provider]/exchange - Exchange code for tokens and save
 // POST /api/oauth/[provider]/poll - Poll for token (device_code flow)
-export async function POST(request: any, { params }: { params: any }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ provider: string; action: string }> },
+) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

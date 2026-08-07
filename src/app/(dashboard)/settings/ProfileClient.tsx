@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type FormEvent,
+  type ChangeEvent,
+} from "react";
 import { toast } from "sonner";
 import { Button, Input, Toggle } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
@@ -15,8 +23,42 @@ const OFFLINE_SETTINGS_CACHE_KEY = "settings:profile";
 const OFFLINE_LEGACY_INFO_CACHE_KEY = "settings:legacy-info";
 const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
 
+type StatusMessage = { type: string; message: string };
+
+type ConfirmDialogState = {
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: (() => void) | null;
+  variant: string;
+};
+
+type ProfileSettings = {
+  fallbackStrategy?: string;
+  comboStrategy?: string;
+  stickyRoundRobinLimit?: number;
+  comboStickyRoundRobinLimit?: number;
+  minimumLockoutMinutes?: number;
+  requireLogin?: boolean;
+  hasPassword?: boolean;
+  outboundProxyEnabled?: boolean;
+  outboundProxyUrl?: string;
+  outboundNoProxy?: string;
+  observabilityEnabled?: boolean;
+  enableObservability?: boolean;
+  modelCostSyncIntervalHours?: number;
+  systemInfo?: { runtime?: string; platform?: string };
+  [key: string]: unknown;
+};
+
+type LegacyInfo = {
+  hasLegacyData: boolean;
+  legacyFilesFound: string[];
+  error?: unknown;
+};
+
 // ─── Section header ───────────────────────────────────────────────────────────
-function SectionHeader({ icon, title }: any) {
+function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <LucideIcon name={icon} className="text-storm-cloud text-[16px]" />
@@ -26,7 +68,7 @@ function SectionHeader({ icon, title }: any) {
 }
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
-function Section({ children, className }: { children: any; className?: any }) {
+function Section({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn("rounded-[6px] border border-charcoal-grey bg-graphite p-5", className)}>
       {children}
@@ -35,7 +77,17 @@ function Section({ children, className }: { children: any; className?: any }) {
 }
 
 // ─── Row: label + description + right slot ────────────────────────────────────
-function SettingRow({ label, description, children, border = false }: any) {
+function SettingRow({
+  label,
+  description,
+  children,
+  border = false,
+}: {
+  label: string;
+  description?: string;
+  children?: ReactNode;
+  border?: boolean;
+}) {
   return (
     <div
       className={cn(
@@ -53,7 +105,7 @@ function SettingRow({ label, description, children, border = false }: any) {
 }
 
 // ─── Status message ───────────────────────────────────────────────────────────
-function StatusMsg({ status }: any) {
+function StatusMsg({ status }: { status: StatusMessage }) {
   if (!status?.message) return null;
   return (
     <p className={cn("text-[12px]", status.type === "error" ? "text-warning-red" : "text-emerald")}>
@@ -63,42 +115,49 @@ function StatusMsg({ status }: any) {
 }
 
 // ─── Label for form fields ────────────────────────────────────────────────────
-function FieldLabel({ children }: any) {
+function FieldLabel({ children }: { children: ReactNode }) {
   return <label className="text-[13px] font-[510] text-porcelain">{children}</label>;
 }
 
 export default function ProfilePage() {
   const { theme, setTheme } = useTheme();
-  const [settings, setSettings] = useState<any>({ fallbackStrategy: "fill-first" });
+  const [settings, setSettings] = useState<ProfileSettings>({ fallbackStrategy: "fill-first" });
   const [loading, setLoading] = useState(true);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
-  const [passStatus, setPassStatus] = useState({ type: "", message: "" });
+  const [passStatus, setPassStatus] = useState<StatusMessage>({ type: "", message: "" });
   const [passLoading, setPassLoading] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
-  const [dbStatus, setDbStatus] = useState({ type: "", message: "" });
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [dbStatus, setDbStatus] = useState<StatusMessage>({ type: "", message: "" });
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     title: "",
     message: "",
-    onConfirm: null as (() => void) | null,
+    onConfirm: null,
     variant: "default",
   });
-  const _openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>
-    setConfirmDialog({ open: true, title, message, onConfirm, variant });
+  const _openConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    variant = "default",
+  ) => setConfirmDialog({ open: true, title, message, onConfirm, variant });
   const closeConfirm = () =>
-    setConfirmDialog((prev: any) => ({
+    setConfirmDialog((prev) => ({
       ...prev,
       open: false,
-      onConfirm: null as (() => void) | null,
+      onConfirm: null,
     }));
-  const [legacyInfo, setLegacyInfo] = useState({ hasLegacyData: false, legacyFilesFound: [] });
-  const importFileRef = useRef<any>(null);
+  const [legacyInfo, setLegacyInfo] = useState<LegacyInfo>({
+    hasLegacyData: false,
+    legacyFilesFound: [],
+  });
+  const importFileRef = useRef<HTMLInputElement | null>(null);
   const [proxyForm, setProxyForm] = useState({
     outboundProxyEnabled: false,
     outboundProxyUrl: "",
     outboundNoProxy: "",
   });
-  const [proxyStatus, setProxyStatus] = useState({ type: "", message: "" });
+  const [proxyStatus, setProxyStatus] = useState<StatusMessage>({ type: "", message: "" });
   const [proxyLoading, setProxyLoading] = useState(false);
   const [proxyTestLoading, setProxyTestLoading] = useState(false);
   const [syncingCost, setSyncingCost] = useState(false);
@@ -114,18 +173,22 @@ export default function ProfilePage() {
     offlineNoticeShownRef.current = false;
   }, []);
 
-  const applySettingsData = useCallback((data: any) => {
+  const applySettingsData = useCallback((data: unknown) => {
     if (!data || typeof data !== "object") return;
-    setSettings(data);
+    const next = data as ProfileSettings;
+    setSettings(next);
     setProxyForm({
-      outboundProxyEnabled: data?.outboundProxyEnabled === true,
-      outboundProxyUrl: data?.outboundProxyUrl || "",
-      outboundNoProxy: data?.outboundNoProxy || "",
+      outboundProxyEnabled: next.outboundProxyEnabled === true,
+      outboundProxyUrl: (next.outboundProxyUrl as string) || "",
+      outboundNoProxy: (next.outboundNoProxy as string) || "",
     });
   }, []);
 
   const patchSettings = useCallback(
-    async (patch: any, { feature = "profile-settings" }: any = {}) => {
+    async (
+      patch: Partial<ProfileSettings>,
+      { feature = "profile-settings" }: { feature?: string } = {},
+    ) => {
       try {
         const result = await mutateJsonWithOfflineQueue({
           url: "/api/settings",
@@ -136,13 +199,14 @@ export default function ProfilePage() {
         });
 
         if (result.queued) {
-          setSettings((prev: any) => ({ ...prev, ...patch }));
-          return { ok: true, queued: true, data: patch };
+          setSettings((prev) => ({ ...prev, ...patch }));
+          return { ok: true, queued: true, data: patch as ProfileSettings };
         }
 
-        const nextData = result.data && typeof result.data === "object" ? result.data : patch;
-        setSettings((prev: any) => ({ ...prev, ...nextData }));
-        return { ok: true, queued: false, data: nextData };
+        const nextData =
+          result.data && typeof result.data === "object" ? (result.data as ProfileSettings) : patch;
+        setSettings((prev) => ({ ...prev, ...nextData }));
+        return { ok: true, queued: false, data: nextData as ProfileSettings };
       } catch (error) {
         console.error("Failed to update settings:", error);
         return { ok: false, queued: false, error };
@@ -159,16 +223,18 @@ export default function ProfilePage() {
       cacheKey: OFFLINE_LEGACY_INFO_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
       cacheTags: ["settings-migration"],
-      onCacheData: (data: any) => {
+      onCacheData: (data) => {
         if (!mounted) return;
-        if (data && !data.error) setLegacyInfo(data);
+        const info = data as LegacyInfo;
+        if (info && !info.error) setLegacyInfo(info);
       },
-      onFreshData: (data: any) => {
+      onFreshData: (data) => {
         if (!mounted) return;
-        if (data && !data.error) setLegacyInfo(data);
+        const info = data as LegacyInfo;
+        if (info && !info.error) setLegacyInfo(info);
       },
     })
-      .then((result: any) => {
+      .then((result) => {
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
       })
@@ -187,16 +253,16 @@ export default function ProfilePage() {
       cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
       maxStaleMs: OFFLINE_MAX_STALE_MS,
       cacheTags: ["settings"],
-      onCacheData: (data: any) => {
+      onCacheData: (data) => {
         if (!mounted) return;
         applySettingsData(data);
       },
-      onFreshData: (data: any) => {
+      onFreshData: (data) => {
         if (!mounted) return;
         applySettingsData(data);
       },
     })
-      .then((result: any) => {
+      .then((result) => {
         if (result.source === "cache") notifyOfflineCache();
         else clearOfflineCacheNotice();
       })
@@ -213,7 +279,7 @@ export default function ProfilePage() {
     };
   }, [applySettingsData, clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const updateOutboundProxy = async (e: any) => {
+  const updateOutboundProxy = async (e: FormEvent) => {
     e.preventDefault();
     if (settings.outboundProxyEnabled !== true) return;
     setProxyLoading(true);
@@ -270,7 +336,7 @@ export default function ProfilePage() {
     }
   };
 
-  const updateOutboundProxyEnabled = async (outboundProxyEnabled: any) => {
+  const updateOutboundProxyEnabled = async (outboundProxyEnabled: boolean) => {
     setProxyLoading(true);
     setProxyStatus({ type: "", message: "" });
     try {
@@ -279,7 +345,7 @@ export default function ProfilePage() {
         { feature: "profile-outbound-proxy-enabled" },
       );
       if (result.ok) {
-        setProxyForm((prev: any) => ({
+        setProxyForm((prev) => ({
           ...prev,
           outboundProxyEnabled:
             (result.data?.outboundProxyEnabled ?? outboundProxyEnabled) === true,
@@ -302,7 +368,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePasswordChange = async (e: any) => {
+  const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
     if (passwords.new !== passwords.confirm) {
       setPassStatus({ type: "error", message: "Passwords do not match" });
@@ -333,21 +399,21 @@ export default function ProfilePage() {
     }
   };
 
-  const updateFallbackStrategy = async (strategy: any) => {
+  const updateFallbackStrategy = async (strategy: string) => {
     await patchSettings({ fallbackStrategy: strategy }, { feature: "profile-fallback-strategy" });
   };
 
-  const updateComboStrategy = async (strategy: any) => {
+  const updateComboStrategy = async (strategy: string) => {
     await patchSettings({ comboStrategy: strategy }, { feature: "profile-combo-strategy" });
   };
 
-  const updateStickyLimit = async (limit: any) => {
+  const updateStickyLimit = async (limit: string) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
     await patchSettings({ stickyRoundRobinLimit: numLimit }, { feature: "profile-sticky-limit" });
   };
 
-  const updateComboStickyLimit = async (limit: any) => {
+  const updateComboStickyLimit = async (limit: string) => {
     const numLimit = parseInt(limit);
     if (Number.isNaN(numLimit) || numLimit < 1) return;
     await patchSettings(
@@ -356,16 +422,16 @@ export default function ProfilePage() {
     );
   };
 
-  const updateMinimumLockout = async (minutes: any) => {
+  const updateMinimumLockout = async (minutes: string) => {
     const val = Math.max(1, parseInt(minutes, 10) || 60);
     await patchSettings({ minimumLockoutMinutes: val }, { feature: "profile-minimum-lockout" });
   };
 
-  const updateRequireLogin = async (requireLogin: any) => {
+  const updateRequireLogin = async (requireLogin: boolean) => {
     await patchSettings({ requireLogin }, { feature: "profile-require-login" });
   };
 
-  const updateModelCostSyncInterval = async (val: any) => {
+  const updateModelCostSyncInterval = async (val: string) => {
     const hours = Math.max(1, parseInt(val) || 1);
     await patchSettings(
       { modelCostSyncIntervalHours: hours },
@@ -390,7 +456,7 @@ export default function ProfilePage() {
     }
   };
 
-  const updateObservabilityEnabled = async (enabled: any) => {
+  const updateObservabilityEnabled = async (enabled: boolean) => {
     await patchSettings(
       { observabilityEnabled: enabled, enableObservability: enabled },
       { feature: "profile-observability-enabled" },
@@ -403,10 +469,10 @@ export default function ProfilePage() {
         url: "/api/settings",
         cacheKey: OFFLINE_SETTINGS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
-        onCacheData: (data: any) => {
+        onCacheData: (data) => {
           applySettingsData(data);
         },
-        onFreshData: (data: any) => {
+        onFreshData: (data) => {
           applySettingsData(data);
         },
       });
@@ -440,13 +506,16 @@ export default function ProfilePage() {
       URL.revokeObjectURL(url);
       setDbStatus({ type: "success", message: "Database backup downloaded" });
     } catch (err) {
-      setDbStatus({ type: "error", message: (err as any).message || "Failed to export database" });
+      setDbStatus({
+        type: "error",
+        message: (err as Error).message || "Failed to export database",
+      });
     } finally {
       setDbLoading(false);
     }
   };
 
-  const handleImportDatabase = async (event: any) => {
+  const handleImportDatabase = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setDbLoading(true);
@@ -464,7 +533,7 @@ export default function ProfilePage() {
       await reloadSettings();
       setDbStatus({ type: "success", message: "Database imported successfully" });
     } catch (err) {
-      setDbStatus({ type: "error", message: (err as any).message || "Invalid backup file" });
+      setDbStatus({ type: "error", message: (err as Error).message || "Invalid backup file" });
     } finally {
       if (importFileRef.current) importFileRef.current.value = "";
       setDbLoading(false);
@@ -495,7 +564,7 @@ export default function ProfilePage() {
           <SectionHeader icon="contrast" title="Appearance" />
           <SettingRow label="Theme" description="Choose how the interface looks">
             <div className="flex items-center gap-1 p-1 rounded-[6px] border border-charcoal-grey bg-pitch-black/60">
-              {["light", "dark", "system"].map((option: any) => (
+              {(["light", "dark", "system"] as const).map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -600,7 +669,7 @@ export default function ProfilePage() {
                       type="password"
                       placeholder="Enter current password"
                       value={passwords.current}
-                      onChange={(e: any) => setPasswords({ ...passwords, current: e.target.value })}
+                      onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                       required
                     />
                   </div>
@@ -612,7 +681,7 @@ export default function ProfilePage() {
                       type="password"
                       placeholder="Enter new password"
                       value={passwords.new}
-                      onChange={(e: any) => setPasswords({ ...passwords, new: e.target.value })}
+                      onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
                       required
                     />
                   </div>
@@ -622,7 +691,7 @@ export default function ProfilePage() {
                       type="password"
                       placeholder="Confirm new password"
                       value={passwords.confirm}
-                      onChange={(e: any) => setPasswords({ ...passwords, confirm: e.target.value })}
+                      onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                       required
                     />
                   </div>
@@ -665,7 +734,7 @@ export default function ProfilePage() {
                   min="1"
                   max="10"
                   value={settings.stickyRoundRobinLimit || 3}
-                  onChange={(e: any) => updateStickyLimit(e.target.value)}
+                  onChange={(e) => updateStickyLimit(e.target.value)}
                   disabled={loading}
                   className="w-16 text-center shrink-0"
                 />
@@ -699,7 +768,7 @@ export default function ProfilePage() {
                   min="1"
                   max="100"
                   value={settings.comboStickyRoundRobinLimit || 1}
-                  onChange={(e: any) => updateComboStickyLimit(e.target.value)}
+                  onChange={(e) => updateComboStickyLimit(e.target.value)}
                   disabled={loading}
                   className="w-16 text-center shrink-0"
                 />
@@ -715,7 +784,7 @@ export default function ProfilePage() {
                 type="number"
                 min="1"
                 value={settings.minimumLockoutMinutes ?? 60}
-                onChange={(e: any) => updateMinimumLockout(e.target.value)}
+                onChange={(e) => updateMinimumLockout(e.target.value)}
                 disabled={loading}
                 className="w-20 text-center shrink-0"
               />
@@ -759,8 +828,8 @@ export default function ProfilePage() {
                   <Input
                     placeholder="http://127.0.0.1:7897"
                     value={proxyForm.outboundProxyUrl}
-                    onChange={(e: any) =>
-                      setProxyForm((prev: any) => ({ ...prev, outboundProxyUrl: e.target.value }))
+                    onChange={(e) =>
+                      setProxyForm((prev) => ({ ...prev, outboundProxyUrl: e.target.value }))
                     }
                     disabled={loading || proxyLoading}
                   />
@@ -774,8 +843,8 @@ export default function ProfilePage() {
                   <Input
                     placeholder="localhost,127.0.0.1"
                     value={proxyForm.outboundNoProxy}
-                    onChange={(e: any) =>
-                      setProxyForm((prev: any) => ({ ...prev, outboundNoProxy: e.target.value }))
+                    onChange={(e) =>
+                      setProxyForm((prev) => ({ ...prev, outboundNoProxy: e.target.value }))
                     }
                     disabled={loading || proxyLoading}
                   />
@@ -834,7 +903,7 @@ export default function ProfilePage() {
                 min="1"
                 max="168"
                 value={settings.modelCostSyncIntervalHours ?? 1}
-                onChange={(e: any) => updateModelCostSyncInterval(e.target.value)}
+                onChange={(e) => updateModelCostSyncInterval(e.target.value)}
                 disabled={loading}
                 inputClassName="h-8 w-[84px] text-center shrink-0 px-2 text-[12px]"
                 className="shrink-0"
@@ -867,7 +936,7 @@ export default function ProfilePage() {
               { label: "Runtime", value: settings.systemInfo?.runtime || "—" },
               { label: "Platform", value: settings.systemInfo?.platform || "—" },
               { label: "Database", value: "~/.pod/pod.sqlite" },
-            ].map((row: any) => (
+            ].map((row) => (
               <div
                 key={row.label}
                 className="flex items-center justify-between py-1.5 border-b border-charcoal-grey last:border-0"

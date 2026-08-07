@@ -1,10 +1,14 @@
 # Pod — Documentation Index
 
-> **pod · v0.0.82** · Bun + Next.js 16 + open-sse (local JS fork) + SQLite · port **20128** · [pod.lazuardy.tech](https://pod.lazuardy.tech)
+> **pod · v0.0.82** · Bun + Next.js 16 + open-sse (typed local fork) + SQLite · port **20128** · [pod.lazuardy.tech](https://pod.lazuardy.tech)
 > Self-hosted AI gateway unifying 50+ LLM providers behind one OpenAI-compatible endpoint.
 
-> **Last reviewed**: 2026-07-13.
-> **Freshness note**: As of this review, `/api/monitoring/health` and `/api/monitoring/health/stream` are **public reads** (no API key required), on par with `/api/health`. Do not trust older architecture or knowledge docs that claim these endpoints require authentication.
+> **Last reviewed**: 2026-08-07.
+> **Freshness notes**:
+>
+> - `open-sse/` is TypeScript and included in root `tsc`; source paths in docs should use `.ts` even though imports keep `.js` suffixes for ESM/bundler resolution.
+> - `/api/monitoring/health` and `/api/monitoring/health/stream` are **public reads** (no API key), on par with `/api/health`. Ignore older docs that claim auth.
+> - Service worker (`public/sw.js`): **network-first** navigation + offline fallback; never reject `respondWith` / never `Response.error()` on images; no blind `controllerchange` reload. See gotcha §34 (`knowledge/04-gotchas.md`).
 
 ---
 
@@ -24,7 +28,7 @@
 | File                                                         | Covers                                                         |
 | ------------------------------------------------------------ | -------------------------------------------------------------- |
 | [architecture/00-engine.md](architecture/00-engine.md)       | open-sse engine: routing, translation, streaming, crash guards |
-| [architecture/01-app.md](architecture/01-app.md)             | Next.js pages, API routes, middleware, PWA, stores             |
+| [architecture/01-app.md](architecture/01-app.md)             | Next.js pages, API routes, routeAuth, PWA, stores              |
 | [architecture/02-providers.md](architecture/02-providers.md) | Provider config, auth types, executors, translators, retry     |
 | [architecture/03-data.md](architecture/03-data.md)           | SQLite, Redis, offline cache, mutation queue                   |
 | [architecture/04-infra.md](architecture/04-infra.md)         | Docker, Zeabur, Cloudflare, networking                         |
@@ -51,18 +55,20 @@
 | [knowledge/01-overview.md](knowledge/01-overview.md)         | Quick facts, repo layout, three-layer architecture |
 | [knowledge/02-conventions.md](knowledge/02-conventions.md)   | Coding, naming, body parsing, modal rules          |
 | [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) | Commands, pre-push verification, Zeabur deploy     |
-| [knowledge/04-gotchas.md](knowledge/04-gotchas.md)           | Common traps (parser quirks, Turbopack, abort)     |
+| [knowledge/04-gotchas.md](knowledge/04-gotchas.md)           | Common traps (parser, Turbopack, abort, SW §34)    |
 | [knowledge/05-open-issues.md](knowledge/05-open-issues.md)   | Active watchlist                                   |
 
 ---
 
 ## Other Directories
 
-| Path     | Purpose                                                                                                                                                                                                                                                             |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| issues/  | Historical audit and security analysis — verify against live code                                                                                                                                                                                                   |
-| reports/ | Release rollups and verification reports by version                                                                                                                                                                                                                 |
-| plan/    | Draft plans: [js-to-ts-migration.md](plan/js-to-ts-migration.md), [openai-compat-fixes.md](plan/openai-compat-fixes.md), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) |
+| Path     | Purpose                                                                                                                                                                                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| skills/  | Cursor agent skills — ponytail suite from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (`/ponytail`, `/ponytail-review`, `/ponytail-audit`, `/ponytail-debt`, `/ponytail-gain`, `/ponytail-help`)                                                     |
+| issues/  | Historical audits — start at [issues/INDEX.md](issues/INDEX.md); verify against live code                                                                                                                                                                                      |
+| reports/ | Release rollups and verification reports by version                                                                                                                                                                                                                            |
+| plan/    | [js-to-ts-migration.md](plan/js-to-ts-migration.md) (completed), [openai-compat-fixes.md](plan/openai-compat-fixes.md), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) (completed) |
+| tests/   | SW seams: [../tests/SW-TEST-SEAM.md](../tests/SW-TEST-SEAM.md); unit `tests/unit/swShellCache.test.ts`                                                                                                                                                                         |
 
 ---
 

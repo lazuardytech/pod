@@ -5,12 +5,12 @@ import { MemoryType } from "@/lib/memory/types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 
-function parsePositiveInt(value: any, fallback: any) {
+function parsePositiveInt(value: unknown, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;
 }
 
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parsePositiveInt(searchParams.get("limit"), 50);
@@ -43,7 +43,7 @@ export async function GET(request: any) {
   }
 }
 
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -78,7 +78,7 @@ export async function POST(request: any) {
   }
 }
 
-export async function DELETE(request: any) {
+export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const apiKeyIdRaw = searchParams.get("apiKeyId");

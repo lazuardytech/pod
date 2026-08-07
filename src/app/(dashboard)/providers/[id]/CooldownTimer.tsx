@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 
-export default function CooldownTimer({ until }: any) {
+export default function CooldownTimer({ until }: { until: string | number | Date }) {
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {
@@ -34,5 +34,6 @@ export default function CooldownTimer({ until }: any) {
 }
 
 CooldownTimer.propTypes = {
-  until: PropTypes.string.isRequired,
+  until: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.instanceOf(Date)])
+    .isRequired,
 };

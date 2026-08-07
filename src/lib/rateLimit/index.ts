@@ -70,7 +70,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
   }
 
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-  const safeRelease = ((): any => {
+  const safeRelease = ((): (() => void) => {
     let done = false;
     return (): void => {
       if (done) return;
@@ -80,7 +80,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
   })();
 
   const wrappedBody = new ReadableStream<Uint8Array>({
-    start(controller): any {
+    start(controller): void {
       reader = sourceBody.getReader();
       const pump = async (): Promise<void> => {
         try {
@@ -100,7 +100,7 @@ function wrapStreamingResponse(response: Response, release: () => void | Promise
       };
       void pump();
     },
-    async cancel(reason): Promise<any> {
+    async cancel(reason: unknown): Promise<void> {
       safeRelease();
       if (reader) {
         try {
@@ -152,7 +152,7 @@ export async function checkRateLimitByKey(
   apiKey: string | null | undefined,
 ): Promise<RateLimitCheckResult> {
   if (!apiKey) return { ok: true, release: null, response: undefined };
-  const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): any => null);
+  const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): null => null);
   if (!apiKeyRecord) return { ok: true, release: null, response: undefined };
 
   const backend = await getBackend();
@@ -213,7 +213,11 @@ export async function checkRateLimitByKey(
 
     return {
       ok: true,
-      release: concResult.release ? (): any => void concResult.release?.() : null,
+      release: concResult.release
+        ? (): void => {
+            void concResult.release?.();
+          }
+        : null,
       response: undefined,
     };
   }
@@ -222,9 +226,9 @@ export async function checkRateLimitByKey(
   type MemoryLike = {
     acquirePermit: (record: {
       id: string;
-      limitType?: string;
-      requestsPerMinute?: number;
-      concurrentRequests?: number;
+      limitType?: string | null;
+      requestsPerMinute?: number | null;
+      concurrentRequests?: number | null;
     }) => {
       ok: boolean;
       reason?: string;
@@ -246,9 +250,10 @@ export async function checkRateLimitByKey(
 
 function getLimitConfigFromRecord(
   apiKeyRecord: {
-    limitType?: string;
-    requestsPerMinute?: number;
-    concurrentRequests?: number;
+    id?: string;
+    limitType?: string | null;
+    requestsPerMinute?: number | null;
+    concurrentRequests?: number | null;
   } | null,
 ): { requestsPerMinute: number; concurrentRequests: number } | null {
   if (!apiKeyRecord || apiKeyRecord.limitType !== "limited") return null;
@@ -273,7 +278,7 @@ export async function withApiKeyRateLimit(
   const apiKey = extractApiKey(request);
   if (!apiKey) return await handler();
 
-  const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): any => null);
+  const apiKeyRecord = await getApiKeyByKey(apiKey).catch((): null => null);
   if (!apiKeyRecord) return await handler();
 
   const backend = await getBackend();
@@ -356,9 +361,9 @@ export async function withApiKeyRateLimit(
   type MemoryLike = {
     acquirePermit: (record: {
       id: string;
-      limitType?: string;
-      requestsPerMinute?: number;
-      concurrentRequests?: number;
+      limitType?: string | null;
+      requestsPerMinute?: number | null;
+      concurrentRequests?: number | null;
     }) => {
       ok: boolean;
       reason?: string;

@@ -9,7 +9,7 @@ import { createProviderConnection } from "@/models";
  * POST /api/oauth/kiro/import
  * Import and validate refresh token from Kiro IDE
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

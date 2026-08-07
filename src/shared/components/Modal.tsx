@@ -1,8 +1,21 @@
 "use client";
+import type { ReactNode } from "react";
 import { useEffect } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 import Button from "./Button";
+
+type ModalProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+  title?: ReactNode;
+  children?: ReactNode;
+  footer?: ReactNode;
+  size?: string;
+  closeOnOverlay?: boolean;
+  showCloseButton?: boolean;
+  className?: string;
+};
 
 export default function Modal({
   isOpen,
@@ -14,18 +27,7 @@ export default function Modal({
   closeOnOverlay = true,
   showCloseButton = true,
   className,
-}: {
-  isOpen?: any;
-  onClose?: any;
-  title?: any;
-  children?: any;
-  footer?: any;
-  size?: string;
-  closeOnOverlay?: boolean;
-  showCloseButton?: boolean;
-  className?: any;
-  [key: string]: any;
-}) {
+}: ModalProps) {
   const sizes: Record<string, string> = {
     sm: "max-w-sm",
     md: "max-w-md",
@@ -46,8 +48,8 @@ export default function Modal({
   }, [isOpen]);
 
   useEffect(() => {
-    const handleEscape = (e: any) => {
-      if (e.key === "Escape" && isOpen) onClose();
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) onClose?.();
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
@@ -111,6 +113,18 @@ export default function Modal({
   );
 }
 
+type ConfirmModalProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onConfirm?: () => void;
+  title?: ReactNode;
+  message?: ReactNode;
+  confirmText?: ReactNode;
+  cancelText?: ReactNode;
+  variant?: string;
+  loading?: boolean;
+};
+
 export function ConfirmModal({
   isOpen,
   onClose,
@@ -121,18 +135,7 @@ export function ConfirmModal({
   cancelText = "Cancel",
   variant = "danger",
   loading = false,
-}: {
-  isOpen?: any;
-  onClose?: any;
-  onConfirm?: any;
-  title?: any;
-  message?: any;
-  confirmText?: any;
-  cancelText?: any;
-  variant?: string;
-  loading?: boolean;
-  [key: string]: any;
-}) {
+}: ConfirmModalProps) {
   return (
     <Modal
       isOpen={isOpen}

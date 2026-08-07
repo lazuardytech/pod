@@ -5,14 +5,22 @@
 ### Added
 
 - OpenAI compatibility: emit standard CORS headers on `/v1/responses` for non-streaming requests, and return `400` on unsupported non-streaming usage.
+- Deploy-time SW versioning: `gen:sw-version` writes `/sw-version.json`; registrar registers `/sw.js?v=…` so each deploy gets an isolated cache namespace.
+- SW shell-cache + deploy-regression test seams (`tests/unit/swShellCache.test.js`, `tests/SW-TEST-SEAM.md`).
+
+### Changed
+
+- `bun run check` / `lint` gate on `oxlint --deny-warnings`.
 
 ### Fixed
 
+- SW navigation: network-first (not cache-first) with offline `/offline` fallback; never `Response.error()` on documents/images; drop blind `controllerchange` reload (`f1d4861`).
 - Remove redundant `controller.close()` in `open-sse/handlers/chatCore.js` finally block — already closed in the success path.
 - Canary body-size latency: extend `readBodyTextStream()` chunk-by-chunk reads across additional large-body routes to avoid the 9–15s `curl/8.x` stall.
 - Redis rate-limit isolation: respect `RATELIMIT_KEY_PREFIX` so environments (e.g. canary/prod) keep separate namespaces.
 - Client disconnect: classify `AbortError` at `node:_http_server` as `[ClientDisconnect]` (not `[FATAL]`) and `controller.close()` on SSE reader abort — no unhandled rejections, no log spam.
 - Body size cap raised to 50MB default, env-tunable via `POD_MAX_REQUEST_BODY_BYTES` and `POD_MAX_CHAT_BODY_BYTES`.
+- `/api/monitoring/health*` are public reads (auth guard removed); older changelog “+ API key auth” entries are historical only.
 
 ## v0.0.82 (2026-07-11)
 

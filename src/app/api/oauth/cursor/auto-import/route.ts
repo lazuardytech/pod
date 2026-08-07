@@ -14,7 +14,7 @@ const ACCESS_TOKEN_KEYS = ["cursorAuth/accessToken", "cursorAuth/token"];
 const MACHINE_ID_KEYS = ["storage.serviceMachineId", "storage.machineId", "telemetry.machineId"];
 
 /** Get candidate db paths by platform */
-function getCandidatePaths(platform: any) {
+function getCandidatePaths(platform: string) {
   const home = homedir();
 
   if (platform === "darwin") {
@@ -41,7 +41,7 @@ function getCandidatePaths(platform: any) {
   ];
 }
 
-const _normalize = (value: any) => {
+const _normalize = (value: unknown) => {
   if (typeof value !== "string") return value;
   try {
     const parsed = JSON.parse(value);
@@ -55,9 +55,9 @@ const _normalize = (value: any) => {
  * Extract tokens via better-sqlite3 (bundled dependency).
  * This is the preferred strategy — no external CLI required.
  */
-function extractTokensViaBetterSqlite(dbPath: any) {
+function extractTokensViaBetterSqlite(dbPath: string) {
   // Dynamic require so the route stays importable even if native bindings fail.
-  // `bun:sqlite` is marked as a server external package in next.config.mjs,
+  // `bun:sqlite` is marked as a server external package in next.config.ts,
   // so require() resolves it at runtime under Bun.
   const isBun = typeof Bun !== "undefined";
   const Database = isBun ? require("bun:sqlite").Database : require("better-sqlite3");
@@ -67,12 +67,12 @@ function extractTokensViaBetterSqlite(dbPath: any) {
     ? new Database(dbPath, { readonly: true, create: false })
     : new Database(dbPath, { readonly: true, fileMustExist: true });
 
-  const query = (key: any) => {
+  const query = (key: string) => {
     const row = db.prepare("SELECT value FROM itemTable WHERE key=? LIMIT 1").get(key);
     return row?.value || null;
   };
 
-  const normalize = (value: any) => {
+  const normalize = (value: unknown) => {
     if (typeof value !== "string") return value;
     try {
       const parsed = JSON.parse(value);
@@ -108,9 +108,9 @@ function extractTokensViaBetterSqlite(dbPath: any) {
  * Extract tokens via sqlite3 CLI.
  * Fallback when better-sqlite3 native bindings are unavailable.
  */
-async function extractTokensViaCLI(dbPath: any) {
-  const normalize = (raw: any) => {
-    const value = raw.trim();
+async function extractTokensViaCLI(dbPath: string) {
+  const normalize = (raw: unknown): string => {
+    const value = String(raw ?? "").trim();
     try {
       const parsed = JSON.parse(value);
       return typeof parsed === "string" ? parsed : value;
@@ -119,7 +119,7 @@ async function extractTokensViaCLI(dbPath: any) {
     }
   };
 
-  const query = async (key: any) => {
+  const query = async (key: string) => {
     const { stdout } = await execFileAsync(
       "sqlite3",
       [
@@ -172,7 +172,7 @@ async function extractTokensViaCLI(dbPath: any) {
  * Auto-detect and extract Cursor tokens from local SQLite database.
  * Strategy: better-sqlite3 → sqlite3 CLI → manual fallback
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

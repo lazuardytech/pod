@@ -44,7 +44,7 @@ export function formatResetTime(date: string | Date | null | undefined) {
  * @param {number} percentage - Remaining percentage (0-100)
  * @returns {string} Color name: "green" | "yellow" | "red"
  */
-export function getStatusColor(percentage: any) {
+export function getStatusColor(percentage: number) {
   if (percentage > 70) return "green";
   if (percentage >= 30) return "yellow";
   return "red"; // 0-29% including 0% (out of quota) - show red
@@ -55,7 +55,7 @@ export function getStatusColor(percentage: any) {
  * @param {number} percentage - Remaining percentage (0-100)
  * @returns {string} Emoji: "🟢" | "🟡" | "🔴"
  */
-export function getStatusEmoji(percentage: any) {
+export function getStatusEmoji(percentage: number) {
   if (percentage > 70) return "🟢";
   if (percentage >= 30) return "🟡";
   return "🔴"; // 0-29% including 0% (out of quota) - show red
@@ -67,7 +67,10 @@ export function getStatusEmoji(percentage: any) {
  * @param {number} total - Total amount
  * @returns {number} Remaining percentage (0-100)
  */
-export function calculatePercentage(used: any, total: any) {
+export function calculatePercentage(
+  used: number | null | undefined,
+  total: number | null | undefined,
+) {
   if (!total || total === 0) return 0;
   if (!used || used < 0) return 100;
   if (used >= total) return 0;
@@ -75,38 +78,48 @@ export function calculatePercentage(used: any, total: any) {
   return Math.round(((total - used) / total) * 100);
 }
 
+export type NormalizedQuota = {
+  name: string;
+  modelKey?: string;
+  used: number;
+  total: number;
+  resetAt: string | null;
+  remainingPercentage?: number;
+  message?: string;
+};
+
+type RawQuota = {
+  used?: number;
+  total?: number;
+  resetAt?: string | null;
+  displayName?: string;
+  remainingPercentage?: number;
+};
+
+type QuotaPayload = {
+  quotas?: Record<string, RawQuota>;
+  message?: string | null;
+};
+
 /**
  * Parse provider-specific quota structures into normalized array
  * @param {string} provider - Provider name (github, antigravity, codex, kiro, claude)
  * @param {Object} data - Raw quota data from provider
  * @returns {Array<Object>} Normalized quota objects with { name, used, total, resetAt }
  */
-export function parseQuotaData(provider: any, data: any) {
+export function parseQuotaData(
+  provider: string,
+  data: QuotaPayload | null | undefined,
+): NormalizedQuota[] {
   if (!data || typeof data !== "object") return [];
 
-  const normalizedQuotas: Array<{
-    name: string;
-    modelKey?: string;
-    used: number;
-    total: number;
-    resetAt: string | null;
-    remainingPercentage?: number;
-    message?: string;
-  }> = [];
-
-  type RawQuota = {
-    used?: number;
-    total?: number;
-    resetAt?: string | null;
-    displayName?: string;
-    remainingPercentage?: number;
-  };
+  const normalizedQuotas: NormalizedQuota[] = [];
 
   try {
     switch (provider.toLowerCase()) {
       case "github":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]: any) => {
+          Object.entries(data.quotas).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -119,48 +132,42 @@ export function parseQuotaData(provider: any, data: any) {
 
       case "antigravity":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(
-            ([modelKey, quota]: any) => {
-              normalizedQuotas.push({
-                name: quota.displayName || modelKey,
-                modelKey: modelKey, // Keep modelKey for sorting
-                used: quota.used || 0,
-                total: quota.total || 0,
-                resetAt: quota.resetAt || null,
-                remainingPercentage: quota.remainingPercentage,
-              });
-            },
-          );
+          Object.entries(data.quotas).forEach(([modelKey, quota]) => {
+            normalizedQuotas.push({
+              name: quota.displayName || modelKey,
+              modelKey: modelKey, // Keep modelKey for sorting
+              used: quota.used || 0,
+              total: quota.total || 0,
+              resetAt: quota.resetAt || null,
+              remainingPercentage: quota.remainingPercentage,
+            });
+          });
         }
         break;
 
       case "codex":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(
-            ([quotaType, quota]: any) => {
-              normalizedQuotas.push({
-                name: quotaType,
-                used: quota.used || 0,
-                total: quota.total || 0,
-                resetAt: quota.resetAt || null,
-              });
-            },
-          );
+          Object.entries(data.quotas).forEach(([quotaType, quota]) => {
+            normalizedQuotas.push({
+              name: quotaType,
+              used: quota.used || 0,
+              total: quota.total || 0,
+              resetAt: quota.resetAt || null,
+            });
+          });
         }
         break;
 
       case "kiro":
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(
-            ([quotaType, quota]: any) => {
-              normalizedQuotas.push({
-                name: quotaType,
-                used: quota.used || 0,
-                total: quota.total || 0,
-                resetAt: quota.resetAt || null,
-              });
-            },
-          );
+          Object.entries(data.quotas).forEach(([quotaType, quota]) => {
+            normalizedQuotas.push({
+              name: quotaType,
+              used: quota.used || 0,
+              total: quota.total || 0,
+              resetAt: quota.resetAt || null,
+            });
+          });
         }
         break;
 
@@ -175,7 +182,7 @@ export function parseQuotaData(provider: any, data: any) {
             message: data.message,
           });
         } else if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]: any) => {
+          Object.entries(data.quotas).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -189,7 +196,7 @@ export function parseQuotaData(provider: any, data: any) {
       default:
         // Generic fallback for unknown providers
         if (data.quotas) {
-          Object.entries(data.quotas as Record<string, RawQuota>).forEach(([name, quota]: any) => {
+          Object.entries(data.quotas).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
@@ -207,9 +214,9 @@ export function parseQuotaData(provider: any, data: any) {
   // Sort quotas according to PROVIDER_MODELS order
   const modelOrder = getModelsByProviderId(provider);
   if (modelOrder.length > 0) {
-    const orderMap = new Map<string, number>(modelOrder.map((m: any, i: any) => [m.id, i]));
+    const orderMap = new Map<string, number>(modelOrder.map((m, i) => [m.id, i]));
 
-    normalizedQuotas.sort((a: any, b: any) => {
+    normalizedQuotas.sort((a, b) => {
       // Use modelKey for antigravity, otherwise use name
       const keyA = a.modelKey || a.name;
       const keyB = b.modelKey || b.name;

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import open from "open";
 import { getServerCredentials } from "../config/index";
-import { IFLOW_CONFIG } from "../constants/oauth";
+import { IFLOW_CONFIG, type IFlowConfig } from "../constants/oauth";
 import { startLocalServer } from "../utils/server";
 import { spinner as createSpinner } from "../utils/ui";
 
@@ -10,7 +10,7 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses Authorization Code flow with Basic Auth
  */
 export class IFlowService {
-  public config: any;
+  public config: IFlowConfig;
 
   constructor() {
     this.config = IFLOW_CONFIG;
@@ -21,8 +21,8 @@ export class IFlowService {
    */
   buildAuthUrl(redirectUri: string, state: string): string {
     const params = new URLSearchParams({
-      loginMethod: this.config.extraParams.loginMethod,
-      type: this.config.extraParams.type,
+      loginMethod: String(this.config.extraParams.loginMethod ?? ""),
+      type: String(this.config.extraParams.type ?? ""),
       redirect: redirectUri,
       state: state,
       client_id: this.config.clientId,
@@ -35,7 +35,7 @@ export class IFlowService {
    * Exchange authorization code for tokens
    */
   // todo(ts): token response shape varies — keep loose.
-  async exchangeCode(code: string, redirectUri: string): Promise<any> {
+  async exchangeCode(code: string, redirectUri: string): Promise<Record<string, unknown>> {
     if (!this.config.clientSecret) {
       throw new Error("Missing IFLOW_OAUTH_CLIENT_SECRET");
     }
@@ -73,7 +73,7 @@ export class IFlowService {
    * Get user info from iFlow
    */
   // todo(ts): iFlow user info shape — keep loose.
-  async getUserInfo(accessToken: string): Promise<any> {
+  async getUserInfo(accessToken: string): Promise<Record<string, unknown>> {
     const response = await fetch(
       `${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`,
       {
@@ -101,7 +101,10 @@ export class IFlowService {
    * Save iFlow tokens to server
    */
   // todo(ts): token/userInfo shapes are provider-specific — keep loose.
-  async saveTokens(tokens: any, userInfo: any): Promise<any> {
+  async saveTokens(
+    tokens: Record<string, unknown>,
+    userInfo: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/iflow`, {
@@ -193,7 +196,7 @@ export class IFlowService {
       spinner.text = "Fetching user info...";
 
       // Get user info (includes API key)
-      const userInfo = await this.getUserInfo(tokens.access_token);
+      const userInfo = await this.getUserInfo(String(tokens.access_token ?? ""));
 
       spinner.text = "Saving tokens to server...";
 

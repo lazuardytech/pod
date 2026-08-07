@@ -22,6 +22,12 @@ bun run check && bun run test:run && bun run build
 
 All three must pass before pushing. No exceptions.
 
+SW shell-cache regression (when touching `public/sw.js` / registrar):
+
+```bash
+bun x vitest run tests/unit/swShellCache.test.ts
+```
+
 ## Workflow Rules
 
 1. **Update docs from live code** — documentation reflects current codebase, not intentions
@@ -41,3 +47,11 @@ All three must pass before pushing. No exceptions.
 - `canary` is the active development branch
 - `main` is the stable/release branch
 - Conventional Commits format
+
+## Cursor Cloud
+
+- Workspace / Cloud environment default branch for development: **`canary`**
+- Install helper: `scripts/cloud-dev-install.sh`
+- Start helper: `scripts/cloud-dev-start.sh` (needs `JWT_SECRET` + `API_KEY_SECRET` from Secrets)
+- Ponytail skills: `.agents/skills/ponytail*` — `/ponytail lite|full|ultra`
+- See AGENTS.md → **Cursor Cloud specific instructions**

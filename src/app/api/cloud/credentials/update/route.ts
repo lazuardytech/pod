@@ -5,7 +5,7 @@ import { checkStrictDashboardAuth } from "@/lib/routeAuth";
 import { getProviderConnections, updateProviderConnection } from "@/models";
 
 // Update provider credentials (for cloud token refresh)
-export async function PUT(request: any) {
+export async function PUT(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

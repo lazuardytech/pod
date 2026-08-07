@@ -4,7 +4,7 @@ import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 // GET /api/keys/[id] - Get single key
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const key = await getApiKeyById(id);
@@ -19,7 +19,7 @@ export async function GET(request: any, { params }: { params: any }) {
 }
 
 // PUT /api/keys/[id] - Update key
-export async function PUT(request: any, { params }: { params: any }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -83,7 +83,7 @@ export async function PUT(request: any, { params }: { params: any }) {
 }
 
 // DELETE /api/keys/[id] - Delete API key
-export async function DELETE(request: any, { params }: { params: any }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 

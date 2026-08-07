@@ -167,7 +167,7 @@ async function handleSingleProviderFetch(
         return unavailableResponse(
           status,
           `[${providerId}] ${errorMsg}`,
-          credentials.retryAfter ?? null,
+          credentials.retryAfter ?? "",
           credentials.retryAfterHuman ?? "",
         );
       }

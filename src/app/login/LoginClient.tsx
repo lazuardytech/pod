@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
 import { Button, Card, Input } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
@@ -42,7 +42,7 @@ export default function LoginClient() {
     checkAuth();
   }, [router]);
 
-  const handleLogin = async (e: any) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -111,7 +111,7 @@ export default function LoginClient() {
               label="Password"
               placeholder="Enter password"
               value={password}
-              onChange={(e: any) => setPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.currentTarget.value)}
               error={error}
               required
               autoFocus

@@ -19,7 +19,8 @@ const fetchWithTimeout = (
 };
 
 // Validate URL format
-const isValidUrl = (url: any) => {
+const isValidUrl = (url: unknown) => {
+  if (typeof url !== "string") return false;
   try {
     new URL(url);
     return true;
@@ -28,24 +29,25 @@ const isValidUrl = (url: any) => {
   }
 };
 
+type NetworkError = Error & { cause?: { code?: string } };
+
 // Parse error details for user-friendly messages
-const getErrorMessage = (error: any) => {
-  if (error.cause?.code === "ECONNREFUSED")
-    return "Connection refused - provider node offline or unreachable";
-  if (error.cause?.code === "ENOTFOUND")
-    return "DNS lookup failed - invalid domain or network issue";
-  if (error.cause?.code === "ETIMEDOUT") return "Connection timeout - provider node too slow";
+const getErrorMessage = (error: unknown) => {
+  const err = error as NetworkError;
+  const code = err.cause?.code;
+  if (code === "ECONNREFUSED") return "Connection refused - provider node offline or unreachable";
+  if (code === "ENOTFOUND") return "DNS lookup failed - invalid domain or network issue";
+  if (code === "ETIMEDOUT") return "Connection timeout - provider node too slow";
   if (sanitizeError(error).includes("timeout"))
     return "Request timeout (>10s) - provider node not responding";
-  if (error.cause?.code === "CERT_HAS_EXPIRED") return "SSL certificate expired";
-  if (error.cause?.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE")
-    return "SSL certificate verification failed";
-  if (error.cause?.code) return `Network error: ${error.cause.code}`;
+  if (code === "CERT_HAS_EXPIRED") return "SSL certificate expired";
+  if (code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE") return "SSL certificate verification failed";
+  if (code) return `Network error: ${code}`;
   return "Network connection failed - check URL and network connectivity";
 };
 
 // Get status-specific error message for /models endpoint
-const getModelsErrorMessage = (status: any) => {
+const getModelsErrorMessage = (status: number) => {
   if (status === 401 || status === 403) return "API key unauthorized";
   if (status === 404) return "/models endpoint not found - try chat validation with model ID";
   if (status >= 500) return "Server error - try again later";
@@ -53,7 +55,7 @@ const getModelsErrorMessage = (status: any) => {
 };
 
 // Get status-specific error message for /chat/completions endpoint
-const getChatErrorMessage = (status: any) => {
+const getChatErrorMessage = (status: number) => {
   if (status === 401 || status === 403) return "API key unauthorized";
   if (status === 400) return "Invalid model or bad request";
   if (status === 404) return "Chat endpoint not found";
@@ -62,7 +64,7 @@ const getChatErrorMessage = (status: any) => {
 };
 
 // POST /api/provider-nodes/validate - Validate API key against base URL
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
