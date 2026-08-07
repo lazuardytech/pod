@@ -1,5 +1,28 @@
 // Stream handler with disconnect detection - shared for all providers
 
+type StreamControllerOptions = {
+  onDisconnect?: (info: { reason: unknown; duration: number }) => void;
+  onError?: (error: unknown) => void;
+  log?: unknown;
+  provider?: unknown;
+  model?: unknown;
+};
+
+export type StreamController = {
+  signal: AbortSignal;
+  startTime: number;
+  isConnected: () => boolean;
+  handleDisconnect: (reason?: unknown) => void;
+  handleComplete: () => void;
+  handleError: (error: unknown) => void;
+  abort: () => void;
+};
+
+type StreamPair = {
+  readable: { getReader: () => ReadableStreamDefaultReader<Uint8Array> };
+  writable: { getWriter: () => { abort: (reason?: unknown) => Promise<unknown> } };
+};
+
 // Get HH:MM:SS timestamp
 function getTimeString() {
   return new Date().toLocaleTimeString("en-US", {
@@ -32,13 +55,13 @@ export function createStreamController({
   log: _log,
   provider: _provider,
   model: _model,
-}: any = {}) {
+}: StreamControllerOptions = {}): StreamController {
   const abortController = new AbortController();
   const startTime = Date.now();
   let disconnected = false;
-  let abortTimeout: any = null;
+  let abortTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const logStream = (status: any) => {
+  const logStream = (status: string) => {
     const duration = Date.now() - startTime;
     console.log(`[${getTimeString()}] 🌊 [STREAM] ${duration}ms | ${status}`);
   };
@@ -50,7 +73,7 @@ export function createStreamController({
     isConnected: () => !disconnected,
 
     // Call when client disconnects
-    handleDisconnect: (reason: any = "client_closed") => {
+    handleDisconnect: (reason: unknown = "client_closed") => {
       if (disconnected) return;
       disconnected = true;
 
@@ -78,7 +101,7 @@ export function createStreamController({
     },
 
     // Call on error
-    handleError: (error: any) => {
+    handleError: (error: unknown) => {
       if (disconnected) return;
       disconnected = true;
 
@@ -104,12 +127,15 @@ export function createStreamController({
  * Create transform stream with disconnect detection
  * Wraps existing transform stream and adds abort capability
  */
-export function createDisconnectAwareStream(transformStream: any, streamController: any) {
+export function createDisconnectAwareStream(
+  transformStream: StreamPair,
+  streamController: StreamController,
+) {
   const reader = transformStream.readable.getReader();
   const writer = transformStream.writable.getWriter();
 
   return new ReadableStream({
-    async pull(controller: any) {
+    async pull(controller: ReadableStreamDefaultController<Uint8Array>) {
       if (!streamController.isConnected()) {
         controller.close();
         return;
@@ -136,7 +162,7 @@ export function createDisconnectAwareStream(transformStream: any, streamControll
       }
     },
 
-    cancel(reason: any) {
+    cancel(reason?: unknown) {
       streamController.handleDisconnect(reason || "cancelled");
       reader.cancel();
       writer.abort();
@@ -151,16 +177,17 @@ export function createDisconnectAwareStream(transformStream: any, streamControll
  * @param {object} streamController - Stream controller from createStreamController
  */
 export function pipeWithDisconnect(
-  providerResponse: any,
-  transformStream: any,
-  streamController: any,
+  providerResponse: Response,
+  transformStream: TransformStream,
+  streamController: unknown,
 ) {
-  const transformedBody = providerResponse.body.pipeThrough(transformStream);
+  const ctrl = streamController as StreamController;
+  const transformedBody = (providerResponse.body as ReadableStream).pipeThrough(transformStream);
   return createDisconnectAwareStream(
     {
       readable: transformedBody,
       writable: { getWriter: () => ({ abort: () => Promise.resolve() }) },
     },
-    streamController,
+    ctrl,
   );
 }

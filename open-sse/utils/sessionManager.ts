@@ -41,7 +41,7 @@ if (cleanupInterval.unref) cleanupInterval.unref();
  * @param {string} connectionId - The connection identifier (email or unique ID)
  * @returns {string} A stable session ID string matching binary format
  */
-export function deriveSessionId(connectionId: any) {
+export function deriveSessionId(connectionId: string | null | undefined) {
   if (!connectionId) {
     return generateBinaryStyleId();
   }

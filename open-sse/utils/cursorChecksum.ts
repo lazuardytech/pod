@@ -14,7 +14,7 @@ import { v5 as uuidv5 } from "uuid";
  * @param {string} salt - Optional salt
  * @returns {string} - 64-character hex string
  */
-export function generateHashed64Hex(input: any, salt: any = "") {
+export function generateHashed64Hex(input: string, salt: string = "") {
   return crypto
     .createHash("sha256")
     .update(input + salt)
@@ -26,7 +26,7 @@ export function generateHashed64Hex(input: any, salt: any = "") {
  * @param {string} authToken - Auth token
  * @returns {string} - UUID string
  */
-export function generateSessionId(authToken: any) {
+export function generateSessionId(authToken: string) {
   return uuidv5(authToken, uuidv5.DNS);
 }
 
@@ -43,7 +43,7 @@ export function generateSessionId(authToken: any) {
  * @param {string} machineId - Machine ID from Cursor storage or generated
  * @returns {string} - Checksum string
  */
-export function generateCursorChecksum(machineId: any) {
+export function generateCursorChecksum(machineId: string) {
   // Math.floor(Date.now() / 1e6) - same as Python implementation
   const timestamp = Math.floor(Date.now() / 1000000);
 
@@ -96,9 +96,14 @@ export function generateCursorChecksum(machineId: any) {
  * @param {boolean} ghostMode - Enable ghost mode (privacy)
  * @returns {Object} - Headers object
  */
-export function buildCursorHeaders(accessToken: any, machineId: any = null, ghostMode: any = true) {
+export function buildCursorHeaders(
+  accessToken: string | undefined,
+  machineId: string | null | undefined = null,
+  ghostMode: boolean = true,
+) {
   // Clean token if it has prefix
-  const cleanToken = accessToken.includes("::") ? accessToken.split("::")[1] : accessToken;
+  const token = accessToken as string;
+  const cleanToken = token.includes("::") ? (token.split("::")[1] as string) : token;
 
   // Generate machine ID if not provided
   const effectiveMachineId = machineId || generateHashed64Hex(cleanToken, "machineId");

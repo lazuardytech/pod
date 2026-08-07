@@ -11,7 +11,7 @@ function ts() {
   });
 }
 
-export function dbg(tag: any, msg: any) {
+export function dbg(tag: unknown, msg: unknown) {
   if (!isDev) return;
   console.log(`[${ts()}] 🐛 [DBG:${tag}] ${msg}`);
 }

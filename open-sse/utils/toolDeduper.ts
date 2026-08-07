@@ -3,7 +3,14 @@
  * Goal: reduce tool definitions token bloat for Claude clients.
  */
 
-const DEDUP_RULES = [
+type ToolLike = {
+  name?: string;
+  function?: { name?: string };
+};
+
+type NamePattern = string | RegExp;
+
+const DEDUP_RULES: Array<{ triggers: NamePattern[]; strip: NamePattern[] }> = [
   {
     // Exa MCP present → drop built-in web tools (Exa is preferred).
     triggers: ["mcp__exa__web_search_exa", "mcp__exa__web_fetch_exa"],
@@ -21,28 +28,29 @@ const DEDUP_RULES = [
   },
 ];
 
-function getToolName(t: any) {
+function getToolName(t: ToolLike | null | undefined) {
   return t?.name || t?.function?.name || "";
 }
 
-function matches(name: any, pattern: any) {
+function matches(name: string, pattern: NamePattern) {
   if (typeof pattern === "string") return name === pattern;
   return pattern instanceof RegExp ? pattern.test(name) : false;
 }
 
-function dedupeTools(tools: any) {
-  if (!Array.isArray(tools) || tools.length === 0) return { tools, stripped: [] };
-  const names = tools.map(getToolName);
-  const toStrip = new Set();
+function dedupeTools(tools: unknown) {
+  if (!Array.isArray(tools) || tools.length === 0) return { tools, stripped: [] as string[] };
+  const toolList = tools as ToolLike[];
+  const names = toolList.map(getToolName);
+  const toStrip = new Set<string>();
   for (const rule of DEDUP_RULES) {
-    const hasTrigger = names.some((n: any) => rule.triggers.some((p: any) => matches(n, p)));
+    const hasTrigger = names.some((n) => rule.triggers.some((p) => matches(n, p)));
     if (!hasTrigger) continue;
     for (const n of names) {
-      if (rule.strip.some((p: any) => matches(n, p))) toStrip.add(n);
+      if (rule.strip.some((p) => matches(n, p))) toStrip.add(n);
     }
   }
-  if (toStrip.size === 0) return { tools, stripped: [] };
-  const out = tools.filter((t: any) => !toStrip.has(getToolName(t)));
+  if (toStrip.size === 0) return { tools, stripped: [] as string[] };
+  const out = toolList.filter((t) => !toStrip.has(getToolName(t)));
   return { tools: out, stripped: Array.from(toStrip) };
 }
 

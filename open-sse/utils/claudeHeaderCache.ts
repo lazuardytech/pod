@@ -26,15 +26,15 @@ const CLAUDE_IDENTITY_HEADERS = [
   "arch",
 ];
 
-let cachedHeaders: Record<string, any> | null = null;
+let cachedHeaders: Record<string, unknown> | null = null;
 
 /**
  * Detect if request headers look like a real Claude Code client.
  * @param {object} headers - Lowercase header key/value object
  */
-function isClaudeCodeClient(headers: any) {
-  const ua = (headers["user-agent"] || "").toLowerCase();
-  const xApp = (headers["x-app"] || "").toLowerCase();
+function isClaudeCodeClient(headers: Record<string, unknown>) {
+  const ua = String(headers["user-agent"] || "").toLowerCase();
+  const xApp = String(headers["x-app"] || "").toLowerCase();
   return ua.includes("claude-cli") || ua.includes("claude-code") || xApp === "cli";
 }
 
@@ -43,14 +43,15 @@ function isClaudeCodeClient(headers: any) {
  * Called at the entry point before any translation/forwarding.
  * @param {object} headers - Lowercase header key/value object (from request.headers.entries())
  */
-export function cacheClaudeHeaders(headers: any) {
+export function cacheClaudeHeaders(headers: unknown) {
   if (!headers || typeof headers !== "object") return;
-  if (!isClaudeCodeClient(headers)) return;
+  const headerRecord = headers as Record<string, unknown>;
+  if (!isClaudeCodeClient(headerRecord)) return;
 
-  const captured: Record<string, any> = {};
+  const captured: Record<string, unknown> = {};
   for (const key of CLAUDE_IDENTITY_HEADERS) {
-    if (headers[key] !== undefined && headers[key] !== null) {
-      captured[key] = headers[key];
+    if (headerRecord[key] !== undefined && headerRecord[key] !== null) {
+      captured[key] = headerRecord[key];
     }
   }
 

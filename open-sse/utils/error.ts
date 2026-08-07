@@ -1,7 +1,9 @@
 import { DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "../config/errorConfig.js";
 
-const ERROR_TYPES_MAP = ERROR_TYPES as Record<string | number, any>;
-const DEFAULT_ERROR_MESSAGES_MAP = DEFAULT_ERROR_MESSAGES as Record<string | number, any>;
+type ErrorTypeInfo = { type: string; code: string };
+
+const ERROR_TYPES_MAP = ERROR_TYPES as Record<number, ErrorTypeInfo>;
+const DEFAULT_ERROR_MESSAGES_MAP = DEFAULT_ERROR_MESSAGES as Record<number, string>;
 
 export type ErrorResult = {
   success: false;
@@ -9,6 +11,20 @@ export type ErrorResult = {
   error: string;
   resetsAtMs?: number | null;
   response: Response;
+};
+
+type UpstreamParseResult = {
+  message?: string;
+  status?: number;
+  resetsAtMs?: number;
+};
+
+type UpstreamErrorExecutor = {
+  parseError?: (response: Response, bodyText: string) => UpstreamParseResult | null | undefined;
+} | null;
+
+type StreamWriter = {
+  write: (chunk: Uint8Array) => PromiseLike<unknown>;
 };
 
 /**
@@ -24,7 +40,7 @@ export const RATE_LIMIT_EXPOSE_HEADERS =
  * @param {string} message - Error message
  * @returns {object} Error response object
  */
-export function buildErrorBody(statusCode: any, message: any) {
+export function buildErrorBody(statusCode: number, message?: string | null) {
   const errorInfo =
     ERROR_TYPES_MAP[statusCode] ||
     (statusCode >= 500
@@ -47,7 +63,7 @@ export function buildErrorBody(statusCode: any, message: any) {
  * @param {string} message - Error message
  * @returns {Response} HTTP Response object
  */
-export function errorResponse(statusCode: any, message: any) {
+export function errorResponse(statusCode: number, message?: string | null) {
   return new Response(JSON.stringify(buildErrorBody(statusCode, message)), {
     status: statusCode,
     headers: {
@@ -64,7 +80,11 @@ export function errorResponse(statusCode: any, message: any) {
  * @param {number} statusCode - HTTP status code
  * @param {string} message - Error message
  */
-export async function writeStreamError(writer: any, statusCode: any, message: any) {
+export async function writeStreamError(
+  writer: StreamWriter,
+  statusCode: number,
+  message?: string | null,
+) {
   const errorBody = buildErrorBody(statusCode, message);
   const encoder = new TextEncoder();
   await writer.write(encoder.encode(`data: ${JSON.stringify(errorBody)}\n\n`));
@@ -76,7 +96,10 @@ export async function writeStreamError(writer: any, statusCode: any, message: an
  * @param {object} [executor] - Optional executor with parseError() override for provider-specific parsing
  * @returns {Promise<{statusCode: number, message: string, resetsAtMs?: number}>}
  */
-export async function parseUpstreamError(response: any, executor: any = null) {
+export async function parseUpstreamError(
+  response: Response,
+  executor: UpstreamErrorExecutor = null,
+) {
   let bodyText = "";
   try {
     bodyText = await response.text();
@@ -104,10 +127,17 @@ export async function parseUpstreamError(response: any, executor: any = null) {
     }
   }
 
-  let message = "";
+  let message: unknown = "";
   try {
-    const json = JSON.parse(bodyText);
-    message = json.error?.message || json.message || json.error || bodyText;
+    const json = JSON.parse(bodyText) as {
+      error?: { message?: string } | string;
+      message?: string;
+    };
+    message =
+      (typeof json.error === "object" && json.error !== null ? json.error.message : undefined) ||
+      json.message ||
+      json.error ||
+      bodyText;
   } catch {
     message = bodyText;
   }
@@ -128,7 +158,11 @@ export async function parseUpstreamError(response: any, executor: any = null) {
  * @param {number} [resetsAtMs] - Optional precise cooldown expiry (ms epoch) for provider-specific quota errors
  * @returns {{ success: false, status: number, error: string, response: Response, resetsAtMs?: number }}
  */
-export function createErrorResult(statusCode: any, message: any, resetsAtMs: any): ErrorResult {
+export function createErrorResult(
+  statusCode: number,
+  message: string,
+  resetsAtMs?: number | null,
+): ErrorResult {
   return {
     success: false,
     status: statusCode,
@@ -147,10 +181,10 @@ export function createErrorResult(statusCode: any, message: any, resetsAtMs: any
  * @returns {Response}
  */
 export function unavailableResponse(
-  statusCode: any,
-  message: any,
-  retryAfter: any,
-  retryAfterHuman: any,
+  statusCode: number,
+  message: string,
+  retryAfter: string,
+  retryAfterHuman: string,
 ) {
   const retryAfterSec = Math.max(
     Math.ceil((new Date(retryAfter).getTime() - Date.now()) / 1000),
@@ -177,8 +211,8 @@ export function unavailableResponse(
   );
 }
 
-function errorRecord(error: unknown): Record<string, any> {
-  return error && typeof error === "object" ? (error as Record<string, any>) : {};
+function errorRecord(error: unknown): Record<string, unknown> {
+  return error && typeof error === "object" ? (error as Record<string, unknown>) : {};
 }
 
 /**
@@ -189,7 +223,14 @@ function errorRecord(error: unknown): Record<string, any> {
  * @param {number|string} statusCode - HTTP status code or error code
  * @returns {string} Formatted error message
  */
-export function formatProviderError(error: unknown, provider: any, model: any, statusCode: any) {
+export function formatProviderError(
+  error: unknown,
+  provider: unknown,
+  model: unknown,
+  statusCode: unknown,
+) {
+  void provider;
+  void model;
   const record = errorRecord(error);
   const code = statusCode || record.code || "FETCH_FAILED";
   const message =

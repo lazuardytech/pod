@@ -5,7 +5,13 @@
 const PLACEHOLDER = " ";
 
 const DEEPSEEK_V4_PRO = "deepseek-v4-pro";
-const DEEPSEEK_V4_PRO_ALIASES: Record<string, any> = {
+
+type AliasConfig = {
+  thinkingType: string;
+  reasoningEffort: string | null;
+};
+
+const DEEPSEEK_V4_PRO_ALIASES: Record<string, AliasConfig> = {
   [`${DEEPSEEK_V4_PRO}-max`]: {
     thinkingType: "enabled",
     reasoningEffort: "max",
@@ -16,18 +22,46 @@ const DEEPSEEK_V4_PRO_ALIASES: Record<string, any> = {
   },
 };
 
+type InjectScope = "all" | "toolCalls";
+
+type InjectRule = { scope: InjectScope };
+
 // Provider-level rules: keyed by executor.provider
-const PROVIDER_RULES: Record<string, any> = {
+const PROVIDER_RULES: Record<string, InjectRule> = {
   deepseek: { scope: "all" },
 };
 
 // Model-level rules: matched by predicate against model id
-const MODEL_RULES = [
-  { match: (m: any) => m?.startsWith?.("kimi-"), scope: "toolCalls" },
-  { match: (m: any) => m?.startsWith?.("deepseek-"), scope: "all" },
+const MODEL_RULES: Array<{ match: (m: string | undefined) => boolean; scope: InjectScope }> = [
+  { match: (m) => Boolean(m?.startsWith?.("kimi-")), scope: "toolCalls" },
+  { match: (m) => Boolean(m?.startsWith?.("deepseek-")), scope: "all" },
 ];
 
-function shouldInject(message: any, scope: any) {
+type ChatMessage = {
+  role?: string;
+  reasoning_content?: unknown;
+  tool_calls?: unknown[];
+  [key: string]: unknown;
+};
+
+type InjectBody = {
+  messages?: ChatMessage[];
+  model?: string;
+  extra_body?: {
+    thinking?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  reasoning_effort?: unknown;
+  [key: string]: unknown;
+};
+
+type InjectArgs = {
+  provider?: string;
+  model?: string;
+  body?: unknown;
+};
+
+function shouldInject(message: ChatMessage | null | undefined, scope: InjectScope) {
   if (message?.role !== "assistant") return false;
   const rc = message.reasoning_content;
   if (typeof rc === "string" && rc.length > 0) return false;
@@ -36,17 +70,18 @@ function shouldInject(message: any, scope: any) {
   return true;
 }
 
-function applyDeepSeekV4ProAlias({ provider, model, body }: any) {
-  const alias = DEEPSEEK_V4_PRO_ALIASES[model];
-  if (provider !== "deepseek" || !alias || !body) return body;
+function applyDeepSeekV4ProAlias({ provider, model, body }: InjectArgs) {
+  const bodyRecord = body as InjectBody | null | undefined;
+  const alias = model ? DEEPSEEK_V4_PRO_ALIASES[model] : undefined;
+  if (provider !== "deepseek" || !alias || !bodyRecord) return bodyRecord;
 
-  const nextBody = {
-    ...body,
+  const nextBody: InjectBody = {
+    ...bodyRecord,
     model: DEEPSEEK_V4_PRO,
     extra_body: {
-      ...(body.extra_body || {}),
+      ...(bodyRecord.extra_body || {}),
       thinking: {
-        ...(body.extra_body?.thinking || {}),
+        ...(bodyRecord.extra_body?.thinking || {}),
         type: alias.thinkingType,
       },
     },
@@ -61,17 +96,17 @@ function applyDeepSeekV4ProAlias({ provider, model, body }: any) {
   return nextBody;
 }
 
-function applyRule(body: any, rule: any) {
+function applyRule(body: InjectBody | null | undefined, rule: InjectRule | undefined) {
   if (!rule || !body?.messages) return body;
-  const messages = body.messages.map((m: any) =>
+  const messages = body.messages.map((m: ChatMessage) =>
     shouldInject(m, rule.scope) ? { ...m, reasoning_content: PLACEHOLDER } : m,
   );
   return { ...body, messages };
 }
 
-export function injectReasoningContent({ provider, model, body }: any) {
-  const providerRule = PROVIDER_RULES[provider];
-  const modelRule = MODEL_RULES.find((r: any) => r.match(model));
+export function injectReasoningContent({ provider, model, body }: InjectArgs) {
+  const providerRule = provider ? PROVIDER_RULES[provider] : undefined;
+  const modelRule = MODEL_RULES.find((r) => r.match(model));
   const rule = providerRule || modelRule;
   const nextBody = applyDeepSeekV4ProAlias({ provider, model, body });
   return applyRule(nextBody, rule);

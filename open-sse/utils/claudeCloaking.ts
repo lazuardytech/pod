@@ -4,9 +4,30 @@ import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.js";
 const CLAUDE_VERSION = "2.1.92";
 const CC_ENTRYPOINT = "sdk-cli";
 
+type JsonRecord = Record<string, unknown>;
+
+type ClaudeTool = JsonRecord & { name: string };
+
+type ClaudeContentBlock = JsonRecord & {
+  type?: string;
+  name?: string;
+  text?: string;
+};
+
+type ClaudeMessage = JsonRecord & {
+  content?: unknown;
+};
+
+type ClaudeBody = JsonRecord & {
+  tools?: ClaudeTool[];
+  messages?: ClaudeMessage[];
+  system?: unknown;
+  metadata?: JsonRecord & { user_id?: unknown };
+};
+
 // Generate billing header matching real Claude Code 2.1.92+ format:
 // x-anthropic-billing-header: cc_version=<ver>.<build>; cc_entrypoint=sdk-cli; cch=<hash>;
-function generateBillingHeader(payload: any) {
+function generateBillingHeader(payload: unknown) {
   const content = JSON.stringify(payload);
   const cch = createHash("sha256").update(content).digest("hex").slice(0, 5);
   const buildHash = randomBytes(2).toString("hex").slice(0, 3);
@@ -15,7 +36,7 @@ function generateBillingHeader(payload: any) {
 
 // Generate fake user ID in Claude Code 2.1.92+ JSON format:
 // {"device_id":"<64hex>","account_uuid":"<uuid>","session_id":"<uuid>"}
-function generateFakeUserID(sessionId: any) {
+function generateFakeUserID(sessionId?: string | null) {
   const deviceId = randomBytes(32).toString("hex");
   const accountUuid = randomUUID();
   const sessionUuid = sessionId || randomUUID();
@@ -31,12 +52,13 @@ function generateFakeUserID(sessionId: any) {
  * @param {object} body - Claude API request body
  * @returns {{ body: object, toolNameMap: Map|null }}
  */
-export function cloakClaudeTools(body: any) {
-  const tools = body.tools;
-  if (!tools || tools.length === 0) return { body, toolNameMap: null };
+export function cloakClaudeTools(body: unknown) {
+  const bodyRecord = body as ClaudeBody;
+  const tools = bodyRecord.tools;
+  if (!tools || tools.length === 0) return { body: bodyRecord, toolNameMap: null };
 
-  const toolNameMap = new Map();
-  const clientDeclarations = [];
+  const toolNameMap = new Map<string, string>();
+  const clientDeclarations: ClaudeTool[] = [];
 
   // All client tools get renamed with suffix
   for (const tool of tools) {
@@ -49,9 +71,9 @@ export function cloakClaudeTools(body: any) {
   const allTools = [...clientDeclarations, ...CC_DECOY_TOOLS];
 
   // Rename tool_use in message history (all client tools get suffix)
-  const renamedMessages = body.messages?.map((msg: any) => {
+  const renamedMessages = bodyRecord.messages?.map((msg: ClaudeMessage) => {
     if (!Array.isArray(msg.content)) return msg;
-    const renamedContent = msg.content.map((block: any) => {
+    const renamedContent = (msg.content as ClaudeContentBlock[]).map((block) => {
       if (block.type === "tool_use") {
         return { ...block, name: `${block.name}${CLAUDE_TOOL_SUFFIX}` };
       }
@@ -61,7 +83,7 @@ export function cloakClaudeTools(body: any) {
   });
 
   return {
-    body: { ...body, tools: allTools, messages: renamedMessages || body.messages },
+    body: { ...bodyRecord, tools: allTools, messages: renamedMessages || bodyRecord.messages },
     toolNameMap: toolNameMap.size > 0 ? toolNameMap : null,
   };
 }
@@ -75,31 +97,33 @@ export function cloakClaudeTools(body: any) {
  * (content[] arrays), message history, and any nested envelope a future
  * Claude API revision might use.
  */
-export function decloakToolNames(node: any, toolNameMap: any): any {
-  if (!toolNameMap?.size || !node || typeof node !== "object") return node;
+export function decloakToolNames(node: unknown, toolNameMap: unknown): unknown {
+  const map = toolNameMap as Map<string, string> | null | undefined;
+  if (!map?.size || !node || typeof node !== "object") return node;
 
   if (Array.isArray(node)) {
     let changed = false;
-    const next: any[] = node.map((child: any): any => {
-      const mapped: any = decloakToolNames(child, toolNameMap);
+    const next: unknown[] = node.map((child: unknown): unknown => {
+      const mapped: unknown = decloakToolNames(child, map);
       if (mapped !== child) changed = true;
       return mapped;
     });
     return changed ? next : node;
   }
 
-  if (node.type === "tool_use" && typeof node.name === "string") {
-    const original = toolNameMap.get(node.name);
-    if (original && original !== node.name) {
-      return { ...node, name: original };
+  const record = node as JsonRecord;
+  if (record.type === "tool_use" && typeof record.name === "string") {
+    const original = map.get(record.name);
+    if (original && original !== record.name) {
+      return { ...record, name: original };
     }
   }
 
   let changed = false;
-  const next: Record<string, any> = {};
-  for (const key of Object.keys(node)) {
-    const mapped = decloakToolNames(node[key], toolNameMap);
-    if (mapped !== node[key]) changed = true;
+  const next: JsonRecord = {};
+  for (const key of Object.keys(record)) {
+    const mapped = decloakToolNames(record[key], map);
+    if (mapped !== record[key]) changed = true;
     next[key] = mapped;
   }
   return changed ? next : node;
@@ -219,18 +243,24 @@ const CC_DECOY_TOOLS = [
  * @param {string} [sessionId] - Session ID to align with X-Claude-Code-Session-Id header
  * @returns {object} Modified body
  */
-export function applyCloaking(body: any, apiKey: any, sessionId: any) {
-  if (!apiKey || !apiKey.includes("sk-ant-oat")) return body;
+export function applyCloaking(
+  body: unknown,
+  apiKey: string | null | undefined,
+  sessionId?: string | null,
+) {
+  const bodyRecord = body as ClaudeBody;
+  if (!apiKey || !apiKey.includes("sk-ant-oat")) return bodyRecord;
 
-  const result = { ...body };
+  const result: ClaudeBody = { ...bodyRecord };
 
   // Inject billing header as system[0], preserve existing system blocks
-  const billingText = generateBillingHeader(body);
+  const billingText = generateBillingHeader(bodyRecord);
   const billingBlock = { type: "text", text: billingText };
 
   if (Array.isArray(result.system)) {
     // Skip if already injected
-    if (!result.system[0]?.text?.startsWith("x-anthropic-billing-header:")) {
+    const first = result.system[0] as ClaudeContentBlock | undefined;
+    if (!first?.text?.startsWith("x-anthropic-billing-header:")) {
       result.system = [billingBlock, ...result.system];
     }
   } else if (typeof result.system === "string") {

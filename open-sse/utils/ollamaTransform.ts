@@ -1,10 +1,15 @@
-// Transform OpenAI SSE stream to Ollama JSON lines format
-export function transformToOllama(response: any, model: any) {
-  let buffer = "";
-  let pendingToolCalls: Record<string, any> = {};
+type PendingToolCall = {
+  id?: string;
+  function: { name: string; arguments: string };
+};
 
-  const transform = new TransformStream({
-    transform(chunk: any, controller: any) {
+// Transform OpenAI SSE stream to Ollama JSON lines format
+export function transformToOllama(response: Response, model: string) {
+  let buffer = "";
+  let pendingToolCalls: Record<string, PendingToolCall> = {};
+
+  const transform = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
       const text = new TextDecoder().decode(chunk);
       buffer += text;
       const lines = buffer.split("\n");
@@ -23,20 +28,32 @@ export function transformToOllama(response: any, model: any) {
         }
 
         try {
-          const parsed = JSON.parse(data);
+          const parsed = JSON.parse(data) as {
+            choices?: Array<{
+              delta?: {
+                content?: string;
+                tool_calls?: Array<{
+                  index?: number | string;
+                  id?: string;
+                  function?: { name?: string; arguments?: string };
+                }>;
+              };
+              finish_reason?: string;
+            }>;
+          };
           const delta = parsed.choices?.[0]?.delta || {};
           const content = delta.content || "";
           const toolCalls = delta.tool_calls;
 
           if (toolCalls) {
             for (const tc of toolCalls) {
-              const idx = tc.index;
+              const idx = String(tc.index);
               if (!pendingToolCalls[idx]) {
                 pendingToolCalls[idx] = { id: tc.id, function: { name: "", arguments: "" } };
               }
-              if (tc.function?.name) pendingToolCalls[idx].function.name += tc.function.name;
-              if (tc.function?.arguments)
-                pendingToolCalls[idx].function.arguments += tc.function.arguments;
+              const slot = pendingToolCalls[idx]!;
+              if (tc.function?.name) slot.function.name += tc.function.name;
+              if (tc.function?.arguments) slot.function.arguments += tc.function.arguments;
             }
           }
 
@@ -51,7 +68,7 @@ export function transformToOllama(response: any, model: any) {
           if (finishReason === "tool_calls" || finishReason === "stop") {
             const toolCallsArr = Object.values(pendingToolCalls);
             if (toolCallsArr.length > 0) {
-              const formattedCalls = toolCallsArr.map((tc: any) => ({
+              const formattedCalls = toolCallsArr.map((tc: PendingToolCall) => ({
                 function: {
                   name: tc.function.name,
                   arguments: (() => {
@@ -83,7 +100,7 @@ export function transformToOllama(response: any, model: any) {
         }
       }
     },
-    flush(controller: any) {
+    flush(controller: TransformStreamDefaultController<Uint8Array>) {
       const ollamaEnd =
         JSON.stringify({ model, message: { role: "assistant", content: "" }, done: true }) + "\n";
       controller.enqueue(new TextEncoder().encode(ollamaEnd));

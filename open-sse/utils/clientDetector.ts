@@ -11,13 +11,20 @@ const NATIVE_PAIRS: Record<string, string[]> = {
   codex: ["codex"],
 };
 
+type HeaderMap = Record<string, string | undefined>;
+
+type BodyLike = {
+  userAgent?: unknown;
+  [key: string]: unknown;
+};
+
 /**
  * Detect which CLI tool is making the request.
  * Returns one of: "claude" | "gemini-cli" | "antigravity" | "codex" | null
  * @param {object} headers - Lowercase header key/value object
  * @param {object} body    - Parsed request body
  */
-export function detectClientTool(headers: any = {}, body: any = {}) {
+export function detectClientTool(headers: HeaderMap = {}, body: BodyLike = {}) {
   const ua = (headers["user-agent"] || "").toLowerCase();
   const xApp = (headers["x-app"] || "").toLowerCase();
   const openaiIntent = (headers["openai-intent"] || "").toLowerCase();
@@ -52,7 +59,10 @@ export function detectClientTool(headers: any = {}, body: any = {}) {
  * @param {string|null} clientTool - Result of detectClientTool()
  * @param {string} provider        - Provider ID (e.g. "claude", "gemini-cli")
  */
-export function isNativePassthrough(clientTool: any, provider: any) {
+export function isNativePassthrough(
+  clientTool: string | null | undefined,
+  provider: string,
+) {
   if (!clientTool) return false;
   const nativeProviders = NATIVE_PAIRS[clientTool];
   if (!nativeProviders) return false;
