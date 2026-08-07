@@ -1,7 +1,8 @@
 "use client";
+import type { ReactNode } from "react";
 import PropTypes from "prop-types";
 
-export default function AuthLayout({ children }: { children?: any; [key: string]: any }) {
+export default function AuthLayout({ children }: { children?: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col relative bg-pitch-black overflow-x-hidden">
       {/* Subtle background glow */}

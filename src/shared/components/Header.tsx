@@ -1,4 +1,5 @@
 "use client";
+import type { ChangeEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import PropTypes from "prop-types";
@@ -11,14 +12,28 @@ import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers
 import { useHeaderActionStore } from "@/store/headerActionStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 
-const getPageInfo = (pathname: any) => {
+type Breadcrumb = {
+  label: string;
+  href?: string;
+  icon?: string;
+  image?: string;
+};
+
+type PageInfo = {
+  title: string;
+  description: string;
+  icon?: string;
+  breadcrumbs: Breadcrumb[];
+};
+
+const getPageInfo = (pathname: string | null): PageInfo => {
   if (!pathname) return { title: "", description: "", breadcrumbs: [] };
 
   const mediaDetailMatch = pathname.match(/\/media-providers\/([^/]+)\/([^/]+)$/);
   if (mediaDetailMatch) {
-    const kindId = mediaDetailMatch[1];
-    const providerId = mediaDetailMatch[2];
-    const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any) => k.id === kindId);
+    const kindId = mediaDetailMatch[1]!;
+    const providerId = mediaDetailMatch[2]!;
+    const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
     const provider = AI_PROVIDERS[providerId];
     return {
       title: provider?.name || providerId,
@@ -39,7 +54,7 @@ const getPageInfo = (pathname: any) => {
 
   const mediaKindMatch = pathname.match(/\/media-providers\/([^/]+)$/);
   if (mediaKindMatch) {
-    const kindId = mediaKindMatch[1];
+    const kindId = mediaKindMatch[1]!;
     if (kindId === "web") {
       return {
         title: "Web Fetch & Search",
@@ -48,18 +63,18 @@ const getPageInfo = (pathname: any) => {
         breadcrumbs: [],
       };
     }
-    const kindConfig = MEDIA_PROVIDER_KINDS.find((k: any) => k.id === kindId);
+    const kindConfig = MEDIA_PROVIDER_KINDS.find((k) => k.id === kindId);
     return {
       title: kindConfig?.label || kindId,
       description: `Manage your ${kindConfig?.label || kindId} providers`,
       icon: kindConfig?.icon || "perm_media",
       breadcrumbs: [],
-    } as any;
+    };
   }
 
   const providerMatch = pathname.match(/\/providers\/([^/]+)$/);
   if (providerMatch) {
-    const providerId = providerMatch[1];
+    const providerId = providerMatch[1]!;
     const providerInfo =
       OAUTH_PROVIDERS[providerId] || APIKEY_PROVIDERS[providerId] || AI_PROVIDERS[providerId];
     if (providerInfo) {
@@ -68,7 +83,10 @@ const getPageInfo = (pathname: any) => {
         description: "",
         breadcrumbs: [
           { label: "LLM Providers", href: "/providers", icon: "dns" },
-          { label: providerInfo.name, image: `/providers/${providerInfo.id || providerId}.png` },
+          {
+            label: providerInfo.name,
+            image: `/providers/${("id" in providerInfo && providerInfo.id) || providerId}.png`,
+          },
         ],
       };
     }
@@ -183,16 +201,15 @@ export default function Header({
   sidebarCollapsed: _sidebarCollapsed,
   onToggleSidebar: _onToggleSidebar,
 }: {
-  onMenuClick?: any;
+  onMenuClick?: () => void;
   showMenuButton?: boolean;
-  sidebarCollapsed?: any;
-  onToggleSidebar?: any;
-  [key: string]: any;
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const pageInfo = useMemo(() => getPageInfo(pathname), [pathname]);
-  const { title, icon, breadcrumbs } = pageInfo ?? ({} as any);
+  const { title, icon, breadcrumbs } = pageInfo;
 
   const handleLogout = async () => {
     try {
@@ -226,7 +243,7 @@ export default function Header({
       {/* Center: breadcrumbs / title */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {breadcrumbs.length > 0 ? (
-          breadcrumbs.map((crumb: any, index: any) => (
+          breadcrumbs.map((crumb, index) => (
             <div
               key={`${crumb.label}-${crumb.href || "current"}`}
               className="flex items-center gap-1.5"
@@ -283,7 +300,7 @@ export default function Header({
 }
 
 function HeaderAction() {
-  const action = useHeaderActionStore((s: any) => s.action);
+  const action = useHeaderActionStore((s) => s.action);
   if (!action) return null;
   return (
     <button
@@ -296,17 +313,21 @@ function HeaderAction() {
           : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain"
       }`}
     >
-      {action.icon && <LucideIcon name={action.icon} size={12} className="shrink-0" />}
+      {typeof action.icon === "string" ? (
+        <LucideIcon name={action.icon} size={12} className="shrink-0" />
+      ) : (
+        action.icon
+      )}
       <span className="hidden sm:inline">{action.label}</span>
     </button>
   );
 }
 
 function HeaderSearch() {
-  const visible = useHeaderSearchStore((s: any) => s.visible);
-  const query = useHeaderSearchStore((s: any) => s.query);
-  const placeholder = useHeaderSearchStore((s: any) => s.placeholder);
-  const setQuery = useHeaderSearchStore((s: any) => s.setQuery);
+  const visible = useHeaderSearchStore((s) => s.visible);
+  const query = useHeaderSearchStore((s) => s.query);
+  const placeholder = useHeaderSearchStore((s) => s.placeholder);
+  const setQuery = useHeaderSearchStore((s) => s.setQuery);
 
   if (!visible) return null;
 
@@ -320,7 +341,7 @@ function HeaderSearch() {
         aria-label="Search"
         type="text"
         value={query}
-        onChange={(e: any) => setQuery(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
         placeholder={placeholder}
         className="w-full h-7 pl-8 pr-6 rounded-[6px] border border-charcoal-grey bg-gunmetal text-[12px] text-porcelain placeholder:text-fog-grey focus:outline-none focus:border-porcelain/50 transition-colors duration-100"
         name="search"

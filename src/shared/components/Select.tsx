@@ -1,9 +1,10 @@
 "use client";
+import type { ReactNode, SelectHTMLAttributes } from "react";
 import { useId } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
-function deriveName(label: any) {
+function deriveName(label: unknown) {
   if (typeof label !== "string" || !label) return "";
   return label
     .toLowerCase()
@@ -11,6 +12,30 @@ function deriveName(label: any) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
 }
+
+export type SelectOption = {
+  value: string;
+  label: ReactNode;
+};
+
+type SelectProps = {
+  label?: ReactNode;
+  options?: SelectOption[];
+  value?: string;
+  onChange?: SelectHTMLAttributes<HTMLSelectElement>["onChange"];
+  placeholder?: ReactNode;
+  error?: ReactNode;
+  hint?: ReactNode;
+  disabled?: boolean;
+  required?: boolean;
+  className?: string;
+  selectClassName?: string;
+  id?: string;
+  name?: string;
+} & Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  "value" | "onChange" | "disabled" | "required" | "id" | "name" | "className"
+>;
 
 export default function Select({
   label,
@@ -27,22 +52,7 @@ export default function Select({
   id,
   name,
   ...props
-}: {
-  label?: any;
-  options?: any[];
-  value?: any;
-  onChange?: any;
-  placeholder?: any;
-  error?: any;
-  hint?: any;
-  disabled?: boolean;
-  required?: boolean;
-  className?: any;
-  selectClassName?: any;
-  id?: any;
-  name?: any;
-  [key: string]: any;
-}) {
+}: SelectProps) {
   const reactId = useId();
   const selectId = id || `select-${reactId}`;
   const selectName = name || deriveName(label) || selectId;
@@ -71,7 +81,7 @@ export default function Select({
             "focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
             "transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed",
             "text-[16px] sm:text-[13px]",
-            error && "border-warning-red focus:border-warning-red focus:ring-warning-red/25",
+            !!error && "border-warning-red focus:border-warning-red focus:ring-warning-red/25",
             selectClassName,
           )}
           {...props}
@@ -79,7 +89,7 @@ export default function Select({
           <option value="" disabled className="bg-graphite text-storm-cloud">
             {placeholder}
           </option>
-          {options.map((option: any) => (
+          {options.map((option) => (
             <option key={option.value} value={option.value} className="bg-graphite text-porcelain">
               {option.label}
             </option>

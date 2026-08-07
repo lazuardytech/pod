@@ -1,5 +1,14 @@
 "use client";
+import type { HTMLAttributes } from "react";
 import { cn } from "@/shared/utils/cn";
+
+type AvatarProps = {
+  src?: string;
+  alt?: string;
+  name?: string;
+  size?: string;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLDivElement>, "children">;
 
 export default function Avatar({
   src,
@@ -8,14 +17,7 @@ export default function Avatar({
   size = "md",
   className,
   ...rest
-}: {
-  src?: any;
-  alt?: any;
-  name?: any;
-  size?: string;
-  className?: any;
-  [key: string]: any;
-}) {
+}: AvatarProps) {
   const sizes: Record<string, string> = {
     xs: "size-6 text-xs",
     sm: "size-8 text-sm",
@@ -25,18 +27,18 @@ export default function Avatar({
   };
 
   // Get initials from name
-  const getInitials = (name: any) => {
-    if (!name) return "?";
-    const parts = name.split(" ");
+  const getInitials = (n?: string) => {
+    if (!n) return "?";
+    const parts = n.split(" ");
     if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
     }
-    return name.substring(0, 2).toUpperCase();
+    return n.substring(0, 2).toUpperCase();
   };
 
   // Generate color from name
-  const getColorFromName = (name: any) => {
-    if (!name) return "bg-primary";
+  const getColorFromName = (n?: string) => {
+    if (!n) return "bg-primary";
     const colors = [
       "bg-red-500",
       "bg-orange-500",
@@ -56,7 +58,7 @@ export default function Avatar({
       "bg-pink-500",
       "bg-rose-500",
     ];
-    const index = name.charCodeAt(0) % colors.length;
+    const index = n.charCodeAt(0) % colors.length;
     return colors[index];
   };
 

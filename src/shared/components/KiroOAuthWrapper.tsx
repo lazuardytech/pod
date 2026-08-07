@@ -5,6 +5,17 @@ import KiroAuthModal from "./KiroAuthModal";
 import KiroSocialOAuthModal from "./KiroSocialOAuthModal";
 import OAuthModal from "./OAuthModal";
 
+type AuthMethod = "builder-id" | "idc" | "social" | "import" | null;
+type SocialProvider = "google" | "github" | null;
+
+type IdcConfig = { startUrl?: string; region?: string };
+
+type MethodConfig = {
+  startUrl?: string;
+  region?: string;
+  provider?: string;
+};
+
 /**
  * Kiro OAuth Wrapper
  * Orchestrates between method selection, device code flow, and social login flow
@@ -15,29 +26,30 @@ export default function KiroOAuthWrapper({
   onSuccess,
   onClose,
 }: {
-  isOpen?: any;
-  providerInfo?: any;
-  onSuccess?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  providerInfo?: { name: string };
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) {
-  const [authMethod, setAuthMethod] = useState<any>(null); // null | "builder-id" | "idc" | "social" | "import"
-  const [socialProvider, setSocialProvider] = useState<any>(null); // "google" | "github"
-  const [idcConfig, setIdcConfig] = useState<any>(null);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
+  const [socialProvider, setSocialProvider] = useState<SocialProvider>(null);
+  const [idcConfig, setIdcConfig] = useState<IdcConfig | undefined>(undefined);
 
   const handleMethodSelect = useCallback(
-    (method: any, config: any) => {
+    (method: string, config?: MethodConfig) => {
       if (method === "builder-id") {
         // Use device code flow (AWS Builder ID)
         setAuthMethod("builder-id");
       } else if (method === "idc") {
         // Use device code flow with IDC config
         setAuthMethod("idc");
-        setIdcConfig(config);
+        setIdcConfig(config ? { startUrl: config.startUrl, region: config.region } : undefined);
       } else if (method === "social") {
         // Use social login with manual callback
         setAuthMethod("social");
-        setSocialProvider(config.provider);
+        setSocialProvider(
+          config?.provider === "google" || config?.provider === "github" ? config.provider : null,
+        );
       } else if (method === "import") {
         // Import handled in KiroAuthModal, just close
         onSuccess?.();
@@ -49,7 +61,7 @@ export default function KiroOAuthWrapper({
   const handleBack = () => {
     setAuthMethod(null);
     setSocialProvider(null);
-    setIdcConfig(null);
+    setIdcConfig(undefined);
   };
 
   const handleSocialSuccess = () => {
@@ -61,7 +73,7 @@ export default function KiroOAuthWrapper({
 
   const handleDeviceSuccess = () => {
     setAuthMethod(null);
-    setIdcConfig(null);
+    setIdcConfig(undefined);
     onSuccess?.();
     onClose?.(); // Close modal after success
   };

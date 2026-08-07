@@ -1,4 +1,5 @@
 "use client";
+import type { HTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
@@ -28,6 +29,15 @@ const dotColors: Record<string, string> = {
   violet: "bg-amethyst",
 };
 
+type BadgeProps = {
+  children?: ReactNode;
+  variant?: string;
+  size?: string;
+  dot?: boolean;
+  icon?: string;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLSpanElement>, "children">;
+
 export default function Badge({
   children,
   variant = "default",
@@ -36,15 +46,7 @@ export default function Badge({
   icon,
   className,
   ...rest
-}: {
-  children?: any;
-  variant?: string;
-  size?: string;
-  dot?: boolean;
-  icon?: any;
-  className?: any;
-  [key: string]: any;
-}) {
+}: BadgeProps) {
   return (
     <span
       className={cn(

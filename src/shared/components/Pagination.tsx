@@ -1,25 +1,27 @@
 "use client";
+import type { HTMLAttributes } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
+type PaginationProps = {
+  currentPage?: number;
+  pageSize?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLDivElement>, "children">;
+
 export default function Pagination({
-  currentPage,
-  pageSize,
-  totalItems,
+  currentPage = 1,
+  pageSize = 10,
+  totalItems = 0,
   onPageChange,
   onPageSizeChange,
   className,
   ...rest
-}: {
-  currentPage?: any;
-  pageSize?: any;
-  totalItems?: any;
-  onPageChange?: any;
-  onPageSizeChange?: any;
-  className?: any;
-  [key: string]: any;
-}) {
-  const totalPages = Math.ceil(totalItems / pageSize);
+}: PaginationProps) {
+  const totalPages = Math.ceil(totalItems / pageSize) || 0;
   const startItem = totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0;
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
@@ -76,7 +78,7 @@ export default function Pagination({
         )}
 
         {/* Pages */}
-        {totalPages > 1 && (
+        {totalPages > 1 && onPageChange && (
           <div className="flex items-center gap-1">
             <button
               onClick={() => onPageChange(currentPage - 1)}

@@ -4,6 +4,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
+export type ShadcnSelectOption = {
+  label: string;
+  value: string;
+};
+
+type ShadcnSelectProps = {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  options?: ShadcnSelectOption[];
+  placeholder?: string;
+  ariaLabel?: string;
+  disabled?: boolean;
+  className?: string;
+  triggerClassName?: string;
+  contentClassName?: string;
+  itemClassName?: string;
+  name?: string;
+};
+
 export default function ShadcnSelect({
   value,
   onValueChange,
@@ -16,25 +35,12 @@ export default function ShadcnSelect({
   contentClassName,
   itemClassName,
   name,
-}: {
-  value?: any;
-  onValueChange?: any;
-  options?: any[];
-  placeholder?: any;
-  ariaLabel?: any;
-  disabled?: boolean;
-  className?: any;
-  triggerClassName?: any;
-  contentClassName?: any;
-  itemClassName?: any;
-  name?: any;
-  [key: string]: any;
-}) {
+}: ShadcnSelectProps) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = useMemo(
-    () => options.find((option: any) => option.value === value) || null,
+    () => options.find((option) => option.value === value) || null,
     [options, value],
   );
 
@@ -43,13 +49,13 @@ export default function ShadcnSelect({
       return undefined;
     }
 
-    const handlePointerDown = (event: any) => {
-      if (containerRef.current && !containerRef.current!.contains(event.target)) {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
 
-    const handleEscape = (event: any) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpen(false);
       }
@@ -71,7 +77,7 @@ export default function ShadcnSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         disabled={disabled}
-        onClick={() => setOpen((prev: any) => !prev)}
+        onClick={() => setOpen((prev) => !prev)}
         className={cn(
           "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-charcoal-grey bg-gunmetal px-3 text-[13px] text-porcelain shadow-[var(--shadow-sm)] transition-colors duration-100",
           "hover:bg-charcoal-grey/70 focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
@@ -100,7 +106,7 @@ export default function ShadcnSelect({
             contentClassName,
           )}
         >
-          {options.map((option: any) => {
+          {options.map((option) => {
             const isSelected = option.value === value;
 
             return (
@@ -110,7 +116,7 @@ export default function ShadcnSelect({
                 role="option"
                 aria-selected={isSelected}
                 onClick={() => {
-                  onValueChange(option.value);
+                  onValueChange?.(option.value);
                   setOpen(false);
                 }}
                 className={cn(

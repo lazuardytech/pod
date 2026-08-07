@@ -1,4 +1,5 @@
 "use client";
+import type { ChangeEvent } from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import Badge from "@/shared/components/Badge";
@@ -17,12 +18,25 @@ export default function EditConnectionModal({
   onSave,
   onClose,
 }: {
-  isOpen?: any;
-  connection?: any;
-  proxyPools?: any;
-  onSave?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  connection?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    priority?: number;
+    provider?: string;
+    authType?: string;
+    providerSpecificData?: {
+      azureEndpoint?: string;
+      apiVersion?: string;
+      deployment?: string;
+      organization?: string;
+      accountId?: string;
+    };
+  } | null;
+  proxyPools?: unknown;
+  onSave?: (data: Record<string, unknown>) => void | Promise<void>;
+  onClose?: () => void;
 }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -37,9 +51,9 @@ export default function EditConnectionModal({
   });
   const [cloudflareData, setCloudflareData] = useState({ accountId: "" });
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+  const [testResult, setTestResult] = useState<"success" | "failed" | null>(null);
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<"success" | "failed" | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -117,7 +131,7 @@ export default function EditConnectionModal({
     if (!connection) return;
     setSaving(true);
     try {
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         name: formData.name,
         priority: formData.priority,
       };
@@ -167,7 +181,7 @@ export default function EditConnectionModal({
         updates.providerSpecificData = { accountId: cloudflareData.accountId };
       }
 
-      await onSave(updates);
+      await onSave?.(updates);
     } finally {
       setSaving(false);
     }
@@ -181,7 +195,7 @@ export default function EditConnectionModal({
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder={isOAuth ? "Account name" : "Production Key"}
         />
         {isOAuth && connection.email && (
@@ -194,7 +208,7 @@ export default function EditConnectionModal({
           label="Priority"
           type="number"
           value={formData.priority}
-          onChange={(e: any) =>
+          onChange={(e) =>
             setFormData({ ...formData, priority: Number.parseInt(e.target.value, 10) || 1 })
           }
         />
@@ -206,7 +220,7 @@ export default function EditConnectionModal({
                 label="API Key"
                 type="password"
                 value={formData.apiKey}
-                onChange={(e: any) => setFormData({ ...formData, apiKey: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                 placeholder="Enter new API key"
                 hint="Leave blank to keep the current API key."
                 className="flex-1"
@@ -236,28 +250,28 @@ export default function EditConnectionModal({
               <Input
                 label="Azure Endpoint"
                 value={azureData.azureEndpoint}
-                onChange={(e: any) => setAzureData({ ...azureData, azureEndpoint: e.target.value })}
+                onChange={(e) => setAzureData({ ...azureData, azureEndpoint: e.target.value })}
                 placeholder="https://your-resource.openai.azure.com"
                 hint="Your Azure OpenAI resource endpoint URL"
               />
               <Input
                 label="Deployment Name"
                 value={azureData.deployment}
-                onChange={(e: any) => setAzureData({ ...azureData, deployment: e.target.value })}
+                onChange={(e) => setAzureData({ ...azureData, deployment: e.target.value })}
                 placeholder="gpt-4"
                 hint="The deployment name in your Azure resource"
               />
               <Input
                 label="API Version"
                 value={azureData.apiVersion}
-                onChange={(e: any) => setAzureData({ ...azureData, apiVersion: e.target.value })}
+                onChange={(e) => setAzureData({ ...azureData, apiVersion: e.target.value })}
                 placeholder="2024-10-01-preview"
                 hint="Azure OpenAI API version to use"
               />
               <Input
                 label="Organization"
                 value={azureData.organization}
-                onChange={(e: any) => setAzureData({ ...azureData, organization: e.target.value })}
+                onChange={(e) => setAzureData({ ...azureData, organization: e.target.value })}
                 placeholder="Organization ID"
                 hint="Required for billing"
               />

@@ -6,15 +6,15 @@ import { drainOfflineMutationQueue } from "@/shared/services/offlineMutationQueu
 const RETRY_INTERVAL_MS = 1000 * 30;
 const QUEUE_TOAST_DEBOUNCE_MS = 2500;
 
-export default function OfflineMutationProcessor(): any {
+export default function OfflineMutationProcessor(): null {
   const isDrainingRef = useRef(false);
   const lastQueueToastAtRef = useRef(0);
 
-  useEffect((): any => {
+  useEffect(() => {
     let cancelled = false;
-    let intervalId: any = null;
+    let intervalId: number | null = null;
 
-    const runDrain = async (): Promise<any> => {
+    const runDrain = async () => {
       if (cancelled || isDrainingRef.current) return;
       isDrainingRef.current = true;
       try {
@@ -34,21 +34,22 @@ export default function OfflineMutationProcessor(): any {
       }
     };
 
-    const onOnline = (): any => {
-      runDrain().catch((): any => {});
+    const onOnline = () => {
+      runDrain().catch(() => {});
     };
 
-    const onVisible = (): any => {
+    const onVisible = () => {
       if (document.hidden) return;
-      runDrain().catch((): any => {});
+      runDrain().catch(() => {});
     };
 
-    const onQueued = (event: any): any => {
+    const onQueued = (event: Event) => {
       const now = Date.now();
       if (now - lastQueueToastAtRef.current < QUEUE_TOAST_DEBOUNCE_MS) return;
       lastQueueToastAtRef.current = now;
 
-      const queueLength = Number(event?.detail?.queueLength || 0);
+      const detail = (event as CustomEvent<{ queueLength?: number }>).detail;
+      const queueLength = Number(detail?.queueLength || 0);
       if (queueLength > 0) {
         toast.info(
           `Offline: queued ${queueLength} pending ${queueLength > 1 ? "changes" : "change"}.`,
@@ -58,14 +59,14 @@ export default function OfflineMutationProcessor(): any {
       }
     };
 
-    runDrain().catch((): any => {});
-    intervalId = window.setInterval((): any => runDrain().catch((): any => {}), RETRY_INTERVAL_MS);
+    runDrain().catch(() => {});
+    intervalId = window.setInterval(() => runDrain().catch(() => {}), RETRY_INTERVAL_MS);
 
     window.addEventListener("online", onOnline);
     window.addEventListener("pod:offline-mutation-enqueued", onQueued);
     document.addEventListener("visibilitychange", onVisible);
 
-    return (): any => {
+    return () => {
       cancelled = true;
       if (intervalId) window.clearInterval(intervalId);
       window.removeEventListener("online", onOnline);

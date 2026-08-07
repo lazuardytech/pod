@@ -1,15 +1,9 @@
 "use client";
+import type { HTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
 
-export function Spinner({
-  size = "md",
-  className,
-}: {
-  size?: string;
-  className?: any;
-  [key: string]: any;
-}) {
+export function Spinner({ size = "md", className }: { size?: string; className?: string }) {
   const sizes: Record<string, string> = {
     sm: "text-[16px]",
     md: "text-[20px]",
@@ -25,7 +19,7 @@ export function Spinner({
   );
 }
 
-export function PageLoading({ message = "Loading..." }: { message?: any; [key: string]: any }) {
+export function PageLoading({ message = "Loading..." }: { message?: ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-pitch-black">
       <Spinner size="xl" />
@@ -34,7 +28,7 @@ export function PageLoading({ message = "Loading..." }: { message?: any; [key: s
   );
 }
 
-export function Skeleton({ className, ...props }: { className?: any; [key: string]: any }) {
+export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("animate-pulse rounded-[6px] bg-deep-slate", className)} {...props} />;
 }
 
@@ -51,20 +45,21 @@ export function CardSkeleton() {
   );
 }
 
-export default function Loading({
-  type = "spinner",
-  ...props
-}: {
+type LoadingProps = {
   type?: string;
-  [key: string]: any;
-}) {
+  size?: string;
+  className?: string;
+  message?: ReactNode;
+};
+
+export default function Loading({ type = "spinner", ...props }: LoadingProps) {
   switch (type) {
     case "page":
       return <PageLoading {...props} />;
     case "skeleton":
       return <Skeleton {...props} />;
     case "card":
-      return <CardSkeleton {...props} />;
+      return <CardSkeleton />;
     default:
       return <Spinner {...props} />;
   }

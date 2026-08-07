@@ -1,3 +1,4 @@
+import type { LucideIcon as LucideIconComponent, LucideProps } from "lucide-react";
 import {
   Activity,
   ArrowDown,
@@ -104,7 +105,7 @@ import {
 } from "lucide-react";
 import PropTypes from "prop-types";
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIconComponent> = {
   account_circle: Users,
   account_tree: GitBranch,
   add: Plus,
@@ -280,6 +281,14 @@ const ICON_MAP: Record<string, any> = {
   wifi_tethering: Wifi,
 };
 
+type LucideIconProps = {
+  name?: string;
+  className?: string;
+  size?: number | string;
+  strokeWidth?: number;
+  absoluteStrokeWidth?: boolean;
+} & Omit<LucideProps, "ref" | "size" | "className" | "strokeWidth" | "absoluteStrokeWidth">;
+
 export default function LucideIcon({
   name,
   className = "",
@@ -287,15 +296,8 @@ export default function LucideIcon({
   strokeWidth = 2,
   absoluteStrokeWidth = false,
   ...props
-}: {
-  name?: any;
-  className?: any;
-  size?: any;
-  strokeWidth?: number;
-  absoluteStrokeWidth?: boolean;
-  [key: string]: any;
-}) {
-  const Icon = ICON_MAP[name] || CircleHelp;
+}: LucideIconProps) {
+  const Icon = (name && ICON_MAP[name]) || CircleHelp;
 
   return (
     <Icon
