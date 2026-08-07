@@ -52,6 +52,10 @@ const CLAUDE_CONFIG = {
   apiVersion: "2023-06-01",
 };
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Get usage data for a provider connection
  * @param {Object} connection - Provider connection with accessToken
@@ -118,7 +122,7 @@ function parseResetTime(resetValue: any) {
     }
 
     return null;
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     console.warn("Failed to parse reset time");
     return null;
   }
@@ -206,8 +210,8 @@ async function getGitHubUsage(
     }
 
     return { message: "GitHub Copilot connected. Unable to parse quota data." };
-  } catch (error: any) {
-    throw new Error(`Failed to fetch GitHub usage: ${error.message}`);
+  } catch (error: unknown) {
+    throw new Error(`Failed to fetch GitHub usage: ${errorMessage(error)}`);
   }
 }
 
@@ -299,8 +303,8 @@ async function getGeminiUsage(
     }
 
     return { plan, quotas };
-  } catch (error: any) {
-    return { message: `Gemini CLI error: ${error.message}` };
+  } catch (error: unknown) {
+    return { message: `Gemini CLI error: ${errorMessage(error)}` };
   }
 }
 
@@ -450,9 +454,9 @@ async function getAntigravityUsage(
       quotas,
       subscriptionInfo,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Antigravity Usage] Error occurred");
-    return { message: `Antigravity error: ${error.message}` };
+    return { message: `Antigravity error: ${errorMessage(error)}` };
   }
 }
 
@@ -493,7 +497,7 @@ async function getAntigravitySubscriptionInfo(accessToken: any, proxyOptions: an
 
     if (!response.ok) return null;
     return await response.json();
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     console.error("[Antigravity Subscription] Error occurred");
     return null;
   } finally {
@@ -567,8 +571,8 @@ async function getClaudeUsage(accessToken: any, proxyOptions: any = null) {
     // Fallback: legacy settings + org usage endpoint
     console.warn("[Claude Usage] OAuth endpoint unavailable, falling back to legacy");
     return await getClaudeUsageLegacy(accessToken, proxyOptions);
-  } catch (error: any) {
-    return { message: `Claude connected. Unable to fetch usage: ${error.message}` };
+  } catch (error: unknown) {
+    return { message: `Claude connected. Unable to fetch usage: ${errorMessage(error)}` };
   }
 }
 
@@ -623,8 +627,8 @@ async function getClaudeUsageLegacy(accessToken: any, proxyOptions: any = null) 
     }
 
     return { message: "Claude connected. Usage API requires admin permissions." };
-  } catch (error: any) {
-    return { message: `Claude connected. Unable to fetch usage: ${error.message}` };
+  } catch (error: unknown) {
+    return { message: `Claude connected. Unable to fetch usage: ${errorMessage(error)}` };
   }
 }
 
@@ -744,8 +748,8 @@ async function getCodexUsage(accessToken: any, proxyOptions: any = null) {
       reviewLimitReached: getCodexRateLimitBody(reviewRateLimit)?.limit_reached || false,
       quotas,
     };
-  } catch (error: any) {
-    throw new Error(`Failed to fetch Codex usage: ${error.message}`);
+  } catch (error: unknown) {
+    throw new Error(`Failed to fetch Codex usage: ${errorMessage(error)}`);
   }
 }
 
@@ -884,8 +888,8 @@ async function getKiroUsage(accessToken: any, providerSpecificData: any, proxyOp
 
       const data = await response.json();
       return parseKiroQuotaData(data);
-    } catch (error: any) {
-      errors.push(`${attempt.name}:${error.message}`);
+    } catch (error: unknown) {
+      errors.push(`${attempt.name}:${errorMessage(error)}`);
     }
   }
 
@@ -935,7 +939,7 @@ async function getQwenUsage(accessToken: any, providerSpecificData: any) {
 
     // Qwen may have usage endpoint at resource URL
     return { message: "Qwen connected. Usage tracked per request." };
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     return { message: "Unable to fetch Qwen usage." };
   }
 }
@@ -947,7 +951,7 @@ async function getIflowUsage(accessToken: any) {
   try {
     // iFlow may have usage endpoint
     return { message: "iFlow connected. Usage tracked per request." };
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     return { message: "Unable to fetch iFlow usage." };
   }
 }
@@ -970,7 +974,7 @@ async function getOllamaUsage(accessToken: any, providerSpecificData: any) {
         "Ollama Cloud uses a free tier with light usage limits (resets every 5h & 7d). For detailed usage tracking, visit ollama.com/settings/keys.",
       quotas: [],
     };
-  } catch (_error: any) {
+  } catch (_error: unknown) {
     return { message: "Unable to fetch Ollama Cloud usage." };
   }
 }
@@ -1032,8 +1036,8 @@ async function getGlmUsage(apiKey: any, provider: any, proxyOptions: any = null)
       : "Unknown";
 
     return { plan, quotas };
-  } catch (error: any) {
-    return { message: `GLM error: ${error.message}` };
+  } catch (error: unknown) {
+    return { message: `GLM error: ${errorMessage(error)}` };
   }
 }
 
@@ -1243,8 +1247,8 @@ async function getMiniMaxUsage(apiKey: any, provider: any, proxyOptions: any = n
       }
 
       return { quotas };
-    } catch (error: any) {
-      lastErrorMessage = error.message;
+    } catch (error: unknown) {
+      lastErrorMessage = errorMessage(error);
       if (!canFallback) break;
     }
   }

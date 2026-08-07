@@ -53,7 +53,7 @@ export const refreshKiroToken = (
   refreshToken: string,
   providerSpecificData: AnyCreds | undefined,
 ): Promise<AnyCreds | null> => _refreshKiroToken(refreshToken, providerSpecificData, log);
-export const getAccessToken = (provider: string, credentials: AnyCreds): Promise<AnyCreds> =>
+export const getAccessToken = (provider: string, credentials: AnyCreds): Promise<AnyCreds | null> =>
   _getAccessToken(provider, credentials, log);
 export const refreshTokenByProvider = (
   provider: string,

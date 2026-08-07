@@ -7,13 +7,65 @@ import zlib from "node:zlib";
 import { v4 as uuidv4 } from "uuid";
 
 const DEBUG = process.env.CURSOR_PROTOBUF_DEBUG === "1";
-const log = (tag: any, ...args: any) => DEBUG && console.log(`[PROTOBUF:${tag}]`, ...args);
+const log = (tag: string, ...args: unknown[]) => DEBUG && console.log(`[PROTOBUF:${tag}]`, ...args);
 const _textDecoder = new TextDecoder();
 
 const PROTOBUF_SCHEMA_VERSION = "1.1.3";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+type ProtobufBytes = Uint8Array;
+type ProtobufLenValue = string | Uint8Array | Buffer;
+type ProtobufFieldValue = number | ProtobufLenValue | null | undefined;
+type DecodedFieldValue = number | Uint8Array | null;
+type DecodedField = { wireType: number | null; value: never };
+type DecodedFieldList = [DecodedField, ...DecodedField[]];
+type DecodedMessage = Map<number, DecodedFieldList> & {
+  get(field: number): DecodedFieldList;
+};
+type CursorToolResult = {
+  tool_name?: string;
+  name?: string;
+  raw_args?: string;
+  result_content?: string;
+  result?: string;
+  tool_call_id?: string;
+  tool_index?: number;
+  index?: number;
+  [key: string]: unknown;
+};
+type CursorMessage = {
+  role?: string;
+  content?: string;
+  tool_calls?: unknown[];
+  tool_results?: CursorToolResult[];
+  [key: string]: unknown;
+};
+type CursorTool = {
+  function?: {
+    name?: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+  };
+  name?: string;
+  description?: string;
+  input_schema?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+type EncodedMessage = {
+  content: string | undefined;
+  role: number;
+  messageId: string;
+  isLast: boolean;
+  hasTools: boolean;
+  toolResults: CursorToolResult[];
+};
+type MessageIdEntry = { messageId: string; role: number };
+
+function fieldValue(fields: DecodedMessage, field: number): never {
+  return (fields.get(field) as DecodedFieldList)[0].value;
 }
 
 // ==================== SCHEMAS ====================
@@ -192,8 +244,8 @@ const KNOWN_RESPONSE_FIELDS = new Set([
 
 // ==================== PRIMITIVE ENCODING ====================
 
-export function encodeVarint(value: any) {
-  const bytes = [];
+export function encodeVarint(value: number) {
+  const bytes: number[] = [];
   while (value >= 0x80) {
     bytes.push((value & 0x7f) | 0x80);
     value >>>= 7;
@@ -202,12 +254,12 @@ export function encodeVarint(value: any) {
   return new Uint8Array(bytes);
 }
 
-export function encodeField(fieldNum: any, wireType: any, value: any) {
+export function encodeField(fieldNum: number, wireType: number, value: ProtobufFieldValue) {
   const tag = (fieldNum << 3) | wireType;
   const tagBytes = encodeVarint(tag);
 
   if (wireType === WIRE_TYPE.VARINT) {
-    const valueBytes = encodeVarint(value);
+    const valueBytes = encodeVarint(value as number);
     return concatArrays(tagBytes, valueBytes);
   }
 
@@ -228,8 +280,8 @@ export function encodeField(fieldNum: any, wireType: any, value: any) {
   return new Uint8Array(0);
 }
 
-function concatArrays(...arrays: any) {
-  const totalLength = arrays.reduce((sum: any, arr: any) => sum + arr.length, 0);
+function concatArrays(...arrays: ProtobufBytes[]) {
+  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
   const result = new Uint8Array(totalLength);
   let offset = 0;
   for (const arr of arrays) {
@@ -245,7 +297,7 @@ function concatArrays(...arrays: any) {
  * Format tool name: "toolName" → "mcp_custom_toolName"
  * Also handles: "mcp__server__tool" → "mcp_server_tool"
  */
-function formatToolName(name: any) {
+function formatToolName(name: unknown) {
   const base = typeof name === "string" && name.length > 0 ? name : "tool";
 
   if (base.startsWith("mcp__")) {
@@ -266,7 +318,7 @@ function formatToolName(name: any) {
 /**
  * Parse formatted tool name: "mcp_server_tool" → { serverName, selectedTool }
  */
-function parseToolName(formattedName: any) {
+function parseToolName(formattedName: string) {
   if (typeof formattedName !== "string" || !formattedName.startsWith("mcp_")) {
     return { serverName: "custom", selectedTool: formattedName || "tool" };
   }
@@ -287,7 +339,7 @@ function parseToolName(formattedName: any) {
  * Parse tool_call_id into { toolCallId, modelCallId }
  * Cursor uses "\nmc_" delimiter for model_call_id
  */
-function parseToolId(id: any) {
+function parseToolId(id: string) {
   const delimiter = "\nmc_";
   const idx = id.indexOf(delimiter);
   if (idx >= 0) {
@@ -299,7 +351,7 @@ function parseToolId(id: any) {
 /**
  * Encode MCPResult proto: { selected_tool, result }
  */
-function encodeMcpResult(selectedTool: any, resultContent: any) {
+function encodeMcpResult(selectedTool: string, resultContent: string) {
   return concatArrays(
     encodeField(FIELD.MCPR_SELECTED_TOOL, WIRE_TYPE.LEN, selectedTool),
     encodeField(FIELD.MCPR_RESULT, WIRE_TYPE.LEN, resultContent),
@@ -311,11 +363,11 @@ function encodeMcpResult(selectedTool: any, resultContent: any) {
  * Represents the result of executing a tool
  */
 function encodeClientSideToolV2Result(
-  toolCallId: any,
-  modelCallId: any,
-  selectedTool: any,
-  resultContent: any,
-  toolIndex: any = 1,
+  toolCallId: string,
+  modelCallId: string | null,
+  selectedTool: string,
+  resultContent: string,
+  toolIndex: number = 1,
 ) {
   return concatArrays(
     encodeField(FIELD.CV2R_TOOL, WIRE_TYPE.VARINT, CLIENT_SIDE_TOOL_V2_MCP),
@@ -329,7 +381,7 @@ function encodeClientSideToolV2Result(
 /**
  * Encode MCPParams.Tool nested inside ClientSideToolV2Call
  */
-function encodeMcpParamsForCall(toolName: any, rawArgs: any, serverName: any) {
+function encodeMcpParamsForCall(toolName: string, rawArgs: string, serverName: string) {
   const tool = concatArrays(
     encodeField(FIELD.MCP_TOOL_NAME, WIRE_TYPE.LEN, toolName),
     encodeField(FIELD.MCP_TOOL_PARAMS, WIRE_TYPE.LEN, rawArgs),
@@ -343,13 +395,13 @@ function encodeMcpParamsForCall(toolName: any, rawArgs: any, serverName: any) {
  * Represents a tool call definition
  */
 function encodeClientSideToolV2Call(
-  toolCallId: any,
-  toolName: any,
-  selectedTool: any,
-  serverName: any,
-  rawArgs: any,
-  modelCallId: any,
-  toolIndex: any = 1,
+  toolCallId: string,
+  toolName: string,
+  selectedTool: string,
+  serverName: string,
+  rawArgs: string,
+  modelCallId: string | null,
+  toolIndex: number = 1,
 ) {
   return concatArrays(
     encodeField(FIELD.CV2C_TOOL, WIRE_TYPE.VARINT, CLIENT_SIDE_TOOL_V2_MCP),
@@ -370,7 +422,7 @@ function encodeClientSideToolV2Call(
  * Encode ConversationMessage.ToolResult with full structure
  * Matches Cursor proto: tool_call_id, tool_name, tool_index, raw_args, result, tool_call
  */
-export function encodeToolResult(toolResult: any) {
+export function encodeToolResult(toolResult: CursorToolResult) {
   const originalName = toolResult.tool_name || toolResult.name || "";
   const toolName = formatToolName(originalName);
   const rawArgs = toolResult.raw_args || "{}";
@@ -411,15 +463,16 @@ export function encodeToolResult(toolResult: any) {
 }
 
 export function encodeMessage(
-  content: any,
-  role: any,
-  messageId: any,
-  chatModeEnum: any = null,
-  isLast: any = false,
-  hasTools: any = false,
-  toolResults: any = [],
-  serverBubbleId: any = null,
+  content: string | undefined,
+  role: number,
+  messageId: string,
+  chatModeEnum: number | null = null,
+  isLast: boolean = false,
+  hasTools: boolean = false,
+  toolResults: CursorToolResult[] = [],
+  serverBubbleId: string | null = null,
 ) {
+  void chatModeEnum;
   const hasToolResults = toolResults.length > 0;
   return concatArrays(
     encodeField(FIELD.MSG_CONTENT, WIRE_TYPE.LEN, content),
@@ -430,7 +483,7 @@ export function encodeMessage(
       ? [encodeField(FIELD.MSG_SERVER_BUBBLE_ID, WIRE_TYPE.LEN, serverBubbleId)]
       : []),
     ...(hasToolResults
-      ? toolResults.map((tr: any) =>
+      ? toolResults.map((tr) =>
           encodeField(FIELD.MSG_TOOL_RESULTS, WIRE_TYPE.LEN, encodeToolResult(tr)),
         )
       : []),
@@ -446,11 +499,11 @@ export function encodeMessage(
   );
 }
 
-export function encodeInstruction(text: any) {
+export function encodeInstruction(text: string) {
   return text ? encodeField(FIELD.INSTRUCTION_TEXT, WIRE_TYPE.LEN, text) : new Uint8Array(0);
 }
 
-export function encodeModel(modelName: any) {
+export function encodeModel(modelName: string) {
   return concatArrays(
     encodeField(FIELD.MODEL_NAME, WIRE_TYPE.LEN, modelName),
     encodeField(FIELD.MODEL_EMPTY, WIRE_TYPE.LEN, new Uint8Array(0)),
@@ -482,7 +535,7 @@ export function encodeMetadata() {
   );
 }
 
-export function encodeMessageId(messageId: any, role: any, summaryId: any = null) {
+export function encodeMessageId(messageId: string, role: number, summaryId: string | null = null) {
   return concatArrays(
     encodeField(FIELD.MSGID_ID, WIRE_TYPE.LEN, messageId),
     ...(summaryId ? [encodeField(FIELD.MSGID_SUMMARY, WIRE_TYPE.LEN, summaryId)] : []),
@@ -490,7 +543,7 @@ export function encodeMessageId(messageId: any, role: any, summaryId: any = null
   );
 }
 
-export function encodeMcpTool(tool: any) {
+export function encodeMcpTool(tool: CursorTool) {
   const toolName = tool.function?.name || tool.name || "";
   const toolDesc = tool.function?.description || tool.description || "";
   const inputSchema = tool.function?.parameters || tool.input_schema || {};
@@ -508,29 +561,30 @@ export function encodeMcpTool(tool: any) {
 // ==================== REQUEST BUILDING ====================
 
 export function encodeRequest(
-  messages: any,
-  modelName: any,
-  tools: any = [],
-  reasoningEffort: any = null,
-  forceAgentMode: any = false,
+  messages: CursorMessage[],
+  modelName: string,
+  tools: CursorTool[] = [],
+  reasoningEffort: string | null = null,
+  forceAgentMode: boolean = false,
 ) {
   const hasTools = tools?.length > 0;
   const isAgentic = hasTools || forceAgentMode;
-  const formattedMessages = [];
-  const messageIds = [];
-  const normalizedMessages = [];
+  const formattedMessages: EncodedMessage[] = [];
+  const messageIds: MessageIdEntry[] = [];
+  const normalizedMessages: CursorMessage[] = [];
 
   // Guardrail: split mixed assistant payload into separate assistant messages
   // This prevents protobuf encoding errors when tool calls and results are in same message
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
+    if (!msg) continue;
     const hasToolCalls = Array.isArray(msg?.tool_calls) && msg.tool_calls.length > 0;
     const hasToolResults = Array.isArray(msg?.tool_results) && msg.tool_results.length > 0;
 
     if (msg?.role === "assistant" && hasToolCalls && hasToolResults) {
       log(
         "ENCODE",
-        `normalizing mixed assistant tool payload at msg[${i}] (calls=${msg.tool_calls.length}, results=${msg.tool_results.length})`,
+        `normalizing mixed assistant tool payload at msg[${i}] (calls=${(msg.tool_calls as unknown[]).length}, results=${(msg.tool_results as CursorToolResult[]).length})`,
       );
 
       // Keep assistant tool call message without embedded results
@@ -545,15 +599,16 @@ export function encodeRequest(
         nextMsg?.role === "assistant" &&
         Array.isArray(nextMsg?.tool_results) &&
         nextMsg.tool_results.length > 0;
+      const currentToolResults = msg.tool_results as CursorToolResult[];
       const currentIds = new Set(
-        msg.tool_results
-          .map((tr: any) => tr?.tool_call_id)
-          .filter((id: any) => typeof id === "string"),
+        currentToolResults
+          .map((tr) => tr?.tool_call_id)
+          .filter((id): id is string => typeof id === "string"),
       );
       const nextIds = new Set(
         (nextMsg?.tool_results || [])
-          .map((tr: any) => tr?.tool_call_id)
-          .filter((id: any) => typeof id === "string"),
+          .map((tr) => tr?.tool_call_id)
+          .filter((id): id is string => typeof id === "string"),
       );
       let sameIds = currentIds.size > 0 && currentIds.size === nextIds.size;
       if (sameIds) {
@@ -569,7 +624,7 @@ export function encodeRequest(
         normalizedMessages.push({
           role: "assistant",
           content: "",
-          tool_results: msg.tool_results,
+          tool_results: currentToolResults,
         });
       }
 
@@ -582,6 +637,7 @@ export function encodeRequest(
   // Prepare messages
   for (let i = 0; i < normalizedMessages.length; i++) {
     const msg = normalizedMessages[i];
+    if (!msg) continue;
     const role = msg.role === "user" ? ROLE.USER : ROLE.ASSISTANT;
     const msgId = uuidv4();
     const isLast = i === normalizedMessages.length - 1;
@@ -606,7 +662,7 @@ export function encodeRequest(
   // Build request
   return concatArrays(
     // Messages
-    ...formattedMessages.map((fm: any) =>
+    ...formattedMessages.map((fm) =>
       encodeField(
         FIELD.MESSAGES,
         WIRE_TYPE.LEN,
@@ -639,13 +695,13 @@ export function encodeRequest(
     ...(isAgentic ? [encodeField(FIELD.SUPPORTED_TOOLS, WIRE_TYPE.LEN, encodeVarint(1))] : []),
 
     // Message IDs
-    ...messageIds.map((mid: any) =>
+    ...messageIds.map((mid) =>
       encodeField(FIELD.MESSAGE_IDS, WIRE_TYPE.LEN, encodeMessageId(mid.messageId, mid.role)),
     ),
 
     // MCP Tools
     ...(tools?.length > 0
-      ? tools.map((tool: any) => encodeField(FIELD.MCP_TOOLS, WIRE_TYPE.LEN, encodeMcpTool(tool)))
+      ? tools.map((tool) => encodeField(FIELD.MCP_TOOLS, WIRE_TYPE.LEN, encodeMcpTool(tool)))
       : []),
 
     // Mode fields
@@ -666,11 +722,11 @@ export function encodeRequest(
 }
 
 export function buildChatRequest(
-  messages: any,
-  modelName: any,
-  tools: any = [],
-  reasoningEffort: any = null,
-  forceAgentMode: any = false,
+  messages: CursorMessage[],
+  modelName: string,
+  tools: CursorTool[] = [],
+  reasoningEffort: string | null = null,
+  forceAgentMode: boolean = false,
 ) {
   return encodeField(
     FIELD.REQUEST,
@@ -684,7 +740,7 @@ export function buildChatRequest(
  * This is sent as a SEPARATE request frame, not inside conversation messages.
  * Proto: StreamUnifiedChatRequestWithTools.client_side_tool_v2_result = 2
  */
-export function buildToolResultRequest(toolResult: any) {
+export function buildToolResultRequest(toolResult: CursorToolResult) {
   const { toolCallId, modelCallId } = parseToolId(toolResult.tool_call_id || "");
   const rawName = toolResult.tool_name || "";
   const resultContent = toolResult.result_content || "";
@@ -693,7 +749,7 @@ export function buildToolResultRequest(toolResult: any) {
   // McpResult { selected_tool: tool_name, result } where tool_name is the mcpParams.tools[0].name
   // which is the name AFTER server prefix stripping (e.g. "custom_Write" -> name = "Write")
   // Actually cursor-api uses: name = tool_name.slice_unchecked(d+1..) → raw name without "custom_"
-  // So selected_tool = raw tool name without any prefix
+  // So selected_tool = raw tool name without a prefix
   const selectedTool = rawName.startsWith("mcp_custom_")
     ? rawName.slice("mcp_custom_".length)
     : rawName.startsWith("mcp_")
@@ -718,7 +774,7 @@ export function buildToolResultRequest(toolResult: any) {
   return encodeField(2, WIRE_TYPE.LEN, cv2Result);
 }
 
-export function wrapConnectRPCFrame(payload: any, compress: any = false) {
+export function wrapConnectRPCFrame(payload: Uint8Array, compress: boolean = false) {
   let finalPayload = payload;
   let flags = 0x00;
 
@@ -739,11 +795,11 @@ export function wrapConnectRPCFrame(payload: any, compress: any = false) {
 }
 
 export function generateCursorBody(
-  messages: any,
-  modelName: any,
-  tools: any = [],
-  reasoningEffort: any = null,
-  forceAgentMode: any = false,
+  messages: CursorMessage[],
+  modelName: string,
+  tools: CursorTool[] = [],
+  reasoningEffort: string | null = null,
+  forceAgentMode: boolean = false,
 ) {
   log(
     "BODY",
@@ -761,20 +817,20 @@ export function generateCursorBody(
  * Generate a framed tool result body to send as a separate request frame.
  * Uses field 2 (client_side_tool_v2_result) of StreamUnifiedChatRequestWithTools.
  */
-export function generateToolResultBody(toolResult: any) {
+export function generateToolResultBody(toolResult: CursorToolResult) {
   const protobuf = buildToolResultRequest(toolResult);
   return wrapConnectRPCFrame(protobuf, false);
 }
 
 // ==================== PRIMITIVE DECODING ====================
 
-export function decodeVarint(buffer: any, offset: any) {
+export function decodeVarint(buffer: Uint8Array, offset: number): [number, number] {
   let result = 0;
   let shift = 0;
   let pos = offset;
 
   while (pos < buffer.length) {
-    const b = buffer[pos];
+    const b = buffer[pos] ?? 0;
     result |= (b & 0x7f) << shift;
     pos++;
     if (!(b & 0x80)) break;
@@ -784,7 +840,10 @@ export function decodeVarint(buffer: any, offset: any) {
   return [result, pos];
 }
 
-export function decodeField(buffer: any, offset: any) {
+export function decodeField(
+  buffer: Uint8Array,
+  offset: number,
+): [number | null, number | null, DecodedFieldValue, number] {
   if (offset >= buffer.length) return [null, null, null, offset];
 
   const [tag, pos1] = decodeVarint(buffer, offset);
@@ -813,16 +872,16 @@ export function decodeField(buffer: any, offset: any) {
   return [fieldNum, wireType, value, pos];
 }
 
-export function decodeMessage(data: any) {
-  const fields = new Map();
+export function decodeMessage(data: Uint8Array): DecodedMessage {
+  const fields = new Map() as DecodedMessage;
   let pos = 0;
 
   while (pos < data.length) {
     const [fieldNum, wireType, value, newPos] = decodeField(data, pos);
     if (fieldNum === null) break;
 
-    if (!fields.has(fieldNum)) fields.set(fieldNum, []);
-    fields.get(fieldNum).push({ wireType, value });
+    if (!fields.has(fieldNum)) fields.set(fieldNum, [] as unknown as DecodedFieldList);
+    (fields.get(fieldNum) as DecodedFieldList).push({ wireType, value } as DecodedField);
     pos = newPos;
   }
 
@@ -831,11 +890,15 @@ export function decodeMessage(data: any) {
 
 // ==================== RESPONSE PARSING ====================
 
-export function parseConnectRPCFrame(buffer: any) {
+export function parseConnectRPCFrame(buffer: Uint8Array) {
   if (buffer.length < 5) return null;
 
   const flags = buffer[0];
-  const length = (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
+  const length =
+    ((buffer[1] ?? 0) << 24) |
+    ((buffer[2] ?? 0) << 16) |
+    ((buffer[3] ?? 0) << 8) |
+    (buffer[4] ?? 0);
 
   if (buffer.length < 5 + length) return null;
 
@@ -853,7 +916,7 @@ export function parseConnectRPCFrame(buffer: any) {
   return { flags, length, payload, consumed: 5 + length };
 }
 
-function extractToolCall(toolCallData: any) {
+function extractToolCall(toolCallData: Uint8Array) {
   const toolCall = decodeMessage(toolCallData);
   let toolCallId = "";
   let toolName = "";
@@ -862,34 +925,34 @@ function extractToolCall(toolCallData: any) {
 
   // Extract tool call ID
   if (toolCall.has(FIELD.TOOL_ID)) {
-    const fullId = new TextDecoder().decode(toolCall.get(FIELD.TOOL_ID)[0].value);
+    const fullId = new TextDecoder().decode(fieldValue(toolCall, FIELD.TOOL_ID));
     toolCallId = fullId.split("\n")[0] as string; // Cursor returns multi-line ID, take first line
   }
 
   // Extract tool name
   if (toolCall.has(FIELD.TOOL_NAME)) {
-    toolName = new TextDecoder().decode(toolCall.get(FIELD.TOOL_NAME)[0].value);
+    toolName = new TextDecoder().decode(fieldValue(toolCall, FIELD.TOOL_NAME));
   }
 
   // Extract is_last flag
   if (toolCall.has(FIELD.TOOL_IS_LAST)) {
-    isLast = toolCall.get(FIELD.TOOL_IS_LAST)[0].value !== 0;
+    isLast = fieldValue(toolCall, FIELD.TOOL_IS_LAST) !== 0;
   }
 
   // Extract MCP params - nested real tool info
   if (toolCall.has(FIELD.TOOL_MCP_PARAMS)) {
     try {
-      const mcpParams = decodeMessage(toolCall.get(FIELD.TOOL_MCP_PARAMS)[0].value);
+      const mcpParams = decodeMessage(fieldValue(toolCall, FIELD.TOOL_MCP_PARAMS));
 
       if (mcpParams.has(FIELD.MCP_TOOLS_LIST)) {
-        const tool = decodeMessage(mcpParams.get(FIELD.MCP_TOOLS_LIST)[0].value);
+        const tool = decodeMessage(fieldValue(mcpParams, FIELD.MCP_TOOLS_LIST));
 
         if (tool.has(FIELD.MCP_NESTED_NAME)) {
-          toolName = new TextDecoder().decode(tool.get(FIELD.MCP_NESTED_NAME)[0].value);
+          toolName = new TextDecoder().decode(fieldValue(tool, FIELD.MCP_NESTED_NAME));
         }
 
         if (tool.has(FIELD.MCP_NESTED_PARAMS)) {
-          rawArgs = new TextDecoder().decode(tool.get(FIELD.MCP_NESTED_PARAMS)[0].value);
+          rawArgs = new TextDecoder().decode(fieldValue(tool, FIELD.MCP_NESTED_PARAMS));
         }
       }
     } catch (err: unknown) {
@@ -899,7 +962,7 @@ function extractToolCall(toolCallData: any) {
 
   // Fallback to raw_args
   if (!rawArgs && toolCall.has(FIELD.TOOL_RAW_ARGS)) {
-    rawArgs = new TextDecoder().decode(toolCall.get(FIELD.TOOL_RAW_ARGS)[0].value);
+    rawArgs = new TextDecoder().decode(fieldValue(toolCall, FIELD.TOOL_RAW_ARGS));
   }
 
   if (toolCallId && toolName) {
@@ -917,22 +980,22 @@ function extractToolCall(toolCallData: any) {
   return null;
 }
 
-function extractTextAndThinking(responseData: any) {
+function extractTextAndThinking(responseData: Uint8Array) {
   const nested = decodeMessage(responseData);
   let text = null;
   let thinking = null;
 
   // Extract text
   if (nested.has(FIELD.RESPONSE_TEXT)) {
-    text = new TextDecoder().decode(nested.get(FIELD.RESPONSE_TEXT)[0].value);
+    text = new TextDecoder().decode(fieldValue(nested, FIELD.RESPONSE_TEXT));
   }
 
   // Extract thinking
   if (nested.has(FIELD.THINKING)) {
     try {
-      const thinkingMsg = decodeMessage(nested.get(FIELD.THINKING)[0].value);
+      const thinkingMsg = decodeMessage(fieldValue(nested, FIELD.THINKING));
       if (thinkingMsg.has(FIELD.THINKING_TEXT)) {
-        thinking = new TextDecoder().decode(thinkingMsg.get(FIELD.THINKING_TEXT)[0].value);
+        thinking = new TextDecoder().decode(fieldValue(thinkingMsg, FIELD.THINKING_TEXT));
       }
     } catch (err: unknown) {
       log("EXTRACT", `Thinking parse error: ${errorMessage(err)}`);
@@ -942,7 +1005,7 @@ function extractTextAndThinking(responseData: any) {
   return { text, thinking };
 }
 
-export function extractTextFromResponse(payload: any) {
+export function extractTextFromResponse(payload: Uint8Array) {
   try {
     const fields = decodeMessage(payload);
 
@@ -958,7 +1021,7 @@ export function extractTextFromResponse(payload: any) {
 
     // Field 1: ClientSideToolV2Call
     if (fields.has(FIELD.TOOL_CALL)) {
-      const toolCall = extractToolCall(fields.get(FIELD.TOOL_CALL)[0].value);
+      const toolCall = extractToolCall(fieldValue(fields, FIELD.TOOL_CALL));
       if (toolCall) {
         log("EXTRACT", `Tool call: ${toolCall.function.name}`);
         return { text: null, error: null, toolCall, thinking: null };
@@ -967,7 +1030,7 @@ export function extractTextFromResponse(payload: any) {
 
     // Field 2: StreamUnifiedChatResponse
     if (fields.has(FIELD.RESPONSE)) {
-      const { text, thinking } = extractTextAndThinking(fields.get(FIELD.RESPONSE)[0].value);
+      const { text, thinking } = extractTextAndThinking(fieldValue(fields, FIELD.RESPONSE));
 
       if (text || thinking) {
         return { text, error: null, toolCall: null, thinking };

@@ -6,12 +6,68 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 export const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
 // In-flight refresh dedup: prevents race condition that triggers refresh_token_reused → Auth0 family revoke
-const refreshPromiseCache = new Map();
+const refreshPromiseCache = new Map<string, RefreshCacheEntry>();
 const CACHE_CLEANUP_INTERVAL_MS = 60 * 1000;
 const CACHE_ENTRY_MAX_AGE_MS = 5 * 60 * 1000;
 const MAX_REFRESH_CACHE_SIZE = 100;
 
-function getRefreshCacheKey(provider: any, refreshToken: any) {
+type TokenJson = Record<string, unknown> & {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  resource_url?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  token?: string;
+  expires_at?: number;
+};
+type ProviderConfig = Record<string, unknown> & {
+  refreshUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
+  tokenUrl?: string;
+};
+type ProviderCredentials = Record<string, unknown> & {
+  accessToken?: unknown;
+  apiKey?: unknown;
+  projectId?: unknown;
+  refreshToken?: unknown;
+  providerSpecificData?: unknown;
+};
+type ProviderLogger = {
+  debug?: (scope: string, message: string, details?: unknown) => void;
+  error?: (scope: string, message: string, details?: unknown) => void;
+  info?: (scope: string, message: string, details?: unknown) => void;
+  warn?: (scope: string, message: string, details?: unknown) => void;
+} | null;
+type RefreshResult = Record<string, unknown> & {
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  expiresAt?: number;
+  token?: string;
+  error?: string;
+  code?: string | null;
+};
+type RefreshCacheEntry = {
+  promise: Promise<RefreshResult | null>;
+  timestamp: number;
+};
+type VertexServiceAccount = {
+  type: "service_account";
+  client_email: string;
+  private_key: string;
+  project_id: string;
+  [key: string]: unknown;
+};
+type VertexCacheEntry = { token: string; expiresAt: number };
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getRefreshCacheKey(provider: string, refreshToken: string) {
   return `${provider}:${refreshToken}`;
 }
 
@@ -25,32 +81,34 @@ setInterval(() => {
 }, CACHE_CLEANUP_INTERVAL_MS);
 
 // Check if refresh result indicates unrecoverable error (caller should stop retry, force re-auth)
-export function isUnrecoverableRefreshError(result: any) {
+export function isUnrecoverableRefreshError(result: unknown) {
+  const error = (result as { error?: unknown } | null)?.error;
   return (
     result &&
     typeof result === "object" &&
-    (result.error === "unrecoverable_refresh_error" ||
-      result.error === "refresh_token_reused" ||
-      result.error === "invalid_request" ||
-      result.error === "invalid_grant")
+    (error === "unrecoverable_refresh_error" ||
+      error === "refresh_token_reused" ||
+      error === "invalid_request" ||
+      error === "invalid_grant")
   );
 }
 
 // Get provider-specific refresh lead time, falls back to default buffer
-export function getRefreshLeadMs(provider: any) {
-  return (REFRESH_LEAD_MS as Record<string, any>)[provider] || TOKEN_EXPIRY_BUFFER_MS;
+export function getRefreshLeadMs(provider: string) {
+  return (REFRESH_LEAD_MS as Record<string, number>)[provider] || TOKEN_EXPIRY_BUFFER_MS;
 }
 
 /**
  * Refresh OAuth access token using refresh token
  */
 export async function refreshAccessToken(
-  provider: any,
-  refreshToken: any,
-  credentials: any,
-  log: any,
+  provider: string,
+  refreshToken: string | undefined,
+  credentials: ProviderCredentials,
+  log: ProviderLogger,
 ) {
-  const config = (PROVIDERS as Record<string, any>)[provider];
+  void credentials;
+  const config = (PROVIDERS as Record<string, ProviderConfig>)[provider];
 
   if (!config || !config.refreshUrl) {
     log?.warn?.("TOKEN_REFRESH", `No refresh URL configured for provider: ${provider}`);
@@ -74,7 +132,7 @@ export async function refreshAccessToken(
         refresh_token: refreshToken,
         client_id: config.clientId,
         client_secret: config.clientSecret,
-      }),
+      } as Record<string, string>),
     });
 
     if (!response.ok) {
@@ -86,7 +144,7 @@ export async function refreshAccessToken(
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
 
     log?.info?.("TOKEN_REFRESH", `Successfully refreshed token for ${provider}`, {
       hasNewAccessToken: !!tokens.access_token,
@@ -99,9 +157,9 @@ export async function refreshAccessToken(
       refreshToken: tokens.refresh_token || refreshToken,
       expiresIn: tokens.expires_in,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     log?.error?.("TOKEN_REFRESH", `Error refreshing token for ${provider}`, {
-      error: error.message,
+      error: errorMessage(error),
     });
     return null;
   }
@@ -110,7 +168,7 @@ export async function refreshAccessToken(
 /**
  * Specialized refresh for Claude OAuth tokens
  */
-export async function refreshClaudeOAuthToken(refreshToken: any, log: any) {
+export async function refreshClaudeOAuthToken(refreshToken: string, log: ProviderLogger) {
   try {
     const response = await fetch(OAUTH_ENDPOINTS.anthropic.token, {
       method: "POST",
@@ -134,7 +192,7 @@ export async function refreshClaudeOAuthToken(refreshToken: any, log: any) {
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed Claude OAuth token", {
       hasNewAccessToken: !!tokens.access_token,
       expiresIn: tokens.expires_in,
@@ -144,8 +202,8 @@ export async function refreshClaudeOAuthToken(refreshToken: any, log: any) {
       refreshToken: tokens.refresh_token || refreshToken,
       expiresIn: tokens.expires_in,
     };
-  } catch (error: any) {
-    log?.error?.("TOKEN_REFRESH", `Network error refreshing Claude token: ${error.message}`);
+  } catch (error: unknown) {
+    log?.error?.("TOKEN_REFRESH", `Network error refreshing Claude token: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -154,10 +212,10 @@ export async function refreshClaudeOAuthToken(refreshToken: any, log: any) {
  * Specialized refresh for Google providers (Gemini, Antigravity)
  */
 export async function refreshGoogleToken(
-  refreshToken: any,
-  clientId: any,
-  clientSecret: any,
-  log: any,
+  refreshToken: string,
+  clientId: string,
+  clientSecret: string,
+  log: ProviderLogger,
 ) {
   try {
     const response = await fetch(OAUTH_ENDPOINTS.google.token, {
@@ -183,7 +241,7 @@ export async function refreshGoogleToken(
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed Google token", {
       hasNewAccessToken: !!tokens.access_token,
       expiresIn: tokens.expires_in,
@@ -193,8 +251,8 @@ export async function refreshGoogleToken(
       refreshToken: tokens.refresh_token || refreshToken,
       expiresIn: tokens.expires_in,
     };
-  } catch (error: any) {
-    log?.error?.("TOKEN_REFRESH", `Network error refreshing Google token: ${error.message}`);
+  } catch (error: unknown) {
+    log?.error?.("TOKEN_REFRESH", `Network error refreshing Google token: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -202,7 +260,7 @@ export async function refreshGoogleToken(
 /**
  * Specialized refresh for Qwen OAuth tokens
  */
-export async function refreshQwenToken(refreshToken: any, log: any) {
+export async function refreshQwenToken(refreshToken: string, log: ProviderLogger) {
   const endpoint = OAUTH_ENDPOINTS.qwen.token;
 
   try {
@@ -220,7 +278,7 @@ export async function refreshQwenToken(refreshToken: any, log: any) {
     });
 
     if (response.status === 200) {
-      const tokens = await response.json();
+      const tokens = (await response.json()) as TokenJson;
 
       log?.info?.("TOKEN_REFRESH", "Successfully refreshed Qwen token", {
         hasNewAccessToken: !!tokens.access_token,
@@ -243,9 +301,9 @@ export async function refreshQwenToken(refreshToken: any, log: any) {
         error: errorText,
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     log?.warn?.("TOKEN_REFRESH", `Network error trying Qwen endpoint`, {
-      error: error.message,
+      error: errorMessage(error),
     });
   }
 
@@ -259,7 +317,7 @@ export async function refreshQwenToken(refreshToken: any, log: any) {
  * Returns { error: 'unrecoverable_refresh_error' } when token already consumed/invalid,
  * so callers stop retrying and request re-authentication.
  */
-export async function refreshCodexToken(refreshToken: any, log: any) {
+export async function refreshCodexToken(refreshToken: string, log: ProviderLogger) {
   try {
     const response = await fetch(OAUTH_ENDPOINTS.openai.token, {
       method: "POST",
@@ -281,9 +339,11 @@ export async function refreshCodexToken(refreshToken: any, log: any) {
       // Detect unrecoverable errors (token reused/expired) — Auth0 revokes whole family on retry
       let errorCode = null;
       try {
-        const parsed = JSON.parse(errorText);
+        const parsed = JSON.parse(errorText) as Record<string, unknown>;
+        const parsedError = parsed.error as Record<string, unknown> | string | undefined;
         errorCode =
-          parsed?.error?.code || (typeof parsed?.error === "string" ? parsed.error : null);
+          (typeof parsedError === "object" ? parsedError?.code : null) ||
+          (typeof parsedError === "string" ? parsedError : null);
       } catch {}
 
       if (
@@ -310,7 +370,7 @@ export async function refreshCodexToken(refreshToken: any, log: any) {
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
 
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed Codex token", {
       hasNewAccessToken: !!tokens.access_token,
@@ -323,8 +383,8 @@ export async function refreshCodexToken(refreshToken: any, log: any) {
       refreshToken: tokens.refresh_token || refreshToken,
       expiresIn: tokens.expires_in,
     };
-  } catch (error: any) {
-    log?.error?.("TOKEN_REFRESH", `Network error refreshing Codex token: ${error.message}`);
+  } catch (error: unknown) {
+    log?.error?.("TOKEN_REFRESH", `Network error refreshing Codex token: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -334,10 +394,10 @@ export async function refreshCodexToken(refreshToken: any, log: any) {
  * Supports both AWS SSO OIDC (Builder ID/IDC) and Social Auth (Google/GitHub)
  */
 export async function refreshKiroToken(
-  refreshToken: any,
-  providerSpecificData: any,
-  log: any,
-  proxyOptions: any = null,
+  refreshToken: string,
+  providerSpecificData: Record<string, unknown> | undefined,
+  log: ProviderLogger,
+  proxyOptions: Record<string, unknown> | null = null,
 ) {
   try {
     const authMethod = providerSpecificData?.authMethod;
@@ -381,7 +441,7 @@ export async function refreshKiroToken(
         return null;
       }
 
-      const tokens = await response.json();
+      const tokens = (await response.json()) as TokenJson;
 
       log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro AWS token", {
         hasNewAccessToken: !!tokens.accessToken,
@@ -421,7 +481,7 @@ export async function refreshKiroToken(
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
 
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed Kiro social token", {
       hasNewAccessToken: !!tokens.accessToken,
@@ -433,8 +493,8 @@ export async function refreshKiroToken(
       refreshToken: tokens.refreshToken || refreshToken,
       expiresIn: tokens.expiresIn,
     };
-  } catch (error: any) {
-    log?.error?.("TOKEN_REFRESH", `Error refreshing Kiro token: ${error.message}`);
+  } catch (error: unknown) {
+    log?.error?.("TOKEN_REFRESH", `Error refreshing Kiro token: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -442,7 +502,7 @@ export async function refreshKiroToken(
 /**
  * Specialized refresh for iFlow OAuth tokens
  */
-export async function refreshIflowToken(refreshToken: any, log: any) {
+export async function refreshIflowToken(refreshToken: string, log: ProviderLogger) {
   try {
     if (!PROVIDERS.iflow.clientSecret) {
       log?.error?.(
@@ -478,7 +538,7 @@ export async function refreshIflowToken(refreshToken: any, log: any) {
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
 
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed iFlow token", {
       hasNewAccessToken: !!tokens.access_token,
@@ -491,8 +551,8 @@ export async function refreshIflowToken(refreshToken: any, log: any) {
       refreshToken: tokens.refresh_token || refreshToken,
       expiresIn: tokens.expires_in,
     };
-  } catch (error: any) {
-    log?.error?.("TOKEN_REFRESH", `Error refreshing iFlow token: ${error.message}`);
+  } catch (error: unknown) {
+    log?.error?.("TOKEN_REFRESH", `Error refreshing iFlow token: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -500,15 +560,16 @@ export async function refreshIflowToken(refreshToken: any, log: any) {
 /**
  * Specialized refresh for GitHub Copilot OAuth tokens
  */
-export async function refreshGitHubToken(refreshToken: any, log: any) {
+export async function refreshGitHubToken(refreshToken: string, log: ProviderLogger) {
   try {
-    const params: Record<string, any> = {
+    const params: Record<string, string> = {
       grant_type: "refresh_token",
       refresh_token: refreshToken,
       client_id: PROVIDERS.github.clientId,
     };
-    if ((PROVIDERS.github as any).clientSecret) {
-      params.client_secret = (PROVIDERS.github as any).clientSecret;
+    const githubConfig = PROVIDERS.github as ProviderConfig;
+    if (githubConfig.clientSecret) {
+      params.client_secret = githubConfig.clientSecret;
     }
 
     const response = await fetch(OAUTH_ENDPOINTS.github.token, {
@@ -529,7 +590,7 @@ export async function refreshGitHubToken(refreshToken: any, log: any) {
       return null;
     }
 
-    const tokens = await response.json();
+    const tokens = (await response.json()) as TokenJson;
 
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed GitHub token", {
       hasNewAccessToken: !!tokens.access_token,
@@ -542,8 +603,8 @@ export async function refreshGitHubToken(refreshToken: any, log: any) {
       refreshToken: tokens.refresh_token || refreshToken,
       expiresIn: tokens.expires_in,
     };
-  } catch (error: any) {
-    log?.error?.("TOKEN_REFRESH", `Error refreshing GitHub token: ${error.message}`);
+  } catch (error: unknown) {
+    log?.error?.("TOKEN_REFRESH", `Error refreshing GitHub token: ${errorMessage(error)}`);
     return null;
   }
 }
@@ -551,7 +612,7 @@ export async function refreshGitHubToken(refreshToken: any, log: any) {
 /**
  * Refresh GitHub Copilot token using GitHub access token
  */
-export async function refreshCopilotToken(githubAccessToken: any, log: any) {
+export async function refreshCopilotToken(githubAccessToken: string, log: ProviderLogger) {
   try {
     const response = await fetch("https://api.github.com/copilot_internal/v2/token", {
       headers: {
@@ -584,9 +645,9 @@ export async function refreshCopilotToken(githubAccessToken: any, log: any) {
       token: data.token,
       expiresAt: data.expires_at,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     log?.error?.("TOKEN_REFRESH", "Error refreshing Copilot token", {
-      error: error.message,
+      error: errorMessage(error),
     });
     return null;
   }
@@ -597,7 +658,11 @@ export async function refreshCopilotToken(githubAccessToken: any, log: any) {
  * If a refresh is already in-flight for same provider+token, share the promise
  * to prevent parallel OAuth requests → Auth0 'refresh_token_reused' family revoke.
  */
-export async function getAccessToken(provider: any, credentials: any, log: any) {
+export async function getAccessToken(
+  provider: string,
+  credentials: ProviderCredentials | null | undefined,
+  log: ProviderLogger,
+) {
   if (!credentials || !credentials.refreshToken || typeof credentials.refreshToken !== "string") {
     log?.warn?.("TOKEN_REFRESH", `No valid refresh token available for provider: ${provider}`);
     return null;
@@ -607,7 +672,7 @@ export async function getAccessToken(provider: any, credentials: any, log: any) 
 
   if (refreshPromiseCache.has(cacheKey)) {
     log?.info?.("TOKEN_REFRESH", `Reusing in-flight refresh for ${provider}`);
-    return refreshPromiseCache.get(cacheKey).promise;
+    return refreshPromiseCache.get(cacheKey)?.promise ?? null;
   }
 
   const refreshPromise = _getAccessTokenInternal(provider, credentials, log).finally(() => {
@@ -616,43 +681,49 @@ export async function getAccessToken(provider: any, credentials: any, log: any) 
 
   if (refreshPromiseCache.size >= MAX_REFRESH_CACHE_SIZE) {
     const firstKey = refreshPromiseCache.keys().next().value;
-    refreshPromiseCache.delete(firstKey);
+    if (firstKey) refreshPromiseCache.delete(firstKey);
   }
   refreshPromiseCache.set(cacheKey, { promise: refreshPromise, timestamp: Date.now() });
   return refreshPromise;
 }
 
-async function _getAccessTokenInternal(provider: any, credentials: any, log: any) {
+async function _getAccessTokenInternal(
+  provider: string,
+  credentials: ProviderCredentials,
+  log: ProviderLogger,
+) {
+  const refreshToken = credentials.refreshToken as string;
+  const providerConfig = (PROVIDERS as Record<string, ProviderConfig>)[provider] ?? {};
   switch (provider) {
     case "gemini":
     case "gemini-cli":
     case "antigravity":
       return await refreshGoogleToken(
-        credentials.refreshToken,
-        (PROVIDERS as Record<string, any>)[provider].clientId,
-        (PROVIDERS as Record<string, any>)[provider].clientSecret,
+        refreshToken,
+        providerConfig.clientId as string,
+        providerConfig.clientSecret as string,
         log,
       );
 
     case "claude":
-      return await refreshClaudeOAuthToken(credentials.refreshToken, log);
+      return await refreshClaudeOAuthToken(refreshToken, log);
 
     case "codex":
-      return await refreshCodexToken(credentials.refreshToken, log);
+      return await refreshCodexToken(refreshToken, log);
 
     case "qwen":
-      return await refreshQwenToken(credentials.refreshToken, log);
+      return await refreshQwenToken(refreshToken, log);
 
     case "iflow":
-      return await refreshIflowToken(credentials.refreshToken, log);
+      return await refreshIflowToken(refreshToken, log);
 
     case "github":
-      return await refreshGitHubToken(credentials.refreshToken, log);
+      return await refreshGitHubToken(refreshToken, log);
 
     case "kiro":
       return await refreshKiroToken(
-        credentials.refreshToken,
-        credentials.providerSpecificData,
+        refreshToken,
+        credentials.providerSpecificData as Record<string, unknown> | undefined,
         log,
       );
 
@@ -672,30 +743,40 @@ async function _getAccessTokenInternal(provider: any, credentials: any, log: any
 /**
  * Refresh token by provider type (helper for handlers)
  */
-export async function refreshTokenByProvider(provider: any, credentials: any, log: any = null) {
+export async function refreshTokenByProvider(
+  provider: string,
+  credentials: ProviderCredentials,
+  log: ProviderLogger = null,
+) {
   if (!credentials.refreshToken) return null;
+  const refreshToken = credentials.refreshToken as string;
+  const providerConfig = (PROVIDERS as Record<string, ProviderConfig>)[provider] ?? {};
 
   switch (provider) {
     case "gemini-cli":
     case "antigravity":
       return refreshGoogleToken(
-        credentials.refreshToken,
-        (PROVIDERS as Record<string, any>)[provider].clientId,
-        (PROVIDERS as Record<string, any>)[provider].clientSecret,
+        refreshToken,
+        providerConfig.clientId as string,
+        providerConfig.clientSecret as string,
         log,
       );
     case "claude":
-      return refreshClaudeOAuthToken(credentials.refreshToken, log);
+      return refreshClaudeOAuthToken(refreshToken, log);
     case "codex":
-      return refreshCodexToken(credentials.refreshToken, log);
+      return refreshCodexToken(refreshToken, log);
     case "qwen":
-      return refreshQwenToken(credentials.refreshToken, log);
+      return refreshQwenToken(refreshToken, log);
     case "iflow":
-      return refreshIflowToken(credentials.refreshToken, log);
+      return refreshIflowToken(refreshToken, log);
     case "github":
-      return refreshGitHubToken(credentials.refreshToken, log);
+      return refreshGitHubToken(refreshToken, log);
     case "kiro":
-      return refreshKiroToken(credentials.refreshToken, credentials.providerSpecificData, log);
+      return refreshKiroToken(
+        refreshToken,
+        credentials.providerSpecificData as Record<string, unknown> | undefined,
+        log,
+      );
     case "vertex":
     case "vertex-partner": {
       const saJson = parseVertexSaJson(credentials.apiKey);
@@ -703,15 +784,19 @@ export async function refreshTokenByProvider(provider: any, credentials: any, lo
       return refreshVertexToken(saJson, log);
     }
     default:
-      return refreshAccessToken(provider, credentials.refreshToken, credentials, log);
+      return refreshAccessToken(provider, refreshToken, credentials, log);
   }
 }
 
 /**
  * Format credentials for provider
  */
-export function formatProviderCredentials(provider: any, credentials: any, log: any) {
-  const config = (PROVIDERS as Record<string, any>)[provider];
+export function formatProviderCredentials(
+  provider: string,
+  credentials: ProviderCredentials,
+  log: ProviderLogger,
+) {
+  const config = (PROVIDERS as Record<string, ProviderConfig>)[provider];
   if (!config) {
     log?.warn?.("TOKEN_REFRESH", `No configuration found for provider: ${provider}`);
     return null;
@@ -761,14 +846,15 @@ export function formatProviderCredentials(provider: any, credentials: any, log: 
 /**
  * Get all access tokens for a user
  */
-export async function getAllAccessTokens(userInfo: any, log: any) {
-  const results: Record<string, any> = {};
+export async function getAllAccessTokens(userInfo: unknown, log: ProviderLogger) {
+  const results: Record<string, RefreshResult> = {};
 
-  if (userInfo.connections && Array.isArray(userInfo.connections)) {
-    for (const connection of userInfo.connections) {
+  const data = userInfo as { connections?: ProviderCredentials[] } | null;
+  if (data?.connections && Array.isArray(data.connections)) {
+    for (const connection of data.connections) {
       if (connection.isActive && connection.provider) {
         const token = await getAccessToken(
-          connection.provider,
+          String(connection.provider),
           {
             refreshToken: connection.refreshToken,
           },
@@ -776,7 +862,7 @@ export async function getAllAccessTokens(userInfo: any, log: any) {
         );
 
         if (token) {
-          results[connection.provider] = token;
+          results[String(connection.provider)] = token;
         }
       }
     }
@@ -788,17 +874,17 @@ export async function getAllAccessTokens(userInfo: any, log: any) {
 /**
  * Parse Vertex AI Service Account JSON from apiKey string
  */
-export function parseVertexSaJson(apiKey: any) {
+export function parseVertexSaJson(apiKey: unknown): VertexServiceAccount | null {
   if (typeof apiKey !== "string") return null;
   try {
-    const parsed = JSON.parse(apiKey);
+    const parsed = JSON.parse(apiKey) as Record<string, unknown>;
     if (
       parsed.type === "service_account" &&
-      parsed.client_email &&
-      parsed.private_key &&
-      parsed.project_id
+      typeof parsed.client_email === "string" &&
+      typeof parsed.private_key === "string" &&
+      typeof parsed.project_id === "string"
     ) {
-      return parsed;
+      return parsed as VertexServiceAccount;
     }
     return null;
   } catch {
@@ -807,16 +893,16 @@ export function parseVertexSaJson(apiKey: any) {
 }
 
 // Cache Vertex tokens keyed by service account email { token, expiresAt }
-const vertexTokenCache = new Map();
+const vertexTokenCache = new Map<string, VertexCacheEntry>();
 // In-flight dedup for concurrent Vertex token refresh requests
-const vertexRefreshPromiseCache = new Map();
+const vertexRefreshPromiseCache = new Map<string, Promise<RefreshResult | null>>();
 
 /**
  * Mint a short-lived OAuth2 Bearer token for Google Cloud Vertex AI
  * using Service Account JSON + jose (RS256 JWT assertion flow).
  * Token is cached until 5 minutes before expiry.
  */
-export async function refreshVertexToken(saJson: any, log: any) {
+export async function refreshVertexToken(saJson: VertexServiceAccount, log: ProviderLogger) {
   const cacheKey = saJson.client_email;
   const cached = vertexTokenCache.get(cacheKey);
 
@@ -827,7 +913,7 @@ export async function refreshVertexToken(saJson: any, log: any) {
 
   // In-flight dedup: if same SA key is already refreshing, reuse result
   if (vertexRefreshPromiseCache.has(cacheKey)) {
-    return vertexRefreshPromiseCache.get(cacheKey);
+    return vertexRefreshPromiseCache.get(cacheKey) ?? null;
   }
 
   const promise = (async () => {
@@ -860,15 +946,15 @@ export async function refreshVertexToken(saJson: any, log: any) {
         return null;
       }
 
-      const { access_token, expires_in } = await res.json();
+      const { access_token, expires_in } = (await res.json()) as TokenJson;
       const expiresAt = Date.now() + (expires_in ?? 3600) * 1000;
 
-      vertexTokenCache.set(cacheKey, { token: access_token, expiresAt });
+      vertexTokenCache.set(cacheKey, { token: access_token as string, expiresAt });
       log?.info?.("TOKEN_REFRESH", `Vertex token minted for ${saJson.client_email}`);
 
       return { accessToken: access_token, expiresAt };
-    } catch (error: any) {
-      log?.error?.("TOKEN_REFRESH", `Vertex token error: ${error.message}`);
+    } catch (error: unknown) {
+      log?.error?.("TOKEN_REFRESH", `Vertex token error: ${errorMessage(error)}`);
       return null;
     } finally {
       vertexRefreshPromiseCache.delete(cacheKey);
@@ -887,19 +973,26 @@ export async function refreshVertexToken(saJson: any, log: any) {
  * @param {object} log - Logger instance (optional)
  * @returns {Promise<object|null>} Token result or null if all retries fail
  */
-export async function refreshWithRetry(refreshFn: any, maxRetries: any = 3, log: any = null) {
+export async function refreshWithRetry(
+  refreshFn: () => Promise<RefreshResult | null>,
+  maxRetries: number = 3,
+  log: ProviderLogger = null,
+) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     if (attempt > 0) {
       const delay = attempt * 1000;
       log?.debug?.("TOKEN_REFRESH", `Retry ${attempt}/${maxRetries} after ${delay}ms`);
-      await new Promise((r: any) => setTimeout(r, delay));
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
     }
 
     try {
       const result = await refreshFn();
       if (result) return result;
-    } catch (error: any) {
-      log?.warn?.("TOKEN_REFRESH", `Attempt ${attempt + 1}/${maxRetries} failed: ${error.message}`);
+    } catch (error: unknown) {
+      log?.warn?.(
+        "TOKEN_REFRESH",
+        `Attempt ${attempt + 1}/${maxRetries} failed: ${errorMessage(error)}`,
+      );
     }
   }
 
