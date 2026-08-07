@@ -20,8 +20,8 @@ const clampCallId = (id: any) =>
 export function openaiResponsesToOpenAIRequest(
   model: any,
   body: any,
-  stream: any,
-  credentials: any,
+  _stream: any,
+  _credentials: any,
 ) {
   if (!body.input) return body;
 
@@ -175,8 +175,8 @@ function normalizeToolParameters(params: any) {
 export function openaiToOpenAIResponsesRequest(
   model: any,
   body: any,
-  stream: any,
-  credentials: any,
+  _stream: any,
+  _credentials: any,
 ) {
   // Body already in Responses API format (e.g. Cursor CLI calling /chat/completions with input[])
   if (body.input) return { ...body, model, stream: true };

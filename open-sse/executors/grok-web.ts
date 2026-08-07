@@ -1,11 +1,56 @@
 import { PROVIDERS } from "../config/providers.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorExecuteOptions,
+  type ExecutorExecuteResult,
+  type ExecutorHeaders,
+} from "./base.js";
 
 const GROK_CHAT_API = PROVIDERS["grok-web"].baseUrl;
 const GROK_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
-const MODEL_MAP: Record<string, any> = {
+type GrokModelInfo = { grokModel: string; modelMode: string; isThinking: boolean };
+type JsonRecord = Record<string, unknown>;
+type OpenAIContentPart = { type?: string; text?: unknown };
+type OpenAIMessage = { role?: string; content?: string | OpenAIContentPart[] | unknown };
+type ExtractedMessage = { role: string; text: string };
+type GrokBody = JsonRecord & { messages?: OpenAIMessage[] };
+type GrokResponseEvent = {
+  error?: { code?: string; message?: string };
+  result?: {
+    response?: {
+      llmInfo?: { modelHash?: string };
+      modelResponse?: { message?: string; metadata?: { llm_info?: { modelHash?: string } } };
+      responseId?: string;
+      token?: string;
+    };
+  };
+};
+type GrokContentChunk = {
+  delta?: string;
+  done?: boolean;
+  error?: unknown;
+  fingerprint?: string;
+  fullMessage?: string;
+  responseId?: string;
+  thinking?: string;
+};
+type AssistantMessage = { role: "assistant"; content: string; reasoning_content?: string };
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asGrokBody(value: unknown): GrokBody {
+  return isRecord(value) ? value : {};
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+const MODEL_MAP: Record<string, GrokModelInfo> = {
   "grok-3": { grokModel: "grok-3", modelMode: "MODEL_MODE_GROK_3", isThinking: false },
   "grok-3-mini": {
     grokModel: "grok-3",
@@ -54,7 +99,7 @@ const MODEL_MAP: Record<string, any> = {
   "grok-4.20-beta": { grokModel: "grok-420", modelMode: "MODEL_MODE_GROK_420", isThinking: false },
 };
 
-function randomString(length: any, alphanumeric: any = false) {
+function randomString(length: number, alphanumeric = false) {
   const chars = alphanumeric
     ? "abcdefghijklmnopqrstuvwxyz0123456789"
     : "abcdefghijklmnopqrstuvwxyz";
@@ -71,14 +116,14 @@ function generateStatsigId() {
   return btoa(msg);
 }
 
-function randomHex(bytes: any) {
+function randomHex(bytes: number) {
   const arr = new Uint8Array(bytes);
   crypto.getRandomValues(arr);
-  return Array.from(arr, (b: any) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function parseOpenAIMessages(messages: any) {
-  const extracted: any[] = [];
+function parseOpenAIMessages(messages: readonly OpenAIMessage[]) {
+  const extracted: ExtractedMessage[] = [];
   for (const msg of messages) {
     let role = String(msg.role || "user");
     if (role === "developer") role = "system";
@@ -87,8 +132,8 @@ function parseOpenAIMessages(messages: any) {
       content = msg.content;
     } else if (Array.isArray(msg.content)) {
       content = msg.content
-        .filter((c: any) => c.type === "text")
-        .map((c: any) => String(c.text || ""))
+        .filter((c) => c.type === "text")
+        .map((c) => String(c.text || ""))
         .join(" ");
     }
     if (!content.trim()) continue;
@@ -103,15 +148,18 @@ function parseOpenAIMessages(messages: any) {
     }
   }
 
-  const parts: any[] = [];
+  const parts: string[] = [];
   for (let i = 0; i < extracted.length; i++) {
-    const { role, text } = extracted[i] as any;
+    const { role, text } = extracted[i] ?? { role: "user", text: "" };
     parts.push(i === lastUserIdx ? text : `${role}: ${text}`);
   }
   return parts.join("\n\n");
 }
 
-async function* readGrokNdjsonEvents(body: any, signal: any) {
+async function* readGrokNdjsonEvents(
+  body: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
+): AsyncGenerator<GrokResponseEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -128,7 +176,8 @@ async function* readGrokNdjsonEvents(body: any, signal: any) {
         buffer = buffer.slice(idx + 1);
         if (!line) continue;
         try {
-          yield JSON.parse(line);
+          const parsed = JSON.parse(line) as unknown;
+          if (isRecord(parsed)) yield parsed as GrokResponseEvent;
         } catch {
           /* skip */
         }
@@ -138,7 +187,8 @@ async function* readGrokNdjsonEvents(body: any, signal: any) {
     const remaining = buffer.trim();
     if (remaining) {
       try {
-        yield JSON.parse(remaining);
+        const parsed = JSON.parse(remaining) as unknown;
+        if (isRecord(parsed)) yield parsed as GrokResponseEvent;
       } catch {
         /* skip */
       }
@@ -148,7 +198,11 @@ async function* readGrokNdjsonEvents(body: any, signal: any) {
   }
 }
 
-async function* extractContent(eventStream: any, isThinkingModel: any, signal: any) {
+async function* extractContent(
+  eventStream: ReadableStream<Uint8Array>,
+  isThinkingModel: boolean,
+  signal?: AbortSignal,
+): AsyncGenerator<GrokContentChunk> {
   let fingerprint = "";
   let responseId = "";
   let thinkOpened = false;
@@ -182,21 +236,21 @@ async function* extractContent(eventStream: any, isThinkingModel: any, signal: a
   yield { done: true, fingerprint, responseId };
 }
 
-function sseChunk(data: any) {
+function sseChunk(data: unknown) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
 function buildStreamingResponse(
-  eventStream: any,
-  model: any,
-  cid: any,
-  created: any,
-  isThinkingModel: any,
-  signal: any,
+  eventStream: ReadableStream<Uint8Array>,
+  model: string,
+  cid: string,
+  created: number,
+  isThinkingModel: boolean,
+  signal?: AbortSignal,
 ) {
   const encoder = new TextEncoder();
-  return new ReadableStream({
-    async start(controller: any) {
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
       try {
         controller.enqueue(
           encoder.encode(
@@ -298,7 +352,7 @@ function buildStreamingResponse(
           ),
         );
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      } catch (err: any) {
+      } catch (err: unknown) {
         controller.enqueue(
           encoder.encode(
             sseChunk({
@@ -310,7 +364,7 @@ function buildStreamingResponse(
               choices: [
                 {
                   index: 0,
-                  delta: { content: `[Stream error: ${err.message || String(err)}]` },
+                  delta: { content: `[Stream error: ${errorMessage(err)}]` },
                   finish_reason: "stop",
                   logprobs: null,
                 },
@@ -327,16 +381,16 @@ function buildStreamingResponse(
 }
 
 async function buildNonStreamingResponse(
-  eventStream: any,
-  model: any,
-  cid: any,
-  created: any,
-  isThinkingModel: any,
-  signal: any,
+  eventStream: ReadableStream<Uint8Array>,
+  model: string,
+  cid: string,
+  created: number,
+  isThinkingModel: boolean,
+  signal?: AbortSignal,
 ) {
   let fullContent = "";
   let fingerprint = "";
-  const thinkingParts: any[] = [];
+  const thinkingParts: string[] = [];
 
   for await (const chunk of extractContent(eventStream, isThinkingModel, signal)) {
     if (chunk.fingerprint) fingerprint = chunk.fingerprint;
@@ -357,7 +411,7 @@ async function buildNonStreamingResponse(
     else if (chunk.delta) fullContent += chunk.delta;
   }
 
-  const msg: any = { role: "assistant", content: fullContent };
+  const msg: AssistantMessage = { role: "assistant", content: fullContent };
   if (thinkingParts.length > 0) msg.reasoning_content = thinkingParts.join("\n");
 
   const promptTokens = Math.ceil(fullContent.length / 4);
@@ -386,8 +440,16 @@ export class GrokWebExecutor extends BaseExecutor {
     super("grok-web", PROVIDERS["grok-web"]);
   }
 
-  async execute({ model, body, stream, credentials, signal, log }: any) {
-    const messages = body?.messages;
+  async execute({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log,
+  }: ExecutorExecuteOptions): Promise<ExecutorExecuteResult> {
+    const requestBody = asGrokBody(body);
+    const messages = requestBody.messages;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       const errResp = new Response(
         JSON.stringify({
@@ -400,7 +462,8 @@ export class GrokWebExecutor extends BaseExecutor {
 
     const modelInfo = MODEL_MAP[model];
     if (!modelInfo) log?.info?.("GROK-WEB", `Unmapped model ${model}, defaulting to grok-4.1-fast`);
-    const { grokModel, modelMode, isThinking } = modelInfo || MODEL_MAP["grok-4.1-fast"];
+    const fallbackModel = MODEL_MAP["grok-4.1-fast"] as GrokModelInfo;
+    const { grokModel, modelMode, isThinking } = modelInfo || fallbackModel;
 
     const message = parseOpenAIMessages(messages);
     if (!message.trim()) {
@@ -448,7 +511,7 @@ export class GrokWebExecutor extends BaseExecutor {
 
     const traceId = randomHex(16);
     const spanId = randomHex(8);
-    const headers: Record<string, any> = {
+    const headers: ExecutorHeaders = {
       Accept: "*/*",
       "Accept-Encoding": "gzip, deflate, br, zstd",
       "Accept-Language": "en-US,en;q=0.9",
@@ -491,12 +554,12 @@ export class GrokWebExecutor extends BaseExecutor {
         body: JSON.stringify(grokPayload),
         signal,
       });
-    } catch (err: any) {
-      log?.error?.("GROK-WEB", `Fetch failed: ${err.message || String(err)}`);
+    } catch (err: unknown) {
+      log?.error?.("GROK-WEB", `Fetch failed: ${errorMessage(err)}`);
       const errResp = new Response(
         JSON.stringify({
           error: {
-            message: `Grok connection failed: ${err.message || String(err)}`,
+            message: `Grok connection failed: ${errorMessage(err)}`,
             type: "upstream_error",
           },
         }),

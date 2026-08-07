@@ -60,7 +60,7 @@ function normalizeMessages(messages: any) {
 
 function extractText(content: any) {
   if (typeof content === "string") return content;
-  if (content == null) return "";
+  if (content === null || content === undefined) return "";
   if (Array.isArray(content)) {
     const parts = [];
     for (const item of content) {
@@ -378,7 +378,7 @@ export class QoderExecutor extends BaseExecutor {
   //   - body encoded with QoderEncodeBody before signing
   //   - COSY headers built from the *encoded* body bytes
   //   - response stream re-wrapped from {statusCodeValue, body} to OpenAI SSE
-  async execute({ model, body, stream, credentials, signal, log, proxyOptions = null }: any) {
+  async execute({ model, body, stream: _stream, credentials, signal, log, proxyOptions = null }: any) {
     const url = this.buildUrl();
 
     const psd = credentials?.providerSpecificData || {};
@@ -459,16 +459,11 @@ export class QoderExecutor extends BaseExecutor {
       ...cosyHeaders,
     };
 
-    let response;
-    try {
-      response = await proxyAwareFetch(
-        url,
-        { method: "POST", headers, body: encodedBodyBuf, signal },
-        proxyOptions,
-      );
-    } catch (err: unknown) {
-      throw err;
-    }
+    const response = await proxyAwareFetch(
+      url,
+      { method: "POST", headers, body: encodedBodyBuf, signal },
+      proxyOptions,
+    );
 
     if (!response.ok) {
       // Pass error response through unchanged so chatCore can capture it.

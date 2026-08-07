@@ -13,7 +13,7 @@ export class GeminiCLIExecutor extends BaseExecutor {
     super("gemini-cli", PROVIDERS["gemini-cli"]);
   }
 
-  buildUrl(model: any, stream: any, urlIndex: any = 0) {
+  buildUrl(model: any, stream: any, _urlIndex: any = 0) {
     const action = stream ? "streamGenerateContent?alt=sse" : "generateContent";
     return `${this.config.baseUrl}:${action}`;
   }

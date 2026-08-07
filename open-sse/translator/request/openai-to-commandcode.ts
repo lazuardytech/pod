@@ -15,7 +15,7 @@ import { FORMATS } from "../formats.js";
 import { register } from "../registry.js";
 
 function flattenText(content: any) {
-  if (content == null) return "";
+  if (content === null || content === undefined) return "";
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     const parts: any[] = [];
@@ -29,7 +29,7 @@ function flattenText(content: any) {
 }
 
 function toContentBlocks(content: any) {
-  if (content == null) return [{ type: "text", text: "" }];
+  if (content === null || content === undefined) return [{ type: "text", text: "" }];
   if (typeof content === "string") return [{ type: "text", text: content }];
   if (Array.isArray(content)) {
     const blocks: any[] = [];
@@ -52,7 +52,7 @@ function toContentBlocks(content: any) {
 }
 
 function safeParseJson(s: any) {
-  if (s == null) return {};
+  if (s === null || s === undefined) return {};
   if (typeof s !== "string") return s;
   try {
     return JSON.parse(s);
@@ -155,7 +155,7 @@ export function openaiToCommandCode(model: any, body: any, stream: any /* , cred
 
   const tools = convertTools(body.tools);
   if (tools) params.tools = tools;
-  if (body.top_p != null) params.top_p = body.top_p;
+  if (body.top_p !== null && body.top_p !== undefined) params.top_p = body.top_p;
 
   const today = new Date().toISOString().slice(0, 10);
 
