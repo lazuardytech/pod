@@ -8,7 +8,7 @@ import {
 
 const LINE_RE = /^\s*\d+\|/;
 
-export function readNumbered(input: any) {
+export function readNumbered(input: string) {
   const lines = input.split("\n");
   if (lines.length < SMART_TRUNCATE_MIN_LINES) return input;
 

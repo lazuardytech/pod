@@ -4,7 +4,7 @@ import { SEARCH_LIST_PER_DIR_MAX, SEARCH_LIST_TOTAL_DIR_MAX } from "../constants
 
 const HEADER_RE = /^Result of search in '[^']*' \(total (\d+) files?\):/;
 
-export function searchList(input: any) {
+export function searchList(input: string) {
   const lines = input.split("\n");
   if (lines.length === 0) return input;
 

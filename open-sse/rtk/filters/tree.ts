@@ -2,7 +2,7 @@
 // Removes summary line (e.g. "5 directories, 23 files") and trailing blanks.
 import { TREE_MAX_LINES } from "../constants.js";
 
-export function tree(input: any) {
+export function tree(input: string) {
   const lines = input.split("\n");
   if (lines.length === 0) return input;
 
@@ -16,7 +16,7 @@ export function tree(input: any) {
   }
 
   // Drop trailing blanks
-  while (filtered.length > 0 && filtered[filtered.length - 1].trim() === "") {
+  while (filtered.length > 0 && (filtered[filtered.length - 1] ?? "").trim() === "") {
     filtered.pop();
   }
 

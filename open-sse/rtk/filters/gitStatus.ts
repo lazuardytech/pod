@@ -10,9 +10,9 @@
 //   clean — nothing to commit
 import { STATUS_MAX_FILES, STATUS_MAX_UNTRACKED } from "../constants.js";
 
-export function gitStatus(input: any) {
+export function gitStatus(input: string) {
   const lines = input.split("\n");
-  if (lines.length === 0 || (lines.length === 1 && !lines[0].trim())) {
+  if (lines.length === 0 || (lines.length === 1 && !(lines[0] ?? "").trim())) {
     return "Clean working tree";
   }
 
@@ -31,7 +31,7 @@ export function gitStatus(input: any) {
     // Long-form branch detection (LLM usually sends this, not porcelain)
     const longBranch = raw.match(/^On branch (\S+)/);
     if (longBranch) {
-      branch = longBranch[1];
+      branch = longBranch[1] ?? "";
       continue;
     }
 
@@ -53,7 +53,7 @@ export function gitStatus(input: any) {
         continue;
       }
 
-      if ("MADRC".includes(x)) {
+      if (x !== undefined && "MADRC".includes(x)) {
         staged++;
         stagedFiles.push(file);
       } else if (x === "U") {
@@ -71,7 +71,7 @@ export function gitStatus(input: any) {
     const longMatch = raw.match(/^\s*(modified|new file|deleted|renamed|both modified):\s+(.+)$/);
     if (longMatch) {
       const kind = longMatch[1];
-      const path = longMatch[2].trim();
+      const path = (longMatch[2] ?? "").trim();
       if (kind === "both modified") {
         conflicts++;
       } else if (kind === "modified" || kind === "deleted") {

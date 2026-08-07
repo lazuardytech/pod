@@ -7,8 +7,32 @@ import { CAVEMAN_PROMPTS } from "./cavemanPrompts.js";
 
 const SEP = "\n\n";
 
-export function injectCaveman(body: any, format: any, level: any) {
-  const prompt = CAVEMAN_PROMPTS[level];
+type JsonRecord = Record<string, unknown>;
+
+type OpenAIMessage = {
+  role?: string;
+  content?: string | Array<Record<string, unknown>>;
+  [key: string]: unknown;
+};
+
+type ClaudeSystemBlock = {
+  type?: string;
+  text?: string;
+  cache_control?: unknown;
+  [key: string]: unknown;
+};
+
+type GeminiSystem = {
+  parts?: Array<{ text?: string }>;
+  [key: string]: unknown;
+};
+
+export function injectCaveman(
+  body: JsonRecord | null | undefined,
+  format: string,
+  level: string,
+) {
+  const prompt = (CAVEMAN_PROMPTS as Record<string, string | undefined>)[level];
   if (!body || !prompt) return;
 
   switch (format) {
@@ -29,7 +53,7 @@ export function injectCaveman(body: any, format: any, level: any) {
 }
 
 // OpenAI-shaped: messages[] (chat) or input[] (responses) or instructions (responses string)
-function injectMessagesSystem(body: any, prompt: any) {
+function injectMessagesSystem(body: JsonRecord, prompt: string) {
   // OpenAI Responses API: top-level string field
   if (typeof body.instructions === "string") {
     body.instructions = body.instructions ? `${body.instructions}${SEP}${prompt}` : prompt;
@@ -37,21 +61,25 @@ function injectMessagesSystem(body: any, prompt: any) {
   }
 
   const arr = Array.isArray(body.messages)
-    ? body.messages
+    ? (body.messages as OpenAIMessage[])
     : Array.isArray(body.input)
-      ? body.input
+      ? (body.input as OpenAIMessage[])
       : null;
   if (!arr) return;
 
-  const idx = arr.findIndex((m: any) => m && (m.role === "system" || m.role === "developer"));
+  const idx = arr.findIndex(
+    (m: OpenAIMessage | null | undefined) =>
+      m && (m.role === "system" || m.role === "developer"),
+  );
   if (idx >= 0) {
-    appendToOpenAIMessage(arr[idx], prompt);
+    const msg = arr[idx];
+    if (msg) appendToOpenAIMessage(msg, prompt);
   } else {
     arr.unshift({ role: "system", content: prompt });
   }
 }
 
-function appendToOpenAIMessage(msg: any, prompt: any) {
+function appendToOpenAIMessage(msg: OpenAIMessage, prompt: string) {
   if (typeof msg.content === "string") {
     msg.content = `${msg.content}${SEP}${prompt}`;
   } else if (Array.isArray(msg.content)) {
@@ -64,24 +92,25 @@ function appendToOpenAIMessage(msg: any, prompt: any) {
 
 // Claude shape: body.system as string | array of {type:"text", text}
 // Insert before the last cache_control block to keep caveman inside the cached prefix.
-function injectClaudeSystem(body: any, prompt: any) {
+function injectClaudeSystem(body: JsonRecord, prompt: string) {
   if (typeof body.system === "string" && body.system.length > 0) {
     body.system = `${body.system}${SEP}${prompt}`;
     return;
   }
   if (Array.isArray(body.system)) {
-    const block = { type: "text", text: prompt };
+    const system = body.system as ClaudeSystemBlock[];
+    const block: ClaudeSystemBlock = { type: "text", text: prompt };
     let lastCacheIdx = -1;
-    for (let i = body.system.length - 1; i >= 0; i--) {
-      if (body.system[i]?.cache_control) {
+    for (let i = system.length - 1; i >= 0; i--) {
+      if (system[i]?.cache_control) {
         lastCacheIdx = i;
         break;
       }
     }
     if (lastCacheIdx >= 0) {
-      body.system.splice(lastCacheIdx, 0, block);
+      system.splice(lastCacheIdx, 0, block);
     } else {
-      body.system.push(block);
+      system.push(block);
     }
     return;
   }
@@ -90,11 +119,14 @@ function injectClaudeSystem(body: any, prompt: any) {
 
 // Gemini shape: body.system_instruction | body.systemInstruction | body.request.systemInstruction
 // Each shape: { parts: [{ text }] }
-function injectGeminiSystem(body: any, prompt: any) {
-  const target = body.request && typeof body.request === "object" ? body.request : body;
+function injectGeminiSystem(body: JsonRecord, prompt: string) {
+  const target =
+    body.request && typeof body.request === "object"
+      ? (body.request as JsonRecord)
+      : body;
   const useSnake = Object.hasOwn(target, "system_instruction");
   const key = useSnake ? "system_instruction" : "systemInstruction";
-  const sys = target[key];
+  const sys = target[key] as GeminiSystem | undefined;
   if (sys && Array.isArray(sys.parts)) {
     sys.parts.push({ text: prompt });
     return;

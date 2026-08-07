@@ -2,20 +2,43 @@
  * Shared combo (model combo) handling with fallback support
  */
 
+type ComboEntry = {
+  name?: string;
+  models?: string[];
+  [key: string]: unknown;
+};
+
+type CombosData = ComboEntry[] | { combos?: ComboEntry[] } | null | undefined;
+
+type ComboLogger = {
+  info: (scope: string, message: string) => void;
+  warn: (scope: string, message: string, meta?: Record<string, unknown>) => void;
+};
+
+type ComboChatOptions = {
+  body: unknown;
+  models: string[];
+  handleSingleModel: (body: unknown, modelStr: string) => Promise<Response>;
+  log: ComboLogger;
+};
+
 /**
  * Get combo models from combos data
  * @param {string} modelStr - Model string to check
  * @param {Array|Object} combosData - Array of combos or object with combos
  * @returns {string[]|null} Array of models or null if not a combo
  */
-export function getComboModelsFromData(modelStr: any, combosData: any) {
+export function getComboModelsFromData(
+  modelStr: string,
+  combosData: CombosData,
+): string[] | null {
   // Don't check if it's in provider/model format
   if (modelStr.includes("/")) return null;
 
   // Handle both array and object formats
   const combos = Array.isArray(combosData) ? combosData : combosData?.combos || [];
 
-  const combo = combos.find((c: any) => c.name === modelStr);
+  const combo = combos.find((c: ComboEntry) => c.name === modelStr);
   if (combo && combo.models && combo.models.length > 0) {
     return combo.models;
   }
@@ -31,21 +54,27 @@ export function getComboModelsFromData(modelStr: any, combosData: any) {
  * @param {Object} options.log - Logger object
  * @returns {Promise<Response>}
  */
-export async function handleComboChat({ body, models, handleSingleModel, log }: any) {
-  let lastError = null;
+export async function handleComboChat({
+  body,
+  models,
+  handleSingleModel,
+  log,
+}: ComboChatOptions): Promise<Response> {
+  let lastError: string | null = null;
 
   for (let i = 0; i < models.length; i++) {
-    const modelStr = models[i];
+    const modelStr = models[i]!;
     log.info("COMBO", `Trying model ${i + 1}/${models.length}: ${modelStr}`);
 
-    let result;
+    let result: Response;
     try {
       result = await handleSingleModel(body, modelStr);
-    } catch (e: any) {
-      lastError = `${modelStr}: ${e.message}`;
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      lastError = `${modelStr}: ${message}`;
       log.warn("COMBO", `Model threw exception, trying next`, {
         model: modelStr,
-        error: e.message,
+        error: message,
       });
       continue;
     }

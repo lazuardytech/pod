@@ -1,11 +1,19 @@
 import { DefaultExecutor } from "./default.js";
+import type { ExecutorCredentials, ExecutorHeaders } from "./base.js";
 
 export class AzureExecutor extends DefaultExecutor {
   constructor() {
     super("azure");
   }
 
-  buildUrl(model: any, stream: any, urlIndex: any = 0, credentials: any = null) {
+  buildUrl(
+    model: string,
+    stream: boolean,
+    urlIndex: number = 0,
+    credentials: ExecutorCredentials | null = null,
+  ): string {
+    void stream;
+    void urlIndex;
     const azureEndpoint =
       credentials?.providerSpecificData?.azureEndpoint ||
       process.env.AZURE_ENDPOINT ||
@@ -26,8 +34,8 @@ export class AzureExecutor extends DefaultExecutor {
     return `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
   }
 
-  buildHeaders(credentials: any, stream: any = true) {
-    const headers: Record<string, string> = {
+  buildHeaders(credentials: ExecutorCredentials, stream: boolean = true): ExecutorHeaders {
+    const headers: ExecutorHeaders = {
       "Content-Type": "application/json",
       ...this.config.headers,
     };
@@ -52,7 +60,13 @@ export class AzureExecutor extends DefaultExecutor {
     return headers;
   }
 
-  transformRequest(model: any, body: any, _stream: any, _credentials: any) {
+  transformRequest(
+    model: string,
+    body: unknown,
+    _stream: boolean,
+    _credentials: ExecutorCredentials,
+  ): unknown {
+    void model;
     return body;
   }
 }

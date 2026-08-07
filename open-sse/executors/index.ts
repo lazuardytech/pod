@@ -1,5 +1,6 @@
 import { AntigravityExecutor } from "./antigravity.js";
 import { AzureExecutor } from "./azure.js";
+import { BaseExecutor } from "./base.js";
 import { CodexExecutor } from "./codex.js";
 import { CommandCodeExecutor } from "./commandcode.js";
 import { CursorExecutor } from "./cursor.js";
@@ -17,7 +18,7 @@ import { QoderExecutor } from "./qoder.js";
 import { QwenExecutor } from "./qwen.js";
 import { VertexExecutor } from "./vertex.js";
 
-const executors: Record<string, any> = {
+const executors: Record<string, BaseExecutor> = {
   antigravity: new AntigravityExecutor(),
   azure: new AzureExecutor(),
   "gemini-cli": new GeminiCLIExecutor(),
@@ -39,15 +40,15 @@ const executors: Record<string, any> = {
   commandcode: new CommandCodeExecutor(),
 };
 
-const defaultCache = new Map<string, any>();
+const defaultCache = new Map<string, BaseExecutor>();
 
-export function getExecutor(provider: any) {
-  if (executors[provider]) return executors[provider];
+export function getExecutor(provider: string): BaseExecutor {
+  if (executors[provider]) return executors[provider]!;
   if (!defaultCache.has(provider)) defaultCache.set(provider, new DefaultExecutor(provider));
-  return defaultCache.get(provider);
+  return defaultCache.get(provider)!;
 }
 
-export function hasSpecializedExecutor(provider: any) {
+export function hasSpecializedExecutor(provider: string): boolean {
   return !!executors[provider];
 }
 

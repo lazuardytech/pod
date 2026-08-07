@@ -15,10 +15,31 @@ const VOICES = {
   sage: { id: "sage", name: "Sage" },
   shimmer: { id: "shimmer", name: "Shimmer" },
   verse: { id: "verse", name: "Verse" },
+} as const;
+
+type VoiceKey = keyof typeof VOICES;
+
+type TtsVoice = {
+  id: string;
+  name: string;
+  type: "tts";
 };
 
-const v = (...keys: any) =>
-  keys.map((k: any) => ({ ...(VOICES as Record<string, any>)[k], type: "tts" }));
+type TtsModelEntry = {
+  id: string;
+  name: string;
+  type: string;
+};
+
+type TtsProviderConfig = {
+  models?: TtsModelEntry[];
+  voices?: Record<string, TtsVoice[]>;
+  allVoices?: TtsVoice[];
+  defaults?: readonly TtsModelEntry[] | TtsModelEntry[];
+};
+
+const v = (...keys: VoiceKey[]): TtsVoice[] =>
+  keys.map((k: VoiceKey) => ({ ...VOICES[k], type: "tts" as const }));
 
 // 9 voices for tts-1 / tts-1-hd
 const VOICES_STANDARD = v(
@@ -81,7 +102,7 @@ const GEMINI_VOICES = [
   "Sadachbia",
   "Sadaltager",
   "Sulafat",
-].map((id: any) => ({ id, name: id, type: "tts" }));
+].map((id: string): TtsVoice => ({ id, name: id, type: "tts" }));
 
 // ── TTS Config (config-driven, single source of truth) ─────────────────────
 export const TTS_MODELS_CONFIG = {
@@ -156,17 +177,17 @@ export const TTS_MODELS_CONFIG = {
 };
 
 // ── Helper: get voices for a specific model ────────────────────────────────
-export function getTtsVoicesForModel(provider: any, modelId: any) {
-  const cfg = (TTS_MODELS_CONFIG as Record<string, any>)[provider];
+export function getTtsVoicesForModel(provider: string, modelId: string) {
+  const cfg = (TTS_MODELS_CONFIG as Record<string, TtsProviderConfig | undefined>)[provider];
   if (!cfg?.voices) return null;
   return cfg.voices[modelId] || cfg.allVoices || null;
 }
 
 // ── Build flat entries for PROVIDER_MODELS backward compat ─────────────────
 export function buildTtsProviderModels() {
-  const entries: Record<string, any> = {};
+  const entries: Record<string, unknown> = {};
   for (const [provider, cfg] of Object.entries(TTS_MODELS_CONFIG)) {
-    const typedCfg = cfg as any;
+    const typedCfg = cfg as TtsProviderConfig;
     if (typedCfg.models) entries[`${provider}-tts-models`] = typedCfg.models;
     if (typedCfg.allVoices) entries[`${provider}-tts-voices`] = typedCfg.allVoices;
     if (typedCfg.defaults) entries[provider] = typedCfg.defaults;

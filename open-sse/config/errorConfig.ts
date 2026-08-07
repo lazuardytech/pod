@@ -138,7 +138,7 @@ const TRANSIENT_BODY_PATTERNS = [
  * @param {string} bodyText
  * @returns {boolean}
  */
-export function isTransientErrorBody(bodyText: any) {
+export function isTransientErrorBody(bodyText: unknown): boolean {
   if (!bodyText || typeof bodyText !== "string") return false;
-  return TRANSIENT_BODY_PATTERNS.some((pattern: any) => pattern.test(bodyText));
+  return TRANSIENT_BODY_PATTERNS.some((pattern: RegExp) => pattern.test(bodyText));
 }

@@ -6,13 +6,13 @@ import { LS_EXT_SUMMARY_TOP, LS_NOISE_DIRS } from "../constants.js";
 const LS_DATE_RE =
   /\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+(\d{4}|\d{2}:\d{2})\s+/;
 
-function humanSize(bytes: any) {
+function humanSize(bytes: number) {
   if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)}M`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)}K`;
   return `${bytes}B`;
 }
 
-function parseLsLine(line: any) {
+function parseLsLine(line: string) {
   const m = LS_DATE_RE.exec(line);
   if (!m) return null;
   const name = line.slice(m.index + m[0].length);
@@ -20,14 +20,15 @@ function parseLsLine(line: any) {
   const beforeParts = beforeDate.split(/\s+/).filter(Boolean);
   if (beforeParts.length < 4) return null;
 
-  const perms = beforeParts[0];
+  const perms = beforeParts[0] ?? "";
   const fileType = perms.charAt(0);
 
   // size = rightmost parseable number before the date
   let size = 0;
   for (let i = beforeParts.length - 1; i >= 0; i--) {
-    const n = Number(beforeParts[i]);
-    if (Number.isInteger(n) && String(n) === beforeParts[i]) {
+    const part = beforeParts[i] ?? "";
+    const n = Number(part);
+    if (Number.isInteger(n) && String(n) === part) {
       size = n;
       break;
     }
@@ -35,10 +36,10 @@ function parseLsLine(line: any) {
   return { fileType, size, name };
 }
 
-export function ls(input: any) {
-  const dirs = [];
-  const files = []; // [name, sizeStr]
-  const byExt = new Map();
+export function ls(input: string) {
+  const dirs: string[] = [];
+  const files: [string, string][] = []; // [name, sizeStr]
+  const byExt = new Map<string, number>();
 
   for (const line of input.split("\n")) {
     if (line.startsWith("total ") || line.length === 0) continue;
@@ -47,7 +48,7 @@ export function ls(input: any) {
     if (parsed.name === "." || parsed.name === "..") continue;
 
     // Rust ls.rs: show_all flag respected — for LLM context always skip noise
-    if (LS_NOISE_DIRS.includes(parsed.name)) continue;
+    if ((LS_NOISE_DIRS as readonly string[]).includes(parsed.name)) continue;
 
     if (parsed.fileType === "d") {
       dirs.push(parsed.name);
@@ -68,8 +69,10 @@ export function ls(input: any) {
   // Summary line (Rust port)
   let summary = `\nSummary: ${files.length} files, ${dirs.length} dirs`;
   if (byExt.size > 0) {
-    const ext = Array.from(byExt.entries()).sort((a: any, b: any) => b[1] - a[1]);
-    const parts = ext.slice(0, LS_EXT_SUMMARY_TOP).map(([e, c]: any) => `${c} ${e}`);
+    const ext = Array.from(byExt.entries()).sort(
+      (a: [string, number], b: [string, number]) => b[1] - a[1],
+    );
+    const parts = ext.slice(0, LS_EXT_SUMMARY_TOP).map(([e, c]: [string, number]) => `${c} ${e}`);
     summary += ` (${parts.join(", ")}`;
     if (ext.length > LS_EXT_SUMMARY_TOP) {
       summary += `, +${ext.length - LS_EXT_SUMMARY_TOP} more`;

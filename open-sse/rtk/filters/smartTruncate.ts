@@ -6,7 +6,7 @@ import {
   SMART_TRUNCATE_TAIL,
 } from "../constants.js";
 
-export function smartTruncate(input: any) {
+export function smartTruncate(input: string) {
   const lines = input.split("\n");
   if (lines.length < SMART_TRUNCATE_MIN_LINES) return input;
 

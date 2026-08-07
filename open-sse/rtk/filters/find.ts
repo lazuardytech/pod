@@ -2,16 +2,16 @@
 // Group by parent dir, show basenames, cap 10/dir and 20 dirs total
 import { FIND_PER_DIR_MAX, FIND_TOTAL_DIR_MAX } from "../constants.js";
 
-export function find(input: any) {
-  const lines = input.split("\n").filter((l: any) => l.trim());
+export function find(input: string) {
+  const lines = input.split("\n").filter((l: string) => l.trim());
   if (lines.length === 0) return input;
 
-  const byDir = new Map();
+  const byDir = new Map<string, string[]>();
 
   for (const path of lines) {
     const lastSlash = path.lastIndexOf("/");
-    let dir;
-    let basename;
+    let dir: string;
+    let basename: string;
     if (lastSlash === -1) {
       dir = ".";
       basename = path;
@@ -21,7 +21,7 @@ export function find(input: any) {
       basename = path.slice(lastSlash + 1);
     }
     if (!byDir.has(dir)) byDir.set(dir, []);
-    byDir.get(dir).push(basename);
+    byDir.get(dir)!.push(basename);
   }
 
   // Rust: dirs.sort_by_key(|(d, _)| d.clone())
@@ -30,7 +30,7 @@ export function find(input: any) {
 
   const showDirs = dirs.slice(0, FIND_TOTAL_DIR_MAX);
   for (const dir of showDirs) {
-    const files = byDir.get(dir);
+    const files = byDir.get(dir) ?? [];
     out += `${dir}/ (${files.length}):\n`;
     const showFiles = files.slice(0, FIND_PER_DIR_MAX);
     for (const f of showFiles) out += `  ${f}\n`;

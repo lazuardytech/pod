@@ -1,13 +1,18 @@
 import crypto from "node:crypto";
 import { PROVIDERS } from "../config/providers.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorConfigInput,
+  type ExecutorCredentials,
+  type ExecutorHeaders,
+} from "./base.js";
 
 /**
  * IFlowExecutor - Executor for iFlow API with HMAC-SHA256 signature
  */
 export class IFlowExecutor extends BaseExecutor {
   constructor() {
-    super("iflow", PROVIDERS.iflow);
+    super("iflow", (PROVIDERS as Record<string, ExecutorConfigInput>).iflow!);
   }
 
   /**
@@ -26,7 +31,12 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {string} apiKey - API key for signing
    * @returns {string} Hex-encoded signature
    */
-  createIFlowSignature(userAgent: any, sessionID: any, timestamp: any, apiKey: any) {
+  createIFlowSignature(
+    userAgent: string,
+    sessionID: string,
+    timestamp: number,
+    apiKey: string,
+  ) {
     if (!apiKey) return "";
     const payload = `${userAgent}:${sessionID}:${timestamp}`;
     const hmac = crypto.createHmac("sha256", apiKey);
@@ -40,7 +50,7 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {boolean} stream - Whether streaming is enabled
    * @returns {object} Headers object
    */
-  buildHeaders(credentials: any, stream: any = true) {
+  buildHeaders(credentials: ExecutorCredentials, stream: boolean = true): ExecutorHeaders {
     // Generate session ID and timestamp
     const sessionID = `session-${this.generateUUID()}`;
     const timestamp = Date.now();
@@ -55,7 +65,7 @@ export class IFlowExecutor extends BaseExecutor {
     const signature = this.createIFlowSignature(userAgent, sessionID, timestamp, apiKey);
 
     // Build headers
-    const headers: Record<string, string> = {
+    const headers: ExecutorHeaders = {
       "Content-Type": "application/json",
       ...this.config.headers,
       "session-id": sessionID,
@@ -84,8 +94,13 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {object} credentials - Provider credentials
    * @returns {string} API URL
    */
-  buildUrl(_model: any, _stream: any, _urlIndex: any = 0, _credentials: any = null) {
-    return this.config.baseUrl;
+  buildUrl(
+    _model: string,
+    _stream: boolean,
+    _urlIndex: number = 0,
+    _credentials: ExecutorCredentials | null = null,
+  ): string {
+    return this.config.baseUrl!;
   }
 
   /**
@@ -96,12 +111,19 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {object} credentials - Provider credentials
    * @returns {object} Transformed body
    */
-  transformRequest(model: any, body: any, stream: any, _credentials: any) {
+  transformRequest(
+    model: string,
+    body: unknown,
+    stream: boolean,
+    _credentials: ExecutorCredentials,
+  ): unknown {
+    void model;
+    const record = body as Record<string, unknown>;
     // Inject stream_options for streaming requests to get usage data
-    if (stream && body.messages && !body.stream_options) {
-      body.stream_options = { include_usage: true };
+    if (stream && record.messages && !record.stream_options) {
+      record.stream_options = { include_usage: true };
     }
-    return body;
+    return record;
   }
 }
 

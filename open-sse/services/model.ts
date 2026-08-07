@@ -1,5 +1,5 @@
 // Provider alias to ID mapping
-const ALIAS_TO_PROVIDER_ID = {
+const ALIAS_TO_PROVIDER_ID: Record<string, string> = {
   cc: "claude",
   cx: "codex",
   gc: "gemini-cli",
@@ -87,14 +87,14 @@ const ALIAS_TO_PROVIDER_ID = {
 /**
  * Resolve provider alias to provider ID
  */
-export function resolveProviderAlias(aliasOrId: any) {
-  return (ALIAS_TO_PROVIDER_ID as Record<string, any>)[aliasOrId] || aliasOrId;
+export function resolveProviderAlias(aliasOrId: string): string {
+  return ALIAS_TO_PROVIDER_ID[aliasOrId] || aliasOrId;
 }
 
 /**
  * Parse model string: "alias/model" or "provider/model" or just alias
  */
-export function parseModel(modelStr: any) {
+export function parseModel(modelStr: string | null | undefined) {
   if (!modelStr) {
     return { provider: null, model: null, isAlias: false, providerAlias: null };
   }
@@ -121,8 +121,20 @@ export function parseModel(modelStr: any) {
  * Resolve model alias from aliases object
  * Format: { "alias": "provider/model" }
  */
-export function resolveModelAliasFromMap(alias: any, aliases: any) {
-  if (!aliases) return null;
+export type ModelAliasResolved = {
+  provider: string;
+  model: string;
+};
+
+export type ModelAliasEntry = string | ModelAliasResolved;
+
+export type ModelAliasMap = Record<string, ModelAliasEntry>;
+
+export function resolveModelAliasFromMap(
+  alias: string | null | undefined,
+  aliases: ModelAliasMap | null | undefined,
+): ModelAliasResolved | null {
+  if (!aliases || alias == null) return null;
 
   // Check if alias exists
   const resolved = aliases[alias];
@@ -154,7 +166,14 @@ export function resolveModelAliasFromMap(alias: any, aliases: any) {
  * @param {string} modelStr - Model string
  * @param {object|function} aliasesOrGetter - Aliases object or async function to get aliases
  */
-export async function getModelInfoCore(modelStr: any, aliasesOrGetter: any) {
+export async function getModelInfoCore(
+  modelStr: string | null | undefined,
+  aliasesOrGetter:
+    | ModelAliasMap
+    | (() => ModelAliasMap | Promise<ModelAliasMap | null | undefined>)
+    | null
+    | undefined,
+) {
   const parsed = parseModel(modelStr);
 
   if (!parsed.isAlias) {
@@ -168,7 +187,7 @@ export async function getModelInfoCore(modelStr: any, aliasesOrGetter: any) {
   const aliases = typeof aliasesOrGetter === "function" ? await aliasesOrGetter() : aliasesOrGetter;
 
   // Resolve alias
-  const resolved = resolveModelAliasFromMap(parsed.model, aliases);
+  const resolved = resolveModelAliasFromMap(parsed.model, aliases ?? null);
   if (resolved) {
     return resolved;
   }
@@ -184,7 +203,7 @@ export async function getModelInfoCore(modelStr: any, aliasesOrGetter: any) {
  * Infer provider from model name prefix
  * Used as fallback when no provider prefix or alias is given
  */
-function inferProviderFromModelName(modelName: any) {
+function inferProviderFromModelName(modelName: string | null | undefined): string {
   if (!modelName) return "openai";
   const m = modelName.toLowerCase();
   if (m.startsWith("claude-")) return "anthropic";

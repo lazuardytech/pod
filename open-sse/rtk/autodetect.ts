@@ -33,7 +33,7 @@ const RE_BUILD_CARGO =
   /^\s*(Compiling|Checking|Building|Finished|Downloading|Updating|Fresh)\s+\S/m;
 const RE_BUILD_YARN = /^(yarn|pnpm)\s+/m;
 
-export function autoDetectFilter(text: any) {
+export function autoDetectFilter(text: string) {
   // Rust: floor_char_boundary to avoid UTF-8 split — JS .slice() by char is safe
   const head = text.length > DETECT_WINDOW ? text.slice(0, DETECT_WINDOW) : text;
 
@@ -53,7 +53,7 @@ export function autoDetectFilter(text: any) {
   if (RE_GIT_STATUS.test(head) || isMostlyPorcelain(head)) return gitStatus;
 
   const lines = head.split("\n");
-  const nonEmpty = lines.filter((l: any) => l.trim().length > 0);
+  const nonEmpty = lines.filter((l: string) => l.trim().length > 0);
 
   // Rust grep rule: first 5 non-empty lines, ANY matches "file:number:content"
   const first5 = nonEmpty.slice(0, 5);
@@ -85,7 +85,7 @@ export function autoDetectFilter(text: any) {
   return null;
 }
 
-function isGrepLine(line: any) {
+function isGrepLine(line: string) {
   // Rust: splitn(3, ':') → parts.len()==3 && parts[1].parse::<usize>().is_ok()
   const first = line.indexOf(":");
   if (first === -1) return false;
@@ -95,21 +95,21 @@ function isGrepLine(line: any) {
   return /^\d+$/.test(lineno);
 }
 
-function isPathLike(line: any) {
+function isPathLike(line: string) {
   const t = line.trim();
   if (t.length === 0) return false;
   if (t.includes(":")) return false;
   return t.startsWith(".") || t.startsWith("/") || t.includes("/");
 }
 
-function isMostlyPorcelain(head: any) {
-  const lines = head.split("\n").filter((l: any) => l.trim());
+function isMostlyPorcelain(head: string) {
+  const lines = head.split("\n").filter((l: string) => l.trim());
   if (lines.length < 3) return false;
-  const hits = lines.filter((l: any) => RE_PORCELAIN.test(l)).length;
+  const hits = lines.filter((l: string) => RE_PORCELAIN.test(l)).length;
   return hits / lines.length >= 0.6;
 }
 
-function isLineNumbered(lines: any) {
+function isLineNumbered(lines: string[]) {
   let hits = 0;
   let nonEmpty = 0;
   const sample = lines.slice(0, 100);
@@ -122,7 +122,7 @@ function isLineNumbered(lines: any) {
   return hits / nonEmpty >= READ_NUMBERED_MIN_HIT_RATIO;
 }
 
-function countMatches(text: any, re: any) {
+function countMatches(text: string, re: RegExp) {
   const g = new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g");
   return (text.match(g) || []).length;
 }

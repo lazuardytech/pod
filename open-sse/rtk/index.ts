@@ -1,23 +1,61 @@
 // RTK port: compress tool_result content in LLM request bodies
 // Injected at the top of translateRequest (before any format translation)
 
-import { safeApply } from "./applyFilter.js";
+import { safeApply, type RtkFilterFn } from "./applyFilter.js";
 import { autoDetectFilter } from "./autodetect.js";
 import { MIN_COMPRESS_SIZE, RAW_CAP } from "./constants.js";
 
+type JsonRecord = Record<string, unknown>;
+
+type ContentPart = {
+  type?: string;
+  text?: string;
+  [key: string]: unknown;
+};
+
+type ToolResultBlock = {
+  type?: string;
+  is_error?: boolean;
+  content?: string | ContentPart[];
+  [key: string]: unknown;
+};
+
+type CompressMessage = {
+  type?: string;
+  role?: string;
+  content?: string | ToolResultBlock[];
+  output?: string | ContentPart[];
+  [key: string]: unknown;
+};
+
+export type RtkHit = {
+  shape: string;
+  filter: string;
+  saved: number;
+};
+
+export type RtkStats = {
+  bytesBefore: number;
+  bytesAfter: number;
+  hits: RtkHit[];
+};
+
 // Compress tool_result content in-place. Returns stats or null if disabled/failed.
-export function compressMessages(body: any, enabled: any) {
+export function compressMessages(
+  body: JsonRecord | null | undefined,
+  enabled: unknown,
+): RtkStats | null {
   if (!enabled) return null;
   if (!body) return null;
   // Support both OpenAI/Claude "messages" and OpenAI Responses "input"
   const items = Array.isArray(body.messages)
-    ? body.messages
+    ? (body.messages as CompressMessage[])
     : Array.isArray(body.input)
-      ? body.input
+      ? (body.input as CompressMessage[])
       : null;
   if (!items) return null;
 
-  const stats = { bytesBefore: 0, bytesAfter: 0, hits: [] };
+  const stats: RtkStats = { bytesBefore: 0, bytesAfter: 0, hits: [] };
   try {
     for (let i = 0; i < items.length; i++) {
       const msg = items[i];
@@ -49,7 +87,7 @@ export function compressMessages(body: any, enabled: any) {
       // Shape 1b: OpenAI tool message — { role:"tool", content:[{type:"text", text:"..."}] }
       if (msg.role === "tool") {
         for (let k = 0; k < msg.content.length; k++) {
-          const part = msg.content[k];
+          const part = msg.content[k] as ContentPart;
           if (part && part.type === "text" && typeof part.text === "string") {
             part.text = compressText(part.text, stats, "openai-tool-array");
           }
@@ -77,14 +115,15 @@ export function compressMessages(body: any, enabled: any) {
         }
       }
     }
-  } catch (e: any) {
-    console.warn("[RTK] compressMessages error:", e.message);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.warn("[RTK] compressMessages error:", message);
     return null;
   }
   return stats;
 }
 
-function compressText(text: any, stats: any, shape: any) {
+function compressText(text: string, stats: RtkStats, shape: string): string {
   const bytesIn = text.length;
   stats.bytesBefore += bytesIn;
 
@@ -93,7 +132,7 @@ function compressText(text: any, stats: any, shape: any) {
     return text;
   }
 
-  const fn = autoDetectFilter(text);
+  const fn = autoDetectFilter(text) as RtkFilterFn | null;
   if (!fn) {
     stats.bytesAfter += bytesIn;
     return text;
@@ -108,15 +147,19 @@ function compressText(text: any, stats: any, shape: any) {
   }
 
   stats.bytesAfter += out.length;
-  stats.hits.push({ shape, filter: fn.filterName || fn.name, saved: bytesIn - out.length });
+  stats.hits.push({
+    shape,
+    filter: fn.filterName || fn.name || "anonymous",
+    saved: bytesIn - out.length,
+  });
   return out;
 }
 
 // Convenience: format a log line from stats
-export function formatRtkLog(stats: any) {
+export function formatRtkLog(stats: RtkStats | null | undefined): string | null {
   if (!stats || !stats.hits || stats.hits.length === 0) return null;
   const saved = stats.bytesBefore - stats.bytesAfter;
   const pct = stats.bytesBefore > 0 ? ((saved / stats.bytesBefore) * 100).toFixed(1) : "0";
-  const filters = Array.from(new Set(stats.hits.map((h: any) => h.filter))).join(",");
+  const filters = Array.from(new Set(stats.hits.map((h: RtkHit) => h.filter))).join(",");
   return `[RTK] saved ${saved}B / ${stats.bytesBefore}B (${pct}%) via [${filters}] hits=${stats.hits.length}`;
 }

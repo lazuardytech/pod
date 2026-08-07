@@ -2,7 +2,7 @@
 // Input format: "file:lineno:content" — splitn(3, ':') in Rust
 import { GREP_PER_FILE_MAX } from "../constants.js";
 
-export function grep(input: any) {
+export function grep(input: string) {
   const byFile = new Map();
   let total = 0;
 
