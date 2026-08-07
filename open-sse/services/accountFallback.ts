@@ -23,6 +23,12 @@ type AccountRecord = Record<string, unknown> & {
   backoffLevel?: unknown;
 };
 
+type FallbackDecision = {
+  cooldownMs: number;
+  newBackoffLevel?: number;
+  shouldFallback: boolean;
+};
+
 /**
  * Calculate exponential backoff cooldown for rate limits (429)
  * Level 1: 1s, Level 2: 2s, Level 3: 4s... → max 4 min
@@ -43,7 +49,11 @@ export function getQuotaCooldown(backoffLevel = 0) {
  * @param {number} backoffLevel - Current backoff level for exponential backoff
  * @returns {{ shouldFallback: boolean, cooldownMs: number, newBackoffLevel?: number }}
  */
-export function checkFallbackError(status: number, errorText: unknown, backoffLevel = 0) {
+export function checkFallbackError(
+  status: number,
+  errorText: unknown,
+  backoffLevel = 0,
+): FallbackDecision {
   const lowerError = errorText
     ? (typeof errorText === "string" ? errorText : JSON.stringify(errorText)).toLowerCase()
     : "";
@@ -63,7 +73,7 @@ export function checkFallbackError(status: number, errorText: unknown, backoffLe
     if (rule.untilNextMinute) {
       return { shouldFallback: true, cooldownMs: msUntilNextMinute(), newBackoffLevel: 0 };
     }
-    return { shouldFallback: true, cooldownMs: rule.cooldownMs };
+    return { shouldFallback: true, cooldownMs: rule.cooldownMs ?? 0 };
   };
 
   const rawError = errorText
@@ -107,7 +117,7 @@ export function getEarliestRateLimitedUntil(accounts: AccountRecord[]) {
   const now = Date.now();
   for (const acc of accounts) {
     if (!acc.rateLimitedUntil) continue;
-    const until = new Date(acc.rateLimitedUntil).getTime();
+    const until = new Date(acc.rateLimitedUntil as string | number | Date).getTime();
     if (until <= now) continue;
     if (!earliest || until < earliest) earliest = until;
   }
@@ -197,7 +207,9 @@ export function isConnectionLockActive(connection: AccountRecord | null | undefi
 export function getConnectionLockUntil(connection: AccountRecord | null | undefined) {
   const until = connection?.[CONN_LOCK_UNTIL_KEY] || connection?.data?.[CONN_LOCK_UNTIL_KEY];
   if (!until) return null;
-  return new Date(until as string | number | Date).getTime() > Date.now() ? until : null;
+  return new Date(until as string | number | Date).getTime() > Date.now()
+    ? (until as string)
+    : null;
 }
 
 /**

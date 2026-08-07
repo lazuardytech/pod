@@ -91,11 +91,11 @@ type ResponsesPayload = {
 };
 
 type ChatSearchParams = {
-  provider: string;
-  query: string;
+  provider: string | undefined;
+  query: string | undefined;
   maxResults?: number;
   model?: string;
-  credentials?: { apiKey?: string; accessToken?: string };
+  credentials?: Record<string, unknown> | null;
   log?: {
     info?: (...args: unknown[]) => void;
     warn?: (...args: unknown[]) => void;
@@ -176,11 +176,11 @@ const CHAT_SEARCH_CONFIG: Record<string, ChatSearchConfig> = {
         .filter(Boolean)
         .join("");
       const chunks = candidate?.groundingMetadata?.groundingChunks || [];
-      const citations = chunks
-        .map((ch) => ch?.web)
-        .filter(Boolean)
-        .map((w) => ({ url: w?.uri || w?.url, title: w?.title || "" }))
-        .filter((c): c is CitationCandidate & { url: string } => Boolean(c.url));
+      const citations = chunks.flatMap((ch) => {
+        const web = ch?.web;
+        const url = web?.uri || web?.url;
+        return url ? [{ url, title: web?.title || "" }] : [];
+      });
       const tokens = payload?.usageMetadata?.totalTokenCount || 0;
       return { text, citations, tokens };
     },
@@ -209,11 +209,10 @@ const CHAT_SEARCH_CONFIG: Record<string, ChatSearchConfig> = {
       const msg = payload?.choices?.[0]?.message || {};
       const text = msg.content || "";
       const annotations = Array.isArray(msg.annotations) ? msg.annotations : [];
-      const fromAnn = annotations
-        .map((a) => a?.url_citation)
-        .filter(Boolean)
-        .map((u) => ({ url: u?.url, title: u?.title || "" }))
-        .filter((c): c is CitationCandidate & { url: string } => Boolean(c.url));
+      const fromAnn = annotations.flatMap((annotation) => {
+        const citation = annotation?.url_citation;
+        return citation?.url ? [{ url: citation.url, title: citation.title || "" }] : [];
+      });
       const fromTop = Array.isArray(payload?.citations)
         ? payload.citations
             .map(normalizeCitation)
@@ -390,7 +389,8 @@ export async function handleChatSearch({
   log,
 }: ChatSearchParams) {
   const startTime = Date.now();
-  const cfg = CHAT_SEARCH_CONFIG[provider];
+  const providerId = provider || "";
+  const cfg = CHAT_SEARCH_CONFIG[providerId];
 
   if (!cfg) {
     return {
@@ -404,7 +404,8 @@ export async function handleChatSearch({
     return { success: false, status: 400, error: "Missing query" };
   }
 
-  const token = credentials?.apiKey || credentials?.accessToken;
+  const rawToken = credentials?.apiKey || credentials?.accessToken;
+  const token = typeof rawToken === "string" ? rawToken : "";
   if (!token) {
     return {
       success: false,
@@ -414,7 +415,9 @@ export async function handleChatSearch({
   }
 
   const limit =
-    Number.isFinite(maxResults) && maxResults > 0 ? Math.floor(maxResults) : DEFAULT_MAX_RESULTS;
+    typeof maxResults === "number" && Number.isFinite(maxResults) && maxResults > 0
+      ? Math.floor(maxResults)
+      : DEFAULT_MAX_RESULTS;
   const useModel = model || cfg.defaultModel;
   const url = cfg.endpoint(useModel);
   const body = cfg.buildBody(query, useModel);
@@ -485,16 +488,16 @@ export async function handleChatSearch({
   const results = limited
     .map(normalizeCitation)
     .filter((c): c is CitationCandidate & { url: string } => Boolean(c))
-    .map((c, i) => toResult(c, i, provider, retrievedAt));
+    .map((c, i) => toResult(c, i, providerId, retrievedAt));
 
   return {
     success: true,
     status: 200,
     data: {
-      provider,
+      provider: providerId,
       query,
       results,
-      answer: { source: provider, text: text || "", model: useModel },
+      answer: { source: providerId, text: text || "", model: useModel },
       usage: { queries_used: 1, search_cost_usd: 0, llm_tokens: tokens || 0 },
       metrics: {
         response_time_ms: Date.now() - startTime,

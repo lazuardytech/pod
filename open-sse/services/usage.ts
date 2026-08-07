@@ -891,8 +891,14 @@ async function getKiroUsage(
 ) {
   // Default profileArn fallback
   const DEFAULT_PROFILE_ARN = "arn:aws:codewhisperer:us-east-1:638616132270:profile/AAAACCCCXXXX";
-  const profileArn = providerSpecificData?.profileArn || DEFAULT_PROFILE_ARN;
-  const authMethod = providerSpecificData?.authMethod || "builder-id";
+  const profileArn =
+    typeof providerSpecificData?.profileArn === "string"
+      ? providerSpecificData.profileArn
+      : DEFAULT_PROFILE_ARN;
+  const authMethod =
+    typeof providerSpecificData?.authMethod === "string"
+      ? providerSpecificData.authMethod
+      : "builder-id";
 
   const getUsageParams = new URLSearchParams({
     isEmailRequired: "true",
@@ -1233,6 +1239,7 @@ async function getMiniMaxUsage(
 
   for (let index = 0; index < usageUrls.length; index += 1) {
     const usageUrl = usageUrls[index];
+    if (!usageUrl) continue;
     const canFallback = index < usageUrls.length - 1;
 
     try {
@@ -1259,7 +1266,7 @@ async function getMiniMaxUsage(
         }
       }
 
-      const baseResp = (payload?.base_resp ?? payload?.baseResp) || {};
+      const baseResp = ((payload?.base_resp ?? payload?.baseResp) || {}) as Record<string, unknown>;
       const apiStatusCode = Number(baseResp.status_code ?? baseResp.statusCode) || 0;
       const apiStatusMessage = String(baseResp.status_msg ?? baseResp.statusMsg ?? "").trim();
       const combined = `${apiStatusMessage} ${rawText}`.trim();

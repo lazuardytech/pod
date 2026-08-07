@@ -368,7 +368,7 @@ export class CodexExecutor extends BaseExecutor {
         const c = entry as ImageContent;
         if (c.type !== "image_url") return c;
         const url = typeof c.image_url === "string" ? c.image_url : c.image_url?.url;
-        const detail = c.image_url?.detail || "auto";
+        const detail = typeof c.image_url === "string" ? "auto" : c.image_url?.detail || "auto";
         if (!url) return c;
         if (url.startsWith("data:")) return { type: "input_image", image_url: url, detail };
         const fetched = await fetchImageAsBase64(url, { timeoutMs: 15000 });

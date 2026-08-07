@@ -18,6 +18,11 @@ import {
 export { COLORS, formatSSE };
 
 type JsonRecord = Record<string, unknown>;
+type MutableStreamChunk = JsonRecord & {
+  choices?: Array<{ finish_reason?: unknown }>;
+  type?: unknown;
+  usage?: unknown;
+};
 
 type RequestLogger = {
   appendConvertedChunk?: (chunk: string) => void;
@@ -120,12 +125,7 @@ function extractReasoningSummaryText(value: unknown): string | null {
 
   const nested = value.summary;
   const nestedContent =
-    nested &&
-    typeof nested === "object" &&
-    !Array.isArray(nested) &&
-    typeof nested.content === "string"
-      ? nested.content.trim()
-      : "";
+    isRecord(nested) && typeof nested.content === "string" ? nested.content.trim() : "";
   return nestedContent.length > 0 ? nestedContent : null;
 }
 
@@ -282,7 +282,7 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
 
           // Passthrough mode: normalize and forward
           if (mode === STREAM_MODE.PASSTHROUGH) {
-            let output;
+            let output = "";
             let injectedUsage = false;
 
             if (trimmed.startsWith("data:") && trimmed.slice(5).trim() !== "[DONE]") {
@@ -496,31 +496,32 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
 
           if (translated?.length > 0) {
             for (const item of translated) {
+              const streamItem = item as MutableStreamChunk;
               // Filter empty chunks
-              if (!hasValuableContent(item, sourceFormat)) {
+              if (!hasValuableContent(streamItem, sourceFormat!)) {
                 continue; // Skip this empty chunk
               }
 
               // Inject estimated usage if finish chunk has no valid usage
               const isFinishChunk =
-                item.type === "message_delta" || item.choices?.[0]?.finish_reason;
+                streamItem.type === "message_delta" || streamItem.choices?.[0]?.finish_reason;
               if (includeUsage) {
                 if (
                   state.finishReason &&
                   isFinishChunk &&
-                  !hasValidUsage(item.usage) &&
+                  !hasValidUsage(streamItem.usage) &&
                   totalContentLength > 0
                 ) {
-                  const estimated = estimateUsage(body, totalContentLength, sourceFormat);
-                  item.usage = filterUsageForFormat(estimated, sourceFormat);
+                  const estimated = estimateUsage(body, totalContentLength, sourceFormat!);
+                  streamItem.usage = filterUsageForFormat(estimated, sourceFormat!);
                   state.usage = estimated;
                 } else if (state.finishReason && isFinishChunk && state.usage) {
                   const buffered = addBufferToUsage(state.usage);
-                  item.usage = filterUsageForFormat(buffered, sourceFormat);
+                  streamItem.usage = filterUsageForFormat(buffered, sourceFormat!);
                 }
               }
 
-              emit(formatSSE(item, sourceFormat), controller);
+              emit(formatSSE(streamItem, sourceFormat!), controller);
             }
           }
         }
@@ -552,7 +553,7 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
         clearTimeout(stallTimer);
         stallTimer = null;
       }
-      trackPendingRequest(model, provider, connectionId, false);
+      trackPendingRequest(model || "", provider || "", connectionId || "", false);
       try {
         const remaining = decoder.decode();
         if (remaining) buffer += remaining;
@@ -576,9 +577,9 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
             logUsage(provider, usage, model, connectionId, apiKey);
           } else {
             appendRequestLog({
-              model,
-              provider,
-              connectionId,
+              model: model ?? undefined,
+              provider: provider ?? undefined,
+              connectionId: connectionId ?? undefined,
               tokens: null,
               status: "SUCCESS",
             }).catch(() => {
@@ -616,7 +617,7 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
 
             if (translated?.length > 0) {
               for (const item of translated) {
-                emit(formatSSE(item, sourceFormat), controller);
+                emit(formatSSE(item, sourceFormat!), controller);
               }
             }
           }
@@ -633,23 +634,23 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
 
         if (flushed?.length > 0) {
           for (const item of flushed) {
-            emit(formatSSE(item, sourceFormat), controller);
+            emit(formatSSE(item, sourceFormat!), controller);
           }
         }
 
         emit("data: [DONE]\n\n", controller);
 
         if (!hasValidUsage(state?.usage) && totalContentLength > 0) {
-          state.usage = estimateUsage(body, totalContentLength, sourceFormat);
+          state.usage = estimateUsage(body, totalContentLength, sourceFormat!);
         }
 
         if (hasValidUsage(state?.usage)) {
           logUsage(state.provider || targetFormat, state.usage, model, connectionId, apiKey);
         } else {
           appendRequestLog({
-            model,
-            provider,
-            connectionId,
+            model: model ?? undefined,
+            provider: provider ?? undefined,
+            connectionId: connectionId ?? undefined,
             tokens: null,
             status: "SUCCESS",
           }).catch(() => {
