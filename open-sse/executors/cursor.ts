@@ -1,4 +1,5 @@
 import zlib from "node:zlib";
+import type { IncomingHttpHeaders } from "node:http2";
 import { PROVIDERS } from "../config/providers.js";
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { FORMATS } from "../translator/formats.js";
@@ -6,9 +7,67 @@ import { buildCursorHeaders } from "../utils/cursorChecksum.js";
 import { extractTextFromResponse, generateCursorBody } from "../utils/cursorProtobuf.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { estimateUsage } from "../utils/usageTracking.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorCredentials,
+  type ExecutorExecuteOptions,
+  type ExecutorHeaders,
+  type ExecutorProxyOptions,
+} from "./base.js";
 
 type EdgeRuntimeGlobal = typeof globalThis & { EdgeRuntime?: unknown };
+type Http2Module = typeof import("node:http2");
+type CursorCredentials = ExecutorCredentials & {
+  providerSpecificData?: ExecutorCredentials["providerSpecificData"] & {
+    ghostMode?: boolean;
+    machineId?: string;
+  };
+  rawHeaders?: Record<string, string>;
+};
+type CursorProxyOptions = Record<string, unknown> & {
+  connectionProxyEnabled?: boolean;
+  enabled?: boolean;
+  vercelRelayUrl?: unknown;
+};
+type CursorRequestBody = {
+  messages?: Array<Record<string, unknown>>;
+  reasoning_effort?: string | null;
+  tools?: Array<Record<string, unknown>>;
+};
+type CursorTransportResponse = {
+  body: Buffer;
+  headers: Record<string, unknown>;
+  status: number;
+};
+type CursorErrorPayload = {
+  error?: {
+    code?: unknown;
+    details?: Array<{ debug?: { details?: { detail?: string; title?: string }; error?: string } }>;
+    message?: string;
+  };
+};
+type CursorToolCall = {
+  function: {
+    arguments: string;
+    name: string;
+  };
+  id: string;
+  index?: number;
+  isLast?: boolean;
+  type: string;
+};
+type CursorAssistantMessage = {
+  content: string | null;
+  role: "assistant";
+  tool_calls?: Array<{
+    function: {
+      arguments: string;
+      name: string;
+    };
+    id: string;
+    type: string;
+  }>;
+};
 
 // Detect cloud environment
 const isCloudEnv = () => {
@@ -18,7 +77,7 @@ const isCloudEnv = () => {
 };
 
 // Lazy import http2 (only in Node.js environment)
-let http2: any = null;
+let http2: Http2Module | null = null;
 if (!isCloudEnv()) {
   try {
     http2 = await import("node:http2");
@@ -35,7 +94,7 @@ const COMPRESS_FLAG = {
 };
 
 const CURSOR_STREAM_DEBUG = process.env.CURSOR_STREAM_DEBUG === "1";
-const debugLog = (...args: any) => {
+const debugLog = (...args: unknown[]) => {
   if (CURSOR_STREAM_DEBUG) console.log(...args);
 };
 
@@ -43,7 +102,7 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function decompressPayload(payload: any, flags: any) {
+function decompressPayload(payload: Buffer, flags: number) {
   // Check if payload is JSON error (starts with {"error")
   if (payload.length > 10 && payload[0] === 0x7b && payload[1] === 0x22) {
     try {
@@ -89,7 +148,7 @@ function decompressPayload(payload: any, flags: any) {
   return payload;
 }
 
-function createErrorResponse(jsonError: any) {
+function createErrorResponse(jsonError: CursorErrorPayload) {
   const errorMsg =
     jsonError?.error?.details?.[0]?.debug?.details?.title ||
     jsonError?.error?.details?.[0]?.debug?.details?.detail ||
@@ -122,7 +181,7 @@ export class CursorExecutor extends BaseExecutor {
     return `${this.config.baseUrl}${this.config.chatPath}`;
   }
 
-  buildHeaders(credentials: any) {
+  buildHeaders(credentials: CursorCredentials): ExecutorHeaders {
     const accessToken = credentials.accessToken;
     const machineId = credentials.providerSpecificData?.machineId;
     const ghostMode = credentials.providerSpecificData?.ghostMode !== false;
@@ -134,7 +193,12 @@ export class CursorExecutor extends BaseExecutor {
     return buildCursorHeaders(accessToken, machineId, ghostMode);
   }
 
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(
+    model: string,
+    body: CursorRequestBody,
+    _stream: boolean,
+    credentials: CursorCredentials,
+  ) {
     // Messages are already translated by chatCore (claude→openai→cursor)
     // Do NOT call buildCursorRequest again — double-translation drops tool_results
     const messages = body.messages || [];
@@ -147,7 +211,13 @@ export class CursorExecutor extends BaseExecutor {
     return generateCursorBody(messages, model, tools, reasoningEffort, forceAgentMode);
   }
 
-  async makeFetchRequest(url: any, headers: any, body: any, signal: any, proxyOptions: any = null) {
+  async makeFetchRequest(
+    url: string,
+    headers: ExecutorHeaders,
+    body: BodyInit,
+    signal: AbortSignal | undefined,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<CursorTransportResponse> {
     const response = await proxyAwareFetch(
       url,
       {
@@ -166,24 +236,29 @@ export class CursorExecutor extends BaseExecutor {
     };
   }
 
-  makeHttp2Request(url: any, headers: any, body: any, signal: any) {
+  makeHttp2Request(
+    url: string,
+    headers: ExecutorHeaders,
+    body: Uint8Array,
+    signal: AbortSignal | undefined,
+  ): Promise<CursorTransportResponse> {
     if (!http2) {
       throw new Error("http2 module not available");
     }
 
     const HTTP2_TIMEOUT_MS = 60000; // 60s max — prevent hung sessions
 
-    return new Promise((resolve: any, reject: any) => {
+    return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
       const client = http2.connect(`https://${urlObj.host}`);
-      const chunks: any[] = [];
-      let responseHeaders: Record<string, any> = {};
+      const chunks: Buffer[] = [];
+      let responseHeaders: IncomingHttpHeaders & { ":status"?: number } = {};
       let settled = false;
 
       // Ensure client is always closed on settle
       const finish =
-        (fn: any) =>
-        (...args: any) => {
+        <Args extends unknown[]>(fn: (...args: Args) => void) =>
+        (...args: Args) => {
           if (settled) return;
           settled = true;
           clearTimeout(hangTimeout);
@@ -209,10 +284,10 @@ export class CursorExecutor extends BaseExecutor {
         ...headers,
       });
 
-      req.on("response", (hdrs: any) => {
+      req.on("response", (hdrs: IncomingHttpHeaders & { ":status"?: number }) => {
         responseHeaders = hdrs;
       });
-      req.on("data", (chunk: any) => {
+      req.on("data", (chunk: Buffer) => {
         chunks.push(chunk);
       });
       req.on(
@@ -237,17 +312,28 @@ export class CursorExecutor extends BaseExecutor {
     });
   }
 
-  async execute({ model, body, stream, credentials, signal, log: _log, proxyOptions = null }: any) {
+  async execute({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log: _log,
+    proxyOptions = null,
+  }: ExecutorExecuteOptions) {
     const url = this.buildUrl();
-    const headers = this.buildHeaders(credentials);
-    const transformedBody = this.transformRequest(model, body, stream, credentials);
+    const cursorCredentials = credentials as CursorCredentials;
+    const cursorBody = (body && typeof body === "object" ? body : {}) as CursorRequestBody;
+    const headers = this.buildHeaders(cursorCredentials);
+    const transformedBody = this.transformRequest(model, cursorBody, stream, cursorCredentials);
 
     try {
+      const cursorProxyOptions = proxyOptions as CursorProxyOptions | null;
       const shouldForceFetch =
-        proxyOptions?.enabled === true ||
-        proxyOptions?.connectionProxyEnabled === true ||
-        !!proxyOptions?.vercelRelayUrl;
-      const response: any =
+        cursorProxyOptions?.enabled === true ||
+        cursorProxyOptions?.connectionProxyEnabled === true ||
+        !!cursorProxyOptions?.vercelRelayUrl;
+      const response =
         http2 && !shouldForceFetch
           ? await this.makeHttp2Request(url, headers, transformedBody, signal)
           : await this.makeFetchRequest(url, headers, transformedBody, signal, proxyOptions);
@@ -294,15 +380,15 @@ export class CursorExecutor extends BaseExecutor {
     }
   }
 
-  transformProtobufToJSON(buffer: any, model: any, body: any) {
+  transformProtobufToJSON(buffer: Buffer, model: string, body: unknown) {
     const responseId = `chatcmpl-cursor-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
 
     let offset = 0;
     let totalContent = "";
-    const toolCalls: any[] = [];
-    const toolCallsMap = new Map<any, any>(); // Track streaming tool calls by ID
-    const finalizedIds = new Set();
+    const toolCalls: CursorToolCall[] = [];
+    const toolCallsMap = new Map<string, CursorToolCall>(); // Track streaming tool calls by ID
+    const finalizedIds = new Set<string>();
     let frameCount = 0;
 
     debugLog(`[CURSOR BUFFER] Total length: ${buffer.length} bytes`);
@@ -388,8 +474,10 @@ export class CursorExecutor extends BaseExecutor {
         if (toolCallsMap.has(tc.id)) {
           // Accumulate arguments for existing tool call
           const existing = toolCallsMap.get(tc.id);
-          existing.function.arguments += tc.function.arguments;
-          existing.isLast = tc.isLast;
+          if (existing) {
+            existing.function.arguments += tc.function.arguments;
+            existing.isLast = tc.isLast;
+          }
         } else {
           // New tool call
           toolCallsMap.set(tc.id, { ...tc });
@@ -399,14 +487,16 @@ export class CursorExecutor extends BaseExecutor {
         if (tc.isLast) {
           const finalToolCall = toolCallsMap.get(tc.id);
           finalizedIds.add(tc.id);
-          toolCalls.push({
-            id: finalToolCall.id,
-            type: finalToolCall.type,
-            function: {
-              name: finalToolCall.function.name,
-              arguments: finalToolCall.function.arguments,
-            },
-          });
+          if (finalToolCall) {
+            toolCalls.push({
+              id: finalToolCall.id,
+              type: finalToolCall.type,
+              function: {
+                name: finalToolCall.function.name,
+                arguments: finalToolCall.function.arguments,
+              },
+            });
+          }
         }
       }
 
@@ -435,7 +525,7 @@ export class CursorExecutor extends BaseExecutor {
 
     debugLog(`[CURSOR BUFFER] Final toolCalls count: ${toolCalls.length}`);
 
-    const message: any = {
+    const message: CursorAssistantMessage = {
       role: "assistant",
       content: totalContent || null,
     };
@@ -467,17 +557,17 @@ export class CursorExecutor extends BaseExecutor {
     });
   }
 
-  transformProtobufToSSE(buffer: any, model: any, body: any) {
+  transformProtobufToSSE(buffer: Buffer, model: string, body: unknown) {
     const responseId = `chatcmpl-cursor-${Date.now()}`;
     const created = Math.floor(Date.now() / 1000);
 
-    const chunks: any[] = [];
+    const chunks: string[] = [];
     let offset = 0;
     let totalContent = "";
-    const toolCalls: any[] = [];
-    const toolCallsMap = new Map<any, any>(); // Track streaming tool calls by ID
-    const finalizedIds = new Set();
-    const emittedToolCallIds = new Set();
+    const toolCalls: CursorToolCall[] = [];
+    const toolCallsMap = new Map<string, CursorToolCall>(); // Track streaming tool calls by ID
+    const finalizedIds = new Set<string>();
+    const emittedToolCallIds = new Set<string>();
     let frameCount = 0;
 
     debugLog(`[CURSOR BUFFER SSE] Total length: ${buffer.length} bytes`);
@@ -581,6 +671,7 @@ export class CursorExecutor extends BaseExecutor {
         if (toolCallsMap.has(tc.id)) {
           // Accumulate arguments for existing tool call
           const existing = toolCallsMap.get(tc.id);
+          if (!existing) continue;
           const _oldArgsLen = existing.function.arguments.length;
           existing.function.arguments += tc.function.arguments;
           existing.isLast = tc.isLast;
@@ -618,7 +709,7 @@ export class CursorExecutor extends BaseExecutor {
           }
         } else {
           // New tool call - assign index and add to map
-          const toolCallIndex: any = toolCalls.length;
+          const toolCallIndex = toolCalls.length;
           finalizedIds.add(tc.id);
           toolCalls.push({ ...tc, index: toolCallIndex });
           toolCallsMap.set(tc.id, { ...tc, index: toolCallIndex });
@@ -686,7 +777,7 @@ export class CursorExecutor extends BaseExecutor {
     for (const [id, tc] of toolCallsMap.entries()) {
       if (!finalizedIds.has(id)) {
         debugLog(`[CURSOR BUFFER SSE] Finalizing incomplete tool call: ${id}, isLast=${tc.isLast}`);
-        const toolCallIndex: any = toolCalls.length;
+        const toolCallIndex = toolCalls.length;
         toolCalls.push({
           id: tc.id,
           type: tc.type,
