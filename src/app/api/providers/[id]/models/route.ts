@@ -445,7 +445,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     if (connection.provider === "ollama-local") {
-      const url = `${resolveOllamaLocalHost(connection)}/api/tags`;
+      const url = `${resolveOllamaLocalHost({
+        providerSpecificData: connection.providerSpecificData as { baseUrl?: string } | undefined,
+      })}/api/tags`;
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },

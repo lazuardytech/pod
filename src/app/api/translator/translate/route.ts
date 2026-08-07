@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import type { ExecutorCredentials } from "open-sse/executors/base.js";
 import { getExecutor } from "open-sse/executors/index.js";
 import { parseModel } from "open-sse/services/model.js";
 import { detectFormat, getTargetFormat } from "open-sse/services/provider.js";
 import { FORMATS } from "open-sse/translator/formats.js";
 import { translateRequest } from "open-sse/translator/index.js";
-import { asApiRecord, asString } from "@/app/api/_types";
+import { asApiRecord, asOptionalString, asString } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
         const clientBody = asApiRecord(reqBody.body || body);
         const { provider, model } = parseModel(asString(clientBody.model));
         const sourceFormat = detectFormat(clientBody);
-        const targetFormat = getTargetFormat(provider);
+        const targetFormat = getTargetFormat(provider ?? "");
         return NextResponse.json({
           success: true,
           result: { provider, model, sourceFormat, targetFormat },
@@ -50,11 +51,11 @@ export async function POST(request: Request) {
         const result = translateRequest(
           sourceFormat,
           FORMATS.OPENAI,
-          model,
+          model ?? "",
           clientBody,
           stream,
           undefined,
-          provider as string as unknown as null,
+          provider,
         );
         delete result._toolNameMap;
 
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
           openaiBody,
           stream,
           undefined,
-          provider as string as unknown as null,
+          provider,
         );
         delete translated._toolNameMap;
 
@@ -99,13 +100,18 @@ export async function POST(request: Request) {
           );
         }
 
-        const credentials = {
-          apiKey: connection.apiKey,
-          accessToken: connection.accessToken,
-          refreshToken: connection.refreshToken,
-          copilotToken: connection.copilotToken,
-          projectId: connection.projectId,
-          providerSpecificData: connection.providerSpecificData,
+        const credentials: ExecutorCredentials = {
+          apiKey: asOptionalString(connection.apiKey),
+          accessToken: asOptionalString(connection.accessToken),
+          refreshToken: asOptionalString(connection.refreshToken),
+          copilotToken: asOptionalString(connection.copilotToken),
+          projectId: asOptionalString(connection.projectId),
+          providerSpecificData:
+            connection.providerSpecificData &&
+            typeof connection.providerSpecificData === "object" &&
+            !Array.isArray(connection.providerSpecificData)
+              ? (connection.providerSpecificData as ExecutorCredentials["providerSpecificData"])
+              : undefined,
         };
 
         const executor = getExecutor(provider);

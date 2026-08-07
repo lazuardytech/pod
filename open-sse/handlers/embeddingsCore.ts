@@ -13,9 +13,9 @@ import { getEmbeddingAdapter } from "./embeddingProviders/index.js";
 type JsonRecord = Record<string, unknown>;
 
 type EmbeddingsLogger = {
-  debug?: (...args: unknown[]) => void;
-  info?: (...args: unknown[]) => void;
-  warn?: (...args: unknown[]) => void;
+  debug?: (tag: string, message: string, data?: unknown) => void;
+  info?: (tag: string, message: string, data?: unknown) => void;
+  warn?: (tag: string, message: string, data?: unknown) => void;
 };
 
 export type EmbeddingsResult = { success: true; response: Response } | ErrorResult;

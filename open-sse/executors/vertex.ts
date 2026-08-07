@@ -29,8 +29,7 @@ async function resolveProjectId(apiKey: string): Promise<string | null> {
     | { error?: { message?: string } }
     | Array<{ error?: { message?: string } }>
     | null;
-  const msg =
-    (Array.isArray(json) ? json[0]?.error?.message : json?.error?.message) || "";
+  const msg = (Array.isArray(json) ? json[0]?.error?.message : json?.error?.message) || "";
   const match = msg.match(/projects\/([^/]+)\//);
   const projectId = match?.[1] || null;
 

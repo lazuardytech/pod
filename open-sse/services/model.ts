@@ -134,7 +134,7 @@ export function resolveModelAliasFromMap(
   alias: string | null | undefined,
   aliases: ModelAliasMap | null | undefined,
 ): ModelAliasResolved | null {
-  if (!aliases || alias == null) return null;
+  if (!aliases || alias === null || alias === undefined) return null;
 
   // Check if alias exists
   const resolved = aliases[alias];

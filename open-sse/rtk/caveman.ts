@@ -27,11 +27,7 @@ type GeminiSystem = {
   [key: string]: unknown;
 };
 
-export function injectCaveman(
-  body: JsonRecord | null | undefined,
-  format: string,
-  level: string,
-) {
+export function injectCaveman(body: JsonRecord | null | undefined, format: string, level: string) {
   const prompt = (CAVEMAN_PROMPTS as Record<string, string | undefined>)[level];
   if (!body || !prompt) return;
 
@@ -68,8 +64,7 @@ function injectMessagesSystem(body: JsonRecord, prompt: string) {
   if (!arr) return;
 
   const idx = arr.findIndex(
-    (m: OpenAIMessage | null | undefined) =>
-      m && (m.role === "system" || m.role === "developer"),
+    (m: OpenAIMessage | null | undefined) => m && (m.role === "system" || m.role === "developer"),
   );
   if (idx >= 0) {
     const msg = arr[idx];
@@ -121,9 +116,7 @@ function injectClaudeSystem(body: JsonRecord, prompt: string) {
 // Each shape: { parts: [{ text }] }
 function injectGeminiSystem(body: JsonRecord, prompt: string) {
   const target =
-    body.request && typeof body.request === "object"
-      ? (body.request as JsonRecord)
-      : body;
+    body.request && typeof body.request === "object" ? (body.request as JsonRecord) : body;
   const useSnake = Object.hasOwn(target, "system_instruction");
   const key = useSnake ? "system_instruction" : "systemInstruction";
   const sys = target[key] as GeminiSystem | undefined;

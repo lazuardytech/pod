@@ -59,10 +59,7 @@ export function detectClientTool(headers: HeaderMap = {}, body: BodyLike = {}) {
  * @param {string|null} clientTool - Result of detectClientTool()
  * @param {string} provider        - Provider ID (e.g. "claude", "gemini-cli")
  */
-export function isNativePassthrough(
-  clientTool: string | null | undefined,
-  provider: string,
-) {
+export function isNativePassthrough(clientTool: string | null | undefined, provider: string) {
   if (!clientTool) return false;
   const nativeProviders = NATIVE_PAIRS[clientTool];
   if (!nativeProviders) return false;

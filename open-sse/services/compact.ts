@@ -28,10 +28,7 @@ type ComboChatOptions = {
  * @param {Array|Object} combosData - Array of combos or object with combos
  * @returns {string[]|null} Array of models or null if not a combo
  */
-export function getComboModelsFromData(
-  modelStr: string,
-  combosData: CombosData,
-): string[] | null {
+export function getComboModelsFromData(modelStr: string, combosData: CombosData): string[] | null {
   // Don't check if it's in provider/model format
   if (modelStr.includes("/")) return null;
 

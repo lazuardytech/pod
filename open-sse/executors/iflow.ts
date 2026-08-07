@@ -31,12 +31,7 @@ export class IFlowExecutor extends BaseExecutor {
    * @param {string} apiKey - API key for signing
    * @returns {string} Hex-encoded signature
    */
-  createIFlowSignature(
-    userAgent: string,
-    sessionID: string,
-    timestamp: number,
-    apiKey: string,
-  ) {
+  createIFlowSignature(userAgent: string, sessionID: string, timestamp: number, apiKey: string) {
     if (!apiKey) return "";
     const payload = `${userAgent}:${sessionID}:${timestamp}`;
     const hmac = crypto.createHmac("sha256", apiKey);

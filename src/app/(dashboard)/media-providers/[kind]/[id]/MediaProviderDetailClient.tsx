@@ -568,16 +568,21 @@ function TtsExampleCard({ providerId }: any): any {
       if (voices.length) {
         if (config.hasBrowseButton) {
           // Google TTS: pre-select "en" (English) as default, show as single voice chip
-          const defaultVoice = voices.find((v: any): any => v.id === "en") || voices[0];
-          setSelectedLang(defaultVoice.id);
-          setSelectedVoice(defaultVoice.id);
-          setSelectedVoiceName(defaultVoice.name);
-          setCountryVoices([{ id: defaultVoice.id, name: defaultVoice.name }]);
+          const defaultVoice = voices.find((v: any): any => v.id === "en") ?? voices[0];
+          if (defaultVoice) {
+            setSelectedLang(defaultVoice.id);
+            setSelectedVoice(defaultVoice.id);
+            setSelectedVoiceName(defaultVoice.name);
+            setCountryVoices([{ id: defaultVoice.id, name: defaultVoice.name }]);
+          }
         } else {
           // OpenAI/OpenRouter: set voice chips directly (no language picker)
+          const firstVoice = voices[0];
           setCountryVoices(voices);
-          setSelectedVoice(voices[0].id);
-          setSelectedVoiceName(voices[0].name || voices[0].id);
+          if (firstVoice) {
+            setSelectedVoice(firstVoice.id);
+            setSelectedVoiceName(firstVoice.name || firstVoice.id);
+          }
         }
       }
     }
@@ -593,9 +598,10 @@ function TtsExampleCard({ providerId }: any): any {
     if (!config.voicesPerModel || !selectedModel) return;
     const voices = getTtsVoicesForModel(providerId, selectedModel) || [];
     setCountryVoices(voices);
-    if (voices.length) {
-      setSelectedVoice(voices[0].id);
-      setSelectedVoiceName(voices[0].name || voices[0].id);
+    const firstVoice = voices[0];
+    if (firstVoice) {
+      setSelectedVoice(firstVoice.id);
+      setSelectedVoiceName(firstVoice.name || firstVoice.id);
     }
   }, [selectedModel]);
   /* eslint-enable react-hooks/exhaustive-deps */

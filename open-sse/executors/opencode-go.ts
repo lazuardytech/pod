@@ -16,10 +16,7 @@ export class OpenCodeGoExecutor extends BaseExecutor {
   private _lastModel: string | null = null;
 
   constructor() {
-    super(
-      "opencode-go",
-      (PROVIDERS as Record<string, ExecutorConfigInput>)["opencode-go"]!,
-    );
+    super("opencode-go", (PROVIDERS as Record<string, ExecutorConfigInput>)["opencode-go"]!);
   }
 
   // buildUrl runs before buildHeaders in BaseExecutor.execute, cache model here

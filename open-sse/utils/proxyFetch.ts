@@ -199,10 +199,7 @@ export async function proxyAwareFetch(
 /**
  * Patched global fetch with env-proxy support
  */
-async function patchedFetch(
-  url: string | URL | Request | undefined,
-  options: FetchOptions = {},
-) {
+async function patchedFetch(url: string | URL | Request | undefined, options: FetchOptions = {}) {
   return proxyAwareFetch(url, options, null);
 }
 

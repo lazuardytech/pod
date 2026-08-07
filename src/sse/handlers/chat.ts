@@ -270,7 +270,7 @@ async function handleSingleModelChat(
           return unavailableResponse(
             status,
             `[${provider}/${model}] ${errorMsg}`,
-            credentials.retryAfter ?? null,
+            credentials.retryAfter ?? "",
             credentials.retryAfterHuman ?? "",
           );
         }

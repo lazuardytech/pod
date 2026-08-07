@@ -16,10 +16,7 @@ export class GeminiCLIExecutor extends BaseExecutor {
   private _currentModel: string | null = null;
 
   constructor() {
-    super(
-      "gemini-cli",
-      (PROVIDERS as Record<string, ExecutorConfigInput>)["gemini-cli"]!,
-    );
+    super("gemini-cli", (PROVIDERS as Record<string, ExecutorConfigInput>)["gemini-cli"]!);
   }
 
   buildUrl(model: string, stream: boolean, _urlIndex: number = 0): string {
@@ -32,7 +29,7 @@ export class GeminiCLIExecutor extends BaseExecutor {
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${credentials.accessToken}`,
-      "User-Agent": geminiCLIUserAgent(this._currentModel),
+      "User-Agent": geminiCLIUserAgent(this._currentModel ?? undefined),
       "X-Goog-Api-Client": GEMINI_CLI_API_CLIENT,
       Accept: stream ? "text/event-stream" : "application/json",
     };

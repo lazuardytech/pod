@@ -23,10 +23,7 @@ import {
  */
 export class CommandCodeExecutor extends BaseExecutor {
   constructor() {
-    super(
-      "commandcode",
-      (PROVIDERS as Record<string, ExecutorConfigInput>).commandcode!,
-    );
+    super("commandcode", (PROVIDERS as Record<string, ExecutorConfigInput>).commandcode!);
   }
 
   buildHeaders(credentials: ExecutorCredentials, stream: boolean = true): ExecutorHeaders {
