@@ -6,6 +6,14 @@ export type TranslatorResponseFn = (...args: any[]) => any;
 export const requestRegistry = new Map<string, TranslatorRequestFn>();
 export const responseRegistry = new Map<string, TranslatorResponseFn>();
 
+export function getRegisteredRequestTranslatorKeys(): readonly string[] {
+  return Array.from(requestRegistry.keys());
+}
+
+export function getRegisteredResponseTranslatorKeys(): readonly string[] {
+  return Array.from(responseRegistry.keys());
+}
+
 export function register(
   from: string,
   to: string,

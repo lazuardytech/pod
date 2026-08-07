@@ -12,7 +12,10 @@ export const FORMATS = {
   KIRO: "kiro",
   CURSOR: "cursor",
   OLLAMA: "ollama",
-};
+  COMMANDCODE: "commandcode",
+} as const;
+
+export type FormatId = (typeof FORMATS)[keyof typeof FORMATS];
 
 /**
  * Detect source format from request URL pathname + body.

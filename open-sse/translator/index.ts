@@ -4,11 +4,17 @@ import { FORMATS } from "./formats.js";
 import { prepareClaudeRequest } from "./helpers/claudeHelper.js";
 import { filterToOpenAIFormat } from "./helpers/openaiHelper.js";
 import { ensureToolCallIds, fixMissingToolResponses } from "./helpers/toolCallHelper.js";
-import { register, requestRegistry, responseRegistry } from "./registry.js";
+import {
+  getRegisteredRequestTranslatorKeys,
+  getRegisteredResponseTranslatorKeys,
+  register,
+  requestRegistry,
+  responseRegistry,
+} from "./registry.js";
 // Side-effect: register all translators (via registry.ts — no circular init).
 import "./loaders.js";
 
-export { register };
+export { getRegisteredRequestTranslatorKeys, getRegisteredResponseTranslatorKeys, register };
 
 function ensureInitialized() {
   // no-op: translators register at module load via ./loaders.js

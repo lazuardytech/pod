@@ -177,5 +177,4 @@ export function openaiToCommandCode(model: any, body: any, stream: any /* , cred
   };
 }
 
-// todo(ts): COMMANDCODE is a JS translator format not yet reflected in FORMATS' TS shape.
-register(FORMATS.OPENAI, (FORMATS as any).COMMANDCODE, openaiToCommandCode, null);
+register(FORMATS.OPENAI, FORMATS.COMMANDCODE, openaiToCommandCode, null);

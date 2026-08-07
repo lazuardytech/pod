@@ -212,4 +212,4 @@ export function convertCommandCodeToOpenAI(chunk: any, state: any) {
   return out.length ? out : null;
 }
 
-register((FORMATS as any).COMMANDCODE, FORMATS.OPENAI, null, convertCommandCodeToOpenAI);
+register(FORMATS.COMMANDCODE, FORMATS.OPENAI, null, convertCommandCodeToOpenAI);

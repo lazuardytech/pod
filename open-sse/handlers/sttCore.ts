@@ -3,9 +3,6 @@ import { AI_PROVIDERS } from "../../src/shared/constants/providers";
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { createErrorResult } from "../utils/error.js";
 
-// todo(ts): preserve the JS-era free variable until STT translate flow is typed.
-declare const translate: any;
-
 export type SttResult =
   | { success: true; response: Response }
   | { success: false; status: number; error: string };
@@ -208,6 +205,7 @@ async function transcribeOpenAICompatible(
   model: any,
   token: any,
   formData: any,
+  translate: any,
 ) {
   const fd = new FormData();
   fd.append("file", file as any, file.name || "audio.wav");
@@ -293,7 +291,7 @@ export async function handleSttCore({
       case "gemini-stt":
         return await transcribeGemini(cfg, file, model, token, formData);
       default:
-        return await transcribeOpenAICompatible(cfg, file, model, token, formData);
+        return await transcribeOpenAICompatible(cfg, file, model, token, formData, translate);
     }
   } catch (err: any) {
     return createErrorResult(
