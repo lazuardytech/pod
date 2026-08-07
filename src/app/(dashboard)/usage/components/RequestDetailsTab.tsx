@@ -13,14 +13,23 @@ import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { cn } from "@/shared/utils/cn";
 
-const OFFLINE_USAGE_PROVIDERS_CACHE_KEY = "usage:providers:list";const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY = "usage:provider-nodes";const OFFLINE_USAGE_DETAILS_CACHE_KEY = "usage:request-details";const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;const DEFAULT_PAGE_SIZE = 20;
-let providerNameCache = null;let providerNodesCache = null;
+const OFFLINE_USAGE_PROVIDERS_CACHE_KEY: any = "usage:providers:list";
+const OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY: any = "usage:provider-nodes";
+const OFFLINE_USAGE_DETAILS_CACHE_KEY: any = "usage:request-details";
+const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
+const DEFAULT_PAGE_SIZE: any = 20;
+
+let providerNameCache: any = null;
+let providerNodesCache: any = null;
+
 async function fetchProviderNames() {
   if (providerNameCache && providerNodesCache) {
     return { providerNameCache, providerNodesCache, source: "memory" };
   }
 
-  const applyNodesData = (nodesData: any) => {    const nodes = nodesData?.nodes || [];    providerNodesCache = {};
+  const applyNodesData: any = (nodesData: any) => {
+    const nodes: any = nodesData?.nodes || [];
+    providerNodesCache = {};
     for (const node of nodes) {
       providerNodesCache[node.id] = node.name;
     }
@@ -30,7 +39,8 @@ async function fetchProviderNames() {
     };
   };
 
-  const result = await loadJsonStaleWhileRevalidate({    url: "/api/provider-nodes",
+  const result: any = await loadJsonStaleWhileRevalidate({
+    url: "/api/provider-nodes",
     cacheKey: OFFLINE_USAGE_PROVIDER_NODES_CACHE_KEY,
     maxStaleMs: OFFLINE_MAX_STALE_MS,
     onCacheData: applyNodesData,
@@ -44,7 +54,8 @@ function getProviderName(providerId: any, cache: any) {
   if (!providerId) return providerId;
   if (!cache) return providerId;
 
-  const cached = cache[providerId];
+  const cached: any = cache[providerId];
+
   if (typeof cached === "string") {
     return cached;
   }
@@ -53,7 +64,8 @@ function getProviderName(providerId: any, cache: any) {
     return cached.name;
   }
 
-  const providerConfig = getProviderByAlias(providerId) || AI_PROVIDERS[providerId];  return providerConfig?.name || providerId;
+  const providerConfig: any = getProviderByAlias(providerId) || AI_PROVIDERS[providerId];
+  return providerConfig?.name || providerId;
 }
 
 function CollapsibleSection({ title, children, defaultOpen = false, icon = null }: any) {
@@ -85,7 +97,9 @@ function CollapsibleSection({ title, children, defaultOpen = false, icon = null 
 }
 
 function getInputTokens(tokens: any) {
-  const prompt = tokens?.prompt_tokens || tokens?.input_tokens || 0;  const cache = tokens?.cached_tokens || tokens?.cache_read_input_tokens || 0;  return prompt < cache ? cache : prompt;
+  const prompt: any = tokens?.prompt_tokens || tokens?.input_tokens || 0;
+  const cache: any = tokens?.cached_tokens || tokens?.cache_read_input_tokens || 0;
+  return prompt < cache ? cache : prompt;
 }
 
 export default function RequestDetailsTab() {
@@ -140,7 +154,8 @@ export default function RequestDetailsTab() {
         setProviderNameCache(namesResult.value.providerNameCache);
       }
 
-      const sources = [];      if (providersResult.status === "fulfilled") sources.push(providersResult.value?.source);
+      const sources: any = [];
+      if (providersResult.status === "fulfilled") sources.push(providersResult.value?.source);
       if (namesResult.status === "fulfilled") sources.push(namesResult.value?.source);
 
       if (sources.includes("cache")) notifyOfflineCache();
@@ -161,14 +176,16 @@ export default function RequestDetailsTab() {
     setLoading(true);
     setFetchError(null);
 
-    const isDefaultSnapshot =       pagination.page === 1 &&
+    const isDefaultSnapshot: any =
+      pagination.page === 1 &&
       pagination.pageSize === DEFAULT_PAGE_SIZE &&
       !filters.provider &&
       !filters.startDate &&
       !filters.endDate;
 
     try {
-      const params = new URLSearchParams({        page: pagination.page.toString(),
+      const params: any = new URLSearchParams({
+        page: pagination.page.toString(),
         pageSize: pagination.pageSize.toString(),
       });
       if (filters.provider) params.append("provider", filters.provider);
@@ -176,7 +193,8 @@ export default function RequestDetailsTab() {
       if (filters.endDate) params.append("endDate", filters.endDate.toISOString());
 
       if (isDefaultSnapshot) {
-        const result = await loadJsonStaleWhileRevalidate({          url: `/api/usage/request-details?${params.toString()}`,
+        const result: any = await loadJsonStaleWhileRevalidate({
+          url: `/api/usage/request-details?${params.toString()}`,
           cacheKey: OFFLINE_USAGE_DETAILS_CACHE_KEY,
           maxStaleMs: OFFLINE_MAX_STALE_MS,
           onCacheData: applyRequestDetailsData,
@@ -187,10 +205,13 @@ export default function RequestDetailsTab() {
         return;
       }
 
-      const res = await fetch(`/api/usage/request-details?${params.toString()}`);      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));        throw new Error(err.error || `HTTP ${res.status}`);
+      const res: any = await fetch(`/api/usage/request-details?${params.toString()}`);
+      if (!res.ok) {
+        const err: any = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const data = await res.json();      applyRequestDetailsData(data);
+      const data: any = await res.json();
+      applyRequestDetailsData(data);
       clearOfflineCacheNotice();
     } catch (error) {
       console.error("Failed to fetch request details:", error);
@@ -215,17 +236,21 @@ export default function RequestDetailsTab() {
     fetchDetails();
   }, [fetchDetails]);
 
-  const handleViewDetail = (detail: any) => {    setSelectedDetail(detail);
+  const handleViewDetail: any = (detail: any) => {
+    setSelectedDetail(detail);
     setIsDrawerOpen(true);
   };
 
-  const handlePageChange = (newPage: any) => {    setPagination((prev: any) => ({ ...prev, page: newPage }));
+  const handlePageChange: any = (newPage: any) => {
+    setPagination((prev: any) => ({ ...prev, page: newPage }));
   };
 
-  const handlePageSizeChange = (newPageSize: any) => {    setPagination((prev: any) => ({ ...prev, pageSize: newPageSize, page: 1 }));
+  const handlePageSizeChange: any = (newPageSize: any) => {
+    setPagination((prev: any) => ({ ...prev, pageSize: newPageSize, page: 1 }));
   };
 
-  const handleClearFilters = () => {    setFilters({ provider: "", startDate: null, endDate: null });
+  const handleClearFilters: any = () => {
+    setFilters({ provider: "", startDate: null, endDate: null });
   };
 
   return (

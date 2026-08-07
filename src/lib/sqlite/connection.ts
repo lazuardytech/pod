@@ -209,7 +209,8 @@ export function getDatabase(): SqliteDatabase {
   // external package in next.config.ts, so the runtime resolves it via
   // createRequire at call time.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const DatabaseCtor =     typeof Bun !== "undefined"
+  const DatabaseCtor: any =
+    typeof Bun !== "undefined"
       ? (require("bun:sqlite") as { Database: new (filename: string) => unknown }).Database
       : require("better-sqlite3");
 

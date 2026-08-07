@@ -35,7 +35,8 @@ const START_TIME = initStartTime();
 // Cache integrity_check result — it's an O(n-pages) full scan, too expensive
 // to run on every SSE poll. Re-run at most once every 5 minutes.
 const INTEGRITY_CACHE_TTL_MS = 5 * 60 * 1000;
-let _integrityCache = null;let _integrityCacheAt = 0;
+let _integrityCache: any = null;
+let _integrityCacheAt = 0;
 
 function getCachedIntegrity(db: any) {
   const now = Date.now();

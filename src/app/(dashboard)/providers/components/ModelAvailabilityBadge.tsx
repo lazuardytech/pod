@@ -13,7 +13,8 @@ import LucideIcon from "@/shared/components/LucideIcon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/components";
 
-const STATUS_CONFIG = {  available: { icon: "check_circle", color: "#22c55e", label: "Available" },
+const STATUS_CONFIG: any = {
+  available: { icon: "check_circle", color: "#22c55e", label: "Available" },
   cooldown: { icon: "schedule", color: "#f59e0b", label: "Cooldown" },
   unavailable: { icon: "error", color: "#ef4444", label: "Unavailable" },
   unknown: { icon: "help", color: "#6b7280", label: "Unknown" },
@@ -28,8 +29,10 @@ export default function ModelAvailabilityBadge() {
 
   const fetchStatus: any = useCallback(async () => {
     try {
-      const res = await fetch("/api/models/availability");      if (res.ok) {
-        const json = await res.json();        setData(json);
+      const res: any = await fetch("/api/models/availability");
+      if (res.ok) {
+        const json: any = await res.json();
+        setData(json);
       }
     } catch {
       // silent fail — will retry
@@ -39,13 +42,18 @@ export default function ModelAvailabilityBadge() {
   }, []);
 
   useEffect(() => {
-    let closed = false;    let reconnectTimer = null;    let es = null;
-    const connect = () => {      if (closed) return;
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
+
+    const connect: any = () => {
+      if (closed) return;
       es = new EventSource("/api/models/availability/stream");
 
       es.onmessage = (event: any) => {
         try {
-          const payload = JSON.parse(event.data);          if (payload?.error) return;
+          const payload: any = JSON.parse(event.data);
+          if (payload?.error) return;
           setData(payload);
           setLoading(false);
         } catch {
@@ -72,15 +80,18 @@ export default function ModelAvailabilityBadge() {
 
   // Close popover on outside click
   useEffect(() => {
-    const handleClick = (e: any) => {      if (ref.current && !ref.current.contains(e.target)) setExpanded(false);
+    const handleClick: any = (e: any) => {
+      if (ref.current && !ref.current.contains(e.target)) setExpanded(false);
     };
     if (expanded) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [expanded]);
 
-  const handleClearCooldown = async (provider: any, model: any) => {    setClearing(`${provider}:${model}`);
+  const handleClearCooldown: any = async (provider: any, model: any) => {
+    setClearing(`${provider}:${model}`);
     try {
-      const res = await fetch("/api/models/availability", {        method: "POST",
+      const res: any = await fetch("/api/models/availability", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clearCooldown", provider, model }),
       });
@@ -99,13 +110,18 @@ export default function ModelAvailabilityBadge() {
 
   if (loading) return null;
 
-  const models = data?.models || [];  const unavailableCount =     data?.unavailableCount || models.filter((m: any) => m.status !== "available").length;
-  const isHealthy = unavailableCount === 0;
+  const models: any = data?.models || [];
+  const unavailableCount: any =
+    data?.unavailableCount || models.filter((m: any) => m.status !== "available").length;
+  const isHealthy: any = unavailableCount === 0;
+
   // Group unhealthy models by provider
   // todo(ts): grouped buckets are untyped; widen to any until the API surfaces a shared shape
-  const byProvider = {};  models.forEach((m: any) => {
+  const byProvider: any = {};
+  models.forEach((m: any) => {
     if (m.status === "available") return;
-    const key = m.provider || "unknown";    if (!byProvider[key]) byProvider[key] = [];
+    const key: any = m.provider || "unknown";
+    if (!byProvider[key]) byProvider[key] = [];
     byProvider[key].push(m);
   });
 
@@ -161,7 +177,9 @@ export default function ModelAvailabilityBadge() {
                       {(
                         provModels as Array<{ provider: string; model: string; status: string }>
                       ).map((m: any) => {
-                        const status = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;                        const isClearing = clearing === `${m.provider}:${m.model}`;                        return (
+                        const status: any = STATUS_CONFIG[m.status] || STATUS_CONFIG.unknown;
+                        const isClearing: any = clearing === `${m.provider}:${m.model}`;
+                        return (
                           <div
                             key={`${m.provider}-${m.model}`}
                             className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface/30"

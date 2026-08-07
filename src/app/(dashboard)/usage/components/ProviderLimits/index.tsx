@@ -11,11 +11,20 @@ import { cn } from "@/shared/utils/cn";
 import { calculatePercentage, formatResetTime, getStatusColor, parseQuotaData } from "./utils";
 
 // Connection is eligible for the quota page when it uses OAuth or is an apikey provider whitelisted for quota
-const isUsageEligible = (conn: any) =>  USAGE_SUPPORTED_PROVIDERS.includes(conn.provider) &&
+const isUsageEligible: any = (conn: any) =>
+  USAGE_SUPPORTED_PROVIDERS.includes(conn.provider) &&
   (conn.authType === "oauth" || USAGE_APIKEY_PROVIDERS.includes(conn.provider));
 
-const DEPLETED_QUOTA_THRESHOLD = 5; // percentconst AUTO_REFRESH_STORAGE_KEY = "quotaAutoRefresh";const QUOTA_CACHE_KEY = "providerQuotaCache";const QUOTA_CACHE_TTL_MS = 300000; // 5 minutes cache TTLconst COLLAPSE_ALL_STORAGE_KEY = "quotaCollapseAll";const EXPIRING_FIRST_STORAGE_KEY = "quotaExpiringFirst";const HIDE_DISABLED_STORAGE_KEY = "quotaHideDisabled";
-const readLocalBool = (key: any) => {  if (typeof window === "undefined") return false;
+const DEPLETED_QUOTA_THRESHOLD: any = 5; // percent
+const AUTO_REFRESH_STORAGE_KEY: any = "quotaAutoRefresh";
+const QUOTA_CACHE_KEY: any = "providerQuotaCache";
+const QUOTA_CACHE_TTL_MS: any = 300000; // 5 minutes cache TTL
+const COLLAPSE_ALL_STORAGE_KEY: any = "quotaCollapseAll";
+const EXPIRING_FIRST_STORAGE_KEY: any = "quotaExpiringFirst";
+const HIDE_DISABLED_STORAGE_KEY: any = "quotaHideDisabled";
+
+const readLocalBool: any = (key: any) => {
+  if (typeof window === "undefined") return false;
   return window.localStorage.getItem(key) === "true";
 };
 
@@ -38,7 +47,8 @@ export default function ProviderLimits() {
   const [connections, setConnections]: any = useState<any[]>([]);
   const [quotaData, setQuotaData]: any = useState<Record<string, QuotaConnectionData>>(() => {
     if (typeof window === "undefined") return {};
-    const cached = window.localStorage.getItem(QUOTA_CACHE_KEY);    if (cached) {
+    const cached: any = window.localStorage.getItem(QUOTA_CACHE_KEY);
+    if (cached) {
       const { data, timestamp }: any = JSON.parse(cached);
       if (Date.now() - timestamp < QUOTA_CACHE_TTL_MS) return data;
     }
@@ -48,11 +58,13 @@ export default function ProviderLimits() {
   const [errors, setErrors]: any = useState({});
   const [autoRefresh, setAutoRefresh]: any = useState(() => {
     if (typeof window === "undefined") return true;
-    const stored = window.localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);    return stored === null ? true : stored === "true";
+    const stored: any = window.localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
+    return stored === null ? true : stored === "true";
   });
   const [_lastUpdated, setLastUpdated]: any = useState(() => {
     if (typeof window === "undefined") return null;
-    const cached = window.localStorage.getItem(QUOTA_CACHE_KEY);    if (cached) {
+    const cached: any = window.localStorage.getItem(QUOTA_CACHE_KEY);
+    if (cached) {
       const { timestamp }: any = JSON.parse(cached);
       if (Date.now() - timestamp < QUOTA_CACHE_TTL_MS) return new Date(timestamp);
     }
@@ -83,15 +95,20 @@ export default function ProviderLimits() {
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>    setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm = () =>    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
+    setConfirmDialog({ open: true, title, message, onConfirm, variant });
+  const closeConfirm: any = () =>
+    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const countdownRef: any = useRef<any>(null);
   const refreshingAllRef: any = useRef(false);
 
   // Hydrate toggle states from localStorage after mount (avoids SSR/hydration mismatch)
   useEffect(() => {
-    const collapse = readLocalBool(COLLAPSE_ALL_STORAGE_KEY);    const expiring = readLocalBool(EXPIRING_FIRST_STORAGE_KEY);    const hide = readLocalBool(HIDE_DISABLED_STORAGE_KEY);    if (collapse) {
+    const collapse: any = readLocalBool(COLLAPSE_ALL_STORAGE_KEY);
+    const expiring: any = readLocalBool(EXPIRING_FIRST_STORAGE_KEY);
+    const hide: any = readLocalBool(HIDE_DISABLED_STORAGE_KEY);
+    if (collapse) {
       setCollapseAll(true);
       setExpandedRows({ __collapsed: true });
       setExpandedProviders({ __collapsed: true });
@@ -125,9 +142,12 @@ export default function ProviderLimits() {
   // Fetch all provider connections
   const fetchConnections: any = useCallback(async () => {
     try {
-      const response = await fetch("/api/providers/client");      if (!response.ok) throw new Error("Failed to fetch connections");
+      const response: any = await fetch("/api/providers/client");
+      if (!response.ok) throw new Error("Failed to fetch connections");
 
-      const data = await response.json();      const connectionList = data.connections || [];      setConnections(connectionList);
+      const data: any = await response.json();
+      const connectionList: any = data.connections || [];
+      setConnections(connectionList);
       return connectionList;
     } catch (error) {
       console.error("Error fetching connections:", error);
@@ -142,9 +162,12 @@ export default function ProviderLimits() {
     setErrors((prev: any) => ({ ...prev, [connectionId]: null }));
 
     try {
-      const response = await fetch(`/api/usage/${connectionId}`);
+      const response: any = await fetch(`/api/usage/${connectionId}`);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));        const errorMsg = errorData.error || response.statusText;
+        const errorData: any = await response.json().catch(() => ({}));
+        const errorMsg: any = errorData.error || response.statusText;
+
         // Handle different error types gracefully
         if (response.status === 404) {
           // Connection not found - skip silently
@@ -168,8 +191,10 @@ export default function ProviderLimits() {
         throw new Error(`HTTP ${response.status}: ${errorMsg}`);
       }
 
-      const data = await response.json();      // Parse quota data using provider-specific parser
-      const parsedQuotas = parseQuotaData(provider, data);
+      const data: any = await response.json();
+      // Parse quota data using provider-specific parser
+      const parsedQuotas: any = parseQuotaData(provider, data);
+
       setQuotaData((prev: any) => ({
         ...prev,
         [connectionId]: {
@@ -219,18 +244,22 @@ export default function ProviderLimits() {
   const handleDeleteConnection: any = useCallback(async (id: any) => {
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });      if (res.ok) {
+      const res: any = await fetch(`/api/providers/${id}`, { method: "DELETE" });
+      if (res.ok) {
         setConnections((prev: any) => prev.filter((c: any) => c.id !== id));
         setQuotaData((prev: any) => {
-          const next = { ...prev };          delete next[id];
+          const next: any = { ...prev };
+          delete next[id];
           return next;
         });
         setLoading((prev: any) => {
-          const next = { ...prev };          delete next[id];
+          const next: any = { ...prev };
+          delete next[id];
           return next;
         });
         setErrors((prev: any) => {
-          const next = { ...prev };          delete next[id];
+          const next: any = { ...prev };
+          delete next[id];
           return next;
         });
       }
@@ -244,7 +273,8 @@ export default function ProviderLimits() {
   const handleToggleConnectionActive: any = useCallback(async (id: any, isActive: any) => {
     setTogglingId(id);
     try {
-      const res = await fetch(`/api/providers/${id}`, {        method: "PUT",
+      const res: any = await fetch(`/api/providers/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
@@ -261,8 +291,11 @@ export default function ProviderLimits() {
   const handleUpdateConnection: any = useCallback(
     async (formData: any) => {
       if (!selectedConnection?.id) return;
-      const connectionId = selectedConnection.id;      const provider = selectedConnection.provider;      try {
-        const res = await fetch(`/api/providers/${connectionId}`, {          method: "PUT",
+      const connectionId: any = selectedConnection.id;
+      const provider: any = selectedConnection.provider;
+      try {
+        const res: any = await fetch(`/api/providers/${connectionId}`, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
@@ -282,7 +315,8 @@ export default function ProviderLimits() {
   );
 
   useEffect(() => {
-    let cancelled = false;    fetch("/api/proxy-pools?isActive=true", { cache: "no-store" })
+    let cancelled: any = false;
+    fetch("/api/proxy-pools?isActive=true", { cache: "no-store" })
       .then((res: any) => res.json())
       .then((data: any) => {
         if (!cancelled && data?.proxyPools) {
@@ -304,9 +338,11 @@ export default function ProviderLimits() {
     setCountdown(60);
 
     try {
-      const conns = await fetchConnections();
+      const conns: any = await fetchConnections();
+
       // Filter eligible connections (OAuth + whitelisted apikey)
-      const eligibleConnections = conns.filter(isUsageEligible);
+      const eligibleConnections: any = conns.filter(isUsageEligible);
+
       await Promise.all(eligibleConnections.map((conn: any) => fetchQuota(conn.id, conn.provider)));
 
       setLastUpdated(new Date());
@@ -321,12 +357,16 @@ export default function ProviderLimits() {
   // Initial load: fetch connections first so cards render immediately, then fetch quotas
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    const initializeData = async () => {      setConnectionsLoading(true);
-      const conns = await fetchConnections();      setConnectionsLoading(false);
+    const initializeData: any = async () => {
+      setConnectionsLoading(true);
+      const conns: any = await fetchConnections();
+      setConnectionsLoading(false);
 
-      const eligibleConnections = conns.filter(isUsageEligible);
+      const eligibleConnections: any = conns.filter(isUsageEligible);
+
       // Mark all as loading before fetching
-      const loadingState = {};      eligibleConnections.forEach((conn: any) => {
+      const loadingState: any = {};
+      eligibleConnections.forEach((conn: any) => {
         loadingState[conn.id] = true;
       });
       setLoading(loadingState);
@@ -367,13 +407,18 @@ export default function ProviderLimits() {
       return undefined;
     }
 
-    let closed = false;    let reconnectTimer = null;    let es = null;
-    const connect = () => {      if (closed) return;
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
+
+    const connect: any = () => {
+      if (closed) return;
       es = new EventSource("/api/usage/provider-limits/stream");
 
       es.onmessage = (event: any) => {
         try {
-          const payload = JSON.parse(event.data);          if (payload?.error) return;
+          const payload: any = JSON.parse(event.data);
+          if (payload?.error) return;
           applySnapshot(payload);
         } catch {
           // keep stream alive on malformed chunk
@@ -420,11 +465,15 @@ export default function ProviderLimits() {
   }, [autoRefresh]);
 
   // Filter eligible connections (OAuth + whitelisted apikey)
-  const filteredConnections = connections.filter(isUsageEligible);
-  const providerFilteredConnections = filteredConnections.filter(    (conn: any) => providerFilter === "all" || conn.provider === providerFilter,
+  const filteredConnections: any = connections.filter(isUsageEligible);
+
+  const providerFilteredConnections: any = filteredConnections.filter(
+    (conn: any) => providerFilter === "all" || conn.provider === providerFilter,
   );
 
-  const getEarliestResetTime = (conn: any) => {    const resetTimes = (quotaData[conn.id]?.quotas || [])      .map((quota: any) =>
+  const getEarliestResetTime: any = (conn: any) => {
+    const resetTimes: any = (quotaData[conn.id]?.quotas || [])
+      .map((quota: any) =>
         quota.resetAt ? new Date(quota.resetAt).getTime() : Number.POSITIVE_INFINITY,
       )
       .filter((time: any) => Number.isFinite(time));
@@ -434,17 +483,23 @@ export default function ProviderLimits() {
   // Sort providers by USAGE_SUPPORTED_PROVIDERS order, then alphabetically.
   // Optionally surface accounts with quotas expiring soonest first.
   // Always hide connections that are disabled (isActive === false).
-  const sortedConnections = [...providerFilteredConnections]    .filter((conn: any) => !hideDisabled || conn.isActive !== false)
+  const sortedConnections: any = [...providerFilteredConnections]
+    .filter((conn: any) => !hideDisabled || conn.isActive !== false)
     .sort((a: any, b: any) => {
       if (expiringFirst) {
-        const expiryDiff = getEarliestResetTime(a) - getEarliestResetTime(b);        if (expiryDiff !== 0) return expiryDiff;
+        const expiryDiff: any = getEarliestResetTime(a) - getEarliestResetTime(b);
+        if (expiryDiff !== 0) return expiryDiff;
       }
-      const orderA = USAGE_SUPPORTED_PROVIDERS.indexOf(a.provider);      const orderB = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);      if (orderA !== orderB) return orderA - orderB;
+      const orderA: any = USAGE_SUPPORTED_PROVIDERS.indexOf(a.provider);
+      const orderB: any = USAGE_SUPPORTED_PROVIDERS.indexOf(b.provider);
+      if (orderA !== orderB) return orderA - orderB;
       return a.provider.localeCompare(b.provider);
     });
 
   // Connection is depleted when any quota entry hit the threshold
-  const isConnectionDepleted = (conn: any) => {    const quotas = quotaData[conn.id]?.quotas;    if (!quotas?.length) return false;
+  const isConnectionDepleted: any = (conn: any) => {
+    const quotas: any = quotaData[conn.id]?.quotas;
+    if (!quotas?.length) return false;
     return quotas.some((q: any) => {
       if (!q.total || q.total <= 0) return false;
       return calculatePercentage(q.used, q.total) <= DEPLETED_QUOTA_THRESHOLD;
@@ -477,40 +532,61 @@ export default function ProviderLimits() {
     [bulkToggling],
   );
 
-  const handleDisableDepleted = () => {    const ids = sortedConnections      .filter((c: any) => (c.isActive ?? true) && isConnectionDepleted(c))
+  const handleDisableDepleted: any = () => {
+    const ids: any = sortedConnections
+      .filter((c: any) => (c.isActive ?? true) && isConnectionDepleted(c))
       .map((c: any) => c.id);
     bulkSetActive(ids, false);
   };
 
-  const handleEnableAvailable = () => {    const ids = sortedConnections      .filter((c: any) => !(c.isActive ?? true) && !isConnectionDepleted(c))
+  const handleEnableAvailable: any = () => {
+    const ids: any = sortedConnections
+      .filter((c: any) => !(c.isActive ?? true) && !isConnectionDepleted(c))
       .map((c: any) => c.id);
     bulkSetActive(ids, true);
   };
 
-  const providerOptions = Array.from(    new Set<any>(filteredConnections.map((conn: any) => conn.provider)),
+  const providerOptions: any = Array.from(
+    new Set<any>(filteredConnections.map((conn: any) => conn.provider)),
   ).sort();
-  const selectedProviderLabel = providerFilter === "all" ? "All providers" : providerFilter;
+  const selectedProviderLabel: any = providerFilter === "all" ? "All providers" : providerFilter;
+
   // Calculate summary stats
-  const _totalProviders = sortedConnections.length;  const _activeWithLimits = Object.values(quotaData).filter(    (data: any) => data?.quotas?.length > 0,
+  const _totalProviders: any = sortedConnections.length;
+  const _activeWithLimits: any = Object.values(quotaData).filter(
+    (data: any) => data?.quotas?.length > 0,
   ).length;
 
   // Count low quotas (remaining < 30%)
-  const _lowQuotasCount = Object.values(quotaData).reduce((count: any, data: any) => {    if (!data?.quotas) return count;
+  const _lowQuotasCount: any = Object.values(quotaData).reduce((count: any, data: any) => {
+    if (!data?.quotas) return count;
 
-    const hasLowQuota = data.quotas.some((quota: any) => {      const percentage = calculatePercentage(quota.used, quota.total);      return percentage < 30 && quota.total > 0;
+    const hasLowQuota: any = data.quotas.some((quota: any) => {
+      const percentage: any = calculatePercentage(quota.used, quota.total);
+      return percentage < 30 && quota.total > 0;
     });
 
     return count + (hasLowQuota ? 1 : 0);
   }, 0);
 
   // Accumulated progress for a connection: sum used / sum total (enabled models only)
-  const getAccumulatedProgress = (conn: any) => {    const quotas = quotaData[conn.id]?.quotas || [];    const providerAlias = conn.provider;    const disabledSet = new Set<any>(disabledModels[providerAlias] || []);    const enabledQuotas = quotas.filter((q: any) => {      const key = q.modelKey || q.name;      return !disabledSet.has(key);
+  const getAccumulatedProgress: any = (conn: any) => {
+    const quotas: any = quotaData[conn.id]?.quotas || [];
+    const providerAlias: any = conn.provider;
+    const disabledSet: any = new Set<any>(disabledModels[providerAlias] || []);
+    const enabledQuotas: any = quotas.filter((q: any) => {
+      const key: any = q.modelKey || q.name;
+      return !disabledSet.has(key);
     });
-    const totalUsed = enabledQuotas.reduce((s: any, q: any) => s + (q.used || 0), 0);    const totalLimit = enabledQuotas.reduce((s: any, q: any) => s + (q.total || 0), 0);    const pct = calculatePercentage(totalUsed, totalLimit);    return { totalUsed, totalLimit, pct };
+    const totalUsed: any = enabledQuotas.reduce((s: any, q: any) => s + (q.used || 0), 0);
+    const totalLimit: any = enabledQuotas.reduce((s: any, q: any) => s + (q.total || 0), 0);
+    const pct: any = calculatePercentage(totalUsed, totalLimit);
+    return { totalUsed, totalLimit, pct };
   };
 
   // Color classes from status color name
-  const colorClasses = (color: any) => {    if (color === "green")
+  const colorClasses: any = (color: any) => {
+    if (color === "green")
       return { bar: "bg-green-500", track: "bg-green-500/15", text: "text-green-400" };
     if (color === "yellow")
       return { bar: "bg-yellow-500", track: "bg-yellow-500/15", text: "text-yellow-400" };
@@ -627,9 +703,12 @@ export default function ProviderLimits() {
         <button
           type="button"
           onClick={() => {
-            const next = !collapseAll;            setCollapseAll(next);
+            const next: any = !collapseAll;
+            setCollapseAll(next);
             if (next) {
-              const allProviderKeys = sortedConnections.map((c: any) => c.provider);              const allConnIds = sortedConnections.map((c: any) => c.id);              setExpandedProviders(Object.fromEntries(allProviderKeys.map((k: any) => [k, false])));
+              const allProviderKeys: any = sortedConnections.map((c: any) => c.provider);
+              const allConnIds: any = sortedConnections.map((c: any) => c.id);
+              setExpandedProviders(Object.fromEntries(allProviderKeys.map((k: any) => [k, false])));
               setExpandedRows(Object.fromEntries(allConnIds.map((id: any) => [id, false])));
             } else {
               setExpandedProviders({});
@@ -793,24 +872,31 @@ export default function ProviderLimits() {
         ) : (
           (() => {
             // Group connections by provider
-            const groupedByProvider = (sortedConnections as any).reduce(              (acc: any, conn: any) => {
+            const groupedByProvider: any = (sortedConnections as any).reduce(
+              (acc: any, conn: any) => {
                 if (!acc[conn.provider]) acc[conn.provider] = [];
                 acc[conn.provider].push(conn);
                 return acc;
               },
               {},
             );
-            const providerGroups = Object.entries(groupedByProvider);
-            const isEmail = (v: any) =>              typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            const providerGroups: any = Object.entries(groupedByProvider);
+
+            const isEmail: any = (v: any) =>
+              typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
             return providerGroups.map(([provider, conns]: any) => {
-              const providerExpanded = collapseAll                ? (expandedProviders[provider] ?? false)
+              const providerExpanded: any = collapseAll
+                ? (expandedProviders[provider] ?? false)
                 : (expandedProviders[provider] ?? true);
 
               // Latest lastUsedAt across all accounts in this provider group
-              const providerLastUsed = conns.reduce((latest: any, c: any) => {                const t = c.lastUsedAt ? new Date(c.lastUsedAt).getTime() : 0;                return t > latest ? t : latest;
+              const providerLastUsed: any = conns.reduce((latest: any, c: any) => {
+                const t: any = c.lastUsedAt ? new Date(c.lastUsedAt).getTime() : 0;
+                return t > latest ? t : latest;
               }, 0);
-              const providerLastUsedStr = providerLastUsed                ? new Date(providerLastUsed).toLocaleDateString("en-US", {
+              const providerLastUsedStr: any = providerLastUsed
+                ? new Date(providerLastUsed).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
@@ -818,13 +904,18 @@ export default function ProviderLimits() {
                 : null;
 
               // Accumulated progress across all connections in this provider group
-              const providerTotalUsed = conns.reduce(                (s: any, c: any) => s + getAccumulatedProgress(c).totalUsed,
+              const providerTotalUsed: any = conns.reduce(
+                (s: any, c: any) => s + getAccumulatedProgress(c).totalUsed,
                 0,
               );
-              const providerTotalLimit = conns.reduce(                (s: any, c: any) => s + getAccumulatedProgress(c).totalLimit,
+              const providerTotalLimit: any = conns.reduce(
+                (s: any, c: any) => s + getAccumulatedProgress(c).totalLimit,
                 0,
               );
-              const providerPct = calculatePercentage(providerTotalUsed, providerTotalLimit);              const providerColor = getStatusColor(providerPct);              const providerCc = colorClasses(providerColor);
+              const providerPct: any = calculatePercentage(providerTotalUsed, providerTotalLimit);
+              const providerColor: any = getStatusColor(providerPct);
+              const providerCc: any = colorClasses(providerColor);
+
               return (
                 <div key={provider} className="border-b border-charcoal-grey/60 last:border-0">
                   {/* Provider group row (top level) */}
@@ -905,10 +996,19 @@ export default function ProviderLimits() {
                   {/* Account rows (second level) */}
                   {providerExpanded &&
                     conns.map((conn: any) => {
-                      const quota = quotaData[conn.id];                      const isLoading = loading[conn.id];                      const error = errors[conn.id];                      const isInactive = conn.isActive === false;                      const rowBusy = deletingId === conn.id || togglingId === conn.id;                      const accountExpanded = collapseAll                        ? (expandedRows[conn.id] ?? false)
+                      const quota: any = quotaData[conn.id];
+                      const isLoading: any = loading[conn.id];
+                      const error: any = errors[conn.id];
+                      const isInactive: any = conn.isActive === false;
+                      const rowBusy: any = deletingId === conn.id || togglingId === conn.id;
+                      const accountExpanded: any = collapseAll
+                        ? (expandedRows[conn.id] ?? false)
                         : (expandedRows[conn.id] ?? true);
                       const { totalLimit, pct }: any = getAccumulatedProgress(conn);
-                      const color = getStatusColor(pct);                      const cc = colorClasses(color);                      const accountLabel = isEmail(conn.email)                        ? conn.email
+                      const color: any = getStatusColor(pct);
+                      const cc: any = colorClasses(color);
+                      const accountLabel: any = isEmail(conn.email)
+                        ? conn.email
                         : conn.name || conn.id.slice(0, 8);
 
                       return (
@@ -1067,10 +1167,14 @@ export default function ProviderLimits() {
                                 </div>
                               ) : (
                                 quota.quotas.map((q: any, idx: any) => {
-                                  const remaining =                                     q.remainingPercentage !== undefined
+                                  const remaining: any =
+                                    q.remainingPercentage !== undefined
                                       ? Math.round(q.remainingPercentage)
                                       : calculatePercentage(q.used, q.total);
-                                  const qColor = getStatusColor(remaining);                                  const qcc = colorClasses(qColor);                                  const resetCountdown = formatResetTime(q.resetAt);
+                                  const qColor: any = getStatusColor(remaining);
+                                  const qcc: any = colorClasses(qColor);
+                                  const resetCountdown: any = formatResetTime(q.resetAt);
+
                                   return (
                                     <div
                                       key={idx}

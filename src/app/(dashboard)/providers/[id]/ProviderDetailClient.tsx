@@ -363,10 +363,12 @@ export default function ProviderDetailPage() {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
       // todo(ts): settings payload shape lives outside the client; treat as any for now
-      const current = settingsData.providerStrategies || {};
+      const current: any = settingsData.providerStrategies || {};
+
       // Build override: null strategy means remove override, use global
       // todo(ts): untyped override object; widening to any to avoid the empty-literal type
-      const override = {};      if (strategy) override.fallbackStrategy = strategy;
+      const override: any = {};
+      if (strategy) override.fallbackStrategy = strategy;
       if (strategy === "round-robin" && stickyLimit !== "") {
         override.stickyRoundRobinLimit = Number(stickyLimit) || 3;
       }
@@ -406,8 +408,10 @@ export default function ProviderDetailPage() {
       const settingsRes = await fetch("/api/settings", { cache: "no-store" });
       const settingsData = settingsRes.ok ? await settingsRes.json() : {};
       // todo(ts): settings payload shape lives outside the client; treat as any for now
-      const current = settingsData.providerThinking || {};      const updated = { ...current };
-      const cfg = {};      if (mode && mode !== "auto") cfg.mode = mode;
+      const current: any = settingsData.providerThinking || {};
+      const updated = { ...current };
+      const cfg: any = {};
+      if (mode && mode !== "auto") cfg.mode = mode;
       if (effort && effort !== "default") cfg.effortMode = effort;
       if (Object.keys(cfg).length === 0) {
         delete updated[providerId];
@@ -518,7 +522,8 @@ export default function ProviderDetailPage() {
         body: JSON.stringify({ provider: providerId, ...formData }),
       });
 
-      let data = null;      try {
+      let data: any = null;
+      try {
         data = await res.json();
       } catch {
         data = null;

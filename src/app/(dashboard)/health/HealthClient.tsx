@@ -9,7 +9,9 @@ import { ANTHROPIC_COMPATIBLE_PREFIX } from "@/shared/constants/providers";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import TelemetryCard from "./TelemetryCard";
 
-const OFFLINE_HEALTH_CACHE_KEY = "health:snapshot";const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;
+const OFFLINE_HEALTH_CACHE_KEY: any = "health:snapshot";
+const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
+
 function getProviderIconSrc(p: any) {
   if (p.isCompatible) {
     if (p.provider?.startsWith(ANTHROPIC_COMPATIBLE_PREFIX)) return "/providers/anthropic-m.png";
@@ -26,7 +28,10 @@ function formatBytes(bytes: any = 0) {
 }
 
 function formatUptime(seconds: any = 0) {
-  const d = Math.floor(seconds / 86400);  const h = Math.floor((seconds % 86400) / 3600);  const m = Math.floor((seconds % 3600) / 60);  if (d > 0) return `${d}d ${h}h ${m}m`;
+  const d: any = Math.floor(seconds / 86400);
+  const h: any = Math.floor((seconds % 86400) / 3600);
+  const m: any = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
@@ -79,7 +84,8 @@ export default function HealthPage() {
 
   const fetchHealth: any = useCallback(async () => {
     try {
-      const result = await loadJsonStaleWhileRevalidate({        url: "/api/monitoring/health",
+      const result: any = await loadJsonStaleWhileRevalidate({
+        url: "/api/monitoring/health",
         cacheKey: OFFLINE_HEALTH_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["health"],
@@ -109,8 +115,12 @@ export default function HealthPage() {
 
   // SSE connection
   useEffect(() => {
-    let closed = false;    let reconnectTimer = null;    let es = null;
-    const cleanup = () => {      if (reconnectTimer) clearTimeout(reconnectTimer);
+    let closed: any = false;
+    let reconnectTimer: any = null;
+    let es: any = null;
+
+    const cleanup: any = () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       reconnectTimer = null;
       if (es) {
         es.close();
@@ -118,7 +128,8 @@ export default function HealthPage() {
       }
     };
 
-    const connect = () => {      if (closed) return;
+    const connect: any = () => {
+      if (closed) return;
       cleanup();
       es = new EventSource("/api/monitoring/health/stream");
       esRef.current = es;
@@ -126,7 +137,8 @@ export default function HealthPage() {
       es.onmessage = (e: any) => {
         if (closed) return;
         try {
-          const payload = JSON.parse(e.data);          if (payload.error) {
+          const payload: any = JSON.parse(e.data);
+          if (payload.error) {
             setError(payload.error);
             return;
           }
@@ -442,7 +454,9 @@ export default function HealthPage() {
           </p>
         ) : (
           (() => {
-            const unhealthy = data.providerHealth.filter((p: any) => p.state !== "CLOSED");            const healthy = data.providerHealth.filter((p: any) => p.state === "CLOSED");            return (
+            const unhealthy: any = data.providerHealth.filter((p: any) => p.state !== "CLOSED");
+            const healthy: any = data.providerHealth.filter((p: any) => p.state === "CLOSED");
+            return (
               <div className="space-y-3">
                 {unhealthy.length > 0 && (
                   <div className="space-y-2">
@@ -631,9 +645,11 @@ export default function HealthPage() {
                     </Badge>
                     <button
                       onClick={async () => {
-                        const key = `${bm.model}`;                        setClearingLock(key);
+                        const key: any = `${bm.model}`;
+                        setClearingLock(key);
                         try {
-                          const results = await Promise.all(                            bm.connections.map((c: any) =>
+                          const results: any = await Promise.all(
+                            bm.connections.map((c: any) =>
                               fetch("/api/models/availability", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -645,7 +661,9 @@ export default function HealthPage() {
                               }).then((r: any) => r.json()),
                             ),
                           );
-                          const anyPassed = results.some((r: any) => r.passed);                          const allFailed = results.every((r: any) => r.tested && !r.passed);                          if (anyPassed) {
+                          const anyPassed: any = results.some((r: any) => r.passed);
+                          const allFailed: any = results.every((r: any) => r.tested && !r.passed);
+                          if (anyPassed) {
                             toast.success("Model recheck passed — lockout cleared");
                           } else if (allFailed) {
                             toast.error("Model still failing — lockout kept");
@@ -680,7 +698,8 @@ export default function HealthPage() {
                       </div>
                       <span className="text-fog-grey shrink-0">
                         {(() => {
-                          const secs = Math.max(0, Math.round(c.retryAfterMs / 1000));                          if (secs >= 3600)
+                          const secs: any = Math.max(0, Math.round(c.retryAfterMs / 1000));
+                          if (secs >= 3600)
                             return `unblocks in ${Math.round(secs / 3600)}h ${Math.round((secs % 3600) / 60)}m`;
                           if (secs >= 60) return `unblocks in ${Math.round(secs / 60)}m`;
                           return `unblocks in ${secs}s`;
@@ -749,7 +768,8 @@ export default function HealthPage() {
                     </Badge>
                     <button
                       onClick={async () => {
-                        const key = `conn-${acc.connectionId}`;                        setClearingLock(key);
+                        const key: any = `conn-${acc.connectionId}`;
+                        setClearingLock(key);
                         try {
                           await fetch(
                             `/api/provider-nodes/${acc.connectionId}/clear-connection-lock`,
@@ -791,7 +811,8 @@ export default function HealthPage() {
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-storm-cloud">
                     {(() => {
-                      const secs = Math.max(0, Math.round(acc.retryAfterMs / 1000));                      if (secs >= 3600)
+                      const secs: any = Math.max(0, Math.round(acc.retryAfterMs / 1000));
+                      if (secs >= 3600)
                         return `unlocks in ${Math.floor(secs / 3600)}h ${Math.round((secs % 3600) / 60)}m`;
                       if (secs >= 60) return `unlocks in ${Math.round(secs / 60)}m`;
                       return `unlocks in ${secs}s`;

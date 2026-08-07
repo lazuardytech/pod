@@ -76,7 +76,8 @@ export class CodexService extends OAuthService {
 
       // Start local server for callback (use fixed port 1455 like real Codex CLI)
       const fixedPort = 1455;
-      let callbackParams = null;      const { port, close } = await startLocalServer((params) => {
+      let callbackParams: any = null;
+      const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       }, fixedPort);
 

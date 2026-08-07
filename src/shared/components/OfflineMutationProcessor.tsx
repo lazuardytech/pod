@@ -12,7 +12,8 @@ export default function OfflineMutationProcessor(): any {
 
   useEffect((): any => {
     let cancelled = false;
-    let intervalId = null;
+    let intervalId: any = null;
+
     const runDrain = async (): Promise<any> => {
       if (cancelled || isDrainingRef.current) return;
       isDrainingRef.current = true;

@@ -5,7 +5,8 @@ import { sanitizeError } from "@/lib/sanitizeError";
 const KILO_MODELS_URL = "https://api.kilo.ai/api/gateway/models";
 
 // In-memory cache with TTL
-let cachedModels = null;let cacheTimestamp = 0;
+let cachedModels: any = null;
+let cacheTimestamp = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export async function GET() {
