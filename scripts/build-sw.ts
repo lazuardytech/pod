@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
@@ -14,5 +15,6 @@ const compiled = transpiler
 
 await mkdir(dirname(outputFile), { recursive: true });
 await writeFile(outputFile, `${generatedHeader}\n${compiled}`);
+execFileSync("bun", ["x", "oxfmt", "--write", outputFile], { stdio: "ignore" });
 
 console.log(`[build-sw] wrote ${outputFile} from ${sourceFile}`);
