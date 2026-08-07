@@ -1,5 +1,16 @@
 // NanoBanana API — async submit + poll record-info
-import { nowSec, POLL_INTERVAL_MS, POLL_TIMEOUT_MS, sizeToAspectRatio, sleep } from "./_base.js";
+import {
+  type ImageProviderHeaders,
+  type ImageRequestBody,
+  type JsonObject,
+  type PollingParseContext,
+  type ProviderCredentials,
+  nowSec,
+  POLL_INTERVAL_MS,
+  POLL_TIMEOUT_MS,
+  sizeToAspectRatio,
+  sleep,
+} from "./_base.js";
 
 const SUBMIT_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana/generate";
 const POLL_BASE = "https://api.nanobananaapi.ai/api/v1/nanobanana/record-info";
@@ -7,16 +18,16 @@ const POLL_BASE = "https://api.nanobananaapi.ai/api/v1/nanobanana/record-info";
 export default {
   async: true,
   buildUrl: () => SUBMIT_URL,
-  buildHeaders: (creds: any) => {
-    const headers: Record<string, any> = { "Content-Type": "application/json" };
+  buildHeaders: (creds: ProviderCredentials) => {
+    const headers: ImageProviderHeaders = { "Content-Type": "application/json" };
     const key = creds?.apiKey || creds?.accessToken;
     if (key) headers["Authorization"] = `Bearer ${key}`;
     return headers;
   },
-  buildBody: (_model: any, body: any) => {
+  buildBody: (_model: string, body: ImageRequestBody) => {
     const ratio = sizeToAspectRatio(body.size);
     const isEdit = !!(body.image || (Array.isArray(body.images) && body.images.length));
-    const req: Record<string, any> = {
+    const req: JsonObject = {
       prompt: body.prompt,
       type: isEdit ? "IMAGETOIAMGE" : "TEXTTOIAMGE",
       numImages: body.n || 1,
@@ -32,8 +43,12 @@ export default {
     return req;
   },
   // Async: parse submit → poll until SUCCESS, return raw poll data
-  async parseResponse(response: any, { headers }: any) {
-    const submitData = await response.json();
+  async parseResponse(response: Response, { headers }: PollingParseContext) {
+    const submitData = (await response.json()) as {
+      code?: number;
+      data?: { taskId?: string };
+      msg?: string;
+    };
     if (submitData.code !== 200) throw new Error(submitData.msg || "NanoBanana submit failed");
     const taskId = submitData.data?.taskId;
     if (!taskId) throw new Error("NanoBanana: no taskId returned");
@@ -41,9 +56,11 @@ export default {
     const deadline = Date.now() + POLL_TIMEOUT_MS;
     while (Date.now() < deadline) {
       await sleep(POLL_INTERVAL_MS);
-      const r = await fetch(pollUrl, { headers });
+      const r = await fetch(pollUrl, { headers: headers as ImageProviderHeaders });
       if (!r.ok) throw new Error(`NanoBanana status ${r.status}`);
-      const s = await r.json();
+      const s = (await r.json()) as {
+        data?: { errorMessage?: string; response?: unknown; successFlag?: number };
+      };
       const flag = s.data?.successFlag;
       if (flag === 1) return s.data;
       if (flag === 2 || flag === 3)
@@ -51,7 +68,10 @@ export default {
     }
     throw new Error("NanoBanana polling timeout");
   },
-  normalize: (responseBody: any, prompt: any) => {
+  normalize: (
+    responseBody: { response?: { originImageUrl?: string; resultImageUrl?: string } },
+    prompt: string,
+  ) => {
     const url = responseBody.response?.resultImageUrl || responseBody.response?.originImageUrl;
     if (url) return { created: nowSec(), data: [{ url, revised_prompt: prompt }] };
     return { created: nowSec(), data: [] };
