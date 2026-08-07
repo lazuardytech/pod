@@ -6,6 +6,14 @@
 const REQUEST_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_RESULTS = 10;
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 /**
  * Normalize a citation entry into the unified result shape.
  * @param {{url:string, title?:string, snippet?:string}} c
@@ -311,17 +319,18 @@ export async function handleChatSearch({
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     clearTimeout(timer);
-    if (err?.name === "AbortError") {
+    if (isAbortError(err)) {
       log?.warn?.(`[chatSearch] timeout provider=${provider}`);
       return { success: false, status: 504, error: "Upstream timeout" };
     }
-    log?.error?.(`[chatSearch] network error provider=${provider}: ${err?.message}`);
+    const message = errorMessage(err);
+    log?.error?.(`[chatSearch] network error provider=${provider}: ${message}`);
     return {
       success: false,
       status: 502,
-      error: `Network error: ${err?.message || "unknown"}`,
+      error: `Network error: ${message || "unknown"}`,
     };
   }
   clearTimeout(timer);
@@ -331,6 +340,7 @@ export async function handleChatSearch({
   try {
     data = await resp.json();
   } catch {
+    // Upstream returned a non-JSON body for a JSON chat-search endpoint.
     return {
       success: false,
       status: 502,

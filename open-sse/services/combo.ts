@@ -5,6 +5,10 @@
 import { unavailableResponse } from "../utils/error.js";
 import { checkFallbackError, formatRetryAfter } from "./accountFallback.js";
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Track rotation state per combo (for round-robin strategy)
  *
@@ -296,10 +300,12 @@ export async function handleComboChat({
       lastError = errorText || String(result.status);
       if (!lastStatus) lastStatus = result.status;
       log.warn("COMBO", `Model ${modelStr} failed, trying next`, { status: result.status });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Catch unexpected exceptions to ensure fallback continues
       // Log full error internally but don't expose raw stack/message to clients
-      log.warn("COMBO", `Model ${modelStr} threw error, trying next`, { error: error.message });
+      log.warn("COMBO", `Model ${modelStr} threw error, trying next`, {
+        error: errorMessage(error),
+      });
       lastError = "Model request failed";
       if (!lastStatus) lastStatus = 500;
     }
@@ -354,6 +360,7 @@ export async function overrideResponseModelId(response: any, modelId: any) {
               if ("model" in obj) obj.model = modelId;
               return `data: ${JSON.stringify(obj)}`;
             } catch {
+              // Malformed SSE data should pass through unchanged.
               return line;
             }
           })
@@ -361,7 +368,9 @@ export async function overrideResponseModelId(response: any, modelId: any) {
         controller.enqueue(new TextEncoder().encode(rewritten));
       },
     });
-    response.body.pipeTo(writable).catch(() => {});
+    response.body.pipeTo(writable).catch(() => {
+      // Client disconnect or upstream cancellation; response body cleanup is best effort.
+    });
     const headers = new Headers(response.headers);
     return new Response(readable, { status: response.status, headers });
   }
@@ -374,6 +383,7 @@ export async function overrideResponseModelId(response: any, modelId: any) {
     headers.set("Content-Type", "application/json");
     return new Response(JSON.stringify(body), { status: response.status, headers });
   } catch {
+    // Preserve original response when non-streaming body cannot be parsed.
     return response;
   }
 }

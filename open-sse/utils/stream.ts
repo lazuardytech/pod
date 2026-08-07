@@ -63,8 +63,13 @@ function decloakSSELine(line: any, toolNameMap: any, allowSuffixFallback: any = 
     if (decloaked === parsed) return line;
     return (isDataLine ? "data: " : "") + JSON.stringify(decloaked);
   } catch {
+    // Malformed SSE data should pass through unchanged.
     return line;
   }
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
 }
 
 /**
@@ -203,10 +208,14 @@ export function createSSEStream(options: any = {}) {
           const errChunk = `data: ${JSON.stringify({ error: { message: "Stream stalled: no data received for 5 minutes", type: "stream_stall", code: "stream_stall" } })}`;
           try {
             controller.enqueue(sharedEncoder.encode(errChunk + "\n\ndata: [DONE]\n\n"));
-          } catch {}
+          } catch {
+            // Client may already be gone; stall cleanup remains best effort.
+          }
           try {
             controller.terminate();
-          } catch {}
+          } catch {
+            // Stream may already be closed by client disconnect.
+          }
         }, STALL_TIMEOUT_MS);
         stallTimer.unref?.();
       };
@@ -366,7 +375,9 @@ export function createSSEStream(options: any = {}) {
                   output = `data: ${JSON.stringify(parsed)}\n\n`;
                   injectedUsage = true;
                 }
-              } catch {}
+              } catch {
+                // Malformed passthrough chunks are forwarded in their original form.
+              }
             }
 
             if (!injectedUsage) {
@@ -479,18 +490,26 @@ export function createSSEStream(options: any = {}) {
             }
           }
         }
-      } catch (_transformError: any) {
-        console.error("[STREAM_TRANSFORM] Transform error; attempting graceful termination");
+      } catch (transformError: unknown) {
+        console.error(
+          isAbortError(transformError)
+            ? "[STREAM_TRANSFORM] Transform aborted; attempting graceful termination"
+            : "[STREAM_TRANSFORM] Transform error; attempting graceful termination",
+        );
         try {
           controller.enqueue(
             sharedEncoder.encode(
               `data: ${JSON.stringify({ error: { message: "Stream processing error", type: "server_error" } })}\n\ndata: [DONE]\n\n`,
             ),
           );
-        } catch {}
+        } catch {
+          // Client may already be disconnected; error frame is best effort.
+        }
         try {
           controller.terminate();
-        } catch {}
+        } catch {
+          // Stream may already be closed after abort/error.
+        }
       }
     },
 
@@ -528,7 +547,9 @@ export function createSSEStream(options: any = {}) {
               connectionId,
               tokens: null,
               status: "SUCCESS",
-            }).catch(() => {});
+            }).catch(() => {
+              // Best-effort usage log; do not fail stream flush.
+            });
           }
 
           if (!sawDone) emit("data: [DONE]\n\n", controller);
@@ -597,7 +618,9 @@ export function createSSEStream(options: any = {}) {
             connectionId,
             tokens: null,
             status: "SUCCESS",
-          }).catch(() => {});
+          }).catch(() => {
+            // Best-effort usage log; do not fail stream flush.
+          });
         }
 
         if (onStreamComplete) {
@@ -610,7 +633,11 @@ export function createSSEStream(options: any = {}) {
             ttftAt,
           );
         }
-      } catch (_error: any) {
+      } catch (error: unknown) {
+        if (isAbortError(error)) {
+          console.log("Stream flush aborted");
+          return;
+        }
         console.log("Error in flush");
       }
     },

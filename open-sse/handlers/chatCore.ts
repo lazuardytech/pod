@@ -100,6 +100,24 @@ import { buildOnStreamComplete, handleStreamingResponse } from "./chatCore/strea
 
 export type ChatCoreResult = { success: true; response: Response } | ErrorResult;
 
+function errorName(error: unknown) {
+  return error instanceof Error ? error.name : "";
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function errorCauseName(error: unknown) {
+  if (!(error instanceof Error) || !error.cause || typeof error.cause !== "object") return "";
+  const cause = error.cause as { name?: unknown };
+  return typeof cause.name === "string" ? cause.name : "";
+}
+
+function isAbortError(error: unknown) {
+  return errorName(error) === "AbortError";
+}
+
 export interface ChatCoreParams {
   body: Record<string, any>;
   modelInfo: { provider: string; model: string };
@@ -412,8 +430,8 @@ export async function handleChatCore({
         body = injectMemory(body, memories, provider);
         log?.debug?.("MEMORY", `Injected ${memories.length} memories for key=${memoryOwnerId}`);
       }
-    } catch (error: any) {
-      log?.debug?.("MEMORY", `Memory injection skipped: ${error?.message || String(error)}`);
+    } catch (error: unknown) {
+      log?.debug?.("MEMORY", `Memory injection skipped: ${errorMessage(error)}`);
     }
   }
 
@@ -563,9 +581,9 @@ export async function handleChatCore({
   // Pass timeout to proxy layer so Vercel relay can enforce its own AbortController
   proxyOptions.upstreamTimeoutMs = upstreamTimeoutMs;
 
-  const isUpstreamTimeoutError = (error: any) =>
-    error?.name === "TimeoutError" || error?.cause?.name === "TimeoutError";
-  const buildAbortStatus = (error: any) =>
+  const isUpstreamTimeoutError = (error: unknown) =>
+    errorName(error) === "TimeoutError" || errorCauseName(error) === "TimeoutError";
+  const buildAbortStatus = (error: unknown) =>
     isUpstreamTimeoutError(error) ? HTTP_STATUS.REQUEST_TIMEOUT : 499;
   const createUpstreamSignal = () => {
     const timeoutController = new AbortController();
@@ -640,7 +658,7 @@ export async function handleChatCore({
       finalBody = retryResult.transformedBody;
       reqLogger.logTargetRequest(providerUrl, providerHeaders, finalBody);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     trackPendingRequest(model, provider, connectionId, false, true);
     const abortStatus = buildAbortStatus(error);
     const isTimeout = isUpstreamTimeoutError(error);
@@ -653,8 +671,10 @@ export async function handleChatCore({
       model,
       provider,
       connectionId,
-      status: `FAILED ${error.name === "AbortError" ? abortStatus : HTTP_STATUS.BAD_GATEWAY}`,
-    }).catch(() => {});
+      status: `FAILED ${isAbortError(error) ? abortStatus : HTTP_STATUS.BAD_GATEWAY}`,
+    }).catch(() => {
+      // Best-effort request log; upstream error response still proceeds.
+    });
     saveRequestDetail(
       buildRequestDetail({
         provider,
@@ -665,15 +685,17 @@ export async function handleChatCore({
         request: extractRequestConfig(body, stream),
         providerRequest: translatedBody || null,
         response: {
-          error: error.message || String(error),
-          status: error.name === "AbortError" ? abortStatus : 502,
+          error: errorMessage(error),
+          status: isAbortError(error) ? abortStatus : 502,
           thinking: null,
         },
         status: "error",
       }),
-    ).catch(() => {});
+    ).catch(() => {
+      // Best-effort request detail; upstream error response still proceeds.
+    });
 
-    if (error.name === "AbortError") {
+    if (isAbortError(error)) {
       streamController.handleError(error);
       return createErrorResult(
         abortStatus,
@@ -719,8 +741,8 @@ export async function handleChatCore({
         if (onCredentialsRefreshed) {
           try {
             await onCredentialsRefreshed(newCredentials);
-          } catch (e: any) {
-            log?.warn?.("TOKEN", `onCredentialsRefreshed failed: ${e.message}`);
+          } catch (e: unknown) {
+            log?.warn?.("TOKEN", `onCredentialsRefreshed failed: ${errorMessage(e)}`);
           }
         }
         try {
@@ -729,14 +751,17 @@ export async function handleChatCore({
             providerResponse = retryResult.response;
             providerUrl = retryResult.url;
           }
-        } catch {
-          log?.warn?.("TOKEN", `${provider.toUpperCase()} | retry after refresh failed`);
+        } catch (e: unknown) {
+          log?.warn?.(
+            "TOKEN",
+            `${provider.toUpperCase()} | retry after refresh failed: ${errorMessage(e)}`,
+          );
         }
       } else {
         log?.warn?.("TOKEN", `${provider.toUpperCase()} | refresh failed`);
       }
-    } catch (e: any) {
-      log?.warn?.("TOKEN", `${provider.toUpperCase()} | refresh threw: ${e.message}`);
+    } catch (e: unknown) {
+      log?.warn?.("TOKEN", `${provider.toUpperCase()} | refresh threw: ${errorMessage(e)}`);
     }
   }
 
@@ -749,7 +774,9 @@ export async function handleChatCore({
     );
     console.error(`[UPSTREAM ${statusCode}] Upstream provider returned an error`);
     appendRequestLog({ model, provider, connectionId, status: `FAILED ${statusCode}` }).catch(
-      () => {},
+      () => {
+        // Best-effort request log; upstream error response still proceeds.
+      },
     );
     saveRequestDetail(
       buildRequestDetail({
@@ -763,7 +790,9 @@ export async function handleChatCore({
         response: { error: message, status: statusCode, thinking: null },
         status: "error",
       }),
-    ).catch(() => {});
+    ).catch(() => {
+      // Best-effort request detail; upstream error response still proceeds.
+    });
 
     const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
     reqLogger.logError(new Error(message), finalBody || translatedBody);
@@ -784,7 +813,9 @@ export async function handleChatCore({
     onRequestSuccess,
   };
   const appendLog = (extra: any) =>
-    appendRequestLog({ model, provider, connectionId, combo: comboName, ...extra }).catch(() => {});
+    appendRequestLog({ model, provider, connectionId, combo: comboName, ...extra }).catch(() => {
+      // Best-effort request log; do not disrupt response handling.
+    });
   const trackDone = () => trackPendingRequest(model, provider, connectionId, false);
 
   // Provider forced streaming but client wants JSON
@@ -872,18 +903,18 @@ export async function handleChatCore({
     let reader;
     try {
       reader = providerResponse.body.getReader();
-    } catch (e: any) {
-      log?.error?.("CHAT_CORE", `Failed to get reader from provider stream: ${e.message}`);
+    } catch (e: unknown) {
+      log?.error?.("CHAT_CORE", `Failed to get reader from provider stream: ${errorMessage(e)}`);
       return createErrorResult(
         HTTP_STATUS.BAD_GATEWAY,
         "Failed to read provider stream",
         undefined,
       );
     }
-    const peekResult = await reader.read().catch((e: any) => {
+    const peekResult = await reader.read().catch((e: unknown) => {
       log?.error?.(
         "CHAT_CORE",
-        `Failed to peek first chunk from ${provider}/${model}: ${e.message}`,
+        `Failed to peek first chunk from ${provider}/${model}: ${errorMessage(e)}`,
       );
       return { value: null, done: true };
     });
@@ -898,7 +929,9 @@ export async function handleChatCore({
             const parsed = JSON.parse(payload);
             if (parsed.error && !parsed.choices) {
               trackPendingRequest(model, provider, connectionId, false, true);
-              reader.cancel().catch(() => {});
+              reader.cancel().catch(() => {
+                // Cleanup only; stream is already returning an upstream error.
+              });
 
               // If contentFilterMessage is set, return a humanistic SSE response
               // instead of a programmatic error so the client sees a natural reply.
@@ -953,11 +986,11 @@ export async function handleChatCore({
               controller.enqueue(value);
             }
             controller.close();
-          } catch (e: any) {
+          } catch (e: unknown) {
             // ponytail: controller.close() on AbortError — controller.error() re-emits the
             // abort to the response writer, which surfaces as unhandledRejection at
             // node:_http_server.
-            if (e?.name === "AbortError") {
+            if (isAbortError(e)) {
               controller.close();
             } else {
               controller.error(e);
@@ -965,7 +998,9 @@ export async function handleChatCore({
           }
         },
         cancel() {
-          reader.cancel().catch(() => {});
+          reader.cancel().catch(() => {
+            // Cleanup only; downstream cancellation is already in progress.
+          });
         },
       });
       providerResponse = new Response(reconstructed, {

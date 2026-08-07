@@ -138,5 +138,7 @@ export function saveUsageStats({
     connectionId: connectionId || undefined,
     apiKey: apiKey || undefined,
     endpoint: endpoint || null,
-  }).catch(() => {});
+  }).catch(() => {
+    // Best-effort usage persistence; never fail response handling on metrics writes.
+  });
 }

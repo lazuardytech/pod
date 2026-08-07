@@ -15,6 +15,10 @@ const SSE_HEADERS = {
   "Access-Control-Allow-Origin": "*",
 };
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Determine which SSE transform stream to use based on provider/format.
  */
@@ -148,8 +152,8 @@ export function handleStreamingResponse({
       },
       { id: streamDetailId },
     ),
-  ).catch((err: any) => {
-    console.error("[RequestDetail] Failed to save streaming request:", err.message);
+  ).catch((err: unknown) => {
+    console.error("[RequestDetail] Failed to save streaming request:", errorMessage(err));
   });
 
   return {
@@ -199,8 +203,8 @@ export function buildOnStreamComplete({
         },
         { id: streamDetailId },
       ),
-    ).catch((err: any) => {
-      console.error("[RequestDetail] Failed to update streaming content:", err.message);
+    ).catch((err: unknown) => {
+      console.error("[RequestDetail] Failed to update streaming content:", errorMessage(err));
     });
 
     saveUsageStats({

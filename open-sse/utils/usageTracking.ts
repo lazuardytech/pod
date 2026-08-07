@@ -273,7 +273,7 @@ export function estimateInputTokens(body: any) {
 
     // Estimate: ~4 chars per token (rough average across all tokenizers)
     return Math.ceil(totalChars / 4);
-  } catch (_err: any) {
+  } catch {
     // Fallback if stringify fails
     return 0;
   }
@@ -374,7 +374,11 @@ export function logUsage(
     reasoning_tokens: reasoning || 0,
   };
   saveRequestUsage({ model, provider, connectionId, tokens, apiKey: apiKey || undefined }).catch(
-    () => {},
+    () => {
+      // Best-effort usage persistence; never fail stream completion on metrics writes.
+    },
   );
-  appendRequestLog({ model, provider, connectionId, tokens, status: "SUCCESS" }).catch(() => {});
+  appendRequestLog({ model, provider, connectionId, tokens, status: "SUCCESS" }).catch(() => {
+    // Best-effort request log; never fail stream completion on metrics writes.
+  });
 }

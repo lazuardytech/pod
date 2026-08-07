@@ -30,6 +30,10 @@ import { getQoderModelConfig, resolveQoderModels } from "../services/qoderModels
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { BaseExecutor } from "./base.js";
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Hoist role:"system" messages out of the messages array (Qoder rejects
  * system in messages) and flatten any multipart content arrays.
@@ -112,7 +116,9 @@ function stableChatRecordId(model: any, messages: any, tools: any, maxTokens: an
     h.update("\0");
     try {
       h.update(JSON.stringify(tools));
-    } catch {}
+    } catch {
+      // Tool hashing is best effort; maxTokens still participates in the key.
+    }
   }
   h.update(`\0mt=${maxTokens}`);
   return h.digest("hex").slice(0, 16);
@@ -261,6 +267,7 @@ function wrapQoderSSE(response: any, model: any) {
     try {
       envelope = JSON.parse(data);
     } catch {
+      // Malformed Qoder envelope lines are ignored; later frames may still be valid.
       return;
     }
     const statusVal = typeof envelope.statusCodeValue === "number" ? envelope.statusCodeValue : 200;
@@ -308,11 +315,11 @@ function wrapQoderSSE(response: any, model: any) {
           buffer = buffer.slice(nl + 1);
           try {
             processLine(line, controller);
-          } catch (lineErr: any) {
-            console.warn("[qoder] processLine error:", lineErr.message);
+          } catch (lineErr: unknown) {
+            console.warn("[qoder] processLine error:", errorMessage(lineErr));
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         controller.error(err);
       }
     },
@@ -409,8 +416,8 @@ export class QoderExecutor extends BaseExecutor {
         proxyOptions,
         signal,
       }));
-    } catch (err: any) {
-      const fakeResp = new Response(JSON.stringify({ error: { message: err.message } }), {
+    } catch (err: unknown) {
+      const fakeResp = new Response(JSON.stringify({ error: { message: errorMessage(err) } }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -430,11 +437,11 @@ export class QoderExecutor extends BaseExecutor {
         email: credentials.email || "",
         machineId: psd.machineId || "",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // cosy.js throws synchronously on missing userId/authToken — surface
       // as 401 so chatCore prompts re-auth instead of returning a 500.
       const fakeResp = new Response(
-        JSON.stringify({ error: { message: `qoder cosy signing failed: ${err.message}` } }),
+        JSON.stringify({ error: { message: `qoder cosy signing failed: ${errorMessage(err)}` } }),
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
       return { response: fakeResp, url, headers: {}, transformedBody: body };
@@ -459,7 +466,7 @@ export class QoderExecutor extends BaseExecutor {
         { method: "POST", headers, body: encodedBodyBuf, signal },
         proxyOptions,
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw err;
     }
 

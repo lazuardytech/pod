@@ -10,6 +10,14 @@ function getTimeString() {
   });
 }
 
+function errorName(error: unknown) {
+  return error instanceof Error ? error.name : "";
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Create stream controller with abort and disconnect detection
  * @param {object} options
@@ -79,12 +87,12 @@ export function createStreamController({
         abortTimeout = null;
       }
 
-      if (error.name === "AbortError") {
+      if (errorName(error) === "AbortError") {
         logStream("aborted");
         return;
       }
 
-      logStream(`error: ${error.message}`);
+      logStream(`error: ${errorMessage(error)}`);
       onError?.(error);
     },
 
@@ -115,11 +123,15 @@ export function createDisconnectAwareStream(transformStream: any, streamControll
           return;
         }
         controller.enqueue(value);
-      } catch (error: any) {
+      } catch (error: unknown) {
         streamController.handleError(error);
         // Cleanup reader/writer to avoid orphaned streams
-        reader.cancel().catch(() => {});
-        writer.abort().catch(() => {});
+        reader.cancel().catch(() => {
+          // Cleanup only; stream is already handling the read error.
+        });
+        writer.abort().catch(() => {
+          // Cleanup only; stream is already handling the read error.
+        });
         controller.error(error);
       }
     },

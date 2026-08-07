@@ -10,6 +10,10 @@ let fs: any = null;
 let path: any = null;
 let LOGS_DIR: any = null;
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // Lazy load Node.js modules (avoid top-level await)
 async function ensureNodeModules() {
   if (!isNode || !LOGGING_ENABLED || fs) return;
@@ -55,8 +59,8 @@ async function createLogSession(sourceFormat: any, targetFormat: any, model: any
     fs.mkdirSync(sessionPath, { recursive: true });
 
     return sessionPath;
-  } catch (err: any) {
-    console.log("[LOG] Failed to create log session:", err.message);
+  } catch (err: unknown) {
+    console.log("[LOG] Failed to create log session:", errorMessage(err));
     return null;
   }
 }
@@ -68,8 +72,8 @@ function writeJsonFile(sessionPath: any, filename: any, data: any) {
   try {
     const filePath = path.join(sessionPath, filename);
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-  } catch (err: any) {
-    console.log(`[LOG] Failed to write ${filename}:`, err.message);
+  } catch (err: unknown) {
+    console.log(`[LOG] Failed to write ${filename}:`, errorMessage(err));
   }
 }
 
@@ -191,7 +195,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
       try {
         const filePath = path.join(sessionPath, "5_res_provider.txt");
         fs.appendFileSync(filePath, chunk);
-      } catch (_err: any) {
+      } catch {
         // Ignore append errors
       }
     },
@@ -202,7 +206,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
       try {
         const filePath = path.join(sessionPath, "6_res_openai.txt");
         fs.appendFileSync(filePath, chunk);
-      } catch (_err: any) {
+      } catch {
         // Ignore append errors
       }
     },
@@ -221,7 +225,7 @@ export async function createRequestLogger(sourceFormat: any, targetFormat: any, 
       try {
         const filePath = path.join(sessionPath, "7_res_client.txt");
         fs.appendFileSync(filePath, chunk);
-      } catch (_err: any) {
+      } catch {
         // Ignore append errors
       }
     },
@@ -264,7 +268,7 @@ export function logError(provider: any, { error, url, model, requestBody }: any)
     };
 
     fs.appendFileSync(logPath, JSON.stringify(logEntry) + "\n");
-  } catch (err: any) {
-    console.log("[LOG] Failed to write error log:", err.message);
+  } catch (err: unknown) {
+    console.log("[LOG] Failed to write error log:", errorMessage(err));
   }
 }

@@ -12,6 +12,10 @@ const _textDecoder = new TextDecoder();
 
 const PROTOBUF_SCHEMA_VERSION = "1.1.3";
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // ==================== SCHEMAS ====================
 
 const WIRE_TYPE = { VARINT: 0, FIXED64: 1, LEN: 2, FIXED32: 5 };
@@ -841,8 +845,8 @@ export function parseConnectRPCFrame(buffer: any) {
   if (flags === 0x01) {
     try {
       payload = new Uint8Array(zlib.gunzipSync(Buffer.from(payload)));
-    } catch (err: any) {
-      log("PARSE", `Decompression failed: ${err.message}`);
+    } catch (err: unknown) {
+      log("PARSE", `Decompression failed: ${errorMessage(err)}`);
     }
   }
 
@@ -888,8 +892,8 @@ function extractToolCall(toolCallData: any) {
           rawArgs = new TextDecoder().decode(tool.get(FIELD.MCP_NESTED_PARAMS)[0].value);
         }
       }
-    } catch (err: any) {
-      log("EXTRACT", `MCP parse error: ${err.message}`);
+    } catch (err: unknown) {
+      log("EXTRACT", `MCP parse error: ${errorMessage(err)}`);
     }
   }
 
@@ -930,8 +934,8 @@ function extractTextAndThinking(responseData: any) {
       if (thinkingMsg.has(FIELD.THINKING_TEXT)) {
         thinking = new TextDecoder().decode(thinkingMsg.get(FIELD.THINKING_TEXT)[0].value);
       }
-    } catch (err: any) {
-      log("EXTRACT", `Thinking parse error: ${err.message}`);
+    } catch (err: unknown) {
+      log("EXTRACT", `Thinking parse error: ${errorMessage(err)}`);
     }
   }
 
@@ -971,15 +975,16 @@ export function extractTextFromResponse(payload: any) {
     }
 
     return { text: null, error: null, toolCall: null, thinking: null };
-  } catch (err: any) {
-    log("EXTRACT", `Decode failed (schema v${PROTOBUF_SCHEMA_VERSION}): ${err.message}`);
+  } catch (err: unknown) {
+    const message = errorMessage(err);
+    log("EXTRACT", `Decode failed (schema v${PROTOBUF_SCHEMA_VERSION}): ${message}`);
     return {
       text: null,
       error: null,
       toolCall: null,
       thinking: null,
       raw: Buffer.from(payload).toString("base64"),
-      decodeError: err.message,
+      decodeError: message,
     };
   }
 }

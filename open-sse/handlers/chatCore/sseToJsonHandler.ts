@@ -9,6 +9,10 @@ type ForcedSSEToJsonResult =
   | { success: true; response: Response }
   | ReturnType<typeof createErrorResult>;
 
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 function textFromResponsesMessageItem(item: any) {
   if (!item?.content || !Array.isArray(item.content)) return "";
   const byType = item.content.find((c: any) => c.type === "output_text");
@@ -198,7 +202,9 @@ export async function handleForcedSSEToJson({
           },
           { endpoint: clientRawRequest?.endpoint || null },
         ),
-      ).catch(() => {});
+      ).catch(() => {
+        // Best-effort request detail; response conversion should not fail on logging.
+      });
 
       // Client is Responses API → return as-is
       if (sourceFormat === FORMATS.OPENAI_RESPONSES) {
@@ -297,8 +303,12 @@ export async function handleForcedSSEToJson({
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         }),
       };
-    } catch {
-      console.error("[ChatCore] Responses API SSE→JSON failed");
+    } catch (error: unknown) {
+      console.error(
+        isAbortError(error)
+          ? "[ChatCore] Responses API SSE→JSON aborted"
+          : "[ChatCore] Responses API SSE→JSON failed",
+      );
       return createErrorResult(
         HTTP_STATUS.BAD_GATEWAY,
         "Failed to convert streaming response to JSON",
@@ -349,7 +359,9 @@ export async function handleForcedSSEToJson({
         },
         { endpoint: clientRawRequest?.endpoint || null },
       ),
-    ).catch(() => {});
+    ).catch(() => {
+      // Best-effort request detail; response conversion should not fail on logging.
+    });
 
     // Preserve reasoning_content even when content is non-empty so clients that
     // expose a dedicated thinking panel can always consume it.
@@ -366,8 +378,12 @@ export async function handleForcedSSEToJson({
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       }),
     };
-  } catch {
-    console.error("[ChatCore] Chat Completions SSE→JSON failed");
+  } catch (error: unknown) {
+    console.error(
+      isAbortError(error)
+        ? "[ChatCore] Chat Completions SSE→JSON aborted"
+        : "[ChatCore] Chat Completions SSE→JSON failed",
+    );
     return createErrorResult(
       HTTP_STATUS.BAD_GATEWAY,
       "Failed to convert streaming response to JSON",

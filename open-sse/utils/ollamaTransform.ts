@@ -78,8 +78,8 @@ export function transformToOllama(response: any, model: any) {
               controller.enqueue(new TextEncoder().encode(ollamaEnd));
             }
           }
-        } catch (_e: any) {
-          // Silently ignore parse errors
+        } catch {
+          // Malformed upstream chunks are ignored; later SSE frames may still be valid.
         }
       }
     },

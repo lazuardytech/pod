@@ -19,6 +19,10 @@ type NonStreamingResult =
   | { success: true; response: Response }
   | ReturnType<typeof createErrorResult>;
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Translate non-streaming response body from provider format → OpenAI format.
  */
@@ -350,8 +354,8 @@ export async function handleNonStreamingResponse({
       },
       { endpoint: clientRawRequest?.endpoint || null },
     ),
-  ).catch((err: any) => {
-    console.error("[RequestDetail] Failed to save:", err.message);
+  ).catch((err: unknown) => {
+    console.error("[RequestDetail] Failed to save:", errorMessage(err));
   });
 
   return {

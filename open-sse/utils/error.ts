@@ -177,6 +177,10 @@ export function unavailableResponse(
   );
 }
 
+function errorRecord(error: unknown): Record<string, any> {
+  return error && typeof error === "object" ? (error as Record<string, any>) : {};
+}
+
 /**
  * Format provider error with context
  * @param {Error} error - Original error
@@ -185,12 +189,15 @@ export function unavailableResponse(
  * @param {number|string} statusCode - HTTP status code or error code
  * @returns {string} Formatted error message
  */
-export function formatProviderError(error: any, provider: any, model: any, statusCode: any) {
-  const code = statusCode || error.code || "FETCH_FAILED";
-  const message = error.message || "Unknown error";
+export function formatProviderError(error: unknown, provider: any, model: any, statusCode: any) {
+  const record = errorRecord(error);
+  const code = statusCode || record.code || "FETCH_FAILED";
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error";
   // Expose low-level cause (e.g. UND_ERR_SOCKET, ECONNRESET, ETIMEDOUT) for diagnosing fetch failures
-  const causeCode = error.cause?.code;
-  const causeMsg = error.cause?.message;
+  const cause = errorRecord(record.cause);
+  const causeCode = cause.code;
+  const causeMsg = cause.message;
   const causeStr =
     causeCode || causeMsg ? ` (cause: ${[causeCode, causeMsg].filter(Boolean).join(": ")})` : "";
   return `[${code}]: ${message}${causeStr}`;

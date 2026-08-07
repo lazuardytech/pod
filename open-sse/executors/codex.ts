@@ -13,6 +13,10 @@ import { BaseExecutor } from "./base.js";
 const CODEX_SSE_OVERLOADED_PATTERNS = ["server_is_overloaded", "service_unavailable_error"];
 const CODEX_SSE_PEEK_BYTES = 4096;
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // In-memory map: hash(machineId + first assistant content) -> { sessionId, lastUsed }
 const SESSION_TTL_MS = 60 * 60 * 1000; // 1 hour
 const assistantSessionMap = new Map();
@@ -141,7 +145,9 @@ getConsistentMachineId()
   .then((id: any) => {
     cachedMachineId = id;
   })
-  .catch(() => {});
+  .catch(() => {
+    // Best-effort machine ID warmup; request-time fallback still resolves it.
+  });
 
 function hashContent(text: any) {
   return createHash("sha256").update(text).digest("hex").slice(0, 16);
@@ -360,7 +366,7 @@ export class CodexExecutor extends BaseExecutor {
       try {
         await result.response.body?.cancel?.();
       } catch {
-        /* noop */
+        // Cleanup only; the retry will issue a fresh upstream request.
       }
       await new Promise((r: any) => setTimeout(r, delayMs));
     }
@@ -390,8 +396,8 @@ export class CodexExecutor extends BaseExecutor {
           break;
         }
       }
-    } catch (e: any) {
-      dbg("CODEX", `peek read error: ${e.message}`);
+    } catch (e: unknown) {
+      dbg("CODEX", `peek read error: ${errorMessage(e)}`);
     }
     // Re-assemble stream via TransformStream — single reader, no releaseLock+getReader.
     // Write peeked chunks first, then read remaining from same reader, then close.
@@ -408,8 +414,10 @@ export class CodexExecutor extends BaseExecutor {
           if (done) break;
           await writer.write(value);
         }
-      } catch (e: any) {
-        await writer.abort(e).catch(() => {});
+      } catch (e: unknown) {
+        await writer.abort(e).catch(() => {
+          // Cleanup only; reader drain already failed.
+        });
         return;
       }
       await writer.close();

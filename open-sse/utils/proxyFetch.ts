@@ -16,6 +16,10 @@ function normalizeString(value: any) {
   return String(value).trim();
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function shouldBypassByNoProxy(targetUrl: any, noProxyValue: any) {
   const noProxy = normalizeString(noProxyValue);
   if (!noProxy) return false;
@@ -155,10 +159,10 @@ export async function proxyAwareFetch(url: any, options: any = {}, proxyOptions:
     try {
       const dispatcher = await getDispatcher(proxyUrl);
       return await originalFetch(url, { ...options, dispatcher });
-    } catch (proxyError: any) {
+    } catch (proxyError: unknown) {
       if (proxyOptions?.strictProxy === true) {
         throw new Error(
-          `[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`,
+          `[ProxyFetch] Proxy required but failed (strictProxy=true): ${errorMessage(proxyError)}`,
         );
       }
       console.warn("[ProxyFetch] Proxy failed, falling back to direct");

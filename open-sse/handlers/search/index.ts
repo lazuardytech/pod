@@ -31,6 +31,14 @@ const NON_RETRIABLE = new Set([400, 401, 403, 404]);
 const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
 const LOCALHOST_URL_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?/i;
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 function formatSearxngError({ status, statusText = "", text = "", fetchUrl = "" }: any) {
   const endpointLabel = fetchUrl ? fetchUrl.split("?")[0] : "configured endpoint";
   if (status === 403) {
@@ -134,11 +142,11 @@ async function tryDedicatedProvider({
   let url, init;
   try {
     ({ url, init } = buildSearchRequest({ id: provider.id, ...providerConfig }, params));
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
       status: 400,
-      error: err?.message || `Invalid request for ${provider.id}`,
+      error: errorMessage(err) || `Invalid request for ${provider.id}`,
     };
   }
 
@@ -161,7 +169,10 @@ async function tryDedicatedProvider({
     });
     clearTimeout(timer);
     if (!resp.ok) {
-      const errText = await resp.text().catch(() => "");
+      const errText = await resp.text().catch(() => {
+        // Best-effort upstream error body read.
+        return "";
+      });
       log?.error?.("SEARCH", `${provider.id} ${resp.status}: ${errText.slice(0, 200)}`);
       if (provider.id === "searxng") {
         return {
@@ -202,11 +213,12 @@ async function tryDedicatedProvider({
         errors: [],
       },
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     clearTimeout(timer);
-    const isTimeout = err.name === "AbortError";
+    const isTimeout = isAbortError(err);
     const status = isTimeout ? 504 : 502;
-    log?.error?.("SEARCH", `${provider.id} ${isTimeout ? "timeout" : "error"}: ${err.message}`);
+    const message = errorMessage(err);
+    log?.error?.("SEARCH", `${provider.id} ${isTimeout ? "timeout" : "error"}: ${message}`);
     if (provider.id === "searxng" && !isTimeout) {
       return {
         success: false,
@@ -217,7 +229,7 @@ async function tryDedicatedProvider({
     return {
       success: false,
       status,
-      error: `${provider.id} ${isTimeout ? "timeout" : "error"}: ${err.message}`,
+      error: `${provider.id} ${isTimeout ? "timeout" : "error"}: ${message}`,
     };
   }
 }

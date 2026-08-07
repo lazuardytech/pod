@@ -6,6 +6,14 @@ import { refreshKiroToken } from "../services/tokenRefresh.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { BaseExecutor, type ExecutorHeaders, type RetryEntry } from "./base.js";
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 /**
  * KiroExecutor - Executor for Kiro AI (AWS CodeWhisperer)
  * Uses AWS CodeWhisperer streaming API with AWS EventStream binary format
@@ -477,8 +485,8 @@ export class KiroExecutor extends BaseExecutor {
               if (done) break;
               await processChunk(value, controller);
             }
-          } catch (err: any) {
-            if (err.name !== "AbortError") {
+          } catch (err: unknown) {
+            if (!isAbortError(err)) {
               controller.error(err);
             }
           }
@@ -548,8 +556,8 @@ export class KiroExecutor extends BaseExecutor {
       );
 
       return result;
-    } catch (error: any) {
-      log?.error?.("TOKEN", `Kiro refresh error: ${error.message}`);
+    } catch (error: unknown) {
+      log?.error?.("TOKEN", `Kiro refresh error: ${errorMessage(error)}`);
       return null;
     }
   }
@@ -608,10 +616,10 @@ function parseEventFrame(data: any) {
 
       try {
         payload = JSON.parse(payloadStr);
-      } catch (parseError: any) {
+      } catch (parseError: unknown) {
         // Log parse error for debugging
         console.warn(
-          `[Kiro] Failed to parse payload: ${parseError.message} | payload: ${payloadStr.substring(0, 100)}`,
+          `[Kiro] Failed to parse payload: ${errorMessage(parseError)} | payload: ${payloadStr.substring(0, 100)}`,
         );
         payload = { raw: payloadStr };
       }
@@ -619,6 +627,7 @@ function parseEventFrame(data: any) {
 
     return { headers, payload };
   } catch {
+    // Invalid EventStream frames are treated as absent payloads by caller.
     return null;
   }
 }

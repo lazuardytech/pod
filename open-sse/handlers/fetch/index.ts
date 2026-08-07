@@ -44,6 +44,14 @@ function sanitizeHeaders(headers: any) {
   return out;
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 async function tryFetch(url: any, init: any, timeoutMs: any): Promise<any> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -54,9 +62,9 @@ async function tryFetch(url: any, init: any, timeoutMs: any): Promise<any> {
       signal: ctrl.signal,
     });
     return { ok: true, res };
-  } catch (err: any) {
-    const isAbort = err?.name === "AbortError";
-    return { ok: false, timeout: isAbort, error: err?.message || String(err) };
+  } catch (err: unknown) {
+    const isAbort = isAbortError(err);
+    return { ok: false, timeout: isAbort, error: errorMessage(err) };
   } finally {
     clearTimeout(timer);
   }
@@ -91,6 +99,7 @@ async function readJsonOrText(res: any) {
     try {
       return { json: await res.json() };
     } catch {
+      // Treat malformed provider JSON as an empty text fallback.
       return { text: "" };
     }
   }
@@ -161,9 +170,9 @@ export async function handleFetchCore({
       return await runExa({ url, fmt, timeoutMs, apiKey, maxCharacters, costPerQuery, startedAt });
     }
     return { success: false, status: 400, error: `Unsupported provider: ${provider}` };
-  } catch (err: any) {
-    log?.("fetch handler error:", err?.message || err);
-    return { success: false, status: 502, error: err?.message || "Internal fetch error" };
+  } catch (err: unknown) {
+    log?.("fetch handler error:", errorMessage(err));
+    return { success: false, status: 502, error: errorMessage(err) || "Internal fetch error" };
   }
 }
 

@@ -23,7 +23,7 @@ if (!isCloudEnv()) {
   try {
     http2 = await import("node:http2");
   } catch {
-    // http2 not available
+    // Optional Node-only transport; fetch remains the fallback.
   }
 }
 
@@ -39,6 +39,10 @@ const debugLog = (...args: any) => {
   if (CURSOR_STREAM_DEBUG) console.log(...args);
 };
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function decompressPayload(payload: any, flags: any) {
   // Check if payload is JSON error (starts with {"error")
   if (payload.length > 10 && payload[0] === 0x7b && payload[1] === 0x22) {
@@ -48,7 +52,9 @@ function decompressPayload(payload: any, flags: any) {
         debugLog(`[DECOMPRESS] Detected JSON error, skipping decompression`);
         return payload;
       }
-    } catch {}
+    } catch {
+      // Payload sniffing only; decompression below handles binary frames.
+    }
   }
 
   if (
@@ -59,17 +65,17 @@ function decompressPayload(payload: any, flags: any) {
     // Primary: try gzip decompression (standard gzip header 0x1f 0x8b)
     try {
       return zlib.gunzipSync(payload);
-    } catch (gzipErr: any) {
+    } catch (gzipErr: unknown) {
       // Fallback: TRAILER and GZIP_TRAILER frames sometimes use raw zlib deflate format
       try {
         return zlib.inflateSync(payload);
-      } catch (deflateErr: any) {
+      } catch (deflateErr: unknown) {
         // Last resort: try raw deflate (no zlib header)
         try {
           return zlib.inflateRawSync(payload);
-        } catch (rawErr: any) {
+        } catch (rawErr: unknown) {
           debugLog(
-            `[DECOMPRESS ERROR] flags=${flags}, payloadSize=${payload.length}, gzip=${gzipErr.message}, deflate=${deflateErr.message}, raw=${rawErr.message}`,
+            `[DECOMPRESS ERROR] flags=${flags}, payloadSize=${payload.length}, gzip=${errorMessage(gzipErr)}, deflate=${errorMessage(deflateErr)}, raw=${errorMessage(rawErr)}`,
           );
           debugLog(
             `[DECOMPRESS ERROR] First 50 bytes (hex):`,
@@ -270,11 +276,11 @@ export class CursorExecutor extends BaseExecutor {
           : this.transformProtobufToJSON(response.body, model, body);
 
       return { response: transformedResponse, url, headers, transformedBody: body };
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorResponse = new Response(
         JSON.stringify({
           error: {
-            message: error.message,
+            message: errorMessage(error),
             type: "connection_error",
             code: "",
           },
@@ -347,7 +353,9 @@ export class CursorExecutor extends BaseExecutor {
             }
             return createErrorResponse(JSON.parse(text));
           }
-        } catch {}
+        } catch {
+          // Non-JSON Cursor frames are decoded as protobuf below.
+        }
       }
 
       const result = extractTextFromResponse(new Uint8Array(payload));
@@ -520,7 +528,9 @@ export class CursorExecutor extends BaseExecutor {
             }
             return createErrorResponse(JSON.parse(text));
           }
-        } catch {}
+        } catch {
+          // Non-JSON Cursor frames are decoded as protobuf below.
+        }
       }
 
       const result = extractTextFromResponse(new Uint8Array(payload));
