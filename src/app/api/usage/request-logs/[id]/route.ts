@@ -20,8 +20,7 @@ export async function GET(request: any, { params }: { params: any }) {
       return NextResponse.json({ error: "Log entry not found" }, { status: 404 });
     }
 
-    let detail: any = null;
-
+    let detail = null;
     try {
       // Strategy 1: direct details_id link (future-proof)
       if (logRow.details_id) {

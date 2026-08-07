@@ -10,8 +10,7 @@ import {
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
 
-const STORAGE_KEYS: any = {
-  sessions: "basic-chat.sessions",
+const STORAGE_KEYS = {  sessions: "basic-chat.sessions",
   activeSessionId: "basic-chat.activeSessionId",
   activeProviderId: "basic-chat.activeProviderId",
   draft: "basic-chat.draft",
@@ -441,8 +440,7 @@ export default function BasicChatPageClient(): any {
       return;
     }
 
-    const session: any = {
-      id: createId(),
+    const session = {      id: createId(),
       title: "New chat",
       providerId: savedProvider.providerId,
       providerName: savedProvider.providerName,
@@ -663,8 +661,7 @@ export default function BasicChatPageClient(): any {
       setActiveSessionId(sessionId);
     }
 
-    const userMessage: any = {
-      id: createId(),
+    const userMessage = {      id: createId(),
       role: "user",
       content: userText,
       attachments: attachments.map((attachment: any): any => ({
@@ -677,8 +674,7 @@ export default function BasicChatPageClient(): any {
     };
 
     const assistantMessageId = createId();
-    const assistantMessage: any = {
-      id: assistantMessageId,
+    const assistantMessage = {      id: assistantMessageId,
       role: "assistant",
       content: "",
       createdAt: new Date().toISOString(),

@@ -41,11 +41,9 @@ export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key
       const res = await fetch("/api/settings", { cache: "no-store" });
       const data = res.ok ? await res.json() : {};
       const current = data.providerStrategies || {};
-      const override: any = { ...(current[providerId] || {}) };
-      if (newValue === NONE_PROXY_POOL_VALUE) delete override.proxyPoolId;
+      const override = { ...(current[providerId] || {}) };      if (newValue === NONE_PROXY_POOL_VALUE) delete override.proxyPoolId;
       else override.proxyPoolId = newValue;
-      const updated: any = { ...current };
-      if (Object.keys(override).length === 0) delete updated[providerId];
+      const updated = { ...current };      if (Object.keys(override).length === 0) delete updated[providerId];
       else updated[providerId] = override;
       await fetch("/api/settings", {
         method: "PATCH",

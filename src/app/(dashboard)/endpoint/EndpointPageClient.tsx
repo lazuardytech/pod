@@ -19,26 +19,16 @@ import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
 
-const TUNNEL_BENEFITS: any = [
-  { icon: "public", title: "Access Anywhere", desc: "Use your API from any network" },
+const TUNNEL_BENEFITS = [  { icon: "public", title: "Access Anywhere", desc: "Use your API from any network" },
   { icon: "group", title: "Share Endpoint", desc: "Share URL with team members" },
   { icon: "code", title: "Use in Cursor/Cline", desc: "Connect AI tools remotely" },
   { icon: "lock", title: "Encrypted", desc: "End-to-end TLS via Cloudflare" },
 ];
 
-const TUNNEL_PING_INTERVAL_MS: any = 2000;
-const TUNNEL_PING_MAX_MS: any = 300000;
-const OFFLINE_SETTINGS_CACHE_KEY: any = "endpoint:settings";
-const OFFLINE_TUNNEL_STATUS_CACHE_KEY: any = "endpoint:tunnel-status";
-const OFFLINE_KEYS_CACHE_KEY: any = "endpoint:keys";
-const OFFLINE_MAX_STALE_MS: any = 1000 * 60 * 60 * 24 * 7;
-const ENDPOINT_ICON_BUTTON_CLASS: any =
-  "flex size-9 items-center justify-center rounded-[6px] text-storm-cloud transition-colors hover:bg-deep-slate hover:text-porcelain shrink-0";
-const ENDPOINT_DANGER_BUTTON_CLASS: any =
-  "flex size-9 items-center justify-center rounded-[6px] text-warning-red transition-colors hover:bg-warning-red/10 shrink-0";
+const TUNNEL_PING_INTERVAL_MS = 2000;const TUNNEL_PING_MAX_MS = 300000;const OFFLINE_SETTINGS_CACHE_KEY = "endpoint:settings";const OFFLINE_TUNNEL_STATUS_CACHE_KEY = "endpoint:tunnel-status";const OFFLINE_KEYS_CACHE_KEY = "endpoint:keys";const OFFLINE_MAX_STALE_MS = 1000 * 60 * 60 * 24 * 7;const ENDPOINT_ICON_BUTTON_CLASS =   "flex size-9 items-center justify-center rounded-[6px] text-storm-cloud transition-colors hover:bg-deep-slate hover:text-porcelain shrink-0";
+const ENDPOINT_DANGER_BUTTON_CLASS =   "flex size-9 items-center justify-center rounded-[6px] text-warning-red transition-colors hover:bg-warning-red/10 shrink-0";
 
-const CAVEMAN_LEVELS: any = [
-  { id: "lite", label: "Lite", desc: "Drop filler, keep grammar" },
+const CAVEMAN_LEVELS = [  { id: "lite", label: "Lite", desc: "Drop filler, keep grammar" },
   { id: "full", label: "Full", desc: "Drop articles, fragments OK" },
   { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
 ];
@@ -50,8 +40,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   const [editingKey, setEditingKey]: any = useState<any>(null);
   const [editKeyName, setEditKeyName]: any = useState("");
   const [keysPage, setKeysPage]: any = useState(1);
-  const KEYS_PAGE_SIZE: any = 15;
-  const [newKeyLimitType, setNewKeyLimitType]: any = useState("unlimited");
+  const KEYS_PAGE_SIZE = 15;  const [newKeyLimitType, setNewKeyLimitType]: any = useState("unlimited");
   const [newKeyRpm, setNewKeyRpm]: any = useState("60");
   const [newKeyConcurrent, setNewKeyConcurrent]: any = useState("5");
   const [createdKey, setCreatedKey]: any = useState<any>(null);
@@ -80,8 +69,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   const [tsLoading, setTsLoading]: any = useState(false);
   const [tsProgress, setTsProgress]: any = useState("");
   const [tsStatus, setTsStatus]: any = useState<any>(null);
-  const setTsError: any = (msg: any) => {
-    if (typeof msg === "string" && msg.includes("exited with code")) {
+  const setTsError = (msg: any) => {    if (typeof msg === "string" && msg.includes("exited with code")) {
       toast.error("Failed to start Tailscale");
     } else {
       setTsStatus({ type: "error", message: msg });
@@ -116,10 +104,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     onConfirm: null,
     variant: "default",
   });
-  const openConfirm: any = (title: any, message: any, onConfirm: any, variant: any = "default") =>
-    setConfirmDialog({ open: true, title, message, onConfirm, variant });
-  const closeConfirm: any = () =>
-    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
+  const openConfirm = (title: any, message: any, onConfirm: any, variant: any = "default") =>    setConfirmDialog({ open: true, title, message, onConfirm, variant });
+  const closeConfirm = () =>    setConfirmDialog((prev: any) => ({ ...prev, open: false, onConfirm: null }));
 
   const { copied, copy }: any = useCopyToClipboard();
 
@@ -138,12 +124,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   const applyTunnelStatus: any = useCallback((data: any) => {
     if (!data || typeof data !== "object") return;
 
-    const tEnabled: any = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
-    const tUrl: any = data.tunnel?.tunnelUrl || "";
-    const tsEn: any = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
-    const tsUrlVal: any = data.tailscale?.tunnelUrl || "";
-    const sig: any = `${tEnabled}|${tUrl}|${tsEn}|${tsUrlVal}`;
-
+    const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;    const tUrl = data.tunnel?.tunnelUrl || "";    const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;    const tsUrlVal = data.tailscale?.tunnelUrl || "";    const sig = `${tEnabled}|${tUrl}|${tsEn}|${tsUrlVal}`;
     if (sig === tunnelStatusSigRef.current) return;
     tunnelStatusSigRef.current = sig;
 
@@ -177,8 +158,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   // Trust user intent (settingsEnabled): UI stays "enabled" while watchdog restarts process
   const syncTunnelStatus: any = useCallback(async () => {
     try {
-      const result: any = await loadJsonStaleWhileRevalidate({
-        url: "/api/tunnel/status",
+      const result = await loadJsonStaleWhileRevalidate({        url: "/api/tunnel/status",
         cacheKey: OFFLINE_TUNNEL_STATUS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["tunnel-status"],
@@ -200,26 +180,20 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   }, [applyTunnelStatus, clearOfflineCacheNotice, notifyOfflineCache]);
 
-  const shouldPollTunnelStatus: any =
-    tunnelEnabled || tsEnabled || tunnelLoading || tsLoading || tunnelChecking || tsConnecting;
+  const shouldPollTunnelStatus =     tunnelEnabled || tsEnabled || tunnelLoading || tsLoading || tunnelChecking || tsConnecting;
 
   useEffect(() => {
     if (!shouldPollTunnelStatus) {
       return undefined;
     }
 
-    let closed: any = false;
-    let reconnectTimer: any = null;
-    let es: any = null;
-
-    const connect: any = () => {
-      if (closed) return;
+    let closed = false;    let reconnectTimer = null;    let es = null;
+    const connect = () => {      if (closed) return;
       es = new EventSource("/api/tunnel/status/stream");
 
       es.addEventListener("status", (event: any) => {
         try {
-          const payload: any = JSON.parse(event.data);
-          if (payload?.error) return;
+          const payload = JSON.parse(event.data);          if (payload?.error) return;
           applyTunnelStatus(payload);
         } catch {
           // ignore malformed event and keep stream alive
@@ -239,8 +213,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     syncTunnelStatus().catch(() => {});
     connect();
 
-    const onVisible: any = () => {
-      if (!document.hidden) syncTunnelStatus().catch(() => {});
+    const onVisible = () => {      if (!document.hidden) syncTunnelStatus().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisible);
 
@@ -252,8 +225,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     };
   }, [applyTunnelStatus, shouldPollTunnelStatus, syncTunnelStatus]);
 
-  const loadSettings: any = async () => {
-    setTunnelChecking(true);
+  const loadSettings = async () => {    setTunnelChecking(true);
     try {
       const [settingsResult, statusResult]: any = await Promise.all([
         loadJsonStaleWhileRevalidate({
@@ -290,19 +262,13 @@ export default function APIPageClient({ machineId: _machineId }: any) {
       }
 
       if (statusResult?.data) {
-        const data: any = statusResult.data as {
-          tunnel?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
+        const data = statusResult.data as {          tunnel?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
           tailscale?: { settingsEnabled?: boolean; enabled?: boolean; tunnelUrl?: string };
         };
-        const tEnabled: any = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;
-        const tUrl: any = data.tunnel?.tunnelUrl || "";
-        const tsEn: any = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;
-        const tsUrlVal: any = data.tailscale?.tunnelUrl || "";
-
+        const tEnabled = data.tunnel?.settingsEnabled ?? data.tunnel?.enabled ?? false;        const tUrl = data.tunnel?.tunnelUrl || "";        const tsEn = data.tailscale?.settingsEnabled ?? data.tailscale?.enabled ?? false;        const tsUrlVal = data.tailscale?.tunnelUrl || "";
         // Background reachability probes (non-blocking, only show warning)
         if (tEnabled && tUrl) {
-          const healthUrl: any = `${tUrl}/api/health`;
-          fetch(healthUrl, { cache: "no-store" })
+          const healthUrl = `${tUrl}/api/health`;          fetch(healthUrl, { cache: "no-store" })
             .then((r: any) => {
               if (!r.ok) setTunnelStatus({ type: "warning", message: "Tunnel reconnecting..." });
             })
@@ -324,11 +290,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleTunnelDashboardAccess: any = async (value: any) => {
-    const previous: any = tunnelDashboardAccess;
-    setTunnelDashboardAccess(value);
-    const result: any = await patchSetting(
-      { tunnelDashboardAccess: value },
+  const handleTunnelDashboardAccess = async (value: any) => {    const previous = tunnelDashboardAccess;    setTunnelDashboardAccess(value);
+    const result = await patchSetting(      { tunnelDashboardAccess: value },
       { feature: "endpoint-tunnel-dashboard-access" },
     );
     if ("error" in result && result.error) {
@@ -336,11 +299,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleRequireApiKey: any = async (value: any) => {
-    const previous: any = requireApiKey;
-    setRequireApiKey(value);
-    const result: any = await patchSetting(
-      { requireApiKey: value },
+  const handleRequireApiKey = async (value: any) => {    const previous = requireApiKey;    setRequireApiKey(value);
+    const result = await patchSetting(      { requireApiKey: value },
       { feature: "endpoint-require-api-key" },
     );
     if ("error" in result && result.error) {
@@ -348,11 +308,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleRtkEnabled: any = async (value: any) => {
-    const previous: any = rtkEnabled;
-    setRtkEnabledState(value);
-    const result: any = await patchSetting(
-      { rtkEnabled: value },
+  const handleRtkEnabled = async (value: any) => {    const previous = rtkEnabled;    setRtkEnabledState(value);
+    const result = await patchSetting(      { rtkEnabled: value },
       { feature: "endpoint-rtk-enabled" },
     );
     if ("error" in result && result.error) {
@@ -360,10 +317,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const patchSetting: any = async (patch: any, { feature = "endpoint-settings" }: any = {}) => {
-    try {
-      const result: any = await mutateJsonWithOfflineQueue({
-        url: "/api/settings",
+  const patchSetting = async (patch: any, { feature = "endpoint-settings" }: any = {}) => {    try {
+      const result = await mutateJsonWithOfflineQueue({        url: "/api/settings",
         method: "PATCH",
         body: patch,
         queueMeta: { feature, patch },
@@ -377,9 +332,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleCavemanEnabled: any = (value: any) => {
-    const previous: any = cavemanEnabled;
-    setCavemanEnabled(value);
+  const handleCavemanEnabled = (value: any) => {    const previous = cavemanEnabled;    setCavemanEnabled(value);
     patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then(
       (result: any) => {
         if ("error" in result && result.error) setCavemanEnabled(previous);
@@ -387,9 +340,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     );
   };
 
-  const handleCavemanLevel: any = (level: any) => {
-    const previous: any = cavemanLevel;
-    setCavemanLevel(level);
+  const handleCavemanLevel = (level: any) => {    const previous = cavemanLevel;    setCavemanLevel(level);
     patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then(
       (result: any) => {
         if ("error" in result && result.error) setCavemanLevel(previous);
@@ -397,21 +348,17 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     );
   };
 
-  const fetchData: any = async () => {
-    try {
-      const result: any = await loadJsonStaleWhileRevalidate({
-        url: "/api/keys",
+  const fetchData = async () => {    try {
+      const result = await loadJsonStaleWhileRevalidate({        url: "/api/keys",
         cacheKey: OFFLINE_KEYS_CACHE_KEY,
         maxStaleMs: OFFLINE_MAX_STALE_MS,
         cacheTags: ["api-keys"],
         onCacheData: (data: any) => {
-          const payload: any = data as { keys?: unknown[] };
-          setKeys((payload?.keys || []) as typeof keys);
+          const payload = data as { keys?: unknown[] };          setKeys((payload?.keys || []) as typeof keys);
           setLoading(false);
         },
         onFreshData: (data: any) => {
-          const payload: any = data as { keys?: unknown[] };
-          setKeys((payload?.keys || []) as typeof keys);
+          const payload = data as { keys?: unknown[] };          setKeys((payload?.keys || []) as typeof keys);
         },
       });
 
@@ -430,27 +377,20 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   // u2500u2500u2500 Cloudflare Tunnel handlers
   // Ping tunnel health until reachable, also check backend status to detect process die
   // Background health probe — fire-and-forget, never blocks UI, never shows errors
-  const backgroundTunnelHealth: any = (url: any) => {
-    if (!url) return;
-    const healthUrl: any = `${url}/api/health`;
-    const start: any = Date.now();
-    const check: any = async () => {
-      while (Date.now() - start < TUNNEL_PING_MAX_MS) {
+  const backgroundTunnelHealth = (url: any) => {    if (!url) return;
+    const healthUrl = `${url}/api/health`;    const start = Date.now();    const check = async () => {      while (Date.now() - start < TUNNEL_PING_MAX_MS) {
         if (unmountRef.current) return;
         await new Promise((r: any) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
         try {
-          const ping: any = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
-          if (ping.ok || ping.type === "opaque") return; // reachable — done
+          const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });          if (ping.ok || ping.type === "opaque") return; // reachable — done
         } catch {
           /* not ready yet */
         }
         // Every ~10s check if backend process died
         if ((Date.now() - start) % 10000 < TUNNEL_PING_INTERVAL_MS) {
           try {
-            const statusRes: any = await fetch("/api/tunnel/status");
-            if (statusRes.ok) {
-              const status: any = await statusRes.json();
-              if (!status.tunnel?.settingsEnabled) {
+            const statusRes = await fetch("/api/tunnel/status");            if (statusRes.ok) {
+              const status = await statusRes.json();              if (!status.tunnel?.settingsEnabled) {
                 setTunnelEnabled(false);
                 setTunnelStatus({ type: "error", message: "Tunnel process stopped unexpectedly." });
                 return;
@@ -466,8 +406,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     check().catch(() => {});
   };
 
-  const handleEnableTunnel: any = async () => {
-    setShowEnableTunnelModal(false);
+  const handleEnableTunnel = async () => {    setShowEnableTunnelModal(false);
     setTunnelLoading(true);
     setTunnelStatus(null);
     setTunnelProgress("Creating tunnel...");
@@ -479,20 +418,15 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     });
 
     // Poll /api/tunnel/status until tunnel is live or overall timeout
-    const start: any = Date.now();
-    const OVERALL_TIMEOUT_MS: any = 180000; // 3 min
-    while (Date.now() - start < OVERALL_TIMEOUT_MS) {
+    const start = Date.now();    const OVERALL_TIMEOUT_MS = 180000; // 3 min    while (Date.now() - start < OVERALL_TIMEOUT_MS) {
       if (unmountRef.current) return;
       await new Promise((r: any) => setTimeout(r, 1000));
       try {
-        const r: any = await fetch("/api/tunnel/status");
-        if (!r.ok) continue;
-        const s: any = await r.json();
-
+        const r = await fetch("/api/tunnel/status");        if (!r.ok) continue;
+        const s = await r.json();
         // Show download progress
         if (s.download?.downloading) {
-          const pct: any = s.download.progress;
-          setTunnelProgress(
+          const pct = s.download.progress;          setTunnelProgress(
             pct < 100 ? `Downloading cloudflared... ${pct}%` : "Creating tunnel...",
           );
         } else {
@@ -518,10 +452,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
 
     // Final check before showing timeout error
     try {
-      const r: any = await fetch("/api/tunnel/status");
-      if (r.ok) {
-        const s: any = await r.json();
-        if (s.tunnel?.enabled && s.tunnel?.tunnelUrl) {
+      const r = await fetch("/api/tunnel/status");      if (r.ok) {
+        const s = await r.json();        if (s.tunnel?.enabled && s.tunnel?.tunnelUrl) {
           setTunnelUrl(s.tunnel.tunnelUrl || "");
           setTunnelEnabled(true);
           setTunnelLoading(false);
@@ -543,13 +475,10 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     setTunnelProgress("");
   };
 
-  const handleDisableTunnel: any = async () => {
-    setTunnelLoading(true);
+  const handleDisableTunnel = async () => {    setTunnelLoading(true);
     setTunnelStatus(null);
     try {
-      const res: any = await fetch("/api/tunnel/disable", { method: "POST" });
-      const data: any = await res.json();
-      if (res.ok) {
+      const res = await fetch("/api/tunnel/disable", { method: "POST" });      const data = await res.json();      if (res.ok) {
         setTunnelEnabled(false);
         setTunnelUrl("");
         setShowDisableTunnelModal(false);
@@ -565,13 +494,10 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   };
 
   // u2500u2500u2500 Tailscale handlers
-  const checkTailscaleInstalled: any = async () => {
-    setTsInstalled(null);
+  const checkTailscaleInstalled = async () => {    setTsInstalled(null);
     try {
-      const res: any = await fetch("/api/tunnel/tailscale-check");
-      if (res.ok) {
-        const data: any = await res.json();
-        setTsInstalled(data.installed);
+      const res = await fetch("/api/tunnel/tailscale-check");      if (res.ok) {
+        const data = await res.json();        setTsInstalled(data.installed);
         return data;
       }
     } catch {
@@ -581,33 +507,24 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     return { installed: false };
   };
 
-  const handleInstallTailscale: any = async () => {
-    setTsInstalling(true);
+  const handleInstallTailscale = async () => {    setTsInstalling(true);
     setTsStatus(null);
     setTsInstallLog([]);
     try {
-      const res: any = await fetch("/api/tunnel/tailscale-install", {
-        method: "POST",
+      const res = await fetch("/api/tunnel/tailscale-install", {        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sudoPassword: tsSudoPassword }),
       });
       setTsSudoPassword("");
 
-      const reader: any = res.body.getReader();
-      const decoder: any = new TextDecoder();
-      let buffer: any = "";
-
+      const reader = res.body.getReader();      const decoder = new TextDecoder();      let buffer = "";
       while (true) {
         const { done, value }: any = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const parts: any = buffer.split("\n\n");
-        buffer = parts.pop() || "";
+        const parts = buffer.split("\n\n");        buffer = parts.pop() || "";
         for (const part of parts) {
-          const lines: any = part.split("\n");
-          let event: any = "progress";
-          let data: any = null;
-          for (const line of lines) {
+          const lines = part.split("\n");          let event = "progress";          let data = null;          for (const line of lines) {
             if (line.startsWith("event: ")) event = line.slice(7).trim();
             if (line.startsWith("data: ")) {
               try {
@@ -637,16 +554,12 @@ export default function APIPageClient({ machineId: _machineId }: any) {
   };
 
   // Ping Tailscale health until reachable
-  const pingTsHealth: any = async (url: any) => {
-    setTsProgress("Waiting for Tailscale ready...");
-    const healthUrl: any = `${url}/api/health`;
-    const start: any = Date.now();
-    while (Date.now() - start < TUNNEL_PING_MAX_MS) {
+  const pingTsHealth = async (url: any) => {    setTsProgress("Waiting for Tailscale ready...");
+    const healthUrl = `${url}/api/health`;    const start = Date.now();    while (Date.now() - start < TUNNEL_PING_MAX_MS) {
       if (unmountRef.current) return false;
       await new Promise((r: any) => setTimeout(r, TUNNEL_PING_INTERVAL_MS));
       try {
-        const ping: any = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
-        if (ping.ok || ping.type === "opaque") return true;
+        const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });        if (ping.ok || ping.type === "opaque") return true;
       } catch {
         /* not ready yet */
       }
@@ -654,22 +567,17 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     return false;
   };
 
-  const handleConnectTailscale: any = async (preOpenedTab: any) => {
-    const tab: any = preOpenedTab || null;
-    setShowTsModal(false);
+  const handleConnectTailscale = async (preOpenedTab: any) => {    const tab = preOpenedTab || null;    setShowTsModal(false);
     setTsConnecting(true);
     setTsLoading(true);
     setTsStatus(null);
     setTsProgress("Connecting...");
     try {
-      const res: any = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
-      const data: any = await res.json();
-
+      const res = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });      const data = await res.json();
       if (res.ok && data.success) {
         if (tab) tab.close();
         setTsUrl(data.tunnelUrl || "");
-        const reachable: any = await pingTsHealth(data.tunnelUrl);
-        if (reachable) {
+        const reachable = await pingTsHealth(data.tunnelUrl);        if (reachable) {
           setTsEnabled(true);
           setTsStatus(null);
         } else {
@@ -687,18 +595,13 @@ export default function APIPageClient({ machineId: _machineId }: any) {
         for (let i = 0; i < 40; i++) {
           await new Promise((r: any) => setTimeout(r, 3000));
           try {
-            const r2: any = await fetch("/api/tunnel/tailscale-check");
-            if (r2.ok) {
-              const check: any = await r2.json();
-              if (check.loggedIn) {
+            const r2 = await fetch("/api/tunnel/tailscale-check");            if (r2.ok) {
+              const check = await r2.json();              if (check.loggedIn) {
                 setTsProgress("Starting funnel...");
-                const res2: any = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
-                const data2: any = await res2.json();
-                if (res2.ok && data2.success) {
+                const res2 = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });                const data2 = await res2.json();                if (res2.ok && data2.success) {
                   if (tab) tab.close();
                   setTsUrl(data2.tunnelUrl || "");
-                  const ok2: any = await pingTsHealth(data2.tunnelUrl);
-                  if (ok2) {
+                  const ok2 = await pingTsHealth(data2.tunnelUrl);                  if (ok2) {
                     setTsEnabled(true);
                     setTsStatus(null);
                   } else {
@@ -739,21 +642,17 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const pollFunnelEnable: any = async (enableUrl: any, tab: any) => {
-    if (tab) tab.location.href = enableUrl;
+  const pollFunnelEnable = async (enableUrl: any, tab: any) => {    if (tab) tab.location.href = enableUrl;
     else window.open(enableUrl, "tailscale_auth", "width=600,height=700");
     setTsProgress("Enable Funnel in browser, waiting...");
     for (let i = 0; i < 40; i++) {
       if (unmountRef.current) return;
       await new Promise((r: any) => setTimeout(r, 3000));
       try {
-        const res: any = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });
-        const data: any = await res.json();
-        if (res.ok && data.success) {
+        const res = await fetch("/api/tunnel/tailscale-enable", { method: "POST" });        const data = await res.json();        if (res.ok && data.success) {
           if (tab) tab.close();
           setTsUrl(data.tunnelUrl || "");
-          const ok3: any = await pingTsHealth(data.tunnelUrl);
-          if (ok3) {
+          const ok3 = await pingTsHealth(data.tunnelUrl);          if (ok3) {
             setTsEnabled(true);
             setTsStatus(null);
           } else {
@@ -774,13 +673,10 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     setTsStatus({ type: "error", message: "Timed out waiting for Funnel to be enabled." });
   };
 
-  const handleDisableTailscale: any = async () => {
-    setTsLoading(true);
+  const handleDisableTailscale = async () => {    setTsLoading(true);
     setTsStatus(null);
     try {
-      const res: any = await fetch("/api/tunnel/tailscale-disable", { method: "POST" });
-      const data: any = await res.json();
-      if (res.ok) {
+      const res = await fetch("/api/tunnel/tailscale-disable", { method: "POST" });      const data = await res.json();      if (res.ok) {
         setTsEnabled(false);
         setTsUrl("");
         setShowDisableTsModal(false);
@@ -795,25 +691,20 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleOpenTsModal: any = async () => {
-    setTsStatus(null);
+  const handleOpenTsModal = async () => {    setTsStatus(null);
     setTsInstallLog([]);
     setShowTsModal(true);
     await checkTailscaleInstalled();
   };
 
-  const handleCreateKey: any = async () => {
-    if (!newKeyName.trim()) return;
+  const handleCreateKey = async () => {    if (!newKeyName.trim()) return;
     if (newKeyLimitType === "limited") {
-      const rpm: any = Number(newKeyRpm);
-      const concurrent: any = Number(newKeyConcurrent);
-      if (!Number.isFinite(rpm) || !Number.isInteger(rpm) || rpm <= 0) return;
+      const rpm = Number(newKeyRpm);      const concurrent = Number(newKeyConcurrent);      if (!Number.isFinite(rpm) || !Number.isInteger(rpm) || rpm <= 0) return;
       if (!Number.isFinite(concurrent) || !Number.isInteger(concurrent) || concurrent <= 0) return;
     }
 
     try {
-      const res: any = await fetch("/api/keys", {
-        method: "POST",
+      const res = await fetch("/api/keys", {        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newKeyName,
@@ -822,8 +713,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
           concurrentRequests: newKeyLimitType === "limited" ? Number(newKeyConcurrent) : null,
         }),
       });
-      const data: any = await res.json();
-
+      const data = await res.json();
       if (res.ok) {
         setCreatedKey(data.key);
         await fetchData();
@@ -834,22 +724,18 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const resetCreateKeyForm: any = () => {
-    setNewKeyName("");
+  const resetCreateKeyForm = () => {    setNewKeyName("");
     setNewKeyLimitType("unlimited");
     setNewKeyRpm("60");
     setNewKeyConcurrent("5");
     setShowAddModal(false);
   };
 
-  const handleDeleteKey: any = async (id: any) => {
-    try {
-      const res: any = await fetch(`/api/keys/${id}`, { method: "DELETE" });
-      if (res.ok) {
+  const handleDeleteKey = async (id: any) => {    try {
+      const res = await fetch(`/api/keys/${id}`, { method: "DELETE" });      if (res.ok) {
         setKeys(keys.filter((k: any) => k.id !== id));
         setVisibleKeys((prev: any) => {
-          const next: any = new Set<any>(prev);
-          next.delete(id);
+          const next = new Set<any>(prev);          next.delete(id);
           return next;
         });
       }
@@ -858,16 +744,13 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleEditKey: any = (key: any) => {
-    setEditingKey(key);
+  const handleEditKey = (key: any) => {    setEditingKey(key);
     setEditKeyName(key.name);
   };
 
-  const handleUpdateKey: any = async () => {
-    if (!editKeyName.trim() || !editingKey) return;
+  const handleUpdateKey = async () => {    if (!editKeyName.trim() || !editingKey) return;
     try {
-      const res: any = await fetch(`/api/keys/${editingKey.id}`, {
-        method: "PUT",
+      const res = await fetch(`/api/keys/${editingKey.id}`, {        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editKeyName.trim() }),
       });
@@ -883,10 +766,8 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const handleToggleKey: any = async (id: any, isActive: any) => {
-    try {
-      const res: any = await fetch(`/api/keys/${id}`, {
-        method: "PUT",
+  const handleToggleKey = async (id: any, isActive: any) => {    try {
+      const res = await fetch(`/api/keys/${id}`, {        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
@@ -898,23 +779,19 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   };
 
-  const maskKey: any = (fullKey: any) => {
-    if (!fullKey) return "";
+  const maskKey = (fullKey: any) => {    if (!fullKey) return "";
     return fullKey.length > 8 ? fullKey.slice(0, 8) + "..." : fullKey;
   };
 
-  const toggleKeyVisibility: any = (keyId: any) => {
-    setVisibleKeys((prev: any) => {
-      const next: any = new Set<any>(prev);
-      if (next.has(keyId)) next.delete(keyId);
+  const toggleKeyVisibility = (keyId: any) => {    setVisibleKeys((prev: any) => {
+      const next = new Set<any>(prev);      if (next.has(keyId)) next.delete(keyId);
       else next.add(keyId);
       return next;
     });
   };
 
   const [baseUrl, setBaseUrl]: any = useState("/v1");
-  const hasValidCreateRateLimitInputs: any =
-    newKeyLimitType !== "limited" ||
+  const hasValidCreateRateLimitInputs =     newKeyLimitType !== "limited" ||
     (Number.isInteger(Number(newKeyRpm)) &&
       Number(newKeyRpm) > 0 &&
       Number.isInteger(Number(newKeyConcurrent)) &&
@@ -927,10 +804,7 @@ export default function APIPageClient({ machineId: _machineId }: any) {
     }
   }, []);
 
-  const currentEndpoint: any = baseUrl;
-  const showTunnelEnableAction: any = !tunnelEnabled && !tunnelLoading && !tunnelChecking;
-  const showTsEnableAction: any = !tsEnabled && !tsLoading && !tsConnecting;
-
+  const currentEndpoint = baseUrl;  const showTunnelEnableAction = !tunnelEnabled && !tunnelLoading && !tunnelChecking;  const showTsEnableAction = !tsEnabled && !tsLoading && !tsConnecting;
   return (
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1770,16 +1644,12 @@ export default function APIPageClient({ machineId: _machineId }: any) {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    const tab: any = window.open("", "tailscale_auth", "width=600,height=700");
-                    if (tab) {
-                      const doc: any = tab.document;
-                      const body: any = doc.body || doc.createElement("body");
-                      if (!doc.body) {
+                    const tab = window.open("", "tailscale_auth", "width=600,height=700");                    if (tab) {
+                      const doc = tab.document;                      const body = doc.body || doc.createElement("body");                      if (!doc.body) {
                         doc.documentElement?.appendChild(body);
                       }
                       body.replaceChildren();
-                      const message: any = doc.createElement("p");
-                      message.style.cssText =
+                      const message = doc.createElement("p");                      message.style.cssText =
                         "font-family:sans-serif;text-align:center;margin-top:40px";
                       message.textContent = "Connecting to Tailscale...";
                       body.appendChild(message);
@@ -1856,9 +1726,7 @@ function EndpointValueCard({ title, icon, url, copyId, copied, onCopy }: any) {
 /** Reusable status alert */
 function StatusAlert({ status, className = "" }: any) {
   // Render URLs in message as clickable links
-  const renderMessage: any = (msg: any) => {
-    const parts: any = msg.split(/(https?:\/\/[^\s]+)/g);
-    return parts.map((part: any, i: any) =>
+  const renderMessage = (msg: any) => {    const parts = msg.split(/(https?:\/\/[^\s]+)/g);    return parts.map((part: any, i: any) =>
       /^https?:\/\//.test(part) ? (
         <a key={i} href={part} target="_blank" rel="noreferrer" className="underline font-medium">
           {part}

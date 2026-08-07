@@ -164,8 +164,7 @@ export class GeminiCLIService {
       spinner.text = "Starting local server...";
 
       // Start local server for callback
-      let callbackParams: any = null;
-      const { port, close } = await startLocalServer((params) => {
+      let callbackParams = null;      const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       });
 

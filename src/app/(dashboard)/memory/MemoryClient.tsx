@@ -254,8 +254,7 @@ export default function MemoryClient() {
   };
 
   // todo(ts): byType payload is untyped; cast through any until the API has a shared shape
-  const typeStats: any = memoryData.stats?.byType || {};
-  const currentCount = memoryData.data.length;
+  const typeStats = memoryData.stats?.byType || {};  const currentCount = memoryData.data.length;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
