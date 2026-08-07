@@ -360,6 +360,11 @@ export const PROVIDERS = {
     headers: { "x-opencode-client": "desktop" },
     noAuth: true,
   },
+  commandcode: {
+    baseUrl: "https://api.commandcode.ai/alpha/generate",
+    format: "commandcode",
+    headers: {},
+  },
   "opencode-go": {
     baseUrl: "https://opencode.ai/zen/go/v1/chat/completions",
     format: "openai",
