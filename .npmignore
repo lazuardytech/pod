@@ -20,7 +20,7 @@ CLIProxyAPI/
 .gitignore
 .env*
 jsconfig.json
-postcss.config.ts
+postcss.config.cts
 next.config.ts
 tsconfig.json
 
