@@ -137,7 +137,7 @@ function sessionStore(
   backendUuid: string | null | undefined,
 ) {
   if (!backendUuid) return;
-  const full = [
+  const full: HistoryItem[] = [
     ...history,
     { role: "user", content: currentMsg },
     { role: "assistant", content: responseText },
@@ -280,7 +280,7 @@ function formatToolsHint(tools: unknown) {
     const fn = isRecord(record.function) ? record.function : record;
     const name = typeof fn.name === "string" && fn.name ? fn.name : "unnamed";
     const desc =
-      typeof fn.description === "string" ? fn.description.split("\n")[0].slice(0, 200) : "";
+      typeof fn.description === "string" ? (fn.description.split("\n")[0] ?? "").slice(0, 200) : "";
     return `- ${name}: ${desc}`;
   });
   return `Available tools (reference only, cannot invoke):\n${lines.join("\n")}`;

@@ -43,8 +43,7 @@ function hasInvalidControlChar(text: string) {
 function stripNonAscii(text: string) {
   let clean = "";
   for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    if (char.charCodeAt(0) <= 255) clean += char;
+    if (text.charCodeAt(i) <= 255) clean += text[i] ?? "";
   }
   return clean;
 }

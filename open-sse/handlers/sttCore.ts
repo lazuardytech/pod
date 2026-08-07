@@ -50,7 +50,7 @@ function resolveAudioContentType(file: UploadFile) {
   const t = (file.type || "").toLowerCase();
   if (t.startsWith("audio/")) return t;
   const name = typeof file.name === "string" ? file.name.toLowerCase() : "";
-  const ext = name.includes(".") ? name.split(".").pop() : "";
+  const ext = name.includes(".") ? (name.split(".").pop() ?? "") : "";
   const map: Record<string, string> = {
     mp3: "audio/mpeg",
     mp4: "audio/mp4",
@@ -337,6 +337,10 @@ export async function handleSttCore({
         return await transcribeOpenAICompatible(cfg, file, model, token, formData, translate);
     }
   } catch (err: unknown) {
-    return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errorMessage(err) || "STT request failed", undefined);
+    return createErrorResult(
+      HTTP_STATUS.BAD_GATEWAY,
+      errorMessage(err) || "STT request failed",
+      undefined,
+    );
   }
 }
