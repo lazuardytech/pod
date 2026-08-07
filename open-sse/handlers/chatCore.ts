@@ -47,6 +47,14 @@ type MemoryRequestBody = JsonRecord & {
 type ProviderThinking = { effortMode?: string; mode?: string };
 type StreamContent = { content?: string; thinking?: string };
 
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function listLength(value: unknown) {
+  return Array.isArray(value) ? value.length : 0;
+}
+
 /**
  * Build a streaming SSE Response from a cached (non-streaming) response object.
  * Emits role chunk → content chunk → finish chunk → [DONE].
@@ -387,11 +395,11 @@ export async function handleChatCore({
     cacheSignature = generateSignature(
       model,
       messages,
-      body.temperature,
-      body.top_p,
+      body.temperature as number | null | undefined,
+      body.top_p as number | null | undefined,
       memoryOwnerId || null,
     );
-    const cached = getCachedResponse(cacheSignature);
+    const cached = getCachedResponse(cacheSignature) as CachedChatResponse | null;
     if (cached) {
       reqLogger.logConvertedResponse(cached);
       if (clientRequestedStreaming) {
@@ -412,7 +420,7 @@ export async function handleChatCore({
     const inFlight = getInFlight(cacheSignature);
     if (inFlight) {
       try {
-        const result = await inFlight;
+        const result = (await inFlight) as CachedChatResponse | null;
         if (result) {
           reqLogger.logConvertedResponse(result);
           if (clientRequestedStreaming) {
@@ -537,10 +545,10 @@ export async function handleChatCore({
   );
 
   const msgCount =
-    translatedBody.messages?.length ||
-    translatedBody.input?.length ||
-    translatedBody.contents?.length ||
-    translatedBody.request?.contents?.length ||
+    listLength(translatedBody.messages) ||
+    listLength(translatedBody.input) ||
+    listLength(translatedBody.contents) ||
+    listLength(isRecord(translatedBody.request) ? translatedBody.request.contents : null) ||
     0;
   log?.debug?.("REQUEST", `${provider.toUpperCase()} | ${model} | ${msgCount} msgs`);
 
@@ -555,16 +563,19 @@ export async function handleChatCore({
     model,
   });
 
+  const providerData = isRecord(credentials?.providerSpecificData)
+    ? credentials.providerSpecificData
+    : {};
   const proxyOptions: JsonRecord = {
-    connectionProxyEnabled: credentials?.providerSpecificData?.connectionProxyEnabled === true,
-    connectionProxyUrl: credentials?.providerSpecificData?.connectionProxyUrl || "",
-    connectionNoProxy: credentials?.providerSpecificData?.connectionNoProxy || "",
-    vercelRelayUrl: credentials?.providerSpecificData?.vercelRelayUrl || "",
+    connectionProxyEnabled: providerData.connectionProxyEnabled === true,
+    connectionProxyUrl: providerData.connectionProxyUrl || "",
+    connectionNoProxy: providerData.connectionNoProxy || "",
+    vercelRelayUrl: providerData.vercelRelayUrl || "",
   };
 
   if (proxyOptions.vercelRelayUrl) {
     const connectionName = credentials?.connectionName || credentials?.connectionId || "unknown";
-    const poolId = credentials?.providerSpecificData?.connectionProxyPoolId || "none";
+    const poolId = providerData.connectionProxyPoolId || "none";
     log?.info?.(
       "PROXY",
       `${provider.toUpperCase()} | ${model} | conn=${connectionName} | pool=${poolId} | vercel-relay=${proxyOptions.vercelRelayUrl}`,
@@ -572,7 +583,7 @@ export async function handleChatCore({
   } else if (proxyOptions.connectionProxyEnabled && proxyOptions.connectionProxyUrl) {
     let maskedProxyUrl = proxyOptions.connectionProxyUrl;
     try {
-      const parsed = new URL(proxyOptions.connectionProxyUrl);
+      const parsed = new URL(proxyOptions.connectionProxyUrl as string);
       const host = parsed.hostname || "";
       const port = parsed.port ? `:${parsed.port}` : "";
       const protocol = parsed.protocol || "http:";
@@ -581,7 +592,7 @@ export async function handleChatCore({
       // Keep raw if URL parsing fails
     }
 
-    const poolId = credentials?.providerSpecificData?.connectionProxyPoolId || "none";
+    const poolId = providerData.connectionProxyPoolId || "none";
     const connectionName = credentials?.connectionName || credentials?.connectionId || "unknown";
     log?.info?.(
       "PROXY",
@@ -1060,6 +1071,7 @@ export async function handleChatCore({
       isCacheableForWrite(body, clientRawRequest?.headers) &&
       contentObj?.content
     ) {
+      const usageRecord = isRecord(usage) ? usage : {};
       const cachedId = `chatcmpl-cached-${Date.now().toString(36)}`;
       const assembledResponse = {
         id: cachedId,
@@ -1075,10 +1087,12 @@ export async function handleChatCore({
         ],
         usage: usage
           ? {
-              prompt_tokens: usage.prompt_tokens ?? 0,
-              completion_tokens: usage.completion_tokens ?? 0,
+              prompt_tokens: usageRecord.prompt_tokens ?? 0,
+              completion_tokens: usageRecord.completion_tokens ?? 0,
               total_tokens:
-                usage.total_tokens ?? (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
+                usageRecord.total_tokens ??
+                ((usageRecord.prompt_tokens as number) ?? 0) +
+                  ((usageRecord.completion_tokens as number) ?? 0),
             }
           : { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
       };
@@ -1120,5 +1134,5 @@ export async function handleChatCore({
 
 export function isTokenExpiringSoon(expiresAt: unknown, bufferMs = 5 * 60 * 1000) {
   if (!expiresAt) return false;
-  return new Date(expiresAt).getTime() - Date.now() < bufferMs;
+  return new Date(expiresAt as string | number | Date).getTime() - Date.now() < bufferMs;
 }
