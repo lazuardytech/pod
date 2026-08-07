@@ -5,8 +5,58 @@
 import { unavailableResponse } from "../utils/error.js";
 import { checkFallbackError, formatRetryAfter } from "./accountFallback.js";
 
+type JsonRecord = Record<string, unknown>;
+
+type ComboLogger = {
+  info: (scope: string, message: string, meta?: JsonRecord) => void;
+  warn: (scope: string, message: string, meta?: JsonRecord) => void;
+};
+
+type ComboEntry = {
+  name?: string;
+  models?: string[];
+  systemPrompt?: string | null;
+};
+
+type CombosData = ComboEntry[] | { combos?: ComboEntry[] } | null | undefined;
+
+type ComboRotationState = { index: number; consecutiveUseCount: number };
+
+type TextPart = { text?: string; [key: string]: unknown };
+
+type SystemInstruction = {
+  role?: string;
+  parts?: TextPart[];
+  [key: string]: unknown;
+};
+
+/** Mutable request body shapes handled by combo system-prompt injection. */
+export type ComboRequestBody = {
+  request?: {
+    contents?: unknown;
+    systemInstruction?: SystemInstruction;
+    [key: string]: unknown;
+  };
+  contents?: unknown;
+  systemInstruction?: SystemInstruction;
+  input?: unknown;
+  messages?: unknown;
+  instructions?: string;
+  system?: unknown;
+  anthropic_version?: unknown;
+  [key: string]: unknown;
+};
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function asComboList(combosData: CombosData): ComboEntry[] {
+  if (Array.isArray(combosData)) return combosData;
+  if (combosData && typeof combosData === "object" && Array.isArray(combosData.combos)) {
+    return combosData.combos;
+  }
+  return [];
 }
 
 /**
@@ -16,30 +66,29 @@ function errorMessage(error: unknown) {
  * purely synchronous (no `await`). Node.js single-threaded event loop
  * guarantees no interleaving between read and write — each call completes
  * atomically within one JS tick. No mutex needed.
- * @type {Map<string, { index: number, consecutiveUseCount: number }>}
  */
-const comboRotationState = new Map();
+const comboRotationState = new Map<string, ComboRotationState | number>();
 
 export interface ComboChatParams {
-  body: Record<string, any>;
+  body: JsonRecord;
   models: string[];
-  handleSingleModel: (body: Record<string, any>, model: string) => Promise<Response>;
-  log: any;
+  handleSingleModel: (body: JsonRecord, model: string) => Promise<Response>;
+  log: ComboLogger;
   comboName?: string;
   comboStrategy?: string;
   comboStickyLimit?: number | string;
 }
 
-function normalizeStickyLimit(stickyLimit: any) {
-  const parsed = Number.parseInt(stickyLimit, 10);
+function normalizeStickyLimit(stickyLimit: unknown): number {
+  const parsed = Number.parseInt(String(stickyLimit), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
-function rotateModelsFromIndex(models: any, currentIndex: any) {
+function rotateModelsFromIndex(models: string[], currentIndex: number): string[] {
   const rotatedModels = [...models];
   for (let i = 0; i < currentIndex; i++) {
     const moved = rotatedModels.shift();
-    rotatedModels.push(moved);
+    if (moved !== undefined) rotatedModels.push(moved);
   }
   return rotatedModels;
 }
@@ -52,7 +101,12 @@ function rotateModelsFromIndex(models: any, currentIndex: any) {
  * @param {number|string} [stickyLimit=1] - Requests per combo model before switching
  * @returns {string[]} Rotated models array
  */
-export function getRotatedModels(models: any, comboName: any, strategy: any, stickyLimit: any = 1) {
+export function getRotatedModels(
+  models: string[],
+  comboName: string | undefined,
+  strategy: string | undefined,
+  stickyLimit: number | string = 1,
+): string[] {
   if (!models || models.length <= 1 || strategy !== "round-robin") {
     return models;
   }
@@ -60,7 +114,7 @@ export function getRotatedModels(models: any, comboName: any, strategy: any, sti
   const rotationKey = comboName || "__default__";
   const normalizedStickyLimit = normalizeStickyLimit(stickyLimit);
   const existingState = comboRotationState.get(rotationKey);
-  const state =
+  const state: ComboRotationState =
     typeof existingState === "number"
       ? { index: existingState, consecutiveUseCount: 0 }
       : existingState || { index: 0, consecutiveUseCount: 0 };
@@ -88,7 +142,7 @@ export function getRotatedModels(models: any, comboName: any, strategy: any, sti
  * Reset in-memory rotation state when combo/settings change
  * @param {string} [comboName] - Combo name to reset; omit to clear all
  */
-export function resetComboRotation(comboName?: any) {
+export function resetComboRotation(comboName?: string) {
   if (comboName) comboRotationState.delete(comboName);
   else comboRotationState.clear();
 }
@@ -99,14 +153,13 @@ export function resetComboRotation(comboName?: any) {
  * @param {Array|Object} combosData - Array of combos or object with combos
  * @returns {string[]|null} Array of models or null if not a combo
  */
-export function getComboModelsFromData(modelStr: any, combosData: any) {
+export function getComboModelsFromData(modelStr: string, combosData: CombosData): string[] | null {
   // Don't check if it's in provider/model format
   if (modelStr.includes("/")) return null;
 
-  // Handle both array and object formats
-  const combos = Array.isArray(combosData) ? combosData : combosData?.combos || [];
+  const combos = asComboList(combosData);
 
-  const combo = combos.find((c: any) => c.name === modelStr);
+  const combo = combos.find((c) => c.name === modelStr);
   if (combo && combo.models && combo.models.length > 0) {
     return combo.models;
   }
@@ -119,10 +172,13 @@ export function getComboModelsFromData(modelStr: any, combosData: any) {
  * @param {Array|Object} combosData
  * @returns {{models: string[], systemPrompt: string|null}|null}
  */
-export function getComboEntryFromData(modelStr: any, combosData: any) {
+export function getComboEntryFromData(
+  modelStr: string,
+  combosData: CombosData,
+): { models: string[]; systemPrompt: string | null } | null {
   if (modelStr.includes("/")) return null;
-  const combos = Array.isArray(combosData) ? combosData : combosData?.combos || [];
-  const combo = combos.find((c: any) => c.name === modelStr);
+  const combos = asComboList(combosData);
+  const combo = combos.find((c) => c.name === modelStr);
   if (combo && combo.models && combo.models.length > 0) {
     return { models: combo.models, systemPrompt: combo.systemPrompt || null };
   }
@@ -137,7 +193,10 @@ export function getComboEntryFromData(modelStr: any, combosData: any) {
  * @param {string} systemPrompt
  * @returns {Object}
  */
-export function injectComboSystemPrompt(body: any, systemPrompt: any) {
+export function injectComboSystemPrompt(
+  body: ComboRequestBody | null | undefined,
+  systemPrompt: unknown,
+): ComboRequestBody | null | undefined {
   if (!body || typeof systemPrompt !== "string" || !systemPrompt.trim()) return body;
   const prompt = systemPrompt;
 
@@ -145,7 +204,7 @@ export function injectComboSystemPrompt(body: any, systemPrompt: any) {
   if (body.request && (body.request.contents || body.request.systemInstruction)) {
     const req = body.request;
     const existing = req.systemInstruction;
-    const newPart = { text: prompt };
+    const newPart: TextPart = { text: prompt };
     if (existing?.parts && Array.isArray(existing.parts)) {
       existing.parts.unshift(newPart);
     } else if (existing?.role || existing?.parts) {
@@ -162,7 +221,7 @@ export function injectComboSystemPrompt(body: any, systemPrompt: any) {
   // Gemini: { contents, systemInstruction? }
   if (Array.isArray(body.contents)) {
     const existing = body.systemInstruction;
-    const newPart = { text: prompt };
+    const newPart: TextPart = { text: prompt };
     if (existing?.parts && Array.isArray(existing.parts)) {
       existing.parts.unshift(newPart);
     } else {
@@ -226,12 +285,12 @@ export async function handleComboChat({
   // Apply rotation strategy if enabled
   const rotatedModels = getRotatedModels(models, comboName, comboStrategy, comboStickyLimit);
 
-  let lastError = null;
-  let earliestRetryAfter = null;
-  let lastStatus = null;
+  let lastError: string | null = null;
+  let earliestRetryAfter: string | null = null;
+  let lastStatus: number | null = null;
 
   for (let i = 0; i < rotatedModels.length; i++) {
-    const modelStr = rotatedModels[i];
+    const modelStr = rotatedModels[i]!;
     log.info("COMBO", `Trying model ${i + 1}/${rotatedModels.length}: ${modelStr}`);
 
     try {
@@ -244,13 +303,21 @@ export async function handleComboChat({
       }
 
       // Extract error info from response
-      let errorText = result.statusText || "";
-      let retryAfter = null;
+      let errorText: unknown = result.statusText || "";
+      let retryAfter: string | null = null;
       try {
-        const errorBody = await result.clone().json();
-        errorText =
-          errorBody?.error?.message || errorBody?.error || errorBody?.message || errorText;
-        retryAfter = errorBody?.retryAfter || null;
+        const errorBodyUnknown: unknown = await result.clone().json();
+        const errorBody =
+          errorBodyUnknown && typeof errorBodyUnknown === "object"
+            ? (errorBodyUnknown as JsonRecord)
+            : {};
+        const errField = errorBody.error;
+        const errMessage =
+          errField && typeof errField === "object" && errField !== null
+            ? (errField as JsonRecord).message
+            : undefined;
+        errorText = errMessage || errField || errorBody.message || errorText;
+        retryAfter = typeof errorBody.retryAfter === "string" ? errorBody.retryAfter : null;
       } catch {
         // Ignore JSON parse errors
       }
@@ -264,16 +331,19 @@ export async function handleComboChat({
       }
 
       // Normalize error text to string (Worker-safe)
-      if (typeof errorText !== "string") {
+      let errorTextStr: string;
+      if (typeof errorText === "string") {
+        errorTextStr = errorText;
+      } else {
         try {
-          errorText = JSON.stringify(errorText);
+          errorTextStr = JSON.stringify(errorText);
         } catch {
-          errorText = String(errorText);
+          errorTextStr = String(errorText);
         }
       }
 
       // Check if should fallback to next model
-      const { shouldFallback, cooldownMs } = checkFallbackError(result.status, errorText);
+      const { shouldFallback, cooldownMs } = checkFallbackError(result.status, errorTextStr);
 
       if (!shouldFallback) {
         log.warn("COMBO", `Model ${modelStr} failed (no fallback)`, { status: result.status });
@@ -293,11 +363,11 @@ export async function handleComboChat({
           "COMBO",
           `Model ${modelStr} transient ${result.status}, waiting ${cooldownMs}ms before next`,
         );
-        await new Promise((r: any) => setTimeout(r, cooldownMs));
+        await new Promise<void>((r) => setTimeout(r, cooldownMs));
       }
 
       // Fallback to next model
-      lastError = errorText || String(result.status);
+      lastError = errorTextStr || String(result.status);
       if (!lastStatus) lastStatus = result.status;
       log.warn("COMBO", `Model ${modelStr} failed, trying next`, { status: result.status });
     } catch (error: unknown) {
@@ -339,25 +409,30 @@ export async function handleComboChat({
  * @param {string} modelId
  * @returns {Response}
  */
-export async function overrideResponseModelId(response: any, modelId: any) {
+export async function overrideResponseModelId(
+  response: Response,
+  modelId: string | null | undefined,
+): Promise<Response> {
   if (!modelId || !response) return response;
 
   const contentType = response.headers.get("content-type") || "";
 
   // SSE streaming — rewrite each `data:` line that contains a `"model"` field
   if (contentType.includes("text/event-stream")) {
-    const { readable, writable } = new TransformStream({
-      transform(chunk: any, controller: any) {
+    const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
         const text = typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk);
         const rewritten = text
           .split("\n")
-          .map((line: any) => {
+          .map((line) => {
             if (!line.startsWith("data:")) return line;
             const payload = line.slice(5).trim();
             if (payload === "[DONE]") return line;
             try {
-              const obj = JSON.parse(payload);
-              if ("model" in obj) obj.model = modelId;
+              const obj: unknown = JSON.parse(payload);
+              if (obj && typeof obj === "object" && "model" in obj) {
+                (obj as JsonRecord).model = modelId;
+              }
               return `data: ${JSON.stringify(obj)}`;
             } catch {
               // Malformed SSE data should pass through unchanged.
@@ -368,7 +443,7 @@ export async function overrideResponseModelId(response: any, modelId: any) {
         controller.enqueue(new TextEncoder().encode(rewritten));
       },
     });
-    response.body.pipeTo(writable).catch(() => {
+    response.body!.pipeTo(writable).catch(() => {
       // Client disconnect or upstream cancellation; response body cleanup is best effort.
     });
     const headers = new Headers(response.headers);
@@ -377,7 +452,9 @@ export async function overrideResponseModelId(response: any, modelId: any) {
 
   // Non-streaming JSON
   try {
-    const body = await response.json();
+    const bodyUnknown: unknown = await response.json();
+    const body =
+      bodyUnknown && typeof bodyUnknown === "object" ? (bodyUnknown as JsonRecord) : bodyUnknown;
     if (body && typeof body === "object" && "model" in body) body.model = modelId;
     const headers = new Headers(response.headers);
     headers.set("Content-Type", "application/json");

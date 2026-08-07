@@ -15,27 +15,67 @@
 import { createHash } from "node:crypto";
 import { QODER_MODEL_LIST_URL } from "@/lib/qoder/constants";
 import { buildCosyHeaders } from "@/lib/qoder/cosy";
+import type {
+  ExecutorCredentials,
+  ExecutorLogger,
+  ExecutorProxyOptions,
+  ExecutorProviderData,
+} from "../executors/base.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 
 const FETCH_TIMEOUT_MS = 15_000;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h, same as the Kiro catalog
 
-/** @type {Map<string, { expiresAt: number, models: any[], rawConfigs: Map<string, object>, fetched: boolean }>} */
-const catalogCache = new Map();
+type JsonRecord = Record<string, unknown>;
+
+type QoderProviderData = ExecutorProviderData & {
+  userId?: string;
+  machineId?: string;
+};
+
+export type QoderCredentials = ExecutorCredentials & {
+  displayName?: string;
+  providerSpecificData?: QoderProviderData;
+};
+
+export type QoderModelSummary = {
+  id: string;
+  name: string;
+  contextLength: number;
+  isVL: boolean;
+  isReasoning: boolean;
+  maxOutputTokens: number;
+  description: string;
+};
+
+export type QoderCatalogCacheEntry = {
+  expiresAt: number;
+  models: QoderModelSummary[];
+  rawConfigs: Map<string, JsonRecord>;
+  fetched: boolean;
+};
+
+export type ResolveQoderModelsOptions = {
+  forceRefresh?: boolean;
+  log?: ExecutorLogger;
+  proxyOptions?: ExecutorProxyOptions;
+  signal?: AbortSignal | null;
+};
+
+const catalogCache = new Map<string, QoderCatalogCacheEntry>();
 
 /**
  * In-flight fetch promises keyed by cacheKey. Concurrent first-time
  * callers (parallel chat windows) all observe the same Promise so we
  * fan-out exactly one upstream request per credential per miss.
- * @type {Map<string, Promise<{ expiresAt: number, models: any[], rawConfigs: Map<string, object>, fetched: boolean } | null>>}
  */
-const inflight = new Map();
+const inflight = new Map<string, Promise<QoderCatalogCacheEntry | null>>();
 
 /**
  * Stable cache key per credential (so different login sessions for the same
  * account share an entry).
  */
-function cacheKey(credentials: any) {
+function cacheKey(credentials: QoderCredentials | null | undefined): string {
   const psd = credentials?.providerSpecificData || {};
   const seed = psd.userId || credentials?.refreshToken || credentials?.accessToken || "anonymous";
   return createHash("sha256").update(`qoder:${seed}`).digest("hex");
@@ -44,11 +84,11 @@ function cacheKey(credentials: any) {
 /**
  * Strip credential -> COSY creds for buildCosyHeaders.
  */
-function cosyCredsFromConnection(credentials: any) {
-  const psd = credentials?.providerSpecificData || {};
+function cosyCredsFromConnection(credentials: QoderCredentials) {
+  const psd = credentials.providerSpecificData || {};
   return {
-    userId: psd.userId,
-    authToken: credentials.accessToken,
+    userId: psd.userId || "",
+    authToken: credentials.accessToken || "",
     name: credentials.displayName || "",
     email: credentials.email || "",
     machineId: psd.machineId || "",
@@ -61,7 +101,11 @@ function cosyCredsFromConnection(credentials: any) {
  *     rawConfigs: Map<modelKey, modelConfigObject> }
  * or `null` on any error.
  */
-async function fetchQoderCatalogRaw(credentials: any, signal: any, proxyOptions: any = null) {
+async function fetchQoderCatalogRaw(
+  credentials: QoderCredentials,
+  signal: AbortSignal | null | undefined,
+  proxyOptions: ExecutorProxyOptions = null,
+): Promise<{ models: QoderModelSummary[]; rawConfigs: Map<string, JsonRecord> } | null> {
   const creds = cosyCredsFromConnection(credentials);
   if (!creds.userId || !creds.authToken) return null;
 
@@ -72,9 +116,9 @@ async function fetchQoderCatalogRaw(credentials: any, signal: any, proxyOptions:
   };
 
   const controller = new AbortController();
-  let timer = null;
-  let abortListener = null;
-  let response;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let abortListener: (() => void) | null = null;
+  let response: Response;
   try {
     timer = setTimeout(() => controller.abort("timeout"), FETCH_TIMEOUT_MS);
     if (signal && typeof signal.addEventListener === "function") {
@@ -104,22 +148,30 @@ async function fetchQoderCatalogRaw(credentials: any, signal: any, proxyOptions:
 
   if (!response.ok) return null;
 
-  const body = await response.json().catch(() => null);
-  if (!body || !Array.isArray(body.chat)) return null;
+  const bodyUnknown: unknown = await response.json().catch(() => null);
+  if (
+    !bodyUnknown ||
+    typeof bodyUnknown !== "object" ||
+    !Array.isArray((bodyUnknown as JsonRecord).chat)
+  ) {
+    return null;
+  }
+  const body = bodyUnknown as JsonRecord & { chat: unknown[] };
 
-  const models = [];
-  const rawConfigs = new Map();
-  for (const entry of body.chat) {
-    if (!entry || typeof entry !== "object") continue;
+  const models: QoderModelSummary[] = [];
+  const rawConfigs = new Map<string, JsonRecord>();
+  for (const entryUnknown of body.chat) {
+    if (!entryUnknown || typeof entryUnknown !== "object") continue;
+    const entry = entryUnknown as JsonRecord;
     const key = entry.key;
-    if (!key) continue;
+    if (typeof key !== "string" || !key) continue;
 
     // Always cache the config — chat needs model_config even for UI-hidden
     // models (enable:false). Upstream still accepts chat for these keys.
     rawConfigs.set(key, entry);
     if (entry.enable === false) continue;
 
-    const display = entry.display_name || key;
+    const display = typeof entry.display_name === "string" ? entry.display_name : key;
     const ctx = Number(entry.max_input_tokens) || 131_072;
     models.push({
       id: key,
@@ -128,7 +180,7 @@ async function fetchQoderCatalogRaw(credentials: any, signal: any, proxyOptions:
       isVL: !!entry.is_vl,
       isReasoning: !!entry.is_reasoning,
       maxOutputTokens: Number(entry.max_output_tokens) || 0,
-      description: entry.description || "",
+      description: typeof entry.description === "string" ? entry.description : "",
     });
   }
 
@@ -140,7 +192,11 @@ async function fetchQoderCatalogRaw(credentials: any, signal: any, proxyOptions:
  * catalog first if needed. Returns null when the catalog can't be fetched
  * (so callers can fall back to the static registry).
  */
-export async function getQoderModelConfig(credentials: any, modelKey: any, options: any = {}) {
+export async function getQoderModelConfig(
+  credentials: QoderCredentials,
+  modelKey: string,
+  options: ResolveQoderModelsOptions = {},
+): Promise<(JsonRecord & { key: string }) | null> {
   const cached = await resolveQoderModels(credentials, options);
   if (!cached) return null;
   const config = cached.rawConfigs.get(modelKey);
@@ -155,7 +211,10 @@ export async function getQoderModelConfig(credentials: any, modelKey: any, optio
  * deduplicates concurrent misses so parallel chat windows fan-out exactly
  * one upstream request per credential.
  */
-export async function resolveQoderModels(credentials: any, options: any = {}) {
+export async function resolveQoderModels(
+  credentials: QoderCredentials | null | undefined,
+  options: ResolveQoderModelsOptions = {},
+): Promise<QoderCatalogCacheEntry | null> {
   if (!credentials?.accessToken) return null;
   const psd = credentials.providerSpecificData || {};
   if (!psd.userId) return null;
@@ -176,10 +235,10 @@ export async function resolveQoderModels(credentials: any, options: any = {}) {
     return existing;
   }
 
-  const fetchPromise = (async () => {
+  const fetchPromise = (async (): Promise<QoderCatalogCacheEntry | null> => {
     const fetched = await fetchQoderCatalogRaw(credentials, options.signal, options.proxyOptions);
     if (!fetched) return null;
-    const entry = {
+    const entry: QoderCatalogCacheEntry = {
       expiresAt: Date.now() + CACHE_TTL_MS,
       models: fetched.models,
       rawConfigs: fetched.rawConfigs,
@@ -201,7 +260,7 @@ export async function resolveQoderModels(credentials: any, options: any = {}) {
   }
 }
 
-export function invalidateQoderCatalog(credentials: any) {
+export function invalidateQoderCatalog(credentials: QoderCredentials | null | undefined) {
   if (!credentials) return;
   catalogCache.delete(cacheKey(credentials));
 }

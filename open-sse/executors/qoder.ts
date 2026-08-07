@@ -26,49 +26,91 @@ import { QODER_CHAT_URL_ENCODED, QODER_MODEL_MAP } from "@/lib/qoder/constants";
 import { buildCosyHeaders } from "@/lib/qoder/cosy";
 import { qoderEncodeBody } from "@/lib/qoder/encoding";
 import { PROVIDERS } from "../config/providers.js";
-import { getQoderModelConfig, resolveQoderModels } from "../services/qoderModels.js";
+import {
+  getQoderModelConfig,
+  resolveQoderModels,
+  type QoderCredentials,
+} from "../services/qoderModels.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorExecuteOptions,
+  type ExecutorExecuteResult,
+  type ExecutorLogger,
+  type ExecutorProxyOptions,
+} from "./base.js";
+
+type JsonRecord = Record<string, unknown>;
+
+type ChatMessage = JsonRecord & {
+  role?: string;
+  content?: unknown;
+};
+
+type QoderEnvelope = {
+  statusCodeValue?: number;
+  body?: string;
+};
+
+type BuildQoderRequestArgs = {
+  model: string;
+  body: JsonRecord;
+  credentials: QoderCredentials;
+  log?: ExecutorLogger;
+  proxyOptions?: ExecutorProxyOptions;
+  signal?: AbortSignal;
+};
+
+/** TransformStream transformer that also cancels the upstream body. */
+type QoderSseTransformer = Transformer<Uint8Array, Uint8Array> & {
+  cancel(reason?: unknown): void;
+};
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
 }
 
 /**
  * Hoist role:"system" messages out of the messages array (Qoder rejects
  * system in messages) and flatten any multipart content arrays.
  */
-function normalizeMessages(messages: any) {
+function normalizeMessages(messages: unknown): { messages: ChatMessage[]; systemText: string } {
   if (!Array.isArray(messages) || messages.length === 0) {
     return { messages: [], systemText: "" };
   }
-  const systemParts = [];
-  const out = [];
-  for (const msg of messages) {
-    if (!msg || typeof msg !== "object") continue;
+  const systemParts: string[] = [];
+  const out: ChatMessage[] = [];
+  for (const msgUnknown of messages) {
+    if (!msgUnknown || typeof msgUnknown !== "object") continue;
+    const msg = msgUnknown as ChatMessage;
     const text = extractText(msg.content);
     if (msg.role === "system") {
       if (text) systemParts.push(text);
       continue;
     }
-    const cloned = { ...msg };
+    const cloned: ChatMessage = { ...msg };
     cloned.content = text;
     out.push(cloned);
   }
   return { messages: out, systemText: systemParts.join("\n\n") };
 }
 
-function extractText(content: any) {
+function extractText(content: unknown): string {
   if (typeof content === "string") return content;
   if (content === null || content === undefined) return "";
   if (Array.isArray(content)) {
-    const parts = [];
+    const parts: string[] = [];
     for (const item of content) {
       if (item && typeof item === "object") {
-        if (item.type === "text" && typeof item.text === "string") {
-          parts.push(item.text);
-        } else if (typeof item.text === "string") {
-          parts.push(item.text);
+        const rec = item as { type?: unknown; text?: unknown };
+        if (rec.type === "text" && typeof rec.text === "string") {
+          parts.push(rec.text);
+        } else if (typeof rec.text === "string") {
+          parts.push(rec.text);
         }
       }
     }
@@ -77,7 +119,7 @@ function extractText(content: any) {
   return String(content);
 }
 
-function lastUserText(messages: any) {
+function lastUserText(messages: ChatMessage[]): string {
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
     if (m?.role === "user" && typeof m.content === "string") {
@@ -87,7 +129,7 @@ function lastUserText(messages: any) {
   return "";
 }
 
-function stableHash(prefix: any, ...parts: any) {
+function stableHash(prefix: string, ...parts: unknown[]): string {
   const h = createHash("sha256");
   h.update(prefix);
   for (const p of parts) {
@@ -97,7 +139,12 @@ function stableHash(prefix: any, ...parts: any) {
   return h.digest("hex").slice(0, 16);
 }
 
-function stableChatRecordId(model: any, messages: any, tools: any, maxTokens: any) {
+function stableChatRecordId(
+  model: string,
+  messages: ChatMessage[],
+  tools: unknown,
+  maxTokens: number,
+): string {
   const h = createHash("sha256");
   h.update("qoder-record\0");
   h.update(String(model));
@@ -124,14 +171,21 @@ function stableChatRecordId(model: any, messages: any, tools: any, maxTokens: an
   return h.digest("hex").slice(0, 16);
 }
 
-function truncate(s: any, n: any) {
+function truncate(s: string, n: number): string {
   return s && s.length > n ? `${s.slice(0, n)}...` : s || "";
 }
 
 /**
  * Map the OpenAI-style request body into the exact shape Qoder expects.
  */
-async function buildQoderRequestBody({ model, body, credentials, log, proxyOptions, signal }: any) {
+async function buildQoderRequestBody({
+  model,
+  body,
+  credentials,
+  log,
+  proxyOptions,
+  signal,
+}: BuildQoderRequestArgs) {
   const qoderKey = String(model || "").replace(/^qoder\//, "");
   if (!QODER_MODEL_MAP[qoderKey]) {
     throw new Error(`Unsupported qoder model: "${qoderKey}" (received "${model}")`);
@@ -239,7 +293,7 @@ async function buildQoderRequestBody({ model, body, credentials, log, proxyOptio
  * and re-emit as `data: <inner>\n\n`. Errors become `data: [DONE]\n\n` plus
  * a synthetic OpenAI error chunk.
  */
-function wrapQoderSSE(response: any, model: any) {
+function wrapQoderSSE(response: Response, model: string): Response {
   if (!response.ok || !response.body) return response;
 
   const decoder = new TextDecoder();
@@ -250,7 +304,10 @@ function wrapQoderSSE(response: any, model: any) {
   // Process one already-extracted SSE line (no trailing newline). Returns
   // false when the line indicated end-of-stream so the caller can stop
   // forwarding any remaining chunks after [DONE].
-  const processLine = (line: any, controller: any) => {
+  const processLine = (
+    line: string,
+    controller: TransformStreamDefaultController<Uint8Array>,
+  ): void => {
     const trimmed = line.replace(/\r$/, "").trim();
     if (!trimmed) return;
     if (!trimmed.startsWith("data:")) return;
@@ -263,9 +320,9 @@ function wrapQoderSSE(response: any, model: any) {
       return;
     }
 
-    let envelope;
+    let envelope: QoderEnvelope;
     try {
-      envelope = JSON.parse(data);
+      envelope = JSON.parse(data) as QoderEnvelope;
     } catch {
       // Malformed Qoder envelope lines are ignored; later frames may still be valid.
       return;
@@ -306,8 +363,8 @@ function wrapQoderSSE(response: any, model: any) {
     controller.enqueue(encoder.encode(`data: ${sanitized}\n\n`));
   };
 
-  const transform = new TransformStream({
-    async transform(chunk: any, controller: any) {
+  const transformer: QoderSseTransformer = {
+    async transform(chunk, controller) {
       try {
         buffer += decoder.decode(chunk, { stream: true });
         for (let nl = buffer.indexOf("\n"); nl !== -1; nl = buffer.indexOf("\n")) {
@@ -323,7 +380,7 @@ function wrapQoderSSE(response: any, model: any) {
         controller.error(err);
       }
     },
-    cancel(reason: any) {
+    cancel(reason) {
       try {
         if (typeof response.body?.cancel === "function") {
           response.body.cancel(reason);
@@ -332,7 +389,7 @@ function wrapQoderSSE(response: any, model: any) {
         // upstream body already cancelled
       }
     },
-    flush(controller: any) {
+    flush(controller) {
       // Finalize the decoder so any pending multi-byte sequence is
       // released into `buffer` instead of being silently dropped.
       buffer += decoder.decode();
@@ -349,7 +406,9 @@ function wrapQoderSSE(response: any, model: any) {
         doneEmitted = true;
       }
     },
-  } as any);
+  };
+
+  const transform = new TransformStream(transformer);
 
   const transformed = response.body.pipeThrough(transform);
   // Build a Response with passable headers; the streaming handler reads
@@ -386,10 +445,11 @@ export class QoderExecutor extends BaseExecutor {
     signal,
     log,
     proxyOptions = null,
-  }: any) {
+  }: ExecutorExecuteOptions): Promise<ExecutorExecuteResult> {
     const url = this.buildUrl();
+    const qoderCredentials = credentials as QoderCredentials;
 
-    const psd = credentials?.providerSpecificData || {};
+    const psd = qoderCredentials?.providerSpecificData || {};
     if (!psd.userId) {
       // No user id → no way to sign. Surface a 401 so the dashboard nudges
       // the user back to OAuth.
@@ -401,7 +461,7 @@ export class QoderExecutor extends BaseExecutor {
       );
       return { response: fakeResp, url, headers: {}, transformedBody: body };
     }
-    if (!credentials?.accessToken) {
+    if (!qoderCredentials?.accessToken) {
       // Same shape as the userId guard — clean 401 so chatCore reports
       // "reconnect" rather than bubbling cosy.js's synchronous throw as 500.
       const fakeResp = new Response(
@@ -413,13 +473,13 @@ export class QoderExecutor extends BaseExecutor {
       return { response: fakeResp, url, headers: {}, transformedBody: body };
     }
 
-    let qoderKey;
-    let payload;
+    let qoderKey: string;
+    let payload: JsonRecord;
     try {
       ({ qoderKey, payload } = await buildQoderRequestBody({
         model,
-        body,
-        credentials,
+        body: asRecord(body),
+        credentials: qoderCredentials,
         log,
         proxyOptions,
         signal,
@@ -436,14 +496,14 @@ export class QoderExecutor extends BaseExecutor {
     const encodedBodyStr = qoderEncodeBody(plainBody);
     const encodedBodyBuf = Buffer.from(encodedBodyStr, "latin1");
 
-    let cosyHeaders;
+    let cosyHeaders: Record<string, string>;
     try {
       cosyHeaders = buildCosyHeaders(encodedBodyBuf, url, {
-        userId: psd.userId,
-        authToken: credentials.accessToken,
-        name: credentials.displayName || "",
-        email: credentials.email || "",
-        machineId: psd.machineId || "",
+        userId: String(psd.userId),
+        authToken: qoderCredentials.accessToken,
+        name: qoderCredentials.displayName || "",
+        email: qoderCredentials.email || "",
+        machineId: typeof psd.machineId === "string" ? psd.machineId : "",
       });
     } catch (err: unknown) {
       // cosy.js throws synchronously on missing userId/authToken — surface
@@ -455,7 +515,8 @@ export class QoderExecutor extends BaseExecutor {
       return { response: fakeResp, url, headers: {}, transformedBody: body };
     }
 
-    const modelSource = (payload.model_config && payload.model_config.source) || "system";
+    const modelConfig = asRecord(payload.model_config);
+    const modelSource = typeof modelConfig.source === "string" ? modelConfig.source : "system";
     const headers = {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
