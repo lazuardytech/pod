@@ -54,20 +54,29 @@ export const DATA_DIR = (() => {
 
 export const SQLITE_FILE = path.join(/*turbopackIgnore: true*/ DATA_DIR, SQLITE_FILE_NAME);
 
+/** Subset of better-sqlite3 / bun:sqlite `run()` return value. */
+export interface SqliteRunResult {
+  changes: number;
+  lastInsertRowid: number | bigint;
+}
+
+/**
+ * Prepared statement subset shared by better-sqlite3 and bun:sqlite.
+ * Row shape is caller-supplied via generics (`all<T>()`, `get<T>()`).
+ * `get` may return `null` (bun) or `undefined` (better-sqlite3) when empty.
+ */
+export interface SqliteStatement {
+  all<T = Record<string, unknown>>(...params: unknown[]): T[];
+  get<T = Record<string, unknown>>(...params: unknown[]): T | null | undefined;
+  run(...params: unknown[]): SqliteRunResult;
+}
+
 // Minimal typed interface covering the subset of both better-sqlite3 and
 // bun:sqlite Database APIs used in this file.
 export interface SqliteDatabase {
   exec(sql: string): unknown;
   pragma?(s: string): unknown;
-  prepare(sql: string): {
-    // todo(ts): better-sqlite3 / bun:sqlite Statement row shapes are ambient FFI
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    all(...params: unknown[]): any[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get(...params: unknown[]): any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    run(...params: unknown[]): any;
-  };
+  prepare(sql: string): SqliteStatement;
   transaction<T>(fn: T): T & {
     default?: T;
     deferred?: T;
@@ -109,8 +118,8 @@ function ensureSchema(db: SqliteDatabase) {
 
 function hasColumn(db: SqliteDatabase, tableName: string, columnName: string): boolean {
   try {
-    const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
-    return columns.some((col: unknown) => String((col as { name: string }).name) === columnName);
+    const columns = db.prepare(`PRAGMA table_info(${tableName})`).all<{ name: string }>();
+    return columns.some((col) => String(col.name) === columnName);
   } catch {
     return false;
   }
@@ -175,9 +184,7 @@ function ensureSchemaPatches(db: SqliteDatabase) {
 }
 
 function readMeta(db: SqliteDatabase, key: string): string | null {
-  const row = db.prepare("SELECT value FROM meta WHERE key = ?").get(key) as
-    | { value: string }
-    | undefined;
+  const row = db.prepare("SELECT value FROM meta WHERE key = ?").get<{ value: string }>(key);
   return row ? row.value : null;
 }
 
@@ -206,7 +213,6 @@ export function getDatabase(): SqliteDatabase {
   // built-in `bun:sqlite` instead. `bun:sqlite` is marked as a server
   // external package in next.config.ts, so the runtime resolves it via
   // createRequire at call time.
-  // todo(ts): bun:sqlite / better-sqlite3 constructors are ambient FFI across runtimes
   type SqliteDatabaseCtor = new (filename: string) => SqliteDatabase;
   const DatabaseCtor: SqliteDatabaseCtor =
     typeof Bun !== "undefined"
