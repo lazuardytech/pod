@@ -1,5 +1,6 @@
 // Image provider adapter registry
 
+import type { ImageProviderAdapter } from "./_base.js";
 import blackForestLabs from "./blackForestLabs.js";
 import cloudflareAi from "./cloudflareAi.js";
 import codex from "./codex.js";
@@ -13,7 +14,7 @@ import runwayml from "./runwayml.js";
 import sdwebui from "./sdwebui.js";
 import stabilityAi from "./stabilityAi.js";
 
-const ADAPTERS: Record<string, any> = {
+const ADAPTERS = {
   openai: createOpenAIAdapter("openai"),
   minimax: createOpenAIAdapter("minimax"),
   openrouter: createOpenAIAdapter("openrouter"),
@@ -29,12 +30,12 @@ const ADAPTERS: Record<string, any> = {
   "black-forest-labs": blackForestLabs,
   runwayml,
   "cloudflare-ai": cloudflareAi,
-};
+} as unknown as Record<string, ImageProviderAdapter>;
 
-export function getImageAdapter(provider: any) {
+export function getImageAdapter(provider: string) {
   return ADAPTERS[provider] || null;
 }
 
-export function isImageProvider(provider: any) {
+export function isImageProvider(provider: string) {
   return provider in ADAPTERS;
 }

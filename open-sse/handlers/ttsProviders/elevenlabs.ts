@@ -4,7 +4,7 @@ import { Buffer } from "node:buffer";
 const VOICES_TTL = 24 * 60 * 60 * 1000;
 const _voicesCache = new Map(); // by API key
 
-export async function fetchElevenLabsVoices(apiKey: any) {
+export async function fetchElevenLabsVoices(apiKey: string) {
   if (!apiKey) throw new Error("ElevenLabs API key required");
   const now = Date.now();
   const cached = _voicesCache.get(apiKey);
@@ -16,17 +16,27 @@ export async function fetchElevenLabsVoices(apiKey: any) {
   if (!res.ok) throw new Error(`ElevenLabs voices fetch failed: ${res.status}`);
   const data = await res.json();
   // Normalize: derive lang from labels for grouping
-  const voices = (data.voices || []).map((v: any) => ({ ...v, lang: v.labels?.language || "en" }));
+  const voices = (data.voices || []).map((v: { labels?: { language?: string } }) => ({
+    ...v,
+    lang: v.labels?.language || "en",
+  }));
   _voicesCache.set(apiKey, { voices, time: now });
   return voices;
 }
 
 export default {
-  async synthesize(text: any, model: any, credentials: any) {
+  async synthesize(
+    text: string,
+    model: string,
+    credentials: { apiKey?: string; accessToken?: string } | null,
+  ) {
     if (!credentials?.apiKey) throw new Error("ElevenLabs API key required");
     let modelId = "eleven_flash_v2_5";
     let voiceId = model;
-    if (model && model.includes("/")) [modelId, voiceId] = model.split("/");
+    if (model && model.includes("/")) {
+      const parts = model.split("/");
+      [modelId, voiceId] = [parts[0] || modelId, parts[1] || voiceId];
+    }
 
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",

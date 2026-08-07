@@ -1,17 +1,24 @@
 // OpenAI-compatible adapter (used by openai, minimax, openrouter, recraft)
 
-const ENDPOINTS: Record<string, any> = {
+import type {
+  ImageProviderHeaders,
+  ImageRequestBody,
+  JsonObject,
+  ProviderCredentials,
+} from "./_base.js";
+
+const ENDPOINTS: Record<string, string> = {
   openai: "https://api.openai.com/v1/images/generations",
   minimax: "https://api.minimaxi.com/v1/images/generations",
   openrouter: "https://openrouter.ai/api/v1/images/generations",
   recraft: "https://external.api.recraft.ai/v1/images/generations",
 };
 
-export default function createOpenAIAdapter(providerId: any) {
+export default function createOpenAIAdapter(providerId: string) {
   return {
     buildUrl: () => ENDPOINTS[providerId],
-    buildHeaders: (creds: any) => {
-      const headers: Record<string, any> = { "Content-Type": "application/json" };
+    buildHeaders: (creds: ProviderCredentials) => {
+      const headers: ImageProviderHeaders = { "Content-Type": "application/json" };
       const key = creds?.apiKey || creds?.accessToken;
       if (key) headers["Authorization"] = `Bearer ${key}`;
       if (providerId === "openrouter") {
@@ -20,14 +27,14 @@ export default function createOpenAIAdapter(providerId: any) {
       }
       return headers;
     },
-    buildBody: (model: any, body: any) => {
+    buildBody: (model: string, body: ImageRequestBody) => {
       const { prompt, n = 1, size = "1024x1024", quality, style, response_format } = body;
-      const req: Record<string, any> = { model, prompt, n, size };
+      const req: JsonObject = { model, prompt, n, size };
       if (quality) req.quality = quality;
       if (style) req.style = style;
       if (response_format) req.response_format = response_format;
       return req;
     },
-    normalize: (responseBody: any) => responseBody,
+    normalize: (responseBody: unknown) => responseBody,
   };
 }

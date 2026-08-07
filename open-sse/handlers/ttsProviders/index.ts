@@ -10,8 +10,14 @@ import localDevice, { fetchLocalDeviceVoices } from "./localDevice.js";
 import openai from "./openai.js";
 import openrouter from "./openrouter.js";
 
+type TtsAdapterResult =
+  | { base64: string; format: string; success?: undefined }
+  | { response: Response; success: true };
+type TtsAdapter = { synthesize: (...args: unknown[]) => Promise<TtsAdapterResult> };
+type TtsConfigResult = { base64: string; format: string } | null;
+
 // Special providers with custom synthesize() logic
-const SPECIAL_ADAPTERS: Record<string, any> = {
+const SPECIAL_ADAPTERS = {
   "google-tts": googleTts,
   "edge-tts": edgeTts,
   "local-device": localDevice,
@@ -19,18 +25,34 @@ const SPECIAL_ADAPTERS: Record<string, any> = {
   openai,
   openrouter,
   gemini,
-};
+} as unknown as Record<string, TtsAdapter>;
 
-export function getTtsAdapter(provider: any) {
+export function getTtsAdapter(provider: string): TtsAdapter | null {
   return SPECIAL_ADAPTERS[provider] || null;
 }
 
 // Generic config-driven dispatcher (uses ttsConfig.format)
-export async function synthesizeViaConfig(provider: any, text: any, model: any, credentials: any) {
+export async function synthesizeViaConfig(
+  provider: string,
+  text: string,
+  model: string,
+  credentials: { apiKey?: string } | null | undefined,
+): Promise<TtsConfigResult> {
   const { AI_PROVIDERS } = await import("@/shared/constants/providers");
   const cfg = AI_PROVIDERS[provider]?.ttsConfig;
   if (!cfg) return null;
-  const handler = (FORMAT_HANDLERS as Record<string, any>)[cfg.format];
+  const handler = (
+    FORMAT_HANDLERS as Record<
+      string,
+      (args: {
+        baseUrl: string;
+        apiKey?: string;
+        text: string;
+        modelId?: string;
+        voiceId?: string;
+      }) => Promise<{ base64: string; format: string }>
+    >
+  )[cfg.format];
   if (!handler) return null;
   const apiKey = credentials?.apiKey;
   if (cfg.authType !== "none" && !apiKey) throw new Error(`${provider} API key required`);
@@ -40,12 +62,12 @@ export async function synthesizeViaConfig(provider: any, text: any, model: any, 
 }
 
 // Voice fetchers (used by /api/media-providers/tts/voices route)
-export const VOICE_FETCHERS: Record<string, (apiKey?: string) => Promise<any>> = {
+export const VOICE_FETCHERS = {
   "edge-tts": fetchEdgeTtsVoices,
   "local-device": fetchLocalDeviceVoices,
   elevenlabs: fetchElevenLabsVoices,
   gemini: fetchGeminiVoices,
-};
+} as unknown as Record<string, (apiKey?: string) => Promise<unknown>>;
 
 // Re-export for backward compat
 export { fetchEdgeTtsVoices, fetchElevenLabsVoices, fetchGeminiVoices, fetchLocalDeviceVoices };

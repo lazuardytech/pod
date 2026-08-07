@@ -7,18 +7,25 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-let _voicesCache: any = null;
+let _voicesCache: unknown = null;
 
 async function fetchVoicesMac() {
   const { stdout } = await execFileAsync("say", ["-v", "?"]);
-  const voices: any[] = [];
+  const voices: {
+    country?: string;
+    gender?: string;
+    id: string;
+    lang: string;
+    locale?: string;
+    name: string;
+  }[] = [];
   for (const line of stdout.split("\n")) {
     const m = line.match(/^([^\s].*?)\s{2,}([a-z]{2}_[A-Z]{2})/);
     if (!m) continue;
-    const name = (m[1] as any).trim();
-    const locale = (m[2] as any).trim();
-    const lang = locale.split("_")[0];
-    const country = locale.split("_")[1];
+    const name = (m[1] || "").trim();
+    const locale = (m[2] || "").trim();
+    const lang = locale.split("_")[0] || "";
+    const country = locale.split("_")[1] || "";
     voices.push({ id: name, name, locale, lang, country, gender: "" });
   }
   return voices;
@@ -39,10 +46,10 @@ async function fetchVoicesWin() {
   );
   const raw = JSON.parse(stdout.trim() || "[]");
   const list = Array.isArray(raw) ? raw : [raw];
-  return list.map((v: any) => {
+  return list.map((v) => {
     const culture = v.Culture || "en-US";
     const [lang, country = ""] = culture.split("-");
-    const genderMap: Record<string, any> = {
+    const genderMap: Record<string, unknown> = {
       1: "Male",
       2: "Female",
       Male: "Male",
@@ -70,7 +77,7 @@ export async function fetchLocalDeviceVoices() {
   }
 }
 
-async function synthesizeMacOrWin(text: any, voiceId: any) {
+async function synthesizeMacOrWin(text: string, voiceId: string) {
   const dir = await mkdtemp(join(tmpdir(), "tts-"));
   const aiffPath = join(dir, "out.aiff");
   const mp3Path = join(dir, "out.mp3");
@@ -96,7 +103,7 @@ async function synthesizeMacOrWin(text: any, voiceId: any) {
 
 export default {
   noAuth: true,
-  async synthesize(text: any, model: any) {
+  async synthesize(text: string, model: string) {
     const base64 = await synthesizeMacOrWin(text, model);
     return { base64, format: "mp3" };
   },

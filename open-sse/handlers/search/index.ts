@@ -15,12 +15,49 @@ export type SearchResult =
   | { success: true; response: Response; data?: unknown }
   | { success: false; status: number; error: string; response?: Response };
 
+type SearchRequestBody = Record<string, unknown> & {
+  query: string;
+  search_type?: string;
+  max_results?: number;
+  country?: string;
+  language?: string;
+  time_range?: string;
+  offset?: number;
+  domain_filter?: string[];
+  content_options?: {
+    snippet?: boolean;
+    full_page?: boolean;
+    format?: string;
+    max_characters?: number;
+  };
+  provider_options?: Record<string, unknown>;
+};
+type SearchProvider = { id: string; searchViaChat?: { defaultModel?: string } };
+type DedicatedSearchConfig = Record<string, unknown> & {
+  baseUrl?: string;
+  authType?: string;
+  defaultMaxResults?: number;
+  maxMaxResults?: number;
+  searchTypes?: string[];
+  timeoutMs?: number;
+};
+type SearchLog = {
+  error?: (...args: unknown[]) => void;
+  info?: (...args: unknown[]) => void;
+  warn?: (...args: unknown[]) => void;
+};
+type SearchCredentials = {
+  accessToken?: string;
+  apiKey?: string;
+  providerSpecificData?: Record<string, unknown>;
+} | null;
+
 export interface SearchCoreParams {
-  body: Record<string, any>;
-  provider: any;
-  providerConfig?: any;
+  body: SearchRequestBody;
+  provider: SearchProvider;
+  providerConfig?: DedicatedSearchConfig;
   credentials: Record<string, unknown> | null;
-  log: any;
+  log: unknown;
   onCredentialsRefreshed?: (newCreds: Record<string, unknown>) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
 }
@@ -56,8 +93,20 @@ function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
 
-function formatSearxngError({ status, statusText = "", text = "", fetchUrl = "" }: any) {
-  const endpointLabel = fetchUrl ? fetchUrl.split("?")[0] : "configured endpoint";
+function formatSearxngError({
+  status,
+  statusText = "",
+  text = "",
+  fetchUrl = "",
+}: {
+  fetchUrl?: string;
+  status: number;
+  statusText?: string;
+  text?: string;
+}) {
+  const endpointLabel = fetchUrl
+    ? fetchUrl.split("?")[0] || "configured endpoint"
+    : "configured endpoint";
   if (status === 403) {
     return `searxng returned 403 from ${endpointLabel}. This instance may block JSON API requests (format=json). Use a SearXNG instance that allows JSON or run your own instance.`;
   }
@@ -68,17 +117,19 @@ function formatSearxngError({ status, statusText = "", text = "", fetchUrl = "" 
   return `searxng returned ${status} from ${endpointLabel}: ${detail.slice(0, 200)}`;
 }
 
-function formatSearxngNetworkError({ err, fetchUrl = "" }: any) {
-  const endpointLabel = fetchUrl ? fetchUrl.split("?")[0] : "configured endpoint";
+function formatSearxngNetworkError({ err, fetchUrl = "" }: { err: unknown; fetchUrl?: string }) {
+  const endpointLabel = fetchUrl
+    ? fetchUrl.split("?")[0] || "configured endpoint"
+    : "configured endpoint";
   if (LOCALHOST_URL_RE.test(endpointLabel)) {
     return `Unable to connect to ${endpointLabel}. Start SearXNG locally on that URL or set provider_options.baseUrl to a reachable SearXNG instance.`;
   }
-  return `searxng connection error at ${endpointLabel}: ${err?.message || "network error"}`;
+  return `searxng connection error at ${endpointLabel}: ${err instanceof Error ? err.message : "network error"}`;
 }
 
 /** Normalize and validate query string. */
 function sanitizeQuery(
-  query: any,
+  query: string,
 ): { clean: string; error?: undefined } | { clean?: undefined; error: string } {
   if (hasInvalidControlChar(query)) return { error: "Query contains invalid control characters" };
   const clean = query.normalize("NFKC").trim().replace(/\s+/g, " ");
@@ -87,9 +138,9 @@ function sanitizeQuery(
 }
 
 // Strip non-ASCII chars from header values (HTTP headers must be ByteString).
-function sanitizeHeaders(headers: any) {
+function sanitizeHeaders(headers: HeadersInit | undefined) {
   if (!headers) return headers;
-  const out: Record<string, any> = {};
+  const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(headers)) {
     out[k] = typeof v === "string" ? stripNonAscii(v).trim() : v;
   }
@@ -97,7 +148,7 @@ function sanitizeHeaders(headers: any) {
 }
 
 /** Build a JSON Response wrapper used by the auth layer. */
-function jsonResponse(payload: any, status: any = 200) {
+function jsonResponse(payload: unknown, status: number = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
@@ -115,7 +166,7 @@ function errorResult(status: number, error: string): SearchResult {
 }
 
 /** Wrap a success payload. */
-function successResult(data: any): SearchResult {
+function successResult(data: unknown): SearchResult {
   return { success: true, data, response: jsonResponse(data, 200) };
 }
 
@@ -130,7 +181,14 @@ async function tryDedicatedProvider({
   credentials,
   log,
   globalStartTime,
-}: any) {
+}: {
+  provider: SearchProvider;
+  providerConfig: DedicatedSearchConfig;
+  body: SearchRequestBody;
+  credentials: SearchCredentials;
+  log: SearchLog;
+  globalStartTime: number;
+}) {
   const startTime = Date.now();
   const token = credentials?.apiKey || credentials?.accessToken || undefined;
 
@@ -158,7 +216,10 @@ async function tryDedicatedProvider({
 
   let url, init;
   try {
-    ({ url, init } = buildSearchRequest({ id: provider.id, ...providerConfig }, params));
+    ({ url, init } = buildSearchRequest(
+      { id: provider.id, baseUrl: String(providerConfig.baseUrl || ""), ...providerConfig },
+      params,
+    ));
   } catch (err: unknown) {
     return {
       success: false,
@@ -181,7 +242,7 @@ async function tryDedicatedProvider({
   try {
     const resp = await fetch(url, {
       ...init,
-      headers: sanitizeHeaders(init.headers),
+      headers: sanitizeHeaders(init.headers as HeadersInit | undefined),
       signal: controller.signal,
     });
     clearTimeout(timer);
@@ -270,11 +331,12 @@ export async function handleSearchCore({
   log,
 }: SearchCoreParams): Promise<SearchResult> {
   const globalStartTime = Date.now();
+  const typedLog = log as SearchLog;
 
   // 1. Sanitize query
   const { clean, error: sanitizeError } = sanitizeQuery(body.query || "");
   if (sanitizeError) return errorResult(400, sanitizeError);
-  const normalizedBody: Record<string, any> = { ...body, query: clean };
+  const normalizedBody: SearchRequestBody = { ...body, query: clean || "" };
 
   // 2. Route: dedicated search API takes priority over chat-based
   let result;
@@ -284,7 +346,7 @@ export async function handleSearchCore({
       providerConfig,
       body: normalizedBody,
       credentials,
-      log,
+      log: typedLog,
       globalStartTime,
     });
   } else if (provider.searchViaChat) {
@@ -294,7 +356,7 @@ export async function handleSearchCore({
       maxResults: normalizedBody.max_results,
       model: provider.searchViaChat.defaultModel,
       credentials,
-      log,
+      log: typedLog,
     });
   } else {
     return errorResult(400, `Provider ${provider.id} does not support web search`);
@@ -309,7 +371,7 @@ export async function handleSearchCore({
     provider.searchViaChat &&
     providerConfig
   ) {
-    log?.warn?.(
+    typedLog?.warn?.(
       "SEARCH",
       `${provider.id} dedicated failed (${result.status}), falling back to chat-based search`,
     );
@@ -319,7 +381,7 @@ export async function handleSearchCore({
       maxResults: normalizedBody.max_results,
       model: provider.searchViaChat.defaultModel,
       credentials,
-      log,
+      log: typedLog,
     });
     if (fallback.success) return successResult(fallback.data);
   }

@@ -1,13 +1,14 @@
-// Custom node providers (openai-compatible-* / custom-embedding-*) — baseUrl from credentials
+// Custom/OpenAI-compatible embedding node adapter
+import type { EmbeddingCredentials } from "./_base.js";
 import createOpenAIEmbeddingAdapter from "./openai.js";
 
-const baseAdapter = createOpenAIEmbeddingAdapter("openai");
+const base = createOpenAIEmbeddingAdapter("openai");
 
 export default {
-  ...baseAdapter,
-  buildUrl: (_model: any, creds: any) => {
-    const rawBaseUrl = creds?.providerSpecificData?.baseUrl || "https://api.openai.com/v1";
-    const baseUrl = rawBaseUrl.replace(/\/$/, "").replace(/\/embeddings$/, "");
-    return `${baseUrl}/embeddings`;
+  ...base,
+  buildUrl: (_model: string, creds: EmbeddingCredentials) => {
+    const baseUrl =
+      creds?.providerSpecificData?.baseUrl || creds?.baseUrl || "https://api.openai.com/v1";
+    return baseUrl.replace(/\/+$/, "") + "/embeddings";
   },
 };

@@ -5,7 +5,7 @@ export const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36";
 
 // Convert upstream Response (binary audio) to { base64, format }
-export async function responseToBase64(res: any, defaultFormat: any = "mp3") {
+export async function responseToBase64(res: Response, defaultFormat: string = "mp3") {
   const buf = await res.arrayBuffer();
   if (buf.byteLength < 100) throw new Error("Upstream returned empty audio");
   const ctype = res.headers.get("content-type") || "";
@@ -16,7 +16,7 @@ export async function responseToBase64(res: any, defaultFormat: any = "mp3") {
   return { base64: Buffer.from(buf).toString("base64"), format };
 }
 
-export async function throwUpstreamError(res: any) {
+export async function throwUpstreamError(res: Response) {
   const text = await res.text().catch(() => "");
   let msg = `Upstream error (${res.status})`;
   try {
@@ -36,16 +36,16 @@ export async function throwUpstreamError(res: any) {
 
 // Parse `model` string as "modelId/voiceId" — match against known model list (longest prefix wins)
 export function parseModelVoice(
-  model: any,
-  defaultModel: any = "",
-  defaultVoice: any = "",
-  knownModels: any = [],
+  model: string,
+  defaultModel: string = "",
+  defaultVoice: string = "",
+  knownModels: ({ id?: string } | string)[] = [],
 ) {
   if (!model) return { modelId: defaultModel, voiceId: defaultVoice };
   const known = knownModels
-    .map((m: any) => m.id || m)
+    .map((m) => (typeof m === "string" ? m : m.id || ""))
     .filter(Boolean)
-    .sort((a: any, b: any) => b.length - a.length);
+    .sort((a, b) => b.length - a.length);
   for (const id of known) {
     if (model === id) return { modelId: id, voiceId: defaultVoice };
     if (model.startsWith(`${id}/`)) return { modelId: id, voiceId: model.slice(id.length + 1) };

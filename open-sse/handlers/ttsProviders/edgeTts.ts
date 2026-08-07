@@ -5,8 +5,9 @@ import { UA } from "./_base.js";
 const REFRESH_MS = 5 * 60 * 1000; // token TTL ~1h, refresh early
 const VOICES_TTL = 24 * 60 * 60 * 1000;
 
-const cache: Record<string, any> = { token: null, tokenTime: 0 };
-let _voicesCache: any = null;
+type EdgeToken = { cookie?: string; key?: string; token?: string };
+const cache: { token: EdgeToken | null; tokenTime: number } = { token: null, tokenTime: 0 };
+let _voicesCache: unknown = null;
 let _voicesCacheTime = 0;
 
 async function getToken() {
@@ -17,24 +18,24 @@ async function getToken() {
   });
   if (!res.ok) throw new Error(`Bing translator fetch failed: ${res.status}`);
   const rawCookies = res.headers.getSetCookie?.() || [];
-  const cookie = rawCookies.map((c: any) => c.split(";")[0]).join("; ");
+  const cookie = rawCookies.map((c: string) => c.split(";")[0]).join("; ");
   const html = await res.text();
   const match = html.match(/params_AbusePreventionHelper\s*=\s*\[([^,]+),([^,]+),/);
   if (!match) throw new Error("Failed to parse Bing token");
-  cache.token = { key: match[1], token: (match[2] as any).replace(/"/g, ""), cookie };
+  cache.token = { key: match[1], token: (match[2] || "").replace(/"/g, ""), cookie };
   cache.tokenTime = now;
   return cache.token;
 }
 
-async function ttsRequest(text: any, voiceId: any, token: any) {
+async function ttsRequest(text: string, voiceId: string, token: EdgeToken) {
   const parts = voiceId.split("-");
   const xmlLang = parts.slice(0, 2).join("-");
   const gender = voiceId.toLowerCase().includes("male") ? "Male" : "Female";
   const ssml = `<speak version='1.0' xml:lang='${xmlLang}'><voice xml:lang='${xmlLang}' xml:gender='${gender}' name='${voiceId}'><prosody rate='0.00%'>${text}</prosody></voice></speak>`;
   const body = new URLSearchParams();
   body.append("ssml", ssml);
-  body.append("token", token.token);
-  body.append("key", token.key);
+  body.append("token", token.token || "");
+  body.append("key", token.key || "");
   return fetch("https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1", {
     method: "POST",
     body: body.toString(),
@@ -65,7 +66,7 @@ export async function fetchEdgeTtsVoices() {
 
 export default {
   noAuth: true,
-  async synthesize(text: any, model: any) {
+  async synthesize(text: string, model: string) {
     const voiceId = model || "vi-VN-HoaiMyNeural";
     let token = await getToken();
     let res = await ttsRequest(text, voiceId, token);

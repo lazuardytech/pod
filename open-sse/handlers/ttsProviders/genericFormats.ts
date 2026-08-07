@@ -2,8 +2,16 @@
 // Each handler accepts { baseUrl, apiKey, text, modelId, voiceId } and returns { base64, format }.
 import { responseToBase64, throwUpstreamError } from "./_base.js";
 
+type GenericTtsParams = {
+  baseUrl: string;
+  apiKey?: string;
+  text: string;
+  modelId?: string;
+  voiceId?: string;
+};
+
 // Hyperbolic: POST { text } → { audio: base64 }
-async function hyperbolic({ baseUrl, apiKey, text }: any) {
+async function hyperbolic({ baseUrl, apiKey, text }: GenericTtsParams) {
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -15,7 +23,7 @@ async function hyperbolic({ baseUrl, apiKey, text }: any) {
 }
 
 // Deepgram: model via query, Token auth, returns binary
-async function deepgram({ baseUrl, apiKey, text, modelId }: any) {
+async function deepgram({ baseUrl, apiKey, text, modelId }: GenericTtsParams) {
   const url = new URL(baseUrl);
   url.searchParams.set("model", modelId || "aura-asteria-en");
   const res = await fetch(url.toString(), {
@@ -28,7 +36,7 @@ async function deepgram({ baseUrl, apiKey, text, modelId }: any) {
 }
 
 // Nvidia NIM: POST { input: { text }, voice, model } → binary
-async function nvidia({ baseUrl, apiKey, text, modelId, voiceId }: any) {
+async function nvidia({ baseUrl, apiKey, text, modelId, voiceId }: GenericTtsParams) {
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -39,7 +47,7 @@ async function nvidia({ baseUrl, apiKey, text, modelId, voiceId }: any) {
 }
 
 // HuggingFace: POST {baseUrl}/{modelId} { inputs: text } → binary
-async function huggingface({ baseUrl, apiKey, text, modelId }: any) {
+async function huggingface({ baseUrl, apiKey, text, modelId }: GenericTtsParams) {
   if (!modelId || modelId.includes("..")) throw new Error("Invalid HuggingFace model ID");
   const res = await fetch(`${baseUrl}/${modelId}`, {
     method: "POST",
@@ -51,7 +59,7 @@ async function huggingface({ baseUrl, apiKey, text, modelId }: any) {
 }
 
 // Inworld: Basic auth, JSON { audioContent }
-async function inworld({ baseUrl, apiKey, text, modelId, voiceId }: any) {
+async function inworld({ baseUrl, apiKey, text, modelId, voiceId }: GenericTtsParams) {
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Basic ${apiKey}` },
@@ -69,12 +77,12 @@ async function inworld({ baseUrl, apiKey, text, modelId, voiceId }: any) {
 }
 
 // Cartesia: X-API-Key header
-async function cartesia({ baseUrl, apiKey, text, modelId, voiceId }: any) {
+async function cartesia({ baseUrl, apiKey, text, modelId, voiceId }: GenericTtsParams) {
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-Key": apiKey,
+      "X-API-Key": apiKey || "",
       "Cartesia-Version": "2024-06-10",
     },
     body: JSON.stringify({
@@ -89,7 +97,7 @@ async function cartesia({ baseUrl, apiKey, text, modelId, voiceId }: any) {
 }
 
 // PlayHT: token format "userId:apiKey", voice = s3 URL
-async function playht({ baseUrl, apiKey, text, modelId, voiceId }: any) {
+async function playht({ baseUrl, apiKey, text, modelId, voiceId }: GenericTtsParams) {
   const [userId, key] = (apiKey || ":").split(":");
   const res = await fetch(baseUrl, {
     method: "POST",
@@ -114,7 +122,7 @@ async function playht({ baseUrl, apiKey, text, modelId, voiceId }: any) {
 }
 
 // Coqui (local, noAuth): POST { text, speaker_id } → WAV
-async function coqui({ baseUrl, text, voiceId }: any) {
+async function coqui({ baseUrl, text, voiceId }: GenericTtsParams) {
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -125,7 +133,7 @@ async function coqui({ baseUrl, text, voiceId }: any) {
 }
 
 // Tortoise (local, noAuth)
-async function tortoise({ baseUrl, text, voiceId }: any) {
+async function tortoise({ baseUrl, text, voiceId }: GenericTtsParams) {
   const res = await fetch(baseUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -136,8 +144,8 @@ async function tortoise({ baseUrl, text, voiceId }: any) {
 }
 
 // OpenAI-compatible upstream (qwen3-tts, etc.)
-async function openaiCompat({ baseUrl, apiKey, text, modelId, voiceId }: any) {
-  const headers: Record<string, any> = { "Content-Type": "application/json" };
+async function openaiCompat({ baseUrl, apiKey, text, modelId, voiceId }: GenericTtsParams) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
   const res = await fetch(baseUrl, {
     method: "POST",

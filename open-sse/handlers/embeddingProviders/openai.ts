@@ -1,7 +1,7 @@
 // OpenAI-compatible embeddings adapter (most providers)
-import { bearerAuth } from "./_base.js";
+import { type EmbeddingCredentials, bearerAuth } from "./_base.js";
 
-const ENDPOINTS: Record<string, any> = {
+const ENDPOINTS: Record<string, string> = {
   openai: "https://api.openai.com/v1/embeddings",
   openrouter: "https://openrouter.ai/api/v1/embeddings",
   mistral: "https://api.mistral.ai/v1/embeddings",
@@ -14,11 +14,17 @@ const ENDPOINTS: Record<string, any> = {
   "jina-ai": "https://api.jina.ai/v1/embeddings",
 };
 
-export default function createOpenAIEmbeddingAdapter(providerId: any) {
+type EmbeddingBodyParams = {
+  dimensions?: unknown;
+  encoding_format?: string;
+  input: string | string[];
+};
+
+export default function createOpenAIEmbeddingAdapter(providerId: string) {
   return {
     buildUrl: () => ENDPOINTS[providerId],
-    buildHeaders: (creds: any) => {
-      const headers: Record<string, any> = {
+    buildHeaders: (creds: EmbeddingCredentials) => {
+      const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...bearerAuth(creds),
       };
@@ -28,8 +34,8 @@ export default function createOpenAIEmbeddingAdapter(providerId: any) {
       }
       return headers;
     },
-    buildBody: (model: any, { input, encoding_format, dimensions }: any) => {
-      const body: Record<string, any> = { model, input };
+    buildBody: (model: string, { input, encoding_format, dimensions }: EmbeddingBodyParams) => {
+      const body: Record<string, unknown> = { model, input };
       if (encoding_format) body.encoding_format = encoding_format;
       if (dimensions !== null && dimensions !== undefined && dimensions !== "") {
         const dim = Number(dimensions);
@@ -37,6 +43,6 @@ export default function createOpenAIEmbeddingAdapter(providerId: any) {
       }
       return body;
     },
-    normalize: (responseBody: any) => responseBody,
+    normalize: (responseBody: unknown) => responseBody,
   };
 }

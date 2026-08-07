@@ -2,7 +2,8 @@
 import { UA } from "./_base.js";
 
 const REFRESH_MS = 11 * 60 * 1000;
-const cache: Record<string, any> = { token: null, tokenTime: 0 };
+type GoogleTtsToken = { "f.sid": string; bl: string };
+const cache: { token: GoogleTtsToken | null; tokenTime: number } = { token: null, tokenTime: 0 };
 let _idx = 0;
 
 async function getToken() {
@@ -21,7 +22,7 @@ async function getToken() {
 
 export default {
   noAuth: true,
-  async synthesize(text: any, model: any) {
+  async synthesize(text: string, model: string) {
     const lang = model || "en";
     const token = await getToken();
     const cleanText = text
@@ -34,12 +35,12 @@ export default {
       "f.sid": token["f.sid"],
       bl: token.bl,
       hl: lang,
-      "soc-app": 1,
-      "soc-platform": 1,
-      "soc-device": 1,
-      _reqid: reqId,
+      "soc-app": "1",
+      "soc-platform": "1",
+      "soc-device": "1",
+      _reqid: String(reqId),
       rt: "c",
-    } as any);
+    });
     const payload = [cleanText, lang, null, "undefined", [0]];
     const body = new URLSearchParams();
     body.append("f.req", JSON.stringify([[[rpcId, JSON.stringify(payload), null, "generic"]]]));
@@ -56,7 +57,7 @@ export default {
     );
     if (!res.ok) throw new Error(`Google TTS failed: ${res.status}`);
     const data = await res.text();
-    const split = JSON.parse(data.split("\n")[3] as any);
+    const split = JSON.parse(data.split("\n")[3] || "");
     const base64 = JSON.parse(split[0][2])[0];
     if (!base64 || base64.length < 100) throw new Error("Google TTS returned empty audio");
     return { base64, format: "mp3" };

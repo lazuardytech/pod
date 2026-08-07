@@ -2,14 +2,20 @@
 import { Buffer } from "node:buffer";
 
 export default {
-  async synthesize(text: any, model: any, credentials: any, _responseFormat: any, opts: any = {}) {
+  async synthesize(
+    text: string,
+    model: string,
+    credentials: { apiKey?: string; accessToken?: string; baseUrl?: string } | null,
+    _responseFormat: string,
+    opts: { language?: string; speed?: number; voice?: string } = {},
+  ) {
     if (!credentials?.apiKey) throw new Error("No OpenAI API key configured");
 
     let ttsModel = "gpt-4o-mini-tts";
     let voice = "alloy";
     if (model && model.includes("/")) {
       const parts = model.split("/");
-      if (parts.length === 2) [ttsModel, voice] = parts;
+      if (parts.length === 2) [ttsModel, voice] = [parts[0] || ttsModel, parts[1] || voice];
     } else if (model) {
       voice = model;
     }

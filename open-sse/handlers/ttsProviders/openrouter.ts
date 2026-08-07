@@ -1,6 +1,12 @@
 // OpenRouter TTS — via chat completions + audio modality (SSE stream)
 export default {
-  async synthesize(text: any, model: any, credentials: any, _responseFormat: any, opts: any = {}) {
+  async synthesize(
+    text: string,
+    model: string,
+    credentials: { apiKey?: string; accessToken?: string } | null,
+    _responseFormat: string,
+    opts: { language?: string; speed?: number; voice?: string } = {},
+  ) {
     if (!credentials?.apiKey) throw new Error("No OpenRouter API key configured");
 
     // model format: "tts-model/voice" e.g. "openai/gpt-4o-mini-tts/alloy"
@@ -44,8 +50,8 @@ export default {
     }
 
     // Parse SSE stream, accumulate base64 audio chunks
-    const chunks: any[] = [];
-    const reader = (res.body as any).getReader();
+    const chunks: Uint8Array[] = [];
+    const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
 
@@ -54,7 +60,7 @@ export default {
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
-      buffer = lines.pop() as any;
+      buffer = lines.pop() || "";
       for (const line of lines) {
         if (!line.startsWith("data: ") || line === "data: [DONE]") continue;
         try {

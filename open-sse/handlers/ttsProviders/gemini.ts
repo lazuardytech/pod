@@ -6,7 +6,7 @@ const DEFAULT_VOICE = "Kore";
 const KNOWN_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
 
 // Parse "model/voice" — if input doesn't match a known TTS model, treat it as voice with default model
-function parseGeminiModelVoice(input: any) {
+function parseGeminiModelVoice(input: string) {
   if (!input) return { modelId: DEFAULT_MODEL, voiceId: DEFAULT_VOICE };
   for (const id of KNOWN_MODELS) {
     if (input === id) return { modelId: id, voiceId: DEFAULT_VOICE };
@@ -20,7 +20,7 @@ const CHANNELS = 1;
 const BITS_PER_SAMPLE = 16;
 
 // Build WAV header for raw PCM payload
-function pcmToWav(pcmBuffer: any) {
+function pcmToWav(pcmBuffer: Buffer) {
   const dataSize = pcmBuffer.length;
   const byteRate = (SAMPLE_RATE * CHANNELS * BITS_PER_SAMPLE) / 8;
   const blockAlign = (CHANNELS * BITS_PER_SAMPLE) / 8;
@@ -42,13 +42,19 @@ function pcmToWav(pcmBuffer: any) {
 }
 
 // Build TTS prompt: add "Say [in {language}]:" prefix to force TTS mode
-function buildPrompt(text: any, language: any) {
+function buildPrompt(text: string, language: string | undefined) {
   if (/:\s/.test(text)) return text; // user already provided style instruction
   return language ? `Say in ${language}: ${text}` : `Say: ${text}`;
 }
 
 export default {
-  async synthesize(text: any, model: any, credentials: any, _responseFormat: any, opts: any = {}) {
+  async synthesize(
+    text: string,
+    model: string,
+    credentials: { apiKey?: string; accessToken?: string } | null,
+    _responseFormat: string,
+    opts: { language?: string; speed?: number; voice?: string } = {},
+  ) {
     if (!credentials?.apiKey) throw new Error("No Gemini API key configured");
     const { modelId, voiceId } = parseGeminiModelVoice(model);
     const voice = opts.voice || voiceId;
@@ -69,8 +75,9 @@ export default {
       throw new Error(err?.error?.message || `Gemini TTS failed: ${res.status}`);
     }
     const data = await res.json();
-    const b64 = data?.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.data)
-      ?.inlineData?.data;
+    const b64 = data?.candidates?.[0]?.content?.parts?.find(
+      (p: { inlineData?: { data?: string } }) => p.inlineData?.data,
+    )?.inlineData?.data;
     if (!b64) {
       const reason =
         data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || "unknown";
@@ -118,7 +125,7 @@ const PREBUILT_VOICES = [
 ];
 
 export async function fetchGeminiVoices() {
-  return PREBUILT_VOICES.map((v: any) => ({
+  return PREBUILT_VOICES.map((v) => ({
     voice_id: v.id,
     name: v.id,
     labels: { language: v.lang, gender: v.gender },
