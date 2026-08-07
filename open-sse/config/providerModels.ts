@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { PROVIDERS } from "./providers.js";
 import { buildTtsProviderModels } from "./ttsModels.js";
 
@@ -8,8 +7,23 @@ import { buildTtsProviderModels } from "./ttsModels.js";
 
 const CODEX_REVIEW_SUFFIX = "-review";
 
-function withCodexReviewModels(models: unknown) {
-  return models.flatMap((model: unknown) => {
+export type ProviderModel = {
+  id: string;
+  name: string;
+  type?: string;
+  capabilities?: string[];
+  params?: string[];
+  strip?: string[];
+  targetFormat?: string;
+  upstreamModelId?: string;
+  quotaFamily?: string;
+  thinking?: boolean;
+};
+
+type ProviderModelsMap = Record<string, ProviderModel[]>;
+
+function withCodexReviewModels(models: ProviderModel[]): ProviderModel[] {
+  return models.flatMap((model) => {
     if ((model.type || "llm") !== "llm" || model.id.endsWith(CODEX_REVIEW_SUFFIX)) {
       return [model];
     }
@@ -917,15 +931,15 @@ export const PROVIDER_MODELS = {
     { id: "blackboxai/gpt-4o", name: "GPT-4o (Blackbox)" },
     { id: "blackboxai/deepseek-v3", name: "DeepSeek V3 (Blackbox)" },
   ],
-};
+} satisfies ProviderModelsMap;
 
 // Helper functions
 export function getProviderModels(aliasOrId: unknown) {
-  return (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId] || [];
+  return PROVIDER_MODELS[String(aliasOrId)] || [];
 }
 
 export function getDefaultModel(aliasOrId: unknown) {
-  const models = (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId];
+  const models = PROVIDER_MODELS[String(aliasOrId)];
   return models?.[0]?.id || null;
 }
 
@@ -935,28 +949,28 @@ export function isValidModel(
   passthroughProviders: unknown = new Set(),
 ) {
   if (passthroughProviders.has(aliasOrId)) return true;
-  const models = (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId];
+  const models = PROVIDER_MODELS[String(aliasOrId)];
   if (!models) return false;
-  return models.some((m: unknown) => m.id === modelId);
+  return models.some((m) => m.id === modelId);
 }
 
 export function findModelName(aliasOrId: unknown, modelId: unknown) {
-  const models = (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId];
+  const models = PROVIDER_MODELS[String(aliasOrId)];
   if (!models) return modelId;
-  const found = models.find((m: unknown) => m.id === modelId);
+  const found = models.find((m) => m.id === modelId);
   return found?.name || modelId;
 }
 
 export function getModelTargetFormat(aliasOrId: unknown, modelId: unknown) {
-  const models = (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId];
+  const models = PROVIDER_MODELS[String(aliasOrId)];
   if (!models) return null;
-  const found = models.find((m: unknown) => m.id === modelId);
+  const found = models.find((m) => m.id === modelId);
   return found?.targetFormat || null;
 }
 
 export function getModelUpstreamId(aliasOrId: unknown, modelId: unknown) {
-  const models = (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId];
-  const found = models?.find((m: unknown) => m.id === modelId);
+  const models = PROVIDER_MODELS[String(aliasOrId)];
+  const found = models?.find((m) => m.id === modelId);
   if (found?.upstreamModelId) return found.upstreamModelId;
   if (aliasOrId === "cx" && typeof modelId === "string" && modelId.endsWith(CODEX_REVIEW_SUFFIX)) {
     return modelId.slice(0, -CODEX_REVIEW_SUFFIX.length);
@@ -965,8 +979,8 @@ export function getModelUpstreamId(aliasOrId: unknown, modelId: unknown) {
 }
 
 export function getModelQuotaFamily(aliasOrId: unknown, modelId: unknown) {
-  const models = (PROVIDER_MODELS as Record<string, unknown>)[aliasOrId];
-  const found = models?.find((m: unknown) => m.id === modelId);
+  const models = PROVIDER_MODELS[String(aliasOrId)];
+  const found = models?.find((m) => m.id === modelId);
   return found?.quotaFamily || "normal";
 }
 
@@ -991,22 +1005,17 @@ const OAUTH_ALIASES = {
 
 // Derived from PROVIDERS — no need to maintain manually
 export const PROVIDER_ID_TO_ALIAS = Object.fromEntries(
-  Object.keys(PROVIDERS).map((id: unknown) => [
-    id,
-    (OAUTH_ALIASES as Record<string, unknown>)[id] || id,
-  ]),
+  Object.keys(PROVIDERS).map((id) => [id, OAUTH_ALIASES[id as keyof typeof OAUTH_ALIASES] || id]),
 );
 
 export function getModelsByProviderId(providerId: unknown) {
-  const alias = (PROVIDER_ID_TO_ALIAS as Record<string, unknown>)[providerId] || providerId;
-  return (PROVIDER_MODELS as Record<string, unknown>)[alias] || [];
+  const alias = PROVIDER_ID_TO_ALIAS[String(providerId)] || String(providerId);
+  return PROVIDER_MODELS[alias] || [];
 }
 
 // Get strip list for a model entry (explicit opt-in only)
 // Returns array of content types to strip, e.g. ["image", "audio"]
 export function getModelStrip(alias: unknown, modelId: unknown) {
-  const entry = (PROVIDER_MODELS as Record<string, unknown>)[alias]?.find(
-    (m: unknown) => m.id === modelId,
-  );
+  const entry = PROVIDER_MODELS[String(alias)]?.find((m) => m.id === modelId);
   return entry?.strip || [];
 }
