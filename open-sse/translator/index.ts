@@ -4,6 +4,14 @@ import { FORMATS } from "./formats.js";
 import { prepareClaudeRequest } from "./helpers/claudeHelper.js";
 import { filterToOpenAIFormat } from "./helpers/openaiHelper.js";
 import { ensureToolCallIds, fixMissingToolResponses } from "./helpers/toolCallHelper.js";
+import type {
+  TranslatedResponseResults,
+  TranslatorCredentials,
+  TranslatorRequestPayload,
+  TranslatorResponseChunk,
+  TranslatorResponseResult,
+  TranslatorState,
+} from "./registry.js";
 import {
   getRegisteredRequestTranslatorKeys,
   getRegisteredResponseTranslatorKeys,
@@ -16,7 +24,25 @@ import "./loaders.js";
 
 export { getRegisteredRequestTranslatorKeys, getRegisteredResponseTranslatorKeys, register };
 
-function ensureInitialized() {
+type RequestPipelineBody = TranslatorRequestPayload & {
+  _toolNameMap?: Map<string, string>;
+};
+
+type RequestLogger = {
+  logOpenAIRequest?: (body: TranslatorRequestPayload) => void;
+};
+
+function asRequestBody(body: TranslatorRequestPayload): RequestPipelineBody {
+  return body as RequestPipelineBody;
+}
+
+function asTranslatedResponseResults(
+  converted: Exclude<TranslatorResponseResult, null | undefined>,
+): TranslatedResponseResults {
+  return (Array.isArray(converted) ? converted : [converted]) as TranslatedResponseResults;
+}
+
+function ensureInitialized(): void {
   // no-op: translators register at module load via ./loaders.js
 }
 
@@ -50,20 +76,21 @@ function normalizeDeveloperRole(body: any) {
 
 // Translate request: source -> openai -> target
 export function translateRequest(
-  sourceFormat: any,
-  targetFormat: any,
-  model: any,
-  body: any,
-  stream: any = true,
-  credentials: any = null,
-  provider: any = null,
-  reqLogger: any = null,
-  stripList: any = [],
-  connectionId: any = null,
-  clientTool: any = null,
-) {
+  sourceFormat: string,
+  targetFormat: string,
+  model: string,
+  body: TranslatorRequestPayload,
+  stream: boolean = true,
+  credentials: TranslatorCredentials = null,
+  provider: string | null = null,
+  reqLogger: RequestLogger | null = null,
+  stripList: readonly unknown[] = [],
+  connectionId: string | null = null,
+  clientTool: unknown = null,
+): TranslatorRequestPayload {
   ensureInitialized();
-  let result = body;
+  void clientTool;
+  let result = asRequestBody(body);
 
   // Strip explicit content types (opt-in via strip[] in PROVIDER_MODELS entry)
   stripContentTypes(result, stripList);
@@ -86,7 +113,7 @@ export function translateRequest(
     if (sourceFormat !== FORMATS.OPENAI) {
       const toOpenAI = requestRegistry.get(`${sourceFormat}:${FORMATS.OPENAI}`);
       if (toOpenAI) {
-        result = toOpenAI(model, result, stream, credentials);
+        result = asRequestBody(toOpenAI(model, result, stream, credentials));
         // Log OpenAI intermediate format
         reqLogger?.logOpenAIRequest?.(result);
       }
@@ -96,7 +123,7 @@ export function translateRequest(
     if (targetFormat !== FORMATS.OPENAI) {
       const fromOpenAI = requestRegistry.get(`${FORMATS.OPENAI}:${targetFormat}`);
       if (fromOpenAI) {
-        result = fromOpenAI(model, result, stream, credentials);
+        result = asRequestBody(fromOpenAI(model, result, stream, credentials));
       }
     }
   }
@@ -118,10 +145,12 @@ export function translateRequest(
   if (provider === "claude") {
     const apiKey = credentials?.accessToken || credentials?.apiKey || null;
     if (apiKey?.includes("sk-ant-oat")) {
-      const { body: cloakedBody, toolNameMap } = cloakClaudeTools(result) as any;
-      result = cloakedBody;
-      if (toolNameMap?.size > 0) {
-        result._toolNameMap = toolNameMap;
+      const { body: cloakedBody, toolNameMap } = cloakClaudeTools(result);
+      result = asRequestBody(cloakedBody);
+      const typedToolNameMap =
+        toolNameMap instanceof Map ? (toolNameMap as Map<string, string>) : null;
+      if (typedToolNameMap && typedToolNameMap.size > 0) {
+        result._toolNameMap = typedToolNameMap;
       }
     }
   }
@@ -139,25 +168,31 @@ export function translateRequest(
 }
 
 // Translate response chunk: target -> openai -> source
-export function translateResponse(targetFormat: any, sourceFormat: any, chunk: any, state: any) {
+export function translateResponse(
+  targetFormat: string,
+  sourceFormat: string,
+  chunk: TranslatorResponseChunk,
+  state: TranslatorState,
+): TranslatedResponseResults {
   ensureInitialized();
   // If same format, return as-is
   if (sourceFormat === targetFormat) {
-    return [chunk];
+    return [chunk] as TranslatedResponseResults;
   }
 
-  let results: any[] = [chunk];
-  let openaiResults: any[] | null = null; // Store OpenAI intermediate results
+  let results: TranslatedResponseResults = [chunk] as TranslatedResponseResults;
+  let openaiResults: TranslatorResponseChunk[] | null = null; // Store OpenAI intermediate results
 
   // Step 1: target -> openai (if target is not openai)
   if (targetFormat !== FORMATS.OPENAI) {
     const toOpenAI = responseRegistry.get(`${targetFormat}:${FORMATS.OPENAI}`);
     if (toOpenAI) {
-      results = [];
       const converted = toOpenAI(chunk, state);
       if (converted) {
-        results = Array.isArray(converted) ? converted : [converted];
+        results = asTranslatedResponseResults(converted);
         openaiResults = results; // Store OpenAI intermediate
+      } else {
+        results = [] as TranslatedResponseResults;
       }
     }
   }
@@ -166,11 +201,11 @@ export function translateResponse(targetFormat: any, sourceFormat: any, chunk: a
   if (sourceFormat !== FORMATS.OPENAI) {
     const fromOpenAI = responseRegistry.get(`${FORMATS.OPENAI}:${sourceFormat}`);
     if (fromOpenAI) {
-      const finalResults: any[] = [];
+      const finalResults = [] as TranslatedResponseResults;
       for (const r of results) {
         const converted = fromOpenAI(r, state);
         if (converted) {
-          finalResults.push(...(Array.isArray(converted) ? converted : [converted]));
+          finalResults.push(...asTranslatedResponseResults(converted));
         }
       }
       results = finalResults;
@@ -179,19 +214,19 @@ export function translateResponse(targetFormat: any, sourceFormat: any, chunk: a
 
   // Attach OpenAI intermediate results for logging
   if (openaiResults && sourceFormat !== FORMATS.OPENAI && targetFormat !== FORMATS.OPENAI) {
-    (results as any)._openaiIntermediate = openaiResults;
+    results._openaiIntermediate = openaiResults;
   }
 
   return results;
 }
 
 // Check if translation needed
-export function needsTranslation(sourceFormat: any, targetFormat: any) {
+export function needsTranslation(sourceFormat: string, targetFormat: string): boolean {
   return sourceFormat !== targetFormat;
 }
 
 // Initialize state for streaming response based on format
-export function initState(sourceFormat: any) {
+export function initState(sourceFormat: string): TranslatorState {
   // Base state for all formats
   const base = {
     messageId: null,
@@ -237,6 +272,6 @@ export function initState(sourceFormat: any) {
   return base;
 }
 
-export function initTranslators() {
+export function initTranslators(): void {
   ensureInitialized();
 }

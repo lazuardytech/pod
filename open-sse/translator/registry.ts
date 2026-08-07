@@ -1,7 +1,33 @@
 /** Translator request/response registry (split to avoid circular ESM init). */
-// todo(ts): narrow translator fn signatures as converters are typed
-export type TranslatorRequestFn = (...args: any[]) => any;
-export type TranslatorResponseFn = (...args: any[]) => any;
+export type TranslatorRequestPayload = Record<string, unknown>;
+export type TranslatorCredentials =
+  | (Record<string, unknown> & {
+      accessToken?: string;
+      apiKey?: string;
+      providerSpecificData?: Record<string, unknown>;
+    })
+  | null;
+export type TranslatorState = Record<string, unknown>;
+export type TranslatorResponseChunk = unknown;
+export type TranslatorResponseResult =
+  | TranslatorResponseChunk
+  | readonly TranslatorResponseChunk[]
+  | null
+  | undefined;
+export type TranslatedResponseResults = TranslatorResponseChunk[] & {
+  _openaiIntermediate?: TranslatorResponseChunk[];
+};
+
+export type TranslatorRequestFn = (
+  model: string,
+  body: TranslatorRequestPayload,
+  stream: boolean,
+  credentials?: TranslatorCredentials,
+) => TranslatorRequestPayload;
+export type TranslatorResponseFn = (
+  chunk: TranslatorResponseChunk,
+  state: TranslatorState,
+) => TranslatorResponseResult;
 
 export const requestRegistry = new Map<string, TranslatorRequestFn>();
 export const responseRegistry = new Map<string, TranslatorResponseFn>();
