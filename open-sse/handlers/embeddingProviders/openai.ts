@@ -31,7 +31,7 @@ export default function createOpenAIEmbeddingAdapter(providerId: any) {
     buildBody: (model: any, { input, encoding_format, dimensions }: any) => {
       const body: Record<string, any> = { model, input };
       if (encoding_format) body.encoding_format = encoding_format;
-      if (dimensions != null && dimensions !== "") {
+      if (dimensions !== null && dimensions !== undefined && dimensions !== "") {
         const dim = Number(dimensions);
         if (Number.isFinite(dim) && dim > 0) body.dimensions = dim;
       }

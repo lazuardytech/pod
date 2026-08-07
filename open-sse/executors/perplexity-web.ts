@@ -388,24 +388,24 @@ async function* extractContent(
   yield { delta: "", answer: fullAnswer, backendUuid: backendUuid ?? undefined, done: true };
 }
 
-function sseChunk(data: any) {
+function sseChunk(data: unknown) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
 function buildStreamingResponse(
-  eventStream: any,
-  model: any,
-  cid: any,
-  created: any,
-  history: any,
-  currentMsg: any,
-  signal: any,
-  opts: any = {},
+  eventStream: ReadableStream<Uint8Array>,
+  model: string,
+  cid: string,
+  created: number,
+  history: readonly HistoryItem[],
+  currentMsg: string,
+  signal?: AbortSignal,
+  opts: PplxStreamOptions = {},
 ) {
   const skipReasoning = opts.skipReasoning === true;
   const encoder = new TextEncoder();
-  return new ReadableStream({
-    async start(controller: any) {
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
       try {
         controller.enqueue(
           encoder.encode(
@@ -514,7 +514,7 @@ function buildStreamingResponse(
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
 
         sessionStore(history, currentMsg, cleanResponse(fullAnswer), respBackendUuid);
-      } catch (err: any) {
+      } catch (err: unknown) {
         controller.enqueue(
           encoder.encode(
             sseChunk({
@@ -526,7 +526,7 @@ function buildStreamingResponse(
               choices: [
                 {
                   index: 0,
-                  delta: { content: `[Stream error: ${err.message || String(err)}]` },
+                  delta: { content: `[Stream error: ${errorMessage(err)}]` },
                   finish_reason: "stop",
                   logprobs: null,
                 },
@@ -543,19 +543,19 @@ function buildStreamingResponse(
 }
 
 async function buildNonStreamingResponse(
-  eventStream: any,
-  model: any,
-  cid: any,
-  created: any,
-  history: any,
-  currentMsg: any,
-  signal: any,
-  opts: any = {},
+  eventStream: ReadableStream<Uint8Array>,
+  model: string,
+  cid: string,
+  created: number,
+  history: readonly HistoryItem[],
+  currentMsg: string,
+  signal?: AbortSignal,
+  opts: PplxStreamOptions = {},
 ) {
   const skipReasoning = opts.skipReasoning === true;
   let fullAnswer = "";
-  let respBackendUuid = null;
-  const thinkingParts: any[] = [];
+  let respBackendUuid: string | null = null;
+  const thinkingParts: string[] = [];
 
   for await (const chunk of extractContent(eventStream, signal)) {
     if (chunk.backendUuid) respBackendUuid = chunk.backendUuid;
@@ -582,7 +582,7 @@ async function buildNonStreamingResponse(
   sessionStore(history, currentMsg, fullAnswer, respBackendUuid);
 
   const reasoningContent = thinkingParts.length > 0 ? thinkingParts.join("\n") : undefined;
-  const msg: any = { role: "assistant", content: fullAnswer };
+  const msg: AssistantMessage = { role: "assistant", content: fullAnswer };
   if (reasoningContent) msg.reasoning_content = reasoningContent;
 
   const promptTokens = Math.ceil(currentMsg.length / 4);

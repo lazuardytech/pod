@@ -16,7 +16,7 @@ export default {
   buildBody: (model: any, { input, dimensions }: any = {}) => {
     const m = modelPath(model);
     let outputDimensionality: any;
-    if (dimensions != null && dimensions !== "") {
+    if (dimensions !== null && dimensions !== undefined && dimensions !== "") {
       const dim = Number(dimensions);
       if (Number.isFinite(dim) && dim > 0) outputDimensionality = dim;
     }
