@@ -97,13 +97,14 @@ export async function POST(request: any, { params }: { params: any }) {
 
     // Warm up with first model to trigger token refresh (if needed) before parallel calls.
     // This prevents race condition where multiple requests concurrently refresh the same token.
-    const [first, ...rest] = models;
+    const first = models[0]!;
+    const rest = models.slice(1);
     const firstResult = await pingModel(`${alias}/${first.id}`, baseUrl, apiKey);
     const results = [{ modelId: first.id, name: first.name || first.id, ...firstResult }];
 
     if (rest.length > 0) {
       const restResults = await Promise.all(
-        rest.map(async (model: any) => {
+        rest.map(async (model) => {
           const result = await pingModel(`${alias}/${model.id}`, baseUrl, apiKey);
           return { modelId: model.id, name: model.name || model.id, ...result };
         }),

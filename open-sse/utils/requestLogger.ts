@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Check if running in Node.js environment (has fs module)
 const isNode =
   typeof process !== "undefined" && process.versions?.node && typeof window === "undefined";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb";
 import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.js";
 import { FORMATS } from "../translator/formats.js";

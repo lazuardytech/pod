@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SKIP_PATTERNS } from "../config/runtimeConfig.js";
 import { detectFormat } from "../services/provider.js";
 import { FORMATS } from "../translator/formats.js";

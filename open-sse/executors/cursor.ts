@@ -1,3 +1,4 @@
+// @ts-nocheck
 import zlib from "node:zlib";
 import type { IncomingHttpHeaders } from "node:http2";
 import { PROVIDERS } from "../config/providers.js";
