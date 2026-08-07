@@ -9,7 +9,7 @@ export class OpenCodeExecutor extends BaseExecutor {
     super("opencode", PROVIDERS.opencode);
   }
 
-  buildUrl(model: any) {
+  buildUrl(model: string) {
     const base = "https://opencode.ai";
     return MESSAGES_MODELS.has(model)
       ? `${base}/zen/v1/messages`

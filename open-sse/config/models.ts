@@ -6,8 +6,14 @@ const DEFAULT_MODEL_INFO = {
   contextWindow: 200000,
 };
 
-export const MODEL_INFO: Record<string, any> = {};
+type ModelInfo = {
+  type?: string[];
+  contextWindow?: number;
+  [key: string]: unknown;
+};
 
-export function getModelInfo(modelId: any) {
+export const MODEL_INFO: Record<string, ModelInfo> = {};
+
+export function getModelInfo(modelId: string) {
   return { ...DEFAULT_MODEL_INFO, ...MODEL_INFO[modelId] };
 }

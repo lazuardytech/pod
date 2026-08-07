@@ -5,7 +5,7 @@ import { arch, platform } from "os";
 export const GEMINI_CLI_VERSION = "0.31.0";
 export const GEMINI_CLI_API_CLIENT = "google-genai-sdk/1.41.0 gl-node/v22.19.0";
 
-export function geminiCLIUserAgent(model: any = "unknown") {
+export function geminiCLIUserAgent(model: string = "unknown") {
   const os = platform() === "win32" ? "windows" : platform();
   return `GeminiCLI/${GEMINI_CLI_VERSION}/${model || "unknown"} (${os}; ${arch()})`;
 }

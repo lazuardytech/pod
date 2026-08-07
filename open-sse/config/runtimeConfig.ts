@@ -53,7 +53,17 @@ export const DEFAULT_RETRY_CONFIG = {
 export const LOCAL_UPSTREAM_TIMEOUT_MS = 45000;
 
 // Normalize a retry entry to { attempts, delayMs }
-export function resolveRetryEntry(entry: any) {
+// (number = attempts with RETRY_CONFIG.delayMs; object = { attempts, delayMs })
+export type RetryEntryInput =
+  | number
+  | {
+      attempts?: number;
+      delayMs?: number | null;
+    }
+  | null
+  | undefined;
+
+export function resolveRetryEntry(entry: RetryEntryInput) {
   if (entry === null || entry === undefined) return { attempts: 0, delayMs: RETRY_CONFIG.delayMs };
   if (typeof entry === "number") return { attempts: entry, delayMs: RETRY_CONFIG.delayMs };
   return {

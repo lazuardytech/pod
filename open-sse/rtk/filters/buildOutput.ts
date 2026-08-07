@@ -29,7 +29,7 @@ const RE_TSC_ERROR = /^[^\s].*\.(ts|tsx|js|jsx|mjs|cjs):\d+:\d+\s*-\s*error\b/i;
 const RE_ESLINT_ERROR = /^\s*\d+:\d+\s+error\b/;
 const RE_GENERIC_ERROR = /^(Error|FAIL|FAILED|panic|Aborted)[\s:]/i;
 
-export function buildOutput(input: any, _maxLines: any) {
+export function buildOutput(input: unknown, _maxLines?: number) {
   if (!input || typeof input !== "string") return input;
 
   const lines = input.split("\n");
