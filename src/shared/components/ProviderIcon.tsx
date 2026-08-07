@@ -1,7 +1,7 @@
 "use client";
+import Image from "next/image";
 import PropTypes from "prop-types";
 import { useState } from "react";
-import Image from "next/image";
 
 export default function ProviderIcon({
   src,
@@ -11,13 +11,12 @@ export default function ProviderIcon({
   fallbackText = "?",
   fallbackColor,
 }: {
-  src?: any;
-  alt?: any;
+  src?: string;
+  alt?: string;
   size?: number;
-  className?: any;
-  fallbackText?: any;
-  fallbackColor?: any;
-  [key: string]: any;
+  className?: string;
+  fallbackText?: string;
+  fallbackColor?: string;
 }) {
   const [errored, setErrored] = useState(false);
 
@@ -40,7 +39,7 @@ export default function ProviderIcon({
   return (
     <Image
       src={src}
-      alt={alt}
+      alt={alt ?? ""}
       width={size}
       height={size}
       className={className}

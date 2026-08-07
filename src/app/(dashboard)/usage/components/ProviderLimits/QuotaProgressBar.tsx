@@ -4,7 +4,7 @@ import { cn } from "@/shared/utils/cn";
 import { formatResetTime } from "./utils";
 
 // Calculate color based on remaining percentage
-const getColorClasses = (remainingPercentage: any) => {
+const getColorClasses = (remainingPercentage: number) => {
   if (remainingPercentage > 70) {
     return {
       text: "text-green-500",
@@ -33,7 +33,7 @@ const getColorClasses = (remainingPercentage: any) => {
 };
 
 // Format reset time display
-const formatResetTimeDisplay = (resetTime: any) => {
+const formatResetTimeDisplay = (resetTime: string | Date | null | undefined) => {
   if (!resetTime) return null;
 
   try {
@@ -64,6 +64,15 @@ const formatResetTimeDisplay = (resetTime: any) => {
   }
 };
 
+type QuotaProgressBarProps = {
+  percentage?: number;
+  label?: string;
+  used?: number;
+  total?: number;
+  unlimited?: boolean;
+  resetTime?: string | Date | null;
+};
+
 export default function QuotaProgressBar({
   percentage = 0,
   label = "",
@@ -71,7 +80,7 @@ export default function QuotaProgressBar({
   total = 0,
   unlimited = false,
   resetTime = null,
-}: any) {
+}: QuotaProgressBarProps) {
   const colors = getColorClasses(percentage);
   const countdown = formatResetTime(resetTime);
   const resetDisplay = formatResetTimeDisplay(resetTime);

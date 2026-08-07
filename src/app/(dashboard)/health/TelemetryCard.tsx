@@ -6,14 +6,34 @@ import LucideIcon from "@/shared/components/LucideIcon";
 const REFRESH_MS = 30_000;
 const MAX_SAMPLES = 24;
 
-function formatBytes(bytes: any = 0) {
+type HealthSystem = {
+  uptime?: number;
+  platform?: string;
+  memoryUsage?: { rss?: number; heapUsed?: number; heapTotal?: number };
+  freeMemory?: number;
+  cpus?: number | string;
+};
+
+type HealthSnapshot = {
+  system?: HealthSystem;
+};
+
+type TelemetrySample = {
+  timestamp: number;
+  memoryBytes: number;
+  heapUsed: number;
+};
+
+type SampleField = "memoryBytes" | "heapUsed";
+
+function formatBytes(bytes: number = 0) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-function formatDuration(seconds: any = 0) {
+function formatDuration(seconds: number = 0) {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -22,9 +42,17 @@ function formatDuration(seconds: any = 0) {
   return `${m}m`;
 }
 
-function Sparkline({ samples, field, fmt }: any) {
-  const [hovered, setHovered] = useState<any>(null);
-  const values = samples.map((s: any) => Number(s[field])).filter((v: any) => Number.isFinite(v));
+function Sparkline({
+  samples,
+  field,
+  fmt,
+}: {
+  samples: TelemetrySample[];
+  field: SampleField;
+  fmt?: (n: number) => string;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const values = samples.map((s) => Number(s[field])).filter((v) => Number.isFinite(v));
   if (values.length < 2) return <div className="h-10 rounded-[4px] bg-deep-slate" />;
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -33,7 +61,7 @@ function Sparkline({ samples, field, fmt }: any) {
   const H = 40;
   const PAD = 0;
   const points = values
-    .map((v: any, i: any) => {
+    .map((v, i) => {
       const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
       const y = H - 1 - ((v - min) / range) * (H - 2);
       return `${x.toFixed(2)},${y.toFixed(2)}`;
@@ -64,7 +92,7 @@ function Sparkline({ samples, field, fmt }: any) {
           points={points}
           className="text-porcelain/40"
         />
-        {values.map((v: any, i: any) => {
+        {values.map((v, i) => {
           const x = PAD + (i / Math.max(1, values.length - 1)) * (W - PAD * 2);
           const y = H - PAD - ((v - min) / range) * (H - PAD * 2);
           return (
@@ -103,9 +131,9 @@ function Sparkline({ samples, field, fmt }: any) {
   );
 }
 
-export default function TelemetryCard({ health }: any) {
-  const [samples, setSamples] = useState<any[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<any>(null);
+export default function TelemetryCard({ health }: { health?: HealthSnapshot | null }) {
+  const [samples, setSamples] = useState<TelemetrySample[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!health) return;
@@ -113,7 +141,7 @@ export default function TelemetryCard({ health }: any) {
     const mem = health.system?.memoryUsage?.rss ?? 0;
     const heap = health.system?.memoryUsage?.heapUsed ?? 0;
     const newSample = { timestamp: Date.now(), memoryBytes: mem, heapUsed: heap };
-    setSamples((prev: any) => {
+    setSamples((prev) => {
       if (prev.length === 0)
         return [{ ...newSample, timestamp: Date.now() - REFRESH_MS }, newSample];
       return [...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)), newSample];
@@ -180,7 +208,7 @@ export default function TelemetryCard({ health }: any) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-4">
-        {metrics.map((m: any) => (
+        {metrics.map((m) => (
           <div
             key={m.label}
             className="rounded-[6px] border border-charcoal-grey bg-deep-slate p-3"

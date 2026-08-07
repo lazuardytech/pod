@@ -1,16 +1,14 @@
 "use client";
+import type { ReactNode } from "react";
 import { cn } from "@/shared/utils/cn";
 
-export default function Tooltip({
-  text,
-  children,
-  position = "top",
-}: {
-  text?: any;
-  children?: any;
+type TooltipProps = {
+  text?: ReactNode;
+  children?: ReactNode;
   position?: string;
-  [key: string]: any;
-}) {
+};
+
+export default function Tooltip({ text, children, position = "top" }: TooltipProps) {
   const posClass = {
     top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
     bottom: "top-full left-1/2 -translate-x-1/2 mt-2",

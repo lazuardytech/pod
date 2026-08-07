@@ -4,7 +4,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 import { getModelAliases, setModelAlias, validateApiKey } from "@/models";
 
 // PUT /api/cloud/models/alias - Set model alias (for cloud/CLI)
-export async function PUT(request: any) {
+export async function PUT(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
     const apiKey = authHeader?.replace("Bearer ", "");
@@ -56,7 +56,7 @@ export async function PUT(request: any) {
 }
 
 // GET /api/cloud/models/alias - Get all aliases
-export async function GET(request: any) {
+export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
     const apiKey = authHeader?.replace("Bearer ", "");

@@ -10,11 +10,10 @@ function MenuItem({
   onClick,
   danger,
 }: {
-  icon?: any;
-  label?: any;
-  onClick?: any;
-  danger?: any;
-  [key: string]: any;
+  icon?: string;
+  label?: string;
+  onClick?: () => void;
+  danger?: boolean;
 }) {
   return (
     <button
@@ -38,14 +37,14 @@ MenuItem.propTypes = {
   danger: PropTypes.bool,
 };
 
-export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]: any }) {
+export default function HeaderMenu({ onLogout }: { onLogout?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<any>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
-    const handleClickOutside = (e: any) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -61,7 +60,7 @@ export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]
   return (
     <div className="relative" ref={menuRef}>
       <button
-        onClick={() => setIsOpen((v: any) => !v)}
+        onClick={() => setIsOpen((v) => !v)}
         className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
         title="Menu"
       >
@@ -85,7 +84,7 @@ export default function HeaderMenu({ onLogout }: { onLogout?: any; [key: string]
             danger
             onClick={() => {
               close();
-              onLogout();
+              onLogout?.();
             }}
           />
         </div>

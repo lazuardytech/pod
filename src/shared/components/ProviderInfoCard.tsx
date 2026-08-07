@@ -1,26 +1,62 @@
 "use client";
+import type { ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import Card from "./Card";
 
+type FieldSchemaEntry = {
+  label: string;
+  format: (v: unknown) => ReactNode;
+  isLink?: boolean;
+  mono?: boolean;
+};
+
 // Only show fields user actually cares about
-const FIELD_SCHEMA = {
-  mode: { label: "Mode", format: (v: any) => v },
-  defaultModel: { label: "Model", format: (v: any) => v, mono: true },
-  baseUrl: { label: "Endpoint", format: (v: any) => v, isLink: true, mono: true },
+const FIELD_SCHEMA: Record<string, FieldSchemaEntry> = {
+  mode: { label: "Mode", format: (v) => String(v) },
+  defaultModel: { label: "Model", format: (v) => String(v), mono: true },
+  baseUrl: { label: "Endpoint", format: (v) => String(v), isLink: true, mono: true },
   costPerQuery: {
     label: "Cost / call",
-    format: (v: any) => (v === 0 ? "Free" : `$${v.toFixed(4)}`),
+    format: (v) => (v === 0 ? "Free" : `$${Number(v).toFixed(4)}`),
   },
   pricingUrl: { label: "Pricing", format: () => "View pricing", isLink: true },
-  freeTier: { label: "Free tier", format: (v: any) => v },
+  freeTier: { label: "Free tier", format: (v) => String(v) },
   freeMonthlyQuota: {
     label: "Free quota",
-    format: (v: any) => (v === 0 ? "—" : v >= 999999 ? "Unlimited" : `${v.toLocaleString()} / mo`),
+    format: (v) => {
+      const n = Number(v);
+      return n === 0 ? "—" : n >= 999999 ? "Unlimited" : `${n.toLocaleString()} / mo`;
+    },
   },
-  searchTypes: { label: "Types", format: (v: any) => v.join(", ") },
-  formats: { label: "Formats", format: (v: any) => v.join(", ") },
-  maxMaxResults: { label: "Max results", format: (v: any) => v },
-  maxCharacters: { label: "Max chars", format: (v: any) => v.toLocaleString() },
+  searchTypes: {
+    label: "Types",
+    format: (v) => (Array.isArray(v) ? v.join(", ") : String(v)),
+  },
+  formats: {
+    label: "Formats",
+    format: (v) => (Array.isArray(v) ? v.join(", ") : String(v)),
+  },
+  maxMaxResults: { label: "Max results", format: (v) => String(v) },
+  maxCharacters: {
+    label: "Max chars",
+    format: (v) => Number(v).toLocaleString(),
+  },
+};
+
+type ProviderInfoConfig = Record<string, unknown>;
+
+type ProviderInfoProvider = {
+  notice?: { apiKeyUrl?: string; text?: string };
+  website?: string;
+};
+
+type ProviderInfoRow = {
+  key: string;
+  label: string;
+  value: ReactNode;
+  isLink?: boolean;
+  mono?: boolean;
+  raw: unknown;
 };
 
 export default function ProviderInfoCard({
@@ -28,21 +64,20 @@ export default function ProviderInfoCard({
   provider,
   title = "Provider Info",
 }: {
-  config?: any;
-  provider?: any;
-  title?: any;
-  [key: string]: any;
+  config?: ProviderInfoConfig | null;
+  provider?: ProviderInfoProvider | null;
+  title?: ReactNode;
 }) {
   if (!config) return null;
 
-  const rows: any[] = Object.entries(FIELD_SCHEMA)
-    .filter(([key]: any) => config[key] !== undefined && config[key] !== null && config[key] !== "")
-    .map(([key, schema]: any) => ({
+  const rows: ProviderInfoRow[] = Object.entries(FIELD_SCHEMA)
+    .filter(([key]) => config[key] !== undefined && config[key] !== null && config[key] !== "")
+    .map(([key, schema]) => ({
       key,
       label: schema.label,
       value: schema.format(config[key]),
-      isLink: (schema as any).isLink,
-      mono: (schema as any).mono,
+      isLink: schema.isLink,
+      mono: schema.mono,
       raw: config[key],
     }));
 
@@ -66,12 +101,12 @@ export default function ProviderInfoCard({
         )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-        {rows.map((r: any) => (
+        {rows.map((r) => (
           <div key={r.key} className="flex items-center gap-3 min-w-0">
             <span className="text-xs text-text-muted w-28 shrink-0">{r.label}</span>
             {r.isLink ? (
               <a
-                href={r.raw}
+                href={String(r.raw)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`text-sm text-primary hover:underline truncate ${r.mono ? "font-mono" : ""}`}

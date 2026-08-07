@@ -1,4 +1,5 @@
 "use client";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
@@ -7,7 +8,7 @@ import { cn } from "@/shared/utils/cn";
  * Slugify a label for use as a form field name when no explicit `name` prop is provided.
  * Returns "" for falsy input so the caller can decide to omit the attribute entirely.
  */
-function deriveName(label: any) {
+function deriveName(label: unknown) {
   if (typeof label !== "string" || !label) return "";
   return label
     .toLowerCase()
@@ -15,6 +16,34 @@ function deriveName(label: any) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
 }
+
+type InputProps = {
+  label?: ReactNode;
+  type?: string;
+  placeholder?: string;
+  value?: string | number;
+  onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
+  error?: ReactNode;
+  hint?: ReactNode;
+  icon?: string;
+  disabled?: boolean;
+  required?: boolean;
+  className?: string;
+  inputClassName?: string;
+  id?: string;
+  name?: string;
+} & Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  | "type"
+  | "value"
+  | "onChange"
+  | "disabled"
+  | "required"
+  | "id"
+  | "name"
+  | "placeholder"
+  | "className"
+>;
 
 export default function Input({
   label,
@@ -32,23 +61,7 @@ export default function Input({
   id,
   name,
   ...props
-}: {
-  label?: any;
-  type?: string;
-  placeholder?: any;
-  value?: any;
-  onChange?: any;
-  error?: any;
-  hint?: any;
-  icon?: any;
-  disabled?: boolean;
-  required?: boolean;
-  className?: any;
-  inputClassName?: any;
-  id?: any;
-  name?: any;
-  [key: string]: any;
-}) {
+}: InputProps) {
   // Stable, deterministic per-instance ID for label association and browser autofill.
   const reactId = useId();
   const inputId = id || `input-${reactId}`;
@@ -88,7 +101,7 @@ export default function Input({
             "disabled:opacity-40 disabled:cursor-not-allowed",
             "text-[16px] sm:text-[13px]",
             icon && "pl-9",
-            error && "border-warning-red focus:border-warning-red focus:ring-warning-red/25",
+            !!error && "border-warning-red focus:border-warning-red focus:ring-warning-red/25",
             inputClassName,
           )}
           {...props}

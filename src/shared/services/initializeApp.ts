@@ -38,7 +38,9 @@ export async function initializeApp(): Promise<void> {
 
     // Init rate limit backend (Redis if REDIS_URL set, else in-memory)
     await initRateLimit().catch((err) =>
-      logError("InitApp", "Rate limit init failed", { error: (err as any)?.message || err }),
+      logError("InitApp", "Rate limit init failed", {
+        error: err instanceof Error ? err.message : err,
+      }),
     );
 
     await cleanupProviderConnections();
@@ -53,7 +55,7 @@ export async function initializeApp(): Promise<void> {
     if (settings.tunnelEnabled) {
       logInfo("InitApp", "Tunnel was enabled, auto-resuming");
       safeRestartTunnel("startup").catch((e) =>
-        logError("InitApp", "Tunnel resume failed", { error: (e as any)?.message || e }),
+        logError("InitApp", "Tunnel resume failed", { error: e instanceof Error ? e.message : e }),
       );
     }
 
@@ -61,7 +63,9 @@ export async function initializeApp(): Promise<void> {
     if (settings.tailscaleEnabled) {
       logInfo("InitApp", "Tailscale was enabled, auto-resuming");
       safeRestartTailscale("startup").catch((e) =>
-        logError("InitApp", "Tailscale resume failed", { error: (e as any)?.message || e }),
+        logError("InitApp", "Tailscale resume failed", {
+          error: e instanceof Error ? e.message : e,
+        }),
       );
     }
 
@@ -85,7 +89,9 @@ export async function initializeApp(): Promise<void> {
     startNetworkMonitor();
     // autoStartMitm();
   } catch (error) {
-    logError("InitApp", "Initialization failed", { error: (error as any)?.message || error });
+    logError("InitApp", "Initialization failed", {
+      error: error instanceof Error ? error.message : error,
+    });
     throw error;
   }
 }
@@ -103,7 +109,7 @@ async function safeRestartTunnel(reason: string): Promise<void> {
   // Alive check: process up + URL responds → skip
   if (isCloudflaredRunning()) {
     const state = loadState();
-    if (state?.tunnelUrl && (await probeUrlAlive(state.tunnelUrl))) return;
+    if (typeof state?.tunnelUrl === "string" && (await probeUrlAlive(state.tunnelUrl))) return;
   }
 
   if (!(await checkInternet())) return;
@@ -114,7 +120,7 @@ async function safeRestartTunnel(reason: string): Promise<void> {
     svc.lastRestartAt = Date.now();
     logInfo("Tunnel", "restart success");
   } catch (err) {
-    logError("Tunnel", "restart failed", { error: (err as any)?.message || err });
+    logError("Tunnel", "restart failed", { error: err instanceof Error ? err.message : err });
   }
 }
 
@@ -138,7 +144,7 @@ async function safeRestartTailscale(reason: string): Promise<void> {
     svc.lastRestartAt = Date.now();
     logInfo("Tailscale", "restart success");
   } catch (err) {
-    logError("Tailscale", "restart failed", { error: (err as any)?.message || err });
+    logError("Tailscale", "restart failed", { error: err instanceof Error ? err.message : err });
   }
 }
 
@@ -196,7 +202,7 @@ function startNetworkMonitor(): void {
       safeRestartTunnel(reason).catch(() => {});
       safeRestartTailscale(reason).catch(() => {});
     } catch (err) {
-      logError("NetworkMonitor", "error", { error: (err as any)?.message || err });
+      logError("NetworkMonitor", "error", { error: err instanceof Error ? err.message : err });
     }
   }, NETWORK_CHECK_INTERVAL_MS);
 

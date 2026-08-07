@@ -41,9 +41,10 @@
     "src/**/*.tsx",
     "src/**/*.js",
     "src/**/*.jsx",
+    "open-sse/**/*.ts",
     "next-env.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next", "cloud", "open-sse", "coverage", "tests"]
+  "exclude": ["node_modules", ".next", "cloud", "coverage", "tests"]
 }

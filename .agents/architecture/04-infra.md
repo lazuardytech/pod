@@ -2,14 +2,14 @@
 
 ## Runtime Stack
 
-| Component  | Choice                                           |
-| ---------- | ------------------------------------------------ |
-| Runtime    | Bun + Next.js 16 (standalone mode, Turbopack)    |
-| Language   | TypeScript (strict mode); open-sse/ is frozen JS |
-| Primary DB | SQLite at `~/.pod/pod.sqlite`                    |
-| Cache DB   | Optional Redis (when `REDIS_URL` is set)         |
-| Tunnel     | Optional Cloudflared                             |
-| Mesh       | Optional Tailscale                               |
+| Component  | Choice                                                          |
+| ---------- | --------------------------------------------------------------- |
+| Runtime    | Bun + Next.js 16 (standalone mode, Turbopack)                   |
+| Language   | TypeScript (strict mode); `open-sse/` is included in root `tsc` |
+| Primary DB | SQLite at `~/.pod/pod.sqlite`                                   |
+| Cache DB   | Optional Redis (when `REDIS_URL` is set)                        |
+| Tunnel     | Optional Cloudflared                                            |
+| Mesh       | Optional Tailscale                                              |
 
 ## Deployment
 

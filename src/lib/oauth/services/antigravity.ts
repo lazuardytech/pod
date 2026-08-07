@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import open from "open";
 import { getServerCredentials } from "../config/index";
-import { ANTIGRAVITY_CONFIG } from "../constants/oauth";
+import { ANTIGRAVITY_CONFIG, type AntigravityConfig } from "../constants/oauth";
 import { startLocalServer } from "../utils/server";
 import { spinner as createSpinner } from "../utils/ui";
 
@@ -10,7 +10,7 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses standard OAuth2 Authorization Code flow (similar to Gemini)
  */
 export class AntigravityService {
-  public config: any;
+  public config: AntigravityConfig;
 
   constructor() {
     this.config = ANTIGRAVITY_CONFIG;
@@ -36,7 +36,7 @@ export class AntigravityService {
   /**
    * Exchange authorization code for tokens
    */
-  async exchangeCode(code: string, redirectUri: string): Promise<any> {
+  async exchangeCode(code: string, redirectUri: string): Promise<Record<string, unknown>> {
     const response = await fetch(this.config.tokenUrl, {
       method: "POST",
       headers: {
@@ -63,7 +63,7 @@ export class AntigravityService {
   /**
    * Get user info from Google
    */
-  async getUserInfo(accessToken: string): Promise<any> {
+  async getUserInfo(accessToken: string): Promise<Record<string, unknown>> {
     const response = await fetch(`${this.config.userInfoUrl}?alt=json`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -109,7 +109,7 @@ export class AntigravityService {
    */
   async loadCodeAssist(
     accessToken: string,
-  ): Promise<{ projectId: string; tierId: string; raw: any }> {
+  ): Promise<{ projectId: string; tierId: string; raw: Record<string, unknown> }> {
     const response = await fetch(this.config.loadCodeAssistEndpoint, {
       method: "POST",
       headers: this.getApiHeaders(accessToken),
@@ -121,13 +121,13 @@ export class AntigravityService {
       throw new Error(`Failed to load code assist: ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as Record<string, unknown>;
 
     // Extract project ID
     const rawProjectId = data.cloudaicompanionProject;
     let projectId: string | null = typeof rawProjectId === "string" ? rawProjectId : null;
-    if (typeof rawProjectId === "object" && rawProjectId !== null && rawProjectId.id) {
-      projectId = rawProjectId.id;
+    if (typeof rawProjectId === "object" && rawProjectId !== null && "id" in rawProjectId) {
+      projectId = String((rawProjectId as { id?: unknown }).id ?? "");
     }
 
     if (!projectId) {
@@ -151,7 +151,11 @@ export class AntigravityService {
   /**
    * Onboard user to enable Gemini Code Assist for the project
    */
-  async onboardUser(accessToken: string, projectId: string, tierId: string): Promise<any> {
+  async onboardUser(
+    accessToken: string,
+    projectId: string,
+    tierId: string,
+  ): Promise<Record<string, unknown>> {
     const response = await fetch(this.config.onboardUserEndpoint, {
       method: "POST",
       headers: this.getApiHeaders(accessToken),
@@ -181,12 +185,13 @@ export class AntigravityService {
       if (result.done === true) {
         // Extract final project ID from response
         let finalProjectId: string = projectId;
-        if (result.response?.cloudaicompanionProject) {
-          const respProject = result.response.cloudaicompanionProject;
+        const resp = (result.response ?? {}) as Record<string, unknown>;
+        if (resp.cloudaicompanionProject) {
+          const respProject = resp.cloudaicompanionProject;
           if (typeof respProject === "string") {
             finalProjectId = respProject.trim();
-          } else if (respProject.id) {
-            finalProjectId = respProject.id.trim();
+          } else if (respProject && typeof respProject === "object" && "id" in respProject) {
+            finalProjectId = String((respProject as { id?: unknown }).id ?? "").trim();
           }
         }
         return { success: true, projectId: finalProjectId };
@@ -213,7 +218,11 @@ export class AntigravityService {
   /**
    * Save Antigravity tokens to server
    */
-  async saveTokens(tokens: any, userInfo: any, projectId: string): Promise<any> {
+  async saveTokens(
+    tokens: Record<string, unknown>,
+    userInfo: Record<string, unknown>,
+    projectId: string,
+  ): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/antigravity`, {
@@ -251,7 +260,7 @@ export class AntigravityService {
       spinner.text = "Starting local server...";
 
       // Start local server for callback
-      let callbackParams: any = null;
+      let callbackParams: Record<string, string> | null = null;
       const { port, close } = await startLocalServer((params) => {
         callbackParams = params;
       });
@@ -307,16 +316,17 @@ export class AntigravityService {
 
       // Exchange code for tokens
       const tokens = await this.exchangeCode(cp.code, redirectUri);
+      const accessToken = String(tokens.access_token ?? "");
 
       spinner.text = "Fetching user info...";
 
       // Get user info
-      const userInfo = await this.getUserInfo(tokens.access_token);
+      const userInfo = await this.getUserInfo(accessToken);
 
       spinner.text = "Loading Code Assist configuration...";
 
       // Load Code Assist to get project ID and tier
-      const { projectId, tierId } = await this.loadCodeAssist(tokens.access_token);
+      const { projectId, tierId } = await this.loadCodeAssist(accessToken);
 
       if (!projectId) {
         throw new Error(
@@ -327,7 +337,7 @@ export class AntigravityService {
       spinner.text = "Onboarding to Gemini Code Assist...";
 
       // Complete onboarding to enable Gemini Code Assist
-      const onboardResult = await this.completeOnboarding(tokens.access_token, projectId, tierId);
+      const onboardResult = await this.completeOnboarding(accessToken, projectId, tierId);
       const finalProjectId = onboardResult.projectId || projectId;
 
       spinner.text = "Saving tokens to server...";

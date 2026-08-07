@@ -78,7 +78,7 @@ function chatCompletionToResponse(cc: ChatCompletion, fallbackId: string) {
  * POST /v1/responses - OpenAI Responses API format
  * Now handled by translator pattern (openai-responses format auto-detected)
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   return await withApiKeyRateLimit(request, async () => {
     await ensureInitialized();
 

@@ -8,7 +8,7 @@ import {
   updateProxyPool,
 } from "@/models";
 
-function sanitizeProxyPool(pool: any) {
+function sanitizeProxyPool(pool: Record<string, unknown> | null | undefined) {
   if (!pool) return pool;
   const sanitized = { ...pool };
   delete sanitized.relayAuthToken;
@@ -54,14 +54,16 @@ function normalizeProxyPoolUpdate(body: Record<string, unknown> = {}) {
   return { updates };
 }
 
-function countBoundConnections(connections: any[] = [], proxyPoolId: any) {
-  return connections.filter(
-    (connection: any) => connection?.providerSpecificData?.proxyPoolId === proxyPoolId,
-  ).length;
+function countBoundConnections(connections: unknown[] = [], proxyPoolId: unknown) {
+  return connections.filter((connection) => {
+    const psd = (connection as { providerSpecificData?: { proxyPoolId?: unknown } } | null)
+      ?.providerSpecificData;
+    return psd?.proxyPoolId === proxyPoolId;
+  }).length;
 }
 
 // GET /api/proxy-pools/[id] - Get proxy pool
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const proxyPool = await getProxyPoolById(id);
@@ -70,7 +72,9 @@ export async function GET(request: any, { params }: { params: any }) {
       return NextResponse.json({ error: "Proxy pool not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ proxyPool: sanitizeProxyPool(proxyPool) });
+    return NextResponse.json({
+      proxyPool: sanitizeProxyPool(proxyPool as Record<string, unknown>),
+    });
   } catch (error) {
     console.log("Error fetching proxy pool:", error);
     return NextResponse.json({ error: "Failed to fetch proxy pool" }, { status: 500 });
@@ -78,7 +82,7 @@ export async function GET(request: any, { params }: { params: any }) {
 }
 
 // PUT /api/proxy-pools/[id] - Update proxy pool
-export async function PUT(request: any, { params }: { params: any }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const existing = await getProxyPoolById(id);
@@ -97,7 +101,7 @@ export async function PUT(request: any, { params }: { params: any }) {
     }
 
     const updated = await updateProxyPool(id, normalized.updates ?? {});
-    return NextResponse.json({ proxyPool: sanitizeProxyPool(updated) });
+    return NextResponse.json({ proxyPool: sanitizeProxyPool(updated as Record<string, unknown>) });
   } catch (error) {
     console.log("Error updating proxy pool:", error);
     return NextResponse.json({ error: "Failed to update proxy pool" }, { status: 500 });
@@ -105,7 +109,7 @@ export async function PUT(request: any, { params }: { params: any }) {
 }
 
 // DELETE /api/proxy-pools/[id] - Delete proxy pool
-export async function DELETE(request: any, { params }: { params: any }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const existing = await getProxyPoolById(id);

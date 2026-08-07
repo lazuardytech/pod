@@ -11,7 +11,7 @@ import { createProviderConnection } from "@/models";
  * Exchange authorization code for tokens (Google/GitHub social login)
  * Callback URL will be in format: kiro://kiro.kiroAgent/authenticate-success?code=XXX&state=YYY
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;

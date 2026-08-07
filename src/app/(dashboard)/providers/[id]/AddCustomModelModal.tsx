@@ -1,9 +1,11 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Button, Modal } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
+
+type TestStatus = null | "testing" | "ok" | "error";
 
 export default function AddCustomModelModal({
   isOpen,
@@ -11,9 +13,15 @@ export default function AddCustomModelModal({
   providerDisplayAlias: _providerDisplayAlias,
   onSave,
   onClose,
-}: any) {
+}: {
+  isOpen: boolean;
+  providerAlias: string;
+  providerDisplayAlias: string;
+  onSave: (modelId: string) => void | Promise<void>;
+  onClose: () => void;
+}) {
   const [modelId, setModelId] = useState("");
-  const [testStatus, setTestStatus] = useState<any>(null); // null | "testing" | "ok" | "error"
+  const [testStatus, setTestStatus] = useState<TestStatus>(null);
   const [testError, setTestError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -27,7 +35,7 @@ export default function AddCustomModelModal({
   }, [isOpen]);
 
   // Strip provider's own alias prefix (e.g. "cc/model" -> "model" for cc provider)
-  const stripAlias = (id: any) => {
+  const stripAlias = (id: string) => {
     const prefix = `${providerAlias}/`;
     return id.startsWith(prefix) ? id.slice(prefix.length) : id;
   };
@@ -43,12 +51,12 @@ export default function AddCustomModelModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: `${providerAlias}/${cleanId}` }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { ok?: boolean; error?: string };
       setTestStatus(data.ok ? "ok" : "error");
       setTestError(data.error || "");
     } catch (err) {
       setTestStatus("error");
-      setTestError((err as any).message);
+      setTestError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -63,7 +71,7 @@ export default function AddCustomModelModal({
     }
   };
 
-  const handleKeyDown = (e: any) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleTest();
   };
 
@@ -77,7 +85,7 @@ export default function AddCustomModelModal({
               aria-label="Model ID"
               type="text"
               value={modelId}
-              onChange={(e: any) => {
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 setModelId(e.target.value);
                 setTestStatus(null);
                 setTestError("");

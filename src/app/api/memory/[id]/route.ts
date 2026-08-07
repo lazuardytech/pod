@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteMemory, getMemory, updateMemory } from "@/lib/memory/store";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
-export async function GET(_request: any, { params }: { params: any }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const memory = await getMemory(id);
@@ -13,7 +13,7 @@ export async function GET(_request: any, { params }: { params: any }) {
   }
 }
 
-export async function PATCH(request: any, { params }: { params: any }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -42,7 +42,7 @@ export async function PATCH(request: any, { params }: { params: any }) {
   }
 }
 
-export async function DELETE(_request: any, { params }: { params: any }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const deleted = await deleteMemory(id);

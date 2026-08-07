@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button, Card, CardSkeleton, Input, Toggle } from "@/shared/components";
 
-function staleMinutesToMs(value: any) {
+function staleMinutesToMs(value: string) {
   const parsed = Number.parseInt(String(value || ""), 10);
   const minutes = Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
   return minutes * 60 * 1000;
@@ -37,7 +37,7 @@ export default function CacheClient() {
     staleMinutes: "60",
   });
 
-  const loadData = useCallback(async (isInitial: any = false) => {
+  const loadData = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     else setRefreshing(true);
     try {
@@ -68,7 +68,7 @@ export default function CacheClient() {
         ),
       });
     } catch (error) {
-      toast.error((error as any)?.message || "Failed to load cache data");
+      toast.error((error as Error)?.message || "Failed to load cache data");
     } finally {
       if (isInitial) setLoading(false);
       else setRefreshing(false);
@@ -112,15 +112,15 @@ export default function CacheClient() {
       toast.success("Cache config updated");
       await loadData(false);
     } catch (error) {
-      toast.error((error as any)?.message || "Failed to update cache config");
+      toast.error((error as Error)?.message || "Failed to update cache config");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleToggleSemanticCache = async (semanticCacheEnabled: any) => {
+  const handleToggleSemanticCache = async (semanticCacheEnabled: boolean) => {
     const previous = config.semanticCacheEnabled;
-    setConfig((prev: any) => ({ ...prev, semanticCacheEnabled }));
+    setConfig((prev) => ({ ...prev, semanticCacheEnabled }));
     setSaving(true);
     try {
       const res = await fetch("/api/settings/cache-config", {
@@ -137,14 +137,14 @@ export default function CacheClient() {
       toast.success(`Semantic cache ${semanticCacheEnabled ? "enabled" : "disabled"}`);
       await loadData(false);
     } catch (error) {
-      setConfig((prev: any) => ({ ...prev, semanticCacheEnabled: previous }));
-      toast.error((error as any)?.message || "Failed to update cache state");
+      setConfig((prev) => ({ ...prev, semanticCacheEnabled: previous }));
+      toast.error((error as Error)?.message || "Failed to update cache state");
     } finally {
       setSaving(false);
     }
   };
 
-  const runInvalidation = async (query: any) => {
+  const runInvalidation = async (query: string) => {
     setInvalidating(true);
     try {
       const target = query ? `/api/cache?${query}` : "/api/cache";
@@ -156,7 +156,7 @@ export default function CacheClient() {
       toast.success("Cache invalidated");
       await loadData(false);
     } catch (error) {
-      toast.error((error as any)?.message || "Cache invalidation failed");
+      toast.error((error as Error)?.message || "Cache invalidation failed");
     } finally {
       setInvalidating(false);
     }
@@ -194,8 +194,8 @@ export default function CacheClient() {
             type="number"
             min="1"
             value={config.semanticCacheMaxSize}
-            onChange={(event: any) =>
-              setConfig((prev: any) => ({ ...prev, semanticCacheMaxSize: event.target.value }))
+            onChange={(event) =>
+              setConfig((prev) => ({ ...prev, semanticCacheMaxSize: event.target.value }))
             }
           />
           <Input
@@ -203,8 +203,8 @@ export default function CacheClient() {
             type="number"
             min="1"
             value={config.semanticCacheTTLMinutes}
-            onChange={(event: any) =>
-              setConfig((prev: any) => ({ ...prev, semanticCacheTTLMinutes: event.target.value }))
+            onChange={(event) =>
+              setConfig((prev) => ({ ...prev, semanticCacheTTLMinutes: event.target.value }))
             }
           />
         </div>
@@ -228,7 +228,7 @@ export default function CacheClient() {
       >
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {loading ? (
-            [1, 2, 3, 4, 5, 6].map((i: any) => <CardSkeleton key={i} />)
+            [1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)
           ) : (
             <>
               <Stat label="Memory Entries" value={stats.memoryEntries} />
@@ -253,8 +253,8 @@ export default function CacheClient() {
               label="Invalidate by Model"
               placeholder="example: melma/zen"
               value={maintenance.model}
-              onChange={(event: any) =>
-                setMaintenance((prev: any) => ({ ...prev, model: event.target.value }))
+              onChange={(event) =>
+                setMaintenance((prev) => ({ ...prev, model: event.target.value }))
               }
               className="flex-1"
             />
@@ -278,8 +278,8 @@ export default function CacheClient() {
               label="Invalidate by Signature"
               placeholder="sha256 signature"
               value={maintenance.signature}
-              onChange={(event: any) =>
-                setMaintenance((prev: any) => ({ ...prev, signature: event.target.value }))
+              onChange={(event) =>
+                setMaintenance((prev) => ({ ...prev, signature: event.target.value }))
               }
               className="flex-1"
             />
@@ -304,8 +304,8 @@ export default function CacheClient() {
               type="number"
               min="1"
               value={maintenance.staleMinutes}
-              onChange={(event: any) =>
-                setMaintenance((prev: any) => ({ ...prev, staleMinutes: event.target.value }))
+              onChange={(event) =>
+                setMaintenance((prev) => ({ ...prev, staleMinutes: event.target.value }))
               }
               className="flex-1"
             />
@@ -342,7 +342,7 @@ export default function CacheClient() {
   );
 }
 
-function Stat({ label, value }: any) {
+function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2">
       <p className="text-xs text-text-muted">{label}</p>

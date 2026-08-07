@@ -7,9 +7,8 @@ export default function ThemeToggle({
   className,
   variant = "default",
 }: {
-  className?: any;
+  className?: string;
   variant?: string;
-  [key: string]: any;
 }) {
   const { isDark, toggleTheme } = useTheme();
 

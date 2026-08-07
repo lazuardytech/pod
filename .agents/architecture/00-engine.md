@@ -7,14 +7,14 @@ The open-sse engine is a local fork (never the npm package) that handles provide
 ```
 open-sse/
   config/           Provider definitions, model catalogs, runtime constants
-  executors/        Provider-specific HTTP clients (19 executors; base.js is a base class, index.js is a barrel)
+  executors/        Provider-specific HTTP clients (19 executors; base.ts is a base class, index.ts is a barrel)
   handlers/         Core chat handler: streaming and non-streaming paths
   services/         Model resolution, provider metadata, credential management, token refresh
   transformer/      Response transformation utilities
   translator/       Request/response format translation (OpenAI ↔ Claude ↔ Gemini)
   utils/            Stream processing, error handling, proxy fetch patch, RTK
   rtk/              Real Talk tool_result compression subsystem
-  index.js          Public API surface — re-exports for src/sse/ consumers
+  index.ts          Public API surface — re-exports for src/sse/ consumers
 ```
 
 ## Executor Types
@@ -38,7 +38,7 @@ Each provider gets its own executor in `open-sse/executors/`. They share a commo
 | ------------ | ----------------------------------------------------- |
 | `request/`   | Client request → provider-native format               |
 | `response/`  | Provider-native response → OpenAI-compatible format   |
-| `formats.js` | Format constants (`openai`, `claude`, `gemini`, etc.) |
+| `formats.ts` | Format constants (`openai`, `claude`, `gemini`, etc.) |
 | `helpers/`   | Shared translation utilities                          |
 
 ### Claude-to-OpenAI Thinking Fix
@@ -64,11 +64,11 @@ Each streaming response chunk passes through a TransformStream that applies form
 | Rule                                                         | Where enforced                                  |
 | ------------------------------------------------------------ | ----------------------------------------------- |
 | SSE connection cap: 100 concurrent                           | `src/sse/handlers/chat.ts`                      |
-| SSE stream stall timeout: 5 minutes                          | `open-sse/utils/stream.js` (`STALL_TIMEOUT_MS`) |
-| Crash guard around stream processing                         | `open-sse/utils/stream.js`                      |
-| Crash guard around chat core                                 | `open-sse/handlers/chatCore.js`                 |
-| Guarded peek-reader (inspect first chunk without consuming)  | `open-sse/handlers/chatCore.js`                 |
-| Transactional connection locking (`modelLockCount_${model}`) | `open-sse/services/accountFallback.js`          |
+| SSE stream stall timeout: 5 minutes                          | `open-sse/utils/stream.ts` (`STALL_TIMEOUT_MS`) |
+| Crash guard around stream processing                         | `open-sse/utils/stream.ts`                      |
+| Crash guard around chat core                                 | `open-sse/handlers/chatCore.ts`                 |
+| Guarded peek-reader (inspect first chunk without consuming)  | `open-sse/handlers/chatCore.ts`                 |
+| Transactional connection locking (`modelLockCount_${model}`) | `open-sse/services/accountFallback.ts`          |
 | Guarded fallback loop                                        | `src/sse/handlers/chat.ts`                      |
 
 These guards are non-negotiable. Removing or weakening any of them risks process crashes or stream corruption.

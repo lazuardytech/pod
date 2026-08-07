@@ -36,7 +36,7 @@ function normalizeProxyConfig(body: Record<string, unknown> = {}) {
   };
 }
 
-async function normalizeProxyPoolUpdate(proxyPoolIdInput: any) {
+async function normalizeProxyPoolUpdate(proxyPoolIdInput: unknown) {
   if (proxyPoolIdInput === undefined) {
     return { hasProxyPoolField: false, proxyPoolId: null };
   }
@@ -59,16 +59,16 @@ async function normalizeProxyPoolUpdate(proxyPoolIdInput: any) {
 }
 
 function shouldMergeProviderSpecificData(
-  existing: any,
-  incoming: any,
-  hasLegacyProxy: any,
-  hasProxyPoolField: any,
+  existing: Record<string, unknown> | null | undefined,
+  incoming: Record<string, unknown> | null | undefined,
+  hasLegacyProxy: boolean,
+  hasProxyPoolField: boolean,
 ) {
   return existing !== undefined || incoming !== undefined || hasLegacyProxy || hasProxyPoolField;
 }
 
 // GET /api/providers/[id] - Get single connection
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -92,7 +92,7 @@ export async function GET(request: any, { params }: { params: any }) {
 }
 
 // PUT /api/providers/[id] - Update connection
-export async function PUT(request: any, { params }: { params: any }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -139,8 +139,8 @@ export async function PUT(request: any, { params }: { params: any }) {
 
     if (
       shouldMergeProviderSpecificData(
-        existing.providerSpecificData,
-        providerSpecificData,
+        asApiRecord(existing.providerSpecificData),
+        asApiRecord(providerSpecificData),
         proxyConfig.hasAnyProxyField,
         proxyPoolResult.hasProxyPoolField,
       )
@@ -184,7 +184,7 @@ export async function PUT(request: any, { params }: { params: any }) {
 }
 
 // DELETE /api/providers/[id] - Delete connection
-export async function DELETE(request: any, { params }: { params: any }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 

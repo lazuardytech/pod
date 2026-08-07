@@ -1,6 +1,20 @@
 "use client";
+import type { HTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { cn } from "@/shared/utils/cn";
+
+type CardProps = {
+  children?: ReactNode;
+  title?: ReactNode;
+  subtitle?: ReactNode;
+  icon?: string;
+  action?: ReactNode;
+  padding?: string;
+  hover?: boolean;
+  elev?: boolean;
+  nested?: boolean;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLDivElement>, "title" | "children">;
 
 export default function Card({
   children,
@@ -14,19 +28,7 @@ export default function Card({
   nested = false,
   className,
   ...props
-}: {
-  children?: any;
-  title?: any;
-  subtitle?: any;
-  icon?: any;
-  action?: any;
-  padding?: string;
-  hover?: boolean;
-  elev?: boolean;
-  nested?: boolean;
-  className?: any;
-  [key: string]: any;
-}) {
+}: CardProps) {
   const paddings: Record<string, string> = {
     none: "",
     xs: "px-2 py-2",
@@ -86,11 +88,7 @@ Card.Section = function CardSection({
   children,
   className,
   ...props
-}: {
-  children?: any;
-  className?: any;
-  [key: string]: any;
-}) {
+}: { children?: ReactNode; className?: string } & HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("p-3 rounded-[6px] bg-pitch-black border border-charcoal-grey", className)}
@@ -105,11 +103,7 @@ Card.Row = function CardRow({
   children,
   className,
   ...props
-}: {
-  children?: any;
-  className?: any;
-  [key: string]: any;
-}) {
+}: { children?: ReactNode; className?: string } & HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -131,11 +125,10 @@ Card.ListItem = function CardListItem({
   className,
   ...props
 }: {
-  children?: any;
-  actions?: any;
-  className?: any;
-  [key: string]: any;
-}) {
+  children?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+} & HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(

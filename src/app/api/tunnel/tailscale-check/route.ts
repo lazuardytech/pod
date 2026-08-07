@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
+import type { SpawnSyncReturns } from "node:child_process";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+
+type SpawnSyncFn = (
+  command: string,
+  args?: ReadonlyArray<string>,
+  options?: Record<string, unknown>,
+) => SpawnSyncReturns<string | Buffer>;
+
+type ExecSyncFn = (command: string, options?: Record<string, unknown>) => string | Buffer;
 
 const EXTENDED_PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 
@@ -15,9 +24,9 @@ function getDataDir() {
 const DATA_DIR = getDataDir();
 
 function runCommandSync(
-  spawnSync: any,
-  command: any,
-  args: any,
+  spawnSync: SpawnSyncFn,
+  command: string,
+  args: ReadonlyArray<string>,
   { timeout = 5000, env }: { timeout?: number; env?: NodeJS.ProcessEnv } = {},
 ) {
   const result = spawnSync(command, args, {
@@ -30,7 +39,7 @@ function runCommandSync(
   return typeof result.stdout === "string" ? result.stdout : "";
 }
 
-function getTailscaleBin(spawnSync: any) {
+function getTailscaleBin(spawnSync: SpawnSyncFn) {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
   const systemPath = runCommandSync(spawnSync, lookupCommand, ["tailscale"], {
     timeout: 3000,
@@ -39,13 +48,13 @@ function getTailscaleBin(spawnSync: any) {
   return systemPath || null;
 }
 
-function isTailscaleInstalled(spawnSync: any) {
+function isTailscaleInstalled(spawnSync: SpawnSyncFn) {
   return getTailscaleBin(spawnSync) !== null;
 }
 
 function runTailscaleJson(
-  spawnSync: any,
-  args: any,
+  spawnSync: SpawnSyncFn,
+  args: ReadonlyArray<string>,
   { timeout = 5000 }: { timeout?: number } = {},
 ) {
   const bin = getTailscaleBin(spawnSync);
@@ -57,7 +66,7 @@ function runTailscaleJson(
       process.platform === "win32" ? null : "--socket",
       process.platform === "win32" ? null : `${DATA_DIR}/tailscale/tailscaled.sock`,
       ...args,
-    ].filter(Boolean),
+    ].filter((a): a is string => Boolean(a)),
     {
       timeout,
       env: { ...process.env, PATH: EXTENDED_PATH },
@@ -71,12 +80,12 @@ function runTailscaleJson(
   }
 }
 
-function isTailscaleLoggedIn(spawnSync: any) {
+function isTailscaleLoggedIn(spawnSync: SpawnSyncFn) {
   const json = runTailscaleJson(spawnSync, ["status", "--json"], { timeout: 5000 });
   return json?.BackendState === "Running";
 }
 
-function hasBrew(execSync: any) {
+function hasBrew(execSync: ExecSyncFn) {
   try {
     execSync("which brew", {
       stdio: "ignore",
@@ -89,7 +98,7 @@ function hasBrew(execSync: any) {
   }
 }
 
-function isDaemonRunning(spawnSync: any, execSync: any) {
+function isDaemonRunning(spawnSync: SpawnSyncFn, execSync: ExecSyncFn) {
   const bin = getTailscaleBin(spawnSync);
   if (!bin) return false;
   try {
@@ -100,7 +109,7 @@ function isDaemonRunning(spawnSync: any, execSync: any) {
         process.platform === "win32" ? null : `${DATA_DIR}/tailscale/tailscaled.sock`,
         "status",
         "--json",
-      ].filter(Boolean),
+      ].filter((a): a is string => Boolean(a)),
       {
         encoding: "utf8",
         stdio: "ignore",

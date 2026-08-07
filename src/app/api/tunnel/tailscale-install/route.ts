@@ -26,7 +26,7 @@ function hasBrew() {
   }
 }
 
-export async function POST(request: any) {
+export async function POST(request: Request) {
   const authResponse = await checkStrictDashboardAuth(request);
   if (authResponse) return authResponse;
 
@@ -52,12 +52,13 @@ export async function POST(request: any) {
     });
   }
 
-  const shortId = loadState()?.shortId || generateShortId();
+  const state = loadState();
+  const shortId = (typeof state?.shortId === "string" && state.shortId) || generateShortId();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (event: any, data: any) => {
+      const send = (event: string, data: unknown) => {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       };
 

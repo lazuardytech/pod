@@ -219,7 +219,7 @@ export class KiroService {
     expiresIn: number;
     profileArn?: string;
   }> {
-    const { clientId, clientSecret, region } = providerSpecificData ?? ({} as any);
+    const { clientId, clientSecret, region } = providerSpecificData ?? {};
 
     // AWS SSO OIDC refresh (Builder ID or IDC)
     if (clientId && clientSecret) {

@@ -1,9 +1,15 @@
 "use client";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import Modal from "./Modal";
+
+type ManualConfig = {
+  filename: string;
+  content: string;
+};
 
 export default function ManualConfigModal({
   isOpen,
@@ -11,16 +17,15 @@ export default function ManualConfigModal({
   title = "Manual Configuration",
   configs = [],
 }: {
-  isOpen?: any;
-  onClose?: any;
-  title?: any;
-  configs?: any[];
-  [key: string]: any;
+  isOpen?: boolean;
+  onClose?: () => void;
+  title?: ReactNode;
+  configs?: ManualConfig[];
 }) {
   const { copy } = useCopyToClipboard();
-  const [copiedIndex, setCopiedIndex] = useState<any>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  const copyConfig = (text: any, index: any) => {
+  const copyConfig = (text: string, index: number) => {
     copy(text, `manualconfig-${index}`);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
@@ -29,7 +34,7 @@ export default function ManualConfigModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="xl">
       <div className="flex flex-col gap-4">
-        {configs.map((config: any, index: any) => (
+        {configs.map((config, index) => (
           <div key={index} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-text-main">{config.filename}</span>

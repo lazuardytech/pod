@@ -61,6 +61,13 @@ const STEPS = [
   },
 ];
 
+type TranslatorMeta = {
+  provider?: string;
+  model?: string;
+  sourceFormat?: string;
+  targetFormat?: string;
+};
+
 const EDITOR_OPTIONS = {
   minimap: { enabled: false },
   fontSize: 12,
@@ -71,20 +78,20 @@ const EDITOR_OPTIONS = {
 };
 
 export default function TranslatorPage() {
-  const [contents, setContents] = useState<Record<string, any>>({});
+  const [contents, setContents] = useState<Record<number, string>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 1: true });
-  const [loading, setLoading] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
   // Detected from step 1: { provider, model, sourceFormat, targetFormat }
-  const [meta, setMeta] = useState<any>(null);
+  const [meta, setMeta] = useState<TranslatorMeta | null>(null);
 
-  const setLoad = (key: any, val: any) => setLoading((prev: any) => ({ ...prev, [key]: val }));
-  const setContent = (id: any, val: any) => setContents((prev: any) => ({ ...prev, [id]: val }));
-  const toggle = (id: any) => setExpanded((prev: any) => ({ ...prev, [id]: !prev[id] }));
+  const setLoad = (key: string, val: boolean) => setLoading((prev) => ({ ...prev, [key]: val }));
+  const setContent = (id: number, val: string) => setContents((prev) => ({ ...prev, [id]: val }));
+  const toggle = (id: number) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const openNext = (nextId: number) =>
-    setExpanded((_prev: any) => {
+    setExpanded((_prev) => {
       const next: Record<number, boolean> = {};
-      STEPS.forEach((s: any) => {
+      STEPS.forEach((s) => {
         next[s.id] = false;
       });
       next[nextId] = true;
@@ -92,8 +99,8 @@ export default function TranslatorPage() {
     });
 
   // Load file from logs/translator/
-  const handleLoad = async (stepId: any) => {
-    const step = STEPS.find((s: any) => s.id === stepId);
+  const handleLoad = async (stepId: number) => {
+    const step = STEPS.find((s) => s.id === stepId);
     if (!step) return;
     setLoad(`load-${stepId}`, true);
     try {
@@ -106,13 +113,13 @@ export default function TranslatorPage() {
         alert(data.error || "File not found");
       }
     } catch (e) {
-      alert((e as any).message);
+      alert((e as Error).message);
     }
     setLoad(`load-${stepId}`, false);
   };
 
   // Step 1: detect provider/format from model field
-  const detectMeta = async (rawContent: any) => {
+  const detectMeta = async (rawContent: string | Record<string, unknown>) => {
     try {
       const body = typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent;
       const res = await fetch("/api/translator/translate", {
@@ -127,7 +134,7 @@ export default function TranslatorPage() {
     }
   };
 
-  const save = (file: any, content: any) =>
+  const save = (file: string, content: string) =>
     fetch("/api/translator/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -139,6 +146,7 @@ export default function TranslatorPage() {
     setLoad("toOpenAI", true);
     try {
       const raw = contents[1];
+      if (!raw) return;
       const body = JSON.parse(raw);
       // Save input: 1_req_client.json + 2_req_source.json (body only)
       save("1_req_client.json", raw);
@@ -165,7 +173,7 @@ export default function TranslatorPage() {
       setContent(3, str);
       openNext(3);
     } catch (e) {
-      alert((e as any).message);
+      alert((e as Error).message);
     }
     setLoad("toOpenAI", false);
   };
@@ -175,6 +183,7 @@ export default function TranslatorPage() {
     setLoad("toTarget", true);
     try {
       const raw = contents[3];
+      if (!raw) return;
       const openaiBody = JSON.parse(raw);
       // Save input: 3_req_openai.json
       save("3_req_openai.json", raw);
@@ -197,7 +206,7 @@ export default function TranslatorPage() {
       setContent(4, JSON.stringify(step4Content, null, 2));
       openNext(4);
     } catch (e) {
-      alert((e as any).message);
+      alert((e as Error).message);
     }
     setLoad("toTarget", false);
   };
@@ -207,6 +216,7 @@ export default function TranslatorPage() {
     setLoad("send", true);
     try {
       const raw = contents[4];
+      if (!raw) return;
       const step4 = JSON.parse(raw);
       // Save input: 4_req_target.json
       save("4_req_target.json", raw);
@@ -252,7 +262,7 @@ export default function TranslatorPage() {
         body: JSON.stringify({ file: "5_res_provider.txt", content: full }),
       });
     } catch (e) {
-      alert((e as any).message);
+      alert((e as Error).message);
     } finally {
       setLoad("send", false);
     }
@@ -260,14 +270,17 @@ export default function TranslatorPage() {
 
   const { copy } = useCopyToClipboard();
 
-  const handleCopy = async (id: any) => {
-    if (!contents[id]) return;
-    copy(contents[id], `translator-step-${id}`);
+  const handleCopy = async (id: number) => {
+    const content = contents[id];
+    if (!content) return;
+    copy(content, `translator-step-${id}`);
   };
 
-  const handleFormat = (id: any) => {
+  const handleFormat = (id: number) => {
+    const content = contents[id];
+    if (!content) return;
     try {
-      const obj = JSON.parse(contents[id]);
+      const obj = JSON.parse(content);
       setContent(id, JSON.stringify(obj, null, 2));
     } catch {
       /* not JSON, skip */
@@ -275,7 +288,7 @@ export default function TranslatorPage() {
   };
 
   // Render action button per step
-  const getAction = (stepId: any) => {
+  const getAction = (stepId: number) => {
     if (stepId === 1)
       return (
         <Button
@@ -326,7 +339,7 @@ export default function TranslatorPage() {
         )}
       </div>
 
-      {STEPS.map((step: any) => {
+      {STEPS.map((step) => {
         const action = getAction(step.id);
         const isExpanded = !!expanded[step.id];
         const content = contents[step.id] || "";
@@ -373,7 +386,7 @@ export default function TranslatorPage() {
                       height="400px"
                       defaultLanguage={step.lang === "text" ? "plaintext" : "json"}
                       value={content}
-                      onChange={(v: any) => {
+                      onChange={(v) => {
                         setContent(step.id, v || "");
                         if (step.id === 1) detectMeta(v || "");
                       }}
@@ -419,8 +432,16 @@ export default function TranslatorPage() {
   );
 }
 
-function MetaBadge({ label, value, color }: any) {
-  const colors: Record<string, any> = {
+function MetaBadge({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value?: string;
+  color: "blue" | "orange" | "green" | "purple";
+}) {
+  const colors: Record<string, string> = {
     blue: "bg-blue-500/10 text-blue-500",
     orange: "bg-orange-500/10 text-orange-500",
     green: "bg-green-500/10 text-green-500",

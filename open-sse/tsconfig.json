@@ -1,0 +1,13 @@
+// Optional scoped check; root tsc remains the release source of truth.
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "plugins": [],
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "incremental": false,
+    "types": ["@types/node", "@types/bun"]
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
+}

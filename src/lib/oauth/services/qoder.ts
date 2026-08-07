@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import open from "open";
 import { getServerCredentials } from "../config/index";
-import { QODER_CONFIG } from "../constants/oauth";
+import { QODER_CONFIG, type QoderConfig } from "../constants/oauth";
 import { startLocalServer } from "../utils/server";
 import { spinner as createSpinner } from "../utils/ui";
 
@@ -10,7 +10,7 @@ import { spinner as createSpinner } from "../utils/ui";
  * Uses Authorization Code flow with Basic Auth
  */
 export class QoderService {
-  public config: any;
+  public config: QoderConfig;
 
   constructor() {
     this.config = QODER_CONFIG;
@@ -21,7 +21,7 @@ export class QoderService {
    */
   buildAuthUrl(redirectUri: string, state: string): string {
     const params = new URLSearchParams({
-      client_id: this.config.clientId,
+      client_id: String(this.config.clientId ?? ""),
       response_type: "code",
       redirect_uri: redirectUri,
       state: state,
@@ -34,7 +34,7 @@ export class QoderService {
    * Exchange authorization code for tokens
    */
   // todo(ts): token response shape varies — keep loose.
-  async exchangeCode(code: string, redirectUri: string): Promise<any> {
+  async exchangeCode(code: string, redirectUri: string): Promise<Record<string, unknown>> {
     if (!this.config.clientId || !this.config.clientSecret) {
       throw new Error("Missing QODER OAuth client credentials");
     }
@@ -71,7 +71,7 @@ export class QoderService {
    * Refresh access token using refresh token
    */
   // todo(ts): token response shape varies — keep loose.
-  async refreshToken(refreshToken: string): Promise<any> {
+  async refreshToken(refreshToken: string): Promise<Record<string, unknown>> {
     if (!this.config.clientId || !this.config.clientSecret) {
       throw new Error("Missing QODER OAuth client credentials");
     }
@@ -107,7 +107,7 @@ export class QoderService {
    * Get user info from Qoder
    */
   // todo(ts): Qoder user info shape — keep loose.
-  async getUserInfo(accessToken: string): Promise<any> {
+  async getUserInfo(accessToken: string): Promise<Record<string, unknown>> {
     const response = await fetch(
       `${this.config.userInfoUrl}?accessToken=${encodeURIComponent(accessToken)}`,
       {
@@ -133,7 +133,10 @@ export class QoderService {
    * Save Qoder tokens to server
    */
   // todo(ts): token/userInfo shapes are provider-specific — keep loose.
-  async saveTokens(tokens: any, userInfo: any): Promise<any> {
+  async saveTokens(
+    tokens: Record<string, unknown>,
+    userInfo: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     const response = await fetch(`${server}/api/cli/providers/qoder`, {
@@ -144,7 +147,7 @@ export class QoderService {
         "X-User-Id": userId,
       },
       body: JSON.stringify({
-        accessToken: tokens.access_token,
+        accessToken: String(tokens.access_token ?? ""),
         refreshToken: tokens.refresh_token,
         expiresIn: tokens.expires_in,
         apiKey: userInfo.apiKey,
@@ -163,12 +166,12 @@ export class QoderService {
   /**
    * Refresh and update tokens on server
    */
-  async refreshAndSave(existingRefreshToken: string): Promise<any> {
+  async refreshAndSave(existingRefreshToken: string): Promise<Record<string, unknown>> {
     const spinner = createSpinner("Refreshing Qoder token...").start();
 
     try {
       const tokens = await this.refreshToken(existingRefreshToken);
-      const userInfo = await this.getUserInfo(tokens.access_token);
+      const userInfo = await this.getUserInfo(String(tokens.access_token ?? ""));
       await this.saveTokens(tokens, userInfo);
       spinner.succeed("Qoder token refreshed successfully");
       return tokens;
@@ -233,7 +236,7 @@ export class QoderService {
       const tokens = await this.exchangeCode(callbackParams!.code, redirectUri);
 
       spinner.text = "Fetching user info...";
-      const userInfo = await this.getUserInfo(tokens.access_token);
+      const userInfo = await this.getUserInfo(String(tokens.access_token ?? ""));
 
       spinner.text = "Saving tokens to server...";
       await this.saveTokens(tokens, userInfo);

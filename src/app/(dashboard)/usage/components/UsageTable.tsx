@@ -1,14 +1,14 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Card from "@/shared/components/Card";
 import LucideIcon from "@/shared/components/LucideIcon";
 
-const fmt = (n: any) => new Intl.NumberFormat().format(n || 0);
-const fmtCost = (n: any) => `$${(n || 0).toFixed(2)}`;
+const fmt = (n: number | null | undefined) => new Intl.NumberFormat().format(n || 0);
+const fmtCost = (n: number | null | undefined) => `$${(n || 0).toFixed(2)}`;
 
-function fmtTime(iso: any) {
+function fmtTime(iso: string | number | Date | null | undefined) {
   if (!iso) return "Never";
   const diffMins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (diffMins < 1) return "Just now";
@@ -17,7 +17,15 @@ function fmtTime(iso: any) {
   return new Date(iso).toLocaleDateString();
 }
 
-function SortIcon({ field, currentSort, currentOrder }: any) {
+function SortIcon({
+  field,
+  currentSort,
+  currentOrder,
+}: {
+  field: string;
+  currentSort: string;
+  currentOrder: string;
+}) {
   if (currentSort !== field) return <span className="ml-1 opacity-20">↕</span>;
   return <span className="ml-1">{currentOrder === "asc" ? "↑" : "↓"}</span>;
 }
@@ -28,10 +36,30 @@ SortIcon.propTypes = {
   currentOrder: PropTypes.string.isRequired,
 };
 
+type UsageValueItem = {
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  inputCost?: number;
+  outputCost?: number;
+  totalCost?: number;
+  cost?: number;
+  pending?: number;
+  [key: string]: unknown;
+};
+
 /**
  * Render 3 token or cost cells based on viewMode
  */
-function ValueCells({ item, viewMode, isSummary = false }: any) {
+function ValueCells({
+  item,
+  viewMode,
+  isSummary = false,
+}: {
+  item: UsageValueItem;
+  viewMode: string;
+  isSummary?: boolean;
+}) {
   if (viewMode === "tokens") {
     return (
       <>
@@ -66,23 +94,35 @@ ValueCells.propTypes = {
   isSummary: PropTypes.bool,
 };
 
+type UsageColumn = {
+  field: string;
+  label: string;
+  align?: string;
+};
+
+type UsageGroup = {
+  groupKey: string;
+  summary: UsageValueItem;
+  items: Array<UsageValueItem & { key?: string }>;
+};
+
+type UsageTableProps = {
+  title: string;
+  columns: UsageColumn[];
+  groupedData: UsageGroup[];
+  tableType: string;
+  sortBy: string;
+  sortOrder: string;
+  onToggleSort: (tableType: string, field: string) => void;
+  viewMode: string;
+  storageKey: string;
+  renderDetailCells: (item: UsageValueItem & { key?: string }) => ReactNode;
+  renderSummaryCells: (group: UsageGroup) => ReactNode;
+  emptyMessage: string;
+};
+
 /**
  * Reusable sortable usage table with expandable group rows.
- *
- * @param {object} props
- * @param {string} props.title - Table title
- * @param {Array} props.columns - Column definitions [{field, label}]
- * @param {Array} props.groupedData - Grouped data from groupDataByKey
- * @param {string} props.tableType - Table type key for sort URL params
- * @param {string} props.sortBy - Current sort field
- * @param {string} props.sortOrder - Current sort order
- * @param {function} props.onToggleSort - Sort toggle handler
- * @param {string} props.viewMode - "tokens" or "costs"
- * @param {string} props.storageKey - localStorage key for expanded state
- * @param {function} props.renderGroupLabel - Render group summary first cell content
- * @param {function} props.renderDetailCells - Render detail row custom cells (before value cells)
- * @param {function} props.renderSummaryCells - Render summary row cells after group label (placeholder cols)
- * @param {string} props.emptyMessage - Empty state message
  */
 export default function UsageTable({
   title,
@@ -97,14 +137,14 @@ export default function UsageTable({
   renderDetailCells,
   renderSummaryCells,
   emptyMessage,
-}: any) {
-  const [expanded, setExpanded] = useState(new Set());
+}: UsageTableProps) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Load expanded state from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) setExpanded(new Set(JSON.parse(saved)));
+      if (saved) setExpanded(new Set(JSON.parse(saved) as string[]));
     } catch (e) {
       console.error(`Failed to load ${storageKey}:`, e);
     }
@@ -119,8 +159,8 @@ export default function UsageTable({
     }
   }, [expanded, storageKey]);
 
-  const toggleGroup = useCallback((groupKey: any) => {
-    setExpanded((prev: any) => {
+  const toggleGroup = useCallback((groupKey: string) => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(groupKey)) {
         next.delete(groupKey);
@@ -157,7 +197,7 @@ export default function UsageTable({
         <table className="w-full text-sm text-left">
           <thead className="bg-bg-subtle/30 text-text-muted uppercase text-xs">
             <tr>
-              {columns.map((col: any) => (
+              {columns.map((col) => (
                 <th
                   key={col.field}
                   className={`px-6 py-3 cursor-pointer hover:bg-bg-subtle/50 ${col.align === "right" ? "text-right" : ""}`}
@@ -167,7 +207,7 @@ export default function UsageTable({
                   <SortIcon field={col.field} currentSort={sortBy} currentOrder={sortOrder} />
                 </th>
               ))}
-              {valueColumns.map((col: any) => (
+              {valueColumns.map((col) => (
                 <th
                   key={col.field}
                   className="px-6 py-3 text-right cursor-pointer hover:bg-bg-subtle/50"
@@ -180,7 +220,7 @@ export default function UsageTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {groupedData.map((group: any) => (
+            {groupedData.map((group) => (
               <Fragment key={group.groupKey}>
                 {/* Group summary row */}
                 <tr
@@ -194,7 +234,7 @@ export default function UsageTable({
                         className={`text-[18px] text-text-muted transition-transform ${expanded.has(group.groupKey) ? "rotate-90" : ""}`}
                       />
                       <span
-                        className={`font-medium transition-colors ${group.summary.pending > 0 ? "text-primary" : ""}`}
+                        className={`font-medium transition-colors ${(group.summary.pending ?? 0) > 0 ? "text-primary" : ""}`}
                       >
                         {group.groupKey}
                       </span>
@@ -205,7 +245,7 @@ export default function UsageTable({
                 </tr>
                 {/* Detail rows */}
                 {expanded.has(group.groupKey) &&
-                  group.items.map((item: any) => (
+                  group.items.map((item) => (
                     <tr
                       key={`detail-${item.key}`}
                       className="group-detail hover:bg-bg-subtle/20 transition-colors"

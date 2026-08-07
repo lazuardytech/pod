@@ -12,14 +12,14 @@ import {
  */
 async function getInternalApiKey() {
   const keys = await getApiKeys();
-  return keys.find((k: any) => k.isActive !== false)?.key || null;
+  return keys.find((k) => k.isActive !== false)?.key || null;
 }
 
 /**
  * Ping a single model via internal completions endpoint (OpenAI format).
  * open-sse handles all provider translation automatically.
  */
-async function pingModel(modelId: any, baseUrl: any, apiKey: any) {
+async function pingModel(modelId: string, baseUrl: string, apiKey: string | null) {
   const start = Date.now();
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -54,7 +54,7 @@ async function pingModel(modelId: any, baseUrl: any, apiKey: any) {
  * id = connectionId — used only to resolve provider + model list.
  * Actual requests go through /api/v1/chat/completions (open-sse handles everything).
  */
-export async function POST(request: any, { params }: { params: any }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -75,7 +75,7 @@ export async function POST(request: any, { params }: { params: any }) {
         const modelsRes = await fetch(`${getBaseUrl(request)}/api/providers/${id}/models`);
         if (modelsRes.ok) {
           const data = await modelsRes.json();
-          models = (data.models || []).map((m: any) => ({
+          models = (data.models || []).map((m: Record<string, unknown>) => ({
             id: m.id || (m as Record<string, unknown>).name,
             name: m.name || m.id,
           }));
@@ -97,13 +97,14 @@ export async function POST(request: any, { params }: { params: any }) {
 
     // Warm up with first model to trigger token refresh (if needed) before parallel calls.
     // This prevents race condition where multiple requests concurrently refresh the same token.
-    const [first, ...rest] = models;
+    const first = models[0]!;
+    const rest = models.slice(1);
     const firstResult = await pingModel(`${alias}/${first.id}`, baseUrl, apiKey);
     const results = [{ modelId: first.id, name: first.name || first.id, ...firstResult }];
 
     if (rest.length > 0) {
       const restResults = await Promise.all(
-        rest.map(async (model: any) => {
+        rest.map(async (model) => {
           const result = await pingModel(`${alias}/${model.id}`, baseUrl, apiKey);
           return { modelId: model.id, name: model.name || model.id, ...result };
         }),
@@ -118,7 +119,7 @@ export async function POST(request: any, { params }: { params: any }) {
   }
 }
 
-function getBaseUrl(request: any) {
+function getBaseUrl(request: Request) {
   const url = new URL(request.url);
   return `${url.protocol}//${url.host}`;
 }

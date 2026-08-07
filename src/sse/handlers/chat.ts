@@ -25,6 +25,8 @@ import { getComboInfo, getModelInfo } from "../services/model";
 import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh";
 import * as log from "../utils/logger";
 
+type ChatCoreOptions = Parameters<typeof handleChatCore>[0];
+
 // ponytail: module-level SSE connection cap, global counter; per-route counters if multi-instance matters
 let activeSseConnections = 0;
 const MAX_SSE_CONNECTIONS = 100;
@@ -56,7 +58,7 @@ export async function handleChat(
     }
     const _exhaustive: never = bodyResult;
     void _exhaustive;
-    return errorResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal error");
+    return errorResponse(HTTP_STATUS.SERVER_ERROR, "Internal error");
   }
   let body: Record<string, any>;
   try {
@@ -126,7 +128,7 @@ export async function handleChat(
   );
   if (bypassResponse) {
     if ("response" in bypassResponse && bypassResponse.response) return bypassResponse.response;
-    return bypassResponse as Response;
+    return bypassResponse as unknown as Response;
   }
   const comboInfo = await getComboInfo(modelStr);
   if (comboInfo) {
@@ -268,7 +270,7 @@ async function handleSingleModelChat(
           return unavailableResponse(
             status,
             `[${provider}/${model}] ${errorMsg}`,
-            credentials.retryAfter ?? null,
+            credentials.retryAfter ?? "",
             credentials.retryAfterHuman ?? "",
           );
         }
@@ -307,7 +309,7 @@ async function handleSingleModelChat(
         modelInfo: { provider, model },
         credentials: refreshedCredentials,
         log,
-        clientRawRequest,
+        clientRawRequest: clientRawRequest as ChatCoreOptions["clientRawRequest"],
         connectionId,
         userAgent,
         apiKey,
@@ -400,7 +402,7 @@ async function handleSingleModelChat(
       );
       excludeConnectionIds.add(credentials?.connectionId || "unknown");
       lastError = (err as { message?: string })?.message || "Unexpected error";
-      lastStatus = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      lastStatus = HTTP_STATUS.SERVER_ERROR;
       continue;
     }
   }

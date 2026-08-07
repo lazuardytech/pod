@@ -1,9 +1,15 @@
 "use client";
+import type { ChangeEvent } from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+
+type AuthData = {
+  authUrl: string;
+  codeVerifier?: string;
+};
 
 /**
  * Kiro Social OAuth Modal (Google/GitHub)
@@ -15,17 +21,16 @@ export default function KiroSocialOAuthModal({
   onSuccess,
   onClose,
 }: {
-  isOpen?: any;
-  provider?: any;
-  onSuccess?: any;
-  onClose?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  provider?: "google" | "github" | string;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) {
-  const [step, setStep] = useState("loading"); // loading | input | success | error
+  const [step, setStep] = useState<"loading" | "input" | "success" | "error">("loading");
   const [authUrl, setAuthUrl] = useState("");
-  const [authData, setAuthData] = useState<any>(null);
+  const [authData, setAuthData] = useState<AuthData | null>(null);
   const [callbackUrl, setCallbackUrl] = useState("");
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const { copied, copy } = useCopyToClipboard();
 
   // Initialize auth flow
@@ -51,7 +56,7 @@ export default function KiroSocialOAuthModal({
         // Auto-open browser
         window.open(data.authUrl, "_blank");
       } catch (err) {
-        setError((err as any).message);
+        setError(err instanceof Error ? err.message : String(err));
         setStep("error");
       }
     };
@@ -64,7 +69,7 @@ export default function KiroSocialOAuthModal({
       setError(null);
 
       // Parse callback URL - can be either kiro:// or http://localhost format
-      let url;
+      let url: URL;
       try {
         url = new URL(callbackUrl);
       } catch (_e) {
@@ -90,7 +95,7 @@ export default function KiroSocialOAuthModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code,
-          codeVerifier: authData.codeVerifier,
+          codeVerifier: authData?.codeVerifier,
           provider,
         }),
       });
@@ -101,7 +106,7 @@ export default function KiroSocialOAuthModal({
       setStep("success");
       onSuccess?.();
     } catch (err) {
-      setError((err as any).message);
+      setError(err instanceof Error ? err.message : String(err));
       setStep("error");
     }
   };
@@ -147,7 +152,7 @@ export default function KiroSocialOAuthModal({
                 </p>
                 <Input
                   value={callbackUrl}
-                  onChange={(e: any) => setCallbackUrl(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setCallbackUrl(e.target.value)}
                   placeholder="kiro://kiro.kiroAgent/authenticate-success?code=..."
                   className="font-mono text-xs"
                 />

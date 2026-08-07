@@ -20,7 +20,7 @@ export async function OPTIONS() {
  * GET /v1beta/models - Gemini compatible models list
  * Returns models in Gemini API format
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   const settings = await getSettings();
   if (settings.requireApiKey) {
     const apiKey = extractApiKey(request);
@@ -47,7 +47,7 @@ export async function GET(request: any) {
 
   try {
     // Collect all models from all providers
-    const models: any[] = [];
+    const models: Record<string, unknown>[] = [];
 
     for (const [provider, providerModels] of Object.entries(PROVIDER_MODELS)) {
       for (const model of providerModels) {

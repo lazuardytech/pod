@@ -90,7 +90,7 @@ export async function handleEmbeddings(request: Request): Promise<Response> {
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${errorMsg}`,
-          credentials.retryAfter ?? null,
+          credentials.retryAfter ?? "",
           credentials.retryAfterHuman ?? "",
         );
       }

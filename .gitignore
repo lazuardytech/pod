@@ -27,7 +27,7 @@ mastracode
 
 # next.js
 /.next/
-# generated per-build SW version (written by scripts/gen-sw-version.mjs)
+# generated per-build SW version (written by scripts/gen-sw-version.ts)
 /public/sw-version.json
 /out/
 product
@@ -56,6 +56,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+open-sse/**/*.js
 
 .bin/*
 data/

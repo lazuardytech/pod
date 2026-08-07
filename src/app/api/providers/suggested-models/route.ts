@@ -4,25 +4,36 @@ import { validateFetchUrl } from "@/lib/validateUrl";
 
 export const dynamic = "force-dynamic";
 
-const FILTERS = {
-  "openrouter-free": (models: any) =>
-    models
-      .filter(
-        (m: any) =>
-          m.pricing?.prompt === "0" && m.pricing?.completion === "0" && m.context_length >= 200000,
-      )
-      .map((m: any) => ({
-        id: m.id,
-        name: (m as Record<string, unknown>).name,
-        contextLength: m.context_length,
-      }))
-      .sort((a: any, b: any) => b.contextLength - a.contextLength),
-
-  "opencode-free": (models: any) =>
-    models.filter((m: any) => m.id?.endsWith("-free")).map((m: any) => ({ id: m.id, name: m.id })),
+type SuggestedModel = Record<string, unknown> & {
+  id?: string;
+  name?: string;
+  pricing?: { prompt?: string; completion?: string };
+  context_length?: number;
 };
 
-export async function GET(request: any) {
+const FILTERS = {
+  "openrouter-free": (models: SuggestedModel[]) =>
+    models
+      .filter(
+        (m) =>
+          m.pricing?.prompt === "0" &&
+          m.pricing?.completion === "0" &&
+          Number(m.context_length ?? 0) >= 200000,
+      )
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        contextLength: Number(m.context_length ?? 0),
+      }))
+      .sort((a, b) => b.contextLength - a.contextLength),
+
+  "opencode-free": (models: SuggestedModel[]) =>
+    models
+      .filter((m) => String(m.id ?? "").endsWith("-free"))
+      .map((m) => ({ id: m.id, name: m.id })),
+};
+
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
   const type = searchParams.get("type");

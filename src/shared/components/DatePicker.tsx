@@ -1,4 +1,5 @@
 "use client";
+import type { HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
@@ -15,6 +16,14 @@ import { cn } from "@/shared/utils/cn";
  *   disabled: boolean
  *   className: string
  */
+type DatePickerProps = {
+  value?: Date | null;
+  onChange?: (date: Date | null) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLDivElement>, "onChange" | "value" | "children">;
+
 export default function DatePicker({
   value,
   onChange,
@@ -22,24 +31,17 @@ export default function DatePicker({
   disabled = false,
   className,
   ...rest
-}: {
-  value?: any;
-  onChange?: any;
-  placeholder?: any;
-  disabled?: boolean;
-  className?: any;
-  [key: string]: any;
-}) {
+}: DatePickerProps) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     if (!open) {
       return undefined;
     }
-    const handler = (e: any) => {
-      if (containerRef.current && !containerRef.current!.contains(e.target)) {
+    const handler = (e: globalThis.MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
@@ -55,7 +57,7 @@ export default function DatePicker({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((prev: any) => !prev)}
+        onClick={() => setOpen((prev) => !prev)}
         className={cn(
           "flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-sm transition-colors",
           "border-black/10 dark:border-white/10 bg-surface text-text-main",
@@ -74,14 +76,14 @@ export default function DatePicker({
             tabIndex={0}
             aria-label="Clear date"
             className="text-[14px] text-text-muted hover:text-text-main shrink-0"
-            onClick={(e: any) => {
+            onClick={(e: MouseEvent) => {
               e.stopPropagation();
-              onChange(null);
+              onChange?.(null);
             }}
-            onKeyDown={(e: any) => {
+            onKeyDown={(e: KeyboardEvent) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.stopPropagation();
-                onChange(null);
+                onChange?.(null);
               }
             }}
           />
@@ -98,65 +100,60 @@ export default function DatePicker({
           )}
         >
           <DayPicker
-            {...({
-              mode: "single",
-              selected: value || undefined,
-              onSelect: (date: Date | undefined) => {
-                onChange(date || null);
-                setOpen(false);
-              },
-              initialFocus: true,
-              classNames: {
-                months: "flex flex-col",
-                month: "space-y-3",
-                month_caption: "relative flex items-center justify-center px-8 py-1",
-                caption_label: "text-sm font-medium text-text-main",
-                nav: "absolute inset-x-0 top-1",
-                button_previous: cn(
-                  "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
-                  "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
-                ),
-                button_next: cn(
-                  "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
-                  "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
-                ),
-                chevron: "size-4 text-text-muted",
-                month_grid: "w-full border-collapse",
-                weekdays: "flex w-full",
-                weekday: "w-9 text-center text-[11px] font-medium text-text-muted",
-                weeks: "mt-1 flex flex-col gap-1",
-                week: "flex w-full",
-                day: cn(
-                  "h-9 w-9 p-0 text-center text-sm",
-                  "focus-within:relative focus-within:z-20",
-                ),
-                day_button: cn(
-                  "size-9 rounded-md text-sm font-normal",
-                  "text-text-main hover:bg-surface-2 transition-colors cursor-pointer",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/20",
-                ),
-                selected:
-                  "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
-                today: "border border-primary/40 text-primary font-medium",
-                outside: "text-text-muted opacity-40",
-                disabled: "text-text-muted opacity-30",
-                hidden: "invisible",
-              },
-              components: {
-                Chevron: ({
-                  orientation,
-                  className,
-                }: {
-                  orientation?: string;
-                  className?: string;
-                }) => (
-                  <LucideIcon
-                    name={orientation === "left" ? "chevron_left" : "chevron_right"}
-                    className={cn("text-[16px]", className)}
-                  />
-                ),
-              },
-            } as any)}
+            mode="single"
+            selected={value || undefined}
+            onSelect={(date: Date | undefined) => {
+              onChange?.(date || null);
+              setOpen(false);
+            }}
+            autoFocus
+            classNames={{
+              months: "flex flex-col",
+              month: "space-y-3",
+              month_caption: "relative flex items-center justify-center px-8 py-1",
+              caption_label: "text-sm font-medium text-text-main",
+              nav: "absolute inset-x-0 top-1",
+              button_previous: cn(
+                "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
+                "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
+              ),
+              button_next: cn(
+                "flex items-center justify-center size-7 rounded-md border border-black/10 dark:border-white/10",
+                "text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors",
+              ),
+              chevron: "size-4 text-text-muted",
+              month_grid: "w-full border-collapse",
+              weekdays: "flex w-full",
+              weekday: "w-9 text-center text-[11px] font-medium text-text-muted",
+              weeks: "mt-1 flex flex-col gap-1",
+              week: "flex w-full",
+              day: cn("h-9 w-9 p-0 text-center text-sm", "focus-within:relative focus-within:z-20"),
+              day_button: cn(
+                "size-9 rounded-md text-sm font-normal",
+                "text-text-main hover:bg-surface-2 transition-colors cursor-pointer",
+                "focus:outline-none focus:ring-2 focus:ring-primary/20",
+              ),
+              selected:
+                "bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg font-medium",
+              today: "border border-primary/40 text-primary font-medium",
+              outside: "text-text-muted opacity-40",
+              disabled: "text-text-muted opacity-30",
+              hidden: "invisible",
+            }}
+            components={{
+              Chevron: ({
+                orientation,
+                className: chevronClassName,
+              }: {
+                orientation?: string;
+                className?: string;
+              }) => (
+                <LucideIcon
+                  name={orientation === "left" ? "chevron_left" : "chevron_right"}
+                  className={cn("text-[16px]", chevronClassName)}
+                />
+              ),
+            }}
           />
         </div>
       )}

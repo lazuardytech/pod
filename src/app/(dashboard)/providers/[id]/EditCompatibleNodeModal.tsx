@@ -1,12 +1,30 @@
 "use client";
 
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { Badge, Button, Input, Modal, Select } from "@/shared/components";
+
+type CompatibleNode = {
+  id?: string;
+  name?: string;
+  prefix?: string;
+  apiType?: string;
+  baseUrl?: string;
+  type?: string;
+};
+
+type NodeSavePayload = {
+  name: string;
+  prefix: string;
+  baseUrl: string;
+  apiType?: string;
+};
+
+type ValidationResult = "success" | "failed" | null;
 
 // Type prefix that must be preserved on rename so isOpenAICompatibleProvider()
 // / isAnthropicCompatibleProvider() keep classifying the node correctly.
-function requiredIdPrefix(node: any, isAnthropic: any) {
+function requiredIdPrefix(node: CompatibleNode | null | undefined, isAnthropic?: boolean) {
   if (!node) return isAnthropic ? "anthropic-compatible-" : "openai-compatible-";
   if (node.type === "anthropic-compatible") return "anthropic-compatible-";
   if (node.type === "openai-compatible") return "openai-compatible-";
@@ -21,7 +39,14 @@ export default function EditCompatibleNodeModal({
   onRename,
   onClose,
   isAnthropic,
-}: any) {
+}: {
+  isOpen: boolean;
+  node?: CompatibleNode | null;
+  onSave: (payload: NodeSavePayload) => void | Promise<void>;
+  onRename?: (newId: string) => void | Promise<void>;
+  onClose: () => void;
+  isAnthropic?: boolean;
+}) {
   const [formData, setFormData] = useState({
     identifier: "",
     name: "",
@@ -35,7 +60,7 @@ export default function EditCompatibleNodeModal({
   const [checkKey, setCheckKey] = useState("");
   const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult>(null);
 
   useEffect(() => {
     if (node) {
@@ -61,7 +86,7 @@ export default function EditCompatibleNodeModal({
     if (!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim()) return;
     setSaving(true);
     try {
-      const payload: { name: string; prefix: string; baseUrl: string; apiType?: string } = {
+      const payload: NodeSavePayload = {
         name: formData.name,
         prefix: formData.prefix,
         baseUrl: formData.baseUrl,
@@ -88,7 +113,7 @@ export default function EditCompatibleNodeModal({
           modelId: checkModelId.trim() || undefined,
         }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { valid?: boolean };
       setValidationResult(data.valid ? "success" : "failed");
     } catch {
       setValidationResult("failed");
@@ -114,7 +139,7 @@ export default function EditCompatibleNodeModal({
     try {
       await onRename(trimmedId);
     } catch (err) {
-      setRenameError((err as any)?.message || "Failed to rename");
+      setRenameError(err instanceof Error ? err.message : "Failed to rename");
     } finally {
       setRenaming(false);
     }
@@ -130,7 +155,9 @@ export default function EditCompatibleNodeModal({
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, name: e.target.value })
+          }
           placeholder={`${isAnthropic ? "Anthropic" : "OpenAI"} Compatible (Prod)`}
           hint="Required. A friendly label for this node."
         />
@@ -139,7 +166,9 @@ export default function EditCompatibleNodeModal({
           <div className="flex gap-2">
             <Input
               value={formData.identifier}
-              onChange={(e: any) => setFormData({ ...formData, identifier: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setFormData({ ...formData, identifier: e.target.value })
+              }
               inputClassName="font-mono text-[12px]"
               className="flex-1"
             />
@@ -167,7 +196,9 @@ export default function EditCompatibleNodeModal({
         <Input
           label="Prefix"
           value={formData.prefix}
-          onChange={(e: any) => setFormData({ ...formData, prefix: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, prefix: e.target.value })
+          }
           placeholder={isAnthropic ? "ac-prod" : "oc-prod"}
           hint="Required. Used as the provider prefix for model IDs."
         />
@@ -176,13 +207,17 @@ export default function EditCompatibleNodeModal({
             label="API Type"
             options={apiTypeOptions}
             value={formData.apiType}
-            onChange={(e: any) => setFormData({ ...formData, apiType: e.target.value })}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              setFormData({ ...formData, apiType: e.target.value })
+            }
           />
         )}
         <Input
           label="Base URL"
           value={formData.baseUrl}
-          onChange={(e: any) => setFormData({ ...formData, baseUrl: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, baseUrl: e.target.value })
+          }
           placeholder={isAnthropic ? "https://api.anthropic.com/v1" : "https://api.openai.com/v1"}
           hint={`Use the base URL (ending in /v1) for your ${isAnthropic ? "Anthropic" : "OpenAI"}-compatible API.`}
         />
@@ -191,7 +226,7 @@ export default function EditCompatibleNodeModal({
             label="API Key (for Check)"
             type="password"
             value={checkKey}
-            onChange={(e: any) => setCheckKey(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setCheckKey(e.target.value)}
             className="flex-1"
           />
           <div className="pt-6">
@@ -207,7 +242,7 @@ export default function EditCompatibleNodeModal({
         <Input
           label="Model ID (optional)"
           value={checkModelId}
-          onChange={(e: any) => setCheckModelId(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setCheckModelId(e.target.value)}
           placeholder="e.g. my-model-id"
           hint="If provider lacks /models endpoint, enter a model ID to validate via chat/completions instead."
         />

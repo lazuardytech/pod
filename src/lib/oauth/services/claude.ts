@@ -38,7 +38,7 @@ export class ClaudeService extends OAuthService {
     redirectUri: string,
     codeVerifier: string,
     state: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     // Parse code - may contain state after #
     let authCode = code;
     let codeState = "";
@@ -78,7 +78,7 @@ export class ClaudeService extends OAuthService {
   /**
    * Save Claude tokens to server
    */
-  async saveTokens(tokens: any): Promise<any> {
+  async saveTokens(tokens: Record<string, unknown>): Promise<Record<string, unknown>> {
     const { server, token, userId } = getServerCredentials();
 
     // Server will auto-generate displayName based on existing account count

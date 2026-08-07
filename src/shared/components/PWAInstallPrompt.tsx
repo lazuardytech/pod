@@ -6,11 +6,16 @@ import LucideIcon from "@/shared/components/LucideIcon";
 const DISMISS_KEY = "pod:pwa-install:dismissed-at";
 const DISMISS_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 }
 
@@ -39,7 +44,7 @@ function markDismissedNow() {
 }
 
 export default function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installing, setInstalling] = useState(false);
   const [canPromptInstall, setCanPromptInstall] = useState(false);
   const [showIosHint, setShowIosHint] = useState(false);
@@ -56,9 +61,10 @@ export default function PWAInstallPrompt() {
       setVisible(true);
     }
 
-    const onBeforeInstallPrompt = (event: any) => {
+    const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      setDeferredPrompt(event);
+      const promptEvent = event as BeforeInstallPromptEvent;
+      setDeferredPrompt(promptEvent);
       setCanPromptInstall(true);
       setShowIosHint(false);
       setVisible(true);

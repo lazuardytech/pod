@@ -9,28 +9,58 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import { AI_PROVIDERS, getProvidersByKind } from "@/shared/constants/providers";
 import { useHeaderActionStore } from "@/store/headerActionStore";
 
-function getEffectiveStatus(conn: any) {
+type DashboardConnection = {
+  id: string;
+  provider: string;
+  isActive?: boolean;
+  testStatus?: string;
+  [key: string]: unknown;
+};
+
+type ComboItem = {
+  id: string;
+  name: string;
+  kind?: string;
+  models: string[];
+};
+
+type ProviderCardItem = {
+  id: string;
+  name: string;
+  color?: string;
+  textIcon?: string;
+};
+
+function getEffectiveStatus(conn: DashboardConnection) {
   const isCooldown = Object.entries(conn).some(
-    ([k, v]: any) =>
+    ([k, v]) =>
       k.startsWith("modelLock_") && v && (new Date(String(v)) as Date).getTime() > Date.now(),
   );
   return conn.testStatus === "unavailable" && !isCooldown ? "active" : conn.testStatus;
 }
 
-function ProviderCard({ provider, kind, connections }: any) {
+function ProviderCard({
+  provider,
+  kind,
+  connections,
+}: {
+  provider: ProviderCardItem;
+  kind: string;
+  connections: DashboardConnection[];
+}) {
   const providerInfo = AI_PROVIDERS[provider.id];
   const isNoAuth = !!providerInfo?.noAuth;
-  const providerConns = connections.filter((c: any) => c.provider === provider.id);
-  const connected = providerConns.filter((c: any) => {
+  const providerConns = connections.filter((c) => c.provider === provider.id);
+  const connected = providerConns.filter((c) => {
     const s = getEffectiveStatus(c);
     return s === "active" || s === "success";
   }).length;
-  const error = providerConns.filter((c: any) => {
+  const error = providerConns.filter((c) => {
     const s = getEffectiveStatus(c);
     return s === "error" || s === "expired" || s === "unavailable";
   }).length;
   const total = providerConns.length;
-  const allDisabled = total > 0 && providerConns.every((c: any) => c.isActive === false);
+  const allDisabled = total > 0 && providerConns.every((c) => c.isActive === false);
 
   const renderStatus = () => {
     if (isNoAuth)
@@ -77,7 +107,7 @@ function ProviderCard({ provider, kind, connections }: any) {
           <div
             className="size-8 rounded-lg flex items-center justify-center shrink-0"
             style={{
-              backgroundColor: `${provider.color?.length > 7 ? provider.color : (provider.color ?? "#888") + "15"}`,
+              backgroundColor: `${(provider.color?.length ?? 0) > 7 ? provider.color : (provider.color ?? "#888") + "15"}`,
             }}
           >
             <ProviderIcon
@@ -99,13 +129,13 @@ function ProviderCard({ provider, kind, connections }: any) {
   );
 }
 
-function ComboList({ combos }: any) {
+function ComboList({ combos }: { combos: ComboItem[] }) {
   if (combos.length === 0) {
     return <p className="text-xs text-text-muted italic">No combos yet.</p>;
   }
   return (
     <div className="flex flex-col gap-2">
-      {combos.map((combo: any) => (
+      {combos.map((combo) => (
         <Link key={combo.id} href={`/media-providers/combo/${combo.id}`}>
           <Card
             padding="xs"
@@ -116,7 +146,7 @@ function ComboList({ combos }: any) {
               <code className="text-sm font-mono font-medium flex-1 truncate">{combo.name}</code>
               {/* Provider icons preview */}
               <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
-                {combo.models.slice(0, 6).map((entry: any, i: any) => {
+                {combo.models.slice(0, 6).map((entry, i) => {
                   const pid = typeof entry === "string" ? (entry.split("/")[0] ?? "") : "";
                   const p = AI_PROVIDERS[pid];
                   return (
@@ -153,7 +183,23 @@ function ComboList({ combos }: any) {
   );
 }
 
-function Section({ title, icon, kind, providers, connections, combos, onCreateCombo }: any) {
+function Section({
+  title,
+  icon,
+  kind,
+  providers,
+  connections,
+  combos,
+  onCreateCombo,
+}: {
+  title: string;
+  icon: string;
+  kind: string;
+  providers: ProviderCardItem[];
+  connections: DashboardConnection[];
+  combos: ComboItem[];
+  onCreateCombo: () => void;
+}) {
   return (
     <div>
       {/* Header — title left, Create Combo right */}
@@ -184,7 +230,7 @@ function Section({ title, icon, kind, providers, connections, combos, onCreateCo
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {providers.map((p: any) => (
+          {providers.map((p) => (
             <ProviderCard key={p.id} provider={p} kind={kind} connections={connections} />
           ))}
         </div>
@@ -195,10 +241,10 @@ function Section({ title, icon, kind, providers, connections, combos, onCreateCo
 
 export default function WebProvidersPage() {
   const router = useRouter();
-  const [connections, setConnections] = useState<any[]>([]);
-  const [combos, setCombos] = useState<any[]>([]);
-  const registerAction = useHeaderActionStore((s: any) => s.register);
-  const unregisterAction = useHeaderActionStore((s: any) => s.unregister);
+  const [connections, setConnections] = useState<DashboardConnection[]>([]);
+  const [combos, setCombos] = useState<ComboItem[]>([]);
+  const registerAction = useHeaderActionStore((s) => s.register);
+  const unregisterAction = useHeaderActionStore((s) => s.unregister);
   const [showConnectedOnly, setShowConnectedOnly] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("web-providers:connectedOnly") === "true";
@@ -223,12 +269,12 @@ export default function WebProvidersPage() {
   }, [showConnectedOnly, registerAction, unregisterAction]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
-  const matchConnected = (providerId: any) => {
+  const matchConnected = (providerId: string) => {
     if (!showConnectedOnly) return true;
     const providerInfo = AI_PROVIDERS[providerId];
     if (providerInfo?.noAuth) return true;
-    const providerConns = connections.filter((c: any) => c.provider === providerId);
-    const connected = providerConns.filter((c: any) => {
+    const providerConns = connections.filter((c) => c.provider === providerId);
+    const connected = providerConns.filter((c) => {
       const s = getEffectiveStatus(c);
       return s === "active" || s === "success";
     }).length;
@@ -252,17 +298,17 @@ export default function WebProvidersPage() {
     fetchAll();
   }, []);
 
-  const searchProviders = getProvidersByKind("webSearch").filter((p: any) => matchConnected(p.id));
-  const fetchProviders = getProvidersByKind("webFetch").filter((p: any) => matchConnected(p.id));
-  const searchCombos = combos.filter((c: any) => c.kind === "webSearch");
-  const fetchCombos = combos.filter((c: any) => c.kind === "webFetch");
+  const searchProviders = getProvidersByKind("webSearch").filter((p) => matchConnected(p.id));
+  const fetchProviders = getProvidersByKind("webFetch").filter((p) => matchConnected(p.id));
+  const searchCombos = combos.filter((c) => c.kind === "webSearch");
+  const fetchCombos = combos.filter((c) => c.kind === "webFetch");
 
-  const handleCreateCombo = async (kind: any) => {
+  const handleCreateCombo = async (kind: string) => {
     // Generate unique default name
     const base = kind === "webSearch" ? "search-combo" : "fetch-combo";
     let name = base;
     let i = 1;
-    const existing = new Set(combos.map((c: any) => c.name));
+    const existing = new Set(combos.map((c) => c.name));
     while (existing.has(name)) {
       name = `${base}-${i++}`;
     }

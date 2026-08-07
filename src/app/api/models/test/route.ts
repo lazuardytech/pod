@@ -5,7 +5,7 @@ import { sanitizeError } from "@/lib/sanitizeError";
 import { validateFetchUrl } from "@/lib/validateUrl";
 
 // POST /api/models/test - Ping a single model via internal completions or embeddings
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

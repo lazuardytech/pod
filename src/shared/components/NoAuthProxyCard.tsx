@@ -1,4 +1,5 @@
 "use client";
+import type { ChangeEvent } from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
@@ -8,8 +9,18 @@ import Select from "./Select";
 
 const NONE_PROXY_POOL_VALUE = "__none__";
 
-export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key: string]: any }) {
-  const [proxyPools, setProxyPools] = useState<any[]>([]);
+type ProxyPool = {
+  id: string;
+  name: string;
+};
+
+type ProviderStrategyOverride = {
+  proxyPoolId?: string;
+  [key: string]: unknown;
+};
+
+export default function NoAuthProxyCard({ providerId }: { providerId?: string }) {
+  const [proxyPools, setProxyPools] = useState<ProxyPool[]>([]);
   const [proxyPoolId, setProxyPoolId] = useState(NONE_PROXY_POOL_VALUE);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -17,15 +28,19 @@ export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch("/api/proxy-pools?isActive=true", { cache: "no-store" }).then((r: any) =>
+      fetch("/api/proxy-pools?isActive=true", { cache: "no-store" }).then((r) =>
         r.ok ? r.json() : { proxyPools: [] },
       ),
-      fetch("/api/settings", { cache: "no-store" }).then((r: any) => (r.ok ? r.json() : {})),
+      fetch("/api/settings", { cache: "no-store" }).then((r) => (r.ok ? r.json() : {})),
     ])
-      .then(([poolData, settingsData]: any) => {
+      .then(([poolData, settingsData]: [{ proxyPools?: ProxyPool[] }, Record<string, unknown>]) => {
         if (cancelled) return;
         setProxyPools(poolData.proxyPools || []);
-        const override = ((settingsData as any).providerStrategies || {})[providerId] || {};
+        const strategies =
+          (settingsData.providerStrategies as
+            | Record<string, ProviderStrategyOverride>
+            | undefined) || {};
+        const override = (providerId && strategies[providerId]) || {};
         setProxyPoolId(override.proxyPoolId || NONE_PROXY_POOL_VALUE);
       })
       .catch(() => {});
@@ -34,17 +49,18 @@ export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key
     };
   }, [providerId]);
 
-  const handleChange = async (newValue: any) => {
+  const handleChange = async (newValue: string) => {
+    if (!providerId) return;
     setProxyPoolId(newValue);
     setSaving(true);
     try {
       const res = await fetch("/api/settings", { cache: "no-store" });
       const data = res.ok ? await res.json() : {};
-      const current = data.providerStrategies || {};
-      const override: any = { ...(current[providerId] || {}) };
+      const current: Record<string, ProviderStrategyOverride> = data.providerStrategies || {};
+      const override: ProviderStrategyOverride = { ...(current[providerId] || {}) };
       if (newValue === NONE_PROXY_POOL_VALUE) delete override.proxyPoolId;
       else override.proxyPoolId = newValue;
-      const updated: any = { ...current };
+      const updated: Record<string, ProviderStrategyOverride> = { ...current };
       if (Object.keys(override).length === 0) delete updated[providerId];
       else updated[providerId] = override;
       await fetch("/api/settings", {
@@ -83,11 +99,11 @@ export default function NoAuthProxyCard({ providerId }: { providerId?: any; [key
       <Select
         label="Proxy Pool"
         value={proxyPoolId}
-        onChange={(e: any) => handleChange(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLSelectElement>) => handleChange(e.target.value)}
         disabled={saving}
         options={[
           { value: NONE_PROXY_POOL_VALUE, label: "None (direct)" },
-          ...proxyPools.map((pool: any) => ({ value: pool.id, label: pool.name })),
+          ...proxyPools.map((pool) => ({ value: pool.id, label: pool.name })),
         ]}
       />
     </Card>

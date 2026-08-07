@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/sqlite/connection";
 
+type RequestLogRow = {
+  id: string;
+  timestamp: string;
+  model?: string | null;
+  provider?: string | null;
+  account?: string | null;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
+  status?: string | null;
+  combo?: string | null;
+  details_id?: string | null;
+};
+
+type RequestDetailsRow = Record<string, unknown> & {
+  id?: string;
+  timestamp?: string;
+  provider?: string;
+  model?: string;
+  status?: string;
+  latency_ms?: number | null;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
+  data?: string;
+};
+
 /**
  * GET /api/usage/request-logs/[id]
  * Fetches the matching request_details row for a given request_log id.
@@ -10,28 +35,33 @@ import { getDatabase } from "@/lib/sqlite/connection";
  * 2. Fuzzy match by model + timestamp within ±5min window
  * 3. Fuzzy match by timestamp only within ±5min window (no model filter)
  */
-export async function GET(request: any, { params }: { params: any }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const db = getDatabase();
 
-    const logRow = db.prepare("SELECT * FROM request_log WHERE id = ?").get(id);
+    const logRow = db.prepare("SELECT * FROM request_log WHERE id = ?").get<RequestLogRow>(id);
     if (!logRow) {
       return NextResponse.json({ error: "Log entry not found" }, { status: 404 });
     }
 
-    let detail: any = null;
+    let detail: RequestDetailsRow | null = null;
 
     try {
       // Strategy 1: direct details_id link (future-proof)
       if (logRow.details_id) {
-        detail = db.prepare("SELECT * FROM request_details WHERE id = ?").get(logRow.details_id);
+        detail =
+          db
+            .prepare("SELECT * FROM request_details WHERE id = ?")
+            .get<RequestDetailsRow>(logRow.details_id) ?? null;
       }
 
       // Strategy 2 & 3: fuzzy timestamp match
       if (!detail) {
         // Parse "DD-MM-YYYY HH:MM:SS" as local time
-        const parts = logRow.timestamp.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
+        const parts = String(logRow.timestamp).match(
+          /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})$/,
+        );
         if (parts) {
           const [, dd, mm, yyyy, hh, min, ss] = parts;
           // Build as local time string and let Date parse it
@@ -44,7 +74,7 @@ export async function GET(request: any, { params }: { params: any }) {
 
           // Strategy 2: match by model + timestamp
           const model = logRow.model && logRow.model !== "-" ? logRow.model : null;
-          let candidates: any[] = [];
+          let candidates: RequestDetailsRow[] = [];
 
           if (model) {
             candidates = db
@@ -54,7 +84,7 @@ export async function GET(request: any, { params }: { params: any }) {
                  ORDER BY timestamp DESC
                  LIMIT 20`,
               )
-              .all(model, from, to);
+              .all<RequestDetailsRow>(model, from, to);
           }
 
           // Strategy 3: fallback — match by timestamp only (no model filter)
@@ -66,15 +96,17 @@ export async function GET(request: any, { params }: { params: any }) {
                  ORDER BY timestamp DESC
                  LIMIT 20`,
               )
-              .all(from, to);
+              .all<RequestDetailsRow>(from, to);
           }
 
           if (candidates.length > 0) {
             // Pick closest by absolute time delta
-            let best = candidates[0];
-            let bestDelta = Math.abs(new Date(best.timestamp).getTime() - logDate.getTime());
+            let best = candidates[0]!;
+            let bestDelta = Math.abs(
+              new Date(String(best.timestamp)).getTime() - logDate.getTime(),
+            );
             for (const c of candidates.slice(1)) {
-              const delta = Math.abs(new Date(c.timestamp).getTime() - logDate.getTime());
+              const delta = Math.abs(new Date(String(c.timestamp)).getTime() - logDate.getTime());
               if (delta < bestDelta) {
                 bestDelta = delta;
                 best = c;
@@ -91,7 +123,7 @@ export async function GET(request: any, { params }: { params: any }) {
     let payload: Record<string, unknown> = {};
     if (detail) {
       try {
-        payload = JSON.parse(detail.data || "{}");
+        payload = JSON.parse(String(detail.data || "{}"));
       } catch {}
     }
 

@@ -8,7 +8,7 @@ const CONN_LOCK_REASON_KEY = "connectionLockReason";
 
 // POST /api/provider-nodes/[id]/clear-connection-lock
 // Clears the connection-level lock for a specific connection.
-export async function POST(_request: any, { params }: { params: any }) {
+export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 

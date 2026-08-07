@@ -35,21 +35,26 @@ const START_TIME = initStartTime();
 // Cache integrity_check result — it's an O(n-pages) full scan, too expensive
 // to run on every SSE poll. Re-run at most once every 5 minutes.
 const INTEGRITY_CACHE_TTL_MS = 5 * 60 * 1000;
-let _integrityCache: any = null;
+let _integrityCache: string | null = null;
 let _integrityCacheAt = 0;
 
-function getCachedIntegrity(db: any) {
+function getCachedIntegrity(db: {
+  prepare: (sql: string) => { get: (...args: unknown[]) => unknown };
+}) {
   const now = Date.now();
   if (_integrityCache && now - _integrityCacheAt < INTEGRITY_CACHE_TTL_MS) {
     return _integrityCache;
   }
-  const result = db.prepare("PRAGMA integrity_check").get();
-  _integrityCache = result?.integrity_check ?? "ok";
+  const result = db.prepare("PRAGMA integrity_check").get() as
+    | string
+    | { integrity_check?: string }
+    | undefined;
+  _integrityCache = (typeof result === "string" ? result : result?.integrity_check) ?? "ok";
   _integrityCacheAt = now;
   return _integrityCache;
 }
 
-function humanizeBytes(bytes: any) {
+function humanizeBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -103,11 +108,15 @@ function getSystemInfo() {
 function getDbInfo() {
   try {
     const db = getDatabase();
-    const version = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get();
+    const version = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as
+      | { value?: string }
+      | undefined;
     const integrity = { integrity_check: getCachedIntegrity(db) };
-    const pageCount = db.prepare("PRAGMA page_count").get();
-    const pageSize = db.prepare("PRAGMA page_size").get();
-    const walMode = db.prepare("PRAGMA journal_mode").get();
+    const pageCount = db.prepare("PRAGMA page_count").get() as { page_count?: number } | undefined;
+    const pageSize = db.prepare("PRAGMA page_size").get() as { page_size?: number } | undefined;
+    const walMode = db.prepare("PRAGMA journal_mode").get() as
+      | { journal_mode?: string }
+      | undefined;
     return {
       ok: true,
       schemaVersion: version?.value ?? "unknown",
@@ -167,7 +176,7 @@ export async function buildHealthPayload() {
   const keys = apiKeys.status === "fulfilled" ? apiKeys.value : [];
   const cfg: Settings = settings.status === "fulfilled" ? settings.value : ({} as Settings);
   const nodeMap = new Map<string, Record<string, unknown>>(
-    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n: any) => [
+    (providerNodesResult.status === "fulfilled" ? providerNodesResult.value : []).map((n) => [
       n.id,
       n as Record<string, unknown>,
     ]),
@@ -175,7 +184,7 @@ export async function buildHealthPayload() {
 
   const providers: Record<string, unknown> = {
     total: conns.length,
-    enabled: conns.filter((c: any) => c.enabled !== false).length,
+    enabled: conns.filter((c) => c.enabled !== false).length,
     combos: comboList.length,
     apiKeys: keys.length,
   };

@@ -17,7 +17,7 @@ export async function GET() {
 }
 
 // POST /api/models/custom - Add custom model
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -40,7 +40,7 @@ export async function POST(request: any) {
 }
 
 // DELETE /api/models/custom?providerAlias=xxx&id=yyy&type=zzz
-export async function DELETE(request: any) {
+export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const providerAlias = searchParams.get("providerAlias");

@@ -18,12 +18,12 @@ import {
 
 // Probe a webSearch/webFetch provider using its searchConfig/fetchConfig.
 // Returns true if API key is accepted (status !== 401 && !== 403).
-async function probeWebProvider(provider: any, apiKey: any) {
+async function probeWebProvider(provider: string, apiKey: string) {
   const p = AI_PROVIDERS[provider];
   if (!p) return null;
   // Skip if provider has dual-purpose (LLM + search), let LLM validate handle it
   const kinds = p.serviceKinds || ["llm"];
-  const isWebOnly = kinds.every((k) => k === "webSearch" || k === "webFetch");
+  const isWebOnly = kinds.every((k: string) => k === "webSearch" || k === "webFetch");
   if (!isWebOnly) return null;
   const cfg = p.searchConfig || p.fetchConfig;
   if (!cfg) return null;
@@ -68,7 +68,7 @@ async function probeWebProvider(provider: any, apiKey: any) {
 
 // Probe a media provider (tts/embedding/stt/image/video) using *Config.
 // Returns true if API key is accepted; null to skip (let default handler decide).
-async function probeMediaProvider(provider: any, apiKey: any) {
+async function probeMediaProvider(provider: string, apiKey: string) {
   const p = AI_PROVIDERS[provider];
   if (!p) return null;
   const MEDIA_KINDS = new Set([
@@ -81,7 +81,7 @@ async function probeMediaProvider(provider: any, apiKey: any) {
     "imageToText",
   ]);
   const kinds = p.serviceKinds || ["llm"];
-  const isMediaOnly = kinds.every((k) => MEDIA_KINDS.has(k));
+  const isMediaOnly = kinds.every((k: string) => MEDIA_KINDS.has(k));
   if (!isMediaOnly) return null;
   const cfg = (p.ttsConfig ||
     p.sttConfig ||
@@ -146,8 +146,12 @@ async function probeMediaProvider(provider: any, apiKey: any) {
   return res.status !== 401 && res.status !== 403;
 }
 
-function validateOllamaLocalBaseUrl(providerSpecificData: any) {
-  const baseUrl = resolveOllamaLocalHost({ providerSpecificData });
+function validateOllamaLocalBaseUrl(
+  providerSpecificData: { baseUrl?: string } | Record<string, unknown> | null | undefined,
+) {
+  const baseUrl = resolveOllamaLocalHost({
+    providerSpecificData: providerSpecificData as { baseUrl?: string } | undefined,
+  });
 
   let parsed;
   try {
@@ -170,7 +174,7 @@ function validateOllamaLocalBaseUrl(providerSpecificData: any) {
 }
 
 // POST /api/providers/validate - Validate API key with provider
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const authResponse = await checkStrictDashboardAuth(request);
     if (authResponse) return authResponse;
@@ -630,7 +634,7 @@ export async function POST(request: any) {
         case "grok-web": {
           const token = apiKey.startsWith("sso=") ? apiKey.slice(4) : apiKey;
           // Cloudflare-bypass: send POST with same browser fingerprint headers as GrokWebExecutor
-          const randomHex = (n: any) => {
+          const randomHex = (n: number) => {
             const a = new Uint8Array(n);
             crypto.getRandomValues(a);
             return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");

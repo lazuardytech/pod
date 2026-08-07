@@ -1,4 +1,5 @@
 "use client";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Toaster } from "sonner";
@@ -6,7 +7,7 @@ import { cn } from "@/shared/utils/cn";
 import Header from "../Header";
 import Sidebar from "../Sidebar";
 
-export default function DashboardLayout({ children }: { children?: any; [key: string]: any }) {
+export default function DashboardLayout({ children }: { children?: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();

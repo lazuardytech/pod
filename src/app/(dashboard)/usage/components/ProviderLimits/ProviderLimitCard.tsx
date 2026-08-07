@@ -6,13 +6,24 @@ import Card from "@/shared/components/Card";
 import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import QuotaProgressBar from "./QuotaProgressBar";
-import { calculatePercentage } from "./utils";
+import { calculatePercentage, type NormalizedQuota } from "./utils";
 
-const planVariants: Record<string, any> = {
+const planVariants: Record<string, string> = {
   free: "default",
   pro: "primary",
   ultra: "success",
   enterprise: "info",
+};
+
+type ProviderLimitCardProps = {
+  provider?: string;
+  name?: string;
+  plan?: string | null;
+  quotas?: NormalizedQuota[];
+  message?: string | null;
+  loading?: boolean;
+  error?: string | null;
+  onRefresh?: () => void | Promise<void>;
 };
 
 export default function ProviderLimitCard({
@@ -24,7 +35,7 @@ export default function ProviderLimitCard({
   loading = false,
   error = null,
   onRefresh,
-}: any) {
+}: ProviderLimitCardProps) {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -40,18 +51,18 @@ export default function ProviderLimitCard({
 
   // Get provider info from config
   const getProviderColor = () => {
-    const colors: Record<string, any> = {
+    const colors: Record<string, string> = {
       github: "#000000",
       antigravity: "#4285F4",
       codex: "#10A37F",
       kiro: "#FF9900",
       claude: "#D97757",
     };
-    return colors[provider?.toLowerCase()] || "#6B7280";
+    return colors[provider?.toLowerCase() ?? ""] || "#6B7280";
   };
 
   const providerColor = getProviderColor();
-  const _planVariant = planVariants[plan?.toLowerCase()] || "default";
+  const _planVariant = planVariants[plan?.toLowerCase() ?? ""] || "default";
 
   return (
     <Card padding="md" className="flex flex-col gap-4">
@@ -134,7 +145,7 @@ export default function ProviderLimitCard({
       {/* Quota Progress Bars */}
       {!loading && !error && !message && quotas?.length > 0 && (
         <div className="space-y-4">
-          {quotas.map((quota: any, index: any) => {
+          {quotas.map((quota, index) => {
             // For Antigravity, use remainingPercentage if available, otherwise calculate
             const percentage =
               quota.remainingPercentage !== undefined

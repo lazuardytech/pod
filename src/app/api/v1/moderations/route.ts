@@ -16,7 +16,7 @@ export async function OPTIONS() {
  * Returns a mock moderation result. Real moderation requires upstream provider support.
  * Returns a pass/not-flagged result by default so clients don't break.
  */
-export async function POST(request: any) {
+export async function POST(request: Request) {
   return await withApiKeyRateLimit(request, async () => {
     try {
       const id = `modr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

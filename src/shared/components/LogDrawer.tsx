@@ -1,4 +1,5 @@
 "use client";
+import type { ReactNode } from "react";
 import { useRef } from "react";
 import { Drawer } from "vaul";
 import LucideIcon from "@/shared/components/LucideIcon";
@@ -9,13 +10,12 @@ export function LogDrawer({
   onClose,
   children,
 }: {
-  open?: any;
-  onClose?: any;
-  children?: any;
-  [key: string]: any;
+  open?: boolean;
+  onClose?: () => void;
+  children?: ReactNode;
 }) {
   return (
-    <Drawer.Root open={open} onOpenChange={(v) => !v && onClose()} direction="right">
+    <Drawer.Root open={open} onOpenChange={(v) => !v && onClose?.()} direction="right">
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]" />
         <Drawer.Content
@@ -39,10 +39,9 @@ export function LogDrawerHeader({
   onClose,
   children,
 }: {
-  title?: any;
-  onClose?: any;
-  children?: any;
-  [key: string]: any;
+  title?: ReactNode;
+  onClose?: () => void;
+  children?: ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between h-14 px-4 border-b border-charcoal-grey shrink-0">
@@ -63,7 +62,7 @@ export function LogDrawerHeader({
   );
 }
 
-export function LogDrawerBody({ children }: { children?: any; [key: string]: any }) {
+export function LogDrawerBody({ children }: { children?: ReactNode }) {
   return <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">{children}</div>;
 }
 
@@ -72,10 +71,9 @@ export function DetailSection({
   icon,
   children,
 }: {
-  title?: any;
-  icon?: any;
-  children?: any;
-  [key: string]: any;
+  title?: ReactNode;
+  icon?: string;
+  children?: ReactNode;
 }) {
   return (
     <div className="rounded-[6px] border border-charcoal-grey bg-deep-slate overflow-hidden">
@@ -96,11 +94,10 @@ export function DetailRow({
   mono = false,
   accent,
 }: {
-  label?: any;
-  value?: any;
+  label?: ReactNode;
+  value?: ReactNode;
   mono?: boolean;
-  accent?: any;
-  [key: string]: any;
+  accent?: string;
 }) {
   if (value === null || value === undefined || value === "" || value === "-") return null;
   return (
@@ -119,9 +116,9 @@ export function DetailRow({
   );
 }
 
-export function JsonBlock({ data }: { data?: any; [key: string]: any }) {
-  const ref = useRef<any>(null);
-  if (!data || (typeof data === "object" && Object.keys(data).length === 0)) return null;
+export function JsonBlock({ data }: { data?: unknown }) {
+  const ref = useRef<HTMLPreElement>(null);
+  if (!data || (typeof data === "object" && Object.keys(data as object).length === 0)) return null;
   const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
   return (
     <pre

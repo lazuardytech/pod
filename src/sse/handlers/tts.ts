@@ -131,7 +131,7 @@ async function handleSingleModelTts(
         return unavailableResponse(
           status,
           `[${provider}/${model}] ${msg}`,
-          credentials.retryAfter ?? null,
+          credentials.retryAfter ?? "",
           credentials.retryAfterHuman ?? "",
         );
       }

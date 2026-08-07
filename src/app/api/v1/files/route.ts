@@ -15,7 +15,7 @@ export async function OPTIONS() {
  * GET /v1/files - List uploaded files
  * ponytail: returns empty list until file storage is needed
  */
-export async function GET(request: any) {
+export async function GET(request: Request) {
   return await withApiKeyRateLimit(request, async () => {
     const apiKey = extractApiKey(request);
     if (!apiKey) {

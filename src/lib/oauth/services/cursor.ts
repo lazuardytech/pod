@@ -1,4 +1,4 @@
-import { CURSOR_CONFIG } from "../constants/oauth";
+import { CURSOR_CONFIG, type CursorConfig } from "../constants/oauth";
 
 /**
  * Cursor IDE OAuth Service
@@ -15,7 +15,7 @@ import { CURSOR_CONFIG } from "../constants/oauth";
  */
 
 export class CursorService {
-  public config: any;
+  public config: CursorConfig;
 
   constructor() {
     this.config = CURSOR_CONFIG;

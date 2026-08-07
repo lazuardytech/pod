@@ -9,16 +9,19 @@ import { sanitizeError } from "@/lib/sanitizeError";
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "pod-default-secret-change-me");
 
-function isTunnelRequest(request: any, settings: any) {
-  const host = (request.headers.get("host") || "").split(":")[0].toLowerCase();
-  const tunnelHost = settings.tunnelUrl ? new URL(settings.tunnelUrl).hostname.toLowerCase() : "";
-  const tailscaleHost = settings.tailscaleUrl
-    ? new URL(settings.tailscaleUrl).hostname.toLowerCase()
-    : "";
-  return (tunnelHost && host === tunnelHost) || (tailscaleHost && host === tailscaleHost);
+function isTunnelRequest(request: Request, settings: Record<string, unknown>) {
+  const host = (request.headers.get("host") || "").split(":")[0]?.toLowerCase() || "";
+  const tunnelUrl = typeof settings.tunnelUrl === "string" ? settings.tunnelUrl : "";
+  const tailscaleUrl = typeof settings.tailscaleUrl === "string" ? settings.tailscaleUrl : "";
+  const tunnelHost = tunnelUrl ? new URL(tunnelUrl).hostname.toLowerCase() : "";
+  const tailscaleHost = tailscaleUrl ? new URL(tailscaleUrl).hostname.toLowerCase() : "";
+  return (
+    (Boolean(tunnelHost) && host === tunnelHost) ||
+    (Boolean(tailscaleHost) && host === tailscaleHost)
+  );
 }
 
-export async function POST(request: any) {
+export async function POST(request: Request) {
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

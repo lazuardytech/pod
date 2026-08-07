@@ -1,10 +1,24 @@
 "use client";
+import type { ChangeEvent } from "react";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Input, Modal } from "@/shared/components";
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
+
+type EmbeddingNode = {
+  id: string;
+  name?: string;
+  prefix?: string;
+  baseUrl?: string;
+};
+
+type ValidationResult = {
+  valid?: boolean;
+  error?: string;
+  dimensions?: number | string;
+};
 
 // Dual-mode modal: edit when `node` provided, add otherwise
 export default function AddCustomEmbeddingModal({
@@ -14,12 +28,11 @@ export default function AddCustomEmbeddingModal({
   onSaved,
   node,
 }: {
-  isOpen?: any;
-  onClose?: any;
-  onCreated?: any;
-  onSaved?: any;
-  node?: any;
-  [key: string]: any;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onCreated?: (node: EmbeddingNode) => void;
+  onSaved?: (node: EmbeddingNode) => void;
+  node?: EmbeddingNode | null;
 }) {
   const isEdit = !!node;
   const [formData, setFormData] = useState({
@@ -31,14 +44,14 @@ export default function AddCustomEmbeddingModal({
   const [checkKey, setCheckKey] = useState("");
   const [checkModelId, setCheckModelId] = useState("");
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setValidationResult(null);
     setCheckKey("");
     setCheckModelId("");
-    if (isEdit) {
+    if (isEdit && node) {
       setFormData({
         name: node.name || "",
         prefix: node.prefix || "",
@@ -53,14 +66,14 @@ export default function AddCustomEmbeddingModal({
     if (!formData.name.trim() || !formData.prefix.trim() || !formData.baseUrl.trim()) return;
     setSubmitting(true);
     try {
-      const url = isEdit ? `/api/provider-nodes/${node.id}` : "/api/provider-nodes";
+      const url = isEdit && node ? `/api/provider-nodes/${node.id}` : "/api/provider-nodes";
       const method = isEdit ? "PUT" : "POST";
-      const payload: Record<string, any> = {
+      const payload: Record<string, string> = {
         name: formData.name,
         prefix: formData.prefix,
         baseUrl: formData.baseUrl,
       };
-      if (!isEdit) (payload as any).type = "custom-embedding";
+      if (!isEdit) payload.type = "custom-embedding";
 
       const res = await fetch(url, {
         method,
@@ -69,8 +82,9 @@ export default function AddCustomEmbeddingModal({
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        if (isEdit) onSaved?.(data.node);
-        else onCreated?.(data.node);
+        const savedNode = data.node as EmbeddingNode;
+        if (isEdit) onSaved?.(savedNode);
+        else onCreated?.(savedNode);
         toast.success(isEdit ? "Embedding node saved" : "Embedding node created");
       } else {
         toast.error(
@@ -109,7 +123,7 @@ export default function AddCustomEmbeddingModal({
 
   const renderValidationResult = () => {
     if (!validationResult) return null;
-    const { valid, error, dimensions } = validationResult ?? ({} as any);
+    const { valid, error, dimensions } = validationResult;
     if (valid) {
       return (
         <>
@@ -136,21 +150,27 @@ export default function AddCustomEmbeddingModal({
         <Input
           label="Name"
           value={formData.name}
-          onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, name: e.target.value })
+          }
           placeholder="Voyage AI"
           hint="Required. A friendly label for this embedding provider."
         />
         <Input
           label="Prefix"
           value={formData.prefix}
-          onChange={(e: any) => setFormData({ ...formData, prefix: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, prefix: e.target.value })
+          }
           placeholder="voyage"
           hint="Required. Used as the provider prefix for model IDs (e.g. voyage/voyage-3)."
         />
         <Input
           label="Base URL"
           value={formData.baseUrl}
-          onChange={(e: any) => setFormData({ ...formData, baseUrl: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setFormData({ ...formData, baseUrl: e.target.value })
+          }
           placeholder="https://api.voyageai.com/v1"
           hint="Most embedding APIs are OpenAI-compatible: Voyage, Cohere, Jina, Mistral, Together..."
         />
@@ -158,12 +178,12 @@ export default function AddCustomEmbeddingModal({
           label="API Key (for Check)"
           type="password"
           value={checkKey}
-          onChange={(e: any) => setCheckKey(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setCheckKey(e.target.value)}
         />
         <Input
           label="Model ID (for Check)"
           value={checkModelId}
-          onChange={(e: any) => setCheckModelId(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setCheckModelId(e.target.value)}
           placeholder="e.g. voyage-3, embed-english-v3.0, text-embedding-3-small"
           hint="Required for validation. Will send a test embeddings request."
         />
