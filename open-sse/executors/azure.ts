@@ -52,7 +52,7 @@ export class AzureExecutor extends DefaultExecutor {
     return headers;
   }
 
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(model: any, body: any, _stream: any, _credentials: any) {
     return body;
   }
 }

@@ -5,6 +5,11 @@
 import { CLIENT_METADATA, getPlatformUserAgent } from "../config/appConstants.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 
+type ProxyOptions = Record<string, unknown> | null;
+type QuotaMap = Record<string, unknown>;
+
+// todo(ts): upstream provider quota payloads stay loose until stable schemas are available.
+
 // GitHub API config
 const GITHUB_CONFIG = {
   apiVersion: "2022-11-28",
@@ -61,7 +66,7 @@ function errorMessage(error: unknown): string {
  * @param {Object} connection - Provider connection with accessToken
  * @returns {Object} Usage data with quotas
  */
-export async function getUsageForProvider(connection: any, proxyOptions: any = null) {
+export async function getUsageForProvider(connection: any, proxyOptions: ProxyOptions = null) {
   const { provider, accessToken, apiKey, providerSpecificData } = connection;
 
   switch (provider) {
@@ -98,7 +103,7 @@ export async function getUsageForProvider(connection: any, proxyOptions: any = n
  * Parse reset date/time to ISO string
  * Handles multiple formats: Unix timestamp (ms), ISO date string, etc.
  */
-function parseResetTime(resetValue: any) {
+function parseResetTime(resetValue: unknown) {
   if (!resetValue) return null;
 
   try {
@@ -133,9 +138,9 @@ function parseResetTime(resetValue: any) {
  * Uses GitHub accessToken (not copilotToken) to call copilot_internal/user API
  */
 async function getGitHubUsage(
-  accessToken: any,
+  accessToken: string | null | undefined,
   providerSpecificData: any,
-  proxyOptions: any = null,
+  proxyOptions: ProxyOptions = null,
 ) {
   try {
     if (!accessToken) {
@@ -215,7 +220,9 @@ async function getGitHubUsage(
   }
 }
 
-function formatGitHubQuotaSnapshot(quota: any) {
+function formatGitHubQuotaSnapshot(
+  quota: { entitlement: number; remaining: number; unlimited?: boolean } | null | undefined,
+) {
   if (!quota) return { used: 0, total: 0, unlimited: true };
 
   return {
@@ -232,9 +239,9 @@ function formatGitHubQuotaSnapshot(quota: any) {
  * per-model buckets with remainingFraction + resetTime.
  */
 async function getGeminiUsage(
-  accessToken: any,
+  accessToken: string | null | undefined,
   providerSpecificData: any,
-  proxyOptions: any = null,
+  proxyOptions: ProxyOptions = null,
 ) {
   if (!accessToken) {
     return { plan: "Free", message: "Gemini CLI access token not available." };
@@ -281,7 +288,7 @@ async function getGeminiUsage(
     }
 
     const data: any = await response.json();
-    const quotas: Record<string, any> = {};
+    const quotas: QuotaMap = {};
 
     if (Array.isArray(data.buckets)) {
       for (const bucket of data.buckets) {
@@ -311,7 +318,10 @@ async function getGeminiUsage(
 /**
  * Get Gemini CLI subscription info via loadCodeAssist
  */
-async function getGeminiSubscriptionInfo(accessToken: any, proxyOptions: any = null) {
+async function getGeminiSubscriptionInfo(
+  accessToken: string | null | undefined,
+  proxyOptions: ProxyOptions = null,
+) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
   try {
@@ -347,9 +357,9 @@ async function getGeminiSubscriptionInfo(accessToken: any, proxyOptions: any = n
  * Antigravity Usage - Fetch quota from Google Cloud Code API
  */
 async function getAntigravityUsage(
-  accessToken: any,
+  accessToken: string | null | undefined,
   providerSpecificData: any,
-  proxyOptions: any = null,
+  proxyOptions: ProxyOptions = null,
 ) {
   try {
     // Fetch subscription info once — reuse for both projectId and plan
@@ -404,7 +414,7 @@ async function getAntigravityUsage(
     }
 
     const data: any = await response.json();
-    const quotas: Record<string, any> = {};
+    const quotas: QuotaMap = {};
 
     // Parse model quotas (inspired by vscode-antigravity-cockpit)
     if (data.models) {
@@ -463,7 +473,7 @@ async function getAntigravityUsage(
 /**
  * Get Antigravity project ID from subscription info
  */
-async function _getAntigravityProjectId(accessToken: any) {
+async function _getAntigravityProjectId(accessToken: string | null | undefined) {
   try {
     const info = await getAntigravitySubscriptionInfo(accessToken);
     return info?.cloudaicompanionProject || null;
@@ -475,7 +485,10 @@ async function _getAntigravityProjectId(accessToken: any) {
 /**
  * Get Antigravity subscription info
  */
-async function getAntigravitySubscriptionInfo(accessToken: any, proxyOptions: any = null) {
+async function getAntigravitySubscriptionInfo(
+  accessToken: string | null | undefined,
+  proxyOptions: ProxyOptions = null,
+) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
   try {
@@ -508,7 +521,10 @@ async function getAntigravitySubscriptionInfo(accessToken: any, proxyOptions: an
 /**
  * Claude Usage - Primary: OAuth endpoint, Fallback: legacy settings/org endpoint
  */
-async function getClaudeUsage(accessToken: any, proxyOptions: any = null) {
+async function getClaudeUsage(
+  accessToken: string | null | undefined,
+  proxyOptions: ProxyOptions = null,
+) {
   try {
     // Primary: OAuth usage endpoint (Claude Code consumer OAuth tokens)
     const oauthResponse = await proxyAwareFetch(
@@ -526,7 +542,7 @@ async function getClaudeUsage(accessToken: any, proxyOptions: any = null) {
 
     if (oauthResponse.ok) {
       const data: any = await oauthResponse.json();
-      const quotas: Record<string, any> = {};
+      const quotas: QuotaMap = {};
 
       // utilization = % USED (e.g. 87 means 87% used, 13% remaining)
       const hasUtilization = (window: any) =>
@@ -579,7 +595,10 @@ async function getClaudeUsage(accessToken: any, proxyOptions: any = null) {
 /**
  * Legacy Claude usage for API key / org admin users
  */
-async function getClaudeUsageLegacy(accessToken: any, proxyOptions: any = null) {
+async function getClaudeUsageLegacy(
+  accessToken: string | null | undefined,
+  proxyOptions: ProxyOptions = null,
+) {
   try {
     const settingsResponse = await proxyAwareFetch(
       CLAUDE_CONFIG.settingsUrl,
@@ -635,7 +654,7 @@ async function getClaudeUsageLegacy(accessToken: any, proxyOptions: any = null) 
 /**
  * Codex (OpenAI) Usage - Fetch from ChatGPT backend API
  */
-function toFiniteNumber(value: any, fallback: any = 0) {
+function toFiniteNumber(value: unknown, fallback = 0) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim()) {
     const parsed = Number(value);
@@ -713,7 +732,10 @@ function getCodexReviewRateLimit(data: any) {
   );
 }
 
-async function getCodexUsage(accessToken: any, proxyOptions: any = null) {
+async function getCodexUsage(
+  accessToken: string | null | undefined,
+  proxyOptions: ProxyOptions = null,
+) {
   try {
     const response = await proxyAwareFetch(
       CODEX_CONFIG.usageUrl,
@@ -758,7 +780,7 @@ async function getCodexUsage(accessToken: any, proxyOptions: any = null) {
  */
 function parseKiroQuotaData(data: any) {
   const usageList = data.usageBreakdownList || [];
-  const quotaInfo: Record<string, any> = {};
+  const quotaInfo: QuotaMap = {};
   const resetAt = parseResetTime(data.nextDateReset || data.resetDate);
 
   usageList.forEach((breakdown: any) => {
@@ -795,7 +817,11 @@ function parseKiroQuotaData(data: any) {
   };
 }
 
-async function getKiroUsage(accessToken: any, providerSpecificData: any, proxyOptions: any = null) {
+async function getKiroUsage(
+  accessToken: string | null | undefined,
+  providerSpecificData: any,
+  proxyOptions: ProxyOptions = null,
+) {
   // Default profileArn fallback
   const DEFAULT_PROFILE_ARN = "arn:aws:codewhisperer:us-east-1:638616132270:profile/AAAACCCCXXXX";
   const profileArn = providerSpecificData?.profileArn || DEFAULT_PROFILE_ARN;
@@ -930,7 +956,7 @@ async function getKiroUsage(accessToken: any, providerSpecificData: any, proxyOp
 /**
  * Qwen Usage
  */
-async function getQwenUsage(accessToken: any, providerSpecificData: any) {
+async function getQwenUsage(accessToken: string | null | undefined, providerSpecificData: any) {
   try {
     const resourceUrl = providerSpecificData?.resourceUrl;
     if (!resourceUrl) {
@@ -947,7 +973,7 @@ async function getQwenUsage(accessToken: any, providerSpecificData: any) {
 /**
  * iFlow Usage
  */
-async function getIflowUsage(accessToken: any) {
+async function getIflowUsage(accessToken: string | null | undefined) {
   try {
     // iFlow may have usage endpoint
     return { message: "iFlow connected. Usage tracked per request." };
@@ -962,7 +988,7 @@ async function getIflowUsage(accessToken: any) {
  * and has no public usage API — free tier has light usage limits (resets every 5h & 7d).
  * This returns an informational message with the plan details.
  */
-async function getOllamaUsage(accessToken: any, providerSpecificData: any) {
+async function getOllamaUsage(accessToken: string | null | undefined, providerSpecificData: any) {
   try {
     // Ollama Cloud does not expose a public quota/usage API.
     // The provider is configured as noAuth with a notice explaining limits.
@@ -982,7 +1008,11 @@ async function getOllamaUsage(accessToken: any, providerSpecificData: any) {
 /**
  * GLM Coding Plan usage (international + China regions)
  */
-async function getGlmUsage(apiKey: any, provider: any, proxyOptions: any = null) {
+async function getGlmUsage(
+  apiKey: string | null | undefined,
+  provider: string,
+  proxyOptions: ProxyOptions = null,
+) {
   if (!apiKey) {
     return { message: "GLM API key not available." };
   }
@@ -1012,7 +1042,7 @@ async function getGlmUsage(apiKey: any, provider: any, proxyOptions: any = null)
     const json: any = await response.json();
     const data: any = json?.data && typeof json.data === "object" ? json.data : {};
     const limits = Array.isArray(data.limits) ? data.limits : [];
-    const quotas: Record<string, any> = {};
+    const quotas: QuotaMap = {};
 
     for (const limit of limits) {
       if (!limit || limit.type !== "TOKENS_LIMIT") continue;
@@ -1042,7 +1072,7 @@ async function getGlmUsage(apiKey: any, provider: any, proxyOptions: any = null)
 }
 
 // ── MiniMax helpers ──────────────────────────────────────────────────────
-function isMiniMaxTextQuotaModel(modelName: any) {
+function isMiniMaxTextQuotaModel(modelName: string) {
   const normalized = (modelName || "").trim().toLowerCase();
   return normalized.startsWith("minimax-m") || normalized.startsWith("coding-plan");
 }
@@ -1089,7 +1119,12 @@ function getMiniMaxResetAt(
   return parseResetTime(getMiniMaxField(model, endSnake, endCamel));
 }
 
-function buildMiniMaxQuota(total: any, count: any, resetAt: any, countMeansRemaining: any) {
+function buildMiniMaxQuota(
+  total: number,
+  count: number,
+  resetAt: unknown,
+  countMeansRemaining: boolean,
+) {
   const safeTotal = Math.max(0, total);
   const used = countMeansRemaining
     ? Math.max(safeTotal - count, 0)
@@ -1109,7 +1144,11 @@ function buildMiniMaxQuota(total: any, count: any, resetAt: any, countMeansRemai
 /**
  * MiniMax Token Plan / Coding Plan usage
  */
-async function getMiniMaxUsage(apiKey: any, provider: any, proxyOptions: any = null) {
+async function getMiniMaxUsage(
+  apiKey: string | null | undefined,
+  provider: string,
+  proxyOptions: ProxyOptions = null,
+) {
   if (!apiKey) {
     return { message: "MiniMax API key not available." };
   }
@@ -1188,7 +1227,7 @@ async function getMiniMaxUsage(apiKey: any, provider: any, proxyOptions: any = n
 
       const capturedAtMs = Date.now();
       const countMeansRemaining = usageUrl.includes("/coding_plan/remains");
-      const quotas: Record<string, any> = {};
+      const quotas: QuotaMap = {};
 
       const sessionModel = pickMiniMaxRepresentativeModel(textModels, getMiniMaxSessionTotal);
       if (sessionModel) {

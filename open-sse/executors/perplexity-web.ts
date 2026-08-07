@@ -545,7 +545,9 @@ export class PerplexityWebExecutor extends BaseExecutor {
 
     const thinking =
       body?.thinking === true ||
-      (body?.reasoning_effort != null && body.reasoning_effort !== "none");
+      (body?.reasoning_effort !== null &&
+        body?.reasoning_effort !== undefined &&
+        body.reasoning_effort !== "none");
 
     let pplxMode;
     let modelPref;

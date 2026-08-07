@@ -51,7 +51,7 @@ function wrapNdjsonAsOpenAISse(originalResponse: any, model: any) {
     if (!chunks) return;
     const list = Array.isArray(chunks) ? chunks : [chunks];
     for (const c of list) {
-      if (c == null) continue;
+      if (c === null || c === undefined) continue;
       controller.enqueue(encoder.encode(`data: ${JSON.stringify(c)}\n\n`));
     }
   };

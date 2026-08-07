@@ -175,7 +175,9 @@ async function* extractContent(eventStream: any, isThinkingModel: any, signal: a
       continue;
     }
 
-    if (resp.token != null) yield { delta: resp.token, fingerprint, responseId };
+    if (resp.token !== null && resp.token !== undefined) {
+      yield { delta: resp.token, fingerprint, responseId };
+    }
   }
   yield { done: true, fingerprint, responseId };
 }

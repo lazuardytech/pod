@@ -237,7 +237,7 @@ export class CursorExecutor extends BaseExecutor {
     });
   }
 
-  async execute({ model, body, stream, credentials, signal, log, proxyOptions = null }: any) {
+  async execute({ model, body, stream, credentials, signal, log: _log, proxyOptions = null }: any) {
     const url = this.buildUrl();
     const headers = this.buildHeaders(credentials);
     const transformedBody = this.transformRequest(model, body, stream, credentials);

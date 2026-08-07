@@ -189,8 +189,8 @@ export class BaseExecutor {
   transformRequest(
     model: string,
     body: unknown,
-    stream: boolean,
-    credentials: ExecutorCredentials,
+    _stream: boolean,
+    _credentials: ExecutorCredentials,
   ): unknown {
     return body;
   }

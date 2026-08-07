@@ -111,7 +111,7 @@ export function handleStreamingResponse({
   requestStartTime,
   connectionId,
   apiKey,
-  clientRawRequest,
+  clientRawRequest: _clientRawRequest,
   onRequestSuccess,
   reqLogger,
   toolNameMap,

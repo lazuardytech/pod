@@ -253,7 +253,7 @@ export class CodexExecutor extends BaseExecutor {
    * Override headers to add codex-specific identity headers.
    * transformRequest runs BEFORE buildHeaders, sets this._currentSessionId.
    */
-  buildHeaders(credentials: any, stream: any = true) {
+  buildHeaders(credentials: any, _stream: any = true) {
     // Codex always returns SSE regardless of client stream preference.
     // Force stream=true so base.js sets Accept: text/event-stream -- without it
     // Codex returns a non-JSON, non-SSE response that fails both parse paths.

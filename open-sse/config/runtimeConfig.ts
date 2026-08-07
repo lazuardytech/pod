@@ -54,11 +54,12 @@ export const LOCAL_UPSTREAM_TIMEOUT_MS = 45000;
 
 // Normalize a retry entry to { attempts, delayMs }
 export function resolveRetryEntry(entry: any) {
-  if (entry == null) return { attempts: 0, delayMs: RETRY_CONFIG.delayMs };
+  if (entry === null || entry === undefined) return { attempts: 0, delayMs: RETRY_CONFIG.delayMs };
   if (typeof entry === "number") return { attempts: entry, delayMs: RETRY_CONFIG.delayMs };
   return {
     attempts: entry.attempts || 0,
-    delayMs: entry.delayMs != null ? entry.delayMs : RETRY_CONFIG.delayMs,
+    delayMs:
+      entry.delayMs !== null && entry.delayMs !== undefined ? entry.delayMs : RETRY_CONFIG.delayMs,
   };
 }
 
