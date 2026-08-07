@@ -21,18 +21,44 @@ import { createStreamController } from "../utils/streamHandler.js";
 import { buildRequestDetail, extractRequestConfig } from "./chatCore/requestDetail.js";
 import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.js";
 
+type JsonRecord = Record<string, unknown>;
+type ChatLogger = {
+  debug?: (scope: string, message: string) => void;
+  error?: (scope: string, message: string) => void;
+  info?: (scope: string, message: string) => void;
+  warn?: (scope: string, message: string) => void;
+};
+type ClientRawRequest = JsonRecord & {
+  body?: unknown;
+  endpoint?: string;
+  headers?: JsonRecord & { accept?: string };
+};
+type CachedChatResponse = JsonRecord & {
+  choices?: { message?: { content?: string }; [key: string]: unknown }[];
+  created?: number;
+  id?: string;
+  usage?: unknown;
+};
+type ContentPart = { text?: string; type?: string };
+type MemoryRequestBody = JsonRecord & {
+  input?: { content?: string | ContentPart[]; role?: string; type?: string }[];
+  messages?: { content?: string | ContentPart[]; role?: string }[];
+};
+type ProviderThinking = { effortMode?: string; mode?: string };
+type StreamContent = { content?: string; thinking?: string };
+
 /**
  * Build a streaming SSE Response from a cached (non-streaming) response object.
  * Emits role chunk → content chunk → finish chunk → [DONE].
  */
-function buildCacheHitSSEResponse(cached: any, model: any) {
+function buildCacheHitSSEResponse(cached: CachedChatResponse, model: string) {
   const cachedId = cached.id || `chatcmpl-cached-${Date.now().toString(36)}`;
   const created = cached.created || Math.floor(Date.now() / 1000);
   const content = cached.choices?.[0]?.message?.content ?? "";
   const encoder = new TextEncoder();
-  const sseStream = new ReadableStream({
-    start(controller: any) {
-      const emit = (obj: any) =>
+  const sseStream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const emit = (obj: unknown) =>
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       emit({
         id: cachedId,
@@ -87,7 +113,7 @@ import {
 } from "@/lib/semanticCache";
 import { injectCaveman } from "../rtk/caveman.js";
 
-async function createRequestLogger(sourceFormat: any, targetFormat: any, model: any) {
+async function createRequestLogger(sourceFormat: string, targetFormat: string, model: string) {
   const { createRequestLogger: createLogger } = await import("../utils/requestLogger.js");
   return createLogger(sourceFormat, targetFormat, model);
 }
@@ -119,14 +145,14 @@ function isAbortError(error: unknown) {
 }
 
 export interface ChatCoreParams {
-  body: Record<string, any>;
+  body: JsonRecord;
   modelInfo: { provider: string; model: string };
-  credentials: Record<string, any> | null;
-  log: any;
-  onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
+  credentials: JsonRecord | null;
+  log: ChatLogger | null;
+  onCredentialsRefreshed?: (newCreds: JsonRecord) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
-  onDisconnect?: (reason?: any) => Promise<void> | void;
-  clientRawRequest?: any;
+  onDisconnect?: (reason?: unknown) => Promise<void> | void;
+  clientRawRequest?: ClientRawRequest | null;
   connectionId: string;
   userAgent?: string;
   apiKey?: string | null;
@@ -135,9 +161,9 @@ export interface ChatCoreParams {
   cavemanEnabled?: boolean;
   cavemanLevel?: string;
   sourceFormatOverride?: string | null;
-  providerThinking?: any;
+  providerThinking?: ProviderThinking | null;
   contentFilterMessage?: string | null;
-  chatSettings?: Record<string, any>;
+  chatSettings?: JsonRecord;
   memoryOwnerId?: string | null;
   comboName?: string | null;
 }
@@ -148,11 +174,11 @@ const MEMORY_EXTRACTION_TEXT_LIMIT = 64 * 1024;
 // synchronous JSON.stringify of a multi-MB payload on every request.
 const _MAX_REQUEST_BYTES_FOR_CACHE_CHECK = 512 * 1024;
 
-function isSmallEnoughForSemanticCache(value: any) {
+function isSmallEnoughForSemanticCache(value: unknown) {
   try {
     // Fast-path: estimate size from known string fields before full stringify.
     // choices[0].message.content is the dominant field in a cached response.
-    const content = value?.choices?.[0]?.message?.content;
+    const content = (value as CachedChatResponse)?.choices?.[0]?.message?.content;
     if (typeof content === "string" && content.length > MAX_SEMANTIC_CACHE_BYTES) return false;
     return JSON.stringify(value).length <= MAX_SEMANTIC_CACHE_BYTES;
   } catch {
@@ -160,7 +186,7 @@ function isSmallEnoughForSemanticCache(value: any) {
   }
 }
 
-function toLimitedText(value: any) {
+function toLimitedText(value: unknown) {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -169,15 +195,16 @@ function toLimitedText(value: any) {
     : trimmed.slice(trimmed.length - MEMORY_EXTRACTION_TEXT_LIMIT);
 }
 
-function extractMemoryTextFromResponse(response: any) {
+function extractMemoryTextFromResponse(response: unknown) {
   if (!response || typeof response !== "object") return "";
-  const openAIText = response?.choices?.[0]?.message?.content;
+  const typed = response as CachedChatResponse & { content?: ContentPart[]; output_text?: string };
+  const openAIText = typed.choices?.[0]?.message?.content;
   if (typeof openAIText === "string") return toLimitedText(openAIText);
-  if (typeof response?.output_text === "string") return toLimitedText(response.output_text);
-  if (Array.isArray(response?.content)) {
-    const contentText = response.content
-      .filter((part: any) => part?.type === "text" && typeof part?.text === "string")
-      .map((part: any) => String(part.text).trim())
+  if (typeof typed.output_text === "string") return toLimitedText(typed.output_text);
+  if (Array.isArray(typed.content)) {
+    const contentText = typed.content
+      .filter((part) => part?.type === "text" && typeof part?.text === "string")
+      .map((part) => String(part.text).trim())
       .filter(Boolean)
       .join("\n");
     if (contentText) return toLimitedText(contentText);
@@ -185,9 +212,10 @@ function extractMemoryTextFromResponse(response: any) {
   return "";
 }
 
-function extractMemoryTextFromRequestBody(body: any) {
+function extractMemoryTextFromRequestBody(body: unknown) {
   if (!body || typeof body !== "object") return "";
-  const messages = Array.isArray(body.messages) ? body.messages : null;
+  const typed = body as MemoryRequestBody;
+  const messages = Array.isArray(typed.messages) ? typed.messages : null;
   if (messages?.length) {
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const msg = messages[i];
@@ -195,10 +223,8 @@ function extractMemoryTextFromRequestBody(body: any) {
       if (typeof msg?.content === "string" && msg.content.trim()) return toLimitedText(msg.content);
       if (Array.isArray(msg?.content)) {
         const text = msg.content
-          .map((part: any) => {
+          .map((part) => {
             if (typeof part?.text === "string") return part.text.trim();
-            if (part?.type === "input_text" && typeof part?.text === "string")
-              return part.text.trim();
             return "";
           })
           .filter(Boolean)
@@ -208,7 +234,7 @@ function extractMemoryTextFromRequestBody(body: any) {
     }
   }
 
-  const input = Array.isArray(body.input) ? body.input : null;
+  const input = Array.isArray(typed.input) ? typed.input : null;
   if (input?.length) {
     for (let i = input.length - 1; i >= 0; i -= 1) {
       const item = input[i];
@@ -220,10 +246,8 @@ function extractMemoryTextFromRequestBody(body: any) {
         return toLimitedText(item.content);
       if (Array.isArray(item?.content)) {
         const text = item.content
-          .map((part: any) => {
+          .map((part) => {
             if (typeof part?.text === "string") return part.text.trim();
-            if (part?.type === "input_text" && typeof part?.text === "string")
-              return part.text.trim();
             return "";
           })
           .filter(Boolean)
@@ -235,10 +259,11 @@ function extractMemoryTextFromRequestBody(body: any) {
   return "";
 }
 
-function extractTokensSaved(usage: any) {
+function extractTokensSaved(usage: unknown) {
   if (!usage || typeof usage !== "object") return 0;
-  const prompt = Number(usage.prompt_tokens ?? usage.input_tokens ?? 0) || 0;
-  const completion = Number(usage.completion_tokens ?? usage.output_tokens ?? 0) || 0;
+  const record = usage as JsonRecord;
+  const prompt = Number(record.prompt_tokens ?? record.input_tokens ?? 0) || 0;
+  const completion = Number(record.completion_tokens ?? record.output_tokens ?? 0) || 0;
   return prompt + completion;
 }
 
@@ -349,7 +374,7 @@ export async function handleChatCore({
 
   // Semantic cache pre-check with thundering herd protection
   let cacheSignature = null;
-  let resolveInFlight: any = null;
+  let resolveInFlight: ((value: unknown) => void) | null = null;
   const messages = body.messages ?? body.input;
   // generateSignature already handles large payloads by hashing only the last
   // 64KB tail (SIGNATURE_MAX_BYTES), so no need to skip cache for large bodies.
@@ -409,7 +434,7 @@ export async function handleChatCore({
       }
     } else {
       // Register this request as in-flight so concurrent duplicates can await it
-      const promise = new Promise((resolve: any) => {
+      const promise = new Promise<unknown>((resolve) => {
         resolveInFlight = resolve;
       });
       setInFlight(cacheSignature, promise);
@@ -440,8 +465,8 @@ export async function handleChatCore({
   const clientTool = detectClientTool(clientRawRequest?.headers || {}, body);
   const passthrough = isNativePassthrough(clientTool, provider);
 
-  let translatedBody: any;
-  let toolNameMap: any;
+  let translatedBody: JsonRecord;
+  let toolNameMap: unknown;
   if (passthrough) {
     log?.debug?.("PASSTHROUGH", `${clientTool} → ${provider} | native lossless`);
     translatedBody = { ...body, model };
@@ -520,7 +545,7 @@ export async function handleChatCore({
   log?.debug?.("REQUEST", `${provider.toUpperCase()} | ${model} | ${msgCount} msgs`);
 
   const streamController = createStreamController({
-    onDisconnect: (reason: any) => {
+    onDisconnect: (reason: unknown) => {
       trackPendingRequest(model, provider, connectionId, false);
       if (onDisconnect) onDisconnect(reason);
     },
@@ -530,7 +555,7 @@ export async function handleChatCore({
     model,
   });
 
-  const proxyOptions: Record<string, any> = {
+  const proxyOptions: JsonRecord = {
     connectionProxyEnabled: credentials?.providerSpecificData?.connectionProxyEnabled === true,
     connectionProxyUrl: credentials?.providerSpecificData?.connectionProxyUrl || "",
     connectionNoProxy: credentials?.providerSpecificData?.connectionNoProxy || "",
@@ -595,9 +620,11 @@ export async function handleChatCore({
     timeoutId.unref?.();
 
     const combinedController = new AbortController();
-    const forwardAbort = (event: any) => {
+    const forwardAbort = (event: Event) => {
       const reason =
-        event?.target?.reason || timeoutController.signal.reason || streamController.signal.reason;
+        (event.target as AbortSignal | null)?.reason ||
+        timeoutController.signal.reason ||
+        streamController.signal.reason;
       combinedController.abort(reason);
     };
 
@@ -650,7 +677,7 @@ export async function handleChatCore({
       (providerResponse.status === 502 || providerResponse.status === 504)
     ) {
       console.error("[VERCEL-RELAY-RETRY] Retrying upstream request after relay 502/504");
-      await new Promise((r: any) => setTimeout(r, 2000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
       const retryResult = await executeUpstream();
       providerResponse = retryResult.response;
       providerUrl = retryResult.url;
@@ -737,7 +764,7 @@ export async function handleChatCore({
       );
       if (newCredentials?.accessToken || newCredentials?.copilotToken) {
         log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed`);
-        Object.assign(credentials as Record<string, any>, newCredentials);
+        Object.assign(credentials as JsonRecord, newCredentials);
         if (onCredentialsRefreshed) {
           try {
             await onCredentialsRefreshed(newCredentials);
@@ -812,7 +839,7 @@ export async function handleChatCore({
     clientRawRequest,
     onRequestSuccess,
   };
-  const appendLog = (extra: any) =>
+  const appendLog = (extra: JsonRecord) =>
     appendRequestLog({ model, provider, connectionId, combo: comboName, ...extra }).catch(() => {
       // Best-effort request log; do not disrupt response handling.
     });
@@ -826,7 +853,7 @@ export async function handleChatCore({
       sourceFormat,
       trackDone,
       appendLog,
-      onFinalJsonResponse: (finalResponse: any, usage: any) => {
+      onFinalJsonResponse: (finalResponse: unknown, usage: unknown) => {
         if (
           semanticCacheEnabled &&
           cacheSignature &&
@@ -867,7 +894,7 @@ export async function handleChatCore({
       toolNameMap,
       trackDone,
       appendLog,
-      onFinalJsonResponse: (translatedResponse: any, usage: any) => {
+      onFinalJsonResponse: (translatedResponse: unknown, usage: unknown) => {
         if (
           semanticCacheEnabled &&
           cacheSignature &&
@@ -921,7 +948,7 @@ export async function handleChatCore({
     const { value: firstChunk, done } = peekResult;
     if (!done && firstChunk) {
       const text = new TextDecoder().decode(firstChunk);
-      const dataLine = text.split("\n").find((l: any) => l.startsWith("data:"));
+      const dataLine = text.split("\n").find((line) => line.startsWith("data:"));
       if (dataLine) {
         const payload = dataLine.slice(5).trim();
         if (payload && payload !== "[DONE]") {
@@ -942,8 +969,8 @@ export async function handleChatCore({
                 const chunk2 = `data: ${JSON.stringify({ id: fallbackId, object: "chat.completion.chunk", created, model, choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } })}\n\n`;
                 const done = "data: [DONE]\n\n";
                 const encoder = new TextEncoder();
-                const fallbackStream = new ReadableStream({
-                  start(controller: any) {
+                const fallbackStream = new ReadableStream<Uint8Array>({
+                  start(controller) {
                     controller.enqueue(encoder.encode(chunk1));
                     controller.enqueue(encoder.encode(chunk2));
                     controller.enqueue(encoder.encode(done));
@@ -976,8 +1003,8 @@ export async function handleChatCore({
       }
       // Reconstruct response with peeked chunk prepended.
       // providerResponse.body is already locked by reader, so pipe via reader.
-      const reconstructed = new ReadableStream({
-        async start(controller: any) {
+      const reconstructed = new ReadableStream<Uint8Array>({
+        async start(controller) {
           controller.enqueue(firstChunk);
           try {
             while (true) {
@@ -1014,7 +1041,7 @@ export async function handleChatCore({
   const { onStreamComplete: baseOnStreamComplete, streamDetailId } = buildOnStreamComplete({
     ...sharedCtx,
   });
-  const onStreamComplete = (contentObj: any, usage: any, ttftAt: any) => {
+  const onStreamComplete = (contentObj: StreamContent, usage: unknown, ttftAt: number | null) => {
     baseOnStreamComplete?.(contentObj, usage, ttftAt);
     appendLog({ tokens: usage, status: "SUCCESS", detailsId: streamDetailId });
     if (memoryOwnerId && memorySettings.enabled && memorySettings.maxTokens > 0) {
@@ -1091,7 +1118,7 @@ export async function handleChatCore({
   });
 }
 
-export function isTokenExpiringSoon(expiresAt: any, bufferMs: any = 5 * 60 * 1000) {
+export function isTokenExpiringSoon(expiresAt: unknown, bufferMs = 5 * 60 * 1000) {
   if (!expiresAt) return false;
   return new Date(expiresAt).getTime() - Date.now() < bufferMs;
 }
