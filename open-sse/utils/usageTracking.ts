@@ -74,7 +74,7 @@ export function filterUsageForFormat(usage: any, targetFormat: any) {
   };
 
   // Define allowed fields for each format
-  const formatFields = {
+  const formatFields: Record<string, readonly string[]> = {
     [FORMATS.CLAUDE]: [
       "input_tokens",
       "output_tokens",
