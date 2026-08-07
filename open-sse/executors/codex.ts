@@ -7,7 +7,65 @@ import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig
 import { fetchImageAsBase64 } from "../translator/helpers/imageHelper.js";
 import { normalizeResponsesInput } from "../translator/helpers/responsesApiHelper.js";
 import { dbg } from "../utils/debugLog.js";
-import { BaseExecutor } from "./base.js";
+import {
+  BaseExecutor,
+  type ExecutorCredentials,
+  type ExecutorErrorDetails,
+  type ExecutorExecuteOptions,
+  type ExecutorExecuteResult,
+  type ExecutorHeaders,
+} from "./base.js";
+
+type MutableRecord = Record<string, unknown>;
+
+type CodexBody = MutableRecord & {
+  _compact?: unknown;
+  conversation_id?: unknown;
+  include?: unknown[];
+  input?: unknown;
+  instructions?: string;
+  model?: string;
+  prompt_cache_key?: unknown;
+  reasoning?: MutableRecord;
+  reasoning_effort?: unknown;
+  session_id?: unknown;
+  store?: boolean;
+  stream?: boolean;
+  tool_choice?: unknown;
+  tools?: unknown;
+};
+
+type CodexInputItem = MutableRecord & {
+  content?: unknown;
+  id?: string;
+  role?: string;
+  type?: string;
+};
+
+type CodexTool = MutableRecord & {
+  description?: unknown;
+  function?: MutableRecord;
+  name?: unknown;
+  parameters?: unknown;
+  tools?: Array<{ name?: unknown }>;
+  type?: unknown;
+};
+
+type ImageContent = MutableRecord & {
+  detail?: string;
+  image_url?: string | { detail?: string; url?: string };
+  type?: string;
+};
+
+type CachedSession = {
+  lastUsed: number;
+  sessionId: string;
+};
+
+type PeekSseResult = {
+  matched: string | null;
+  replacementBody: ReadableStream<Uint8Array> | null;
+};
 
 // SSE error patterns inside 200-OK body that should trigger retry as if 503
 const CODEX_SSE_OVERLOADED_PATTERNS = ["server_is_overloaded", "service_unavailable_error"];
@@ -19,7 +77,7 @@ function errorMessage(error: unknown) {
 
 // In-memory map: hash(machineId + first assistant content) -> { sessionId, lastUsed }
 const SESSION_TTL_MS = 60 * 60 * 1000; // 1 hour
-const assistantSessionMap = new Map();
+const assistantSessionMap = new Map<string, CachedSession>();
 
 // Server-generated item id prefixes that Codex /responses cannot resolve when store=false
 const SERVER_ID_PATTERN = /^(rs|fc|resp|msg)_/;
@@ -54,9 +112,9 @@ const RESPONSES_API_ALLOWLIST = new Set([
 ]);
 
 // Convert role=system -> role=developer in body.input (keeps content in cacheable prefix)
-function convertSystemToDeveloperRole(body: any) {
+function convertSystemToDeveloperRole(body: CodexBody) {
   if (!Array.isArray(body.input)) return;
-  for (const item of body.input) {
+  for (const item of body.input as CodexInputItem[]) {
     if (!item || typeof item !== "object" || Array.isArray(item)) continue;
     const isSystemMsg = item.role === "system" && (!item.type || item.type === "message");
     if (isSystemMsg) item.role = "developer";
@@ -64,28 +122,30 @@ function convertSystemToDeveloperRole(body: any) {
 }
 
 // Strip server-generated item IDs (rs_/fc_/resp_/msg_) from input -- avoids 404 with store=false
-function stripStoredItemReferences(body: any) {
+function stripStoredItemReferences(body: CodexBody) {
   if (!Array.isArray(body.input)) return;
-  body.input = body.input.filter((item: any) => {
+  body.input = body.input.filter((item: unknown) => {
     if (typeof item === "string" && SERVER_ID_PATTERN.test(item)) return false;
     if (item && typeof item === "object" && !Array.isArray(item)) {
-      if (item.type === "item_reference") return false;
-      if (typeof item.id === "string" && SERVER_ID_PATTERN.test(item.id)) delete item.id;
+      const record = item as CodexInputItem;
+      if (record.type === "item_reference") return false;
+      if (typeof record.id === "string" && SERVER_ID_PATTERN.test(record.id)) delete record.id;
     }
     return true;
   });
 }
 
 // Flatten Chat-Completions tool shape into Responses flat format + filter unsupported tools
-function normalizeCodexTools(body: any) {
+function normalizeCodexTools(body: CodexBody) {
   if (!Array.isArray(body.tools)) return;
-  const validNames = new Set();
-  body.tools = body.tools.filter((tool: any) => {
+  const validNames = new Set<string>();
+  body.tools = body.tools.filter((tool: unknown) => {
     if (!tool || typeof tool !== "object" || Array.isArray(tool)) return false;
-    const type = typeof tool.type === "string" ? tool.type : "";
+    const record = tool as CodexTool;
+    const type = typeof record.type === "string" ? record.type : "";
     if (type === "namespace") {
-      if (Array.isArray(tool.tools)) {
-        for (const st of tool.tools) {
+      if (Array.isArray(record.tools)) {
+        for (const st of record.tools) {
           const n = typeof st?.name === "string" ? st.name.trim().slice(0, 128) : "";
           if (n) validNames.add(n);
         }
@@ -93,36 +153,38 @@ function normalizeCodexTools(body: any) {
       return true;
     }
     if (type !== "function") {
-      if (!type || tool.function || typeof tool.name === "string") return false;
+      if (!type || record.function || typeof record.name === "string") return false;
       return CODEX_HOSTED_TOOL_TYPES.has(type);
     }
     // Normalize function tool shape (handle both Chat Completions and Responses schemas)
     const fn =
-      tool.function && typeof tool.function === "object" && !Array.isArray(tool.function)
-        ? tool.function
+      record.function && typeof record.function === "object" && !Array.isArray(record.function)
+        ? record.function
         : null;
     const rawName =
-      typeof tool.name === "string" ? tool.name : typeof fn?.name === "string" ? fn.name : "";
+      typeof record.name === "string" ? record.name : typeof fn?.name === "string" ? fn.name : "";
     const name = rawName.trim();
     if (!name) return false;
     const description =
-      typeof tool.description === "string"
-        ? tool.description
+      typeof record.description === "string"
+        ? record.description
         : typeof fn?.description === "string"
           ? fn.description
           : "";
     const parameters =
-      tool.parameters && typeof tool.parameters === "object" && !Array.isArray(tool.parameters)
-        ? tool.parameters
+      record.parameters &&
+      typeof record.parameters === "object" &&
+      !Array.isArray(record.parameters)
+        ? record.parameters
         : fn?.parameters && typeof fn.parameters === "object" && !Array.isArray(fn.parameters)
           ? fn.parameters
           : { type: "object", properties: {} };
     // Drop old keys, set canonical shape
-    for (const k of Object.keys(tool)) delete tool[k];
-    tool.type = "function";
-    tool.name = name.slice(0, 128);
-    if (description) tool.description = description;
-    tool.parameters = parameters;
+    for (const k of Object.keys(record)) delete record[k];
+    record.type = "function";
+    record.name = name.slice(0, 128);
+    if (description) record.description = description;
+    record.parameters = parameters;
     validNames.add(name);
     return true;
   });
@@ -132,43 +194,52 @@ function normalizeCodexTools(body: any) {
     typeof body.tool_choice === "object" &&
     !Array.isArray(body.tool_choice)
   ) {
-    if (body.tool_choice.type === "function") {
-      const n = typeof body.tool_choice.name === "string" ? body.tool_choice.name.trim() : "";
+    const toolChoice = body.tool_choice as MutableRecord;
+    if (toolChoice.type === "function") {
+      const n = typeof toolChoice.name === "string" ? toolChoice.name.trim() : "";
       if (!n || !validNames.has(n)) delete body.tool_choice;
     }
   }
 }
 
 // Cache machine ID at module level (resolved once)
-let cachedMachineId: any = null;
+let cachedMachineId: string | null = null;
 getConsistentMachineId()
-  .then((id: any) => {
+  .then((id: string) => {
     cachedMachineId = id;
   })
   .catch(() => {
     // Best-effort machine ID warmup; request-time fallback still resolves it.
   });
 
-function hashContent(text: any) {
+function hashContent(text: string) {
   return createHash("sha256").update(text).digest("hex").slice(0, 16);
 }
 
 function generateSessionId() {
   const bytes = new Uint8Array(5);
   crypto.getRandomValues(bytes);
-  const rand = Array.from(bytes, (b: any) => b.toString(36))
+  const rand = Array.from(bytes, (b) => b.toString(36))
     .join("")
     .slice(0, 7);
   return `sess_${Date.now().toString(36)}_${rand}`;
 }
 
 // Extract text content from an input item
-function extractItemText(item: any) {
+function extractItemText(item: unknown) {
   if (!item) return "";
-  if (typeof item.content === "string") return item.content;
-  if (Array.isArray(item.content)) {
-    return item.content
-      .map((c: any) => c.text || c.output || "")
+  const record = item as CodexInputItem;
+  if (typeof record.content === "string") return record.content;
+  if (Array.isArray(record.content)) {
+    return record.content
+      .map((c: unknown) => {
+        const contentPart = c as { output?: unknown; text?: unknown };
+        return typeof contentPart.text === "string"
+          ? contentPart.text
+          : typeof contentPart.output === "string"
+            ? contentPart.output
+            : "";
+      })
       .filter(Boolean)
       .join("");
   }
@@ -176,7 +247,7 @@ function extractItemText(item: any) {
 }
 
 // Normalize a session id candidate (trim, length cap)
-function normalizeSessionId(value: any) {
+function normalizeSessionId(value: unknown) {
   if (typeof value !== "string") return null;
   const v = value.trim();
   if (!v || v.length > 256) return null;
@@ -184,7 +255,11 @@ function normalizeSessionId(value: any) {
 }
 
 // Resolve prompt-cache session id with priority: body -> assistant-text-hash -> workspaceId -> machineId
-function resolveCacheSessionId(body: any, credentials: any, machineId: any) {
+function resolveCacheSessionId(
+  body: CodexBody,
+  credentials: ExecutorCredentials | null | undefined,
+  machineId: string | null,
+) {
   // 1. Client-provided session/conversation id (highest priority -- stable per conversation)
   const fromBody =
     normalizeSessionId(body?.prompt_cache_key) ||
@@ -198,8 +273,9 @@ function resolveCacheSessionId(body: any, credentials: any, machineId: any) {
     const MIN_LEN = 50;
     const CAP_LEN = 200;
     for (const item of body.input) {
-      if (item?.role !== "assistant") continue;
-      const t = extractItemText(item);
+      const inputItem = item as CodexInputItem;
+      if (inputItem?.role !== "assistant") continue;
+      const t = extractItemText(inputItem);
       if (!t) continue;
       text += t;
       if (text.length >= CAP_LEN) break;
@@ -253,7 +329,7 @@ export class CodexExecutor extends BaseExecutor {
    * Override headers to add codex-specific identity headers.
    * transformRequest runs BEFORE buildHeaders, sets this._currentSessionId.
    */
-  buildHeaders(credentials: any, _stream: any = true) {
+  buildHeaders(credentials: ExecutorCredentials, _stream = true): ExecutorHeaders {
     // Codex always returns SSE regardless of client stream preference.
     // Force stream=true so base.js sets Accept: text/event-stream -- without it
     // Codex returns a non-JSON, non-SSE response that fails both parse paths.
@@ -269,7 +345,12 @@ export class CodexExecutor extends BaseExecutor {
     return headers;
   }
 
-  buildUrl(model: any, stream: any, urlIndex: any = 0, credentials: any = null) {
+  buildUrl(
+    model: string,
+    stream: boolean,
+    urlIndex = 0,
+    credentials: ExecutorCredentials | null = null,
+  ): string | undefined {
     const base = super.buildUrl(model, stream, urlIndex, credentials);
     return this._isCompact ? `${base}/compact` : base;
   }
@@ -279,11 +360,12 @@ export class CodexExecutor extends BaseExecutor {
    * Runs before execute() because Codex backend cannot fetch remote images.
    * Mutates body.input in place.
    */
-  async prefetchImages(body: any) {
+  async prefetchImages(body: CodexBody) {
     if (!Array.isArray(body?.input)) return;
-    for (const item of body.input) {
+    for (const item of body.input as CodexInputItem[]) {
       if (!Array.isArray(item.content)) continue;
-      const pending = item.content.map(async (c: any) => {
+      const pending = item.content.map(async (entry: unknown) => {
+        const c = entry as ImageContent;
         if (c.type !== "image_url") return c;
         const url = typeof c.image_url === "string" ? c.image_url : c.image_url?.url;
         const detail = c.image_url?.detail || "auto";
@@ -296,28 +378,29 @@ export class CodexExecutor extends BaseExecutor {
     }
   }
 
-  async execute(args: any) {
-    const imgCount = Array.isArray(args.body?.input)
-      ? args.body.input.reduce(
-          (n: any, it: any) =>
+  async execute(args: ExecutorExecuteOptions): Promise<ExecutorExecuteResult> {
+    const body = args.body as CodexBody;
+    const imgCount = Array.isArray(body?.input)
+      ? (body.input as CodexInputItem[]).reduce(
+          (n: number, it) =>
             n +
             (Array.isArray(it.content)
-              ? it.content.filter((c: any) => c.type === "image_url").length
+              ? it.content.filter((c: unknown) => (c as ImageContent).type === "image_url").length
               : 0),
           0,
         )
       : 0;
-    const inputLen = Array.isArray(args.body?.input) ? args.body.input.length : 0;
+    const inputLen = Array.isArray(body?.input) ? body.input.length : 0;
     dbg(
       "CODEX",
       `execute start | inputItems=${inputLen} | images=${imgCount} | sessionId=${this._currentSessionId || "pending"}`,
     );
     if (imgCount > 0) {
       const t0 = Date.now();
-      await this.prefetchImages(args.body);
+      await this.prefetchImages(body);
       dbg("CODEX", `prefetchImages done | ${Date.now() - t0}ms`);
     } else {
-      await this.prefetchImages(args.body);
+      await this.prefetchImages(body);
     }
 
     // Retry loop for SSE-level overloaded errors (200 OK body contains event: error)
@@ -368,7 +451,7 @@ export class CodexExecutor extends BaseExecutor {
       } catch {
         // Cleanup only; the retry will issue a fresh upstream request.
       }
-      await new Promise((r: any) => setTimeout(r, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 
@@ -376,21 +459,21 @@ export class CodexExecutor extends BaseExecutor {
   // Returns { matched: string|null, replacementBody: ReadableStream|null }.
   // Caller MUST use replacementBody (original body has been read).
   // Uses TransformStream to avoid fragile releaseLock+getReader double-reader pattern.
-  async _peekSseOverloaded(response: any) {
+  async _peekSseOverloaded(response: Response): Promise<PeekSseResult> {
     if (!response || !response.ok || !response.body)
       return { matched: null, replacementBody: null };
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    const chunks = [];
+    const chunks: Uint8Array[] = [];
     let text = "";
-    let matched = null;
+    let matched: string | null = null;
     try {
       while (text.length < CODEX_SSE_PEEK_BYTES) {
         const { done, value } = await reader.read();
         if (done) break;
         chunks.push(value);
         text += decoder.decode(value, { stream: true });
-        const hit = CODEX_SSE_OVERLOADED_PATTERNS.find((p: any) => text.includes(p));
+        const hit = CODEX_SSE_OVERLOADED_PATTERNS.find((p) => text.includes(p));
         if (hit) {
           matched = hit;
           break;
@@ -401,7 +484,7 @@ export class CodexExecutor extends BaseExecutor {
     }
     // Re-assemble stream via TransformStream — single reader, no releaseLock+getReader.
     // Write peeked chunks first, then read remaining from same reader, then close.
-    const { readable, writable } = new TransformStream();
+    const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
     const writer = writable.getWriter();
     for (const c of chunks) {
       writer.write(c);
@@ -427,14 +510,21 @@ export class CodexExecutor extends BaseExecutor {
   }
 
   // Parse Codex usage_limit_reached to extract precise resetsAtMs; fallback to default otherwise
-  parseError(response: any, bodyText: any) {
+  parseError(response: Response, bodyText: string): ExecutorErrorDetails {
     if (response.status === 429 && bodyText) {
       try {
-        const json = JSON.parse(bodyText);
+        const json = JSON.parse(bodyText) as {
+          error?: {
+            message?: string;
+            resets_at?: number;
+            resets_in_seconds?: number;
+            type?: string;
+          };
+        };
         const err = json?.error;
         if (err?.type === "usage_limit_reached") {
           const now = Date.now();
-          let resetsAtMs = null;
+          let resetsAtMs: number | null = null;
           if (typeof err.resets_at === "number" && err.resets_at > 0) {
             const ms = err.resets_at * 1000;
             if (ms > now) resetsAtMs = ms;
@@ -461,7 +551,13 @@ export class CodexExecutor extends BaseExecutor {
    * Transform request before sending - inject default instructions if missing.
    * Image fetching is handled separately in prefetchImages() so this stays sync.
    */
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(
+    model: string,
+    rawBody: unknown,
+    _stream: boolean,
+    credentials: ExecutorCredentials,
+  ): CodexBody {
+    const body = rawBody as CodexBody;
     this._isCompact = !!body._compact;
     delete body._compact;
     // Resolve conversation-stable session_id (priority: body -> assistant-text-hash -> workspace -> machine)
@@ -501,23 +597,28 @@ export class CodexExecutor extends BaseExecutor {
     }
 
     // Map virtual Codex review models to the upstream Codex model before suffix parsing.
-    body.model = getModelUpstreamId("cx", body.model || model);
+    let requestModel = getModelUpstreamId(
+      "cx",
+      typeof body.model === "string" ? body.model : model,
+    );
+    body.model = requestModel;
 
     // Extract thinking level from model name suffix
     // e.g., gpt-5.3-codex-high -> high, gpt-5.3-codex -> medium (default)
     const effortLevels = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
-    let modelEffort = null;
+    let modelEffort: string | null = null;
     for (const level of effortLevels) {
-      if (body.model.endsWith(`-${level}`)) {
+      if (requestModel.endsWith(`-${level}`)) {
         modelEffort = level;
         // Strip suffix from model name for actual API call
-        body.model = body.model.replace(`-${level}`, "");
+        requestModel = requestModel.replace(`-${level}`, "");
+        body.model = requestModel;
         break;
       }
     }
 
     // Normalize: UI/client sends "extra-high" but Codex API expects "xhigh"
-    const EFFORT_ALIASES: Record<string, any> = {
+    const EFFORT_ALIASES: Record<string, string> = {
       "extra-high": "xhigh",
       extrahigh: "xhigh",
       "very-high": "xhigh",
@@ -532,7 +633,8 @@ export class CodexExecutor extends BaseExecutor {
 
     // Priority: explicit reasoning.effort > reasoning_effort param > model suffix > default (low)
     if (!body.reasoning) {
-      const effort = body.reasoning_effort || modelEffort || "low";
+      const effort =
+        typeof body.reasoning_effort === "string" ? body.reasoning_effort : modelEffort || "low";
       body.reasoning = { effort, summary: "auto" };
     } else if (!body.reasoning.summary) {
       body.reasoning.summary = "auto";

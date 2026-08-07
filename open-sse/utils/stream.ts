@@ -2,6 +2,7 @@ import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb";
 import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.js";
 import { FORMATS } from "../translator/formats.js";
 import { initState, translateResponse } from "../translator/index.js";
+import type { TranslatorState } from "../translator/registry.js";
 import { decloakToolNames } from "./claudeCloaking.js";
 import { fixInvalidId, formatSSE, hasValuableContent, parseSSELine } from "./streamHelpers.js";
 import {
@@ -16,13 +17,45 @@ import {
 
 export { COLORS, formatSSE };
 
-function stripClaudeToolSuffixes(node: any): any {
+type JsonRecord = Record<string, unknown>;
+
+type RequestLogger = {
+  appendConvertedChunk?: (chunk: string) => void;
+  appendOpenAIChunk?: (chunk: string) => void;
+  appendProviderChunk?: (chunk: string) => void;
+};
+
+type StreamCompleteHandler = (
+  result: { content: string; thinking: string },
+  usage: unknown,
+  ttftAt: number | null,
+) => void;
+
+type SSEStreamOptions = {
+  apiKey?: string | null;
+  body?: JsonRecord | null;
+  connectionId?: string | null;
+  mode?: (typeof STREAM_MODE)[keyof typeof STREAM_MODE];
+  model?: string | null;
+  onStreamComplete?: StreamCompleteHandler | null;
+  provider?: string | null;
+  reqLogger?: RequestLogger | null;
+  sourceFormat?: string | null;
+  targetFormat?: string | null;
+  toolNameMap?: unknown;
+};
+
+function isRecord(value: unknown): value is JsonRecord {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function stripClaudeToolSuffixes(node: unknown): unknown {
   if (!node || typeof node !== "object") return node;
 
   if (Array.isArray(node)) {
     let changed = false;
-    const next: any[] = node.map((child: any): any => {
-      const mapped: any = stripClaudeToolSuffixes(child);
+    const next = node.map((child: unknown): unknown => {
+      const mapped = stripClaudeToolSuffixes(child);
       if (mapped !== child) changed = true;
       return mapped;
     });
@@ -30,6 +63,8 @@ function stripClaudeToolSuffixes(node: any): any {
   }
 
   if (
+    "type" in node &&
+    "name" in node &&
     node.type === "tool_use" &&
     typeof node.name === "string" &&
     node.name.endsWith(CLAUDE_TOOL_SUFFIX)
@@ -38,16 +73,17 @@ function stripClaudeToolSuffixes(node: any): any {
   }
 
   let changed = false;
-  const next: Record<string, any> = {};
+  const record = node as JsonRecord;
+  const next: JsonRecord = {};
   for (const key of Object.keys(node)) {
-    const mapped = stripClaudeToolSuffixes(node[key]);
-    if (mapped !== node[key]) changed = true;
+    const mapped = stripClaudeToolSuffixes(record[key]);
+    if (mapped !== record[key]) changed = true;
     next[key] = mapped;
   }
   return changed ? next : node;
 }
 
-function decloakSSELine(line: any, toolNameMap: any, allowSuffixFallback: any = false) {
+function decloakSSELine(line: string, toolNameMap: unknown, allowSuffixFallback = false) {
   if (!line.includes("tool_use")) return line;
 
   const isDataLine = line.startsWith("data:");
@@ -76,8 +112,8 @@ function isAbortError(error: unknown) {
  * Extract reasoning summary text from a reasoning_summary payload.
  * Supports both direct `{ content: "..." }` and nested `{ summary: { content: "..." } }` shapes.
  */
-function extractReasoningSummaryText(value: any) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+function extractReasoningSummaryText(value: unknown): string | null {
+  if (!isRecord(value)) return null;
 
   const direct = typeof value.content === "string" ? value.content.trim() : "";
   if (direct.length > 0) return direct;
@@ -98,8 +134,8 @@ function extractReasoningSummaryText(value: any) {
  * from a reasoning_summary envelope, so clients that consume delta.reasoning_content
  * (rather than top-level reasoning_summary) see the final summary.
  */
-function buildReasoningSummaryCompatChunk(chunk: any, summaryText: any) {
-  const compatChunk: Record<string, any> = {
+function buildReasoningSummaryCompatChunk(chunk: JsonRecord, summaryText: string) {
+  const compatChunk: JsonRecord = {
     id:
       typeof chunk.id === "string" && chunk.id.trim().length > 0
         ? chunk.id
@@ -139,7 +175,7 @@ const sharedEncoder = new TextEncoder();
 const STREAM_MODE = {
   TRANSLATE: "translate", // Full translation between formats
   PASSTHROUGH: "passthrough", // No translation, normalize output, extract usage
-};
+} as const;
 
 /**
  * Create unified SSE transform stream
@@ -157,7 +193,7 @@ const STREAM_MODE = {
  */
 const STALL_TIMEOUT_MS = 300_000; // 5 minutes
 
-export function createSSEStream(options: any = {}) {
+export function createSSEStream(options: SSEStreamOptions = {}) {
   const {
     mode = STREAM_MODE.TRANSLATE,
     targetFormat,
@@ -173,36 +209,36 @@ export function createSSEStream(options: any = {}) {
   } = options;
 
   let buffer = "";
-  let usage: any = null;
-  let stallTimer: any = null;
-  let stallController: any = null;
+  let usage: unknown = null;
+  let stallTimer: ReturnType<typeof setTimeout> | null = null;
+  let resetStallTimer: (() => void) | null = null;
 
   // Per-stream decoder with stream:true to correctly handle multi-byte chars split across chunks
   const decoder = new TextDecoder("utf-8", { fatal: false });
 
-  const state: any =
+  const state: TranslatorState =
     mode === STREAM_MODE.TRANSLATE
-      ? { ...initState(sourceFormat), provider, toolNameMap, model }
-      : null;
+      ? { ...initState(sourceFormat!), provider, toolNameMap, model }
+      : {};
 
   let totalContentLength = 0;
   let accumulatedContent = "";
   let accumulatedThinking = "";
-  let ttftAt: any = null;
+  let ttftAt: number | null = null;
   let sawDone = false;
-  const includeUsage = body?.stream_options?.include_usage === true;
+  const streamOptions = isRecord(body?.stream_options) ? body.stream_options : null;
+  const includeUsage = streamOptions?.include_usage === true;
 
   const allowSuffixFallback = provider === "claude";
 
-  function emit(output: any, controller: any) {
+  function emit(output: string, controller: TransformStreamDefaultController<Uint8Array>) {
     reqLogger?.appendConvertedChunk?.(output);
     controller.enqueue(sharedEncoder.encode(output));
   }
 
-  return new TransformStream({
-    start(controller: any) {
-      stallController = controller;
-      const resetStall = () => {
+  return new TransformStream<Uint8Array, Uint8Array>({
+    start(controller) {
+      resetStallTimer = () => {
         if (stallTimer) clearTimeout(stallTimer);
         stallTimer = setTimeout(() => {
           const errChunk = `data: ${JSON.stringify({ error: { message: "Stream stalled: no data received for 5 minutes", type: "stream_stall", code: "stream_stall" } })}`;
@@ -219,15 +255,13 @@ export function createSSEStream(options: any = {}) {
         }, STALL_TIMEOUT_MS);
         stallTimer.unref?.();
       };
-      resetStall();
-      // Expose reset so transform can call it
-      stallController._resetStall = resetStall;
+      resetStallTimer();
     },
 
-    transform(chunk: any, controller: any) {
+    transform(chunk, controller) {
       try {
         // Reset stall timer on each received chunk
-        stallController?._resetStall?.();
+        resetStallTimer?.();
 
         if (!ttftAt) {
           ttftAt = Date.now();
@@ -450,7 +484,7 @@ export function createSSEStream(options: any = {}) {
           if (extracted) state.usage = extracted; // Keep original usage for logging
 
           // Translate: targetFormat -> openai -> sourceFormat
-          const translated: any = translateResponse(targetFormat, sourceFormat, parsed, state);
+          const translated = translateResponse(targetFormat!, sourceFormat!, parsed, state);
 
           // Log OpenAI intermediate chunks (if available)
           if (translated?._openaiIntermediate) {
@@ -513,7 +547,7 @@ export function createSSEStream(options: any = {}) {
       }
     },
 
-    flush(controller: any) {
+    flush(controller) {
       if (stallTimer) {
         clearTimeout(stallTimer);
         stallTimer = null;
@@ -571,7 +605,7 @@ export function createSSEStream(options: any = {}) {
           const decloaked = decloakSSELine(buffer, toolNameMap, allowSuffixFallback);
           const parsed = parseSSELine(decloaked.trim());
           if (parsed && !parsed.done) {
-            const translated: any = translateResponse(targetFormat, sourceFormat, parsed, state);
+            const translated = translateResponse(targetFormat!, sourceFormat!, parsed, state);
 
             if (translated?._openaiIntermediate) {
               for (const item of translated._openaiIntermediate) {
@@ -588,7 +622,7 @@ export function createSSEStream(options: any = {}) {
           }
         }
 
-        const flushed: any = translateResponse(targetFormat, sourceFormat, null, state);
+        const flushed = translateResponse(targetFormat!, sourceFormat!, null, state);
 
         if (flushed?._openaiIntermediate) {
           for (const item of flushed._openaiIntermediate) {
@@ -645,16 +679,16 @@ export function createSSEStream(options: any = {}) {
 }
 
 export function createSSETransformStreamWithLogger(
-  targetFormat: any,
-  sourceFormat: any,
-  provider: any = null,
-  reqLogger: any = null,
-  toolNameMap: any = null,
-  model: any = null,
-  connectionId: any = null,
-  body: any = null,
-  onStreamComplete: any = null,
-  apiKey: any = null,
+  targetFormat: string,
+  sourceFormat: string,
+  provider: string | null = null,
+  reqLogger: RequestLogger | null = null,
+  toolNameMap: unknown = null,
+  model: string | null = null,
+  connectionId: string | null = null,
+  body: JsonRecord | null = null,
+  onStreamComplete: StreamCompleteHandler | null = null,
+  apiKey: string | null = null,
 ) {
   return createSSEStream({
     mode: STREAM_MODE.TRANSLATE,
@@ -672,15 +706,15 @@ export function createSSETransformStreamWithLogger(
 }
 
 export function createPassthroughStreamWithLogger(
-  provider: any = null,
-  reqLogger: any = null,
-  model: any = null,
-  connectionId: any = null,
-  body: any = null,
-  onStreamComplete: any = null,
-  apiKey: any = null,
-  sourceFormat: any = null,
-  toolNameMap: any = null,
+  provider: string | null = null,
+  reqLogger: RequestLogger | null = null,
+  model: string | null = null,
+  connectionId: string | null = null,
+  body: JsonRecord | null = null,
+  onStreamComplete: StreamCompleteHandler | null = null,
+  apiKey: string | null = null,
+  sourceFormat: string | null = null,
+  toolNameMap: unknown = null,
 ) {
   return createSSEStream({
     mode: STREAM_MODE.PASSTHROUGH,

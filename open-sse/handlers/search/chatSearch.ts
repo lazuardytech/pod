@@ -6,6 +6,103 @@
 const REQUEST_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_RESULTS = 10;
 
+type Citation = {
+  url: string;
+  title?: string;
+  snippet?: string;
+  link?: string;
+  summary?: string;
+};
+
+type CitationCandidate = Partial<Citation> & {
+  uri?: string;
+};
+
+type SearchExtract = {
+  text: string;
+  citations: CitationCandidate[];
+  tokens: number;
+};
+
+type SearchResult = {
+  title: string;
+  url: string;
+  snippet: string;
+  position: number;
+  score: null;
+  published_at: null;
+  favicon_url: null;
+  content: null;
+  metadata: Record<string, never>;
+  citation: { provider: string; retrieved_at: string; rank: number };
+  provider_raw: null;
+};
+
+type ChatSearchConfig = {
+  endpoint: (model: string) => string;
+  defaultModel: string;
+  buildBody: (query: string, model: string) => Record<string, unknown>;
+  buildHeaders: (token: string) => Record<string, string>;
+  extractAnswer: (data: unknown) => SearchExtract;
+};
+
+type ToolCallArguments = {
+  search_results?: CitationCandidate[];
+  results?: CitationCandidate[];
+  references?: CitationCandidate[];
+};
+
+type ToolCall = {
+  function?: { arguments?: string | ToolCallArguments };
+};
+
+type OpenAiLikePayload = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+      annotations?: Array<{ url_citation?: CitationCandidate }>;
+      tool_calls?: ToolCall[];
+    };
+  }>;
+  citations?: unknown[];
+  usage?: { total_tokens?: number };
+  web_search_results?: CitationCandidate[];
+};
+
+type GeminiPayload = {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: { uri?: string; url?: string; title?: string } }>;
+    };
+  }>;
+  usageMetadata?: { totalTokenCount?: number };
+};
+
+type ResponsesPayload = {
+  output?: Array<{
+    content?: Array<{
+      text?: string;
+      annotations?: Array<{ url?: string; url_citation?: CitationCandidate }>;
+    }>;
+  }>;
+  citations?: unknown[];
+  usage?: { total_tokens?: number };
+};
+
+type ChatSearchParams = {
+  provider: string;
+  query: string;
+  maxResults?: number;
+  model?: string;
+  credentials?: { apiKey?: string; accessToken?: string };
+  log?: {
+    info?: (...args: unknown[]) => void;
+    warn?: (...args: unknown[]) => void;
+    error?: (...args: unknown[]) => void;
+  };
+};
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -21,7 +118,12 @@ function isAbortError(error: unknown) {
  * @param {string} provider
  * @param {string} retrievedAt
  */
-function toResult(c: any, index: any, provider: any, retrievedAt: any) {
+function toResult(
+  c: CitationCandidate & { url: string },
+  index: number,
+  provider: string,
+  retrievedAt: string,
+): SearchResult {
   return {
     title: c.title || "",
     url: c.url,
@@ -38,10 +140,13 @@ function toResult(c: any, index: any, provider: any, retrievedAt: any) {
 }
 
 /** Coerce a citation that might be a raw URL string or an object. */
-function normalizeCitation(c: any) {
+function normalizeCitation(c: unknown): (CitationCandidate & { url: string }) | null {
   if (!c) return null;
   if (typeof c === "string") return { url: c };
-  if (typeof c === "object" && c.url) return c;
+  if (typeof c === "object" && "url" in c && typeof c.url === "string") {
+    const candidate = c as CitationCandidate;
+    return { ...candidate, url: c.url };
+  }
   return null;
 }
 
@@ -49,33 +154,34 @@ function normalizeCitation(c: any) {
  * Provider-specific configuration map. All providers must implement:
  * { endpoint, defaultModel, buildBody, buildHeaders, extractAnswer }
  */
-const CHAT_SEARCH_CONFIG: Record<string, any> = {
+const CHAT_SEARCH_CONFIG: Record<string, ChatSearchConfig> = {
   gemini: {
-    endpoint: (model: any) =>
+    endpoint: (model) =>
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     defaultModel: "gemini-2.5-flash",
-    buildBody: (query: any) => ({
+    buildBody: (query) => ({
       contents: [{ role: "user", parts: [{ text: query }] }],
       tools: [{ google_search: {} }],
     }),
-    buildHeaders: (token: any) => ({
+    buildHeaders: (token) => ({
       "Content-Type": "application/json",
       "x-goog-api-key": token,
     }),
-    extractAnswer: (data: any) => {
-      const candidate = data?.candidates?.[0];
+    extractAnswer: (data) => {
+      const payload = data as GeminiPayload;
+      const candidate = payload?.candidates?.[0];
       const parts = candidate?.content?.parts || [];
       const text = parts
-        .map((p: any) => p?.text || "")
+        .map((p) => p?.text || "")
         .filter(Boolean)
         .join("");
       const chunks = candidate?.groundingMetadata?.groundingChunks || [];
       const citations = chunks
-        .map((ch: any) => ch?.web)
+        .map((ch) => ch?.web)
         .filter(Boolean)
-        .map((w: any) => ({ url: w.uri || w.url, title: w.title || "" }))
-        .filter((c: any) => c.url);
-      const tokens = data?.usageMetadata?.totalTokenCount || 0;
+        .map((w) => ({ url: w?.uri || w?.url, title: w?.title || "" }))
+        .filter((c): c is CitationCandidate & { url: string } => Boolean(c.url));
+      const tokens = payload?.usageMetadata?.totalTokenCount || 0;
       return { text, citations, tokens };
     },
   },
@@ -83,8 +189,8 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
   openai: {
     endpoint: () => "https://api.openai.com/v1/chat/completions",
     defaultModel: "gpt-4o-mini",
-    buildBody: (query: any, model: any) => {
-      const body: Record<string, any> = {
+    buildBody: (query, model) => {
+      const body: Record<string, unknown> = {
         model,
         messages: [{ role: "user", content: query }],
       };
@@ -94,23 +200,27 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
       }
       return body;
     },
-    buildHeaders: (token: any) => ({
+    buildHeaders: (token) => ({
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     }),
-    extractAnswer: (data: any) => {
-      const msg = data?.choices?.[0]?.message || {};
+    extractAnswer: (data) => {
+      const payload = data as OpenAiLikePayload;
+      const msg = payload?.choices?.[0]?.message || {};
       const text = msg.content || "";
       const annotations = Array.isArray(msg.annotations) ? msg.annotations : [];
       const fromAnn = annotations
-        .map((a: any) => a?.url_citation)
+        .map((a) => a?.url_citation)
         .filter(Boolean)
-        .map((u: any) => ({ url: u.url, title: u.title || "" }));
-      const fromTop = Array.isArray(data?.citations)
-        ? data.citations.map(normalizeCitation).filter(Boolean)
+        .map((u) => ({ url: u?.url, title: u?.title || "" }))
+        .filter((c): c is CitationCandidate & { url: string } => Boolean(c.url));
+      const fromTop = Array.isArray(payload?.citations)
+        ? payload.citations
+            .map(normalizeCitation)
+            .filter((c): c is CitationCandidate & { url: string } => Boolean(c))
         : [];
       const citations = fromAnn.length ? fromAnn : fromTop;
-      const tokens = data?.usage?.total_tokens || 0;
+      const tokens = payload?.usage?.total_tokens || 0;
       return { text, citations, tokens };
     },
   },
@@ -118,20 +228,21 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
   xai: {
     endpoint: () => "https://api.x.ai/v1/responses",
     defaultModel: "grok-4.20-reasoning",
-    buildBody: (query: any, model: any) => ({
+    buildBody: (query, model) => ({
       model,
       input: [{ role: "user", content: query }],
       tools: [{ type: "web_search" }],
     }),
-    buildHeaders: (token: any) => ({
+    buildHeaders: (token) => ({
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     }),
-    extractAnswer: (data: any) => {
+    extractAnswer: (data) => {
+      const payload = data as ResponsesPayload;
       // /v1/responses returns output[] array of message/tool blocks
-      const output = Array.isArray(data?.output) ? data.output : [];
+      const output = Array.isArray(payload?.output) ? payload.output : [];
       let text = "";
-      const citations: any[] = [];
+      const citations: CitationCandidate[] = [];
       for (const item of output) {
         const parts = Array.isArray(item?.content) ? item.content : [];
         for (const p of parts) {
@@ -144,13 +255,13 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
         }
       }
       // Fallback: top-level citations array (some response variants)
-      if (!citations.length && Array.isArray(data?.citations)) {
-        for (const c of data.citations) {
+      if (!citations.length && Array.isArray(payload?.citations)) {
+        for (const c of payload.citations) {
           const n = normalizeCitation(c);
           if (n) citations.push(n);
         }
       }
-      const tokens = data?.usage?.total_tokens || 0;
+      const tokens = payload?.usage?.total_tokens || 0;
       return { text, citations, tokens };
     },
   },
@@ -158,24 +269,25 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
   kimi: {
     endpoint: () => "https://api.moonshot.cn/v1/chat/completions",
     defaultModel: "kimi-k2.5",
-    buildBody: (query: any, model: any) => ({
+    buildBody: (query, model) => ({
       model,
       messages: [{ role: "user", content: query }],
       tools: [{ type: "builtin_function", function: { name: "$web_search" } }],
     }),
-    buildHeaders: (token: any) => ({
+    buildHeaders: (token) => ({
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     }),
-    extractAnswer: (data: any) => {
-      const msg = data?.choices?.[0]?.message || {};
+    extractAnswer: (data) => {
+      const payload = data as OpenAiLikePayload;
+      const msg = payload?.choices?.[0]?.message || {};
       const text = msg.content || "";
       const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
-      const citations: any[] = [];
+      const citations: CitationCandidate[] = [];
       for (const call of calls) {
         const argStr = call?.function?.arguments;
         if (!argStr) continue;
-        let parsed;
+        let parsed: ToolCallArguments;
         try {
           parsed = typeof argStr === "string" ? JSON.parse(argStr) : argStr;
         } catch {
@@ -194,7 +306,7 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
           }
         }
       }
-      const tokens = data?.usage?.total_tokens || 0;
+      const tokens = payload?.usage?.total_tokens || 0;
       return { text, citations, tokens };
     },
   },
@@ -202,20 +314,21 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
   minimax: {
     endpoint: () => "https://api.minimaxi.com/v1/text/chatcompletion_v2",
     defaultModel: "MiniMax-M2.7",
-    buildBody: (query: any, model: any) => ({
+    buildBody: (query, model) => ({
       model,
       messages: [{ role: "user", content: query }],
       tools: [{ type: "web_search" }],
     }),
-    buildHeaders: (token: any) => ({
+    buildHeaders: (token) => ({
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     }),
-    extractAnswer: (data: any) => {
-      const msg = data?.choices?.[0]?.message || {};
+    extractAnswer: (data) => {
+      const payload = data as OpenAiLikePayload;
+      const msg = payload?.choices?.[0]?.message || {};
       const text = msg.content || "";
-      const citations = [];
-      const direct = Array.isArray(data?.web_search_results) ? data.web_search_results : [];
+      const citations: CitationCandidate[] = [];
+      const direct = Array.isArray(payload?.web_search_results) ? payload.web_search_results : [];
       for (const it of direct) {
         const url = it?.url || it?.link;
         if (url) {
@@ -231,7 +344,7 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
         for (const call of calls) {
           const argStr = call?.function?.arguments;
           if (!argStr) continue;
-          let parsed;
+          let parsed: ToolCallArguments;
           try {
             parsed = typeof argStr === "string" ? JSON.parse(argStr) : argStr;
           } catch {
@@ -251,7 +364,7 @@ const CHAT_SEARCH_CONFIG: Record<string, any> = {
           }
         }
       }
-      const tokens = data?.usage?.total_tokens || 0;
+      const tokens = payload?.usage?.total_tokens || 0;
       return { text, citations, tokens };
     },
   },
@@ -275,7 +388,7 @@ export async function handleChatSearch({
   model,
   credentials,
   log,
-}: any) {
+}: ChatSearchParams) {
   const startTime = Date.now();
   const cfg = CHAT_SEARCH_CONFIG[provider];
 
@@ -311,7 +424,7 @@ export async function handleChatSearch({
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   const upstreamStart = Date.now();
-  let resp;
+  let resp: Response;
   try {
     resp = await fetch(url, {
       method: "POST",
@@ -336,7 +449,7 @@ export async function handleChatSearch({
   clearTimeout(timer);
   const upstreamLatency = Date.now() - upstreamStart;
 
-  let data;
+  let data: unknown;
   try {
     data = await resp.json();
   } catch {
@@ -349,8 +462,15 @@ export async function handleChatSearch({
   }
 
   if (!resp.ok) {
+    const payload = data as { error?: { message?: unknown } | unknown; message?: unknown };
+    const errorValue = payload.error;
     const errMsg =
-      data?.error?.message || data?.error || data?.message || `Upstream HTTP ${resp.status}`;
+      (typeof errorValue === "object" && errorValue && "message" in errorValue
+        ? errorValue.message
+        : undefined) ||
+      errorValue ||
+      payload.message ||
+      `Upstream HTTP ${resp.status}`;
     log?.warn?.(`[chatSearch] upstream error provider=${provider} status=${resp.status}`);
     return {
       success: false,
@@ -362,7 +482,10 @@ export async function handleChatSearch({
   const { text, citations, tokens } = cfg.extractAnswer(data);
   const retrievedAt = new Date().toISOString();
   const limited = (citations || []).slice(0, limit);
-  const results = limited.map((c: any, i: any) => toResult(c, i, provider, retrievedAt));
+  const results = limited
+    .map(normalizeCitation)
+    .filter((c): c is CitationCandidate & { url: string } => Boolean(c))
+    .map((c, i) => toResult(c, i, provider, retrievedAt));
 
   return {
     success: true,

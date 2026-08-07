@@ -7,6 +7,31 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 
 type ProxyOptions = Record<string, unknown> | null;
 type QuotaMap = Record<string, unknown>;
+type ProviderSpecificData = Record<string, unknown> | null | undefined;
+type UsageConnection = {
+  accessToken?: string | null;
+  apiKey?: string | null;
+  provider: string;
+  providerSpecificData?: ProviderSpecificData;
+};
+type CodexRateLimitWindow = Record<string, unknown> & {
+  percent_used?: unknown;
+  resetAt?: unknown;
+  reset_at?: unknown;
+  resets_at?: unknown;
+  used_percent?: unknown;
+};
+type KiroUsageBreakdown = Record<string, unknown> & {
+  currentUsageWithPrecision?: number;
+  freeTrialInfo?: Record<string, unknown> & {
+    currentUsageWithPrecision?: number;
+    freeTrialExpiry?: unknown;
+    usageLimitWithPrecision?: number;
+  };
+  resourceType?: string;
+  usageLimitWithPrecision?: number;
+};
+type MiniMaxModel = Record<string, unknown>;
 
 // todo(ts): upstream provider quota payloads stay loose until stable schemas are available.
 
@@ -66,7 +91,10 @@ function errorMessage(error: unknown): string {
  * @param {Object} connection - Provider connection with accessToken
  * @returns {Object} Usage data with quotas
  */
-export async function getUsageForProvider(connection: any, proxyOptions: ProxyOptions = null) {
+export async function getUsageForProvider(
+  connection: UsageConnection,
+  proxyOptions: ProxyOptions = null,
+) {
   const { provider, accessToken, apiKey, providerSpecificData } = connection;
 
   switch (provider) {
@@ -139,7 +167,7 @@ function parseResetTime(resetValue: unknown) {
  */
 async function getGitHubUsage(
   accessToken: string | null | undefined,
-  providerSpecificData: any,
+  providerSpecificData: ProviderSpecificData,
   proxyOptions: ProxyOptions = null,
 ) {
   try {
@@ -240,7 +268,7 @@ function formatGitHubQuotaSnapshot(
  */
 async function getGeminiUsage(
   accessToken: string | null | undefined,
-  providerSpecificData: any,
+  providerSpecificData: ProviderSpecificData,
   proxyOptions: ProxyOptions = null,
 ) {
   if (!accessToken) {
@@ -287,7 +315,7 @@ async function getGeminiUsage(
       return { plan, message: `Gemini CLI quota error (${response.status}).` };
     }
 
-    const data: any = await response.json();
+    const data = await response.json();
     const quotas: QuotaMap = {};
 
     if (Array.isArray(data.buckets)) {
@@ -364,7 +392,7 @@ async function getGeminiSubscriptionInfo(
  */
 async function getAntigravityUsage(
   accessToken: string | null | undefined,
-  providerSpecificData: any,
+  providerSpecificData: ProviderSpecificData,
   proxyOptions: ProxyOptions = null,
 ) {
   try {
@@ -419,7 +447,7 @@ async function getAntigravityUsage(
       throw new Error(`Antigravity API error: ${response.status}`);
     }
 
-    const data: any = await response.json();
+    const data = await response.json();
     const quotas: QuotaMap = {};
 
     // Parse model quotas (inspired by vscode-antigravity-cockpit)
@@ -434,7 +462,16 @@ async function getAntigravityUsage(
         "gpt-oss-120b-medium",
       ];
 
-      for (const [modelKey, info] of Object.entries(data.models as Record<string, any>)) {
+      for (const [modelKey, info] of Object.entries(
+        data.models as Record<
+          string,
+          {
+            displayName?: string;
+            isInternal?: boolean;
+            quotaInfo?: { remainingFraction?: number; resetTime?: unknown };
+          }
+        >,
+      )) {
         // Skip models without quota info
         if (!info.quotaInfo) {
           continue;
@@ -547,14 +584,22 @@ async function getClaudeUsage(
     );
 
     if (oauthResponse.ok) {
-      const data: any = await oauthResponse.json();
+      const data = await oauthResponse.json();
       const quotas: QuotaMap = {};
 
       // utilization = % USED (e.g. 87 means 87% used, 13% remaining)
-      const hasUtilization = (window: any) =>
-        window && typeof window === "object" && typeof window.utilization === "number";
+      const hasUtilization = (
+        window: unknown,
+      ): window is { resets_at?: unknown; utilization: number } => {
+        const maybeWindow = window as { utilization?: unknown } | null;
+        return (
+          Boolean(window) &&
+          typeof window === "object" &&
+          typeof maybeWindow?.utilization === "number"
+        );
+      };
 
-      const createQuotaObject = (window: any) => {
+      const createQuotaObject = (window: { resets_at?: unknown; utilization: number }) => {
         const used = window.utilization;
         const remaining = Math.max(0, 100 - used);
         return {
@@ -669,14 +714,15 @@ function toFiniteNumber(value: unknown, fallback = 0) {
   return fallback;
 }
 
-function getCodexRateLimitBody(snapshot: any) {
+function getCodexRateLimitBody(snapshot: unknown): Record<string, unknown> | null {
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return null;
-  return snapshot.rate_limit && typeof snapshot.rate_limit === "object"
-    ? snapshot.rate_limit
-    : snapshot;
+  const record = snapshot as Record<string, unknown>;
+  return record.rate_limit && typeof record.rate_limit === "object"
+    ? (record.rate_limit as Record<string, unknown>)
+    : record;
 }
 
-function formatCodexWindow(window: any) {
+function formatCodexWindow(window: CodexRateLimitWindow) {
   const used = Math.max(
     0,
     Math.min(100, toFiniteNumber(window?.used_percent ?? window?.percent_used, 0)),
@@ -690,46 +736,59 @@ function formatCodexWindow(window: any) {
   };
 }
 
-function appendCodexQuotaWindows(quotas: any, prefix: any, snapshot: any) {
+function appendCodexQuotaWindows(quotas: QuotaMap, prefix: string, snapshot: unknown) {
   const rateLimit = getCodexRateLimitBody(snapshot);
   if (!rateLimit) return false;
+  const snapshotRecord =
+    snapshot && typeof snapshot === "object" && !Array.isArray(snapshot)
+      ? (snapshot as Record<string, unknown>)
+      : {};
 
   const primary =
-    rateLimit.primary_window || rateLimit.primary || snapshot.primary_window || snapshot.primary;
+    rateLimit.primary_window ||
+    rateLimit.primary ||
+    snapshotRecord.primary_window ||
+    snapshotRecord.primary;
   const secondary =
     rateLimit.secondary_window ||
     rateLimit.secondary ||
-    snapshot.secondary_window ||
-    snapshot.secondary;
+    snapshotRecord.secondary_window ||
+    snapshotRecord.secondary;
   let added = false;
 
   if (primary) {
-    quotas[prefix ? `${prefix}_session` : "session"] = formatCodexWindow(primary);
+    quotas[prefix ? `${prefix}_session` : "session"] = formatCodexWindow(
+      primary as CodexRateLimitWindow,
+    );
     added = true;
   }
   if (secondary) {
-    quotas[prefix ? `${prefix}_weekly` : "weekly"] = formatCodexWindow(secondary);
+    quotas[prefix ? `${prefix}_weekly` : "weekly"] = formatCodexWindow(
+      secondary as CodexRateLimitWindow,
+    );
     added = true;
   }
 
   return added;
 }
 
-function getCodexReviewRateLimit(data: any) {
+function getCodexReviewRateLimit(data: Record<string, unknown>) {
   if (data.code_review_rate_limit || data.review_rate_limit) {
     return data.code_review_rate_limit || data.review_rate_limit;
   }
 
   const byLimitId = data.rate_limits_by_limit_id;
   if (byLimitId && typeof byLimitId === "object" && !Array.isArray(byLimitId)) {
-    return byLimitId.code_review || byLimitId.codex_review || byLimitId.review || null;
+    const limitMap = byLimitId as Record<string, unknown>;
+    return limitMap.code_review || limitMap.codex_review || limitMap.review || null;
   }
 
   const additional = Array.isArray(data.additional_rate_limits) ? data.additional_rate_limits : [];
   return (
-    additional.find((entry: any) => {
+    additional.find((entry: unknown) => {
+      const record = entry as Record<string, unknown>;
       const id = String(
-        entry?.limit_name || entry?.metered_feature || entry?.id || "",
+        record?.limit_name || record?.metered_feature || record?.id || "",
       ).toLowerCase();
       return (
         id === "code_review" || id === "codex_review" || id === "review" || id.includes("review")
@@ -784,12 +843,12 @@ async function getCodexUsage(
 /**
  * Kiro (AWS CodeWhisperer) Usage
  */
-function parseKiroQuotaData(data: any) {
+function parseKiroQuotaData(data: Record<string, unknown>) {
   const usageList = data.usageBreakdownList || [];
   const quotaInfo: QuotaMap = {};
   const resetAt = parseResetTime(data.nextDateReset || data.resetDate);
 
-  usageList.forEach((breakdown: any) => {
+  (usageList as KiroUsageBreakdown[]).forEach((breakdown) => {
     const resourceType = breakdown.resourceType?.toLowerCase() || "unknown";
     const used = breakdown.currentUsageWithPrecision || 0;
     const total = breakdown.usageLimitWithPrecision || 0;
@@ -818,14 +877,16 @@ function parseKiroQuotaData(data: any) {
   });
 
   return {
-    plan: data.subscriptionInfo?.subscriptionTitle || "Kiro",
+    plan:
+      (data.subscriptionInfo as { subscriptionTitle?: string } | undefined)?.subscriptionTitle ||
+      "Kiro",
     quotas: quotaInfo,
   };
 }
 
 async function getKiroUsage(
   accessToken: string | null | undefined,
-  providerSpecificData: any,
+  providerSpecificData: ProviderSpecificData,
   proxyOptions: ProxyOptions = null,
 ) {
   // Default profileArn fallback
@@ -918,7 +979,7 @@ async function getKiroUsage(
         continue;
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as Record<string, unknown>;
       return parseKiroQuotaData(data);
     } catch (error: unknown) {
       errors.push(`${attempt.name}:${errorMessage(error)}`);
@@ -962,7 +1023,10 @@ async function getKiroUsage(
 /**
  * Qwen Usage
  */
-async function getQwenUsage(accessToken: string | null | undefined, providerSpecificData: any) {
+async function getQwenUsage(
+  accessToken: string | null | undefined,
+  providerSpecificData: ProviderSpecificData,
+) {
   try {
     const resourceUrl = providerSpecificData?.resourceUrl;
     if (!resourceUrl) {
@@ -994,7 +1058,10 @@ async function getIflowUsage(_accessToken: string | null | undefined) {
  * and has no public usage API — free tier has light usage limits (resets every 5h & 7d).
  * This returns an informational message with the plan details.
  */
-async function getOllamaUsage(accessToken: string | null | undefined, providerSpecificData: any) {
+async function getOllamaUsage(
+  accessToken: string | null | undefined,
+  providerSpecificData: ProviderSpecificData,
+) {
   try {
     // Ollama Cloud does not expose a public quota/usage API.
     // The provider is configured as noAuth with a notice explaining limits.
@@ -1045,8 +1112,9 @@ async function getGlmUsage(
       return { message: `GLM quota API error (${response.status}).` };
     }
 
-    const json: any = await response.json();
-    const data: any = json?.data && typeof json.data === "object" ? json.data : {};
+    const json = (await response.json()) as { data?: unknown };
+    const data: Record<string, unknown> =
+      json?.data && typeof json.data === "object" ? (json.data as Record<string, unknown>) : {};
     const limits = Array.isArray(data.limits) ? data.limits : [];
     const quotas: QuotaMap = {};
 
@@ -1083,12 +1151,12 @@ function isMiniMaxTextQuotaModel(modelName: string) {
   return normalized.startsWith("minimax-m") || normalized.startsWith("coding-plan");
 }
 
-function getMiniMaxField(model: any, snakeKey: any, camelKey: any) {
+function getMiniMaxField(model: MiniMaxModel, snakeKey: string, camelKey: string) {
   if (!model || typeof model !== "object") return null;
   return model[snakeKey] ?? model[camelKey] ?? null;
 }
 
-function getMiniMaxSessionTotal(model: any) {
+function getMiniMaxSessionTotal(model: MiniMaxModel) {
   return Math.max(
     0,
     Number(getMiniMaxField(model, "current_interval_total_count", "currentIntervalTotalCount")) ||
@@ -1096,29 +1164,30 @@ function getMiniMaxSessionTotal(model: any) {
   );
 }
 
-function getMiniMaxWeeklyTotal(model: any) {
+function getMiniMaxWeeklyTotal(model: MiniMaxModel) {
   return Math.max(
     0,
     Number(getMiniMaxField(model, "current_weekly_total_count", "currentWeeklyTotalCount")) || 0,
   );
 }
 
-function pickMiniMaxRepresentativeModel(models: any, getTotal: any) {
-  const withQuota = models.filter((m: any) => getTotal(m) > 0);
+function pickMiniMaxRepresentativeModel(
+  models: MiniMaxModel[],
+  getTotal: (model: MiniMaxModel) => number,
+) {
+  const withQuota = models.filter((m) => getTotal(m) > 0);
   const pool = withQuota.length > 0 ? withQuota : models;
   if (pool.length === 0) return null;
-  return pool.reduce((best: any, current: any) =>
-    getTotal(current) > getTotal(best) ? current : best,
-  );
+  return pool.reduce((best, current) => (getTotal(current) > getTotal(best) ? current : best));
 }
 
 function getMiniMaxResetAt(
-  model: any,
-  capturedAtMs: any,
-  remainsSnake: any,
-  remainsCamel: any,
-  endSnake: any,
-  endCamel: any,
+  model: MiniMaxModel,
+  capturedAtMs: number,
+  remainsSnake: string,
+  remainsCamel: string,
+  endSnake: string,
+  endCamel: string,
 ) {
   const remainsMs = Number(getMiniMaxField(model, remainsSnake, remainsCamel)) || 0;
   if (remainsMs > 0) return new Date(capturedAtMs + remainsMs).toISOString();
@@ -1159,7 +1228,7 @@ async function getMiniMaxUsage(
     return { message: "MiniMax API key not available." };
   }
 
-  const usageUrls = (MINIMAX_USAGE_URLS as Record<string, any>)[provider] || [];
+  const usageUrls = (MINIMAX_USAGE_URLS as Record<string, string[]>)[provider] || [];
   let lastErrorMessage = "";
 
   for (let index = 0; index < usageUrls.length; index += 1) {
@@ -1181,7 +1250,7 @@ async function getMiniMaxUsage(
       );
 
       const rawText = await response.text();
-      let payload: Record<string, any> = {};
+      let payload: Record<string, unknown> = {};
       if (rawText) {
         try {
           payload = JSON.parse(rawText);
@@ -1223,7 +1292,7 @@ async function getMiniMaxUsage(
 
       const modelRemains = payload?.model_remains ?? payload?.modelRemains;
       const allModels = Array.isArray(modelRemains) ? modelRemains : [];
-      const textModels = allModels.filter((m: any) =>
+      const textModels = (allModels as MiniMaxModel[]).filter((m) =>
         isMiniMaxTextQuotaModel(String(getMiniMaxField(m, "model_name", "modelName"))),
       );
 
