@@ -113,7 +113,7 @@ export function handleStreamingResponse({
   toolNameMap,
   streamController,
   onStreamComplete,
-}: any) {
+}: any): { success: true; response: Response } {
   if (onRequestSuccess) onRequestSuccess();
 
   const transformStream = buildTransformStream({

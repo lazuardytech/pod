@@ -62,8 +62,8 @@ export type ExecutorConfig = {
   baseUrl?: string;
   baseUrls?: string[];
   chatPath?: string;
-  clientId: string;
-  clientSecret: string;
+  clientId?: string | null;
+  clientSecret?: string | null;
   format?: string;
   headers: ExecutorHeaders;
   noAuth?: boolean;

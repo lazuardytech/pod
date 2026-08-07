@@ -210,7 +210,6 @@ export function injectComboSystemPrompt(body: any, systemPrompt: any) {
  * @param {number|string} [options.comboStickyLimit=1] - Requests per combo model before switching
  * @returns {Promise<Response>}
  */
-export async function handleComboChat(params: ComboChatParams): Promise<Response>;
 export async function handleComboChat({
   body,
   models,
@@ -219,7 +218,7 @@ export async function handleComboChat({
   comboName,
   comboStrategy,
   comboStickyLimit = 1,
-}: any): Promise<any> {
+}: ComboChatParams): Promise<Response> {
   // Apply rotation strategy if enabled
   const rotatedModels = getRotatedModels(models, comboName, comboStrategy, comboStickyLimit);
 

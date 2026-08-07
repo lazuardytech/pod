@@ -1,13 +1,16 @@
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { getExecutor } from "../executors/index.js";
 import { refreshWithRetry } from "../services/tokenRefresh.js";
-import { createErrorResult, formatProviderError, parseUpstreamError } from "../utils/error.js";
+import {
+  createErrorResult,
+  formatProviderError,
+  parseUpstreamError,
+  type ErrorResult,
+} from "../utils/error.js";
 import { urlToBase64 } from "./imageProviders/_base.js";
 import { getImageAdapter } from "./imageProviders/index.js";
 
-export type ImageGenResult =
-  | { success: true; response: Response }
-  | { success: false; status: number; error: string };
+export type ImageGenResult = { success: true; response: Response } | ErrorResult;
 
 export interface ImageGenCoreParams {
   body: Record<string, any>;
@@ -41,9 +44,6 @@ function serializeRequestBody(requestBody: any) {
  * @param {function} [options.onRequestSuccess]
  * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
-export async function handleImageGenerationCore(
-  params: ImageGenCoreParams,
-): Promise<ImageGenResult>;
 export async function handleImageGenerationCore({
   body,
   modelInfo,
@@ -53,7 +53,7 @@ export async function handleImageGenerationCore({
   binaryOutput = false,
   onCredentialsRefreshed,
   onRequestSuccess,
-}: any): Promise<any> {
+}: ImageGenCoreParams): Promise<ImageGenResult> {
   const { provider, model } = modelInfo;
 
   if (!body.prompt) {
@@ -119,7 +119,7 @@ export async function handleImageGenerationCore({
 
     if (newCredentials?.accessToken || newCredentials?.apiKey) {
       log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed for image generation`);
-      Object.assign(credentials, newCredentials);
+      Object.assign(credentials as Record<string, any>, newCredentials);
       if (onCredentialsRefreshed) await onCredentialsRefreshed(newCredentials);
 
       try {

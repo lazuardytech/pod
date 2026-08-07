@@ -11,7 +11,12 @@ import { refreshWithRetry } from "../services/tokenRefresh.js";
 import { FORMATS } from "../translator/formats.js";
 import { translateRequest } from "../translator/index.js";
 import { handleBypassRequest } from "../utils/bypassHandler.js";
-import { createErrorResult, formatProviderError, parseUpstreamError } from "../utils/error.js";
+import {
+  createErrorResult,
+  formatProviderError,
+  parseUpstreamError,
+  type ErrorResult,
+} from "../utils/error.js";
 import { createStreamController } from "../utils/streamHandler.js";
 import { buildRequestDetail, extractRequestConfig } from "./chatCore/requestDetail.js";
 import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.js";
@@ -93,9 +98,7 @@ import { reserveReasoningTokenBudget } from "../utils/tokenBudget.js";
 import { handleNonStreamingResponse } from "./chatCore/nonStreamingHandler.js";
 import { buildOnStreamComplete, handleStreamingResponse } from "./chatCore/streamingHandler.js";
 
-export type ChatCoreResult =
-  | { success: true; response: Response }
-  | { success: false; status: number; error: string; resetsAtMs?: number | null };
+export type ChatCoreResult = { success: true; response: Response } | ErrorResult;
 
 export interface ChatCoreParams {
   body: Record<string, any>;
@@ -104,8 +107,8 @@ export interface ChatCoreParams {
   log: any;
   onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
-  onDisconnect?: () => Promise<void> | void;
-  clientRawRequest?: unknown;
+  onDisconnect?: (reason?: any) => Promise<void> | void;
+  clientRawRequest?: any;
   connectionId: string;
   userAgent?: string;
   apiKey?: string | null;
@@ -114,7 +117,7 @@ export interface ChatCoreParams {
   cavemanEnabled?: boolean;
   cavemanLevel?: string;
   sourceFormatOverride?: string | null;
-  providerThinking?: unknown;
+  providerThinking?: any;
   contentFilterMessage?: string | null;
   chatSettings?: Record<string, any>;
   memoryOwnerId?: string | null;
@@ -228,7 +231,6 @@ function extractTokensSaved(usage: any) {
  * @param {object} options.credentials - Provider credentials
  * @param {string} options.sourceFormatOverride - Override detected source format (e.g. "openai-responses")
  */
-export async function handleChatCore(params: ChatCoreParams): Promise<ChatCoreResult>;
 export async function handleChatCore({
   body,
   modelInfo,
@@ -251,7 +253,7 @@ export async function handleChatCore({
   chatSettings,
   memoryOwnerId,
   comboName,
-}: any): Promise<any> {
+}: ChatCoreParams): Promise<ChatCoreResult> {
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
   const pipelineSessionId =
@@ -420,8 +422,8 @@ export async function handleChatCore({
   const clientTool = detectClientTool(clientRawRequest?.headers || {}, body);
   const passthrough = isNativePassthrough(clientTool, provider);
 
-  let translatedBody;
-  let toolNameMap;
+  let translatedBody: any;
+  let toolNameMap: any;
   if (passthrough) {
     log?.debug?.("PASSTHROUGH", `${clientTool} → ${provider} | native lossless`);
     translatedBody = { ...body, model };
@@ -713,7 +715,7 @@ export async function handleChatCore({
       );
       if (newCredentials?.accessToken || newCredentials?.copilotToken) {
         log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed`);
-        Object.assign(credentials, newCredentials);
+        Object.assign(credentials as Record<string, any>, newCredentials);
         if (onCredentialsRefreshed) {
           try {
             await onCredentialsRefreshed(newCredentials);

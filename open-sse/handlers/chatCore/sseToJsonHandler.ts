@@ -5,6 +5,10 @@ import { FORMATS } from "../../translator/formats.js";
 import { createErrorResult } from "../../utils/error.js";
 import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.js";
 
+type ForcedSSEToJsonResult =
+  | { success: true; response: Response }
+  | ReturnType<typeof createErrorResult>;
+
 function textFromResponsesMessageItem(item: any) {
   if (!item?.content || !Array.isArray(item.content)) return "";
   const byType = item.content.find((c: any) => c.type === "output_text");
@@ -137,7 +141,7 @@ export async function handleForcedSSEToJson({
   trackDone,
   appendLog,
   onFinalJsonResponse,
-}: any) {
+}: any): Promise<ForcedSSEToJsonResult | null> {
   const contentType = providerResponse.headers.get("content-type") || "";
   const isSSE =
     contentType.includes("text/event-stream") || (contentType === "" && provider === "codex");

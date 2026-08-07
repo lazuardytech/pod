@@ -139,7 +139,7 @@ export class AntigravityExecutor extends BaseExecutor {
             refresh_token: credentials.refreshToken,
             client_id: this.config.clientId,
             client_secret: this.config.clientSecret,
-          }),
+          } as any),
         },
         proxyOptions,
       );

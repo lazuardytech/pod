@@ -1,16 +1,14 @@
 import { Buffer } from "node:buffer";
 import { AI_PROVIDERS } from "../../src/shared/constants/providers";
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { createErrorResult } from "../utils/error.js";
+import { createErrorResult, type ErrorResult } from "../utils/error.js";
 
-export type SttResult =
-  | { success: true; response: Response }
-  | { success: false; status: number; error: string };
+export type SttResult = { success: true; response: Response } | ErrorResult;
 
 export interface SttCoreParams {
   provider: string;
   model: string;
-  formData?: FormData;
+  formData: FormData;
   credentials?: Record<string, unknown> | null;
   translate?: boolean;
 }
@@ -52,7 +50,7 @@ function resolveAudioContentType(file: any) {
   return map[ext] || "application/octet-stream";
 }
 
-async function upstreamError(res: any) {
+async function upstreamError(res: any): Promise<SttResult> {
   let txt = "";
   try {
     txt = await res.text();
@@ -70,7 +68,13 @@ async function upstreamError(res: any) {
 }
 
 // Deepgram: raw binary POST + model query param
-async function transcribeDeepgram(cfg: any, file: any, model: any, token: any, formData: any) {
+async function transcribeDeepgram(
+  cfg: any,
+  file: any,
+  model: any,
+  token: any,
+  formData: any,
+): Promise<SttResult> {
   const url = new URL(cfg.baseUrl);
   url.searchParams.set("model", model);
   url.searchParams.set("smart_format", "true");
@@ -95,7 +99,12 @@ async function transcribeDeepgram(cfg: any, file: any, model: any, token: any, f
 }
 
 // AssemblyAI: upload → submit → poll (max 120s)
-async function transcribeAssemblyAI(cfg: any, file: any, model: any, token: any) {
+async function transcribeAssemblyAI(
+  cfg: any,
+  file: any,
+  model: any,
+  token: any,
+): Promise<SttResult> {
   const auth = buildAuthHeaders(cfg, token);
   const buf = await file.arrayBuffer();
   const up = await fetch("https://api.assemblyai.com/v2/upload", {
@@ -132,7 +141,7 @@ async function transcribeAssemblyAI(cfg: any, file: any, model: any, token: any)
 }
 
 // Nvidia NIM: multipart, normalize response
-async function transcribeNvidia(cfg: any, file: any, model: any, token: any) {
+async function transcribeNvidia(cfg: any, file: any, model: any, token: any): Promise<SttResult> {
   const fd = new FormData();
   fd.append("file", file as any, file.name || "audio.wav");
   fd.append("model", model);
@@ -147,7 +156,13 @@ async function transcribeNvidia(cfg: any, file: any, model: any, token: any) {
 }
 
 // Gemini: generateContent with inline_data audio + transcription prompt
-async function transcribeGemini(cfg: any, file: any, model: any, token: any, formData: any) {
+async function transcribeGemini(
+  cfg: any,
+  file: any,
+  model: any,
+  token: any,
+  formData: any,
+): Promise<SttResult> {
   const buf = await file.arrayBuffer();
   const b64 = Buffer.from(buf).toString("base64");
   const mime = resolveAudioContentType(file);
@@ -180,7 +195,12 @@ async function transcribeGemini(cfg: any, file: any, model: any, token: any, for
 }
 
 // HuggingFace: POST raw binary to {baseUrl}/{model_id}
-async function transcribeHuggingFace(cfg: any, file: any, model: any, token: any) {
+async function transcribeHuggingFace(
+  cfg: any,
+  file: any,
+  model: any,
+  token: any,
+): Promise<SttResult> {
   if (model.includes("..") || model.includes("//"))
     return createErrorResult(400, "Invalid model ID", undefined);
   const url = `${cfg.baseUrl.replace(/\/+$/, "")}/${model}`;
@@ -206,7 +226,7 @@ async function transcribeOpenAICompatible(
   token: any,
   formData: any,
   translate: any,
-) {
+): Promise<SttResult> {
   const fd = new FormData();
   fd.append("file", file as any, file.name || "audio.wav");
   fd.append("model", model);
@@ -235,7 +255,7 @@ async function transcribeOpenAICompatible(
   };
 }
 
-function jsonResponse(obj: any) {
+function jsonResponse(obj: any): SttResult {
   return {
     success: true,
     response: new Response(JSON.stringify(obj), {
@@ -249,14 +269,13 @@ function jsonResponse(obj: any) {
  * STT core handler — dispatch by sttConfig.format.
  * @returns {Promise<{success, response, status?, error?}>}
  */
-export async function handleSttCore(params: SttCoreParams): Promise<SttResult>;
 export async function handleSttCore({
   provider,
   model,
   formData,
   credentials,
   translate,
-}: any): Promise<any> {
+}: SttCoreParams): Promise<SttResult> {
   const file = formData.get("file");
   if (!file)
     return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: file", undefined);

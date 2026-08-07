@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { createErrorResult } from "../utils/error.js";
+import { createErrorResult, type ErrorResult } from "../utils/error.js";
 import { getTtsAdapter, synthesizeViaConfig } from "./ttsProviders/index.js";
 
 // Re-export voice fetchers + voices APIs for backward compat with existing routes
@@ -11,9 +11,7 @@ export {
   VOICE_FETCHERS,
 } from "./ttsProviders/index.js";
 
-export type TtsResult =
-  | { success: true; response: Response }
-  | { success: false; status: number; error: string };
+export type TtsResult = { success: true; response: Response } | ErrorResult;
 
 export interface TtsCoreParams {
   provider: string;
@@ -27,7 +25,7 @@ export interface TtsCoreParams {
 }
 
 // ── Response Formatter (DRY) ───────────────────────────────────
-function createTtsResponse(base64Audio: any, format: any, responseFormat: any) {
+function createTtsResponse(base64Audio: any, format: any, responseFormat: any): TtsResult {
   const audioBuffer = Buffer.from(base64Audio, "base64");
 
   // JSON format: return base64 encoded audio
@@ -63,7 +61,6 @@ function createTtsResponse(base64Audio: any, format: any, responseFormat: any) {
  *
  * @returns {Promise<{success, response, status?, error?}>}
  */
-export async function handleTtsCore(params: TtsCoreParams): Promise<TtsResult>;
 export async function handleTtsCore({
   provider,
   model,
@@ -73,7 +70,7 @@ export async function handleTtsCore({
   language,
   voice,
   speed,
-}: any): Promise<any> {
+}: TtsCoreParams): Promise<TtsResult> {
   if (!input?.trim()) {
     return createErrorResult(HTTP_STATUS.BAD_REQUEST, "Missing required field: input", undefined);
   }

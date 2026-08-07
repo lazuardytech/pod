@@ -15,6 +15,10 @@ import {
 } from "./requestDetail.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
 
+type NonStreamingResult =
+  | { success: true; response: Response }
+  | ReturnType<typeof createErrorResult>;
+
 /**
  * Translate non-streaming response body from provider format → OpenAI format.
  */
@@ -173,7 +177,7 @@ export async function handleNonStreamingResponse({
   trackDone,
   appendLog,
   onFinalJsonResponse,
-}: any) {
+}: any): Promise<NonStreamingResult> {
   trackDone();
   const contentType = providerResponse.headers.get("content-type") || "";
   let responseBody;

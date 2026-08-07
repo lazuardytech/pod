@@ -377,7 +377,7 @@ Respond ONLY with the JSON object, no other text.`;
           refresh_token: refreshToken,
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
-        }),
+        } as any),
       },
       proxyOptions,
     );

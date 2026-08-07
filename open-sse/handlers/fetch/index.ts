@@ -13,8 +13,8 @@ export interface FetchCoreParams {
   format?: string;
   maxCharacters?: number;
   provider: string;
-  providerConfig: unknown;
-  credentials: Record<string, unknown> | null;
+  providerConfig: Record<string, any> | null;
+  credentials: Record<string, any> | null;
   log: any;
   onCredentialsRefreshed?: (newCreds: Record<string, unknown>) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
@@ -109,7 +109,6 @@ async function readJsonOrText(res: any) {
  * @param {Function} [params.log]
  * @returns {Promise<FetchResult>}
  */
-export async function handleFetchCore(params: FetchCoreParams): Promise<FetchResult>;
 export async function handleFetchCore({
   url,
   format,
@@ -118,7 +117,7 @@ export async function handleFetchCore({
   providerConfig,
   credentials,
   log,
-}: any): Promise<any> {
+}: FetchCoreParams): Promise<FetchResult> {
   if (!url || typeof url !== "string") {
     return { success: false, status: 400, error: "url is required" };
   }
@@ -176,7 +175,7 @@ async function runFirecrawl({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any) {
+}: any): Promise<FetchResult> {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.firecrawl.dev/v1/scrape",
@@ -229,7 +228,7 @@ async function runJina({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any) {
+}: any): Promise<FetchResult> {
   const target = `https://r.jina.ai/${encodeURIComponent(url)}`;
   const upstreamStart = Date.now();
   const r = await tryFetch(
@@ -277,7 +276,7 @@ async function runTavily({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any) {
+}: any): Promise<FetchResult> {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.tavily.com/extract",
@@ -329,7 +328,7 @@ async function runExa({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any) {
+}: any): Promise<FetchResult> {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.exa.ai/contents",

@@ -12,8 +12,8 @@ import { handleChatSearch } from "./chatSearch.js";
 import { normalizeSearchResponse } from "./normalizers.js";
 
 export type SearchResult =
-  | { success: true; response: Response }
-  | { success: false; status: number; error: string };
+  | { success: true; response: Response; data?: unknown }
+  | { success: false; status: number; error: string; response?: Response };
 
 export interface SearchCoreParams {
   body: Record<string, any>;
@@ -52,7 +52,9 @@ function formatSearxngNetworkError({ err, fetchUrl = "" }: any) {
 }
 
 /** Normalize and validate query string. */
-function sanitizeQuery(query: any) {
+function sanitizeQuery(
+  query: any,
+): { clean: string; error?: undefined } | { clean?: undefined; error: string } {
   if (CONTROL_CHAR_RE.test(query)) return { error: "Query contains invalid control characters" };
   const clean = query.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (!clean) return { error: "Query is empty after normalization" };
@@ -78,7 +80,7 @@ function jsonResponse(payload: any, status: any = 200) {
 }
 
 /** Wrap an error result with a Response object so the auth wrapper can return it directly. */
-function errorResult(status: any, error: any) {
+function errorResult(status: number, error: string): SearchResult {
   return {
     success: false,
     status,
@@ -88,7 +90,7 @@ function errorResult(status: any, error: any) {
 }
 
 /** Wrap a success payload. */
-function successResult(data: any) {
+function successResult(data: any): SearchResult {
   return { success: true, data, response: jsonResponse(data, 200) };
 }
 
@@ -231,20 +233,19 @@ async function tryDedicatedProvider({
  * @param {object|null} options.credentials  Provider credentials
  * @param {object}   [options.log]           Logger
  */
-export async function handleSearchCore(params: SearchCoreParams): Promise<SearchResult>;
 export async function handleSearchCore({
   body,
   provider,
   providerConfig,
   credentials,
   log,
-}: any): Promise<any> {
+}: SearchCoreParams): Promise<SearchResult> {
   const globalStartTime = Date.now();
 
   // 1. Sanitize query
   const { clean, error: sanitizeError } = sanitizeQuery(body.query || "");
   if (sanitizeError) return errorResult(400, sanitizeError);
-  const normalizedBody = { ...body, query: clean };
+  const normalizedBody: Record<string, any> = { ...body, query: clean };
 
   // 2. Route: dedicated search API takes priority over chat-based
   let result;

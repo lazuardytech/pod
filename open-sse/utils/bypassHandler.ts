@@ -4,6 +4,8 @@ import { FORMATS } from "../translator/formats.js";
 import { initState, translateResponse } from "../translator/index.js";
 import { formatSSE } from "./stream.js";
 
+type BypassResult = { success: true; response: Response };
+
 /**
  * Check for bypass patterns - return fake response without calling provider
  * Only works for Claude CLI requests
@@ -13,7 +15,7 @@ export function handleBypassRequest(
   model: any,
   userAgent: any = "",
   ccFilterNaming: any = false,
-) {
+): BypassResult | null {
   if (!userAgent.includes("claude-cli")) return null;
   if (!body.messages?.length) return null;
 
@@ -140,7 +142,7 @@ function createOpenAIResponse(model: any, text: any = DEFAULT_BYPASS_TEXT) {
  * Create non-streaming response with translation
  * Use translator to convert OpenAI → sourceFormat
  */
-function createNonStreamingResponse(sourceFormat: any, model: any, text: any) {
+function createNonStreamingResponse(sourceFormat: any, model: any, text: any): BypassResult {
   const openaiResponse = createOpenAIResponse(model, text);
 
   // If sourceFormat is OpenAI, return directly
@@ -194,7 +196,7 @@ function createNonStreamingResponse(sourceFormat: any, model: any, text: any) {
  * Create streaming response with translation
  * Use translator to convert OpenAI chunks → sourceFormat
  */
-function createStreamingResponse(sourceFormat: any, model: any, text: any) {
+function createStreamingResponse(sourceFormat: any, model: any, text: any): BypassResult {
   const openaiResponse = createOpenAIResponse(model, text);
   const state = initState(sourceFormat);
   state.model = model;

@@ -1,12 +1,15 @@
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { getExecutor } from "../executors/index.js";
 import { refreshWithRetry } from "../services/tokenRefresh.js";
-import { createErrorResult, formatProviderError, parseUpstreamError } from "../utils/error.js";
+import {
+  createErrorResult,
+  formatProviderError,
+  parseUpstreamError,
+  type ErrorResult,
+} from "../utils/error.js";
 import { getEmbeddingAdapter } from "./embeddingProviders/index.js";
 
-export type EmbeddingsResult =
-  | { success: true; response: Response }
-  | { success: false; status: number; error: string };
+export type EmbeddingsResult = { success: true; response: Response } | ErrorResult;
 
 export interface EmbeddingsCoreParams {
   body: Record<string, any>;
@@ -23,7 +26,6 @@ export interface EmbeddingsCoreParams {
  *
  * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
-export async function handleEmbeddingsCore(params: EmbeddingsCoreParams): Promise<EmbeddingsResult>;
 export async function handleEmbeddingsCore({
   body,
   modelInfo,
@@ -31,7 +33,7 @@ export async function handleEmbeddingsCore({
   log,
   onCredentialsRefreshed,
   onRequestSuccess,
-}: any): Promise<any> {
+}: EmbeddingsCoreParams): Promise<EmbeddingsResult> {
   const { provider, model } = modelInfo;
 
   // Validate input
@@ -98,7 +100,7 @@ export async function handleEmbeddingsCore({
 
     if (newCredentials?.accessToken || newCredentials?.apiKey) {
       log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed for embeddings`);
-      Object.assign(credentials, newCredentials);
+      Object.assign(credentials as Record<string, any>, newCredentials);
       if (onCredentialsRefreshed) await onCredentialsRefreshed(newCredentials);
 
       try {
