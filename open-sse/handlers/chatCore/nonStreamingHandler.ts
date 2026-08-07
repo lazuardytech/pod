@@ -15,22 +15,175 @@ import {
 } from "./requestDetail.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
 
+type JsonRecord = Record<string, unknown>;
+
 type NonStreamingResult =
   | { success: true; response: Response }
   | ReturnType<typeof createErrorResult>;
 
+type OpenAIToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
+type OpenAIAssistantMessage = {
+  role: "assistant";
+  content?: string;
+  reasoning_content?: string;
+  tool_calls?: OpenAIToolCall[];
+};
+
+type OpenAIChatCompletion = JsonRecord & {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: OpenAIAssistantMessage;
+    finish_reason: string;
+    logprobs?: unknown;
+    content_filter_results?: unknown;
+  }>;
+  usage?: JsonRecord & {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    completion_tokens_details?: { reasoning_tokens: number };
+  };
+};
+
+type MutableChatCompletion = JsonRecord & {
+  object?: string;
+  created?: number;
+  system_fingerprint?: string;
+  prompt_filter_results?: unknown;
+  choices?: Array<{
+    message?: {
+      content?: unknown;
+      reasoning_content?: unknown;
+      tool_calls?: unknown[];
+    };
+    finish_reason?: string;
+    logprobs?: unknown;
+    content_filter_results?: unknown;
+  }>;
+  usage?: unknown;
+  content?: unknown;
+  reasoning_content?: unknown;
+};
+
+type GeminiPart = {
+  thought?: boolean;
+  text?: string;
+  functionCall?: { name?: string; args?: unknown };
+};
+
+type GeminiCandidate = {
+  content?: { parts?: GeminiPart[] };
+  finishReason?: string;
+};
+
+type GeminiUsage = {
+  promptTokenCount?: number;
+  thoughtsTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
+};
+
+type GeminiResponse = {
+  candidates?: GeminiCandidate[];
+  usageMetadata?: GeminiUsage;
+  responseId?: string;
+  createTime?: string | number;
+  modelVersion?: string;
+};
+
+type ClaudeContentBlock = {
+  type?: string;
+  text?: string;
+  thinking?: string;
+  id?: string;
+  name?: string;
+  input?: unknown;
+};
+
+type ClaudeUsage = {
+  input_tokens?: number;
+  output_tokens?: number;
+};
+
+type ClaudeResponse = {
+  content?: ClaudeContentBlock[];
+  stop_reason?: string;
+  id?: string;
+  model?: string;
+  usage?: ClaudeUsage;
+};
+
+type ResponsesContentItem = { text?: string; type?: string };
+
+type ResponsesOutputItem = {
+  type?: string;
+  content?: ResponsesContentItem[];
+};
+
+type ResponsesJson = {
+  created_at?: number;
+  id?: string;
+  output?: ResponsesOutputItem[];
+  usage?: { input_tokens?: number; output_tokens?: number };
+};
+
+type RequestLoggerLike = {
+  logProviderResponse: (
+    status?: unknown,
+    statusText?: unknown,
+    headers?: unknown,
+    body?: unknown,
+  ) => void;
+  logConvertedResponse: (body?: unknown) => void;
+};
+
+type NonStreamingParams = {
+  providerResponse: Response;
+  provider: string;
+  model: string;
+  sourceFormat: string;
+  targetFormat: string;
+  body: JsonRecord;
+  stream: boolean;
+  translatedBody?: unknown;
+  finalBody?: unknown;
+  requestStartTime: number;
+  connectionId?: string;
+  apiKey?: string | null;
+  clientRawRequest?: { endpoint?: string } | null;
+  onRequestSuccess?: () => Promise<void> | void;
+  reqLogger: RequestLoggerLike;
+  toolNameMap?: unknown;
+  trackDone: () => void;
+  appendLog: (entry: JsonRecord) => void;
+  onFinalJsonResponse?: (response: unknown, usage: unknown) => void;
+};
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
  * Translate non-streaming response body from provider format → OpenAI format.
  */
 export function translateNonStreamingResponse(
-  responseBody: any,
-  targetFormat: any,
-  sourceFormat: any,
-) {
+  responseBody: unknown,
+  targetFormat: unknown,
+  sourceFormat: unknown,
+): unknown {
   if (targetFormat === sourceFormat || targetFormat === FORMATS.OPENAI) return responseBody;
 
   // Gemini / Antigravity
@@ -40,15 +193,16 @@ export function translateNonStreamingResponse(
     targetFormat === FORMATS.GEMINI_CLI ||
     targetFormat === FORMATS.VERTEX
   ) {
-    const response = responseBody.response || responseBody;
+    const body = isRecord(responseBody) ? responseBody : {};
+    const response = (isRecord(body.response) ? body.response : body) as GeminiResponse;
     if (!response?.candidates?.[0]) return responseBody;
 
     const candidate = response.candidates[0];
-    const content = candidate.content;
-    const usage = response.usageMetadata || responseBody.usageMetadata;
+    const content = candidate?.content;
+    const usage = response.usageMetadata || (body.usageMetadata as GeminiUsage | undefined);
     let textContent = "",
       reasoningContent = "";
-    const toolCalls: any[] = [];
+    const toolCalls: OpenAIToolCall[] = [];
 
     if (content?.parts) {
       for (const part of content.parts) {
@@ -59,7 +213,7 @@ export function translateNonStreamingResponse(
             id: `call_${part.functionCall.name}_${Date.now()}_${toolCalls.length}`,
             type: "function",
             function: {
-              name: part.functionCall.name,
+              name: part.functionCall.name || "",
               arguments: JSON.stringify(part.functionCall.args || {}),
             },
           });
@@ -67,16 +221,16 @@ export function translateNonStreamingResponse(
       }
     }
 
-    const message: any = { role: "assistant" };
+    const message: OpenAIAssistantMessage = { role: "assistant" };
     if (textContent) message.content = textContent;
     if (reasoningContent) message.reasoning_content = reasoningContent;
     if (toolCalls.length > 0) message.tool_calls = toolCalls;
     if (!message.content && !message.tool_calls) message.content = "";
 
-    let finishReason = (candidate.finishReason || "stop").toLowerCase();
+    let finishReason = (candidate?.finishReason || "stop").toLowerCase();
     if (finishReason === "stop" && toolCalls.length > 0) finishReason = "tool_calls";
 
-    const result: any = {
+    const result: OpenAIChatCompletion = {
       id: `chatcmpl-${response.responseId || Date.now()}`,
       object: "chat.completion",
       created: Math.floor(new Date(response.createTime || Date.now()).getTime() / 1000),
@@ -90,8 +244,10 @@ export function translateNonStreamingResponse(
         completion_tokens: usage.candidatesTokenCount || 0,
         total_tokens: usage.totalTokenCount || 0,
       };
-      if (usage.thoughtsTokenCount > 0) {
-        result.usage.completion_tokens_details = { reasoning_tokens: usage.thoughtsTokenCount };
+      if ((usage.thoughtsTokenCount || 0) > 0) {
+        result.usage.completion_tokens_details = {
+          reasoning_tokens: usage.thoughtsTokenCount || 0,
+        };
       }
     }
     return result;
@@ -99,13 +255,14 @@ export function translateNonStreamingResponse(
 
   // Claude
   if (targetFormat === FORMATS.CLAUDE) {
-    if (!responseBody.content) return responseBody;
+    const claudeBody = responseBody as ClaudeResponse;
+    if (!claudeBody.content) return responseBody;
 
     let textContent = "",
       thinkingContent = "";
-    const toolCalls: any[] = [];
+    const toolCalls: OpenAIToolCall[] = [];
 
-    for (const block of responseBody.content) {
+    for (const block of claudeBody.content) {
       if (block.type === "text") {
         // Strip markdown code block markers (e.g. kimi wraps JSON in ```json...```)
         const raw = block.text ?? "";
@@ -114,37 +271,36 @@ export function translateNonStreamingResponse(
       } else if (block.type === "thinking") thinkingContent += block.thinking || "";
       else if (block.type === "tool_use") {
         toolCalls.push({
-          id: block.id,
+          id: block.id || "",
           type: "function",
-          function: { name: block.name, arguments: JSON.stringify(block.input || {}) },
+          function: { name: block.name || "", arguments: JSON.stringify(block.input || {}) },
         });
       }
     }
 
-    const message: any = { role: "assistant" };
+    const message: OpenAIAssistantMessage = { role: "assistant" };
     if (textContent) message.content = textContent;
     if (thinkingContent) message.reasoning_content = thinkingContent;
     if (toolCalls.length > 0) message.tool_calls = toolCalls;
     if (!message.content && !message.tool_calls) message.content = "";
 
-    let finishReason = responseBody.stop_reason || "stop";
+    let finishReason = claudeBody.stop_reason || "stop";
     if (finishReason === "end_turn") finishReason = "stop";
     if (finishReason === "tool_use") finishReason = "tool_calls";
 
-    const result: any = {
-      id: `chatcmpl-${responseBody.id || Date.now()}`,
+    const result: OpenAIChatCompletion = {
+      id: `chatcmpl-${claudeBody.id || Date.now()}`,
       object: "chat.completion",
       created: Math.floor(Date.now() / 1000),
-      model: responseBody.model || "claude",
+      model: claudeBody.model || "claude",
       choices: [{ index: 0, message, finish_reason: finishReason }],
     };
 
-    if (responseBody.usage) {
+    if (claudeBody.usage) {
       result.usage = {
-        prompt_tokens: responseBody.usage.input_tokens || 0,
-        completion_tokens: responseBody.usage.output_tokens || 0,
-        total_tokens:
-          (responseBody.usage.input_tokens || 0) + (responseBody.usage.output_tokens || 0),
+        prompt_tokens: claudeBody.usage.input_tokens || 0,
+        completion_tokens: claudeBody.usage.output_tokens || 0,
+        total_tokens: (claudeBody.usage.input_tokens || 0) + (claudeBody.usage.output_tokens || 0),
       };
     }
     return result;
@@ -181,10 +337,10 @@ export async function handleNonStreamingResponse({
   trackDone,
   appendLog,
   onFinalJsonResponse,
-}: any): Promise<NonStreamingResult> {
+}: NonStreamingParams): Promise<NonStreamingResult> {
   trackDone();
   const contentType = providerResponse.headers.get("content-type") || "";
-  let responseBody;
+  let responseBody: unknown;
 
   // Codex never sends Content-Type on success — detect by provider name too.
   // Codex returns Responses API SSE format, not Chat Completions SSE, so it
@@ -195,14 +351,16 @@ export async function handleNonStreamingResponse({
   if (isSSE && isCodexSSE) {
     // Responses API SSE → convert to chat.completion JSON
     try {
-      const jsonResponse = await convertResponsesStreamToJson(providerResponse.body);
+      const jsonResponse = (await convertResponsesStreamToJson(
+        providerResponse.body,
+      )) as ResponsesJson;
       const inTokens = jsonResponse.usage?.input_tokens || 0;
       const outTokens = jsonResponse.usage?.output_tokens || 0;
       // Extract text from output items
-      const msgItem = (jsonResponse.output || []).find((i: any) => i?.type === "message");
+      const msgItem = (jsonResponse.output || []).find((i) => i?.type === "message");
       const textContent =
-        msgItem?.content?.find?.((c: any) => c.type === "output_text")?.text ||
-        msgItem?.content?.find?.((c: any) => typeof c.text === "string")?.text ||
+        msgItem?.content?.find?.((c) => c.type === "output_text")?.text ||
+        msgItem?.content?.find?.((c) => typeof c.text === "string")?.text ||
         "";
       responseBody = {
         id: jsonResponse.id || `chatcmpl-${Date.now()}`,
@@ -276,16 +434,18 @@ export async function handleNonStreamingResponse({
     endpoint: clientRawRequest?.endpoint,
   });
 
-  const translatedResponse = needsTranslation(targetFormat, sourceFormat)
-    ? translateNonStreamingResponse(responseBody, targetFormat, sourceFormat)
-    : responseBody;
+  const translatedResponse = (
+    needsTranslation(targetFormat, sourceFormat)
+      ? translateNonStreamingResponse(responseBody, targetFormat, sourceFormat)
+      : responseBody
+  ) as MutableChatCompletion;
 
   // Fix finish_reason for tool_calls: some providers return non-standard values (e.g. "other")
   if (translatedResponse?.choices?.[0]) {
     const choice = translatedResponse.choices[0];
-    const msg = choice.message;
+    const msg = choice?.message;
     const hasToolCalls = Array.isArray(msg?.tool_calls) && msg.tool_calls.length > 0;
-    if (hasToolCalls && choice.finish_reason !== "tool_calls") {
+    if (hasToolCalls && choice && choice.finish_reason !== "tool_calls") {
       choice.finish_reason = "tool_calls";
     }
   }

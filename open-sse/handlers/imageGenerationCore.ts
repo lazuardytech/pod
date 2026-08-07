@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { getExecutor } from "../executors/index.js";
+import type { ExecutorCredentials } from "../executors/base.js";
 import { refreshWithRetry } from "../services/tokenRefresh.js";
 import {
   createErrorResult,
@@ -7,42 +8,47 @@ import {
   parseUpstreamError,
   type ErrorResult,
 } from "../utils/error.js";
-import { urlToBase64 } from "./imageProviders/_base.js";
+import {
+  urlToBase64,
+  type ImageRequestBody,
+  type ProviderCredentials,
+} from "./imageProviders/_base.js";
 import { getImageAdapter } from "./imageProviders/index.js";
+
+type JsonRecord = Record<string, unknown>;
+
+type ImageLogger = {
+  debug?: (...args: unknown[]) => void;
+  info?: (...args: unknown[]) => void;
+  warn?: (...args: unknown[]) => void;
+};
 
 export type ImageGenResult = { success: true; response: Response } | ErrorResult;
 
 export interface ImageGenCoreParams {
-  body: Record<string, any>;
+  body: ImageRequestBody;
   modelInfo: { provider: string; model: string };
-  credentials: Record<string, any> | null;
-  log?: any;
+  credentials: ProviderCredentials;
+  log?: ImageLogger | null;
   binaryOutput?: boolean;
   streamToClient?: boolean;
-  onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
+  onCredentialsRefreshed?: (newCreds: JsonRecord) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
 }
 
-function serializeRequestBody(requestBody: any) {
+function serializeRequestBody(requestBody: unknown) {
   if (typeof FormData !== "undefined" && requestBody instanceof FormData) return requestBody;
   if (typeof requestBody === "string") return requestBody;
   return JSON.stringify(requestBody);
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Core image generation handler — orchestrator only.
  * Provider-specific URL/headers/body/parse/normalize live in `./imageProviders/{id}.js`.
- *
- * @param {object} options
- * @param {object} options.body - Request body { model, prompt, n, size, ... }
- * @param {object} options.modelInfo - { provider, model }
- * @param {object} options.credentials - Provider credentials
- * @param {object} [options.log] - Logger
- * @param {boolean} [options.streamToClient] - Pipe SSE to client (codex)
- * @param {boolean} [options.binaryOutput] - Return raw image bytes
- * @param {function} [options.onCredentialsRefreshed]
- * @param {function} [options.onRequestSuccess]
- * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
 export async function handleImageGenerationCore({
   body,
@@ -77,17 +83,17 @@ export async function handleImageGenerationCore({
     url = adapter.buildUrl(model, credentials) as string;
     requestBody = await adapter.buildBody(model, body);
     headers = adapter.buildHeaders(credentials, requestBody, model, body);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return createErrorResult(
       HTTP_STATUS.BAD_REQUEST,
-      error.message || `Invalid ${provider} image request`,
+      errorMessage(error) || `Invalid ${provider} image request`,
       undefined,
     );
   }
 
   log?.debug?.(
     "IMAGE",
-    `${provider.toUpperCase()} | ${model} | prompt="${body.prompt.slice(0, 50)}..."`,
+    `${provider.toUpperCase()} | ${model} | prompt="${String(body.prompt).slice(0, 50)}..."`,
   );
 
   let providerResponse;
@@ -97,7 +103,7 @@ export async function handleImageGenerationCore({
       headers,
       body: serializeRequestBody(requestBody),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
     log?.debug?.("IMAGE", `Fetch error: ${errMsg}`);
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg, undefined);
@@ -112,14 +118,29 @@ export async function handleImageGenerationCore({
       providerResponse.status === HTTP_STATUS.FORBIDDEN)
   ) {
     const newCredentials = await refreshWithRetry(
-      () => executor.refreshCredentials(credentials, log),
+      async () => {
+        const refreshed = await executor.refreshCredentials(
+          (credentials || {}) as ExecutorCredentials,
+          log ?? null,
+        );
+        return refreshed as
+          | (Record<string, unknown> & {
+              accessToken?: string;
+              apiKey?: string;
+              refreshToken?: string;
+              expiresIn?: number;
+              expiresAt?: number;
+              token?: string;
+            })
+          | null;
+      },
       3,
-      log,
+      log ?? null,
     );
 
     if (newCredentials?.accessToken || newCredentials?.apiKey) {
       log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed for image generation`);
-      Object.assign(credentials as Record<string, any>, newCredentials);
+      if (credentials) Object.assign(credentials, newCredentials);
       if (onCredentialsRefreshed) await onCredentialsRefreshed(newCredentials);
 
       try {
@@ -147,12 +168,12 @@ export async function handleImageGenerationCore({
   }
 
   // Parse provider response — adapter may override (codex SSE / async polling / binary)
-  let parsed;
+  let parsed: unknown;
   try {
     if (adapter.parseResponse) {
       parsed = await adapter.parseResponse(providerResponse, {
         headers,
-        log,
+        log: log ?? undefined,
         streamToClient,
         onRequestSuccess,
         url,
@@ -169,10 +190,10 @@ export async function handleImageGenerationCore({
     } else {
       parsed = await providerResponse.json();
     }
-  } catch (parseError: any) {
+  } catch (parseError: unknown) {
     return createErrorResult(
       HTTP_STATUS.BAD_GATEWAY,
-      parseError.message || `Invalid response from ${provider}`,
+      errorMessage(parseError) || `Invalid response from ${provider}`,
       undefined,
     );
   }
@@ -186,7 +207,10 @@ export async function handleImageGenerationCore({
   };
 
   // Already in OpenAI shape? skip re-normalize
-  const finalBody = normalized.created && Array.isArray(normalized.data) ? normalized : parsed;
+  const finalBody =
+    normalized.created && Array.isArray(normalized.data)
+      ? normalized
+      : (parsed as { data?: Array<{ b64_json?: string; url?: string }> });
 
   // Binary output: decode first b64_json (or fetch url) into raw bytes
   if (binaryOutput) {
@@ -199,7 +223,7 @@ export async function handleImageGenerationCore({
     }
     if (b64) {
       const buf = Buffer.from(b64, "base64");
-      const fmt = (body.output_format || "png").toLowerCase();
+      const fmt = String(body.output_format || "png").toLowerCase();
       const mime =
         fmt === "jpeg" || fmt === "jpg"
           ? "image/jpeg"

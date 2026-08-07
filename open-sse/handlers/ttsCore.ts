@@ -24,8 +24,12 @@ export interface TtsCoreParams {
   speed?: number;
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // ── Response Formatter (DRY) ───────────────────────────────────
-function createTtsResponse(base64Audio: any, format: any, responseFormat: any): TtsResult {
+function createTtsResponse(base64Audio: string, format: string, responseFormat: string): TtsResult {
   const audioBuffer = Buffer.from(base64Audio, "base64");
 
   // JSON format: return base64 encoded audio
@@ -58,8 +62,6 @@ function createTtsResponse(base64Audio: any, format: any, responseFormat: any): 
 /**
  * Synthesize text to audio. Provider logic lives in `./ttsProviders/{id}.js`
  * or is dispatched generically via `ttsConfig.format`.
- *
- * @returns {Promise<{success, response, status?, error?}>}
  */
 export async function handleTtsCore({
   provider,
@@ -98,10 +100,10 @@ export async function handleTtsCore({
       `Provider '${provider}' does not support TTS via this route.`,
       undefined,
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     return createErrorResult(
       HTTP_STATUS.BAD_GATEWAY,
-      err.message || "TTS synthesis failed",
+      errorMessage(err) || "TTS synthesis failed",
       undefined,
     );
   }

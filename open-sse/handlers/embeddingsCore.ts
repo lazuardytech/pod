@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from "../config/runtimeConfig.js";
 import { getExecutor } from "../executors/index.js";
+import type { ExecutorCredentials } from "../executors/base.js";
 import { refreshWithRetry } from "../services/tokenRefresh.js";
 import {
   createErrorResult,
@@ -9,22 +10,32 @@ import {
 } from "../utils/error.js";
 import { getEmbeddingAdapter } from "./embeddingProviders/index.js";
 
+type JsonRecord = Record<string, unknown>;
+
+type EmbeddingsLogger = {
+  debug?: (...args: unknown[]) => void;
+  info?: (...args: unknown[]) => void;
+  warn?: (...args: unknown[]) => void;
+};
+
 export type EmbeddingsResult = { success: true; response: Response } | ErrorResult;
 
 export interface EmbeddingsCoreParams {
-  body: Record<string, any>;
+  body: JsonRecord & {
+    input?: unknown;
+    encoding_format?: string;
+    dimensions?: number;
+  };
   modelInfo: { provider: string; model: string };
-  credentials: Record<string, any> | null;
-  log: any;
-  onCredentialsRefreshed?: (newCreds: Record<string, any>) => Promise<void> | void;
+  credentials: JsonRecord | null;
+  log: EmbeddingsLogger | null;
+  onCredentialsRefreshed?: (newCreds: JsonRecord) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
 }
 
 /**
  * Core embeddings handler — orchestrator only. Provider-specific URL/headers/body/normalize
  * live in `./embeddingProviders/{id}.js`.
- *
- * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
  */
 export async function handleEmbeddingsCore({
   body,
@@ -79,7 +90,7 @@ export async function handleEmbeddingsCore({
       headers,
       body: JSON.stringify(requestBody),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errMsg = formatProviderError(error, provider, model, HTTP_STATUS.BAD_GATEWAY);
     log?.debug?.("EMBEDDINGS", `Fetch error: ${errMsg}`);
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg, undefined);
@@ -93,14 +104,29 @@ export async function handleEmbeddingsCore({
       providerResponse.status === HTTP_STATUS.FORBIDDEN)
   ) {
     const newCredentials = await refreshWithRetry(
-      () => executor.refreshCredentials(credentials, log),
+      async () => {
+        const refreshed = await executor.refreshCredentials(
+          (credentials ?? {}) as ExecutorCredentials,
+          log,
+        );
+        return refreshed as
+          | (Record<string, unknown> & {
+              accessToken?: string;
+              apiKey?: string;
+              refreshToken?: string;
+              expiresIn?: number;
+              expiresAt?: number;
+              token?: string;
+            })
+          | null;
+      },
       3,
       log,
     );
 
     if (newCredentials?.accessToken || newCredentials?.apiKey) {
       log?.info?.("TOKEN", `${provider.toUpperCase()} | refreshed for embeddings`);
-      Object.assign(credentials as Record<string, any>, newCredentials);
+      if (credentials) Object.assign(credentials, newCredentials);
       if (onCredentialsRefreshed) await onCredentialsRefreshed(newCredentials);
 
       try {

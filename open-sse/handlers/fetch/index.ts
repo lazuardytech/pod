@@ -8,32 +8,62 @@ export type FetchResult =
   | { success: true; data: unknown; response?: Response }
   | { success: false; status: number; error: string };
 
+type JsonRecord = Record<string, unknown>;
+
+type FetchCredentials = JsonRecord & {
+  apiKey?: string;
+  key?: string;
+  token?: string;
+};
+
+type FetchProviderConfig = JsonRecord & {
+  timeoutMs?: number;
+  costPerQuery?: number | null;
+};
+
 export interface FetchCoreParams {
   url: string;
   format?: string;
   maxCharacters?: number;
   provider: string;
-  providerConfig: Record<string, any> | null;
-  credentials: Record<string, any> | null;
-  log: any;
-  onCredentialsRefreshed?: (newCreds: Record<string, unknown>) => Promise<void> | void;
+  providerConfig: FetchProviderConfig | null;
+  credentials: FetchCredentials | null;
+  log?: unknown;
+  onCredentialsRefreshed?: (newCreds: JsonRecord) => Promise<void> | void;
   onRequestSuccess?: () => Promise<void> | void;
 }
 
-/**
- * @typedef {Object} FetchResult
- * @property {boolean} success
- * @property {number} [status]
- * @property {string} [error]
- * @property {Object} [data]
- */
+type ProviderRunParams = {
+  url: string;
+  fmt: string;
+  timeoutMs: number;
+  apiKey: string;
+  maxCharacters?: number;
+  costPerQuery: number | null;
+  startedAt: number;
+};
 
-/**
- * Fetch with timeout abort.
- * @param {string} url
- * @param {RequestInit} init
- * @param {number} timeoutMs
- */
+type BuildDataParams = {
+  provider: string;
+  url: string;
+  title: string | null;
+  format: string;
+  text: string;
+  costUsd: number | null;
+  responseMs: number;
+  upstreamMs: number;
+};
+
+type TryFetchOk = { ok: true; res: Response };
+type TryFetchErr = { ok: false; timeout: boolean; error: string };
+type TryFetchResult = TryFetchOk | TryFetchErr;
+
+type ReadJsonResult = { json?: JsonRecord; text?: string };
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 // Strip non-ASCII chars from header values (HTTP headers must be ByteString).
 function stripNonAscii(text: string) {
   let clean = "";
@@ -43,10 +73,10 @@ function stripNonAscii(text: string) {
   return clean;
 }
 
-function sanitizeHeaders(headers: any) {
+function sanitizeHeaders(headers: unknown) {
   if (!headers) return headers;
-  const out: Record<string, any> = {};
-  for (const [k, v] of Object.entries(headers)) {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(headers as Record<string, unknown>)) {
     out[k] = typeof v === "string" ? stripNonAscii(v).trim() : v;
   }
   return out;
@@ -60,13 +90,23 @@ function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
 
-async function tryFetch(url: any, init: any, timeoutMs: any): Promise<any> {
+function callLog(log: unknown, ...args: unknown[]) {
+  if (typeof log === "function") {
+    (log as (...a: unknown[]) => void)(...args);
+  }
+}
+
+async function tryFetch(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<TryFetchResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       ...init,
-      headers: sanitizeHeaders(init.headers),
+      headers: sanitizeHeaders(init.headers) as HeadersInit,
       signal: ctrl.signal,
     });
     return { ok: true, res };
@@ -78,18 +118,28 @@ async function tryFetch(url: any, init: any, timeoutMs: any): Promise<any> {
   }
 }
 
-function truncate(text: any, max: any) {
-  if (!text || typeof text !== "string") return text || "";
+function truncate(text: unknown, max?: number): string {
+  if (!text || typeof text !== "string") return (text as string) || "";
   if (!max || max <= 0) return text;
   return text.length > max ? text.slice(0, max) : text;
 }
 
-function parseJinaTitle(text: any) {
+function parseJinaTitle(text: unknown): string | null {
   const m = String(text || "").match(/^\s*#\s+(.+)$/m);
-  return m ? (m[1] as any).trim() : null;
+  const title = m?.[1];
+  return title ? title.trim() : null;
 }
 
-function buildData({ provider, url, title, format, text, costUsd, responseMs, upstreamMs }: any) {
+function buildData({
+  provider,
+  url,
+  title,
+  format,
+  text,
+  costUsd,
+  responseMs,
+  upstreamMs,
+}: BuildDataParams) {
   return {
     provider,
     url,
@@ -101,11 +151,11 @@ function buildData({ provider, url, title, format, text, costUsd, responseMs, up
   };
 }
 
-async function readJsonOrText(res: any) {
+async function readJsonOrText(res: Response): Promise<ReadJsonResult> {
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
     try {
-      return { json: await res.json() };
+      return { json: (await res.json()) as JsonRecord };
     } catch {
       // Treat malformed provider JSON as an empty text fallback.
       return { text: "" };
@@ -116,15 +166,6 @@ async function readJsonOrText(res: any) {
 
 /**
  * Main handler.
- * @param {Object} params
- * @param {string} params.url
- * @param {string} [params.format]
- * @param {number} [params.maxCharacters]
- * @param {string} params.provider
- * @param {Object} [params.providerConfig]
- * @param {Object} [params.credentials]
- * @param {Function} [params.log]
- * @returns {Promise<FetchResult>}
  */
 export async function handleFetchCore({
   url,
@@ -143,9 +184,11 @@ export async function handleFetchCore({
   }
 
   const fmt = format || DEFAULT_FORMAT;
-  const timeoutMs = providerConfig?.timeoutMs || DEFAULT_TIMEOUT_MS;
-  const apiKey = credentials?.apiKey || credentials?.key || credentials?.token || "";
-  const costPerQuery = providerConfig?.costPerQuery ?? null;
+  const timeoutMs =
+    typeof providerConfig?.timeoutMs === "number" ? providerConfig.timeoutMs : DEFAULT_TIMEOUT_MS;
+  const apiKey = String(credentials?.apiKey || credentials?.key || credentials?.token || "");
+  const costPerQuery =
+    providerConfig?.costPerQuery === undefined ? null : (providerConfig.costPerQuery ?? null);
   const startedAt = Date.now();
 
   try {
@@ -179,7 +222,7 @@ export async function handleFetchCore({
     }
     return { success: false, status: 400, error: `Unsupported provider: ${provider}` };
   } catch (err: unknown) {
-    log?.("fetch handler error:", errorMessage(err));
+    callLog(log, "fetch handler error:", errorMessage(err));
     return { success: false, status: 502, error: errorMessage(err) || "Internal fetch error" };
   }
 }
@@ -192,7 +235,7 @@ async function runFirecrawl({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any): Promise<FetchResult> {
+}: ProviderRunParams): Promise<FetchResult> {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.firecrawl.dev/v1/scrape",
@@ -216,10 +259,16 @@ async function runFirecrawl({
     return {
       success: false,
       status: r.res.status,
-      error: json?.error || `Firecrawl error: ${r.res.status}`,
+      error:
+        (typeof json?.error === "string" ? json.error : null) || `Firecrawl error: ${r.res.status}`,
     };
   }
-  const d = json?.data || {};
+  const d = (isRecord(json?.data) ? json.data : {}) as JsonRecord & {
+    markdown?: string;
+    html?: string;
+    text?: string;
+    metadata?: { title?: string };
+  };
   const text = truncate(d.markdown || d.html || d.text || "", maxCharacters);
   const title = d.metadata?.title || null;
   return {
@@ -245,7 +294,7 @@ async function runJina({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any): Promise<FetchResult> {
+}: ProviderRunParams): Promise<FetchResult> {
   const target = `https://r.jina.ai/${encodeURIComponent(url)}`;
   const upstreamStart = Date.now();
   const r = await tryFetch(
@@ -293,7 +342,7 @@ async function runTavily({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any): Promise<FetchResult> {
+}: ProviderRunParams): Promise<FetchResult> {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.tavily.com/extract",
@@ -317,10 +366,12 @@ async function runTavily({
     return {
       success: false,
       status: r.res.status,
-      error: json?.error || `Tavily error: ${r.res.status}`,
+      error:
+        (typeof json?.error === "string" ? json.error : null) || `Tavily error: ${r.res.status}`,
     };
   }
-  const first = json?.results?.[0] || {};
+  const results = Array.isArray(json?.results) ? json.results : [];
+  const first = (isRecord(results[0]) ? results[0] : {}) as JsonRecord & { raw_content?: string };
   const text = truncate(first.raw_content || "", maxCharacters);
   return {
     success: true,
@@ -345,7 +396,7 @@ async function runExa({
   maxCharacters,
   costPerQuery,
   startedAt,
-}: any): Promise<FetchResult> {
+}: ProviderRunParams): Promise<FetchResult> {
   const upstreamStart = Date.now();
   const r = await tryFetch(
     "https://api.exa.ai/contents",
@@ -369,10 +420,14 @@ async function runExa({
     return {
       success: false,
       status: r.res.status,
-      error: json?.error || `Exa error: ${r.res.status}`,
+      error: (typeof json?.error === "string" ? json.error : null) || `Exa error: ${r.res.status}`,
     };
   }
-  const first = json?.results?.[0] || {};
+  const results = Array.isArray(json?.results) ? json.results : [];
+  const first = (isRecord(results[0]) ? results[0] : {}) as JsonRecord & {
+    text?: string;
+    title?: string;
+  };
   const text = truncate(first.text || "", maxCharacters);
   return {
     success: true,

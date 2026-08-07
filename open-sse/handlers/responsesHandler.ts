@@ -8,18 +8,32 @@ import { convertResponsesStreamToJson } from "../transformer/streamToJsonConvert
 import { convertResponsesApiFormat } from "../translator/helpers/responsesApiHelper.js";
 import { handleChatCore } from "./chatCore.js";
 
+type JsonRecord = Record<string, unknown>;
+
+type ChatLogger = {
+  debug?: (scope: string, message: string) => void;
+  error?: (scope: string, message: string) => void;
+  info?: (scope: string, message: string) => void;
+  warn?: (scope: string, message: string) => void;
+};
+
+export type ResponsesCoreParams = {
+  body: JsonRecord;
+  modelInfo: { provider: string; model: string };
+  credentials: JsonRecord | null;
+  log?: ChatLogger | null;
+  onCredentialsRefreshed?: (newCreds: JsonRecord) => Promise<void> | void;
+  onRequestSuccess?: () => Promise<void> | void;
+  onDisconnect?: (reason?: unknown) => Promise<void> | void;
+  connectionId: string;
+};
+
+type ResponsesCoreResult =
+  | { success: true; response: Response }
+  | { success: false; status?: number; error?: string; response?: Response };
+
 /**
  * Handle /v1/responses request
- * @param {object} options
- * @param {object} options.body - Request body (Responses API format)
- * @param {object} options.modelInfo - { provider, model }
- * @param {object} options.credentials - Provider credentials
- * @param {object} options.log - Logger instance (optional)
- * @param {function} options.onCredentialsRefreshed - Callback when credentials are refreshed
- * @param {function} options.onRequestSuccess - Callback when request succeeds
- * @param {function} options.onDisconnect - Callback when client disconnects
- * @param {string} options.connectionId - Connection ID for usage tracking
- * @returns {Promise<{success: boolean, response?: Response, status?: number, error?: string}>}
  */
 export async function handleResponsesCore({
   body,
@@ -30,9 +44,9 @@ export async function handleResponsesCore({
   onRequestSuccess,
   onDisconnect,
   connectionId,
-}: any) {
+}: ResponsesCoreParams): Promise<ResponsesCoreResult> {
   // Convert Responses API format to Chat Completions format
-  const convertedBody = convertResponsesApiFormat(body);
+  const convertedBody = convertResponsesApiFormat(body) as JsonRecord & { stream?: boolean };
 
   // Preserve client's stream preference (matches OpenClaw behavior)
   // Default to false if omitted: Boolean(undefined) = false
@@ -46,7 +60,7 @@ export async function handleResponsesCore({
     body: convertedBody,
     modelInfo,
     credentials,
-    log,
+    log: log ?? null,
     onCredentialsRefreshed,
     onRequestSuccess,
     onDisconnect,
@@ -64,7 +78,7 @@ export async function handleResponsesCore({
   // Case 1: Client wants non-streaming, but got SSE (provider forced it, e.g., Codex)
   if (!clientRequestedStreaming && contentType.includes("text/event-stream")) {
     try {
-      const jsonResponse = await convertResponsesStreamToJson(response.body as any);
+      const jsonResponse = await convertResponsesStreamToJson(response.body);
 
       return {
         success: true,
@@ -77,7 +91,7 @@ export async function handleResponsesCore({
           },
         }),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[Responses API] Stream-to-JSON conversion failed:", error);
       return {
         success: false,
@@ -90,7 +104,11 @@ export async function handleResponsesCore({
   // Case 2: Client wants streaming, got SSE - transform it
   if (clientRequestedStreaming && contentType.includes("text/event-stream")) {
     const transformStream = createResponsesApiTransformStream(null);
-    const transformedBody = (response.body as any).pipeThrough(transformStream);
+    const streamBody = response.body;
+    if (!streamBody) {
+      return result;
+    }
+    const transformedBody = streamBody.pipeThrough(transformStream);
 
     return {
       success: true,

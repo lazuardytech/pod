@@ -8,6 +8,78 @@ import {
 import { pipeWithDisconnect } from "../../utils/streamHandler.js";
 import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.js";
 
+type JsonRecord = Record<string, unknown>;
+
+type StreamContent = { content?: string; thinking?: string | null };
+
+type RequestLoggerLike = {
+  appendConvertedChunk?: (chunk: string) => void;
+  appendOpenAIChunk?: (chunk: string) => void;
+  appendProviderChunk?: (chunk: string) => void;
+};
+
+type StreamCompleteHandler = (
+  contentObj: StreamContent,
+  usage: unknown,
+  ttftAt: number | null,
+) => void;
+
+type BuildTransformStreamParams = {
+  provider: string;
+  sourceFormat: string;
+  targetFormat: string;
+  userAgent?: string;
+  reqLogger?: RequestLoggerLike | null;
+  toolNameMap?: unknown;
+  model: string;
+  connectionId?: string;
+  body: JsonRecord;
+  onStreamComplete?: StreamCompleteHandler | null;
+  apiKey?: string | null;
+};
+
+type StreamingResponseParams = {
+  providerResponse: Response;
+  provider: string;
+  model: string;
+  sourceFormat: string;
+  targetFormat: string;
+  userAgent?: string;
+  body: JsonRecord;
+  stream: boolean;
+  translatedBody?: unknown;
+  finalBody?: unknown;
+  requestStartTime: number;
+  connectionId?: string;
+  apiKey?: string | null;
+  clientRawRequest?: { endpoint?: string } | null;
+  onRequestSuccess?: () => Promise<void> | void;
+  reqLogger?: RequestLoggerLike | null;
+  toolNameMap?: unknown;
+  streamController?: unknown;
+  onStreamComplete?: StreamCompleteHandler | null;
+};
+
+type BuildOnStreamCompleteParams = {
+  provider: string;
+  model: string;
+  connectionId?: string;
+  apiKey?: string | null;
+  requestStartTime: number;
+  body: JsonRecord;
+  stream: boolean;
+  finalBody?: unknown;
+  translatedBody?: unknown;
+  clientRawRequest?: { endpoint?: string } | null;
+};
+
+type UsageTokensLike = {
+  input_tokens?: number;
+  output_tokens?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+};
+
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream",
   "Cache-Control": "no-cache",
@@ -34,7 +106,7 @@ function buildTransformStream({
   body,
   onStreamComplete,
   apiKey,
-}: any) {
+}: BuildTransformStreamParams) {
   const isDroidCLI =
     userAgent?.toLowerCase().includes("droid") || userAgent?.toLowerCase().includes("codex-cli");
   const needsCodexTranslation =
@@ -117,7 +189,7 @@ export function handleStreamingResponse({
   toolNameMap,
   streamController,
   onStreamComplete,
-}: any): { success: true; response: Response } {
+}: StreamingResponseParams): { success: true; response: Response } {
   if (onRequestSuccess) onRequestSuccess();
 
   const transformStream = buildTransformStream({
@@ -176,10 +248,10 @@ export function buildOnStreamComplete({
   finalBody,
   translatedBody,
   clientRawRequest,
-}: any) {
+}: BuildOnStreamCompleteParams) {
   const streamDetailId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
-  const onStreamComplete = (contentObj: any, usage: any, ttftAt: any) => {
+  const onStreamComplete: StreamCompleteHandler = (contentObj, usage, ttftAt) => {
     const latency = {
       ttft: ttftAt ? ttftAt - requestStartTime : Date.now() - requestStartTime,
       total: Date.now() - requestStartTime,
@@ -210,7 +282,7 @@ export function buildOnStreamComplete({
     saveUsageStats({
       provider,
       model,
-      tokens: usage,
+      tokens: (usage as UsageTokensLike | null | undefined) || null,
       connectionId,
       apiKey,
       endpoint: clientRawRequest?.endpoint,
