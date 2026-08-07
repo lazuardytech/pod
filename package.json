@@ -4,7 +4,7 @@
   "private": true,
   "description": "Pod web dashboard",
   "scripts": {
-    "dev": "bun --bun next dev --turbopack --port 20128",
+    "dev": "bun run gen:open-sse-shims && bun --bun next dev --turbopack --port 20128",
     "build": "bun run gen:open-sse-shims && NODE_ENV=production bun --bun next build --turbopack && bun run gen:sw-version",
     "gen:open-sse-shims": "bun run scripts/gen-open-sse-js-shims.mjs",
     "gen:sw-version": "bun run scripts/gen-sw-version.mjs",
