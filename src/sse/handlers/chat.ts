@@ -25,6 +25,8 @@ import { getComboInfo, getModelInfo } from "../services/model";
 import { checkAndRefreshToken, updateProviderCredentials } from "../services/tokenRefresh";
 import * as log from "../utils/logger";
 
+type ChatCoreOptions = Parameters<typeof handleChatCore>[0];
+
 // ponytail: module-level SSE connection cap, global counter; per-route counters if multi-instance matters
 let activeSseConnections = 0;
 const MAX_SSE_CONNECTIONS = 100;
@@ -307,7 +309,7 @@ async function handleSingleModelChat(
         modelInfo: { provider, model },
         credentials: refreshedCredentials,
         log,
-        clientRawRequest,
+        clientRawRequest: clientRawRequest as ChatCoreOptions["clientRawRequest"],
         connectionId,
         userAgent,
         apiKey,
