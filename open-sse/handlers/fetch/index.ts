@@ -35,11 +35,20 @@ export interface FetchCoreParams {
  * @param {number} timeoutMs
  */
 // Strip non-ASCII chars from header values (HTTP headers must be ByteString).
+function stripNonAscii(text: string) {
+  let clean = "";
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char.charCodeAt(0) <= 255) clean += char;
+  }
+  return clean;
+}
+
 function sanitizeHeaders(headers: any) {
   if (!headers) return headers;
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(headers)) {
-    out[k] = typeof v === "string" ? v.replace(/[^\x00-\xFF]/g, "").trim() : v;
+    out[k] = typeof v === "string" ? stripNonAscii(v).trim() : v;
   }
   return out;
 }

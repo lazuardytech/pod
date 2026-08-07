@@ -111,7 +111,7 @@ export function prepareClaudeRequest(
   // 1. System: remove all cache_control, add only to last block with ttl 1h
   if (body.system && Array.isArray(body.system)) {
     body.system = body.system.map((block: any, i: any) => {
-      const { cache_control, ...rest } = block;
+      const { cache_control: _cache_control, ...rest } = block;
       if (i === body.system.length - 1) {
         return { ...rest, cache_control: { type: "ephemeral", ttl: "1h" } };
       }
@@ -207,7 +207,7 @@ export function prepareClaudeRequest(
     }
 
     body.tools = body.tools.map((tool: any, i: any) => {
-      const { cache_control, ...rest } = tool;
+      const { cache_control: _cache_control, ...rest } = tool;
       if (i === body.tools.length - 1) {
         return { ...rest, cache_control: { type: "ephemeral", ttl: "1h" } };
       }
