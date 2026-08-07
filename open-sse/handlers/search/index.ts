@@ -28,8 +28,26 @@ export interface SearchCoreParams {
 const GLOBAL_TIMEOUT_MS = 15000;
 const NON_RETRIABLE = new Set([400, 401, 403, 404]);
 
-const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/;
 const LOCALHOST_URL_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?/i;
+
+function hasInvalidControlChar(text: string) {
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 127) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function stripNonAscii(text: string) {
+  let clean = "";
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char.charCodeAt(0) <= 255) clean += char;
+  }
+  return clean;
+}
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
@@ -63,7 +81,7 @@ function formatSearxngNetworkError({ err, fetchUrl = "" }: any) {
 function sanitizeQuery(
   query: any,
 ): { clean: string; error?: undefined } | { clean?: undefined; error: string } {
-  if (CONTROL_CHAR_RE.test(query)) return { error: "Query contains invalid control characters" };
+  if (hasInvalidControlChar(query)) return { error: "Query contains invalid control characters" };
   const clean = query.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (!clean) return { error: "Query is empty after normalization" };
   return { clean };
@@ -74,7 +92,7 @@ function sanitizeHeaders(headers: any) {
   if (!headers) return headers;
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(headers)) {
-    out[k] = typeof v === "string" ? v.replace(/[^\x00-\xFF]/g, "").trim() : v;
+    out[k] = typeof v === "string" ? stripNonAscii(v).trim() : v;
   }
   return out;
 }

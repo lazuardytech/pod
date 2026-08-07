@@ -219,7 +219,7 @@ export function buildProviderHeaders(
   provider: any,
   credentials: any,
   stream: any = true,
-  body: any = null,
+  _body: any = null,
 ) {
   const config = getProviderConfig(provider);
   const headers = {

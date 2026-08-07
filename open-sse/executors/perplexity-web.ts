@@ -611,8 +611,19 @@ export class PerplexityWebExecutor extends BaseExecutor {
     super("perplexity-web", PROVIDERS["perplexity-web"]);
   }
 
-  async execute({ model, body, stream, credentials, signal, log, clientHeaders = null }: any) {
-    const messages = body?.messages;
+  async execute({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log,
+    clientHeaders = null,
+  }: ExecutorExecuteOptions & {
+    clientHeaders?: PplxClientHeaders | null;
+  }): Promise<ExecutorExecuteResult> {
+    const requestBody = asPplxBody(body);
+    const messages = requestBody.messages;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       const errResp = new Response(
         JSON.stringify({
@@ -624,19 +635,21 @@ export class PerplexityWebExecutor extends BaseExecutor {
     }
 
     const thinking =
-      body?.thinking === true ||
-      (body?.reasoning_effort !== null &&
-        body?.reasoning_effort !== undefined &&
-        body.reasoning_effort !== "none");
+      requestBody.thinking === true ||
+      (requestBody.reasoning_effort !== null &&
+        requestBody.reasoning_effort !== undefined &&
+        requestBody.reasoning_effort !== "none");
 
     let pplxMode;
     let modelPref;
-    if (thinking && THINKING_MAP[model]) {
+    const thinkingModel = THINKING_MAP[model];
+    const mappedModel = MODEL_MAP[model];
+    if (thinking && thinkingModel) {
       pplxMode = "copilot";
-      modelPref = THINKING_MAP[model];
+      modelPref = thinkingModel;
       log?.info?.("PPLX-WEB", `Thinking mode → ${model} using ${modelPref}`);
-    } else if (MODEL_MAP[model]) {
-      [pplxMode, modelPref] = MODEL_MAP[model];
+    } else if (mappedModel) {
+      [pplxMode, modelPref] = mappedModel;
     } else {
       pplxMode = "copilot";
       modelPref = model;
@@ -647,7 +660,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
     const followUpUuid = sessionLookup(parsed.history);
     if (followUpUuid) log?.info?.("PPLX-WEB", `Session continue: ${followUpUuid.slice(0, 12)}...`);
 
-    const query = buildQuery(parsed, followUpUuid, body?.tools);
+    const query = buildQuery(parsed, followUpUuid, requestBody.tools);
     if (!query.trim()) {
       const errResp = new Response(
         JSON.stringify({
@@ -660,7 +673,7 @@ export class PerplexityWebExecutor extends BaseExecutor {
 
     const pplxBody = buildPplxRequestBody(query, pplxMode, modelPref, followUpUuid);
 
-    const headers: Record<string, any> = {
+    const headers: ExecutorHeaders = {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
       Origin: "https://www.perplexity.ai",
@@ -681,18 +694,18 @@ export class PerplexityWebExecutor extends BaseExecutor {
       `Query to ${model} (pref=${modelPref}, mode=${pplxMode}), len=${query.length}`,
     );
 
-    const fetchOptions: any = { method: "POST", headers, body: JSON.stringify(pplxBody) };
+    const fetchOptions: RequestInit = { method: "POST", headers, body: JSON.stringify(pplxBody) };
     if (signal) fetchOptions.signal = signal;
 
     let response;
     try {
       response = await fetch(PPLX_SSE_ENDPOINT, fetchOptions);
-    } catch (err: any) {
-      log?.error?.("PPLX-WEB", `Fetch failed: ${err.message || String(err)}`);
+    } catch (err: unknown) {
+      log?.error?.("PPLX-WEB", `Fetch failed: ${errorMessage(err)}`);
       const errResp = new Response(
         JSON.stringify({
           error: {
-            message: `Perplexity connection failed: ${err.message || String(err)}`,
+            message: `Perplexity connection failed: ${errorMessage(err)}`,
             type: "upstream_error",
           },
         }),
@@ -736,8 +749,8 @@ export class PerplexityWebExecutor extends BaseExecutor {
     // Improves perceived TTFT for clients that don't render reasoning_content.
     const skipReasoning = (() => {
       if (!clientHeaders) return false;
-      const get = (name: any) => {
-        if (typeof clientHeaders.get === "function") return clientHeaders.get(name);
+      const get = (name: string) => {
+        if (clientHeaders instanceof Headers) return clientHeaders.get(name);
         const lo = String(name).toLowerCase();
         for (const [k, v] of Object.entries(clientHeaders)) {
           if (String(k).toLowerCase() === lo) return typeof v === "string" ? v : null;
