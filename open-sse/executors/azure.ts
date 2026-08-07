@@ -27,7 +27,7 @@ export class AzureExecutor extends DefaultExecutor {
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...this.config.headers,
     };

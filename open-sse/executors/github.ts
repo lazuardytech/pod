@@ -10,6 +10,8 @@ import { formatSSE, parseSSELine } from "../utils/streamHelpers.js";
 import { BaseExecutor } from "./base.js";
 
 export class GithubExecutor extends BaseExecutor {
+  private knownCodexModels: Set<string>;
+
   constructor() {
     super("github", PROVIDERS.github);
     this.knownCodexModels = new Set();

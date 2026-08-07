@@ -4,7 +4,7 @@ import { PROVIDERS } from "../config/providers.js";
 import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.js";
 import { refreshKiroToken } from "../services/tokenRefresh.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { BaseExecutor } from "./base.js";
+import { BaseExecutor, type ExecutorHeaders, type RetryEntry } from "./base.js";
 
 /**
  * KiroExecutor - Executor for Kiro AI (AWS CodeWhisperer)
@@ -16,7 +16,7 @@ export class KiroExecutor extends BaseExecutor {
   }
 
   buildHeaders(credentials: any, stream: any = true) {
-    const headers = {
+    const headers: ExecutorHeaders = {
       ...this.config.headers,
       "Amz-Sdk-Request": "attempt=1; max=3",
       "Amz-Sdk-Invocation-Id": uuidv4(),
@@ -52,7 +52,10 @@ export class KiroExecutor extends BaseExecutor {
     const transformedBody = this.transformRequest(model, body, stream, credentials);
 
     // Merge default retry config with provider-specific config
-    const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...this.config.retry };
+    const retryConfig: Record<string, RetryEntry> = {
+      ...DEFAULT_RETRY_CONFIG,
+      ...this.config.retry,
+    };
     let retryAttempts = 0;
     let transientAttempts = 0;
 
@@ -101,7 +104,9 @@ export class KiroExecutor extends BaseExecutor {
       );
 
       // Check if should retry based on status code (existing path)
-      const { attempts: maxRetries, delayMs } = resolveRetryEntry(retryConfig[response.status]);
+      const { attempts: maxRetries, delayMs } = resolveRetryEntry(
+        retryConfig[String(response.status)],
+      );
       if (!response.ok && maxRetries > 0 && retryAttempts < maxRetries) {
         retryAttempts++;
         log?.debug?.(

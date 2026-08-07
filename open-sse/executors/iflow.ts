@@ -55,7 +55,7 @@ export class IFlowExecutor extends BaseExecutor {
     const signature = this.createIFlowSignature(userAgent, sessionID, timestamp, apiKey);
 
     // Build headers
-    const headers = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...this.config.headers,
       "session-id": sessionID,

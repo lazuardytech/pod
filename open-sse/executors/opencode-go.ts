@@ -8,6 +8,8 @@ const CLAUDE_FORMAT_MODELS = new Set(["minimax-m2.5", "minimax-m2.7"]);
 const BASE = "https://opencode.ai/zen/go/v1";
 
 export class OpenCodeGoExecutor extends BaseExecutor {
+  private _lastModel: string | null = null;
+
   constructor() {
     super("opencode-go", PROVIDERS["opencode-go"]);
   }
@@ -22,7 +24,7 @@ export class OpenCodeGoExecutor extends BaseExecutor {
     const key = credentials?.apiKey || credentials?.accessToken;
     const headers: Record<string, any> = { "Content-Type": "application/json" };
 
-    if (CLAUDE_FORMAT_MODELS.has(this._lastModel)) {
+    if (this._lastModel && CLAUDE_FORMAT_MODELS.has(this._lastModel)) {
       headers["x-api-key"] = key;
       headers["anthropic-version"] = "2023-06-01";
     } else {

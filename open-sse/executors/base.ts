@@ -3,41 +3,148 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 
 const FETCH_CONNECT_TIMEOUT_MS = 15_000;
 
+export type ExecutorHeaders = Record<string, string>;
+export type ExecutorProviderData = {
+  accountId?: string;
+  apiVersion?: string;
+  azureEndpoint?: string;
+  baseUrl?: string;
+  deployment?: string;
+  machineId?: string;
+  organization?: string;
+  resourceUrl?: string;
+  workspaceId?: string;
+  [key: string]: unknown;
+};
+export type ExecutorCredentials = {
+  accessToken?: string;
+  apiKey?: string;
+  connectionId?: string;
+  copilotToken?: string;
+  email?: string;
+  expiresAt?: string | number | Date;
+  projectId?: string;
+  providerSpecificData?: ExecutorProviderData;
+  refreshToken?: string;
+  [key: string]: unknown;
+};
+export type RetryEntry =
+  | number
+  | {
+      attempts?: number;
+      delayMs?: number;
+    }
+  | null
+  | undefined;
+export type TransientRetryConfig = {
+  attempts?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+};
+export type ExecutorConfigInput = {
+  authUrl?: string;
+  baseUrl?: string;
+  baseUrls?: string[];
+  chatPath?: string;
+  clientId?: string | null;
+  clientSecret?: string | null;
+  format?: string;
+  headers?: ExecutorHeaders;
+  noAuth?: boolean;
+  responsesUrl?: string;
+  retry?: Record<string, RetryEntry>;
+  tokenUrl?: string;
+  transientRetry?: TransientRetryConfig;
+  [key: string]: unknown;
+};
+export type ExecutorConfig = {
+  authUrl?: string;
+  baseUrl?: string;
+  baseUrls?: string[];
+  chatPath?: string;
+  clientId: string;
+  clientSecret: string;
+  format?: string;
+  headers: ExecutorHeaders;
+  noAuth?: boolean;
+  responsesUrl?: string;
+  retry: Record<string, RetryEntry>;
+  tokenUrl?: string;
+  transientRetry?: TransientRetryConfig;
+  [key: string]: unknown;
+};
+export type ExecutorLogger = {
+  debug?: (scope: string, message: string) => void;
+  error?: (scope: string, message: string) => void;
+  info?: (scope: string, message: string) => void;
+  warn?: (scope: string, message: string) => void;
+};
+export type ExecutorProxyOptions = Record<string, unknown> | null;
+export type ExecutorExecuteOptions = {
+  model: string;
+  body: unknown;
+  stream: boolean;
+  credentials: ExecutorCredentials;
+  signal?: AbortSignal;
+  log?: ExecutorLogger;
+  proxyOptions?: ExecutorProxyOptions;
+  [key: string]: unknown;
+};
+export type ExecutorExecuteResult = {
+  response: Response;
+  url: string | undefined;
+  headers: ExecutorHeaders;
+  transformedBody: unknown;
+};
+export type ExecutorErrorDetails = {
+  status: number;
+  message: string;
+  resetsAtMs?: number;
+};
+
 /**
  * BaseExecutor - Base class for provider executors
  */
 export class BaseExecutor {
-  [key: string]: any;
-  provider: any;
-  config: any;
-  noAuth: any;
+  provider: string;
+  config: ExecutorConfig;
+  noAuth: boolean;
 
-  constructor(provider: any, config: any) {
+  constructor(provider: string, config: ExecutorConfigInput) {
     this.provider = provider;
-    this.config = config;
-    this.noAuth = config?.noAuth || false;
+    this.config = {
+      ...config,
+      headers: config.headers || {},
+      retry: config.retry || {},
+    } as ExecutorConfig;
+    this.noAuth = config.noAuth || false;
   }
 
-  getProvider() {
+  getProvider(): string {
     return this.provider;
   }
 
-  getBaseUrls() {
+  getBaseUrls(): string[] {
     return this.config.baseUrls || (this.config.baseUrl ? [this.config.baseUrl] : []);
   }
 
-  getFallbackCount() {
+  getFallbackCount(): number {
     return this.getBaseUrls().length || 1;
   }
 
-  buildUrl(model: any, stream: any, urlIndex: any = 0, credentials: any = null) {
-    if (this.provider?.startsWith?.("openai-compatible-")) {
+  buildUrl(
+    model: string,
+    stream: boolean,
+    urlIndex: number = 0,
+    credentials: ExecutorCredentials | null = null,
+  ): string | undefined {
+    if (this.provider.startsWith("openai-compatible-")) {
       const baseUrl = credentials?.providerSpecificData?.baseUrl || "https://api.openai.com/v1";
       const normalized = baseUrl.replace(/\/$/, "");
       const path = this.provider.includes("responses") ? "/responses" : "/chat/completions";
       return `${normalized}${path}`;
     }
-    if (this.provider?.startsWith?.("anthropic-compatible-")) {
+    if (this.provider.startsWith("anthropic-compatible-")) {
       const baseUrl = credentials?.providerSpecificData?.baseUrl || "https://api.anthropic.com/v1";
       const normalized = baseUrl.replace(/\/$/, "");
       return `${normalized}/messages`;
@@ -46,13 +153,13 @@ export class BaseExecutor {
     return baseUrls[urlIndex] || baseUrls[0] || this.config.baseUrl;
   }
 
-  buildHeaders(credentials: any, stream: any = true) {
-    const headers: Record<string, any> = {
+  buildHeaders(credentials: ExecutorCredentials, stream: boolean = true): ExecutorHeaders {
+    const headers: ExecutorHeaders = {
       "Content-Type": "application/json",
       ...this.config.headers,
     };
 
-    if (this.provider?.startsWith?.("anthropic-compatible-")) {
+    if (this.provider.startsWith("anthropic-compatible-")) {
       // Anthropic-compatible providers use x-api-key header
       if (credentials.apiKey) {
         headers["x-api-key"] = credentials.apiKey;
@@ -79,11 +186,16 @@ export class BaseExecutor {
   }
 
   // Override in subclass for provider-specific transformations
-  transformRequest(model: any, body: any, stream: any, credentials: any) {
+  transformRequest(
+    model: string,
+    body: unknown,
+    stream: boolean,
+    credentials: ExecutorCredentials,
+  ): unknown {
     return body;
   }
 
-  shouldRetry(status: any, urlIndex: any) {
+  shouldRetry(status: number, urlIndex: number): boolean {
     return (
       [
         HTTP_STATUS.RATE_LIMITED,
@@ -95,39 +207,60 @@ export class BaseExecutor {
   }
 
   // Override in subclass for provider-specific refresh
-  async refreshCredentials(credentials: any, log: any, proxyOptions: any = null): Promise<any> {
+  async refreshCredentials(
+    credentials: ExecutorCredentials,
+    log: ExecutorLogger | null,
+    proxyOptions: ExecutorProxyOptions = null,
+  ): Promise<ExecutorCredentials | null> {
+    void credentials;
+    void log;
+    void proxyOptions;
     return null;
   }
 
-  needsRefresh(credentials: any) {
+  needsRefresh(credentials: ExecutorCredentials): boolean {
     if (!credentials.expiresAt) return false;
     const expiresAtMs = new Date(credentials.expiresAt).getTime();
     return expiresAtMs - Date.now() < 5 * 60 * 1000;
   }
 
-  parseError(response: any, bodyText: any) {
+  parseError(response: Response, bodyText: string): ExecutorErrorDetails {
     return { status: response.status, message: bodyText || `HTTP ${response.status}` };
   }
 
-  async execute({ model, body, stream, credentials, signal, log, proxyOptions = null }: any) {
+  async execute({
+    model,
+    body,
+    stream,
+    credentials,
+    signal,
+    log,
+    proxyOptions = null,
+  }: ExecutorExecuteOptions): Promise<ExecutorExecuteResult> {
     const fallbackCount = this.getFallbackCount();
-    let lastError = null;
+    let lastError: unknown = null;
     let lastStatus = 0;
-    const retryAttemptsByUrl: Record<string, any> = {};
+    const retryAttemptsByUrl: Record<number, number> = {};
 
     // Merge default retry config with provider-specific config
-    const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...this.config.retry };
+    const retryConfig: Record<string, RetryEntry> = {
+      ...DEFAULT_RETRY_CONFIG,
+      ...this.config.retry,
+    };
 
     // Schedule retry via retryConfig[statusKey]. Returns true when caller should `urlIndex--; continue`
-    const tryRetry = async (urlIndex: any, statusKey: any, reason: any) => {
-      const { attempts, delayMs } = resolveRetryEntry(retryConfig[statusKey]);
-      if (attempts <= 0 || retryAttemptsByUrl[urlIndex] >= attempts) return false;
-      retryAttemptsByUrl[urlIndex]++;
-      log?.debug?.(
-        "RETRY",
-        `${reason} retry ${retryAttemptsByUrl[urlIndex]}/${attempts} after ${delayMs / 1000}s`,
-      );
-      await new Promise((resolve: any) => setTimeout(resolve, delayMs));
+    const tryRetry = async (
+      urlIndex: number,
+      statusKey: number,
+      reason: string,
+    ): Promise<boolean> => {
+      const { attempts, delayMs } = resolveRetryEntry(retryConfig[String(statusKey)]);
+      const previousAttempts = retryAttemptsByUrl[urlIndex] || 0;
+      if (attempts <= 0 || previousAttempts >= attempts) return false;
+      const nextAttempts = previousAttempts + 1;
+      retryAttemptsByUrl[urlIndex] = nextAttempts;
+      log?.debug?.("RETRY", `${reason} retry ${nextAttempts}/${attempts} after ${delayMs / 1000}s`);
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
       return true;
     };
 
@@ -173,15 +306,17 @@ export class BaseExecutor {
         }
 
         return { response, url, headers, transformedBody };
-      } catch (error: any) {
+      } catch (error: unknown) {
         clearTimeout(connectTimer);
         lastError = error;
-        const isConnectTimeout = connectCtrl.signal.aborted && error.name === "AbortError";
+        const errorName = error instanceof Error ? error.name : "";
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isConnectTimeout = connectCtrl.signal.aborted && errorName === "AbortError";
         // Connect timeout is internal — convert to retryable network error, don't propagate AbortError
-        if (error.name === "AbortError" && !isConnectTimeout) throw error;
+        if (errorName === "AbortError" && !isConnectTimeout) throw error;
 
         // Map network/fetch exceptions to 502 retry config
-        if (await tryRetry(urlIndex, HTTP_STATUS.BAD_GATEWAY, `network "${error.message}"`)) {
+        if (await tryRetry(urlIndex, HTTP_STATUS.BAD_GATEWAY, `network "${errorMessage}"`)) {
           urlIndex--;
           continue;
         }

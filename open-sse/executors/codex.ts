@@ -235,6 +235,9 @@ setInterval(
  * Automatically injects default instructions if missing
  */
 export class CodexExecutor extends BaseExecutor {
+  private _currentSessionId: string | null;
+  private _isCompact = false;
+
   constructor() {
     super("codex", PROVIDERS.codex);
     this._currentSessionId = null;

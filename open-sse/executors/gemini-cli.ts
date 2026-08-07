@@ -7,6 +7,8 @@ import { PROVIDERS } from "../config/providers.js";
 import { BaseExecutor } from "./base.js";
 
 export class GeminiCLIExecutor extends BaseExecutor {
+  private _currentModel: string | null = null;
+
   constructor() {
     super("gemini-cli", PROVIDERS["gemini-cli"]);
   }
