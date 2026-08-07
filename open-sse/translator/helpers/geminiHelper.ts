@@ -348,7 +348,7 @@ function ensureObjectType(obj: unknown) {
 }
 
 // Clean JSON Schema for Antigravity API compatibility - removes unsupported keywords recursively
-export function cleanJSONSchemaForAntigravity(schema: unknown) {
+export function cleanJSONSchemaForAntigravity<T>(schema: T): T {
   if (!schema || typeof schema !== "object") return schema;
 
   // Mutate directly (schema is only used once per request)

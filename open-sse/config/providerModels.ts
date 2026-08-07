@@ -41,7 +41,7 @@ function withCodexReviewModels(models: ProviderModel[]): ProviderModel[] {
   });
 }
 
-export const PROVIDER_MODELS = {
+export const PROVIDER_MODELS: ProviderModelsMap = {
   // OAuth Providers (using alias)
   cc: [
     // Claude Code
@@ -931,7 +931,7 @@ export const PROVIDER_MODELS = {
     { id: "blackboxai/gpt-4o", name: "GPT-4o (Blackbox)" },
     { id: "blackboxai/deepseek-v3", name: "DeepSeek V3 (Blackbox)" },
   ],
-} satisfies ProviderModelsMap;
+};
 
 // Helper functions
 export function getProviderModels(aliasOrId: unknown) {
@@ -946,7 +946,7 @@ export function getDefaultModel(aliasOrId: unknown) {
 export function isValidModel(
   aliasOrId: unknown,
   modelId: unknown,
-  passthroughProviders: unknown = new Set(),
+  passthroughProviders: ReadonlySet<unknown> = new Set(),
 ) {
   if (passthroughProviders.has(aliasOrId)) return true;
   const models = PROVIDER_MODELS[String(aliasOrId)];
