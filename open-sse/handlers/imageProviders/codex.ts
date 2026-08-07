@@ -1,6 +1,6 @@
 // Codex (ChatGPT Plus/Pro) image generation via Responses API + SSE
 import { randomUUID } from "node:crypto";
-import { nowSec } from "./_base.js";
+import { type ImageParseContext, type ImageRequestBody, type ProviderCredentials, nowSec } from "./_base.js";
 
 const CODEX_RESPONSES_URL = "https://chatgpt.com/backend-api/codex/responses";
 const CODEX_USER_AGENT = "codex-imagen/0.2.6";
@@ -9,11 +9,26 @@ const CODEX_ORIGINATOR = "codex_cli_rs";
 const CODEX_MODEL_SUFFIX = "-image";
 const CODEX_REF_DETAIL = "high";
 
-function decodeAccountId(idToken: any) {
+type CodexContent =
+  | { type: "input_text"; text: string | undefined }
+  | { type: "input_image"; image_url: string; detail: string };
+
+type CodexCallbacks = {
+  onPartialImage?: (info: { b64_json: string; index?: number }) => void;
+  onProgress?: (info: { stage: string; bytesReceived: number }) => void;
+};
+
+type CodexSseData = {
+  item?: { result?: string; type?: string };
+  partial_image_b64?: string;
+  partial_image_index?: number;
+};
+
+function decodeAccountId(idToken: string | undefined) {
   try {
     const parts = String(idToken || "").split(".");
     if (parts.length !== 3) return null;
-    const b64 = (parts[1] as any).replace(/-/g, "+").replace(/_/g, "/");
+    const b64 = (parts[1] || "").replace(/-/g, "+").replace(/_/g, "/");
     const pad = (4 - (b64.length % 4)) % 4;
     const payload = JSON.parse(Buffer.from(b64 + "=".repeat(pad), "base64").toString("utf8"));
     return payload?.["https://api.openai.com/auth"]?.chatgpt_account_id || null;
@@ -22,19 +37,19 @@ function decodeAccountId(idToken: any) {
   }
 }
 
-function stripImageSuffix(model: any) {
+function stripImageSuffix(model: string) {
   return model.endsWith(CODEX_MODEL_SUFFIX) ? model.slice(0, -CODEX_MODEL_SUFFIX.length) : model;
 }
 
-function toDataUrl(input: any) {
+function toDataUrl(input: unknown) {
   if (!input || typeof input !== "string") return null;
   if (/^data:image\//i.test(input) || /^https?:\/\//i.test(input)) return input;
   return `data:image/png;base64,${input}`;
 }
 
-function buildContent(prompt: any, refs: any, detail: any = CODEX_REF_DETAIL) {
-  const content: any[] = [];
-  refs.forEach((url: any, index: any) => {
+function buildContent(prompt: string | undefined, refs: string[], detail: string = CODEX_REF_DETAIL) {
+  const content: CodexContent[] = [];
+  refs.forEach((url, index) => {
     content.push({ type: "input_text", text: `<image name=image${index + 1}>` });
     content.push({ type: "input_image", image_url: url, detail });
     content.push({ type: "input_text", text: "</image>" });
@@ -44,12 +59,12 @@ function buildContent(prompt: any, refs: any, detail: any = CODEX_REF_DETAIL) {
 }
 
 // Parse Codex SSE stream → final base64 image. Optional callbacks for client streaming.
-async function parseStream(response: any, log: any, callbacks: any = {}) {
-  const reader = response.body.getReader();
+async function parseStream(response: Response, log: ImageParseContext["log"], callbacks: CodexCallbacks = {}) {
+  const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let imageB64 = null;
-  let lastEvent = null;
+  let imageB64: string | null = null;
+  let lastEvent: string | null = null;
   let bytesReceived = 0;
   let lastProgressLogMs = 0;
 
@@ -86,7 +101,7 @@ async function parseStream(response: any, log: any, callbacks: any = {}) {
 
       if (eventName === "response.image_generation_call.partial_image" && dataStr) {
         try {
-          const data = JSON.parse(dataStr);
+          const data = JSON.parse(dataStr) as CodexSseData;
           if (callbacks.onPartialImage && data?.partial_image_b64) {
             callbacks.onPartialImage({
               b64_json: data.partial_image_b64,
@@ -98,7 +113,7 @@ async function parseStream(response: any, log: any, callbacks: any = {}) {
 
       if (eventName === "response.output_item.done" && dataStr) {
         try {
-          const data = JSON.parse(dataStr);
+          const data = JSON.parse(dataStr) as CodexSseData;
           const item = data?.item;
           if (item?.type === "image_generation_call" && item.result) {
             imageB64 = item.result;
@@ -111,17 +126,17 @@ async function parseStream(response: any, log: any, callbacks: any = {}) {
 }
 
 // SSE Response that pipes codex progress + partial + done events to client
-function buildSseResponse(providerResponse: any, log: any, onSuccess: any) {
+function buildSseResponse(providerResponse: Response, log: ImageParseContext["log"], onSuccess: ImageParseContext["onRequestSuccess"]) {
   const stream = new ReadableStream({
-    async start(controller: any) {
+    async start(controller: ReadableStreamDefaultController<Uint8Array>) {
       const enc = new TextEncoder();
-      const send = (event: any, data: any) => {
+      const send = (event: string, data: unknown) => {
         controller.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
       };
       try {
         const b64 = await parseStream(providerResponse, log, {
-          onProgress: (info: any) => send("progress", info),
-          onPartialImage: (info: any) => send("partial_image", info),
+          onProgress: (info) => send("progress", info),
+          onPartialImage: (info) => send("partial_image", info),
         });
         if (!b64) {
           send("error", {
@@ -132,8 +147,8 @@ function buildSseResponse(providerResponse: any, log: any, onSuccess: any) {
           if (onSuccess) await onSuccess();
           send("done", { created: nowSec(), data: [{ b64_json: b64 }] });
         }
-      } catch (err: any) {
-        send("error", { message: err?.message || "Stream failed" });
+       } catch (err: unknown) {
+        send("error", { message: err instanceof Error ? err.message : "Stream failed" });
       } finally {
         controller.close();
       }
@@ -153,13 +168,13 @@ function buildSseResponse(providerResponse: any, log: any, onSuccess: any) {
 export default {
   stream: true,
   buildUrl: () => CODEX_RESPONSES_URL,
-  buildHeaders: (creds: any) => {
+  buildHeaders: (creds: ProviderCredentials) => {
     const accountId =
       creds?.providerSpecificData?.chatgptAccountId || decodeAccountId(creds?.idToken);
     return {
       accept: "text/event-stream, application/json",
       authorization: `Bearer ${creds?.accessToken || ""}`,
-      "chatgpt-account-id": accountId || "",
+      "chatgpt-account-id": String(accountId || ""),
       "content-type": "application/json",
       originator: CODEX_ORIGINATOR,
       session_id: randomUUID(),
@@ -168,17 +183,17 @@ export default {
       "x-client-request-id": randomUUID(),
     };
   },
-  buildBody: (model: any, body: any) => {
-    const refs: any[] = [];
+  buildBody: (model: string, body: ImageRequestBody) => {
+    const refs: string[] = [];
     if (Array.isArray(body.images))
-      body.images.forEach((i: any) => {
+      body.images.forEach((i) => {
         const u = toDataUrl(i);
         if (u) refs.push(u);
       });
     const single = toDataUrl(body.image);
     if (single) refs.push(single);
     const detail = body.image_detail || CODEX_REF_DETAIL;
-    const imgTool: Record<string, any> = {
+    const imgTool: Record<string, unknown> = {
       type: "image_generation",
       output_format: (body.output_format || "png").toLowerCase(),
     };
@@ -199,7 +214,7 @@ export default {
     };
   },
   // Custom: codex parses SSE → either pipe to client or collect b64
-  async parseResponse(response: any, { log, streamToClient, onRequestSuccess }: any) {
+  async parseResponse(response: Response, { log, streamToClient, onRequestSuccess }: ImageParseContext) {
     if (streamToClient) {
       return { sseResponse: buildSseResponse(response, log, onRequestSuccess) };
     }
@@ -211,5 +226,5 @@ export default {
     }
     return { created: nowSec(), data: [{ b64_json: b64 }] };
   },
-  normalize: (responseBody: any) => responseBody,
+  normalize: (responseBody: unknown) => responseBody,
 };

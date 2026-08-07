@@ -60,12 +60,7 @@ export type ImageResponseBody = JsonObject & {
 export type ImageProviderAdapter = {
   async?: boolean;
   buildBody: (model: string, body: ImageRequestBody) => Promise<unknown> | unknown;
-  buildHeaders: (
-    credentials: ProviderCredentials,
-    requestBody?: unknown,
-    model?: string,
-    body?: ImageRequestBody,
-  ) => HeadersInit | ImageProviderHeaders;
+  buildHeaders: (credentials: ProviderCredentials, requestBody?: unknown, model?: string, body?: ImageRequestBody) => HeadersInit | ImageProviderHeaders;
   buildUrl: (model: string, credentials: ProviderCredentials) => string | undefined;
   noAuth?: boolean;
   normalize: (responseBody: unknown, prompt?: string) => unknown;
