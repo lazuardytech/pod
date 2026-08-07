@@ -2,19 +2,19 @@
 
 ## Naming
 
-| Element           | Convention                             | Example                            |
-| ----------------- | -------------------------------------- | ---------------------------------- |
-| React components  | PascalCase                             | `ConfirmModal`, `SegmentedControl` |
-| Utility functions | camelCase                              | `sanitizeError`, `parseJsonBody`   |
-| API routes        | kebab-case                             | `/v1/chat/completions`             |
-| Files             | camelCase (JS/TS), kebab-case (routes) | `localDb.ts`, `chatCore.js`        |
-| Product name      | lowercase                              | "pod" (internal), "Pod" (display)  |
+| Element           | Convention                          | Example                            |
+| ----------------- | ----------------------------------- | ---------------------------------- |
+| React components  | PascalCase                          | `ConfirmModal`, `SegmentedControl` |
+| Utility functions | camelCase                           | `sanitizeError`, `parseJsonBody`   |
+| API routes        | kebab-case                          | `/v1/chat/completions`             |
+| Files             | camelCase (TS), kebab-case (routes) | `localDb.ts`, `chatCore.ts`        |
+| Product name      | lowercase                           | "pod" (internal), "Pod" (display)  |
 
 ## Imports
 
 - ESM only (`import`/`export`)
 - `@/` alias maps to `src/`
-- TypeScript throughout (src/ is TS, engine is JS)
+- TypeScript throughout (`src/` and `open-sse/`; `cloud/` has its own TS config)
 
 ## Components
 

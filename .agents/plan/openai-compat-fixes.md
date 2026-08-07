@@ -5,7 +5,7 @@ Audited: 2026-07-11 via code review + live black-box tests against https://pod.l
 
 ## Method
 
-1. Code review of `src/` + `open-sse/` (frozen JS, editable but no TS conversion).
+1. Code review of `src/` + `open-sse/` (typed local fork).
 2. Live cross-check: every finding re-tested directly against production with a real API key.
 3. Findings confirmed/refuted from production evidence before planning fixes.
 
@@ -30,13 +30,13 @@ Audited: 2026-07-11 via code review + live black-box tests against https://pod.l
 - File: `src/app/api/v1/responses/route.ts` (only this file; open-sse untouched).
 - Add a local helper `chatCompletionToResponse(cc, fallbackId)` that maps `object:"chat.completion"` -> `object:"response"` with `id:"resp_"+cc.id`, `output:[{type:"message", content:[{type:"output_text", text}]}]`, and `usage` mapped to `input_tokens`/`output_tokens`/`total_tokens`.
 - In `POST`, read body once via `readBodyTextStream` to detect `stream`. If `!stream`, call `handleChat`, then convert the JSON response with the helper.
-- `handleResponsesCore` in `open-sse/handlers/responsesHandler.js` is confirmed dead code and does NOT build the shape - do not wire it in (Option B chosen: shortest correct).
+- `handleResponsesCore` in `open-sse/handlers/responsesHandler.ts` is confirmed dead code and does NOT build the shape - do not wire it in (Option B chosen: shortest correct).
 - Verification: `POST /v1/responses {"stream":false}` -> `object:"response"`, `output[0].type=="message"`.
 
 ### F2 - Responses ignored params
 
 - File: `src/app/api/v1/responses/route.ts`.
-- Keep silent-ignore for `store`/`truncation`/`include`/`reasoning` (already stripped in `openai-responses.js`; fine for a gateway).
+- Keep silent-ignore for `store`/`truncation`/`include`/`reasoning` (already stripped in `openai-responses.ts`; fine for a gateway).
 - If `previous_response_id` is present and non-empty -> return `400 {"code":"invalid_request_error","message":"previous_response not found"}` (Pod stores nothing).
 - Verification: `POST` with `previous_response_id` -> `400`.
 
@@ -56,7 +56,7 @@ Audited: 2026-07-11 via code review + live black-box tests against https://pod.l
 - `src/lib/rateLimit/redis.ts` (~line 103) and `memory.ts` (~line 104): return `remaining` + `resetSeconds` alongside `ok`.
 - `src/lib/rateLimit/index.ts`: add one helper `attachRateLimitHeaders(res, {limit, remaining, reset})` emitting `x-ratelimit-limit-requests`, `x-ratelimit-remaining-requests`, `x-ratelimit-reset-requests`; also add these 3 headers to `rateLimitResponse()` (429 path). Apply helper in both success return sites (redis + memory) only when `config` exists.
 - Token-based headers omitted (Pod tracks RPM + concurrent only, not tokens) - honest minimal set.
-- `open-sse/utils/error.js` (~line 35): add `Access-Control-Expose-Headers: Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests` to the shared error header block so browsers can read them.
+- `open-sse/utils/error.ts` (~line 35): add `Access-Control-Expose-Headers: Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests` to the shared error header block so browsers can read them.
 - Verification: `curl -D - /v1/chat/completions` -> 3 `x-ratelimit-*` headers present.
 
 ### F8 - Sanitize topology leak
@@ -68,15 +68,15 @@ Audited: 2026-07-11 via code review + live black-box tests against https://pod.l
 ### F3 - TTS body params (code-level; needs capable provider to verify)
 
 - `src/sse/handlers/tts.ts` (~47-53): read `response_format` from **body** (fallback query), and read `voice` + `speed` from body. Forward to `handleTtsCore`.
-- `open-sse/handlers/ttsCore.js` (~51-58): add `voice`/`speed` to destructure; pass to adapter `synthesize(..., {language, voice, speed})`.
-- `open-sse/handlers/ttsProviders/{index,openai,openrouter,gemini}.js`: honor `opts.voice` (override suffix) and `opts.speed`; others ignore `speed` (YAGNI).
+- `open-sse/handlers/ttsCore.ts` (~51-58): add `voice`/`speed` to destructure; pass to adapter `synthesize(..., {language, voice, speed})`.
+- `open-sse/handlers/ttsProviders/{index,openai,openrouter,gemini}.ts`: honor `opts.voice` (override suffix) and `opts.speed`; others ignore `speed` (YAGNI).
 - Verification requires a TTS-capable provider (e.g. OpenAI `tts-1`) configured; send `{"voice":"alloy","speed":1.2,"response_format":"opus"}` and assert honored.
 
 ### F4 - Translations distinct from transcriptions (code-level; needs capable provider)
 
 - `src/app/api/v1/audio/translations/route.ts` (~21): call `handleStt(request, {translate:true})`.
 - `src/sse/handlers/stt.ts` (~23): thread `translate`; when set, restrict to whisper-1 and `formData.delete("language")`.
-- `open-sse/handlers/sttCore.js` (~218): accept `translate`; on OpenAI-compatible path skip `language` (whisper translates to English by default). Deepgram/Gemini lack true translation - document as partial.
+- `open-sse/handlers/sttCore.ts` (~218): accept `translate`; on OpenAI-compatible path skip `language` (whisper translates to English by default). Deepgram/Gemini lack true translation - document as partial.
 - Verification requires whisper-1-capable provider; assert English output and `language` dropped.
 
 ## Execution order
@@ -101,4 +101,4 @@ Then re-run the production curl cross-checks above against the Zeabur canary dep
 
 - F0 confirmed correct - no action.
 - F3/F4 are real code defects but cannot be exercised on the current deployment (no audio-capable provider). Fix is still worth landing for correctness; mark verification as blocked-on-provider-config.
-- open-sse/ stays frozen JS: edits allowed, no TS conversion, type surface via `src/sse/open-sse.d.ts` only if signatures change.
+- `open-sse/` is TypeScript and included in root `tsc`; update typed exports directly if signatures change.

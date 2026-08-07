@@ -200,7 +200,7 @@ describe("chatCore — Vercel relay 504 detection (Fix 2)", () => {
     const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.js");
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 
-    // Verify the 504 detection code exists in chatCore.js
+    // Verify the 504 detection code exists in chatCore.ts
     const chatCorePath = path.resolve(import.meta.dirname, "../../open-sse/handlers/chatCore.ts");
     const source = fs.readFileSync(chatCorePath, "utf8");
     expect(source).toContain("[VERCEL-RELAY-TIMEOUT]");

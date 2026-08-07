@@ -126,7 +126,7 @@ describe("setCachedResponse / getCachedResponse", () => {
     // Memory cache won't have it (isSmallEnoughForSemanticCache blocks it)
     // but setCachedResponse itself doesn't check size — chatCore does.
     // Here we verify the DB write still happened (setCachedResponse doesn't guard size).
-    // The guard is in chatCore.js. So this test verifies the lib stores it.
+    // The guard is in chatCore.ts. So this test verifies the lib stores it.
     const hit = getCachedResponse(sig);
     expect(hit).toBeTruthy(); // lib itself stores regardless; chatCore guards before calling
   });

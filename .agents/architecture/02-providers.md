@@ -32,7 +32,7 @@ Provider definitions live in `src/shared/constants/providers.ts`. Model catalogs
 | Service account  | GCP IAM                                  | Vertex AI                                    |
 | Free             | No credentials needed                    | Kiro, Qwen Code, Gemini CLI, iFlow           |
 
-Token refresh logic lives in `open-sse/services/tokenRefresh.js` with provider-specific refreshers for Claude, Codex, Copilot, GitHub, Google, iFlow, and Qwen.
+Token refresh logic lives in `open-sse/services/tokenRefresh.ts` with provider-specific refreshers for Claude, Codex, Copilot, GitHub, Google, iFlow, and Qwen.
 
 ## Executor Routing
 
@@ -40,23 +40,23 @@ Executors live in `open-sse/executors/`. Each implements the same interface for 
 
 | Executor                         | Provider(s)            | Notable behavior                           |
 | -------------------------------- | ---------------------- | ------------------------------------------ |
-| `default.js`                     | Most OpenAI-compatible | Standard passthrough                       |
-| `vertex.js`                      | Vertex AI              | GCP auth + strips `stream` field from body |
-| `kiro.js`                        | Kiro AI                | Transient overload body-gating for retry   |
-| `codex.js`                       | OpenAI Codex           | Reasoning token budget normalization       |
-| `ollama-local.js`                | Ollama                 | Local endpoint handling                    |
-| `antigravity.js`                 | Antigravity            | OAuth-based                                |
-| `cursor.js`                      | Cursor IDE             | OAuth-based                                |
-| `github.js`                      | GitHub Copilot         | OAuth token refresh                        |
-| `grok-web.js`                    | xAI Grok (web)         | Cookie-based                               |
-| `perplexity-web.js`              | Perplexity (web)       | Cookie-based, x-pod-skip-reasoning         |
-| `iflow.js`                       | iFlow AI               | Free access                                |
-| `qoder.js`                       | Qoder                  | OAuth-based                                |
-| `qwen.js`                        | Qwen Code              | Free access                                |
-| `opencode.js` / `opencode-go.js` | OpenCode               | Free access                                |
-| `commandcode.js`                 | Command Code           | OAuth-based                                |
-| `gemini-cli.js`                  | Gemini CLI             | Free access                                |
-| `azure.js`                       | Azure OpenAI           | API key                                    |
+| `default.ts`                     | Most OpenAI-compatible | Standard passthrough                       |
+| `vertex.ts`                      | Vertex AI              | GCP auth + strips `stream` field from body |
+| `kiro.ts`                        | Kiro AI                | Transient overload body-gating for retry   |
+| `codex.ts`                       | OpenAI Codex           | Reasoning token budget normalization       |
+| `ollama-local.ts`                | Ollama                 | Local endpoint handling                    |
+| `antigravity.ts`                 | Antigravity            | OAuth-based                                |
+| `cursor.ts`                      | Cursor IDE             | OAuth-based                                |
+| `github.ts`                      | GitHub Copilot         | OAuth token refresh                        |
+| `grok-web.ts`                    | xAI Grok (web)         | Cookie-based                               |
+| `perplexity-web.ts`              | Perplexity (web)       | Cookie-based, x-pod-skip-reasoning         |
+| `iflow.ts`                       | iFlow AI               | Free access                                |
+| `qoder.ts`                       | Qoder                  | OAuth-based                                |
+| `qwen.ts`                        | Qwen Code              | Free access                                |
+| `opencode.ts` / `opencode-go.ts` | OpenCode               | Free access                                |
+| `commandcode.ts`                 | Command Code           | OAuth-based                                |
+| `gemini-cli.ts`                  | Gemini CLI             | Free access                                |
+| `azure.ts`                       | Azure OpenAI           | API key                                    |
 
 ## Format Translation
 
@@ -91,4 +91,4 @@ When a provider returns rate-limit or overload errors:
 3. Lockout status visible on `/health` page
 4. Connection-level lockdown with exponential cooldown (v0.0.75+)
 
-Account fallback logic lives in `open-sse/services/accountFallback.js`.
+Account fallback logic lives in `open-sse/services/accountFallback.ts`.

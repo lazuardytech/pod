@@ -59,7 +59,7 @@ const chatCoreSrc = readFileSync(
 );
 
 describe("MAX_SEMANTIC_CACHE_BYTES", () => {
-  it("is set to 512KB in chatCore.js", () => {
+  it("is set to 512KB in chatCore.ts", () => {
     expect(chatCoreSrc).toContain("const MAX_SEMANTIC_CACHE_BYTES = 512 * 1024;");
   });
 

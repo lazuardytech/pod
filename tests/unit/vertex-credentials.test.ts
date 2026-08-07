@@ -411,7 +411,7 @@ describe("Vertex stream guard — credentials integration", () => {
   });
 
   it("VertexExecutor.transformRequest passes stream through — stripping is handler's job", () => {
-    // The stream field is stripped by chatCore.js when targetFormat === FORMATS.VERTEX,
+    // The stream field is stripped by chatCore.ts when targetFormat === FORMATS.VERTEX,
     // not by VertexExecutor.transformRequest. transformRequest returns body as-is.
     const sa = generateSAJson();
     const body = {

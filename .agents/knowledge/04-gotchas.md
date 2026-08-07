@@ -14,7 +14,7 @@ When adding or modifying routes, ensure the auth matcher in `routeAuth.ts` cover
 
 ## 4. Streaming Fragility
 
-SSE code is complex with multiple nested guards. The crash guards in `open-sse/utils/stream.js` and `open-sse/handlers/chatCore.js`, and the guarded peek-reader in `chatCore.js`, must stay intact. Removing or weakening them risks process crashes.
+SSE code is complex with multiple nested guards. The crash guards in `open-sse/utils/stream.ts` and `open-sse/handlers/chatCore.ts`, and the guarded peek-reader in `chatCore.ts`, must stay intact. Removing or weakening them risks process crashes.
 
 ## 5. Offline Cache Invalidation
 
@@ -30,7 +30,7 @@ Build warnings may not fail the build. Always verify after deploy that the app s
 
 ## 8. Thinking Blocks
 
-The Claude-to-OpenAI translator (`open-sse/translator/response/claude-to-openai.js`) must never emit `<think>` or `</think>` as content deltas. This causes client-side rendering bugs.
+The Claude-to-OpenAI translator (`open-sse/translator/response/claude-to-openai.ts`) must never emit `<think>` or `</think>` as content deltas. This causes client-side rendering bugs.
 
 ## 9. Version Drift
 

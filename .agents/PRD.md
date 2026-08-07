@@ -116,7 +116,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 ## Product Constraints
 
 - **Bun-only** — never npm/pnpm
-- **Local open-sse fork** — never replace with npm version, frozen as JS
+- **Local open-sse fork** — never replace with npm version; TypeScript, included in root `tsc`
 - **SQLite primary store** — optional Redis for rate limiting
 - **Dark-only UI** — no light mode
 - **Defensive by default** — sanitized errors, safe streaming, crash guards
@@ -140,6 +140,6 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 | SSE idle timeout    | 5 minutes                                                                  |
 | Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES)    |
 | Providers supported | 50+                                                                        |
-| Executors           | 19 (provider executors; `base.js` is a base class, `index.js` is a barrel) |
+| Executors           | 19 (provider executors; `base.ts` is a base class, `index.ts` is a barrel) |
 | API route groups    | 26                                                                         |
 | Dashboard pages     | 15 (top-level, no /dashboard prefix)                                       |

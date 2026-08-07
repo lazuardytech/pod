@@ -1,11 +1,12 @@
 # Pod — Documentation Index
 
-> **pod · v0.0.82** · Bun + Next.js 16 + open-sse (local JS fork) + SQLite · port **20128** · [pod.lazuardy.tech](https://pod.lazuardy.tech)
+> **pod · v0.0.82** · Bun + Next.js 16 + open-sse (typed local fork) + SQLite · port **20128** · [pod.lazuardy.tech](https://pod.lazuardy.tech)
 > Self-hosted AI gateway unifying 50+ LLM providers behind one OpenAI-compatible endpoint.
 
-> **Last reviewed**: 2026-07-24.
+> **Last reviewed**: 2026-08-07.
 > **Freshness notes**:
 >
+> - `open-sse/` is TypeScript and included in root `tsc`; source paths in docs should use `.ts` even though imports keep `.js` suffixes for ESM/bundler resolution.
 > - `/api/monitoring/health` and `/api/monitoring/health/stream` are **public reads** (no API key), on par with `/api/health`. Ignore older docs that claim auth.
 > - Service worker (`public/sw.js`): **network-first** navigation + offline fallback; never reject `respondWith` / never `Response.error()` on images; no blind `controllerchange` reload. See gotcha §34 (`knowledge/04-gotchas.md`).
 
@@ -67,7 +68,7 @@
 | issues/  | Historical audits — start at [issues/INDEX.md](issues/INDEX.md); verify against live code                                                                                                                                                                                      |
 | reports/ | Release rollups and verification reports by version                                                                                                                                                                                                                            |
 | plan/    | [js-to-ts-migration.md](plan/js-to-ts-migration.md) (completed), [openai-compat-fixes.md](plan/openai-compat-fixes.md), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) (completed) |
-| tests/   | SW seams: [../tests/SW-TEST-SEAM.md](../tests/SW-TEST-SEAM.md); unit `tests/unit/swShellCache.test.js`                                                                                                                                                                         |
+| tests/   | SW seams: [../tests/SW-TEST-SEAM.md](../tests/SW-TEST-SEAM.md); unit `tests/unit/swShellCache.test.ts`                                                                                                                                                                         |
 
 ---
 

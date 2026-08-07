@@ -1,7 +1,7 @@
 /**
  * Memory pipeline integration tests
  *
- * Validates the integration points between chatCore.js and the memory subsystem:
+ * Validates the integration points between chatCore.ts and the memory subsystem:
  * - memoryOwnerId scoping
  * - injection order relative to cache signature
  * - extractFacts call contract
@@ -49,7 +49,7 @@ describe("memoryOwnerId scoping", () => {
 // ---------------------------------------------------------------------------
 describe("injection order: AFTER cache signature", () => {
   it("cacheSignature is generated from the original body before injection", () => {
-    // In chatCore.js the order is:
+    // In chatCore.ts the order is:
     //   1. cacheSignature = generateSignature(model, messages, ...)   ← line ~298
     //   2. injectMemory(body, memories, provider)                     ← line ~353
     // We verify this by checking that the signature input (messages) is the

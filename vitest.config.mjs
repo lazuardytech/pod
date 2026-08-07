@@ -27,7 +27,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "json-summary"],
       reportsDirectory: "coverage",
-      include: ["src/**/*.{js,mjs}"],
+      include: ["src/**/*.{ts,tsx}"],
       // Start with low floors — raise as coverage improves.
       thresholds: {
         lines: 1,

@@ -6,7 +6,7 @@
  *
  * Two guards exist:
  * 1. openaiToVertexRequest() — translator deletes processed.stream
- * 2. chatCore.js — skips stream injection when targetFormat === FORMATS.VERTEX
+ * 2. chatCore.ts — skips stream injection when targetFormat === FORMATS.VERTEX
  *
  * These tests verify both guards work correctly for all request shapes.
  */
@@ -194,7 +194,7 @@ describe("translateRequest OPENAI→VERTEX — stream field guard", () => {
 
 describe("chatCore stream injection guard logic", () => {
   /**
-   * Simulate the exact guard logic from chatCore.js:
+   * Simulate the exact guard logic from chatCore.ts:
    *
    *   if (targetFormat !== FORMATS.VERTEX) {
    *     if (stream) translatedBody.stream = true;
