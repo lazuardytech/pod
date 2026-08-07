@@ -9,6 +9,7 @@ export default {
   buildUrl: (_model: string, creds: EmbeddingCredentials) => {
     const baseUrl =
       creds?.providerSpecificData?.baseUrl || creds?.baseUrl || "https://api.openai.com/v1";
-    return baseUrl.replace(/\/+$/, "") + "/embeddings";
+    // ponytail: restore idempotent de-dup — old code stripped /embeddings before re-appending.
+    return baseUrl.replace(/\/+$/, "").replace(/\/embeddings$/, "") + "/embeddings";
   },
 };
