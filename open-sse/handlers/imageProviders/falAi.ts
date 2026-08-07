@@ -46,7 +46,10 @@ export default {
     }
     throw new Error("Fal polling timeout");
   },
-  normalize: (responseBody: { image?: { url?: string } | string; images?: ({ url?: string } | string)[] }) => {
+  normalize: (responseBody: {
+    image?: { url?: string } | string;
+    images?: ({ url?: string } | string)[];
+  }) => {
     const images = Array.isArray(responseBody.images)
       ? responseBody.images
       : responseBody.image
