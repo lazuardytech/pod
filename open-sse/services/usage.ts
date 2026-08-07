@@ -292,7 +292,13 @@ async function getGeminiUsage(
 
     if (Array.isArray(data.buckets)) {
       for (const bucket of data.buckets) {
-        if (!bucket.modelId || bucket.remainingFraction == null) continue;
+        if (
+          !bucket.modelId ||
+          bucket.remainingFraction === null ||
+          bucket.remainingFraction === undefined
+        ) {
+          continue;
+        }
 
         const remainingFraction = Number(bucket.remainingFraction) || 0;
         const total = 1000; // Normalized base, matches antigravity convention
@@ -973,7 +979,7 @@ async function getQwenUsage(accessToken: string | null | undefined, providerSpec
 /**
  * iFlow Usage
  */
-async function getIflowUsage(accessToken: string | null | undefined) {
+async function getIflowUsage(_accessToken: string | null | undefined) {
   try {
     // iFlow may have usage endpoint
     return { message: "iFlow connected. Usage tracked per request." };
