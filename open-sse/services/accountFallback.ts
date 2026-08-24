@@ -4,7 +4,7 @@ import {
   msUntilMidnightVN,
   msUntilNextMinute,
   TRANSIENT_COOLDOWN_MS,
-} from "../config/errorConfig.js";
+} from "../config/errorConfig.ts";
 
 type ErrorRule = {
   text?: string;

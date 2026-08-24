@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 // Create OpenAI chunk helper
 function createChunk(state: unknown, delta: unknown, finishReason: unknown = null) {

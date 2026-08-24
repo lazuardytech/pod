@@ -1,8 +1,8 @@
 // Embeddings provider adapter registry
 
-import gemini from "./gemini.js";
-import createOpenAIEmbeddingAdapter from "./openai.js";
-import openaiCompatNode from "./openaiCompatNode.js";
+import gemini from "./gemini.ts";
+import createOpenAIEmbeddingAdapter from "./openai.ts";
+import openaiCompatNode from "./openaiCompatNode.ts";
 
 const OPENAI_COMPAT_PROVIDERS = [
   "openai",

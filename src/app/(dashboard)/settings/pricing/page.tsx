@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Card from "@/shared/components/Card";
+import { Button, Card } from "@/shared/components";
 import PricingModal from "@/shared/components/PricingModal";
 
 type ModelPricing = Record<string, number>;
@@ -64,12 +64,7 @@ export default function PricingSettingsPage() {
             Configure pricing rates for cost tracking and calculations
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-primary text-primary-fg rounded hover:bg-primary/90 transition-colors"
-        >
-          Edit Pricing
-        </button>
+        <Button onClick={() => setShowModal(true)}>Edit Pricing</Button>
       </div>
 
       {/* Quick Stats */}
@@ -135,12 +130,14 @@ export default function PricingSettingsPage() {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Current Pricing Overview</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowModal(true)}
-            className="text-primary hover:underline text-sm"
+            className="h-auto px-0 text-primary hover:underline"
           >
             View Full Details
-          </button>
+          </Button>
         </div>
 
         {loading ? (

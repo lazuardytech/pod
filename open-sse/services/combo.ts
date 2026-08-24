@@ -2,8 +2,11 @@
  * Shared combo (model combo) handling with fallback support
  */
 
-import { unavailableResponse } from "../utils/error.js";
-import { checkFallbackError, formatRetryAfter } from "./accountFallback.js";
+import { getCapabilitiesForModel } from "../providers/capabilities.ts";
+import { unavailableResponse } from "../utils/error.ts";
+import { checkFallbackError, formatRetryAfter } from "./accountFallback.ts";
+
+const HARD_CAPS = new Set(["vision", "pdf", "audioInput", "videoInput"]);
 
 type JsonRecord = Record<string, unknown>;
 
@@ -72,11 +75,23 @@ const comboRotationState = new Map<string, ComboRotationState | number>();
 export interface ComboChatParams {
   body: JsonRecord;
   models: string[];
-  handleSingleModel: (body: JsonRecord, model: string) => Promise<Response>;
+  handleSingleModel: (body: JsonRecord, model: string, isPanel?: boolean) => Promise<Response>;
   log: ComboLogger;
   comboName?: string;
   comboStrategy?: string;
   comboStickyLimit?: number | string;
+  autoSwitch?: boolean;
+  judgeModel?: string;
+  tuning?: {
+    minPanel?: number;
+    stragglerGraceMs?: number;
+    panelHardTimeoutMs?: number;
+  };
+}
+
+/** TTS/image/search/fetch cannot panel+judge — fusion becomes sequential fallback. */
+export function coerceNonChatComboStrategy(strategy: string | undefined): string {
+  return strategy === "fusion" ? "fallback" : strategy || "fallback";
 }
 
 function normalizeStickyLimit(stickyLimit: unknown): number {
@@ -91,6 +106,125 @@ function rotateModelsFromIndex(models: string[], currentIndex: number): string[]
     if (moved !== undefined) rotatedModels.push(moved);
   }
   return rotatedModels;
+}
+
+function trailingUserItems<T extends { role?: string }>(arr: T[] | unknown): T[] {
+  if (!Array.isArray(arr) || arr.length === 0) return [];
+  const isAssistant = (r: unknown) => r === "assistant" || r === "model";
+  let i = arr.length - 1;
+  while (i >= 0 && !isAssistant(arr[i]?.role)) i--;
+  return arr.slice(i + 1);
+}
+
+export function reorderByCapabilities(
+  models: string[],
+  required: Set<string> | null | undefined,
+): string[] {
+  if (!required || required.size === 0 || !Array.isArray(models) || models.length <= 1)
+    return models;
+  const hard = [...required].filter((c) => HARD_CAPS.has(c));
+  const soft = [...required].filter((c) => !HARD_CAPS.has(c));
+
+  const tierOf = (m: string) => {
+    const slash = typeof m === "string" ? m.indexOf("/") : -1;
+    const provider = slash > 0 ? m.slice(0, slash) : "";
+    const model = slash > 0 ? m.slice(slash + 1) : m;
+    const caps = getCapabilitiesForModel(provider, model) as unknown as Record<
+      string,
+      boolean | number | undefined
+    >;
+    if (!hard.every((c) => caps[c] === true)) return 2;
+    return soft.every((c) => caps[c] === true) ? 0 : 1;
+  };
+
+  return models
+    .map((m, i) => ({ m, i, t: tierOf(m) }))
+    .sort((a, b) => a.t - b.t || a.i - b.i)
+    .map((x) => x.m);
+}
+
+export function detectRequiredCapabilities(body: JsonRecord | null | undefined): Set<string> {
+  const required = new Set<string>();
+  if (!body || typeof body !== "object") return required;
+
+  const addByMime = (mime: unknown) => {
+    if (typeof mime !== "string") return;
+    if (mime.startsWith("image/")) required.add("vision");
+    else if (mime === "application/pdf") required.add("pdf");
+    else if (mime.startsWith("audio/")) required.add("audioInput");
+    else if (mime.startsWith("video/")) required.add("videoInput");
+  };
+
+  const scanBlock = (b: unknown) => {
+    if (!b || typeof b !== "object") return;
+    const rec = b as JsonRecord;
+    const t = rec.type;
+    if (t === "image_url" || t === "image" || t === "input_image") required.add("vision");
+    if (t === "input_audio" || t === "audio_url" || t === "audio") required.add("audioInput");
+    if (t === "input_video" || t === "video_url" || t === "video") required.add("videoInput");
+    if (t === "file" || t === "document" || t === "input_file") {
+      let fmime: string | null = null;
+      const inputAudio = rec.input_audio as { format?: string } | undefined;
+      const file = rec.file as { file_data?: string } | undefined;
+      const source = rec.source as { media_type?: string; data?: string } | undefined;
+      if (inputAudio?.format) fmime = `audio/${inputAudio.format}`;
+      else if (file?.file_data) fmime = String(file.file_data).match(/^data:([^;,]+)/)?.[1] ?? null;
+      else if (source?.media_type) fmime = source.media_type;
+      else if (source?.data) fmime = String(source.data).match(/^data:([^;,]+)/)?.[1] ?? null;
+      if (fmime) addByMime(fmime);
+      else required.add("pdf");
+    }
+    const inlineData = rec.inlineData as { mimeType?: string } | undefined;
+    const fileData = rec.fileData as { mimeType?: string } | undefined;
+    addByMime(inlineData?.mimeType || fileData?.mimeType);
+  };
+
+  const scanContent = (content: unknown) => {
+    if (Array.isArray(content)) for (const b of content) scanBlock(b);
+  };
+
+  const scanMessage = (m: unknown) => {
+    if (!m || typeof m !== "object") return;
+    const rec = m as JsonRecord;
+
+    if (Array.isArray(rec.images) && rec.images.length > 0) required.add("vision");
+
+    const attachments = rec.experimental_attachments || rec.attachments;
+    if (Array.isArray(attachments)) {
+      for (const att of attachments) {
+        if (!att || typeof att !== "object") continue;
+        const a = att as { contentType?: string; mediaType?: string; url?: string; data?: unknown };
+        const mime =
+          a.contentType ||
+          a.mediaType ||
+          (typeof a.url === "string" ? a.url.match(/^data:([^;,]+)/)?.[1] : undefined);
+        if (mime) addByMime(mime);
+        else if (a.url || a.data) required.add("vision");
+      }
+    }
+
+    if (rec.image_url || rec.image) required.add("vision");
+    if (rec.audio_url || rec.audio) required.add("audioInput");
+
+    scanContent(rec.content);
+
+    if (typeof rec.content === "string") {
+      if (rec.content.includes("data:image/")) required.add("vision");
+      else if (rec.content.includes("data:audio/")) required.add("audioInput");
+      else if (rec.content.includes("data:application/pdf")) required.add("pdf");
+    }
+  };
+
+  for (const m of trailingUserItems(body.messages as { role?: string }[])) scanMessage(m);
+  for (const it of trailingUserItems(body.input as { role?: string; content?: unknown }[])) {
+    scanContent((it as { content?: unknown }).content);
+  }
+  const contents = body.contents || (body.request as { contents?: unknown } | undefined)?.contents;
+  for (const c of trailingUserItems(contents as { role?: string; parts?: unknown }[])) {
+    scanContent((c as { parts?: unknown }).parts);
+  }
+
+  return required;
 }
 
 /**
@@ -281,9 +415,37 @@ export async function handleComboChat({
   comboName,
   comboStrategy,
   comboStickyLimit = 1,
+  autoSwitch = true,
+  judgeModel,
+  tuning,
 }: ComboChatParams): Promise<Response> {
+  if (comboStrategy === "fusion") {
+    // Inline import: fusion.ts imports detectRequiredCapabilities from this module.
+    const { handleFusionChat } = await import("./fusion.ts");
+    return handleFusionChat({
+      body,
+      models,
+      handleSingleModel,
+      log,
+      comboName,
+      judgeModel,
+      tuning,
+    });
+  }
+
   // Apply rotation strategy if enabled
-  const rotatedModels = getRotatedModels(models, comboName, comboStrategy, comboStickyLimit);
+  let rotatedModels = getRotatedModels(models, comboName, comboStrategy, comboStickyLimit);
+
+  if (autoSwitch) {
+    const required = detectRequiredCapabilities(body);
+    if (required.size > 0) {
+      const reordered = reorderByCapabilities(rotatedModels, required);
+      if (reordered[0] !== rotatedModels[0]) {
+        log.info("COMBO", `auto-switch for [${[...required].join(",")}] → ${reordered[0]}`);
+      }
+      rotatedModels = reordered;
+    }
+  }
 
   let lastError: string | null = null;
   let earliestRetryAfter: string | null = null;

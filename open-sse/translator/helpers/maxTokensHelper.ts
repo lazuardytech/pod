@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { DEFAULT_MAX_TOKENS, DEFAULT_MIN_TOKENS } from "../../config/runtimeConfig.js";
+import { DEFAULT_MAX_TOKENS, DEFAULT_MIN_TOKENS } from "../../config/runtimeConfig.ts";
 
 /**
  * Adjust max_tokens based on request context

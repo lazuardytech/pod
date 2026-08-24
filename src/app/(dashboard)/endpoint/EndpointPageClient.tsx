@@ -8,16 +8,19 @@ import {
   Button,
   Card,
   CardSkeleton,
+  IconButton,
   Input,
   Modal,
   SegmentedControl,
   Toggle,
+  Tooltip,
 } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
 import { mutateJsonWithOfflineQueue } from "@/shared/services/offlineMutationRequest";
+import { cn } from "@/shared/utils/cn";
 
 function errMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
@@ -54,6 +57,10 @@ type SettingsPayload = {
   rtkEnabled?: boolean;
   cavemanEnabled?: boolean;
   cavemanLevel?: string;
+  headroomEnabled?: boolean;
+  headroomUrl?: string;
+  ponytailEnabled?: boolean;
+  ponytailLevel?: string;
 };
 
 type ConfirmDialogState = {
@@ -87,6 +94,11 @@ const CAVEMAN_LEVELS = [
   { id: "full", label: "Full", desc: "Drop articles, fragments OK" },
   { id: "ultra", label: "Ultra", desc: "Telegraphic, max compression" },
 ];
+const PONYTAIL_LEVELS = [
+  { id: "lite", label: "Lite", desc: "Name the lazier alternative" },
+  { id: "full", label: "Full", desc: "Stdlib first, shortest diff" },
+  { id: "ultra", label: "Ultra", desc: "Deletion before addition" },
+];
 export default function APIPageClient({ machineId: _machineId }: { machineId: string }) {
   const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,13 +113,27 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
   const [newKeyConcurrent, setNewKeyConcurrent] = useState("5");
   const [createdKey, setCreatedKey] = useState<string | null>(null);
 
-  const [requireApiKey, setRequireApiKey] = useState(false);
+  const [requireApiKey, setRequireApiKey] = useState(true);
   const [requireLogin, setRequireLogin] = useState(true);
   const [hasPassword, setHasPassword] = useState(true);
   const [tunnelDashboardAccess, setTunnelDashboardAccess] = useState(false);
   const [rtkEnabled, setRtkEnabledState] = useState(false);
   const [cavemanEnabled, setCavemanEnabled] = useState(false);
   const [cavemanLevel, setCavemanLevel] = useState("full");
+  const [headroomEnabled, setHeadroomEnabled] = useState(false);
+  const [headroomUrl, setHeadroomUrl] = useState("http://localhost:8787");
+  const [headroomStatus, setHeadroomStatus] = useState<"unknown" | "ok" | "error">("unknown");
+  const [headroomProc, setHeadroomProc] = useState<{
+    installed?: boolean;
+    running?: boolean;
+    canStart?: boolean;
+    localUrl?: boolean;
+    managedPid?: number | null;
+    version?: string | null;
+  }>({});
+  const [headroomBusy, setHeadroomBusy] = useState(false);
+  const [ponytailEnabled, setPonytailEnabled] = useState(false);
+  const [ponytailLevel, setPonytailLevel] = useState("full");
 
   // Cloudflare Tunnel state
   const [tunnelChecking, setTunnelChecking] = useState(true);
@@ -206,13 +232,17 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
   const applySettingsData = useCallback((data: unknown) => {
     if (!data || typeof data !== "object") return;
     const d = data as SettingsPayload;
-    setRequireApiKey(d.requireApiKey || false);
+    setRequireApiKey(d.requireApiKey !== false);
     setRequireLogin(d.requireLogin !== false);
     setHasPassword(d.hasPassword || false);
     setTunnelDashboardAccess(d.tunnelDashboardAccess || false);
     setRtkEnabledState(!!d.rtkEnabled);
     setCavemanEnabled(!!d.cavemanEnabled);
     setCavemanLevel(d.cavemanLevel || "full");
+    setHeadroomEnabled(!!d.headroomEnabled);
+    setHeadroomUrl(d.headroomUrl || "http://localhost:8787");
+    setPonytailEnabled(!!d.ponytailEnabled);
+    setPonytailLevel(d.ponytailLevel || "full");
   }, []);
 
   const notifyOfflineCache = useCallback(() => {
@@ -425,23 +455,113 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
     }
   };
 
-  const handleCavemanEnabled = (value: boolean) => {
-    const previous = cavemanEnabled;
-    setCavemanEnabled(value);
-    patchSetting({ cavemanEnabled: value }, { feature: "endpoint-caveman-enabled" }).then(
-      (result) => {
-        if ("error" in result && result.error) setCavemanEnabled(previous);
-      },
-    );
-  };
-
-  const handleCavemanLevel = (level: string) => {
-    const previous = cavemanLevel;
-    setCavemanLevel(level);
-    patchSetting({ cavemanLevel: level }, { feature: "endpoint-caveman-level" }).then((result) => {
-      if ("error" in result && result.error) setCavemanLevel(previous);
+  const handleCavemanMode = (value: string) => {
+    const previousEnabled = cavemanEnabled;
+    const previousLevel = cavemanLevel;
+    const enabled = value !== "off";
+    const level = enabled ? value : previousLevel;
+    setCavemanEnabled(enabled);
+    if (enabled) setCavemanLevel(level);
+    patchSetting(
+      enabled ? { cavemanEnabled: true, cavemanLevel: level } : { cavemanEnabled: false },
+      { feature: "endpoint-caveman-mode" },
+    ).then((result) => {
+      if ("error" in result && result.error) {
+        setCavemanEnabled(previousEnabled);
+        setCavemanLevel(previousLevel);
+      }
     });
   };
+
+  const handlePonytailMode = (value: string) => {
+    const previousEnabled = ponytailEnabled;
+    const previousLevel = ponytailLevel;
+    const enabled = value !== "off";
+    const level = enabled ? value : previousLevel;
+    setPonytailEnabled(enabled);
+    if (enabled) setPonytailLevel(level);
+    patchSetting(
+      enabled ? { ponytailEnabled: true, ponytailLevel: level } : { ponytailEnabled: false },
+      { feature: "endpoint-ponytail-mode" },
+    ).then((result) => {
+      if ("error" in result && result.error) {
+        setPonytailEnabled(previousEnabled);
+        setPonytailLevel(previousLevel);
+      }
+    });
+  };
+
+  const probeHeadroom = useCallback(async () => {
+    try {
+      const res = await fetch("/api/headroom/health", { cache: "no-store" });
+      if (!res.ok) {
+        setHeadroomStatus("error");
+        return;
+      }
+      const data = (await res.json()) as { ok?: boolean };
+      setHeadroomStatus(data.ok ? "ok" : "error");
+    } catch {
+      setHeadroomStatus("error");
+    }
+  }, []);
+
+  const refreshHeadroomProc = useCallback(async () => {
+    try {
+      const res = await fetch("/api/headroom/status", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as typeof headroomProc;
+      setHeadroomProc(data);
+    } catch {
+      // status is advisory
+    }
+  }, []);
+
+  const handleHeadroomSpawn = async (action: "start" | "stop" | "restart") => {
+    setHeadroomBusy(true);
+    try {
+      const res = await fetch(`/api/headroom/${action}`, { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        toast.error(typeof data.error === "string" ? data.error : `Headroom ${action} failed`);
+        return;
+      }
+      await refreshHeadroomProc();
+      if (headroomEnabled) void probeHeadroom();
+    } catch (e) {
+      toast.error(errMessage(e));
+    } finally {
+      setHeadroomBusy(false);
+    }
+  };
+
+  const handleHeadroomEnabled = async (value: boolean) => {
+    const previous = headroomEnabled;
+    setHeadroomEnabled(value);
+    const result = await patchSetting(
+      { headroomEnabled: value },
+      { feature: "endpoint-headroom-enabled" },
+    );
+    if ("error" in result && result.error) {
+      setHeadroomEnabled(previous);
+      return;
+    }
+    if (value) void probeHeadroom();
+    else setHeadroomStatus("unknown");
+  };
+
+  const handleHeadroomUrlBlur = async () => {
+    const result = await patchSetting({ headroomUrl }, { feature: "endpoint-headroom-url" });
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Invalid Headroom URL");
+      return;
+    }
+    if (headroomEnabled) void probeHeadroom();
+  };
+
+  useEffect(() => {
+    if (headroomEnabled) void probeHeadroom();
+    void refreshHeadroomProc();
+  }, [headroomEnabled, probeHeadroom, refreshHeadroomProc]);
 
   const fetchData = async () => {
     try {
@@ -949,7 +1069,7 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
 
   const maskKey = (fullKey: string) => {
     if (!fullKey) return "";
-    return fullKey.length > 8 ? fullKey.slice(0, 8) + "..." : fullKey;
+    return fullKey.length > 24 ? `${fullKey.slice(0, 24)}...` : fullKey;
   };
 
   const toggleKeyVisibility = (keyId: string) => {
@@ -961,7 +1081,7 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
     });
   };
 
-  const [baseUrl, setBaseUrl] = useState("/v1");
+  const [baseUrl, setBaseUrl] = useState("");
   const hasValidCreateRateLimitInputs =
     newKeyLimitType !== "limited" ||
     (Number.isInteger(Number(newKeyRpm)) &&
@@ -976,7 +1096,8 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
     }
   }, []);
 
-  const currentEndpoint = baseUrl;
+  const currentEndpoint = baseUrl || "Processing...";
+  const endpointReady = Boolean(baseUrl);
   const showTunnelEnableAction = !tunnelEnabled && !tunnelLoading && !tunnelChecking;
   const showTsEnableAction = !tsEnabled && !tsLoading && !tsConnecting;
 
@@ -990,6 +1111,7 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
           copyId="openai_url"
           copied={copied}
           onCopy={copy}
+          ready={endpointReady}
         />
         <EndpointValueCard
           title="Anthropic"
@@ -998,6 +1120,7 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
           copyId="anthropic_url"
           copied={copied}
           onCopy={copy}
+          ready={endpointReady}
         />
 
         <Card
@@ -1029,20 +1152,20 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
             {tunnelEnabled && !tunnelLoading ? (
               <div className="flex items-center gap-2">
                 <Input value={`${tunnelUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
-                <button
+                <IconButton
+                  size="lg"
+                  icon={copied === "tunnel_url" ? "check" : "content_copy"}
                   onClick={() => copy(`${tunnelUrl}/v1`, "tunnel_url")}
                   className={ENDPOINT_ICON_BUTTON_CLASS}
                   title="Copy tunnel URL"
-                >
-                  <LucideIcon name={copied === "tunnel_url" ? "check" : "content_copy"} size={16} />
-                </button>
-                <button
+                />
+                <IconButton
+                  size="lg"
+                  icon="power_settings_new"
                   onClick={() => setShowDisableTunnelModal(true)}
                   className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Disable Tunnel"
-                >
-                  <LucideIcon name="power_settings_new" size={16} />
-                </button>
+                />
               </div>
             ) : tunnelLoading ? (
               <div className="flex items-start gap-2">
@@ -1054,16 +1177,16 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                   />
                   <span>{tunnelProgress || "Creating tunnel..."}</span>
                 </div>
-                <button
+                <IconButton
+                  size="lg"
+                  icon="power_settings_new"
                   onClick={() => {
                     setTunnelLoading(false);
                     setTunnelProgress("");
                   }}
                   className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Stop"
-                >
-                  <LucideIcon name="power_settings_new" size={16} />
-                </button>
+                />
               </div>
             ) : tunnelStatus?.type === "error" ? (
               <div className="flex items-start gap-2 rounded-[6px] border border-warning-red/25 bg-warning-red/8 px-3 py-2 text-sm text-warning-red">
@@ -1080,13 +1203,13 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                   />
                   <span>Checking...</span>
                 </div>
-                <button
+                <IconButton
+                  size="lg"
+                  icon="power_settings_new"
                   onClick={() => setTunnelChecking(false)}
                   className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Stop"
-                >
-                  <LucideIcon name="power_settings_new" size={16} />
-                </button>
+                />
               </div>
             ) : (
               <p className="text-sm text-storm-cloud">
@@ -1111,20 +1234,20 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
             {tsEnabled && !tsLoading ? (
               <div className="flex items-center gap-2">
                 <Input value={`${tsUrl}/v1`} readOnly className="flex-1 font-mono text-sm" />
-                <button
+                <IconButton
+                  size="lg"
+                  icon={copied === "ts_url" ? "check" : "content_copy"}
                   onClick={() => copy(`${tsUrl}/v1`, "ts_url")}
                   className={ENDPOINT_ICON_BUTTON_CLASS}
                   title="Copy Tailscale URL"
-                >
-                  <LucideIcon name={copied === "ts_url" ? "check" : "content_copy"} size={16} />
-                </button>
-                <button
+                />
+                <IconButton
+                  size="lg"
+                  icon="power_settings_new"
                   onClick={() => setShowDisableTsModal(true)}
                   className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Disable Tailscale"
-                >
-                  <LucideIcon name="power_settings_new" size={16} />
-                </button>
+                />
               </div>
             ) : tsLoading || tsConnecting ? (
               <div className="flex items-start gap-2">
@@ -1136,7 +1259,9 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                   />
                   <span>{tsProgress || "Connecting..."}</span>
                 </div>
-                <button
+                <IconButton
+                  size="lg"
+                  icon="power_settings_new"
                   onClick={() => {
                     setTsLoading(false);
                     setTsConnecting(false);
@@ -1144,9 +1269,7 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                   }}
                   className={ENDPOINT_DANGER_BUTTON_CLASS}
                   title="Stop"
-                >
-                  <LucideIcon name="power_settings_new" size={16} />
-                </button>
+                />
               </div>
             ) : tsStatus?.type === "error" ? (
               <div className="flex items-start gap-2 rounded-[6px] border border-warning-red/25 bg-warning-red/8 px-3 py-2 text-sm text-warning-red">
@@ -1194,7 +1317,9 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
               />
               <div className="flex items-center gap-1.5">
                 <p className="font-medium text-sm">Allow dashboard access via tunnel</p>
-                <Tooltip text="When enabled, the dashboard can be accessed through your tunnel or Tailscale URL (login still required). When disabled, dashboard access via tunnel/Tailscale is completely blocked." />
+                <Tooltip text="When enabled, the dashboard can be accessed through your tunnel or Tailscale URL (login still required). When disabled, dashboard access via tunnel/Tailscale is completely blocked.">
+                  <LucideIcon name="help" className="text-[14px] text-text-muted cursor-help" />
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -1245,29 +1370,122 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
               Terse-style system prompt → ~65% fewer output tokens (up to 87%)
             </p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {cavemanEnabled && (
-              <div className="flex items-center gap-1.5">
-                {CAVEMAN_LEVELS.map((lvl) => (
-                  <button
-                    key={lvl.id}
-                    onClick={() => handleCavemanLevel(lvl.id)}
-                    className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
-                      cavemanLevel === lvl.id
-                        ? "bg-primary text-primary-fg border-primary"
-                        : "bg-transparent border-border text-text-muted hover:bg-surface-2"
-                    }`}
-                    title={lvl.desc}
-                  >
-                    {lvl.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            <Toggle
-              checked={cavemanEnabled}
-              onChange={() => handleCavemanEnabled(!cavemanEnabled)}
-            />
+          <SegmentedControl
+            size="sm"
+            className="shrink-0"
+            aria-label="Caveman compression mode"
+            value={cavemanEnabled ? cavemanLevel : "off"}
+            onChange={handleCavemanMode}
+            options={[
+              { value: "off", label: "Off" },
+              ...CAVEMAN_LEVELS.map((lvl) => ({ value: lvl.id, label: lvl.label })),
+            ]}
+          />
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t border-border mt-4 gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">
+              Lazy senior dev{" "}
+              <a
+                href="https://github.com/DietrichGebert/ponytail"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-normal text-primary underline hover:opacity-80"
+              >
+                (Ponytail)
+              </a>
+            </p>
+            <p className="text-sm text-text-muted">
+              Inject a shortest-diff system prompt on each request (not Cursor /ponytail skills)
+            </p>
+          </div>
+          <SegmentedControl
+            size="sm"
+            className="shrink-0"
+            aria-label="Ponytail compression mode"
+            value={ponytailEnabled ? ponytailLevel : "off"}
+            onChange={handlePonytailMode}
+            options={[
+              { value: "off", label: "Off" },
+              ...PONYTAIL_LEVELS.map((lvl) => ({ value: lvl.id, label: lvl.label })),
+            ]}
+          />
+        </div>
+        <div className="flex flex-col gap-3 pt-4 border-t border-border mt-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">
+                Compress context{" "}
+                <span className="text-xs font-normal text-text-muted">(Headroom)</span>
+              </p>
+              <p className="text-sm text-text-muted">
+                POST to Headroom /v1/compress before routing. Fail-open if unreachable.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge
+                variant={
+                  !headroomEnabled ? "default" : headroomStatus === "ok" ? "success" : "warning"
+                }
+              >
+                {!headroomEnabled
+                  ? "Off"
+                  : headroomStatus === "ok"
+                    ? "Reachable"
+                    : headroomStatus === "error"
+                      ? "Unreachable"
+                      : "Unknown"}
+              </Badge>
+              <Toggle
+                checked={headroomEnabled}
+                onChange={() => handleHeadroomEnabled(!headroomEnabled)}
+              />
+            </div>
+          </div>
+          <Input
+            label="Headroom URL"
+            value={headroomUrl}
+            onChange={(e) => setHeadroomUrl(e.target.value)}
+            onBlur={() => void handleHeadroomUrlBlur()}
+            placeholder="http://localhost:8787"
+            hint="localhost, 127.0.0.1, or hostname headroom only"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs text-text-muted flex-1 min-w-[12rem]">
+              {headroomProc.installed
+                ? `CLI ${headroomProc.version || "installed"}${
+                    headroomProc.running && headroomProc.managedPid
+                      ? ` · running pid ${headroomProc.managedPid}`
+                      : headroomProc.running
+                        ? " · running"
+                        : " · stopped"
+                  }`
+                : "Local Python CLI not on PATH — spawn is local-only (no Docker/Zeabur sidecar)"}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={headroomBusy || !headroomProc.canStart || headroomProc.running}
+              onClick={() => void handleHeadroomSpawn("start")}
+            >
+              Start
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={headroomBusy || !headroomProc.running}
+              onClick={() => void handleHeadroomSpawn("stop")}
+            >
+              Stop
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={headroomBusy || !headroomProc.canStart}
+              onClick={() => void handleHeadroomSpawn("restart")}
+            >
+              Restart
+            </Button>
           </div>
         </div>
       </Card>
@@ -1361,26 +1579,20 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                             <code className="text-[11px] text-storm-cloud font-mono">
                               {visibleKeys.has(key.id) ? key.key : maskKey(key.key)}
                             </code>
-                            <button
+                            <IconButton
+                              size="sm"
+                              icon={visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
                               onClick={() => toggleKeyVisibility(key.id)}
-                              className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
                               title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
-                            >
-                              <LucideIcon
-                                name={visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
-                                className="text-[12px]"
-                              />
-                            </button>
-                            <button
+                              className="opacity-0 group-hover:opacity-100 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey"
+                            />
+                            <IconButton
+                              size="sm"
+                              icon={copied === key.id ? "check" : "content_copy"}
                               onClick={() => copy(key.key, key.id)}
-                              className="flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey opacity-0 group-hover:opacity-100 transition-all duration-100"
                               title="Copy key"
-                            >
-                              <LucideIcon
-                                name={copied === key.id ? "check" : "content_copy"}
-                                className="text-[12px]"
-                              />
-                            </button>
+                              className="opacity-0 group-hover:opacity-100 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-charcoal-grey"
+                            />
                           </div>
                         </td>
 
@@ -1445,14 +1657,16 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                         {/* Actions */}
                         <td className="px-3 py-2 w-[72px]">
                           <div className="flex items-center justify-end gap-1">
-                            <button
+                            <IconButton
+                              size="sm"
+                              icon="edit"
                               onClick={() => handleEditKey(key)}
-                              className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
                               title="Edit key"
-                            >
-                              <LucideIcon name="edit" className="text-[14px]" />
-                            </button>
-                            <button
+                              className="size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain"
+                            />
+                            <IconButton
+                              size="sm"
+                              icon="delete"
                               onClick={() =>
                                 openConfirm(
                                   "Delete API Key",
@@ -1461,11 +1675,9 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                                   "danger",
                                 )
                               }
-                              className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red transition-colors duration-100"
                               title="Delete key"
-                            >
-                              <LucideIcon name="delete" className="text-[14px]" />
-                            </button>
+                              className="size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red"
+                            />
                           </div>
                         </td>
                       </tr>
@@ -1481,40 +1693,45 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                   {Math.min(keysPage * KEYS_PAGE_SIZE, keys.length)} of {keys.length}
                 </span>
                 <div className="flex items-center gap-1">
-                  <button
+                  <IconButton
+                    size="sm"
+                    icon="chevron_left"
                     onClick={() => setKeysPage((p: number) => Math.max(1, p - 1))}
                     disabled={keysPage === 1}
-                    className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
-                  >
-                    <LucideIcon name="chevron_left" className="text-[14px]" />
-                  </button>
+                    title="Previous page"
+                    className="size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40"
+                  />
                   {Array.from(
                     { length: Math.ceil(keys.length / KEYS_PAGE_SIZE) },
                     (_: unknown, i: number) => i + 1,
                   ).map((p: number) => (
-                    <button
+                    <Button
                       key={p}
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setKeysPage(p)}
-                      className={`flex items-center justify-center size-6 rounded-[4px] text-[11px] font-[510] transition-colors duration-100 ${
+                      className={cn(
+                        "size-6 min-w-6 rounded-[4px] p-0 text-[11px] font-[510]",
                         p === keysPage
                           ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
-                          : "text-fog-grey hover:bg-deep-slate hover:text-porcelain border border-transparent"
-                      }`}
+                          : "text-fog-grey hover:bg-deep-slate hover:text-porcelain border border-transparent",
+                      )}
                     >
                       {p}
-                    </button>
+                    </Button>
                   ))}
-                  <button
+                  <IconButton
+                    size="sm"
+                    icon="chevron_right"
                     onClick={() =>
                       setKeysPage((p: number) =>
                         Math.min(Math.ceil(keys.length / KEYS_PAGE_SIZE), p + 1),
                       )
                     }
                     disabled={keysPage === Math.ceil(keys.length / KEYS_PAGE_SIZE)}
-                    className="flex items-center justify-center size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 transition-colors duration-100"
-                  >
-                    <LucideIcon name="chevron_right" className="text-[14px]" />
-                  </button>
+                    title="Next page"
+                    className="size-6 rounded-[4px] border border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain disabled:opacity-40"
+                  />
                 </div>
               </div>
             )}
@@ -1892,6 +2109,7 @@ function EndpointValueCard({
   copyId,
   copied,
   onCopy,
+  ready = true,
 }: {
   title: string;
   icon: string;
@@ -1899,18 +2117,24 @@ function EndpointValueCard({
   copyId: string;
   copied: string | null;
   onCopy: (text: string, id?: string) => void;
+  ready?: boolean;
 }) {
   return (
     <Card title={title} icon={icon} className="h-full">
       <div className="flex items-center gap-2">
-        <Input value={url} readOnly className="flex-1 font-mono text-sm" />
-        <button
+        <Input
+          value={url}
+          readOnly
+          className={cn("flex-1 font-mono text-sm", !ready && "text-storm-cloud")}
+        />
+        <IconButton
+          size="lg"
+          icon={copied === copyId ? "check" : "content_copy"}
           onClick={() => onCopy(url, copyId)}
-          className={ENDPOINT_ICON_BUTTON_CLASS}
+          disabled={!ready}
+          className={cn(ENDPOINT_ICON_BUTTON_CLASS, !ready && "opacity-40 pointer-events-none")}
           title={`Copy ${title} URL`}
-        >
-          <LucideIcon name={copied === copyId ? "check" : "content_copy"} size={16} />
-        </button>
+        />
       </div>
     </Card>
   );
@@ -1952,18 +2176,6 @@ function StatusAlert({
     >
       {renderMessage(status.message)}
     </div>
-  );
-}
-
-/** Inline tooltip, Claude Code CLI style */
-function Tooltip({ text }: { text: string }) {
-  return (
-    <span className="relative group inline-flex items-center">
-      <LucideIcon name="help" className="text-[14px] text-text-muted cursor-help" />
-      <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 w-64 rounded bg-gray-900 dark:bg-gray-800 text-white text-xs px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-        {text}
-      </span>
-    </span>
   );
 }
 

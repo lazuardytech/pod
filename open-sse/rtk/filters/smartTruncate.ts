@@ -4,7 +4,7 @@ import {
   SMART_TRUNCATE_HEAD,
   SMART_TRUNCATE_MIN_LINES,
   SMART_TRUNCATE_TAIL,
-} from "../constants.js";
+} from "../constants.ts";
 
 export function smartTruncate(input: string) {
   const lines = input.split("\n");

@@ -19,7 +19,7 @@ Each request passes through this pipeline. Fails early on missing credentials or
 | Media (speech/image/embed/search) | Deepgram, AssemblyAI, ElevenLabs, Voyage AI, SD WebUI, ComfyUI, Tavily, Brave Search, SearXNG, Fal.ai, Stability AI, Jina AI, and more                                                                                                                         |
 | Custom nodes                      | OpenAI-compatible, Anthropic-compatible, custom embedding nodes (added from dashboard)                                                                                                                                                                         |
 
-Provider definitions live in `src/shared/constants/providers.ts`. Model catalogs in `src/shared/constants/models.ts`.
+Provider definitions live in `src/shared/constants/providers.ts` (`AI_PROVIDERS`: **84** built-in ids — 5 free / 7 free-tier / 7 OAuth / 63 API-key / 2 cookie). Tables above are examples, not exhaustive. Custom OpenAI/Anthropic/embedding nodes are extra. Model catalogs in `src/shared/constants/models.ts`.
 
 ## Auth Types
 
@@ -36,7 +36,7 @@ Token refresh logic lives in `open-sse/services/tokenRefresh.ts` with provider-s
 
 ## Executor Routing
 
-Executors live in `open-sse/executors/`. Each implements the same interface for generic dispatch.
+Executors live in `open-sse/executors/` (20 files: 17 specialized + `default.ts` + `base.ts` + `index.ts`). `getExecutor()` maps 19 keys; unknown providers get `DefaultExecutor`.
 
 | Executor                         | Provider(s)            | Notable behavior                           |
 | -------------------------------- | ---------------------- | ------------------------------------------ |

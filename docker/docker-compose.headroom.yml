@@ -1,0 +1,19 @@
+# Optional Headroom compress sidecar. Pod talks HTTP only (fail-open); it never spawns Python.
+# Usage: cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml up -d
+# Hostname `headroom` is allowlisted by Pod's Headroom client.
+# Zeabur: set HEADROOM_URL only — do not deploy this service.
+
+services:
+  headroom:
+    image: ghcr.io/headroomlabs-ai/headroom
+    container_name: pod-headroom
+    restart: unless-stopped
+    command: ["--host", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:8787:8787"
+
+  pod:
+    environment:
+      HEADROOM_URL: http://headroom:8787
+    depends_on:
+      - headroom

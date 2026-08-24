@@ -2,13 +2,15 @@
 
 Status: completed — historical
 
+> **Update 2026-08-22**: generated `open-sse/**/*.js` shims are gone. Local imports use `.ts`/`.tsx` suffixes. The only committed JavaScript is `public/sw.js` (built from `src/sw/sw.ts`).
+
 > **Update 2026-08-06**: `open-sse/` and `tests/` have been migrated to TypeScript on `cursor/p1`. The freeze decision below is historical.
 
-> **Status: completed — repo is now TypeScript strict; `open-sse/` intentionally frozen as JS. Tooling is oxfmt + oxlint + tsc (Biome/ESLint removed).**
+> **Status: completed.** Repo is TypeScript strict (`src/`, `open-sse/`, `tests/`). Tooling is oxfmt + oxlint + tsc (Biome/ESLint removed). The freeze-open-sse-as-JS decision below is historical.
 >
 > The migration narrative below is preserved as history. **Tooling caveat:** inline commands and example diffs that still read `biome` / `eslint` / `eslint.config.mjs` were written before the VoidZero (oxfmt/oxlint) adoption and are now **historical** — the real gate is `bun run check` = oxfmt + oxlint + `tsc --noEmit`. References to `biome`/`eslint` reflect the tooling in use when this plan was authored, not the current setup.
 
-Scope: `src/`, `cloud/` ✅, `open-sse/` (frozen as JS — see Phase 9)
+Scope: `src/`, `cloud/` ✅, `open-sse/` ✅ (TypeScript; historical freeze-as-JS text below is obsolete)
 Goal: end state is a strictly-typed, real type system across `src/`, with `tsc --noEmit --strict` green in CI.
 
 ## Non-Negotiables

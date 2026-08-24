@@ -28,7 +28,7 @@ describe("proxyAwareFetch — relay timeout margin (Fix 1)", () => {
     // Import after setting spy so the module's originalFetch captures our spy.
     // Note: the module overwrites globalThis.fetch with patchedFetch, but
     // proxyAwareFetch calls originalFetch which points to our fetchSpy.
-    const mod = await import("../../open-sse/utils/proxyFetch.js");
+    const mod = await import("../../open-sse/utils/proxyFetch.ts");
     proxyAwareFetch = mod.proxyAwareFetch;
   });
 
@@ -197,7 +197,7 @@ describe("testVercelRelay — healthcheck endpoint (Fix 3)", () => {
 describe("chatCore — Vercel relay 504 detection (Fix 2)", () => {
   it("returns relay-timeout error when Vercel relay returns 504", async () => {
     // Verify the HTTP_STATUS constant and that the Fix 2 condition exists in source.
-    const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.js");
+    const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.ts");
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 
     // Verify the 504 detection code exists in chatCore.ts
@@ -210,7 +210,7 @@ describe("chatCore — Vercel relay 504 detection (Fix 2)", () => {
   it("does not special-case 504 when vercelRelayUrl is not set", async () => {
     // The Fix 2 guard is: providerResponse && status === 504 && proxyOptions.vercelRelayUrl
     // When vercelRelayUrl is falsy, the condition is skipped.
-    const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.js");
+    const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.ts");
     expect(HTTP_STATUS.BAD_GATEWAY).toBe(502);
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 
@@ -225,7 +225,7 @@ describe("chatCore — Vercel relay 504 detection (Fix 2)", () => {
 
 describe("chatCore — one-shot retry on 502/504 (Fix 4)", () => {
   it("retry flag: Vercel relay 502 triggers retry condition", async () => {
-    const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.js");
+    const { HTTP_STATUS } = await import("../../open-sse/config/runtimeConfig.ts");
     expect(HTTP_STATUS.BAD_GATEWAY).toBe(502);
     expect(HTTP_STATUS.GATEWAY_TIMEOUT).toBe(504);
 

@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
-import { PROVIDERS } from "../config/providers.js";
+import { PROVIDERS } from "../config/providers.ts";
 import {
   BaseExecutor,
   type ExecutorConfigInput,
   type ExecutorCredentials,
   type ExecutorHeaders,
-} from "./base.js";
+} from "./base.ts";
 
 /**
  * IFlowExecutor - Executor for iFlow API with HMAC-SHA256 signature

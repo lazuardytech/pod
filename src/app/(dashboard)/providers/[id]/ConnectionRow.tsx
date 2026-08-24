@@ -2,7 +2,7 @@
 
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
-import { Badge, Toggle } from "@/shared/components";
+import { Badge, Button, Toggle } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import CooldownTimer from "./CooldownTimer";
 
@@ -242,52 +242,60 @@ export default function ConnectionRow({
           {/* Proxy button with inline dropdown */}
           {(proxyPools || []).length > 0 && (
             <div className="relative" ref={proxyDropdownRef}>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="lan"
+                loading={updatingProxy}
                 onClick={() => setShowProxyDropdown((v) => !v)}
-                className={`flex w-full flex-col items-center rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
+                className={`h-auto w-full flex-col gap-0 px-2 py-1 ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
               >
-                <LucideIcon
-                  name={updatingProxy ? "progress_activity" : "lan"}
-                  className="text-[18px]"
-                />
-                <span className="text-[10px] leading-tight">Proxy</span>
-              </button>
+                <span className="text-[10px] leading-tight font-normal">Proxy</span>
+              </Button>
               {showProxyDropdown && (
                 <div className="absolute right-0 top-full z-50 mt-1 max-w-[78vw] min-w-[160px] rounded-lg border border-border bg-bg py-1 shadow-lg">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleSelectProxy("__none__")}
-                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 ${!boundProxyPoolId ? "text-primary font-medium" : "text-text-main"}`}
+                    className={`h-auto w-full justify-start rounded-none px-3 py-1.5 text-sm ${!boundProxyPoolId ? "font-medium text-primary" : "text-text-main"}`}
                   >
                     None
-                  </button>
+                  </Button>
                   {(proxyPools || []).map((pool) => (
-                    <button
+                    <Button
                       key={pool.id}
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleSelectProxy(pool.id)}
-                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 ${boundProxyPoolId === pool.id ? "text-primary font-medium" : "text-text-main"}`}
+                      className={`h-auto w-full justify-start rounded-none px-3 py-1.5 text-sm ${boundProxyPoolId === pool.id ? "font-medium text-primary" : "text-text-main"}`}
                     >
                       {pool.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
             </div>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="edit"
             onClick={onEdit}
-            className="flex flex-col items-center rounded px-2 py-1 text-text-muted hover:bg-black/5 hover:text-primary dark:hover:bg-white/5"
+            className="h-auto flex-col gap-0 px-2 py-1 text-text-muted hover:text-primary"
           >
-            <LucideIcon name="edit" className="text-[18px]" />
-            <span className="text-[10px] leading-tight">Edit</span>
-          </button>
-          <button
+            <span className="text-[10px] leading-tight font-normal">Edit</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="delete"
             onClick={onDelete}
-            className="flex flex-col items-center rounded px-2 py-1 text-red-500 hover:bg-red-500/10"
+            className="h-auto flex-col gap-0 px-2 py-1 text-red-500 hover:bg-red-500/10 hover:text-red-500"
           >
-            <LucideIcon name="delete" className="text-[18px]" />
-            <span className="text-[10px] leading-tight">Delete</span>
-          </button>
+            <span className="text-[10px] leading-tight font-normal">Delete</span>
+          </Button>
         </div>
         <Toggle
           size="sm"

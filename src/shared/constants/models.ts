@@ -11,9 +11,9 @@ export {
   isValidModel as isValidModelCore,
   PROVIDER_ID_TO_ALIAS,
   PROVIDER_MODELS,
-} from "open-sse/config/providerModels.js";
+} from "open-sse/config/providerModels.ts";
 
-import { PROVIDER_MODELS as MODELS, type ProviderModel } from "open-sse/config/providerModels.js";
+import { PROVIDER_MODELS as MODELS, type ProviderModel } from "open-sse/config/providerModels.ts";
 import { AI_PROVIDERS, isOpenAICompatibleProvider, type ProviderDefinition } from "./providers";
 
 // Providers that accept any model (passthrough)

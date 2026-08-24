@@ -1,4 +1,4 @@
-import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
+import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.ts";
 import {
   buildConnectionLockUpdate,
   buildModelLockUpdate,
@@ -15,7 +15,7 @@ import {
   isConnectionLockActive,
   isModelLockActive,
   MODEL_LOCK_COUNT_PREFIX,
-} from "open-sse/services/accountFallback.js";
+} from "open-sse/services/accountFallback.ts";
 import {
   getProviderConnections,
   getSettings,

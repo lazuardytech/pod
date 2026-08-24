@@ -1,13 +1,13 @@
 // @ts-nocheck
 import crypto from "node:crypto";
-import { GITHUB_COPILOT, OAUTH_ENDPOINTS } from "../config/appConstants.js";
-import { PROVIDERS } from "../config/providers.js";
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { initState } from "../translator/index.js";
-import { openaiToOpenAIResponsesRequest } from "../translator/request/openai-responses.js";
-import { openaiResponsesToOpenAIResponse } from "../translator/response/openai-responses.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { formatSSE, parseSSELine } from "../utils/streamHelpers.js";
+import { GITHUB_COPILOT, OAUTH_ENDPOINTS } from "../config/appConstants.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { initState } from "../translator/index.ts";
+import { openaiToOpenAIResponsesRequest } from "../translator/request/openai-responses.ts";
+import { openaiResponsesToOpenAIResponse } from "../translator/response/openai-responses.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
+import { formatSSE, parseSSELine } from "../utils/streamHelpers.ts";
 import {
   BaseExecutor,
   type ExecutorCredentials,
@@ -16,7 +16,7 @@ import {
   type ExecutorHeaders,
   type ExecutorLogger,
   type ExecutorProxyOptions,
-} from "./base.js";
+} from "./base.ts";
 
 type JsonRecord = Record<string, unknown>;
 type ContentPart = JsonRecord & {

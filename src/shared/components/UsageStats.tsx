@@ -46,7 +46,11 @@ function TimeAgo({ timestamp }: { timestamp?: string | number }) {
 
 function RecentRequests({ requests = [] }: { requests?: Record<string, unknown>[] }) {
   return (
-    <Card className="flex min-w-0 flex-col overflow-hidden" padding="sm" style={{ height: 480 }}>
+    <Card
+      className="flex min-w-0 flex-col overflow-hidden px-3 pb-3 pt-0"
+      padding="none"
+      style={{ height: 480 }}
+    >
       {/* Header */}
       <div className="px-1 py-2 border-b border-border shrink-0">
         <span className="text-xs font-semibold text-text-muted uppercase tracking-wide">
@@ -744,7 +748,7 @@ export default function UsageStats({
             aria-label="Table view"
             value={tableView}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTableView(e.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 sm:w-auto"
+            className="w-full rounded-lg border border-border bg-surface py-1.5 pl-3 pr-8 text-sm font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 sm:w-auto"
             style={{ colorScheme: "auto" }}
             name="table-view"
           >

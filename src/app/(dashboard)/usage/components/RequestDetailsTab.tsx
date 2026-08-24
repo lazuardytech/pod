@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import Button from "@/shared/components/Button";
+import { Button } from "@/shared/components";
 import Card from "@/shared/components/Card";
 import DatePicker from "@/shared/components/DatePicker";
 import Drawer from "@/shared/components/Drawer";
@@ -132,10 +132,12 @@ function CollapsibleSection({
 
   return (
     <div className="border border-black/5 dark:border-white/5 rounded-lg overflow-hidden">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        fullWidth
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
+        className="justify-between rounded-none p-3 h-auto bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
       >
         <div className="flex items-center gap-2">
           {icon && <LucideIcon name={icon} className="text-[18px] text-text-muted" />}
@@ -148,7 +150,7 @@ function CollapsibleSection({
             isOpen ? "rotate-90" : "",
           )}
         />
-      </button>
+      </Button>
 
       {isOpen && <div className="p-4 border-t border-black/5 dark:border-white/5">{children}</div>}
     </div>
@@ -341,7 +343,7 @@ export default function RequestDetailsTab() {
               placeholder="Select provider"
               className="w-full min-w-0"
               selectClassName={cn(
-                "h-9 py-0 px-3 pr-9 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
+                "h-9 py-0 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
                 "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20",
                 "hover:border-black/20 dark:hover:border-white/20",
               )}

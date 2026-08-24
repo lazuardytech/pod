@@ -7,7 +7,7 @@ const unauthorizedResponse = {
 };
 
 const checkStrictDashboardAuthMock = vi.fn();
-vi.mock("@/lib/routeAuth.js", () => ({
+vi.mock("@/lib/routeAuth.ts", () => ({
   checkStrictDashboardAuth: checkStrictDashboardAuthMock,
 }));
 
@@ -37,7 +37,7 @@ describe("OAuth import helper auth gates", () => {
   });
 
   it("short-circuits Cursor import GET/POST when auth fails", async () => {
-    const { GET, POST } = await import("@/app/api/oauth/cursor/import/route.js");
+    const { GET, POST } = await import("@/app/api/oauth/cursor/import/route.ts");
 
     const getResponse = await GET(createRequest("http://localhost/api/oauth/cursor/import"));
     const postResponse = await POST(createRequest("http://localhost/api/oauth/cursor/import"));
@@ -47,8 +47,8 @@ describe("OAuth import helper auth gates", () => {
   });
 
   it("short-circuits Kiro auto-import and import when auth fails", async () => {
-    const autoImport = await import("@/app/api/oauth/kiro/auto-import/route.js");
-    const importRoute = await import("@/app/api/oauth/kiro/import/route.js");
+    const autoImport = await import("@/app/api/oauth/kiro/auto-import/route.ts");
+    const importRoute = await import("@/app/api/oauth/kiro/import/route.ts");
 
     const autoResponse = await autoImport.GET(
       createRequest("http://localhost/api/oauth/kiro/auto-import"),
@@ -62,8 +62,8 @@ describe("OAuth import helper auth gates", () => {
   });
 
   it("short-circuits Kiro social authorize/exchange when auth fails", async () => {
-    const authorize = await import("@/app/api/oauth/kiro/social-authorize/route.js");
-    const exchange = await import("@/app/api/oauth/kiro/social-exchange/route.js");
+    const authorize = await import("@/app/api/oauth/kiro/social-authorize/route.ts");
+    const exchange = await import("@/app/api/oauth/kiro/social-exchange/route.ts");
 
     const authorizeResponse = await authorize.GET(
       createRequest("http://localhost/api/oauth/kiro/social-authorize?provider=google"),
@@ -77,8 +77,8 @@ describe("OAuth import helper auth gates", () => {
   });
 
   it("short-circuits GitLab PAT and iFlow cookie helpers when auth fails", async () => {
-    const gitlabPat = await import("@/app/api/oauth/gitlab/pat/route.js");
-    const iflowCookie = await import("@/app/api/oauth/iflow/cookie/route.js");
+    const gitlabPat = await import("@/app/api/oauth/gitlab/pat/route.ts");
+    const iflowCookie = await import("@/app/api/oauth/iflow/cookie/route.ts");
 
     const gitlabResponse = await gitlabPat.POST(
       createRequest("http://localhost/api/oauth/gitlab/pat"),
@@ -92,7 +92,7 @@ describe("OAuth import helper auth gates", () => {
   });
 
   it("short-circuits generic OAuth authorize/exchange routes when auth fails", async () => {
-    const oauthRoute = await import("@/app/api/oauth/[provider]/[action]/route.js");
+    const oauthRoute = await import("@/app/api/oauth/[provider]/[action]/route.ts");
 
     const authorizeResponse = await oauthRoute.GET(
       createRequest(

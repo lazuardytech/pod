@@ -12,8 +12,8 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { injectComboSystemPrompt } from "../../open-sse/services/combo.js";
-import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.js";
+import { injectComboSystemPrompt } from "../../open-sse/services/combo.ts";
+import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.ts";
 
 const PROMPT = "Selalu balas dalam Bahasa Indonesia. Gunakan format markdown.";
 
@@ -114,7 +114,7 @@ describe("OpenCode Go — combo systemPrompt injection (Claude route, minimax-m2
 describe("OpenCode Go — buildUrl + buildHeaders honour route split", () => {
   it("buildUrl picks /messages for minimax-m2.5/m2.7, /chat/completions for others", async () => {
     // Dynamic import so we don't pull executors registry at top
-    const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.js");
+    const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.ts");
     const exec = new OpenCodeGoExecutor();
 
     expect(exec.buildUrl("grok-code-fast-1")).toBe(
@@ -126,7 +126,7 @@ describe("OpenCode Go — buildUrl + buildHeaders honour route split", () => {
   });
 
   it("buildHeaders uses x-api-key + anthropic-version for Claude-format models", async () => {
-    const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.js");
+    const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.ts");
     const exec = new OpenCodeGoExecutor();
 
     // Prime _lastModel via buildUrl (BaseExecutor.execute order)
@@ -138,7 +138,7 @@ describe("OpenCode Go — buildUrl + buildHeaders honour route split", () => {
   });
 
   it("buildHeaders uses Bearer for OpenAI-format models", async () => {
-    const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.js");
+    const { OpenCodeGoExecutor } = await import("../../open-sse/executors/opencode-go.ts");
     const exec = new OpenCodeGoExecutor();
     exec.buildUrl("grok-code-fast-1");
     const headers = exec.buildHeaders({ apiKey: "sk-test-1234" }, true);

@@ -3,7 +3,7 @@
 export { default as AddCustomEmbeddingModal } from "./AddCustomEmbeddingModal";
 export { default as Avatar } from "./Avatar";
 export { default as Badge } from "./Badge";
-export { default as Button } from "./Button";
+export { default as Button, IconButton } from "./Button";
 export { default as Card } from "./Card";
 export { default as CursorAuthModal } from "./CursorAuthModal";
 export { default as EditConnectionModal } from "./EditConnectionModal";

@@ -1,19 +1,19 @@
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { getExecutor } from "../executors/index.js";
-import type { ExecutorCredentials } from "../executors/base.js";
-import { refreshWithRetry } from "../services/tokenRefresh.js";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { getExecutor } from "../executors/index.ts";
+import type { ExecutorCredentials } from "../executors/base.ts";
+import { refreshWithRetry } from "../services/tokenRefresh.ts";
 import {
   createErrorResult,
   formatProviderError,
   parseUpstreamError,
   type ErrorResult,
-} from "../utils/error.js";
+} from "../utils/error.ts";
 import {
   urlToBase64,
   type ImageRequestBody,
   type ProviderCredentials,
-} from "./imageProviders/_base.js";
-import { getImageAdapter } from "./imageProviders/index.js";
+} from "./imageProviders/_base.ts";
+import { getImageAdapter } from "./imageProviders/index.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -48,7 +48,7 @@ function errorMessage(error: unknown) {
 
 /**
  * Core image generation handler — orchestrator only.
- * Provider-specific URL/headers/body/parse/normalize live in `./imageProviders/{id}.js`.
+ * Provider-specific URL/headers/body/parse/normalize live in `./imageProviders/{id}.ts`.
  */
 export async function handleImageGenerationCore({
   body,

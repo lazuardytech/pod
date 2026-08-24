@@ -4,12 +4,34 @@
 
 ### Added
 
-- OpenAI compatibility: emit standard CORS headers on `/v1/responses` for non-streaming requests, and return `400` on unsupported non-streaming usage.
-- Deploy-time SW versioning: `gen:sw-version` writes `/sw-version.json`; registrar registers `/sw.js?v=…` so each deploy gets an isolated cache namespace.
-- SW shell-cache + deploy-regression test seams (`tests/unit/swShellCache.test.js`, `tests/SW-TEST-SEAM.md`).
+- Event-loop hang mitigations (prod 24 Aug): skip RTK on bodies > 512KiB; skip per-chunk `JSON.parse` on clean OpenAI passthrough SSE; cap 4 concurrent heavy streamed chats (≥256KiB); queue `usage_history` inserts (30-day retention).
 
 ### Changed
 
+- Version bump **0.0.85 → 0.0.86**.
+
+### Fixed
+
+- Zeabur k3s readiness probed `GET /` with a 1s timeout (dashboard SSR), which flapped Ready under combo load. Point Health Check at `/api/health` (timeout ≥5s). Docker HEALTHCHECK was already correct.
+
+### Added
+
+- Thinking copy suffix: Provider Detail copies `alias/model(level)` from the existing Thinking Effort dropdown. Engine `thinkingUnified` strips the suffix and maps native thinking (Claude adaptive vs budget, Gemini, Codex ultra, etc.). Codex hyphen `-{effort}` still works after paren strip.
+- Local Headroom spawn: loopback-only start/stop/restart/status (+ extras/proxy). No Docker/Zeabur sidecar. Compress path stays fail-open.
+- Cloud combo: pass `comboStrategy` / `judgeModel` / `tuning` from machine settings into `handleComboChat`.
+- Combo Fusion: per-combo Fallback / RR / Fusion (parallel panel + judge, N+1). Vision Adapter still filters the panel to capable models. TTS/image/search coerce fusion → fallback.
+- Token Saver: Headroom HTTP client (`POST /v1/compress`, fail-open, loopback/`headroom` host only) and request-time Ponytail (Lite/Full/Ultra) on Endpoint. `X-Pod-Token-Saver: off` disables RTK + Headroom + Caveman + Ponytail. Optional compose overlay `docker/docker-compose.headroom.yml` (Zeabur = URL only).
+- Combos Vision Adapter: global vision/audio pools that reorder combo members (and text-only single models) when the current user turn includes image or audio. Empty pool is a no-op.
+- OpenAI compatibility: emit standard CORS headers on `/v1/responses` for non-streaming requests, and return `400` on unsupported non-streaming usage.
+- Deploy-time SW versioning: `gen:sw-version` writes `/sw-version.json`; registrar registers `/sw.js?v=…` so each deploy gets an isolated cache namespace.
+- SW shell-cache + deploy-regression test seams (`tests/unit/swShellCache.test.ts`, `tests/SW-TEST-SEAM.md`).
+
+### Changed
+
+- Version bump **0.0.84 → 0.0.85**. OmniRoute Vision Bridge / 14-engine stack is not in 9router and is not ported.
+
+- Runtime pin: Bun 1.3.14 → **1.4.0** (`packageManager`, Docker `oven/bun:1.4.0-alpine`, CI). Idle CPU/memory wins from [Bun v1.4](https://bun.com/blog/bun-v1.4); tests stay on Node (health asserts `version.bun === null`).
+- Drop generated `open-sse/**/*.js` shims. Local imports use `.ts`/`.tsx` suffixes (`allowImportingTsExtensions`). Authored source is TypeScript-only; `public/sw.js` remains the generated browser artifact.
 - `bun run check` / `lint` gate on `oxlint --deny-warnings`.
 
 ### Fixed

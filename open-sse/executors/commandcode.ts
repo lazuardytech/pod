@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { PROVIDERS } from "../config/providers.js";
-import { convertCommandCodeToOpenAI } from "../translator/response/commandcode-to-openai.js";
+import { PROVIDERS } from "../config/providers.ts";
+import { convertCommandCodeToOpenAI } from "../translator/response/commandcode-to-openai.ts";
 import {
   BaseExecutor,
   type ExecutorConfigInput,
@@ -8,7 +8,7 @@ import {
   type ExecutorExecuteOptions,
   type ExecutorExecuteResult,
   type ExecutorHeaders,
-} from "./base.js";
+} from "./base.ts";
 
 /**
  * CommandCodeExecutor — talks to https://api.commandcode.ai/alpha/generate

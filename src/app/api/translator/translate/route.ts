@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import type { ExecutorCredentials } from "open-sse/executors/base.js";
-import { getExecutor } from "open-sse/executors/index.js";
-import { parseModel } from "open-sse/services/model.js";
-import { detectFormat, getTargetFormat } from "open-sse/services/provider.js";
-import { FORMATS } from "open-sse/translator/formats.js";
-import { translateRequest } from "open-sse/translator/index.js";
+import type { ExecutorCredentials } from "open-sse/executors/base.ts";
+import { getExecutor } from "open-sse/executors/index.ts";
+import { parseModel } from "open-sse/services/model.ts";
+import { detectFormat, getTargetFormat } from "open-sse/services/provider.ts";
+import { FORMATS } from "open-sse/translator/formats.ts";
+import { translateRequest } from "open-sse/translator/index.ts";
 import { asApiRecord, asOptionalString, asString } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";

@@ -1,7 +1,7 @@
 // Patch global fetch with proxy support (must be first)
-import "./utils/proxyFetch.js";
+import "./utils/proxyFetch.ts";
 
-export { CLAUDE_SYSTEM_PROMPT, OAUTH_ENDPOINTS } from "./config/appConstants.js";
+export { CLAUDE_SYSTEM_PROMPT, OAUTH_ENDPOINTS } from "./config/appConstants.ts";
 export {
   findModelName,
   getDefaultModel,
@@ -11,27 +11,27 @@ export {
   isValidModel,
   PROVIDER_ID_TO_ALIAS,
   PROVIDER_MODELS,
-} from "./config/providerModels.js";
+} from "./config/providerModels.ts";
 // Config
-export { PROVIDERS } from "./config/providers.js";
+export { PROVIDERS } from "./config/providers.ts";
 export {
   BACKOFF_CONFIG,
   CACHE_TTL,
   COOLDOWN_MS,
   DEFAULT_MAX_TOKENS,
-} from "./config/runtimeConfig.js";
+} from "./config/runtimeConfig.ts";
 // Executors
-export { getExecutor, hasSpecializedExecutor } from "./executors/index.js";
+export { getExecutor, hasSpecializedExecutor } from "./executors/index.ts";
 // Handlers
-export { handleChatCore, isTokenExpiringSoon } from "./handlers/chatCore.js";
+export { handleChatCore, isTokenExpiringSoon } from "./handlers/chatCore.ts";
 export {
   checkFallbackError,
   filterAvailableAccounts,
   getUnavailableUntil,
   isAccountUnavailable,
-} from "./services/accountFallback.js";
+} from "./services/accountFallback.ts";
 
-export { getModelInfoCore, parseModel, resolveModelAliasFromMap } from "./services/model.js";
+export { getModelInfoCore, parseModel, resolveModelAliasFromMap } from "./services/model.ts";
 // Services
 export {
   buildProviderHeaders,
@@ -39,7 +39,7 @@ export {
   detectFormat,
   getProviderConfig,
   getTargetFormat,
-} from "./services/provider.js";
+} from "./services/provider.ts";
 
 export {
   getAccessToken,
@@ -53,9 +53,9 @@ export {
   refreshQwenToken,
   refreshTokenByProvider,
   TOKEN_EXPIRY_BUFFER_MS,
-} from "./services/tokenRefresh.js";
+} from "./services/tokenRefresh.ts";
 // Translator
-export { FORMATS } from "./translator/formats.js";
+export { FORMATS } from "./translator/formats.ts";
 export {
   initState,
   initTranslators,
@@ -63,15 +63,15 @@ export {
   register,
   translateRequest,
   translateResponse,
-} from "./translator/index.js";
+} from "./translator/index.ts";
 // Utils
-export { errorResponse, formatProviderError } from "./utils/error.js";
+export { errorResponse, formatProviderError } from "./utils/error.ts";
 export {
   createPassthroughStreamWithLogger,
   createSSETransformStreamWithLogger,
-} from "./utils/stream.js";
+} from "./utils/stream.ts";
 export {
   createDisconnectAwareStream,
   createStreamController,
   pipeWithDisconnect,
-} from "./utils/streamHandler.js";
+} from "./utils/streamHandler.ts";

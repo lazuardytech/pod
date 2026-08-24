@@ -9,8 +9,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CodexExecutor } from "../../open-sse/executors/codex.js";
-import * as proxyFetchModule from "../../open-sse/utils/proxyFetch.js";
+import { CodexExecutor } from "../../open-sse/executors/codex.ts";
+import * as proxyFetchModule from "../../open-sse/utils/proxyFetch.ts";
 
 const IMAGE_1MB_BYTES = 1024 * 1024;
 const REMOTE_URL = "https://example.com/big.jpg";

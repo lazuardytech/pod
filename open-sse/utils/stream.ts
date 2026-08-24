@@ -1,11 +1,12 @@
 // @ts-nocheck
 import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb";
-import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.js";
-import { FORMATS } from "../translator/formats.js";
-import { initState, translateResponse } from "../translator/index.js";
-import type { TranslatorState } from "../translator/registry.js";
-import { decloakToolNames } from "./claudeCloaking.js";
-import { fixInvalidId, formatSSE, hasValuableContent, parseSSELine } from "./streamHelpers.js";
+import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.ts";
+import { FORMATS } from "../translator/formats.ts";
+import { initState, translateResponse } from "../translator/index.ts";
+import type { TranslatorState } from "../translator/registry.ts";
+import { decloakToolNames } from "./claudeCloaking.ts";
+import { passthroughNeedsJsonParse } from "./eventLoopGuards.ts";
+import { fixInvalidId, formatSSE, hasValuableContent, parseSSELine } from "./streamHelpers.ts";
 import {
   addBufferToUsage,
   COLORS,
@@ -14,7 +15,7 @@ import {
   filterUsageForFormat,
   hasValidUsage,
   logUsage,
-} from "./usageTracking.js";
+} from "./usageTracking.ts";
 
 export { COLORS, formatSSE };
 
@@ -287,131 +288,138 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
             let injectedUsage = false;
 
             if (trimmed.startsWith("data:") && trimmed.slice(5).trim() !== "[DONE]") {
-              try {
-                const parsed = JSON.parse(trimmed.slice(5).trim());
+              if (
+                passthroughNeedsJsonParse(trimmed, {
+                  includeUsage,
+                  hasToolNameMap: Boolean(toolNameMap),
+                })
+              ) {
+                try {
+                  const parsed = JSON.parse(trimmed.slice(5).trim());
 
-                const idFixed = fixInvalidId(parsed);
+                  const idFixed = fixInvalidId(parsed);
 
-                // Reasoning summary forwarding: mirror top-level reasoning_summary envelope to
-                // an OpenAI-style delta.reasoning_content chunk for clients that don't consume
-                // the summary envelope directly.
-                const summaryText = extractReasoningSummaryText(parsed.reasoning_summary);
-                const firstChoice = Array.isArray(parsed.choices) ? parsed.choices[0] || {} : {};
-                const firstDelta = (firstChoice && firstChoice.delta) || {};
-                const hasTextDelta =
-                  typeof firstDelta.content === "string" && firstDelta.content.length > 0;
-                const hasReasoningDelta =
-                  typeof firstDelta.reasoning_content === "string" &&
-                  firstDelta.reasoning_content.length > 0;
-                const hasToolDelta =
-                  Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
-                const hasFinishReason =
-                  typeof firstChoice.finish_reason === "string" &&
-                  firstChoice.finish_reason.length > 0;
+                  // Reasoning summary forwarding: mirror top-level reasoning_summary envelope to
+                  // an OpenAI-style delta.reasoning_content chunk for clients that don't consume
+                  // the summary envelope directly.
+                  const summaryText = extractReasoningSummaryText(parsed.reasoning_summary);
+                  const firstChoice = Array.isArray(parsed.choices) ? parsed.choices[0] || {} : {};
+                  const firstDelta = (firstChoice && firstChoice.delta) || {};
+                  const hasTextDelta =
+                    typeof firstDelta.content === "string" && firstDelta.content.length > 0;
+                  const hasReasoningDelta =
+                    typeof firstDelta.reasoning_content === "string" &&
+                    firstDelta.reasoning_content.length > 0;
+                  const hasToolDelta =
+                    Array.isArray(firstDelta.tool_calls) && firstDelta.tool_calls.length > 0;
+                  const hasFinishReason =
+                    typeof firstChoice.finish_reason === "string" &&
+                    firstChoice.finish_reason.length > 0;
 
-                if (
-                  summaryText &&
-                  !hasTextDelta &&
-                  !hasReasoningDelta &&
-                  !hasToolDelta &&
-                  !hasFinishReason
-                ) {
-                  const compatChunk = buildReasoningSummaryCompatChunk(parsed, summaryText);
-                  const compatOutput = `data: ${JSON.stringify(compatChunk)}\n\n`;
-                  accumulatedThinking += summaryText;
-                  totalContentLength += summaryText.length;
-                  reqLogger?.appendConvertedChunk?.(compatOutput);
-                  controller.enqueue(sharedEncoder.encode(compatOutput));
-                }
-
-                // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
-                let fieldsInjected = false;
-                if (parsed.choices !== undefined) {
-                  if (!parsed.object) {
-                    parsed.object = "chat.completion.chunk";
-                    fieldsInjected = true;
+                  if (
+                    summaryText &&
+                    !hasTextDelta &&
+                    !hasReasoningDelta &&
+                    !hasToolDelta &&
+                    !hasFinishReason
+                  ) {
+                    const compatChunk = buildReasoningSummaryCompatChunk(parsed, summaryText);
+                    const compatOutput = `data: ${JSON.stringify(compatChunk)}\n\n`;
+                    accumulatedThinking += summaryText;
+                    totalContentLength += summaryText.length;
+                    reqLogger?.appendConvertedChunk?.(compatOutput);
+                    controller.enqueue(sharedEncoder.encode(compatOutput));
                   }
-                  if (!parsed.created) {
-                    parsed.created = Math.floor(Date.now() / 1000);
-                    fieldsInjected = true;
-                  }
-                  // Ensure logprobs on each choice (null when not present)
-                  for (const choice of parsed.choices) {
-                    if (choice.logprobs === undefined) {
-                      choice.logprobs = null;
+
+                  // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
+                  let fieldsInjected = false;
+                  if (parsed.choices !== undefined) {
+                    if (!parsed.object) {
+                      parsed.object = "chat.completion.chunk";
                       fieldsInjected = true;
                     }
-                  }
-                }
-
-                // Strip Azure-specific non-standard fields from streaming chunks
-                if (parsed.prompt_filter_results !== undefined) {
-                  delete parsed.prompt_filter_results;
-                  fieldsInjected = true;
-                }
-                if (parsed?.choices) {
-                  for (const choice of parsed.choices) {
-                    if (choice.content_filter_results !== undefined) {
-                      delete choice.content_filter_results;
+                    if (!parsed.created) {
+                      parsed.created = Math.floor(Date.now() / 1000);
                       fieldsInjected = true;
                     }
+                    // Ensure logprobs on each choice (null when not present)
+                    for (const choice of parsed.choices) {
+                      if (choice.logprobs === undefined) {
+                        choice.logprobs = null;
+                        fieldsInjected = true;
+                      }
+                    }
                   }
-                }
 
-                // Error payload mid-stream: if we already sent content, skip it
-                // to avoid corrupting the stream. If no content yet, forward as-is
-                // so downstream can detect and handle it.
-                if (parsed.error && !parsed.choices) {
-                  if (totalContentLength > 0) {
-                    // Already sent content — silently drop error and close stream
+                  // Strip Azure-specific non-standard fields from streaming chunks
+                  if (parsed.prompt_filter_results !== undefined) {
+                    delete parsed.prompt_filter_results;
+                    fieldsInjected = true;
+                  }
+                  if (parsed?.choices) {
+                    for (const choice of parsed.choices) {
+                      if (choice.content_filter_results !== undefined) {
+                        delete choice.content_filter_results;
+                        fieldsInjected = true;
+                      }
+                    }
+                  }
+
+                  // Error payload mid-stream: if we already sent content, skip it
+                  // to avoid corrupting the stream. If no content yet, forward as-is
+                  // so downstream can detect and handle it.
+                  if (parsed.error && !parsed.choices) {
+                    if (totalContentLength > 0) {
+                      // Already sent content — silently drop error and close stream
+                      continue;
+                    }
+                    output = `data: ${JSON.stringify(parsed)}\n\n`;
+                    emit(output, controller);
                     continue;
                   }
-                  output = `data: ${JSON.stringify(parsed)}\n\n`;
-                  emit(output, controller);
-                  continue;
-                }
 
-                if (!hasValuableContent(parsed, FORMATS.OPENAI)) {
-                  continue;
-                }
+                  if (!hasValuableContent(parsed, FORMATS.OPENAI)) {
+                    continue;
+                  }
 
-                const delta = parsed.choices?.[0]?.delta;
-                const content = delta?.content;
-                const reasoning = delta?.reasoning_content;
-                if (content && typeof content === "string") {
-                  totalContentLength += content.length;
-                  accumulatedContent += content;
-                }
-                if (reasoning && typeof reasoning === "string") {
-                  totalContentLength += reasoning.length;
-                  accumulatedThinking += reasoning;
-                }
+                  const delta = parsed.choices?.[0]?.delta;
+                  const content = delta?.content;
+                  const reasoning = delta?.reasoning_content;
+                  if (content && typeof content === "string") {
+                    totalContentLength += content.length;
+                    accumulatedContent += content;
+                  }
+                  if (reasoning && typeof reasoning === "string") {
+                    totalContentLength += reasoning.length;
+                    accumulatedThinking += reasoning;
+                  }
 
-                const extracted = extractUsage(parsed);
-                if (extracted) {
-                  usage = extracted;
-                }
+                  const extracted = extractUsage(parsed);
+                  if (extracted) {
+                    usage = extracted;
+                  }
 
-                const isFinishChunk = parsed.choices?.[0]?.finish_reason;
-                if (includeUsage) {
-                  if (isFinishChunk && !hasValidUsage(parsed.usage)) {
-                    const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
-                    parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
-                    output = `data: ${JSON.stringify(parsed)}\n\n`;
-                    usage = estimated;
-                    injectedUsage = true;
-                  } else if (isFinishChunk && usage) {
-                    const buffered = addBufferToUsage(usage);
-                    parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
+                  const isFinishChunk = parsed.choices?.[0]?.finish_reason;
+                  if (includeUsage) {
+                    if (isFinishChunk && !hasValidUsage(parsed.usage)) {
+                      const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
+                      parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
+                      output = `data: ${JSON.stringify(parsed)}\n\n`;
+                      usage = estimated;
+                      injectedUsage = true;
+                    } else if (isFinishChunk && usage) {
+                      const buffered = addBufferToUsage(usage);
+                      parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
+                      output = `data: ${JSON.stringify(parsed)}\n\n`;
+                      injectedUsage = true;
+                    }
+                  } else if (idFixed || fieldsInjected) {
                     output = `data: ${JSON.stringify(parsed)}\n\n`;
                     injectedUsage = true;
                   }
-                } else if (idFixed || fieldsInjected) {
-                  output = `data: ${JSON.stringify(parsed)}\n\n`;
-                  injectedUsage = true;
+                } catch {
+                  // Malformed passthrough chunks are forwarded in their original form.
                 }
-              } catch {
-                // Malformed passthrough chunks are forwarded in their original form.
               }
             }
 

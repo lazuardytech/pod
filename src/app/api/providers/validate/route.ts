@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getDefaultModel } from "open-sse/config/providerModels.js";
-import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
+import { getDefaultModel } from "open-sse/config/providerModels.ts";
+import { resolveOllamaLocalHost } from "open-sse/config/providers.ts";
 import { asRecord, asString, fetchUrlError } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { normalizeProviderId } from "@/lib/providerNormalization";

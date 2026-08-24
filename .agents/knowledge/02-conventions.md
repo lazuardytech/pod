@@ -14,7 +14,9 @@
 
 - ESM only (`import`/`export`)
 - `@/` alias maps to `src/`
-- TypeScript throughout (`src/` and `open-sse/`; `cloud/` has its own TS config)
+- TypeScript is required (`src/`, `open-sse/`, `cloud/`, `tests/`, `scripts/`)
+- Local relative, `@/`, and `open-sse/` imports use `.ts`/`.tsx` suffixes (`allowImportingTsExtensions`)
+- Do not add authored `.js`/`.jsx`. Generated JS is only `public/sw.js` (built from `src/sw/sw.ts`)
 
 ## Components
 

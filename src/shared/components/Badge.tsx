@@ -1,16 +1,17 @@
 "use client";
 import type { HTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { Badge as UiBadge } from "@/shared/components/ui/badge";
 import { cn } from "@/shared/utils/cn";
 
-const variants: Record<string, string> = {
-  default: "bg-gunmetal text-storm-cloud",
-  primary: "bg-porcelain/8 text-porcelain",
-  success: "bg-emerald/10 text-emerald",
-  warning: "bg-yellow-500/10 text-yellow-400",
-  error: "bg-warning-red/10 text-warning-red",
-  info: "bg-aether-blue/10 text-aether-blue",
-  violet: "bg-amethyst/10 text-amethyst",
+const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  default: "secondary",
+  primary: "default",
+  success: "default",
+  warning: "outline",
+  error: "destructive",
+  info: "outline",
+  violet: "outline",
 };
 
 const sizes: Record<string, string> = {
@@ -29,6 +30,16 @@ const dotColors: Record<string, string> = {
   violet: "bg-amethyst",
 };
 
+const variantClasses: Record<string, string> = {
+  default: "bg-gunmetal text-storm-cloud",
+  primary: "bg-porcelain/8 text-porcelain",
+  success: "bg-emerald/10 text-emerald",
+  warning: "bg-yellow-500/10 text-yellow-400",
+  error: "bg-warning-red/10 text-warning-red",
+  info: "bg-aether-blue/10 text-aether-blue",
+  violet: "bg-amethyst/10 text-amethyst",
+};
+
 type BadgeProps = {
   children?: ReactNode;
   variant?: string;
@@ -45,21 +56,22 @@ export default function Badge({
   dot = false,
   icon,
   className,
-  ...rest
+  ...props
 }: BadgeProps) {
   return (
-    <span
+    <UiBadge
+      variant={variants[variant] ?? "secondary"}
       className={cn(
-        "inline-flex items-center font-[400] rounded-[4px]",
-        variants[variant],
+        "rounded-[4px] h-auto font-[510] border-transparent",
         sizes[size],
+        variantClasses[variant],
         className,
       )}
-      {...rest}
+      {...props}
     >
       {dot && <span className={cn("size-1.5 rounded-full shrink-0", dotColors[variant])} />}
-      {icon && <LucideIcon name={icon} className="text-[12px]" />}
+      {icon && <LucideIcon name={icon} className="text-[11px]" />}
       {children}
-    </span>
+    </UiBadge>
   );
 }

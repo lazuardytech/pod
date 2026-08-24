@@ -4,23 +4,28 @@ import {
   getModelStrip,
   getModelTargetFormat,
   PROVIDER_ID_TO_ALIAS,
-} from "../config/providerModels.js";
-import { HTTP_STATUS, LOCAL_UPSTREAM_TIMEOUT_MS } from "../config/runtimeConfig.js";
-import { getExecutor } from "../executors/index.js";
-import { detectFormat, getTargetFormat } from "../services/provider.js";
-import { refreshWithRetry } from "../services/tokenRefresh.js";
-import { FORMATS } from "../translator/formats.js";
-import { translateRequest } from "../translator/index.js";
-import { handleBypassRequest } from "../utils/bypassHandler.js";
+} from "../config/providerModels.ts";
+import {
+  HTTP_STATUS,
+  LOCAL_UPSTREAM_TIMEOUT_MS,
+  isTokenSaverEnabled,
+} from "../config/runtimeConfig.ts";
+import { getExecutor } from "../executors/index.ts";
+import { detectFormat, getTargetFormat } from "../services/provider.ts";
+import { refreshWithRetry } from "../services/tokenRefresh.ts";
+import { applyThinking, stripThinkingSuffix } from "../translator/concerns/thinkingUnified.ts";
+import { FORMATS } from "../translator/formats.ts";
+import { translateRequest } from "../translator/index.ts";
+import { handleBypassRequest } from "../utils/bypassHandler.ts";
 import {
   createErrorResult,
   formatProviderError,
   parseUpstreamError,
   type ErrorResult,
-} from "../utils/error.js";
-import { createStreamController } from "../utils/streamHandler.js";
-import { buildRequestDetail, extractRequestConfig } from "./chatCore/requestDetail.js";
-import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.js";
+} from "../utils/error.ts";
+import { createStreamController } from "../utils/streamHandler.ts";
+import { buildRequestDetail, extractRequestConfig } from "./chatCore/requestDetail.ts";
+import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.ts";
 
 type JsonRecord = Record<string, unknown>;
 type ChatLogger = {
@@ -120,18 +125,27 @@ import {
   setCachedResponse,
   setInFlight,
 } from "@/lib/semanticCache";
-import { injectCaveman } from "../rtk/caveman.js";
+import { injectCaveman } from "../rtk/caveman.ts";
+import {
+  compressWithHeadroom,
+  formatHeadroomLog,
+  formatHeadroomSizeLog,
+  isHeadroomPhantomSavings,
+  type HeadroomDiagnostics,
+} from "../rtk/headroom.ts";
+import { injectPonytail } from "../rtk/ponytail.ts";
 
 async function createRequestLogger(sourceFormat: string, targetFormat: string, model: string) {
-  const { createRequestLogger: createLogger } = await import("../utils/requestLogger.js");
+  const { createRequestLogger: createLogger } = await import("../utils/requestLogger.ts");
   return createLogger(sourceFormat, targetFormat, model);
 }
 
-import { compressMessages, formatRtkLog } from "../rtk/index.js";
-import { detectClientTool, isNativePassthrough } from "../utils/clientDetector.js";
-import { reserveReasoningTokenBudget } from "../utils/tokenBudget.js";
-import { handleNonStreamingResponse } from "./chatCore/nonStreamingHandler.js";
-import { buildOnStreamComplete, handleStreamingResponse } from "./chatCore/streamingHandler.js";
+import { compressMessages, formatRtkLog } from "../rtk/index.ts";
+import { detectClientTool, isNativePassthrough } from "../utils/clientDetector.ts";
+import { estimateRequestMessageBytes, isRequestTooLargeForRtk } from "../utils/eventLoopGuards.ts";
+import { reserveReasoningTokenBudget } from "../utils/tokenBudget.ts";
+import { handleNonStreamingResponse } from "./chatCore/nonStreamingHandler.ts";
+import { buildOnStreamComplete, handleStreamingResponse } from "./chatCore/streamingHandler.ts";
 
 export type ChatCoreResult = { success: true; response: Response } | ErrorResult;
 
@@ -167,8 +181,14 @@ export interface ChatCoreParams {
   apiKey?: string | null;
   ccFilterNaming?: boolean;
   rtkEnabled?: boolean;
+  headroomEnabled?: boolean;
+  headroomUrl?: string;
+  headroomTimeoutMs?: number;
+  headroomCompressUserMessages?: boolean;
   cavemanEnabled?: boolean;
   cavemanLevel?: string;
+  ponytailEnabled?: boolean;
+  ponytailLevel?: string;
   sourceFormatOverride?: string | null;
   providerThinking?: ProviderThinking | null;
   contentFilterMessage?: string | null;
@@ -179,9 +199,6 @@ export interface ChatCoreParams {
 
 const MAX_SEMANTIC_CACHE_BYTES = 512 * 1024;
 const MEMORY_EXTRACTION_TEXT_LIMIT = 64 * 1024;
-// Skip cacheability check for request bodies larger than this to avoid a
-// synchronous JSON.stringify of a multi-MB payload on every request.
-const _MAX_REQUEST_BYTES_FOR_CACHE_CHECK = 512 * 1024;
 
 function isSmallEnoughForSemanticCache(value: unknown) {
   try {
@@ -297,8 +314,14 @@ export async function handleChatCore({
   apiKey,
   ccFilterNaming,
   rtkEnabled,
+  headroomEnabled,
+  headroomUrl,
+  headroomTimeoutMs,
+  headroomCompressUserMessages,
   cavemanEnabled,
   cavemanLevel,
+  ponytailEnabled,
+  ponytailLevel,
   sourceFormatOverride,
   providerThinking,
   contentFilterMessage,
@@ -385,9 +408,11 @@ export async function handleChatCore({
   let cacheSignature = null;
   let resolveInFlight: ((value: unknown) => void) | null = null;
   const messages = body.messages ?? body.input;
+  const approxRequestBytes = estimateRequestMessageBytes(messages);
   // generateSignature already handles large payloads by hashing only the last
-  // 64KB tail (SIGNATURE_MAX_BYTES), so no need to skip cache for large bodies.
+  // 64KB tail (SIGNATURE_MAX_BYTES), so cache stays on for large bodies.
   const requestTooLargeForCache = false;
+  const skipRtkForSize = isRequestTooLargeForRtk(approxRequestBytes);
   if (
     semanticCacheEnabled &&
     !requestTooLargeForCache &&
@@ -478,7 +503,21 @@ export async function handleChatCore({
   let toolNameMap: unknown;
   if (passthrough) {
     log?.debug?.("PASSTHROUGH", `${clientTool} → ${provider} | native lossless`);
-    translatedBody = { ...body, model };
+    translatedBody = { ...body, model: stripThinkingSuffix(model) };
+    if (provider === "codex") {
+      const suffixThinking: JsonRecord = {};
+      applyThinking(sourceFormat, model, suffixThinking, provider);
+      if (suffixThinking.reasoning_effort) {
+        const reasoning = translatedBody.reasoning;
+        translatedBody.reasoning = {
+          ...(reasoning && typeof reasoning === "object" && !Array.isArray(reasoning)
+            ? reasoning
+            : {}),
+          effort: suffixThinking.reasoning_effort,
+        };
+        delete translatedBody.reasoning_effort;
+      }
+    }
   } else {
     translatedBody = translateRequest(
       sourceFormat,
@@ -503,7 +542,7 @@ export async function handleChatCore({
     }
     toolNameMap = translatedBody._toolNameMap;
     delete translatedBody._toolNameMap;
-    translatedBody.model = model;
+    translatedBody.model = stripThinkingSuffix(model);
   }
 
   // Ensure stream flag in body matches resolved stream value.
@@ -523,18 +562,60 @@ export async function handleChatCore({
   // Token savers: applied at the final body just before dispatch
   // Covers both passthrough (source shape) and translated (target shape) flows
   const finalFormat = passthrough ? sourceFormat : targetFormat;
+  const tokenSaverEnabled = isTokenSaverEnabled(clientRawRequest?.headers);
 
   // RTK: compress tool_result content
   // Skip for very large payloads — iterating all messages + running regex
   // autodetect on each tool_result is O(n) and blocks the event loop.
-  const rtkStats = compressMessages(translatedBody, rtkEnabled && !requestTooLargeForCache);
+  const rtkStats = compressMessages(
+    translatedBody,
+    tokenSaverEnabled && rtkEnabled && !skipRtkForSize,
+  );
   const rtkLine = formatRtkLog(rtkStats);
   if (rtkLine) console.log(rtkLine);
 
+  // Headroom: HTTP compress via /v1/compress (fail-open). After RTK so tool
+  // output is already shortened; before Caveman/Ponytail so extra system text
+  // is not fighting the compressor.
+  if (tokenSaverEnabled && headroomEnabled) {
+    const headroomDiagnostics: HeadroomDiagnostics = {};
+    const headroomStats = await compressWithHeadroom(translatedBody, {
+      enabled: true,
+      url: headroomUrl,
+      model,
+      format: finalFormat,
+      compressUserMessages: headroomCompressUserMessages,
+      timeoutMs: headroomTimeoutMs,
+      diagnostics: headroomDiagnostics,
+    });
+    const headroomLine = formatHeadroomLog(headroomStats);
+    const headroomSizeLine = formatHeadroomSizeLog(headroomDiagnostics);
+    if (headroomLine) {
+      log?.info?.("HEADROOM", `${headroomLine}${headroomSizeLine ? ` | ${headroomSizeLine}` : ""}`);
+      if (isHeadroomPhantomSavings(headroomStats, headroomDiagnostics)) {
+        log?.warn?.(
+          "HEADROOM",
+          `reported token delta, but outbound JSON shrank <5%; provider may bill near-original payload | ${headroomSizeLine}`,
+        );
+      }
+    } else {
+      log?.warn?.(
+        "HEADROOM",
+        `skipped: ${headroomDiagnostics.reason || "compression unavailable"}${headroomDiagnostics.endpoint ? ` (${headroomDiagnostics.endpoint})` : ""}`,
+      );
+    }
+  }
+
   // Caveman: inject terse-style system prompt
-  if (cavemanEnabled && cavemanLevel) {
+  if (tokenSaverEnabled && cavemanEnabled && cavemanLevel) {
     injectCaveman(translatedBody, finalFormat, cavemanLevel);
     log?.debug?.("CAVEMAN", `${cavemanLevel} | ${finalFormat}`);
+  }
+
+  // Ponytail: inject lazy-senior-dev system prompt (stacks with Caveman)
+  if (tokenSaverEnabled && ponytailEnabled && ponytailLevel) {
+    injectPonytail(translatedBody, finalFormat, ponytailLevel);
+    log?.debug?.("PONYTAIL", `${ponytailLevel} | ${finalFormat}`);
   }
 
   reserveReasoningTokenBudget(translatedBody, { provider, model, targetFormat, log });

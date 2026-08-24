@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/providerModels.js";
+import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/providerModels.ts";
 import { getApiKeys, getProviderConnectionById } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
 import {

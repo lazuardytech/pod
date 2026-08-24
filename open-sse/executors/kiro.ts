@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { v4 as uuidv4 } from "uuid";
-import { isTransientErrorBody } from "../config/errorConfig.js";
-import { PROVIDERS } from "../config/providers.js";
-import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.js";
-import { refreshKiroToken } from "../services/tokenRefresh.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+import { isTransientErrorBody } from "../config/errorConfig.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.ts";
+import { refreshKiroToken } from "../services/tokenRefresh.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 import {
   BaseExecutor,
   type ExecutorCredentials,
@@ -13,7 +13,7 @@ import {
   type ExecutorLogger,
   type ExecutorProxyOptions,
   type RetryEntry,
-} from "./base.js";
+} from "./base.ts";
 
 type JsonRecord = Record<string, unknown>;
 type UsagePayload = {

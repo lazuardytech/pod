@@ -21,8 +21,10 @@ OpenAI-compatible and Anthropic-compatible behavior is Pod's primary sacred obje
 | `POST /v1/moderations`          | Supported | Mock — always unflagged                                                          |
 | `GET /v1/files`                 | Supported | Returns empty list                                                               |
 | `POST /v1/files`                | **501**   | Not implemented                                                                  |
-| `GET /v1/files/{file_id}`       | Supported | Returns 404                                                                      |
-| `DELETE /v1/files/{file_id}`    | Supported | Returns `{ deleted: true }`                                                      |
+| `GET /v1/files/{file_id}`       | Supported | Returns 404 `file_not_found`                                                     |
+| `DELETE /v1/files/{file_id}`    | Supported | Returns 404 `file_not_found` (no file store)                                     |
+| `GET /v1beta/models`            | Supported | Gemini-compatible model list; honors `requireApiKey`                             |
+| `GET /v1beta/models/{path}`     | Supported | Gemini-compatible model detail                                                   |
 | `POST /v1/web/fetch`            | Supported | Web fetch utility                                                                |
 | `POST /v1/search`               | Supported | Web search utility                                                               |
 
@@ -32,7 +34,7 @@ Errors return `{ error: { message, type, param, code } }` with appropriate HTTP 
 
 ### Partially Supported
 
-- `stream_options.include_usage` — handled in stream.js, injects estimated usage on finish chunk
+- `stream_options.include_usage` — handled in `open-sse/utils/stream.ts`, injects estimated usage on finish chunk
 - `response_format` — json_schema/json_object supported via translator, route-level schema validation not tested
 - `tool_choice` — `auto`, `none`, `required` supported; named function choice passes through
 - `max_completion_tokens` vs `max_tokens` — both accepted; `max_tokens` used internally, `max_completion_tokens` passed through for reasoning models

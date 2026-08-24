@@ -54,7 +54,7 @@ const FORWARD_RAW_TIMEOUT_MS = 15000;
 // Forward request via raw TCP socket (bypasses CF auto headers) - authenticated
 export async function handleForwardRaw(request: Request): Promise<Response> {
   try {
-    const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.js");
+    const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.ts");
 
     // Auth: require valid API key
     const apiKey = extractBearerToken(request);

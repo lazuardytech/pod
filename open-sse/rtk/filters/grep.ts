@@ -1,6 +1,6 @@
 // Port of grep_wrapper (rtk/src/cmds/system/pipe_cmd.rs:50-86)
 // Input format: "file:lineno:content" — splitn(3, ':') in Rust
-import { GREP_PER_FILE_MAX } from "../constants.js";
+import { GREP_PER_FILE_MAX } from "../constants.ts";
 
 export function grep(input: string) {
   const byFile = new Map();

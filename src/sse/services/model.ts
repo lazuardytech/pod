@@ -1,4 +1,4 @@
-import { getModelInfoCore, parseModel, resolveModelAliasFromMap } from "open-sse/services/model.js";
+import { getModelInfoCore, parseModel, resolveModelAliasFromMap } from "open-sse/services/model.ts";
 import { getComboByName, getModelAliases, getProviderNodes } from "@/lib/localDb";
 
 export { parseModel };

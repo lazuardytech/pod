@@ -1,7 +1,13 @@
 "use client";
-import type { ReactNode, SelectHTMLAttributes } from "react";
+import type { ChangeEvent, ReactNode, SelectHTMLAttributes } from "react";
 import { useId } from "react";
-import LucideIcon from "@/shared/components/LucideIcon";
+import {
+  Select as UiSelectRoot,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/shared/components/ui/select";
+import { Label } from "@/shared/components/ui/label";
 import { cn } from "@/shared/utils/cn";
 
 function deriveName(label: unknown) {
@@ -37,7 +43,7 @@ type SelectProps = {
   "value" | "onChange" | "disabled" | "required" | "id" | "name" | "className"
 >;
 
-export default function Select({
+function PodSelect({
   label,
   options = [],
   value,
@@ -51,7 +57,6 @@ export default function Select({
   selectClassName,
   id,
   name,
-  ...props
 }: SelectProps) {
   const reactId = useId();
   const selectId = id || `select-${reactId}`;
@@ -60,52 +65,48 @@ export default function Select({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label
+        <Label
           htmlFor={selectId}
           className="text-[12px] font-[510] text-storm-cloud tracking-[-0.1px]"
         >
           {label}
           {required && <span className="text-warning-red ml-1">*</span>}
-        </label>
+        </Label>
       )}
-      <div className="relative">
-        <select
+      <UiSelectRoot
+        value={value ?? ""}
+        onValueChange={(next) => {
+          onChange?.({
+            target: { value: next, name: selectName },
+          } as ChangeEvent<HTMLSelectElement>);
+        }}
+        disabled={disabled}
+        name={selectName}
+      >
+        <SelectTrigger
           id={selectId}
-          name={selectName}
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
           className={cn(
-            "h-9 w-full px-3.5 pr-9 text-[13px] text-porcelain",
-            "bg-gunmetal border border-charcoal-grey rounded-[6px] appearance-none",
-            "focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
-            "transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed",
-            "text-[16px] sm:text-[13px]",
-            !!error && "border-warning-red focus:border-warning-red focus:ring-warning-red/25",
+            "h-9 w-full text-[13px] bg-gunmetal border-charcoal-grey text-porcelain rounded-[6px]",
+            error && "border-warning-red",
             selectClassName,
           )}
-          {...props}
         >
-          <option value="" disabled className="bg-graphite text-storm-cloud">
-            {placeholder}
-          </option>
+          <span data-slot="select-value" className="flex flex-1 truncate text-left">
+            {options.find((o) => o.value === (value ?? ""))?.label ?? placeholder}
+          </span>
+        </SelectTrigger>
+        <SelectContent>
           {options.map((option) => (
-            <option key={option.value} value={option.value} className="bg-graphite text-porcelain">
+            <SelectItem key={option.value} value={option.value}>
               {option.label}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-storm-cloud">
-          <LucideIcon name="expand_more" className="text-[16px]" />
-        </div>
-      </div>
-      {error && (
-        <p className="text-[11px] text-warning-red flex items-center gap-1">
-          <LucideIcon name="error" className="text-[13px]" />
-          {error}
-        </p>
-      )}
+        </SelectContent>
+      </UiSelectRoot>
+      {error && <p className="text-[11px] text-warning-red">{error}</p>}
       {hint && !error && <p className="text-[11px] text-fog-grey">{hint}</p>}
     </div>
   );
 }
+
+export default PodSelect;

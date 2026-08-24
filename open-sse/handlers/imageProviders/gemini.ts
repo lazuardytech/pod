@@ -1,5 +1,5 @@
 // Google Gemini adapter (Nano Banana models)
-import { type ImageRequestBody, type ProviderCredentials, nowSec } from "./_base.js";
+import { type ImageRequestBody, type ProviderCredentials, nowSec } from "./_base.ts";
 
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 

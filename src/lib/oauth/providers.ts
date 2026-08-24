@@ -4,7 +4,7 @@
  */
 
 // Ensure outbound fetch respects HTTP(S)_PROXY/ALL_PROXY in Node runtime
-import "open-sse/index.js";
+import "open-sse/index.ts";
 
 import {
   ANTIGRAVITY_CONFIG,

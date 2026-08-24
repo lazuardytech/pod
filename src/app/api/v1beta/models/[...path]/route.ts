@@ -1,4 +1,4 @@
-import { initTranslators } from "open-sse/translator/index.js";
+import { initTranslators } from "open-sse/translator/index.ts";
 import { getSettings, validateApiKey } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";

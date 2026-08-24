@@ -33,7 +33,7 @@ describe("GitHub OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGitHubToken("old-refresh", null);
 
       expect(result.accessToken).toBe("new-gh-access");
@@ -51,7 +51,7 @@ describe("GitHub OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGitHubToken("original-refresh", null);
 
       expect(result.refreshToken).toBe("original-refresh");
@@ -64,7 +64,7 @@ describe("GitHub OAuth Token Refresh", () => {
         text: () => Promise.resolve('{"error":"bad_verification_code"}'),
       });
 
-      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGitHubToken("bad-token", null);
 
       expect(result).toBeNull();
@@ -73,7 +73,7 @@ describe("GitHub OAuth Token Refresh", () => {
     it("returns null on network error", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("DNS lookup failed"));
 
-      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGitHubToken("some-token", null);
 
       expect(result).toBeNull();
@@ -90,7 +90,7 @@ describe("GitHub OAuth Token Refresh", () => {
       });
       global.fetch = fetchMock;
 
-      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGitHubToken } = await import("../../open-sse/services/tokenRefresh.ts");
       await refreshGitHubToken("rt-github", null);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -115,7 +115,7 @@ describe("GitHub OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshCopilotToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshCopilotToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshCopilotToken("gh-access-token", null);
 
       expect(result.token).toBe("copilot-token-value");
@@ -129,7 +129,7 @@ describe("GitHub OAuth Token Refresh", () => {
         text: () => Promise.resolve("Bad credentials"),
       });
 
-      const { refreshCopilotToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshCopilotToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshCopilotToken("bad-token", null);
 
       expect(result).toBeNull();
@@ -138,7 +138,7 @@ describe("GitHub OAuth Token Refresh", () => {
     it("returns null on network error", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("network timeout"));
 
-      const { refreshCopilotToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshCopilotToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshCopilotToken("some-token", null);
 
       expect(result).toBeNull();
@@ -148,7 +148,7 @@ describe("GitHub OAuth Token Refresh", () => {
   describe("getRefreshLeadMs", () => {
     it("returns default buffer for github (no custom lead)", async () => {
       const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
-        await import("../../open-sse/services/tokenRefresh.js");
+        await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("github")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });

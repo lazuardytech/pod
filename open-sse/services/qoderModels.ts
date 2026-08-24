@@ -20,8 +20,8 @@ import type {
   ExecutorLogger,
   ExecutorProxyOptions,
   ExecutorProviderData,
-} from "../executors/base.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+} from "../executors/base.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 
 const FETCH_TIMEOUT_MS = 15_000;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h, same as the Kiro catalog

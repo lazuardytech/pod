@@ -34,7 +34,7 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
           }),
       });
 
-      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGoogleToken("old-refresh", "client-id", "client-secret", null);
 
       expect(result.accessToken).toBe("new-google-access");
@@ -52,7 +52,7 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
           }),
       });
 
-      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGoogleToken("original-refresh", "cid", "csecret", null);
 
       expect(result.refreshToken).toBe("original-refresh");
@@ -66,7 +66,7 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
         text: () => Promise.resolve('{"error":"invalid_grant"}'),
       });
 
-      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGoogleToken("bad-token", "cid", "csecret", null);
 
       expect(result).toBeNull();
@@ -75,7 +75,7 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
     it("returns null on network error", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("network failure"));
 
-      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshGoogleToken("some-token", "cid", "csecret", null);
 
       expect(result).toBeNull();
@@ -92,7 +92,7 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
       });
       global.fetch = fetchMock;
 
-      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshGoogleToken } = await import("../../open-sse/services/tokenRefresh.ts");
       await refreshGoogleToken("rt-value", "my-client", "my-secret", null);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -111,20 +111,20 @@ describe("Google OAuth Token Refresh (gemini / gemini-cli / antigravity)", () =>
   describe("getRefreshLeadMs", () => {
     it("returns default buffer for gemini (no custom lead)", async () => {
       const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
-        await import("../../open-sse/services/tokenRefresh.js");
+        await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("gemini")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });
 
     it("returns default buffer for gemini-cli (no custom lead)", async () => {
       const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
-        await import("../../open-sse/services/tokenRefresh.js");
+        await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("gemini-cli")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });
 
     it("returns 5 minutes for antigravity", async () => {
-      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("antigravity")).toBe(5 * 60 * 1000);
     });

@@ -1,6 +1,7 @@
 "use client";
 import type { HTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { Skeleton as UiSkeleton } from "@/shared/components/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
 
 export function Spinner({ size = "md", className }: { size?: string; className?: string }) {
@@ -29,7 +30,7 @@ export function PageLoading({ message = "Loading..." }: { message?: ReactNode })
 }
 
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded-[6px] bg-deep-slate", className)} {...props} />;
+  return <UiSkeleton className={cn("rounded-[6px] bg-deep-slate", className)} {...props} />;
 }
 
 export function CardSkeleton() {

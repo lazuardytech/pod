@@ -1,4 +1,4 @@
-import { FORMATS } from "../translator/formats.js";
+import { FORMATS } from "../translator/formats.ts";
 
 type JsonRecord = Record<string, unknown>;
 

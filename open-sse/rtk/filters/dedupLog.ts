@@ -1,5 +1,5 @@
 // Generic fallback: collapse consecutive duplicate lines + blank-line dedupe + hard line cap
-import { DEDUP_LINE_MAX } from "../constants.js";
+import { DEDUP_LINE_MAX } from "../constants.ts";
 
 export function dedupLog(input: string) {
   const lines = input.split("\n");

@@ -1,12 +1,8 @@
 "use client";
 import type { HTMLAttributes, ReactNode } from "react";
+import { Label } from "@/shared/components/ui/label";
+import { Switch } from "@/shared/components/ui/switch";
 import { cn } from "@/shared/utils/cn";
-
-type ToggleSize = {
-  track: string;
-  thumb: string;
-  translate: string;
-};
 
 type ToggleProps = {
   checked?: boolean;
@@ -28,17 +24,7 @@ export default function Toggle({
   className,
   ...rest
 }: ToggleProps) {
-  const sizes: Record<string, ToggleSize> = {
-    sm: { track: "w-7 h-4", thumb: "size-3", translate: "translate-x-3" },
-    md: { track: "w-9 h-5", thumb: "size-4", translate: "translate-x-4" },
-    lg: { track: "w-11 h-6", thumb: "size-5", translate: "translate-x-5" },
-  };
-
-  const handleClick = () => {
-    if (!disabled && onChange) onChange(!checked);
-  };
-
-  const sizeCfg = sizes[size] ?? sizes.md!;
+  const switchSize = size === "sm" ? "sm" : "default";
 
   return (
     <div
@@ -49,37 +35,13 @@ export default function Toggle({
       )}
       {...rest}
     >
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        disabled={disabled}
-        onClick={handleClick}
-        className={cn(
-          "relative inline-flex shrink-0 cursor-pointer rounded-full",
-          "transition-colors duration-150 ease-in-out",
-          "focus:outline-none focus-visible:ring-1 focus-visible:ring-porcelain/50",
-          checked ? "bg-porcelain" : "bg-gunmetal border border-charcoal-grey",
-          sizeCfg.track,
-          disabled && "cursor-not-allowed",
-        )}
-      >
-        <span
-          className={cn(
-            "pointer-events-none inline-block rounded-full shadow-sm",
-            "transform transition duration-150 ease-in-out",
-            checked ? `${sizeCfg.translate} bg-pitch-black` : "translate-x-0.5 bg-storm-cloud",
-            sizeCfg.thumb,
-            "mt-0.5",
-          )}
-        />
-      </button>
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} size={switchSize} />
       {(label || description) && (
         <div className="flex flex-col">
           {label && (
-            <span className="text-[13px] font-[400] text-porcelain tracking-[-0.12px]">
+            <Label className="text-[13px] font-[400] text-porcelain tracking-[-0.12px]">
               {label}
-            </span>
+            </Label>
           )}
           {description && <span className="text-[11px] text-fog-grey">{description}</span>}
         </div>

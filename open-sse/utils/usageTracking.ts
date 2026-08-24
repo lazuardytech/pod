@@ -3,7 +3,7 @@
  */
 
 import { appendRequestLog, saveRequestUsage } from "@/lib/usageDb";
-import { FORMATS, type FormatId } from "../translator/formats.js";
+import { FORMATS, type FormatId } from "../translator/formats.ts";
 
 type UsageRecord = Record<string, unknown> & {
   cache_creation_input_tokens?: number;

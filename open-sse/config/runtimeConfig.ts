@@ -15,7 +15,7 @@ export const HTTP_STATUS = {
 };
 
 // Re-export error config (backward compat)
-export { BACKOFF_CONFIG, COOLDOWN_MS, DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "./errorConfig.js";
+export { BACKOFF_CONFIG, COOLDOWN_MS, DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "./errorConfig.ts";
 
 // Cache TTLs (seconds)
 export const CACHE_TTL = {
@@ -51,6 +51,18 @@ export const DEFAULT_RETRY_CONFIG = {
 };
 
 export const LOCAL_UPSTREAM_TIMEOUT_MS = 45000;
+
+/** Client header that disables RTK + Headroom + Caveman + Ponytail when set to "off". */
+export const TOKEN_SAVER_HEADER = "x-pod-token-saver";
+
+export function isTokenSaverEnabled(headers?: Record<string, unknown> | null): boolean {
+  if (!headers) return true;
+  const want = TOKEN_SAVER_HEADER;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === want) return String(value ?? "").toLowerCase() !== "off";
+  }
+  return true;
+}
 
 // Normalize a retry entry to { attempts, delayMs }
 // (number = attempts with RETRY_CONFIG.delayMs; object = { attempts, delayMs })

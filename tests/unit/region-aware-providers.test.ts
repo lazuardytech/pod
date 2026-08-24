@@ -14,9 +14,9 @@
  * 5. Gap documentation for xiaomi-mimo
  */
 import { describe, expect, it } from "vitest";
-import { getDefaultModel, PROVIDER_MODELS } from "../../open-sse/config/providerModels.js";
-import { PROVIDERS } from "../../open-sse/config/providers.js";
-import { DefaultExecutor } from "../../open-sse/executors/default.js";
+import { getDefaultModel, PROVIDER_MODELS } from "../../open-sse/config/providerModels.ts";
+import { PROVIDERS } from "../../open-sse/config/providers.ts";
+import { DefaultExecutor } from "../../open-sse/executors/default.ts";
 
 // ---- xiaomi-mimo ----
 // GAP: 9router v0.4.55 added SG/CN/EU region selector but pod has NOT adopted.

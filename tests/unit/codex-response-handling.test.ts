@@ -18,12 +18,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────
-vi.mock("@/lib/usageDb.js", () => ({
+vi.mock("@/lib/usageDb.ts", () => ({
   generateDetailId: vi.fn(() => "detail_test_001"),
   saveRequestDetail: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock("../../open-sse/handlers/chatCore/requestDetail.js", () => ({
+vi.mock("../../open-sse/handlers/chatCore/requestDetail.ts", () => ({
   buildRequestDetail: vi.fn(() => ({})),
   extractRequestConfig: vi.fn(() => ({})),
   saveUsageStats: vi.fn(() => {}),
@@ -110,7 +110,7 @@ describe("CodexExecutor.buildHeaders — always SSE", () => {
   let executor;
 
   beforeEach(async () => {
-    const { CodexExecutor } = await import("../../open-sse/executors/codex.js");
+    const { CodexExecutor } = await import("../../open-sse/executors/codex.ts");
     executor = new CodexExecutor();
   });
 
@@ -159,7 +159,7 @@ describe("convertResponsesStreamToJson", () => {
   let convert;
 
   beforeEach(async () => {
-    const mod = await import("../../open-sse/transformer/streamToJsonConverter.js");
+    const mod = await import("../../open-sse/transformer/streamToJsonConverter.ts");
     convert = mod.convertResponsesStreamToJson;
   });
 
@@ -254,7 +254,7 @@ describe("handleForcedSSEToJson — Codex paths", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import("../../open-sse/handlers/chatCore/sseToJsonHandler.js");
+    const mod = await import("../../open-sse/handlers/chatCore/sseToJsonHandler.ts");
     handleForcedSSEToJson = mod.handleForcedSSEToJson;
     trackDone = vi.fn();
     appendLog = vi.fn(() => Promise.resolve());
@@ -400,7 +400,7 @@ describe("CodexExecutor.transformRequest — stream always true", () => {
   let executor;
 
   beforeEach(async () => {
-    const { CodexExecutor } = await import("../../open-sse/executors/codex.js");
+    const { CodexExecutor } = await import("../../open-sse/executors/codex.ts");
     executor = new CodexExecutor();
   });
 
@@ -525,7 +525,7 @@ describe("parseSSEToOpenAIResponse — standard Chat Completions SSE", () => {
   let parse;
 
   beforeEach(async () => {
-    const mod = await import("../../open-sse/handlers/chatCore/sseToJsonHandler.js");
+    const mod = await import("../../open-sse/handlers/chatCore/sseToJsonHandler.ts");
     parse = mod.parseSSEToOpenAIResponse;
   });
 

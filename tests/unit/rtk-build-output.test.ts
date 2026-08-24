@@ -3,8 +3,8 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { autoDetectFilter } from "../../open-sse/rtk/autodetect.js";
-import { buildOutput } from "../../open-sse/rtk/filters/buildOutput.js";
+import { autoDetectFilter } from "../../open-sse/rtk/autodetect.ts";
+import { buildOutput } from "../../open-sse/rtk/filters/buildOutput.ts";
 
 describe("buildOutput filter", () => {
   it("collapses npm WARN/notice into a counted bucket and keeps the install summary", () => {
@@ -135,7 +135,7 @@ describe("autoDetectFilter routes build logs to buildOutput", () => {
   });
 
   it("plain git diff still routes to gitDiff (build patterns don't false-positive)", async () => {
-    const { gitDiff } = await import("../../open-sse/rtk/filters/gitDiff.js");
+    const { gitDiff } = await import("../../open-sse/rtk/filters/gitDiff.ts");
     const log = ["diff --git a/foo.js b/foo.js", "@@ -1,3 +1,3 @@", "-old", "+new", "context"].join(
       "\n",
     );

@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { IconButton } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 type ModelInfo = {
@@ -22,6 +23,7 @@ export default function ModelRow({
   isTesting,
   onDisable,
   onSetAlias: _onSetAlias,
+  thinkingSuffix,
 }: {
   model: ModelInfo;
   fullModel?: string;
@@ -36,7 +38,10 @@ export default function ModelRow({
   isTesting?: boolean;
   onDisable?: () => void;
   onSetAlias?: (modelId: string, alias: string) => void;
+  thinkingSuffix?: string | null;
 }) {
+  const displayModel =
+    thinkingSuffix && fullModel ? `${fullModel}(${thinkingSuffix})` : (fullModel ?? "");
   const borderColor = isTesting
     ? "border-border"
     : testStatus === "ok"
@@ -75,60 +80,52 @@ export default function ModelRow({
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <code className="max-w-[72vw] truncate rounded bg-sidebar px-1.5 py-0.5 font-mono text-xs text-text-muted sm:max-w-[360px]">
-            {fullModel}
+            {displayModel}
           </code>
           {model.name && (
             <span className="truncate pl-1 text-[9px] italic text-text-muted/70">{model.name}</span>
           )}
         </div>
         {onTest && (
-          <div className="relative shrink-0 group/btn">
-            <button
-              onClick={onTest}
-              disabled={isTesting}
-              className="rounded p-0.5 text-text-muted hover:bg-sidebar hover:text-primary"
-            >
-              <LucideIcon
-                name={isTesting ? "progress_activity" : "science"}
-                className="text-sm"
-                style={isTesting ? { animation: "spin 1s linear infinite" } : undefined}
-              />
-            </button>
-            <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-              {isTesting ? "Testing..." : "Test"}
-            </span>
-          </div>
+          <IconButton
+            icon="science"
+            title={isTesting ? "Testing..." : "Test"}
+            size="sm"
+            onClick={onTest}
+            disabled={isTesting}
+            loading={isTesting}
+            className="shrink-0"
+          />
         )}
-        <div className="relative shrink-0 group/btn">
-          <button
-            onClick={() => onCopy?.(fullModel ?? "", `model-${model.id}`)}
-            className="rounded p-0.5 text-text-muted hover:bg-sidebar hover:text-primary"
-          >
-            <LucideIcon
-              name={copied === `model-${model.id}` ? "check" : "content_copy"}
-              className="text-sm"
-            />
-          </button>
-          <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-            {copied === `model-${model.id}` ? "Copied!" : "Copy"}
-          </span>
-        </div>
+        <IconButton
+          icon={copied === `model-${model.id}` ? "check" : "content_copy"}
+          title={
+            copied === `model-${model.id}`
+              ? "Copied!"
+              : thinkingSuffix
+                ? "Copy with (level) suffix"
+                : "Copy"
+          }
+          size="sm"
+          onClick={() => onCopy?.(displayModel, `model-${model.id}`)}
+          className="shrink-0"
+        />
         {isCustom ? (
-          <button
-            onClick={onDeleteAlias}
-            className="ml-auto rounded p-0.5 text-text-muted hover:bg-red-500/10 hover:text-red-500"
+          <IconButton
+            icon="close"
             title="Remove custom model"
-          >
-            <LucideIcon name="close" className="text-sm" />
-          </button>
+            size="sm"
+            onClick={onDeleteAlias}
+            className="ml-auto text-red-500 hover:bg-red-500/10 hover:text-red-500"
+          />
         ) : onDisable ? (
-          <button
-            onClick={onDisable}
-            className="ml-auto rounded p-0.5 text-text-muted hover:bg-red-500/10 hover:text-red-500"
+          <IconButton
+            icon="close"
             title="Disable this model"
-          >
-            <LucideIcon name="close" className="text-sm" />
-          </button>
+            size="sm"
+            onClick={onDisable}
+            className="ml-auto text-red-500 hover:bg-red-500/10 hover:text-red-500"
+          />
         ) : null}
       </div>
     </div>
@@ -150,4 +147,5 @@ ModelRow.propTypes = {
   onTest: PropTypes.func,
   isTesting: PropTypes.bool,
   onDisable: PropTypes.func,
+  thinkingSuffix: PropTypes.string,
 };

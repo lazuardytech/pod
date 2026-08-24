@@ -1,5 +1,5 @@
-import { parseApiKey, extractBearerToken } from "../utils/apiKey.js";
-import { getMachineData } from "../services/storage.js";
+import { parseApiKey, extractBearerToken } from "../utils/apiKey.ts";
+import { getMachineData } from "../services/storage.ts";
 
 /**
  * Verify API key endpoint

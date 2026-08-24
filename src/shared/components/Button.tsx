@@ -1,33 +1,30 @@
 "use client";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { Button as UiButton } from "@/shared/components/ui/button";
 import { cn } from "@/shared/utils/cn";
 
-const variants: Record<string, string> = {
-  primary:
-    "bg-porcelain hover:bg-white text-pitch-black font-[590] shadow-[var(--shadow-sm)] disabled:opacity-40 disabled:cursor-not-allowed btn-cta",
-  secondary:
-    "bg-gunmetal hover:bg-charcoal-grey text-porcelain border border-charcoal-grey hover:border-muted-ash disabled:opacity-40 disabled:cursor-not-allowed html:not(.dark):bg-[#e8e8e8] html:not(.dark):hover:bg-[#d4d4d4] html:not(.dark):text-[#111111] html:not(.dark):border-[#d4d4d4]",
-  outline:
-    "border border-charcoal-grey text-porcelain hover:bg-deep-slate hover:border-muted-ash disabled:opacity-40 disabled:cursor-not-allowed html:not(.dark):border-[#d4d4d4] html:not(.dark):text-[#111111] html:not(.dark):hover:bg-[#ebebeb]",
-  ghost:
-    "text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-40 disabled:cursor-not-allowed",
-  danger:
-    "bg-warning-red hover:bg-[#d94f4f] text-porcelain shadow-[var(--shadow-sm)] disabled:opacity-40 disabled:cursor-not-allowed",
-  success:
-    "bg-emerald hover:bg-[#1f8a38] text-porcelain shadow-[var(--shadow-sm)] disabled:opacity-40 disabled:cursor-not-allowed",
+const variantMap: Record<string, "default" | "secondary" | "outline" | "ghost" | "destructive"> = {
+  primary: "default",
+  secondary: "secondary",
+  outline: "outline",
+  ghost: "ghost",
+  danger: "destructive",
+  success: "default",
 };
 
-const sizes: Record<string, string> = {
-  sm: "h-8 px-3 text-[12px] gap-1.5 rounded-[6px]",
-  md: "h-9 px-3.5 text-[13px] gap-2 rounded-[6px]",
-  lg: "h-10 px-4 text-[13px] gap-2 rounded-[6px]",
+const sizeMap: Record<string, "default" | "sm" | "lg" | "icon" | "icon-sm"> = {
+  sm: "sm",
+  md: "default",
+  lg: "lg",
+  icon: "icon-sm",
 };
 
 const iconSizes: Record<string, number> = {
   sm: 12,
   md: 13,
   lg: 14,
+  icon: 14,
 };
 
 type ButtonProps = {
@@ -55,18 +52,21 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const iconSize = iconSizes[size] ?? iconSizes.md;
+  const uiVariant = variantMap[variant] ?? "default";
+  const uiSize = sizeMap[size] ?? "default";
+  const isIconOnly = !children && Boolean(icon || iconRight);
 
   return (
-    <button
+    <UiButton
+      variant={uiVariant}
+      size={isIconOnly ? "icon-sm" : uiSize}
+      disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center font-[400] transition-all duration-100 ease-out cursor-pointer",
-        "active:scale-[0.97] disabled:active:scale-100",
-        variants[variant],
-        sizes[size],
+        variant === "success" && "bg-emerald text-porcelain hover:bg-emerald/90",
+        variant === "primary" && "bg-porcelain text-pitch-black hover:bg-white",
         fullWidth && "w-full",
         className,
       )}
-      disabled={disabled || loading}
       {...props}
     >
       {loading ? (
@@ -78,6 +78,39 @@ export default function Button({
       {iconRight && !loading && (
         <LucideIcon name={iconRight} size={iconSize} className="shrink-0" />
       )}
-    </button>
+    </UiButton>
+  );
+}
+
+type IconButtonProps = {
+  icon: string;
+  title?: string;
+  size?: "sm" | "md" | "lg";
+  variant?: string;
+  className?: string;
+  loading?: boolean;
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
+
+export function IconButton({
+  icon,
+  title,
+  size = "md",
+  variant = "ghost",
+  className,
+  loading = false,
+  ...props
+}: IconButtonProps) {
+  const dim = size === "sm" ? "size-5" : size === "lg" ? "size-9" : "size-7";
+  return (
+    <Button
+      variant={variant}
+      size="icon"
+      icon={icon}
+      title={title}
+      aria-label={title}
+      loading={loading}
+      className={cn(dim, "rounded-[4px] p-0", className)}
+      {...props}
+    />
   );
 }

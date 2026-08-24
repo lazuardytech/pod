@@ -34,7 +34,7 @@ describe("Claude OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshClaudeOAuthToken("old-refresh", null);
 
       expect(result.accessToken).toBe("new-claude-access");
@@ -52,7 +52,7 @@ describe("Claude OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshClaudeOAuthToken("old-refresh", null);
 
       expect(result.refreshToken).toBe("old-refresh");
@@ -66,7 +66,7 @@ describe("Claude OAuth Token Refresh", () => {
         text: () => Promise.resolve('{"error":"invalid_grant"}'),
       });
 
-      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshClaudeOAuthToken("expired-token", null);
 
       expect(result).toBeNull();
@@ -75,7 +75,7 @@ describe("Claude OAuth Token Refresh", () => {
     it("returns null on network error", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("fetch failed"));
 
-      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshClaudeOAuthToken("some-token", null);
 
       expect(result).toBeNull();
@@ -92,7 +92,7 @@ describe("Claude OAuth Token Refresh", () => {
       });
       global.fetch = fetchMock;
 
-      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshClaudeOAuthToken } = await import("../../open-sse/services/tokenRefresh.ts");
       await refreshClaudeOAuthToken("rt-123", null);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -109,7 +109,7 @@ describe("Claude OAuth Token Refresh", () => {
 
   describe("getRefreshLeadMs", () => {
     it("returns 4 hours for claude", async () => {
-      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.ts");
       expect(getRefreshLeadMs("claude")).toBe(4 * 60 * 60 * 1000);
     });
   });

@@ -1,5 +1,5 @@
 import { saveRequestUsage, saveRequestDetail } from "@/lib/usageDb";
-import { COLORS } from "../../utils/stream.js";
+import { COLORS } from "../../utils/stream.ts";
 
 type JsonRecord = Record<string, unknown>;
 type DetailItem = Parameters<typeof saveRequestDetail>[0];

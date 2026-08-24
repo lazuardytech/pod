@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 // Convert OpenAI SSE chunk to Antigravity SSE format
 // Real Antigravity format:

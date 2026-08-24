@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { CLAUDE_SYSTEM_PROMPT } from "../../config/appConstants.js";
-import { FORMATS } from "../formats.js";
-import { adjustMaxTokens } from "../helpers/maxTokensHelper.js";
-import { register } from "../registry.js";
+import { CLAUDE_SYSTEM_PROMPT } from "../../config/appConstants.ts";
+import { FORMATS } from "../formats.ts";
+import { adjustMaxTokens } from "../helpers/maxTokensHelper.ts";
+import { register } from "../registry.ts";
 
 // Empty prefix matches real Claude Code behavior (no tool name prefix).
 // Previously "proxy_" was used but this is a detectable fingerprint difference.

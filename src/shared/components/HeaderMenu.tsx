@@ -1,95 +1,54 @@
 "use client";
 import PropTypes from "prop-types";
-import { useEffect, useRef, useState } from "react";
+import { IconButton } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
 import { useTheme } from "@/shared/hooks/useTheme";
 
-function MenuItem({
-  icon,
-  label,
-  onClick,
-  danger,
-}: {
-  icon?: string;
-  label?: string;
-  onClick?: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2.5 w-full px-3 py-2 text-[13px] tracking-[-0.12px] transition-colors duration-100 ${
-        danger
-          ? "text-warning-red hover:bg-warning-red/8"
-          : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
-      }`}
-    >
-      <LucideIcon name={icon} className="text-[15px]" />
-      <span className="flex-1 text-left">{label}</span>
-    </button>
-  );
-}
-
-MenuItem.propTypes = {
-  icon: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  onClick: PropTypes.func.isRequired,
-  danger: PropTypes.bool,
-};
-
 export default function HeaderMenu({ onLogout }: { onLogout?: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const { isDark, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-    return undefined;
-  }, [isOpen]);
-
-  const close = () => setIsOpen(false);
-
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
-        title="Menu"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <IconButton
+            icon="more_horiz"
+            title="Menu"
+            variant="ghost"
+            className="text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
+          />
+        }
+      />
+      <DropdownMenuContent
+        align="end"
+        sideOffset={4}
+        className="w-48 bg-graphite border border-charcoal-grey rounded-[6px] shadow-[var(--shadow-xl)] py-1 fade-in"
       >
-        <LucideIcon name="more_horiz" className="text-[16px]" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-graphite border border-charcoal-grey rounded-[6px] shadow-[var(--shadow-xl)] z-50 fade-in overflow-hidden py-1">
-          <MenuItem
-            icon={isDark ? "light_mode" : "dark_mode"}
-            label={isDark ? "Toggle Light Theme" : "Toggle Dark Theme"}
-            onClick={() => {
-              toggleTheme();
-              close();
-            }}
-          />
-          <div className="my-1 border-t border-charcoal-grey" />
-          <MenuItem
-            icon="logout"
-            label="Logout"
-            danger
-            onClick={() => {
-              close();
-              onLogout?.();
-            }}
-          />
-        </div>
-      )}
-    </div>
+        <DropdownMenuItem
+          className="flex items-center gap-2.5 px-3 py-2 text-[13px] tracking-[-0.12px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain rounded-none"
+          onClick={toggleTheme}
+        >
+          <LucideIcon name={isDark ? "light_mode" : "dark_mode"} className="text-[15px]" />
+          <span>{isDark ? "Toggle Light Theme" : "Toggle Dark Theme"}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="my-1 border-charcoal-grey bg-charcoal-grey" />
+        <DropdownMenuItem
+          variant="destructive"
+          className="flex items-center gap-2.5 px-3 py-2 text-[13px] tracking-[-0.12px] text-warning-red hover:bg-warning-red/8 hover:text-warning-red rounded-none"
+          onClick={() => onLogout?.()}
+        >
+          <LucideIcon name="logout" className="text-[15px]" />
+          <span>Logout</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  allowedDevOrigins: ["127.0.0.1"],
   serverExternalPackages: ["bun:sqlite", "undici"],
   images: {
     unoptimized: true,
@@ -19,6 +20,8 @@ const nextConfig: NextConfig = {
     ],
   },
   turbopack: {
+    // Home has a pnpm-lock.yaml; without this Next infers /home/ubuntu as the workspace root.
+    root: import.meta.dirname,
     // Keep server-only node modules out of browser bundles.
     resolveAlias: {
       fs: { browser: "./src/lib/empty-module.ts" },

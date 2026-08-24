@@ -10,7 +10,7 @@ import {
   POLL_TIMEOUT_MS,
   sizeToAspectRatio,
   sleep,
-} from "./_base.js";
+} from "./_base.ts";
 
 const BASE_URL = "https://queue.fal.run";
 

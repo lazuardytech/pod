@@ -12,9 +12,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { FORMATS } from "../../open-sse/translator/formats.js";
-import { translateRequest } from "../../open-sse/translator/index.js";
-import { openaiToVertexRequest } from "../../open-sse/translator/request/openai-to-vertex.js";
+import { FORMATS } from "../../open-sse/translator/formats.ts";
+import { translateRequest } from "../../open-sse/translator/index.ts";
+import { openaiToVertexRequest } from "../../open-sse/translator/request/openai-to-vertex.ts";
 
 // ─── Guard 1: openaiToVertexRequest translator ────────────────────────────────
 
@@ -264,7 +264,7 @@ describe("chatCore stream injection guard logic", () => {
 
 describe("VertexExecutor.buildUrl — streaming via URL not body", () => {
   it("uses streamGenerateContent action for streaming requests", async () => {
-    const { VertexExecutor } = await import("../../open-sse/executors/vertex.js");
+    const { VertexExecutor } = await import("../../open-sse/executors/vertex.ts");
     const executor = new VertexExecutor("vertex");
     const url = executor.buildUrl("gemini-2.0-flash", true, 0, { apiKey: "test-key-123" });
     expect(url).toContain(":streamGenerateContent");
@@ -273,7 +273,7 @@ describe("VertexExecutor.buildUrl — streaming via URL not body", () => {
   });
 
   it("uses generateContent action for non-streaming requests", async () => {
-    const { VertexExecutor } = await import("../../open-sse/executors/vertex.js");
+    const { VertexExecutor } = await import("../../open-sse/executors/vertex.ts");
     const executor = new VertexExecutor("vertex");
     const url = executor.buildUrl("gemini-2.0-flash", false, 0, { apiKey: "test-key-123" });
     expect(url).toContain(":generateContent");
@@ -282,14 +282,14 @@ describe("VertexExecutor.buildUrl — streaming via URL not body", () => {
   });
 
   it("includes API key in URL for raw key auth", async () => {
-    const { VertexExecutor } = await import("../../open-sse/executors/vertex.js");
+    const { VertexExecutor } = await import("../../open-sse/executors/vertex.ts");
     const executor = new VertexExecutor("vertex");
     const url = executor.buildUrl("gemini-2.0-flash", false, 0, { apiKey: "my-api-key" });
     expect(url).toContain("key=my-api-key");
   });
 
   it("does NOT include API key in URL for SA JSON auth", async () => {
-    const { VertexExecutor } = await import("../../open-sse/executors/vertex.js");
+    const { VertexExecutor } = await import("../../open-sse/executors/vertex.ts");
     const executor = new VertexExecutor("vertex");
     const saJson = JSON.stringify({
       type: "service_account",

@@ -1,16 +1,18 @@
 # Overview
 
-**Pod** is a self-hosted AI gateway — a unified proxy for 50+ LLM providers behind a single OpenAI-compatible endpoint.
+**Pod** is a self-hosted AI gateway — a unified proxy for 84 built-in LLM providers behind a single OpenAI-compatible endpoint.
 
-| Fact        | Value                                                                     |
-| ----------- | ------------------------------------------------------------------------- |
-| Version     | v0.0.82                                                                   |
-| Stack       | Bun + Next.js 16 (TS, strict mode) + open-sse (typed local fork) + SQLite |
-| Port        | 20128                                                                     |
-| Deployed at | pod.lazuardy.tech (Zeabur, Cloudflare DNS)                                |
-| Data dir    | `~/.pod/pod.sqlite`                                                       |
-| Health      | `GET /api/health` + `/api/monitoring/health*` (public)                    |
-| License     | MIT                                                                       |
+| Fact        | Value                                                                        |
+| ----------- | ---------------------------------------------------------------------------- |
+| Version     | v0.0.86                                                                      |
+| Stack       | Bun + Next.js 16 (TypeScript default) + open-sse (typed local fork) + SQLite |
+| Port        | 20128 local / 20140 Zeabur                                                   |
+| Providers   | 84 built-in (`AI_PROVIDERS`) + custom nodes                                  |
+| Executors   | 17 specialized + DefaultExecutor (20 files in `open-sse/executors/`)         |
+| Deployed at | pod.lazuardy.tech (Zeabur, Cloudflare DNS)                                   |
+| Data dir    | `~/.pod/pod.sqlite`                                                          |
+| Health      | `GET /api/health` + `/api/monitoring/health*` (public)                       |
+| License     | MIT                                                                          |
 
 ## Three Layers
 

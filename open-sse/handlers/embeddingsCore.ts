@@ -1,14 +1,14 @@
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { getExecutor } from "../executors/index.js";
-import type { ExecutorCredentials } from "../executors/base.js";
-import { refreshWithRetry } from "../services/tokenRefresh.js";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { getExecutor } from "../executors/index.ts";
+import type { ExecutorCredentials } from "../executors/base.ts";
+import { refreshWithRetry } from "../services/tokenRefresh.ts";
 import {
   createErrorResult,
   formatProviderError,
   parseUpstreamError,
   type ErrorResult,
-} from "../utils/error.js";
-import { getEmbeddingAdapter } from "./embeddingProviders/index.js";
+} from "../utils/error.ts";
+import { getEmbeddingAdapter } from "./embeddingProviders/index.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -35,7 +35,7 @@ export interface EmbeddingsCoreParams {
 
 /**
  * Core embeddings handler — orchestrator only. Provider-specific URL/headers/body/normalize
- * live in `./embeddingProviders/{id}.js`.
+ * live in `./embeddingProviders/{id}.ts`.
  */
 export async function handleEmbeddingsCore({
   body,

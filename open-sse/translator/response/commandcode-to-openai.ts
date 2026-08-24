@@ -17,8 +17,8 @@
  * already split per line by the upstream SSE/JSON-line reader in pod.
  */
 
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 function ensureState(state: unknown, model: unknown) {
   if (!state.responseId) {

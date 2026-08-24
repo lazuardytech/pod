@@ -25,7 +25,7 @@ import {
   getComboEntryFromData,
   getComboModelsFromData,
   injectComboSystemPrompt,
-} from "../../open-sse/services/combo.js";
+} from "../../open-sse/services/combo.ts";
 
 const PROMPT = "You are a helpful assistant. Always reply in Indonesian.";
 

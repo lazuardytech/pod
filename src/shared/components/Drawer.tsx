@@ -1,7 +1,12 @@
 "use client";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
-import LucideIcon from "@/shared/components/LucideIcon";
+import { IconButton } from "@/shared/components/Button.tsx";
+import {
+  Drawer as UiDrawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/shared/components/ui/drawer";
 import { cn } from "@/shared/utils/cn";
 
 type DrawerProps = {
@@ -13,6 +18,14 @@ type DrawerProps = {
   className?: string;
 };
 
+const widths: Record<string, string> = {
+  sm: "sm:[--drawer-content-width:400px]",
+  md: "sm:[--drawer-content-width:500px]",
+  lg: "sm:[--drawer-content-width:600px]",
+  xl: "sm:[--drawer-content-width:800px]",
+  full: "sm:[--drawer-content-width:100%]",
+};
+
 export default function Drawer({
   isOpen,
   onClose,
@@ -21,72 +34,29 @@ export default function Drawer({
   width = "md",
   className,
 }: DrawerProps) {
-  const widths: Record<string, string> = {
-    sm: "w-[400px]",
-    md: "w-[500px]",
-    lg: "w-[600px]",
-    xl: "w-[800px]",
-    full: "w-full",
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose?.();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px] fade-in cursor-pointer"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Drawer panel */}
-      <div
+    <UiDrawer
+      open={!!isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
+      swipeDirection="left"
+    >
+      <DrawerContent
         className={cn(
-          "absolute right-0 top-0 h-full bg-surface flex flex-col",
-          "shadow-[var(--shadow-elev)]",
-          "slide-in-right",
-          "border-l border-border-subtle",
-          widths[width] || widths.md,
+          "bg-surface border-l border-border-subtle rounded-none",
+          widths[width],
           className,
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border-subtle flex-shrink-0">
-          <div className="flex items-center gap-3">
-            {title && <h2 className="text-lg font-semibold text-text-main">{title}</h2>}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-[10px] text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors"
-          >
-            <LucideIcon name="close" className="text-[20px]" />
-          </button>
-        </div>
-
-        {/* Body */}
+        <DrawerHeader className="flex flex-row items-center justify-between border-b border-border-subtle p-6">
+          {title && (
+            <DrawerTitle className="text-lg font-semibold text-text-main">{title}</DrawerTitle>
+          )}
+          <IconButton icon="close" title="Close" onClick={onClose} className="ml-auto" />
+        </DrawerHeader>
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">{children}</div>
-      </div>
-    </div>
+      </DrawerContent>
+    </UiDrawer>
   );
 }

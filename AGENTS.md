@@ -8,7 +8,9 @@ Operational rules for AI agents working on the **Pod** project.
 - Communicates operational/planning requests in Indonesian; expects concise, no-essay responses for routine ops, full detail when explicitly asked for a report/walkthrough.
 - Wants zero leftover uncommitted changes — after substantive work, commit and push ALL uncommitted changes to `origin canary` so nothing drifts. Never leave changes unpushed.
 - Before any Zeabur deploy, user expects all env vars on every service (pod/pod-canary) verified complete and valid to avoid build/runtime failures.
-- Prefers docs kept concise and structured in English; wants `.agents/INDEX.md` as a clean, accurate map of all docs and AGENTS/.agents refreshed together after repo changes.
+- Prefers docs kept concise and structured in English; wants `.agents/INDEX.md` as a clean, accurate map of all docs and AGENTS/.agents refreshed together after repo changes. Keep DESIGN.md aligned with the shadcn dashboard visual system, and keep PRD stating authored source is TypeScript (only generated JS is `public/sw.js`).
+- Interactive dashboard controls (buttons, icon buttons, button groups) must use shadcn-backed shared components (`@/shared/components`); segmented tab controls are not wrapped in Card.
+- Default `bun run test:run` must report zero skipped tests; live/network harnesses belong in `tests/live/` (`bun run test:live`). Mock in the default suite instead of `it.skip`.
 
 ## Learned Workspace Facts
 
@@ -16,19 +18,23 @@ Operational rules for AI agents working on the **Pod** project.
 - `changelogUrl` in `src/shared/constants/config.ts` uses `refs/heads/canary` (never `master` — dead branch 404s).
 - `src/app/api/proxy-pools/vercel-deploy/route.ts` trailing-slash trim uses a real `/\\/$/` regex (an earlier `/\\\\/$/` matched a backslash, producing `//<relayPath>`).
 - Rate-limit env: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
+- `bun run format` / `check` / `lint` must use lockfile binaries (`oxfmt`, `oxlint`, `tsc`) — never `bun x oxlint`, which floats past bun.lock (1.79+ enables `react(set-state-in-effect)` and fails `--deny-warnings`).
 - `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode`, `.rwx` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`); do not commit those dirs.
-- open-sse/ has 19 provider executors (base.ts is the base class, index.ts is the barrel) — not "20". `src/lib/` holds router/translators; executors/translators live in the typed `open-sse/` fork.
+- open-sse/executors/ is 20 `.ts` files: 17 specialized executors + `default.ts` + `base.ts` + `index.ts`. `getExecutor()` registers 19 map keys (`cu` aliases cursor; Vertex covers `vertex` and `vertex-partner`); unknown providers get `DefaultExecutor`. Do not count the file total as "provider count". Executors/translators live in the typed `open-sse/` fork, not `src/lib/`.
 - Path dirs with parentheses (e.g. `src/app/(dashboard)/`) break naive `sed 's/([0-9].*//'` patterns — use a paren-aware pattern when parsing `tsc` output.
 - Chrome `ERR_FAILED` interstitial after idle (fixed by hard reload) is often SW-side: `public/sw.js` must keep network-first navigation, never reject `respondWith`, and avoid `Response.error()` (esp. images); `ServiceWorkerRegistrar` must not blind `location.reload()` on every `controllerchange`. RSC/`?_rsc=` fetches are not SW-intercepted (idle CF/TLS is a separate failure mode).
+- `next.config.ts` sets `turbopack.root` to `import.meta.dirname` so Next does not infer `/home/ubuntu` from a home-level `pnpm-lock.yaml`.
+- `.env` is gitignored; `JWT_SECRET` and `API_KEY_SECRET` are required at process start even in development — generate local values, never copy Zeabur prod secrets. `.env.example` is local-first (`PORT=20128`); Zeabur uses `PORT=20140`, `DATA_DIR=/app/data`, and in-project Redis via `REDIS_URL` (`REDIS_HOST` is unused). SQLite stays the primary store (one volume per service); do not migrate to Postgres or Kafka. Redis is rate-limit only — local Redis for tests, Zeabur in-project Redis for deploy.
+- Primary upstream reference is 9router (`decolua/9router`, last cloned ~0.4.x); OmniRoute (`diegosouzapw/OmniRoute`) is secondary. Do not reintroduce features Pod dropped (e.g. MITM). OmniRoute Vision Bridge / 14-engine compression is not in 9router and is not ported.
 
 ## Project Identity
 
-- **Project name**: pod, v0.0.82
-- **Runtime**: Bun + Next.js 16 (TS, strict mode)
-- **Engine**: open-sse/ (local fork, not npm, TypeScript)
+- **Project name**: pod, v0.0.86
+- **Runtime**: Bun 1.4.0 + Next.js 16 (TypeScript default, strict mode)
+- **Engine**: open-sse/ (local fork, not npm, TypeScript; `.ts` import suffixes)
 - **Data**: SQLite at ~/.pod/pod.sqlite
-- **Port**: 20128
-- **Health**: GET /api/health (public)
+- **Port**: 20128 (local/Docker) / 20140 (Zeabur `PORT`)
+- **Health**: GET /api/health and `/api/monitoring/health*` (public)
 - **Deployment**: pod.lazuardy.tech (Zeabur, Cloudflare-proxied)
 - **Branch model**: canary (active dev), main (stable/release)
 
@@ -44,6 +50,7 @@ Operational rules for AI agents working on the **Pod** project.
 8. Bump version in package.json AND src/shared/constants/config.ts (displayVersion).
 9. Use src/lib/localDb.ts and src/lib/sqlite/connection.ts for storage.
 10. User may invoke `/ponytail lite|full|ultra`; "stop ponytail" / "normal mode" reverts. Ponytail favors one-line solutions, YAGNI, stdlib over deps, and deletion over addition.
+11. TypeScript is the default. Authored files are `.ts`/`.tsx` with `.ts`/`.tsx` import suffixes. The only committed JavaScript is generated (`public/sw.js` from `src/sw/sw.ts`).
 
 ## Security & API Rules
 
@@ -58,7 +65,7 @@ Operational rules for AI agents working on the **Pod** project.
 7. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
 8. Stateful internal APIs self-authenticate via routeAuth.ts — dashboardGuard.ts and proxy.ts were removed (no middleware.ts registered).
 9. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
-10. All src/ is TypeScript with strict: true + noUncheckedIndexedAccess in tsconfig.
+10. Authored source is TypeScript (`strict` + `noUncheckedIndexedAccess`). Do not add authored `.js`/`.jsx`. Generated JS is only `public/sw.js` (from `src/sw/sw.ts`). Local imports use `.ts`/`.tsx` suffixes.
 11. cloud/ has its own tsconfig.json with @cloudflare/workers-types.
 12. Body size cap defaults to 50MB (env `POD_MAX_REQUEST_BODY_BYTES`); chat routes use `POD_MAX_CHAT_BODY_BYTES` (default inherits). Helpers `readBodyText()` (in `src/lib/parseJsonBody.ts`), `readBodyTextStream()` (in `@/lib/parseJsonBody`), and `getMaxRequestBodyBytes(stream)` (in `src/shared/constants/config.ts`) are the canonical entry points — raw `request.text()` / `request.json()` for mutation routes is forbidden.
 
@@ -73,9 +80,9 @@ Operational rules for AI agents working on the **Pod** project.
 7. Keep the guarded fallback loop in src/sse/handlers/chat.ts.
 8. Keep the outer crash guard in open-sse/utils/stream.ts.
 9. Keep the guarded peek-reader behavior in open-sse/handlers/chatCore.ts.
-10. open-sse/ is TypeScript (strict, included in `tsc`). Keep `.js` import path suffixes (ESM/bundler convention). Do not replace the local fork with the npm package.
+10. open-sse/ is TypeScript (strict, included in `tsc`). Local imports use `.ts`/`.tsx` suffixes (`allowImportingTsExtensions`). Do not replace the local fork with the npm package. Do not add authored `.js` — the only committed JS is generated (`public/sw.js` from `src/sw/sw.ts`).
 11. Regex literals with flags that look unterminated to Turbopack must use `new RegExp()` — apply in any file where Turbopack fails to parse a regex literal.
-12. `src/instrumentation.ts` is the canonical startup path (Next.js 16) — runs `initializeApp()` + signal handlers in production; side-effect imports in layout.tsx for startup code have been removed.
+12. `src/instrumentation.ts` is the canonical startup path (Next.js 16). It must stay Edge-safe (no `node:` imports); Node startup (`initializeApp()` + signal handlers) lives in `src/instrumentation.node.ts`. Do not add `turbopackIgnore` on that import — it makes `next dev` fail with `Cannot find module './instrumentation.node.ts'`. Side-effect imports in layout.tsx for startup code have been removed.
 13. AbortError at `node:_http_server` (client disconnect) must be classified as `[ClientDisconnect]`, not `[FATAL]`. SSE stream wrappers use `controller.close()` (not `controller.error(err)`) on reader abort. See `.agents/knowledge/04-gotchas.md` item 31.
 14. `cloud/` remains excluded from root `tsc` (has its own tsconfig). `open-sse/` is included. Prefer importing typed symbols from `open-sse/`; keep cross-boundary constants inlined in `src/` when bundling constraints require it (e.g. rate-limit headers).
 15. `next.config.ts` `serverExternalPackages` must include `undici` (and `bun:sqlite`). undici v8 throws a bare `Error` when Turbopack bundles its top-level code into the standalone server chunk, breaking dynamic `import("undici")` in server routes (`src/app/api/proxy-pools/[id]/test/route.ts`) and `src/lib/network/`. Keep undici external (loaded from `node_modules` at runtime) — never bundle it.
@@ -151,11 +158,11 @@ bun run build   # NODE_ENV=production next build (turbopack)
 ## Cursor Cloud specific instructions
 
 - **Default development branch**: `canary` (active). `main` is stable/release only — promote via PR.
-- **Install (idempotent)**: `bash scripts/cloud-dev-install.sh` — ensures Bun 1.3.14+ and `bun install --frozen-lockfile`.
+- **Install (idempotent)**: `bash scripts/cloud-dev-install.sh` — ensures Bun 1.4.0+ and `bun install --frozen-lockfile`.
 - **Start**: `bash scripts/cloud-dev-start.sh` — `bun run dev` on port **20128**. Requires secrets `JWT_SECRET` and `API_KEY_SECRET` (Cursor environment Secrets tab). Optional: `SHUTDOWN_SECRET`, `INITIAL_PASSWORD`.
-- **Health check**: `curl -sf http://localhost:20128/api/health` → `{"ok":true}`; monitoring health is also public.
+- **Health check**: `curl -sf http://localhost:20128/api/health` → `{"ok":true}`; monitoring health is also public. Zeabur dashboard Health Check must be `/api/health` (kubelet `GET /` with 1s timeout flaps Ready under combo load; see gotcha §35).
 - **Tests need Node ≥ 22.18 on PATH (not bun)**: `bun run test:run` runs vitest under `node` on purpose (a health test asserts `version.bun` is `null`, which only holds under node). The pre-provisioned `/exec-daemon/node` is v22.14.0 — too old for native `.mts` type-stripping — so it throws `Unknown file extension ".mts"` on `src/shared/utils/clineAuth.mts` (2 spurious failures). Prepend nvm's newer node first, e.g. `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`, then `bun run test:run` → all green. `bun run check`/`bun run build` are unaffected (they run under bun).
-- **Build**: `bun run build` first generates ignored `open-sse/**/*.js` shims from TypeScript sources; Docker's existing `COPY /app/open-sse` relies on those shims for standalone Bun runtime resolution of `.js` ESM specifiers.
+- **Build**: `bun run build` compiles `src/sw/sw.ts` → `public/sw.js`. Docker `COPY /app/open-sse` copies TypeScript sources; Bun resolves `.ts` import specifiers directly (no JS shims).
 - **Verify before push**: `bun run check && bun run test:run && bun run build`.
 - **Ponytail skills**: vendored at `.agents/skills/{ponytail,ponytail-review,ponytail-audit,ponytail-debt,ponytail-gain,ponytail-help}/` (Cloud discovers `.agents/skills/`; `.cursor/` is gitignored). Invoke `/ponytail lite|full|ultra` (default **full**). Stop: `stop ponytail` / `normal mode`. Upstream: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
 - Do not commit `.env`; `.cursor/` is gitignored — configure Cloud environment via dashboard / `environment.json` proposal.
@@ -173,5 +180,8 @@ bun run build   # NODE_ENV=production next build (turbopack)
 | .agents/reports/\*              | Release rollups & verification reports        |
 | .agents/plan/\*                 | Draft plans (migrations, optimization)        |
 | .agents/compatibility-matrix.md | API compatibility matrix (OpenAI + Anthropic) |
-| DESIGN.md                       | UI design system reference                    |
+| README.md                       | Project overview, quick start, env reference  |
+| DESIGN.md                       | UI design system (tokens + shadcn adapters)   |
+| CONTRIBUTING.md                 | Dev workflow, PR conventions                  |
+| SECURITY.md                     | Vulnerability reporting                       |
 | CHANGELOG.md                    | Release history                               |

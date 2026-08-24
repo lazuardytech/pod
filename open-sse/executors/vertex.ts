@@ -1,6 +1,6 @@
-import { PROVIDERS } from "../config/providers.js";
-import { parseVertexSaJson, refreshVertexToken } from "../services/tokenRefresh.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+import { PROVIDERS } from "../config/providers.ts";
+import { parseVertexSaJson, refreshVertexToken } from "../services/tokenRefresh.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 import {
   BaseExecutor,
   type ExecutorConfigInput,
@@ -9,7 +9,7 @@ import {
   type ExecutorExecuteResult,
   type ExecutorHeaders,
   type ExecutorLogger,
-} from "./base.js";
+} from "./base.ts";
 
 // Cache project IDs resolved from raw API keys { apiKey → projectId }
 const projectIdCache = new Map<string, string>();

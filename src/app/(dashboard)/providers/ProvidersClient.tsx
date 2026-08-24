@@ -14,6 +14,7 @@ import {
   Button,
   Card,
   CardSkeleton,
+  IconButton,
   Input,
   Modal,
   Select,
@@ -500,23 +501,19 @@ export default function ProvidersPage() {
             </h2>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <ModelAvailabilityBadge />
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                icon="play_arrow"
+                loading={testingMode === "oauth"}
                 onClick={() => handleBatchTest("oauth")}
                 disabled={!!testingMode}
-                className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
-                  testingMode === "oauth"
-                    ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                    : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-                }`}
                 title="Test all OAuth connections"
                 aria-label="Test all OAuth connections"
+                className="w-full sm:w-auto"
               >
-                <LucideIcon
-                  name={testingMode === "oauth" ? "progress_activity" : "play_arrow"}
-                  className={`text-[14px]${testingMode === "oauth" ? " animate-spin" : ""}`}
-                />
                 {testingMode === "oauth" ? "Testing..." : "Test All"}
-              </button>
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
@@ -541,23 +538,19 @@ export default function ProvidersPage() {
             <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
               Free Tier Providers
             </h2>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              icon="play_arrow"
+              loading={testingMode === "free"}
               onClick={() => handleBatchTest("free")}
               disabled={!!testingMode}
-              className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
-                testingMode === "free"
-                  ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                  : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-              }`}
               title="Test all Free connections"
               aria-label="Test all Free provider connections"
+              className="w-full sm:w-auto"
             >
-              <LucideIcon
-                name={testingMode === "free" ? "progress_activity" : "play_arrow"}
-                className={`text-[14px]${testingMode === "free" ? " animate-spin" : ""}`}
-              />
               {testingMode === "free" ? "Testing..." : "Test All"}
-            </button>
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {freeEntries.map(([key, info]) => (
@@ -591,23 +584,19 @@ export default function ProvidersPage() {
             <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
               API Key Providers{" "}
             </h2>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
+              icon="play_arrow"
+              loading={testingMode === "apikey"}
               onClick={() => handleBatchTest("apikey")}
               disabled={!!testingMode}
-              className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
-                testingMode === "apikey"
-                  ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
-                  : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
-              }`}
               title="Test all API Key connections"
               aria-label="Test all API Key connections"
+              className="w-full sm:w-auto"
             >
-              <LucideIcon
-                name={testingMode === "apikey" ? "progress_activity" : "play_arrow"}
-                className={`text-[14px]${testingMode === "apikey" ? " animate-spin" : ""}`}
-              />
               {testingMode === "apikey" ? "Testing..." : "Test All"}
-            </button>
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {apikeyEntries.map(([key, info]) => (
@@ -685,13 +674,12 @@ export default function ProvidersPage() {
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3 border-b border-border bg-surface/95 backdrop-blur-sm rounded-t-xl">
               <h3 className="font-semibold">Test Results</h3>
-              <button
-                onClick={() => setTestResults(null)}
-                className="p-1 rounded-lg hover:bg-bg text-text-muted hover:text-text-main transition-colors"
+              <IconButton
+                icon="close"
+                title="Close test results"
                 aria-label="Close test results"
-              >
-                <LucideIcon name="close" className="text-lg" />
-              </button>
+                onClick={() => setTestResults(null)}
+              />
             </div>
             <div className="p-5">
               <ProviderTestResultsView results={testResults} />

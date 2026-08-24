@@ -20,49 +20,49 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Module mocks (hoisted before imports) ───────────────────────────────────
 
-vi.mock("../../open-sse/services/model.js", () => ({
+vi.mock("../../open-sse/services/model.ts", () => ({
   getModelInfoCore: vi.fn(),
 }));
 
-vi.mock("../../open-sse/handlers/embeddingsCore.js", () => ({
+vi.mock("../../open-sse/handlers/embeddingsCore.ts", () => ({
   handleEmbeddingsCore: vi.fn(),
 }));
 
-vi.mock("../../open-sse/utils/error.js", async (importOriginal) => {
+vi.mock("../../open-sse/utils/error.ts", async (importOriginal) => {
   // Use real errorResponse implementation so response bodies are realistic
   const actual = await importOriginal();
   return actual;
 });
 
-vi.mock("../../open-sse/services/accountFallback.js", async (importOriginal) => {
+vi.mock("../../open-sse/services/accountFallback.ts", async (importOriginal) => {
   const actual = await importOriginal();
   return actual;
 });
 
-vi.mock("../../cloud/src/utils/logger.js", () => ({
+vi.mock("../../cloud/src/utils/logger.ts", () => ({
   info: vi.fn(),
   debug: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
 }));
 
-vi.mock("../../cloud/src/utils/apiKey.js", () => ({
+vi.mock("../../cloud/src/utils/apiKey.ts", () => ({
   parseApiKey: vi.fn(),
   extractBearerToken: vi.fn(),
 }));
 
-vi.mock("../../cloud/src/services/storage.js", () => ({
+vi.mock("../../cloud/src/services/storage.ts", () => ({
   getMachineData: vi.fn(),
   saveMachineData: vi.fn(),
 }));
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
-import { handleEmbeddings } from "../../cloud/src/handlers/embeddings.js";
-import { getMachineData, saveMachineData } from "../../cloud/src/services/storage.js";
-import { extractBearerToken, parseApiKey } from "../../cloud/src/utils/apiKey.js";
-import { handleEmbeddingsCore } from "../../open-sse/handlers/embeddingsCore.js";
-import { getModelInfoCore } from "../../open-sse/services/model.js";
+import { handleEmbeddings } from "../../cloud/src/handlers/embeddings.ts";
+import { getMachineData, saveMachineData } from "../../cloud/src/services/storage.ts";
+import { extractBearerToken, parseApiKey } from "../../cloud/src/utils/apiKey.ts";
+import { handleEmbeddingsCore } from "../../open-sse/handlers/embeddingsCore.ts";
+import { getModelInfoCore } from "../../open-sse/services/model.ts";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 

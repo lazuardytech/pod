@@ -1,4 +1,4 @@
-import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
+import { MEMORY_CONFIG } from "../config/runtimeConfig.ts";
 
 const originalFetch = globalThis.fetch;
 const proxyDispatchers = new Map<string, unknown>();

@@ -2,7 +2,7 @@
 
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Modal } from "@/shared/components";
+import { Badge, Button, Card, IconButton, Modal } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import { getProviderAlias } from "@/shared/constants/providers";
@@ -101,32 +101,30 @@ export function ModelRow({
         </div>
         {onTest && (
           <div className="relative group/btn">
-            <button
+            <IconButton
+              icon="science"
+              title={isTesting ? "Testing..." : "Test"}
+              size="sm"
+              variant="ghost"
               onClick={onTest}
               disabled={isTesting}
-              className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
-            >
-              <LucideIcon
-                name={isTesting ? "progress_activity" : "science"}
-                className="text-sm"
-                style={isTesting ? { animation: "spin 1s linear infinite" } : undefined}
-              />
-            </button>
+              loading={isTesting}
+              className="text-text-muted hover:text-primary"
+            />
             <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
               {isTesting ? "Testing..." : "Test"}
             </span>
           </div>
         )}
         <div className="relative group/btn">
-          <button
+          <IconButton
+            icon={copied === `model-${model.id}` ? "check" : "content_copy"}
+            title={copied === `model-${model.id}` ? "Copied!" : "Copy"}
+            size="sm"
+            variant="ghost"
             onClick={() => onCopy(fullModel, `model-${model.id}`)}
-            className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
-          >
-            <LucideIcon
-              name={copied === `model-${model.id}` ? "check" : "content_copy"}
-              className="text-sm"
-            />
-          </button>
+            className="text-text-muted hover:text-primary"
+          />
           <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
             {copied === `model-${model.id}` ? "Copied!" : "Copy"}
           </span>
@@ -137,13 +135,14 @@ export function ModelRow({
           </Badge>
         )}
         {isCustom && (
-          <button
-            onClick={onDeleteAlias}
-            className="p-0.5 hover:bg-red-500/10 rounded text-text-muted hover:text-red-500 ml-auto"
+          <IconButton
+            icon="close"
             title="Remove custom model"
-          >
-            <LucideIcon name="close" className="text-sm" />
-          </button>
+            size="sm"
+            variant="ghost"
+            onClick={onDeleteAlias}
+            className="ml-auto text-text-muted hover:text-red-500 hover:bg-red-500/10"
+          />
         )}
       </div>
     </div>
@@ -413,13 +412,16 @@ export default function ModelsCard({
             />
           ))}
 
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            icon="add"
             onClick={() => setShowAddCustomModel(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-black/15 dark:border-white/15 text-xs text-text-muted hover:text-primary hover:border-primary/40 transition-colors"
+            className="border-dashed border-black/15 dark:border-white/15 text-xs text-text-muted hover:text-primary hover:border-primary/40"
           >
-            <LucideIcon name="add" className="text-sm" />
             Add Model
-          </button>
+          </Button>
         </div>
       </Card>
 

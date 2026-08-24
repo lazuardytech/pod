@@ -1,5 +1,5 @@
-import { DEFAULT_RETRY_CONFIG, HTTP_STATUS, resolveRetryEntry } from "../config/runtimeConfig.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+import { DEFAULT_RETRY_CONFIG, HTTP_STATUS, resolveRetryEntry } from "../config/runtimeConfig.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 
 const FETCH_CONNECT_TIMEOUT_MS = 15_000;
 

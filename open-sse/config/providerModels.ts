@@ -1,5 +1,5 @@
-import { PROVIDERS } from "./providers.js";
-import { buildTtsProviderModels } from "./ttsModels.js";
+import { PROVIDERS } from "./providers.ts";
+import { buildTtsProviderModels } from "./ttsModels.ts";
 
 // Provider models - Single source of truth
 // Key = alias (cc, cx, gc, qw, if, ag, gh for OAuth; id for API Key)

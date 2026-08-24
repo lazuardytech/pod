@@ -1,10 +1,10 @@
 # Pod — Product Requirements Document
 
-**Version:** v0.0.82 | **Status:** Active development
+**Version:** v0.0.86 | **Status:** Active development | **Last reviewed:** 2026-08-24
 
 ## Overview
 
-Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single OpenAI-compatible endpoint. It handles provider authentication, intelligent routing, fallback chains, semantic caching, usage analytics, and operational visibility through a dark-themed web dashboard.
+Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus custom nodes) behind a single OpenAI-compatible endpoint. It handles provider authentication, intelligent routing, fallback chains, semantic caching, usage analytics, and operational visibility through a dark-themed web dashboard.
 
 ## Target Users
 
@@ -17,10 +17,12 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ### Provider Unification
 
-- OpenAI-compatible `/v1/*` endpoints: chat/completions, responses, embeddings, audio (speech, transcriptions, translations), images (generations, edits, variations), moderations, models (list, detail), files (upload, retrieve, delete)
-- Anthropic `/v1/messages` and `/v1/messages/count_tokens` compatibility
+- OpenAI-compatible `/v1/*` endpoints: chat/completions, responses, embeddings, audio (speech, transcriptions, translations), images/generations, models (list, detail). See [compatibility-matrix.md](compatibility-matrix.md).
+- Stubs / partial: `POST /v1/images/edits` and `/variations` **501**; `POST /v1/files` **501**; `GET /v1/files` empty list; `GET`/`DELETE /v1/files/{id}` **404** `file_not_found`; moderations mock (always unflagged)
+- Gemini-compatible `GET /v1beta/models` (and `/v1beta/models/{path}`) — `requireApiKey` applies
+- Anthropic `/v1/messages` and `/v1/messages/count_tokens` (char-based estimate)
 - Ollama `/v1/api/chat` endpoint
-- 50+ providers across free, API-key, OAuth, and self-hosted categories
+- 84 built-in providers across free, API-key, OAuth, cookie, and self-hosted categories
 - Auth types: API key, OAuth, cookie/session, local, service account
 - Account credential rotation and lockout/cooldown management
 
@@ -34,7 +36,8 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 ### Intelligent Routing
 
 - Model-to-provider mapping with alias resolution
-- Combos: model groups with fallback and round-robin strategies
+- Combos: model groups with fallback, round-robin, or Fusion (parallel panel + judge; Vision Adapter still filters the panel to capable models); Vision Adapter pools (Combos page) reorder or prepend a capable model when the current turn includes image/audio. OmniRoute Vision Bridge is not in 9router and is not ported.
+- Thinking copy suffix: Provider Detail copies `alias/model(level)` from the existing Thinking Effort control; engine strips the suffix and applies native thinking (`thinkingUnified`)
 - Provider-level rate limiting and lockout tracking
 - Sticky sessions within combos
 
@@ -69,7 +72,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 - HTTP proxy pools and Vercel relay companion services
 - Outbound SOCKS proxy pools for egress control
 - Connection-level proxy resolution order: configured pool → legacy proxy → direct (none)
-- Cloudflared tunnel support for public exposure
+- Cloudflared and Tailscale tunnel support for public / mesh exposure
 
 ### AbortError-safe Streaming
 
@@ -85,13 +88,14 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ### Dashboard
 
-- Dark-only, Linear-inspired UI (15 top-level pages, no `/dashboard` prefix)
+- Dark-only, Linear-inspired UI (15 dashboard pages in `src/app/(dashboard)/`, no `/dashboard` prefix; includes `/basic-chat` playground)
 - Provider health monitoring with real-time SSE updates
 - Model diagnostics and testing
 - Quota tracking with 3-level expand/collapse
 - Cache and memory management
 - Settings and auth config
 - Combo management with drag-to-reorder
+- Endpoint Token Saver: local loopback Headroom spawn (Python CLI on PATH); Docker/Zeabur stay URL-only
 
 ### Offline and PWA
 
@@ -102,7 +106,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 ## Non-Goals
 
 - Not a model training or fine-tuning platform
-- Not a chat UI (though chat completion is proxiable)
+- Not a consumer chat product — `/basic-chat` is a gateway test playground only
 - Not a multi-tenant SaaS (self-hosted single-tenant)
 - Not a replacement for provider-native SDKs
 
@@ -116,6 +120,7 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 ## Product Constraints
 
 - **Bun-only** — never npm/pnpm
+- **TypeScript required** — the entire authored codebase stays TypeScript. Source is `.ts`/`.tsx` with `.ts`/`.tsx` import suffixes (`strict` + `noUncheckedIndexedAccess`). Do not add authored JavaScript, including when porting 9router (JS) or OmniRoute. The only committed `.js` is generated browser output (`public/sw.js` compiled from `src/sw/sw.ts`). `open-sse/` is TypeScript and stays in root `tsc`.
 - **Local open-sse fork** — never replace with npm version; TypeScript, included in root `tsc`
 - **SQLite primary store** — optional Redis for rate limiting
 - **Dark-only UI** — no light mode
@@ -131,15 +136,15 @@ Pod is a self-hosted AI gateway that unifies 50+ LLM providers behind a single O
 
 ## Key Numbers
 
-| Metric              | Value                                                                      |
-| ------------------- | -------------------------------------------------------------------------- |
-| Version             | v0.0.82                                                                    |
-| Default port        | 20128                                                                      |
-| Zeabur port         | 20140                                                                      |
-| SSE connection cap  | 100 concurrent                                                             |
-| SSE idle timeout    | 5 minutes                                                                  |
-| Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES)    |
-| Providers supported | 50+                                                                        |
-| Executors           | 19 (provider executors; `base.ts` is a base class, `index.ts` is a barrel) |
-| API route groups    | 26                                                                         |
-| Dashboard pages     | 15 (top-level, no /dashboard prefix)                                       |
+| Metric              | Value                                                                   |
+| ------------------- | ----------------------------------------------------------------------- |
+| Version             | v0.0.86                                                                 |
+| Default port        | 20128                                                                   |
+| Zeabur port         | 20140                                                                   |
+| SSE connection cap  | 100 concurrent                                                          |
+| SSE idle timeout    | 5 minutes                                                               |
+| Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES) |
+| Providers supported | 84 built-in (`AI_PROVIDERS`) + custom nodes                             |
+| Executors           | 17 specialized + `DefaultExecutor`; 20 files in `open-sse/executors/`   |
+| API route groups    | 26                                                                      |
+| Dashboard pages     | 15 in `(dashboard)` (incl. `/basic-chat`, `/settings/pricing`)          |

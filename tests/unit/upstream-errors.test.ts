@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   DEFAULT_ERROR_MESSAGES,
   TRANSIENT_COOLDOWN_MS,
-} from "../../open-sse/config/errorConfig.js";
+} from "../../open-sse/config/errorConfig.ts";
 import {
   errorResponse,
   formatProviderError,
   parseUpstreamError,
   unavailableResponse,
-} from "../../open-sse/utils/error.js";
+} from "../../open-sse/utils/error.ts";
 
 // ─── parseUpstreamError ───────────────────────────────────────────────
 
@@ -220,7 +220,7 @@ afterAll(async () => {
 const PROVIDER = "openai";
 
 async function seedConnection(overrides = {}) {
-  const { createProviderConnection } = await import("@/lib/localDb.js");
+  const { createProviderConnection } = await import("@/lib/localDb.ts");
   return await createProviderConnection({
     provider: PROVIDER,
     authType: "apikey",
@@ -232,17 +232,17 @@ async function seedConnection(overrides = {}) {
 }
 
 async function readConn(id) {
-  const { getProviderConnectionById } = await import("@/lib/localDb.js");
+  const { getProviderConnectionById } = await import("@/lib/localDb.ts");
   return await getProviderConnectionById(id);
 }
 
 async function clearCaches() {
-  const { invalidateConnectionsCache } = await import("@/sse/services/auth.js");
+  const { invalidateConnectionsCache } = await import("@/sse/services/auth.ts");
   invalidateConnectionsCache();
 }
 
 beforeEach(async () => {
-  const { importDb } = await import("@/lib/localDb.js");
+  const { importDb } = await import("@/lib/localDb.ts");
   await importDb({
     providerConnections: [],
     providerNodes: [],
@@ -260,8 +260,8 @@ beforeEach(async () => {
 describe("markAccountUnavailable — 5xx error path", () => {
   it("treats 502 as transient error (TRANSIENT_COOLDOWN_MS)", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockKey } = await import("open-sse/services/accountFallback.ts");
 
     const before = Date.now();
     const result = await markAccountUnavailable(
@@ -283,8 +283,8 @@ describe("markAccountUnavailable — 5xx error path", () => {
 
   it("treats 503 as transient error (TRANSIENT_COOLDOWN_MS)", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockKey } = await import("open-sse/services/accountFallback.ts");
 
     const before = Date.now();
     await markAccountUnavailable(
@@ -302,8 +302,8 @@ describe("markAccountUnavailable — 5xx error path", () => {
 
   it("treats 504 as transient error (TRANSIENT_COOLDOWN_MS)", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockKey } = await import("open-sse/services/accountFallback.ts");
 
     const before = Date.now();
     await markAccountUnavailable(conn.id, 504, "Gateway timeout", PROVIDER, "gpt-5");
@@ -315,8 +315,8 @@ describe("markAccountUnavailable — 5xx error path", () => {
 
   it("respects resetsAtMs from provider-specific error (e.g. codex usage_limit_reached)", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockKey } = await import("open-sse/services/accountFallback.ts");
 
     // Simulate codex providing resetsAtMs = 2 minutes from now
     const resetsAtMs = Date.now() + 120_000;
@@ -341,7 +341,7 @@ describe("markAccountUnavailable — 5xx error path", () => {
 
   it("backoffLevel increments on consecutive 429 errors across same connection", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
 
     // 429 with rate limit text → exponential backoff (backoff=true)
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-a");
@@ -366,7 +366,7 @@ describe("account fallback loop simulation", () => {
     const connB = await seedConnection({ name: "B", priority: 2 });
 
     const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
-      await import("@/sse/services/auth.js");
+      await import("@/sse/services/auth.ts");
 
     // Simulate 503 on connA
     await markAccountUnavailable(connA.id, 503, "Service unavailable", PROVIDER, "gpt-5");
@@ -381,7 +381,7 @@ describe("account fallback loop simulation", () => {
     const connB = await seedConnection({ name: "B", priority: 2 });
 
     const { markAccountUnavailable, getProviderCredentials, invalidateConnectionsCache } =
-      await import("@/sse/services/auth.js");
+      await import("@/sse/services/auth.ts");
 
     await markAccountUnavailable(connA.id, 503, "Unavailable", PROVIDER, "gpt-5");
     await markAccountUnavailable(connB.id, 502, "Bad gateway", PROVIDER, "gpt-5");
@@ -395,7 +395,7 @@ describe("account fallback loop simulation", () => {
 
   it("clearAccountError clears lock and resets error state on success after 5xx", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
+    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.ts");
 
     await markAccountUnavailable(conn.id, 503, "Overloaded", PROVIDER, "gpt-5");
     let updated = await readConn(conn.id);

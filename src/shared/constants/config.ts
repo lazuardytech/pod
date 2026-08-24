@@ -4,7 +4,7 @@ export const APP_CONFIG = {
   name: "Pod",
   description: "AI Infrastructure Management",
   version: pkg.version,
-  displayVersion: "0.0.82",
+  displayVersion: "0.0.86",
 } as const;
 
 export const MAX_REQUEST_BODY_BYTES: number = (() => {

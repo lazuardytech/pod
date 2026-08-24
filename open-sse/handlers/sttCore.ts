@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { AI_PROVIDERS } from "../../src/shared/constants/providers";
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { createErrorResult, type ErrorResult } from "../utils/error.js";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { createErrorResult, type ErrorResult } from "../utils/error.ts";
 
 export type SttResult = { success: true; response: Response } | ErrorResult;
 

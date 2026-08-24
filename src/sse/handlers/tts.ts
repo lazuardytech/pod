@@ -1,7 +1,7 @@
-import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
-import { handleTtsCore } from "open-sse/handlers/ttsCore.js";
-import { handleComboChat } from "open-sse/services/combo.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { HTTP_STATUS } from "open-sse/config/runtimeConfig.ts";
+import { handleTtsCore } from "open-sse/handlers/ttsCore.ts";
+import { coerceNonChatComboStrategy, handleComboChat } from "open-sse/services/combo.ts";
+import { errorResponse, unavailableResponse } from "open-sse/utils/error.ts";
 import { getSettings } from "@/lib/localDb";
 import { readBodyText } from "@/lib/parseJsonBody";
 import { getMaxRequestBodyBytes } from "@/shared/constants/config";
@@ -69,10 +69,14 @@ export async function handleTts(request: Request): Promise<Response> {
       string,
       Record<string, unknown>
     >;
-    const comboStrategy =
+    const requestedStrategy =
       (comboStrategies[modelStr]?.fallbackStrategy as string) ||
       (settings.comboStrategy as string) ||
       "fallback";
+    const comboStrategy = coerceNonChatComboStrategy(requestedStrategy);
+    if (requestedStrategy === "fusion") {
+      log.info("TTS", `Combo "${modelStr}" fusion coerced to fallback`);
+    }
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "TTS",

@@ -1,6 +1,6 @@
 // Port of find_wrapper (rtk/src/cmds/system/pipe_cmd.rs:89-128)
 // Group by parent dir, show basenames, cap 10/dir and 20 dirs total
-import { FIND_PER_DIR_MAX, FIND_TOTAL_DIR_MAX } from "../constants.js";
+import { FIND_PER_DIR_MAX, FIND_TOTAL_DIR_MAX } from "../constants.ts";
 
 export function find(input: string) {
   const lines = input.split("\n").filter((l: string) => l.trim());

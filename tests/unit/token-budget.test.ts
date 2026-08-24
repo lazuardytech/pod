@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reserveReasoningTokenBudget } from "../../open-sse/utils/tokenBudget.js";
+import { reserveReasoningTokenBudget } from "../../open-sse/utils/tokenBudget.ts";
 
 describe("reserveReasoningTokenBudget", () => {
   it("raises small OpenAI-compatible max_tokens to leave room for reasoning", () => {

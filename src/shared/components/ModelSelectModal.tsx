@@ -2,6 +2,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { getCapabilitiesForModel } from "open-sse/providers/capabilities.ts";
 import { getModelsByProviderId } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,
@@ -41,6 +42,7 @@ export default function ModelSelectModal({
   kindFilter = null,
   addedModelValues = [],
   closeOnSelect = true,
+  capabilityFilter = null,
 }: {
   isOpen?: boolean;
   onClose?: () => void;
@@ -53,6 +55,7 @@ export default function ModelSelectModal({
   kindFilter?: string | null;
   addedModelValues?: string[];
   closeOnSelect?: boolean;
+  capabilityFilter?: "vision" | "audioInput" | "pdf" | "videoInput" | null;
 }) {
   // Filter activeProviders by serviceKinds when kindFilter set (e.g. "webSearch", "webFetch")
   const filteredActiveProviders = useMemo(() => {
@@ -430,6 +433,19 @@ export default function ModelSelectModal({
         delete (groups as Record<string, Record<string, unknown>>)[providerId];
     });
 
+    if (capabilityFilter) {
+      Object.entries(groups).forEach(([providerId, group]) => {
+        const g = group as Record<string, unknown>;
+        g.models = (g.models as Record<string, unknown>[]).filter((m) => {
+          if (m.isPlaceholder) return true;
+          const caps = getCapabilitiesForModel(providerId, String(m.id ?? ""));
+          return caps[capabilityFilter] === true;
+        });
+        if ((g.models as Record<string, unknown>[]).length === 0)
+          delete (groups as Record<string, Record<string, unknown>>)[providerId];
+      });
+    }
+
     return groups;
   }, [
     filteredActiveProviders,
@@ -440,18 +456,19 @@ export default function ModelSelectModal({
     kiloFreeModels,
     disabledModels,
     kindFilter,
+    capabilityFilter,
     activeProviders,
   ]);
 
   // Filter combos by search query (and hide combos when kindFilter is set — combos are LLM-only by design)
   const filteredCombos = useMemo(() => {
-    if (kindFilter) return [];
+    if (kindFilter || capabilityFilter) return [];
     if (!searchQuery.trim()) return combos;
     const query = searchQuery.toLowerCase();
     return combos.filter((c: Record<string, unknown>) =>
       (c.name as string).toLowerCase().includes(query),
     );
-  }, [combos, searchQuery, kindFilter]);
+  }, [combos, searchQuery, kindFilter, capabilityFilter]);
 
   // Filter models by search query
   const filteredGroups = useMemo(() => {
@@ -687,4 +704,5 @@ ModelSelectModal.propTypes = {
   kindFilter: PropTypes.string,
   addedModelValues: PropTypes.arrayOf(PropTypes.string),
   closeOnSelect: PropTypes.bool,
+  capabilityFilter: PropTypes.string,
 };

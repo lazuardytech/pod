@@ -349,9 +349,11 @@ export default function TranslatorPage() {
             <div className="p-4 space-y-3">
               {/* Step header */}
               <div className="flex items-center justify-between">
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={() => toggle(step.id)}
-                  className="flex items-center gap-2 flex-1 text-left group"
+                  className="flex items-center gap-2 flex-1 justify-start h-auto text-left group"
                 >
                   <LucideIcon
                     name={isExpanded ? "expand_more" : "chevron_right"}
@@ -363,7 +365,7 @@ export default function TranslatorPage() {
                   {content && (
                     <span className="text-xs text-green-500">({content.length} chars)</span>
                   )}
-                </button>
+                </Button>
                 {!isExpanded && (
                   <div className="flex gap-1 shrink-0">
                     <Button

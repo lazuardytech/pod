@@ -1,4 +1,4 @@
-import * as log from "../utils/logger.js";
+import * as log from "../utils/logger.ts";
 
 // Request-scoped cache for getMachineData (avoids multiple D1 queries per request)
 // Capped at 500 entries to prevent unbounded growth across long-lived isolates

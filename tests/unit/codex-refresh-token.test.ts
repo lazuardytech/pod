@@ -32,7 +32,7 @@ describe("Codex Refresh Token", () => {
           }),
       });
 
-      const { refreshCodexToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshCodexToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshCodexToken("old-refresh-token", null);
 
       expect(result.refreshToken).toBe("rotated-refresh-token");
@@ -49,7 +49,7 @@ describe("Codex Refresh Token", () => {
           }),
       });
 
-      const { refreshCodexToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshCodexToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshCodexToken("old-refresh-token", null);
 
       expect(result.refreshToken).toBe("old-refresh-token");
@@ -58,7 +58,7 @@ describe("Codex Refresh Token", () => {
 
   describe("getRefreshLeadMs (early refresh config)", () => {
     it("should return provider-specific lead time for OAuth providers", async () => {
-      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.ts");
 
       // Synced with CLIProxyAPI refresh_registry
       expect(getRefreshLeadMs("codex")).toBe(5 * 24 * 60 * 60 * 1000); // 5 days
@@ -71,7 +71,7 @@ describe("Codex Refresh Token", () => {
 
     it("should fallback to default buffer for unknown providers", async () => {
       const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
-        await import("../../open-sse/services/tokenRefresh.js");
+        await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("unknown-provider")).toBe(TOKEN_EXPIRY_BUFFER_MS);
       expect(getRefreshLeadMs("openai")).toBe(TOKEN_EXPIRY_BUFFER_MS);
@@ -79,7 +79,7 @@ describe("Codex Refresh Token", () => {
 
     it("codex lead should be greater than default buffer", async () => {
       const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
-        await import("../../open-sse/services/tokenRefresh.js");
+        await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("codex")).toBeGreaterThan(TOKEN_EXPIRY_BUFFER_MS);
     });

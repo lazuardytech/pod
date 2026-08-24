@@ -36,7 +36,7 @@ describe("_health.js: PRAGMA integrity_check is cached", () => {
       }),
     }));
 
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => [],
       getCombos: async () => [],
       getApiKeys: async () => [],
@@ -44,11 +44,11 @@ describe("_health.js: PRAGMA integrity_check is cached", () => {
       getProviderNodes: async () => [],
     }));
 
-    vi.doMock("@/lib/usageDb.js", () => ({
+    vi.doMock("@/lib/usageDb.ts", () => ({
       getQueueDepths: () => ({}),
     }));
 
-    const mod = await import("@/app/api/monitoring/health/_health.js");
+    const mod = await import("@/app/api/monitoring/health/_health.ts");
     buildHealthPayload = mod.buildHealthPayload;
   });
 
@@ -144,7 +144,7 @@ describe("_health.js: integrity_check cache works with non-ok result", () => {
       }),
     }));
 
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => [],
       getCombos: async () => [],
       getApiKeys: async () => [],
@@ -152,11 +152,11 @@ describe("_health.js: integrity_check cache works with non-ok result", () => {
       getProviderNodes: async () => [],
     }));
 
-    vi.doMock("@/lib/usageDb.js", () => ({
+    vi.doMock("@/lib/usageDb.ts", () => ({
       getQueueDepths: () => ({}),
     }));
 
-    const mod = await import("@/app/api/monitoring/health/_health.js");
+    const mod = await import("@/app/api/monitoring/health/_health.ts");
     buildHealthPayload = mod.buildHealthPayload;
   });
 
@@ -292,7 +292,7 @@ describe("buildHealthPayload: payload shape unchanged after caching fix", () => 
       }),
     }));
 
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => [
         { id: "c1", provider: "openai", enabled: true },
         {
@@ -321,11 +321,11 @@ describe("buildHealthPayload: payload shape unchanged after caching fix", () => 
       getProviderNodes: async () => [],
     }));
 
-    vi.doMock("@/lib/usageDb.js", () => ({
+    vi.doMock("@/lib/usageDb.ts", () => ({
       getQueueDepths: () => ({ chat: 0, embed: 0 }),
     }));
 
-    const mod = await import("@/app/api/monitoring/health/_health.js");
+    const mod = await import("@/app/api/monitoring/health/_health.ts");
     buildHealthPayload = mod.buildHealthPayload;
   });
 

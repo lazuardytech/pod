@@ -1,20 +1,20 @@
-import { getModelInfoCore } from "open-sse/services/model.js";
-import { handleChatCore } from "open-sse/handlers/chatCore.js";
-import { errorResponse } from "open-sse/utils/error.js";
+import { getModelInfoCore } from "open-sse/services/model.ts";
+import { handleChatCore } from "open-sse/handlers/chatCore.ts";
+import { errorResponse } from "open-sse/utils/error.ts";
 import {
   checkFallbackError,
   isAccountUnavailable,
   getEarliestRateLimitedUntil,
   getUnavailableUntil,
   formatRetryAfter,
-} from "open-sse/services/accountFallback.js";
-import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.js";
-import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
-import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
-import * as log from "../utils/logger.js";
-import { refreshTokenByProvider } from "../services/tokenRefresh.js";
-import { parseApiKey, extractBearerToken, type ParsedApiKey } from "../utils/apiKey.js";
-import { getMachineData, saveMachineData } from "../services/storage.js";
+} from "open-sse/services/accountFallback.ts";
+import { MAX_RATE_LIMIT_COOLDOWN_MS } from "open-sse/config/errorConfig.ts";
+import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.ts";
+import { HTTP_STATUS } from "open-sse/config/runtimeConfig.ts";
+import * as log from "../utils/logger.ts";
+import { refreshTokenByProvider } from "../services/tokenRefresh.ts";
+import { parseApiKey, extractBearerToken, type ParsedApiKey } from "../utils/apiKey.ts";
+import { getMachineData, saveMachineData } from "../services/storage.ts";
 
 const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;
 
@@ -61,6 +61,37 @@ interface ChatCoreResult {
   status?: number;
   error?: string;
   resetsAtMs?: number;
+}
+
+type FusionTuning = {
+  minPanel?: number;
+  stragglerGraceMs?: number;
+  panelHardTimeoutMs?: number;
+};
+
+function getComboStrategyFields(data: Record<string, unknown> | null, modelStr: string) {
+  const nested =
+    data?.settings && typeof data.settings === "object" && !Array.isArray(data.settings)
+      ? (data.settings as Record<string, unknown>)
+      : null;
+  const settings = nested || data || {};
+  const comboStrategies = (settings.comboStrategies || data?.comboStrategies || {}) as Record<
+    string,
+    Record<string, unknown>
+  >;
+  const entry = comboStrategies[modelStr] || {};
+  const comboSpecificStrategy =
+    typeof entry.fallbackStrategy === "string" ? entry.fallbackStrategy : undefined;
+  const fusionTuning = entry.fusionTuning;
+  const globalStrategy =
+    typeof settings.comboStrategy === "string" ? settings.comboStrategy : undefined;
+  return {
+    comboStrategy: comboSpecificStrategy || globalStrategy || "fallback",
+    comboStickyLimit: settings.comboStickyRoundRobinLimit as number | undefined,
+    judgeModel: typeof entry.judgeModel === "string" ? entry.judgeModel : undefined,
+    tuning:
+      fusionTuning && typeof fusionTuning === "object" ? (fusionTuning as FusionTuning) : undefined,
+  };
 }
 
 /**
@@ -128,13 +159,25 @@ export async function handleChat(
   const comboModels = getComboModelsFromData(modelStr, (data?.combos as Array<unknown>) || []);
 
   if (comboModels) {
-    log.info("COMBO", `"${modelStr}" with ${comboModels.length} models`);
+    const { comboStrategy, comboStickyLimit, judgeModel, tuning } = getComboStrategyFields(
+      data,
+      modelStr,
+    );
+    log.info(
+      "COMBO",
+      `"${modelStr}" with ${comboModels.length} models (strategy: ${comboStrategy})`,
+    );
     return handleComboChat({
       body,
       models: comboModels,
       handleSingleModel: (reqBody: Record<string, unknown>, model: string) =>
         handleSingleModelChat(reqBody, model, machineId!, env),
       log,
+      comboName: modelStr,
+      comboStrategy,
+      comboStickyLimit,
+      judgeModel,
+      tuning,
     });
   }
 

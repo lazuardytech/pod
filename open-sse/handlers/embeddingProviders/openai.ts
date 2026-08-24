@@ -1,5 +1,5 @@
 // OpenAI-compatible embeddings adapter (most providers)
-import { type EmbeddingCredentials, bearerAuth } from "./_base.js";
+import { type EmbeddingCredentials, bearerAuth } from "./_base.ts";
 
 const ENDPOINTS: Record<string, string> = {
   openai: "https://api.openai.com/v1/embeddings",

@@ -25,7 +25,7 @@ describe("In-Flight Refresh Dedup (getAccessToken)", () => {
   it("returns null when no valid refresh token is provided", async () => {
     const fetchMock = vi.fn();
     global.fetch = fetchMock;
-    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.js");
+    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.ts");
     // Note: after import, proxyFetch replaces global.fetch with patchedFetch.
     // We assert on fetchMock (captured before import) instead.
 
@@ -49,7 +49,7 @@ describe("In-Flight Refresh Dedup (getAccessToken)", () => {
 
     global.fetch = vi.fn().mockReturnValue(delayedPromise);
 
-    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.js");
+    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.ts");
 
     const creds = { refreshToken: "dedup-test-token" };
 
@@ -90,7 +90,7 @@ describe("In-Flight Refresh Dedup (getAccessToken)", () => {
     const fetchMock = vi.fn().mockReturnValueOnce(p1).mockReturnValueOnce(p2);
     global.fetch = fetchMock;
 
-    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.js");
+    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.ts");
 
     const promiseA = getAccessToken("codex", { refreshToken: "token-a" }, null);
     const promiseB = getAccessToken("codex", { refreshToken: "token-b" }, null);
@@ -122,7 +122,7 @@ describe("In-Flight Refresh Dedup (getAccessToken)", () => {
         }),
     });
 
-    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.js");
+    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.ts");
 
     const result = await getAccessToken("gemini", { refreshToken: "rt-g" }, null);
 
@@ -135,7 +135,7 @@ describe("In-Flight Refresh Dedup (getAccessToken)", () => {
   it("does not route unknown providers (returns null, no fetch)", async () => {
     const fetchMock = vi.fn();
     global.fetch = fetchMock;
-    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.js");
+    const { getAccessToken } = await import("../../open-sse/services/tokenRefresh.ts");
 
     const result = await getAccessToken("unknown-provider", { refreshToken: "some-token" }, null);
 

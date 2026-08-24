@@ -1,12 +1,12 @@
 import { saveRequestDetail } from "@/lib/usageDb";
-import { FORMATS } from "../../translator/formats.js";
-import { needsTranslation } from "../../translator/index.js";
+import { FORMATS } from "../../translator/formats.ts";
+import { needsTranslation } from "../../translator/index.ts";
 import {
   createPassthroughStreamWithLogger,
   createSSETransformStreamWithLogger,
-} from "../../utils/stream.js";
-import { pipeWithDisconnect } from "../../utils/streamHandler.js";
-import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.js";
+} from "../../utils/stream.ts";
+import { pipeWithDisconnect } from "../../utils/streamHandler.ts";
+import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.ts";
 
 type JsonRecord = Record<string, unknown>;
 

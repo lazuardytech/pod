@@ -20,7 +20,7 @@ vi.mock("@/lib/sqlite/connection.ts", () => ({
   })),
 }));
 
-vi.mock("@/lib/semanticCache.js", () => ({
+vi.mock("@/lib/semanticCache.ts", () => ({
   getCacheStats: vi.fn(() => ({
     memoryEntries: 5,
     dbEntries: 10,
@@ -32,7 +32,7 @@ vi.mock("@/lib/semanticCache.js", () => ({
   getInFlightStats: vi.fn(() => ({ count: 3 })),
 }));
 
-vi.mock("@/lib/cacheLayer.js", () => ({
+vi.mock("@/lib/cacheLayer.ts", () => ({
   LRUCache: vi.fn(),
   getPromptCache: vi.fn(() => ({
     getStats: vi.fn(() => ({
@@ -48,7 +48,7 @@ vi.mock("@/lib/cacheLayer.js", () => ({
   })),
 }));
 
-vi.mock("@/lib/usageDb.js", () => ({
+vi.mock("@/lib/usageDb.ts", () => ({
   getQueueDepths: vi.fn(() => ({ logQueue: 0, summaryQueue: 0 })),
   getPendingStats: vi.fn(() => ({ total: 5, byProvider: { openai: 3, anthropic: 2 } })),
   getConnectionNameCacheStats: vi.fn(() => ({
@@ -63,7 +63,7 @@ vi.mock("@/lib/usageDb.js", () => ({
   })),
 }));
 
-vi.mock("@/lib/memory/store.js", () => ({
+vi.mock("@/lib/memory/store.ts", () => ({
   getMemoryStoreStats: vi.fn(() => ({
     size: 20,
     maxSize: 500,
@@ -76,7 +76,7 @@ vi.mock("@/lib/memory/store.js", () => ({
   })),
 }));
 
-vi.mock("@/lib/modelsDevSync.js", () => ({
+vi.mock("@/lib/modelsDevSync.ts", () => ({
   getSyncStatus: vi.fn(() => ({
     lastSync: "2026-05-28T00:00:00.000Z",
     lastSyncModelCount: 350,
@@ -100,7 +100,7 @@ vi.mock("@/shared/constants/config", () => ({
   displayVersion: "0.0.63",
 }));
 
-vi.mock("@/shared/constants/providers.js", () => ({
+vi.mock("@/shared/constants/providers.ts", () => ({
   AI_PROVIDERS: {},
   isOpenAICompatibleProvider: vi.fn(() => false),
   isAnthropicCompatibleProvider: vi.fn(() => false),
@@ -113,8 +113,8 @@ vi.mock("node:fs", () => ({
   },
 }));
 
-import { buildHealthPayload } from "@/app/api/monitoring/health/_health.js";
-import { GET } from "@/app/api/monitoring/health/route.js";
+import { buildHealthPayload } from "@/app/api/monitoring/health/_health.ts";
+import { GET } from "@/app/api/monitoring/health/route.ts";
 import { getSettings } from "@/lib/localDb";
 
 describe("buildHealthPayload", () => {

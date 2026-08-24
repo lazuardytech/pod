@@ -7,9 +7,9 @@
  *   provider.searchViaChat   → wrap chat-completions (chatSearch.js)
  */
 
-import { buildSearchRequest } from "./callers.js";
-import { handleChatSearch } from "./chatSearch.js";
-import { normalizeSearchResponse } from "./normalizers.js";
+import { buildSearchRequest } from "./callers.ts";
+import { handleChatSearch } from "./chatSearch.ts";
+import { normalizeSearchResponse } from "./normalizers.ts";
 
 export type SearchResult =
   | { success: true; response: Response; data?: unknown }

@@ -1,5 +1,5 @@
 // HuggingFace Inference API — returns binary image
-import { type ImageRequestBody, type ProviderCredentials, nowSec } from "./_base.js";
+import { type ImageRequestBody, type ProviderCredentials, nowSec } from "./_base.ts";
 
 const BASE_URL = "https://api-inference.huggingface.co/models";
 

@@ -11,7 +11,7 @@ import LucideIcon from "@/shared/components/LucideIcon";
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/shared/components";
+import { Button, IconButton } from "@/shared/components";
 
 type AvailabilityStatus = "available" | "cooldown" | "unavailable" | "unknown";
 
@@ -167,13 +167,14 @@ export default function ModelAvailabilityBadge() {
               />
               <span className="text-sm font-semibold text-text-main">Model Status</span>
             </div>
-            <button
-              onClick={fetchStatus}
-              className="p-1 rounded-lg hover:bg-surface text-text-muted hover:text-text-main transition-colors"
+            <IconButton
+              icon="refresh"
               title="Refresh"
-            >
-              <LucideIcon name="refresh" className="text-[14px]" />
-            </button>
+              size="sm"
+              variant="ghost"
+              onClick={fetchStatus}
+              className="text-text-muted hover:text-text-main"
+            />
           </div>
 
           <div className="px-4 py-3 max-h-60 overflow-y-auto">

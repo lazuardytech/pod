@@ -2,7 +2,7 @@
 
 import PropTypes from "prop-types";
 import { useState, type ChangeEvent, type KeyboardEvent } from "react";
-import { Button } from "@/shared/components";
+import { Button, IconButton } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 
 type TestStatus = "ok" | "error" | undefined;
@@ -56,32 +56,30 @@ function PassthroughModelRow({
             {fullModel}
           </code>
           <div className="relative group/btn">
-            <button
+            <IconButton
+              icon={copied === `model-${modelId}` ? "check" : "content_copy"}
+              title={copied === `model-${modelId}` ? "Copied!" : "Copy"}
+              size="sm"
+              variant="ghost"
               onClick={() => onCopy(fullModel, `model-${modelId}`)}
-              className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
-            >
-              <LucideIcon
-                name={copied === `model-${modelId}` ? "check" : "content_copy"}
-                className="text-sm"
-              />
-            </button>
+              className="text-text-muted hover:text-primary"
+            />
             <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
               {copied === `model-${modelId}` ? "Copied!" : "Copy"}
             </span>
           </div>
           {onTest && (
             <div className="relative group/btn">
-              <button
+              <IconButton
+                icon="science"
+                title={isTesting ? "Testing..." : "Test"}
+                size="sm"
+                variant="ghost"
                 onClick={onTest}
                 disabled={isTesting}
-                className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary transition-colors"
-              >
-                <LucideIcon
-                  name={isTesting ? "progress_activity" : "science"}
-                  className="text-sm"
-                  style={isTesting ? { animation: "spin 1s linear infinite" } : undefined}
-                />
-              </button>
+                loading={isTesting}
+                className="text-text-muted hover:text-primary"
+              />
               <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
                 {isTesting ? "Testing..." : "Test"}
               </span>
@@ -91,13 +89,14 @@ function PassthroughModelRow({
       </div>
 
       {/* Delete button */}
-      <button
-        onClick={onDeleteAlias}
-        className="p-1 hover:bg-red-50 rounded text-red-500"
+      <IconButton
+        icon="delete"
         title="Remove model"
-      >
-        <LucideIcon name="delete" className="text-sm" />
-      </button>
+        size="sm"
+        variant="ghost"
+        onClick={onDeleteAlias}
+        className="text-red-500 hover:bg-red-50"
+      />
     </div>
   );
 }

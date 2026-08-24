@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import geminiAdapter from "../../open-sse/handlers/embeddingProviders/gemini.js";
+import geminiAdapter from "../../open-sse/handlers/embeddingProviders/gemini.ts";
 
 describe("Gemini embedding adapter", () => {
   describe("buildBody", () => {

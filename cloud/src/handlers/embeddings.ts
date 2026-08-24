@@ -1,17 +1,17 @@
-import { getModelInfoCore } from "open-sse/services/model.js";
-import { handleEmbeddingsCore } from "open-sse/handlers/embeddingsCore.js";
-import { errorResponse } from "open-sse/utils/error.js";
+import { getModelInfoCore } from "open-sse/services/model.ts";
+import { handleEmbeddingsCore } from "open-sse/handlers/embeddingsCore.ts";
+import { errorResponse } from "open-sse/utils/error.ts";
 import {
   checkFallbackError,
   isAccountUnavailable,
   getEarliestRateLimitedUntil,
   getUnavailableUntil,
   formatRetryAfter,
-} from "open-sse/services/accountFallback.js";
-import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
-import * as log from "../utils/logger.js";
-import { parseApiKey, extractBearerToken, type ParsedApiKey } from "../utils/apiKey.js";
-import { getMachineData, saveMachineData } from "../services/storage.js";
+} from "open-sse/services/accountFallback.ts";
+import { HTTP_STATUS } from "open-sse/config/runtimeConfig.ts";
+import * as log from "../utils/logger.ts";
+import { parseApiKey, extractBearerToken, type ParsedApiKey } from "../utils/apiKey.ts";
+import { getMachineData, saveMachineData } from "../services/storage.ts";
 
 interface CredentialsResult {
   id: string;

@@ -1,10 +1,11 @@
 // @ts-nocheck
-import { normalizeThinkingConfig } from "../services/provider.js";
-import { cloakClaudeTools } from "../utils/claudeCloaking.js";
-import { FORMATS } from "./formats.js";
-import { prepareClaudeRequest } from "./helpers/claudeHelper.js";
-import { filterToOpenAIFormat } from "./helpers/openaiHelper.js";
-import { ensureToolCallIds, fixMissingToolResponses } from "./helpers/toolCallHelper.js";
+import { normalizeThinkingConfig } from "../services/provider.ts";
+import { cloakClaudeTools } from "../utils/claudeCloaking.ts";
+import { applyThinking, captureThinking } from "./concerns/thinkingUnified.ts";
+import { FORMATS } from "./formats.ts";
+import { prepareClaudeRequest } from "./helpers/claudeHelper.ts";
+import { filterToOpenAIFormat } from "./helpers/openaiHelper.ts";
+import { ensureToolCallIds, fixMissingToolResponses } from "./helpers/toolCallHelper.ts";
 import type {
   TranslatedResponseResults,
   TranslatorCredentials,
@@ -12,16 +13,16 @@ import type {
   TranslatorResponseChunk,
   TranslatorResponseResult,
   TranslatorState,
-} from "./registry.js";
+} from "./registry.ts";
 import {
   getRegisteredRequestTranslatorKeys,
   getRegisteredResponseTranslatorKeys,
   register,
   requestRegistry,
   responseRegistry,
-} from "./registry.js";
+} from "./registry.ts";
 // Side-effect: register all translators (via registry.ts — no circular init).
-import "./loaders.js";
+import "./loaders.ts";
 
 export { getRegisteredRequestTranslatorKeys, getRegisteredResponseTranslatorKeys, register };
 
@@ -110,6 +111,8 @@ export function translateRequest(
   // Fix missing tool responses (insert empty tool_result if needed)
   fixMissingToolResponses(result);
 
+  const thinkingIntent = captureThinking(result);
+
   // If same format, skip translation steps
   if (sourceFormat !== targetFormat) {
     // Step 1: source -> openai (if source is not openai)
@@ -129,6 +132,14 @@ export function translateRequest(
         result = asRequestBody(fromOpenAI(model, result, stream, credentials));
       }
     }
+  }
+
+  // Kiro translators map thinking to KAS fields; skip generic applyThinking there.
+  const kiroThinkingMappedByTranslator =
+    targetFormat === FORMATS.KIRO &&
+    (sourceFormat === FORMATS.OPENAI || sourceFormat === FORMATS.CLAUDE);
+  if (!kiroThinkingMappedByTranslator) {
+    applyThinking(targetFormat, model, result, provider, thinkingIntent);
   }
 
   // Always normalize to clean OpenAI format when target is OpenAI

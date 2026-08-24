@@ -7,8 +7,8 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { PROVIDERS } from "../../open-sse/config/providers.js";
-import { getExecutor } from "../../open-sse/executors/index.js";
+import { PROVIDERS } from "../../open-sse/config/providers.ts";
+import { getExecutor } from "../../open-sse/executors/index.ts";
 
 // ─── Provider Config ─────────────────────────────────────────────────────────
 

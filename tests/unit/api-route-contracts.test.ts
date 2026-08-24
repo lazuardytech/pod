@@ -72,12 +72,12 @@ describe("v1 route contracts", () => {
 
   describe("OPTIONS /v1/chat/completions", () => {
     beforeEach(() => {
-      vi.doMock("open-sse/translator/index.js", () => mockTranslator);
-      vi.doMock("@/sse/handlers/chat.js", () => mockChatHandler);
+      vi.doMock("open-sse/translator/index.ts", () => mockTranslator);
+      vi.doMock("@/sse/handlers/chat.ts", () => mockChatHandler);
     });
 
     it("returns 200 with CORS headers", async () => {
-      const { OPTIONS } = await import("@/app/api/v1/chat/completions/route.js");
+      const { OPTIONS } = await import("@/app/api/v1/chat/completions/route.ts");
       const res = await OPTIONS();
       expect(res.status).toBe(200);
       expectCors(res);
@@ -86,15 +86,15 @@ describe("v1 route contracts", () => {
 
   describe("POST /v1/chat/completions", () => {
     beforeEach(() => {
-      vi.doMock("open-sse/translator/index.js", () => mockTranslator);
-      vi.doMock("@/sse/handlers/chat.js", () => mockChatHandler);
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("open-sse/translator/index.ts", () => mockTranslator);
+      vi.doMock("@/sse/handlers/chat.ts", () => mockChatHandler);
+      vi.doMock("@/lib/localDb.ts", () => ({
         getSettings: vi.fn().mockResolvedValue({ requireApiKey: false }),
       }));
     });
 
     it("returns 200 with valid request", async () => {
-      const { POST } = await import("@/app/api/v1/chat/completions/route.js");
+      const { POST } = await import("@/app/api/v1/chat/completions/route.ts");
       const req = makeJsonRequest("/v1/chat/completions", {
         model: "gpt-4",
         messages: [{ role: "user", content: "hi" }],
@@ -108,12 +108,12 @@ describe("v1 route contracts", () => {
 
   describe("OPTIONS /v1/messages", () => {
     beforeEach(() => {
-      vi.doMock("open-sse/translator/index.js", () => mockTranslator);
-      vi.doMock("@/sse/handlers/chat.js", () => mockChatHandler);
+      vi.doMock("open-sse/translator/index.ts", () => mockTranslator);
+      vi.doMock("@/sse/handlers/chat.ts", () => mockChatHandler);
     });
 
     it("returns 200 with CORS headers", async () => {
-      const { OPTIONS } = await import("@/app/api/v1/messages/route.js");
+      const { OPTIONS } = await import("@/app/api/v1/messages/route.ts");
       const res = await OPTIONS();
       expect(res.status).toBe(200);
       expectCors(res);
@@ -122,15 +122,15 @@ describe("v1 route contracts", () => {
 
   describe("POST /v1/messages", () => {
     beforeEach(() => {
-      vi.doMock("open-sse/translator/index.js", () => mockTranslator);
-      vi.doMock("@/sse/handlers/chat.js", () => mockChatHandler);
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("open-sse/translator/index.ts", () => mockTranslator);
+      vi.doMock("@/sse/handlers/chat.ts", () => mockChatHandler);
+      vi.doMock("@/lib/localDb.ts", () => ({
         getSettings: vi.fn().mockResolvedValue({ requireApiKey: false }),
       }));
     });
 
     it("returns 200", async () => {
-      const { POST } = await import("@/app/api/v1/messages/route.js");
+      const { POST } = await import("@/app/api/v1/messages/route.ts");
       const req = makeJsonRequest("/v1/messages", {
         model: "claude-3",
         messages: [{ role: "user", content: "hi" }],
@@ -144,12 +144,12 @@ describe("v1 route contracts", () => {
 
   describe("OPTIONS /v1/responses", () => {
     beforeEach(() => {
-      vi.doMock("open-sse/translator/index.js", () => mockTranslator);
-      vi.doMock("@/sse/handlers/chat.js", () => mockChatHandler);
+      vi.doMock("open-sse/translator/index.ts", () => mockTranslator);
+      vi.doMock("@/sse/handlers/chat.ts", () => mockChatHandler);
     });
 
     it("returns 200 with CORS headers", async () => {
-      const { OPTIONS } = await import("@/app/api/v1/responses/route.js");
+      const { OPTIONS } = await import("@/app/api/v1/responses/route.ts");
       const res = await OPTIONS();
       expect(res.status).toBe(200);
       expectCors(res);
@@ -158,15 +158,15 @@ describe("v1 route contracts", () => {
 
   describe("POST /v1/responses", () => {
     beforeEach(() => {
-      vi.doMock("open-sse/translator/index.js", () => mockTranslator);
-      vi.doMock("@/sse/handlers/chat.js", () => mockChatHandler);
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("open-sse/translator/index.ts", () => mockTranslator);
+      vi.doMock("@/sse/handlers/chat.ts", () => mockChatHandler);
+      vi.doMock("@/lib/localDb.ts", () => ({
         getSettings: vi.fn().mockResolvedValue({ requireApiKey: false }),
       }));
     });
 
     it("returns 200", async () => {
-      const { POST } = await import("@/app/api/v1/responses/route.js");
+      const { POST } = await import("@/app/api/v1/responses/route.ts");
       const req = makeJsonRequest("/v1/responses", { model: "gpt-4o", input: "hi" });
       const res = await POST(req);
       expect(res.status).toBe(200);
@@ -177,11 +177,11 @@ describe("v1 route contracts", () => {
 
   describe("OPTIONS /v1/embeddings", () => {
     beforeEach(() => {
-      vi.doMock("@/sse/handlers/embeddings.js", () => mockEmbedHandler);
+      vi.doMock("@/sse/handlers/embeddings.ts", () => mockEmbedHandler);
     });
 
     it("returns 200 with CORS headers", async () => {
-      const { OPTIONS } = await import("@/app/api/v1/embeddings/route.js");
+      const { OPTIONS } = await import("@/app/api/v1/embeddings/route.ts");
       const res = await OPTIONS();
       expect(res.status).toBe(200);
       expectCors(res);
@@ -190,14 +190,14 @@ describe("v1 route contracts", () => {
 
   describe("POST /v1/embeddings", () => {
     beforeEach(() => {
-      vi.doMock("@/sse/handlers/embeddings.js", () => mockEmbedHandler);
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("@/sse/handlers/embeddings.ts", () => mockEmbedHandler);
+      vi.doMock("@/lib/localDb.ts", () => ({
         getSettings: vi.fn().mockResolvedValue({ requireApiKey: false }),
       }));
     });
 
     it("returns 200", async () => {
-      const { POST } = await import("@/app/api/v1/embeddings/route.js");
+      const { POST } = await import("@/app/api/v1/embeddings/route.ts");
       const req = makeJsonRequest("/v1/embeddings", {
         model: "text-embedding-3-small",
         input: "hello",
@@ -211,17 +211,17 @@ describe("v1 route contracts", () => {
 
   describe("GET /v1/models", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("@/lib/localDb.ts", () => ({
         getSettings: vi.fn().mockResolvedValue({ requireApiKey: false }),
       }));
-      vi.doMock("@/shared/constants/models.js", () => ({
+      vi.doMock("@/shared/constants/models.ts", () => ({
         PROVIDER_MODELS: {},
         PROVIDER_ID_TO_ALIAS: {},
       }));
     });
 
     it("returns 200 with object list shape", async () => {
-      const { GET } = await import("@/app/api/v1/models/route.js");
+      const { GET } = await import("@/app/api/v1/models/route.ts");
       const req = makeRequest("/v1/models");
       const res = await GET(req);
       expect(res.status).toBe(200);
@@ -235,18 +235,18 @@ describe("v1 route contracts", () => {
 
   describe("GET /v1/models/[kind]", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("@/lib/localDb.ts", () => ({
         getSettings: vi.fn().mockResolvedValue({ requireApiKey: false, requireLogin: false }),
         validateApiKey: vi.fn().mockResolvedValue(true),
       }));
-      vi.doMock("@/shared/constants/models.js", () => ({
+      vi.doMock("@/shared/constants/models.ts", () => ({
         PROVIDER_MODELS: {},
         PROVIDER_ID_TO_ALIAS: {},
       }));
     });
 
     it("returns 200 for valid kind", async () => {
-      const { GET } = await import("@/app/api/v1/models/[slug]/route.js");
+      const { GET } = await import("@/app/api/v1/models/[slug]/route.ts");
       const req = makeRequest("/v1/models/image");
       const params = Promise.resolve({ slug: "image" });
       const res = await GET(req, { params });
@@ -282,7 +282,7 @@ describe("api route contracts", () => {
     });
 
     it("returns 200 with connections array", async () => {
-      const { GET } = await import("@/app/api/providers/route.js");
+      const { GET } = await import("@/app/api/providers/route.ts");
       const res = await GET();
       expect(res.status).toBe(200);
       const json = await readJson(res);
@@ -303,7 +303,7 @@ describe("api route contracts", () => {
         getProxyPoolById: vi.fn().mockResolvedValue(null),
         createProviderConnection: vi.fn().mockResolvedValue({ id: "new-conn", provider: "openai" }),
       }));
-      vi.doMock("@/shared/constants/providers.js", () => ({
+      vi.doMock("@/shared/constants/providers.ts", () => ({
         AI_PROVIDERS: { openai: { name: "OpenAI" } },
         FREE_TIER_PROVIDERS: {},
         APIKEY_PROVIDERS: { openai: { name: "OpenAI" } },
@@ -315,14 +315,14 @@ describe("api route contracts", () => {
       vi.doMock("@/shared/constants/config", () => ({
         APIKEY_PROVIDERS: { openai: { name: "OpenAI" } },
       }));
-      vi.doMock("@/lib/providerNormalization.js", () => ({
+      vi.doMock("@/lib/providerNormalization.ts", () => ({
         normalizeProviderId: (p) => p,
         normalizeProviderSpecificData: () => ({}),
       }));
     });
 
     it("returns 400 when missing provider", async () => {
-      const { POST } = await import("@/app/api/providers/route.js");
+      const { POST } = await import("@/app/api/providers/route.ts");
       const req = makeJsonRequest("/api/providers", { apiKey: "sk-test" });
       const res = await POST(req);
       expect(res.status).toBe(400);
@@ -343,7 +343,7 @@ describe("api route contracts", () => {
     });
 
     it("returns 200 with tunnel status shape", async () => {
-      const { GET } = await import("@/app/api/tunnel/status/route.js");
+      const { GET } = await import("@/app/api/tunnel/status/route.ts");
       const res = await GET();
       expect(res.status).toBe(200);
       const json = await readJson(res);
@@ -362,7 +362,7 @@ describe("api route contracts", () => {
     });
 
     it("returns 200 with tailscale check info", async () => {
-      const { GET } = await import("@/app/api/tunnel/tailscale-check/route.js");
+      const { GET } = await import("@/app/api/tunnel/tailscale-check/route.ts");
       const res = await GET();
       expect(res.status).toBe(200);
     });
@@ -384,7 +384,7 @@ describe("usage route contracts", () => {
 
   describe("GET /api/usage/stats", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/usageDb.js", () => ({
+      vi.doMock("@/lib/usageDb.ts", () => ({
         getUsageStats: vi
           .fn()
           .mockResolvedValue({ totalRequests: 42, totalCost: 1.5, pendingRequests: 0 }),
@@ -393,7 +393,7 @@ describe("usage route contracts", () => {
     });
 
     it("returns 200 with stats shape", async () => {
-      const { GET } = await import("@/app/api/usage/stats/route.js");
+      const { GET } = await import("@/app/api/usage/stats/route.ts");
       const req = makeRequest("/api/usage/stats?period=7d");
       const res = await GET(req);
       expect(res.status).toBe(200);
@@ -406,13 +406,13 @@ describe("usage route contracts", () => {
 
   describe("GET /api/usage/chart", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/usageDb.js", () => ({
+      vi.doMock("@/lib/usageDb.ts", () => ({
         getChartData: vi.fn().mockResolvedValue([]),
       }));
     });
 
     it("returns 200 with array", async () => {
-      const { GET } = await import("@/app/api/usage/chart/route.js");
+      const { GET } = await import("@/app/api/usage/chart/route.ts");
       const req = makeRequest("/api/usage/chart?period=24h");
       const res = await GET(req);
       expect(res.status).toBe(200);
@@ -423,13 +423,13 @@ describe("usage route contracts", () => {
 
   describe("GET /api/usage/history", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/usageDb.js", () => ({
+      vi.doMock("@/lib/usageDb.ts", () => ({
         getUsageStats: vi.fn().mockResolvedValue({ totalRequests: 0, totalCost: 0 }),
       }));
     });
 
     it("returns 200", async () => {
-      const { GET } = await import("@/app/api/usage/history/route.js");
+      const { GET } = await import("@/app/api/usage/history/route.ts");
       const res = await GET();
       expect(res.status).toBe(200);
     });
@@ -439,10 +439,10 @@ describe("usage route contracts", () => {
 
   describe("GET /api/usage/providers", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/localDb.js", () => ({
+      vi.doMock("@/lib/localDb.ts", () => ({
         getProviderNodes: vi.fn().mockResolvedValue([]),
       }));
-      vi.doMock("@/lib/requestDetailsDb.js", () => ({
+      vi.doMock("@/lib/requestDetailsDb.ts", () => ({
         getRequestDetails: vi
           .fn()
           .mockResolvedValue({ details: [], pagination: { totalItems: 0 } }),
@@ -453,7 +453,7 @@ describe("usage route contracts", () => {
     });
 
     it("returns 200", async () => {
-      const { GET } = await import("@/app/api/usage/providers/route.js");
+      const { GET } = await import("@/app/api/usage/providers/route.ts");
       const res = await GET();
       expect(res.status).toBe(200);
     });
@@ -463,13 +463,13 @@ describe("usage route contracts", () => {
 
   describe("GET /api/usage/logs", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/usageDb.js", () => ({
+      vi.doMock("@/lib/usageDb.ts", () => ({
         getRecentLogs: vi.fn().mockResolvedValue([]),
       }));
     });
 
     it("returns 200", async () => {
-      const { GET } = await import("@/app/api/usage/logs/route.js");
+      const { GET } = await import("@/app/api/usage/logs/route.ts");
       const res = await GET();
       expect(res.status).toBe(200);
     });
@@ -479,13 +479,13 @@ describe("usage route contracts", () => {
 
   describe("GET /api/usage/request-logs", () => {
     beforeEach(() => {
-      vi.doMock("@/lib/usageDb.js", () => ({
+      vi.doMock("@/lib/usageDb.ts", () => ({
         getRecentLogsStructured: vi.fn().mockResolvedValue([]),
       }));
     });
 
     it("returns 200", async () => {
-      const { GET } = await import("@/app/api/usage/request-logs/route.js");
+      const { GET } = await import("@/app/api/usage/request-logs/route.ts");
       const req = makeRequest("/api/usage/request-logs?limit=50");
       const res = await GET(req);
       expect(res.status).toBe(200);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
+import { resolveOllamaLocalHost } from "open-sse/config/providers.ts";
 import { asApiRecord, asString } from "@/app/api/_types";
 import { GEMINI_CONFIG } from "@/lib/oauth/constants/oauth";
 import { KiroService } from "@/lib/oauth/services/kiro";

@@ -63,7 +63,7 @@ function isUrlAllowed(targetUrl: string): boolean {
 // Forward request to any endpoint (authenticated)
 export async function handleForward(request: Request): Promise<Response> {
   try {
-    const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.js");
+    const { extractBearerToken, parseApiKey } = await import("../utils/apiKey.ts");
 
     // Auth: require valid API key
     const apiKey = extractBearerToken(request);

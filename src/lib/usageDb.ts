@@ -186,8 +186,86 @@ type UsageEntry = {
   cost?: number;
 };
 
-// In-memory queue of pending daily_summary upserts. usage_history rows still
-// inserted synchronously so dashboard real-time view stays accurate.
+export const USAGE_HISTORY_MAX_DAYS = 30;
+
+type UsageHistoryRow = {
+  timestamp: string;
+  provider: string | null;
+  model: string | null;
+  connectionId: string | null;
+  apiKey: string | null;
+  endpoint: string | null;
+  status: string | null;
+  prompt: number;
+  completion: number;
+  cost: number;
+  data: string;
+};
+
+if (!global._usageHistoryQueue) global._usageHistoryQueue = [];
+const usageHistoryQueue = (global._usageHistoryQueue as UsageHistoryRow[]) || [];
+let usageHistoryFlushTimer: ReturnType<typeof setTimeout> | null = null;
+const USAGE_HISTORY_BATCH_SIZE = 50;
+const USAGE_HISTORY_FLUSH_INTERVAL_MS = 500;
+let usageHistoryTrimCounter = 0;
+const USAGE_HISTORY_TRIM_EVERY = 100;
+
+function scheduleUsageHistoryFlush(): void {
+  if (usageHistoryFlushTimer) return;
+  usageHistoryFlushTimer = setTimeout(
+    flushUsageHistoryQueue,
+    USAGE_HISTORY_FLUSH_INTERVAL_MS,
+  ) as ReturnType<typeof setTimeout>;
+  if (usageHistoryFlushTimer.unref) usageHistoryFlushTimer.unref();
+}
+
+function flushUsageHistoryQueue(): void {
+  if (usageHistoryFlushTimer) {
+    clearTimeout(usageHistoryFlushTimer);
+    usageHistoryFlushTimer = null;
+  }
+  if (usageHistoryQueue.length === 0) return;
+  const batch = usageHistoryQueue.splice(0, usageHistoryQueue.length);
+  try {
+    const db = getDatabase();
+    const insert = db.prepare(`
+      INSERT INTO usage_history
+      (timestamp, provider, model, connection_id, api_key, endpoint, status,
+       prompt_tokens, completion_tokens, cost, data)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const run = db.transaction(() => {
+      for (const row of batch) {
+        insert.run(
+          row.timestamp,
+          row.provider,
+          row.model,
+          row.connectionId,
+          row.apiKey,
+          row.endpoint,
+          row.status,
+          row.prompt,
+          row.completion,
+          row.cost,
+          row.data,
+        );
+      }
+    });
+    run();
+    usageHistoryTrimCounter += batch.length;
+    if (usageHistoryTrimCounter >= USAGE_HISTORY_TRIM_EVERY) {
+      usageHistoryTrimCounter = 0;
+      const cutoff = new Date(Date.now() - USAGE_HISTORY_MAX_DAYS * 86400000).toISOString();
+      db.prepare("DELETE FROM usage_history WHERE timestamp < ?").run(cutoff);
+    }
+  } catch (err) {
+    logError("usageDb", "Failed to flush usage_history batch", {
+      error: (err as Error)?.message || err,
+    });
+  }
+}
+
+// In-memory queue of pending daily_summary upserts.
 if (!global._summaryQueue) global._summaryQueue = [];
 const summaryQueue =
   (global._summaryQueue as Array<{
@@ -318,22 +396,6 @@ function flushSummaryQueue(): void {
   }
 }
 
-// Keep usage_history bounded — trim every ~100 inserts.
-// Default: keep 90 days. Prevents unbounded table growth.
-const USAGE_HISTORY_MAX_DAYS = 90;
-let usageHistoryTrimCounter = 0;
-const USAGE_HISTORY_TRIM_EVERY = 100;
-
-function trimUsageHistoryIfNeeded(db: ReturnType<typeof getDatabase>): void {
-  usageHistoryTrimCounter += 1;
-  if (usageHistoryTrimCounter < USAGE_HISTORY_TRIM_EVERY) return;
-  usageHistoryTrimCounter = 0;
-  try {
-    const cutoff = new Date(Date.now() - USAGE_HISTORY_MAX_DAYS * 86400000).toISOString();
-    db.prepare("DELETE FROM usage_history WHERE timestamp < ?").run(cutoff);
-  } catch {}
-}
-
 export async function saveRequestUsage(entry: UsageEntry): Promise<void> {
   if (isCloud) return;
 
@@ -341,29 +403,24 @@ export async function saveRequestUsage(entry: UsageEntry): Promise<void> {
     if (!entry.timestamp) entry.timestamp = new Date().toISOString();
     entry.cost = await calculateCost(entry.provider, entry.model, entry.tokens);
 
-    const db = getDatabase();
     const { prompt, completion } = tokensFromEntry(entry);
     const cost = entry.cost || 0;
 
-    // Insert usage_history row synchronously (dashboard real-time view).
-    db.prepare(`
-      INSERT INTO usage_history
-      (timestamp, provider, model, connection_id, api_key, endpoint, status,
-       prompt_tokens, completion_tokens, cost, data)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      entry.timestamp,
-      entry.provider || null,
-      entry.model || null,
-      entry.connectionId || null,
-      typeof entry.apiKey === "string" ? entry.apiKey : null,
-      entry.endpoint || null,
-      entry.status || null,
+    usageHistoryQueue.push({
+      timestamp: entry.timestamp,
+      provider: entry.provider || null,
+      model: entry.model || null,
+      connectionId: entry.connectionId || null,
+      apiKey: typeof entry.apiKey === "string" ? entry.apiKey : null,
+      endpoint: entry.endpoint || null,
+      status: entry.status || null,
       prompt,
       completion,
       cost,
-      JSON.stringify({ tokens: entry.tokens || {} }),
-    );
+      data: JSON.stringify({ tokens: entry.tokens || {} }),
+    });
+    if (usageHistoryQueue.length >= USAGE_HISTORY_BATCH_SIZE) flushUsageHistoryQueue();
+    else scheduleUsageHistoryFlush();
 
     // Defer the 6+ daily_summary upserts to a batched async flush.
     summaryQueue.push({
@@ -379,9 +436,6 @@ export async function saveRequestUsage(entry: UsageEntry): Promise<void> {
     });
     if (summaryQueue.length >= SUMMARY_BATCH_SIZE) flushSummaryQueue();
     else scheduleSummaryFlush();
-
-    // Periodic trim to keep usage_history bounded
-    trimUsageHistoryIfNeeded(db);
   } catch (err) {
     logError("usageDb", "Failed to save usage stats", { error: (err as Error)?.message || err });
   }
@@ -540,6 +594,7 @@ if (!isCloud && !global._flushHooksRegistered) {
   global._flushHooksRegistered = true;
   const flushAll = (): void => {
     clearPendingRequestTimers();
+    flushUsageHistoryQueue();
     flushSummaryQueue();
     flushLogs();
     try {
@@ -1511,10 +1566,15 @@ export async function getChartData(period: string = "7d"): Promise<ChartBucket[]
   });
 }
 
-export function getQueueDepths(): { logQueue: number; summaryQueue: number } {
+export function getQueueDepths(): {
+  logQueue: number;
+  summaryQueue: number;
+  usageHistoryQueue: number;
+} {
   return {
     logQueue: logQueue.length,
     summaryQueue: summaryQueue?.length ?? 0,
+    usageHistoryQueue: usageHistoryQueue.length,
   };
 }
 

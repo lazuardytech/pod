@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  const { importDb } = await import("@/lib/localDb.js");
+  const { importDb } = await import("@/lib/localDb.ts");
   await importDb({
     providerConnections: [],
     providerNodes: [],
@@ -39,7 +39,7 @@ beforeEach(async () => {
 
 describe("api key limit config + enforcement", () => {
   it("stores unlimited key by default", async () => {
-    const { createApiKey } = await import("@/lib/localDb.js");
+    const { createApiKey } = await import("@/lib/localDb.ts");
     const key = await createApiKey("Default Key", "machine-1");
 
     expect(key.limitType).toBe("unlimited");
@@ -48,7 +48,7 @@ describe("api key limit config + enforcement", () => {
   });
 
   it("stores limited key with rpm/concurrency values", async () => {
-    const { createApiKey, getApiKeyById } = await import("@/lib/localDb.js");
+    const { createApiKey, getApiKeyById } = await import("@/lib/localDb.ts");
     const key = await createApiKey("Limited Key", "machine-2", {
       limitType: "limited",
       requestsPerMinute: 120,
@@ -62,7 +62,7 @@ describe("api key limit config + enforcement", () => {
   });
 
   it("enforces requests-per-minute for limited key", async () => {
-    const { createApiKey } = await import("@/lib/localDb.js");
+    const { createApiKey } = await import("@/lib/localDb.ts");
     const { withApiKeyRateLimit } = await import("@/lib/rateLimit");
 
     const key = await createApiKey("RPM Key", "machine-3", {
@@ -93,7 +93,7 @@ describe("api key limit config + enforcement", () => {
   });
 
   it("enforces concurrent requests while streaming response is still active", async () => {
-    const { createApiKey } = await import("@/lib/localDb.js");
+    const { createApiKey } = await import("@/lib/localDb.ts");
     const { withApiKeyRateLimit } = await import("@/lib/rateLimit");
 
     const key = await createApiKey("Concurrent Key", "machine-4", {

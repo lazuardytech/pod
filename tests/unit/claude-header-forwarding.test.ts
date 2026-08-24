@@ -20,7 +20,7 @@ describe("claudeHeaderCache", () => {
   beforeEach(async () => {
     // Re-import fresh module each time to reset singleton state
     vi.resetModules();
-    cacheModule = await import("open-sse/utils/claudeHeaderCache.js");
+    cacheModule = await import("open-sse/utils/claudeHeaderCache.ts");
   });
 
   it("returns null before any headers are cached (cold start)", () => {
@@ -123,7 +123,7 @@ describe("DefaultExecutor.buildHeaders() — claude provider", () => {
   beforeEach(async () => {
     vi.resetModules();
     // Prime the cache with live client headers before importing executor
-    const cache = await import("open-sse/utils/claudeHeaderCache.js");
+    const cache = await import("open-sse/utils/claudeHeaderCache.ts");
     cache.cacheClaudeHeaders({
       "user-agent": "claude-code/2.1.63 node/24.3.0",
       "anthropic-beta": "claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14",
@@ -140,7 +140,7 @@ describe("DefaultExecutor.buildHeaders() — claude provider", () => {
       "x-stainless-retry-count": "0",
       "x-stainless-timeout": "600",
     });
-    const mod = await import("open-sse/executors/default.js");
+    const mod = await import("open-sse/executors/default.ts");
     DefaultExecutor = mod.DefaultExecutor || mod.default;
   });
 
@@ -206,7 +206,7 @@ describe("DefaultExecutor.buildHeaders() — claude provider cold start (no cach
   beforeEach(async () => {
     vi.resetModules();
     // Do NOT prime cache — simulate cold start
-    const mod = await import("open-sse/executors/default.js");
+    const mod = await import("open-sse/executors/default.ts");
     DefaultExecutor = mod.DefaultExecutor || mod.default;
   });
 
@@ -235,7 +235,7 @@ describe("DefaultExecutor.buildHeaders() — anthropic-compatible stripping", ()
 
   beforeEach(async () => {
     vi.resetModules();
-    const mod = await import("open-sse/executors/default.js");
+    const mod = await import("open-sse/executors/default.ts");
     DefaultExecutor = mod.DefaultExecutor || mod.default;
   });
 
@@ -336,7 +336,7 @@ describe("proxyAwareFetch — api.anthropic.com routing", () => {
       json: async () => ({ id: "msg_test" }),
     });
 
-    vi.doMock("open-sse/utils/proxyFetch.js", () => ({
+    vi.doMock("open-sse/utils/proxyFetch.ts", () => ({
       originalFetch: fetchMock,
       proxyAwareFetch: async (url, options, _proxyOptions) => {
         // Simplified: just call originalFetch directly
@@ -345,7 +345,7 @@ describe("proxyAwareFetch — api.anthropic.com routing", () => {
     }));
 
     vi.resetModules();
-    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
+    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.ts");
 
     const res = await proxyAwareFetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -367,7 +367,7 @@ describe("proxyAwareFetch — api.anthropic.com routing", () => {
     globalThis.fetch = fetchMock;
 
     vi.resetModules();
-    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
+    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.ts");
 
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -398,7 +398,7 @@ describe("proxyAwareFetch — api.anthropic.com routing", () => {
     console.error = vi.fn();
 
     vi.resetModules();
-    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
+    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.ts");
 
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,

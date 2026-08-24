@@ -16,15 +16,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { translateNonStreamingResponse } from "../../open-sse/handlers/chatCore/nonStreamingHandler.js";
-import { FORMATS } from "../../open-sse/translator/formats.js";
-import { claudeToOpenAIRequest } from "../../open-sse/translator/request/claude-to-openai.js";
-import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.js";
-import { claudeToOpenAIResponse } from "../../open-sse/translator/response/claude-to-openai.js";
-import { geminiToOpenAIResponse } from "../../open-sse/translator/response/gemini-to-openai.js";
-import { ollamaToOpenAI } from "../../open-sse/translator/response/ollama-to-openai.js";
-import { openaiToAntigravityResponse } from "../../open-sse/translator/response/openai-to-antigravity.js";
-import { openaiToClaudeResponse } from "../../open-sse/translator/response/openai-to-claude.js";
+import { translateNonStreamingResponse } from "../../open-sse/handlers/chatCore/nonStreamingHandler.ts";
+import { FORMATS } from "../../open-sse/translator/formats.ts";
+import { claudeToOpenAIRequest } from "../../open-sse/translator/request/claude-to-openai.ts";
+import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.ts";
+import { claudeToOpenAIResponse } from "../../open-sse/translator/response/claude-to-openai.ts";
+import { geminiToOpenAIResponse } from "../../open-sse/translator/response/gemini-to-openai.ts";
+import { ollamaToOpenAI } from "../../open-sse/translator/response/ollama-to-openai.ts";
+import { openaiToAntigravityResponse } from "../../open-sse/translator/response/openai-to-antigravity.ts";
+import { openaiToClaudeResponse } from "../../open-sse/translator/response/openai-to-claude.ts";
 
 // ---------------------------------------------------------------------------
 // Helpers

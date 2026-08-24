@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createDisconnectAwareStream,
   createStreamController,
-} from "../../open-sse/utils/streamHandler.js";
+} from "../../open-sse/utils/streamHandler.ts";
 
 // ─── createStreamController ───────────────────────────────────────────
 

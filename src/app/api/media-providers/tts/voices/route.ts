@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.js";
+import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.ts";
 import { asApiRecord, asString } from "@/app/api/_types";
 
 import { sanitizeError } from "@/lib/sanitizeError";

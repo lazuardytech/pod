@@ -25,7 +25,7 @@ afterAll(async () => {
 const PROVIDER = "openai";
 
 async function seedConnection(overrides = {}) {
-  const { createProviderConnection } = await import("@/lib/localDb.js");
+  const { createProviderConnection } = await import("@/lib/localDb.ts");
   return await createProviderConnection({
     provider: PROVIDER,
     authType: "apikey",
@@ -37,17 +37,17 @@ async function seedConnection(overrides = {}) {
 }
 
 async function readConn(id) {
-  const { getProviderConnectionById } = await import("@/lib/localDb.js");
+  const { getProviderConnectionById } = await import("@/lib/localDb.ts");
   return await getProviderConnectionById(id);
 }
 
 async function clearCaches() {
-  const { invalidateConnectionsCache } = await import("@/sse/services/auth.js");
+  const { invalidateConnectionsCache } = await import("@/sse/services/auth.ts");
   invalidateConnectionsCache();
 }
 
 beforeEach(async () => {
-  const { importDb } = await import("@/lib/localDb.js");
+  const { importDb } = await import("@/lib/localDb.ts");
   await importDb({
     providerConnections: [],
     providerNodes: [],
@@ -65,8 +65,8 @@ beforeEach(async () => {
 describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15)", () => {
   it("increments on consecutive lock DB writes for the SAME model", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     // First lock: count goes to 1
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
@@ -83,8 +83,8 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 
   it("tracks separate lock count per model", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5"); // guard fires, no change
@@ -97,8 +97,8 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 
   it("read-before-write guard prevents re-increment on same active lock", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-x");
     let updated = await readConn(conn.id);
@@ -112,8 +112,8 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 
   it("IS cleared on successful response via clearAccountError", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
     const before = await readConn(conn.id);
@@ -126,8 +126,8 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 
   it("IS NOT cleared when other models succeed but this model stays locked", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     // Lock gpt-5 twice (second triggers guard) and gpt-4 once
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
@@ -146,8 +146,8 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 
   it("all lock counts cleared when all active locks have expired or been cleared", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-5");
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, "gpt-4");
@@ -173,8 +173,8 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 
   it("modelLockCount ___all key is tracked when model is null", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     await markAccountUnavailable(conn.id, 429, "rate limit exceeded", PROVIDER, null);
     let updated = await readConn(conn.id);
@@ -190,9 +190,9 @@ describe("modelLockCount — per-model lock count field semantics (AGENTS.md #15
 describe("minimum lockout multiplier — modelLockCount * minimumLockoutMinutes", () => {
   it("applies 1x minimum lockout on first lock (modelLockCount=1)", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockKey } = await import("open-sse/services/accountFallback.js");
-    const { updateSettings } = await import("@/lib/localDb.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockKey } = await import("open-sse/services/accountFallback.ts");
+    const { updateSettings } = await import("@/lib/localDb.ts");
 
     // Set minimum lockout to 1 minute
     await updateSettings({ minimumLockoutMinutes: 1 });
@@ -210,10 +210,10 @@ describe("minimum lockout multiplier — modelLockCount * minimumLockoutMinutes"
 
   it("applies 2x minimum lockout on second lock of same model (modelLockCount=2) after lock expires", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.js");
+    const { markAccountUnavailable, clearAccountError } = await import("@/sse/services/auth.ts");
     const { getModelLockKey, getModelLockCountKey } =
-      await import("open-sse/services/accountFallback.js");
-    const { updateSettings } = await import("@/lib/localDb.js");
+      await import("open-sse/services/accountFallback.ts");
+    const { updateSettings } = await import("@/lib/localDb.ts");
 
     await updateSettings({ minimumLockoutMinutes: 1 });
     await clearCaches();
@@ -242,8 +242,8 @@ describe("minimum lockout multiplier — modelLockCount * minimumLockoutMinutes"
 
   it("lock count persists across lock cycles when not cleared on error path", async () => {
     const conn = await seedConnection();
-    const { markAccountUnavailable } = await import("@/sse/services/auth.js");
-    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.js");
+    const { markAccountUnavailable } = await import("@/sse/services/auth.ts");
+    const { getModelLockCountKey } = await import("open-sse/services/accountFallback.ts");
 
     // Lock gpt-a (count=1), gpt-b (count=1), gpt-c (count=1) on same connection
     // Each is a DIFFERENT model, so each gets its own count.
@@ -256,7 +256,7 @@ describe("minimum lockout multiplier — modelLockCount * minimumLockoutMinutes"
     expect(Number(updated[getModelLockCountKey("gpt-c")])).toBe(1);
 
     // gpt-b succeeds — its count is cleared. gpt-a and gpt-c stay locked → counts remain
-    const { clearAccountError } = await import("@/sse/services/auth.js");
+    const { clearAccountError } = await import("@/sse/services/auth.ts");
     await clearAccountError(conn.id, updated, "gpt-b");
     const after = await readConn(conn.id);
     expect(Number(after[getModelLockCountKey("gpt-a")])).toBe(1); // unchanged (still locked)

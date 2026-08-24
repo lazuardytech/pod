@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { createErrorResult, type ErrorResult } from "../utils/error.js";
-import { getTtsAdapter, synthesizeViaConfig } from "./ttsProviders/index.js";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { createErrorResult, type ErrorResult } from "../utils/error.ts";
+import { getTtsAdapter, synthesizeViaConfig } from "./ttsProviders/index.ts";
 
 // Re-export voice fetchers + voices APIs for backward compat with existing routes
 export {
@@ -9,7 +9,7 @@ export {
   fetchElevenLabsVoices,
   fetchLocalDeviceVoices,
   VOICE_FETCHERS,
-} from "./ttsProviders/index.js";
+} from "./ttsProviders/index.ts";
 
 export type TtsResult = { success: true; response: Response } | ErrorResult;
 
@@ -60,7 +60,7 @@ function createTtsResponse(base64Audio: string, format: string, responseFormat: 
 
 // ── Core handler ───────────────────────────────────────────────
 /**
- * Synthesize text to audio. Provider logic lives in `./ttsProviders/{id}.js`
+ * Synthesize text to audio. Provider logic lives in `./ttsProviders/{id}.ts`
  * or is dispatched generically via `ttsConfig.format`.
  */
 export async function handleTtsCore({

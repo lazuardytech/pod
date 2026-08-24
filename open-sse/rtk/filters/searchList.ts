@@ -1,6 +1,6 @@
 // Compact "Result of search in '...' (total N files):\n- path\n- path" output
 // (Cursor Glob tool). Groups by parent dir like find, shows basenames.
-import { SEARCH_LIST_PER_DIR_MAX, SEARCH_LIST_TOTAL_DIR_MAX } from "../constants.js";
+import { SEARCH_LIST_PER_DIR_MAX, SEARCH_LIST_TOTAL_DIR_MAX } from "../constants.ts";
 
 const HEADER_RE = /^Result of search in '[^']*' \(total (\d+) files?\):/;
 
