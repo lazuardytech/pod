@@ -148,7 +148,7 @@ function buildCompressEndpoint(url: string) {
     parsed.hash = "";
     return parsed.toString();
   } catch {
-    const raw = String(url).replace(/#.*$/, "");
+    const raw = String(url).split("#", 1)[0];
     const [base, query = ""] = raw.split("?", 2);
     const endpoint = `${(base ?? "").replace(/\/$/, "").replace(/\/v1\/compress$/, "")}/v1/compress`;
     return query ? `${endpoint}?${query}` : endpoint;
@@ -164,9 +164,14 @@ function maskEndpoint(endpoint: string) {
     parsed.hash = "";
     return parsed.toString();
   } catch {
-    return String(endpoint)
-      .replace(/\/\/[^/@\s]+@/, "//")
-      .replace(/[?#].*$/, "");
+    const raw = String(endpoint).replace(/\/\/[^/@\s]+@/, "//");
+    const cut = Math.min(
+      ...["?", "#"].map((c) => {
+        const i = raw.indexOf(c);
+        return i === -1 ? raw.length : i;
+      }),
+    );
+    return raw.slice(0, cut);
   }
 }
 
