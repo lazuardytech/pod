@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, CardSkeleton } from "@/shared/components";
+import { Badge, Button, CardSkeleton, IconButton } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { ANTHROPIC_COMPATIBLE_PREFIX } from "@/shared/constants/providers";
 import { loadJsonStaleWhileRevalidate } from "@/shared/services/offlineJsonCache";
+import { cn } from "@/shared/utils/cn";
 import TelemetryCard from "./TelemetryCard";
 
 import type { ReactNode } from "react";
@@ -352,21 +353,19 @@ export default function HealthPage() {
               Updated {lastRefresh.toLocaleTimeString()}
             </span>
           )}
-          <button
+          <Button
+            size="icon"
+            variant="outline"
+            icon="refresh"
+            loading={refreshing}
             onClick={async () => {
               setRefreshing(true);
               await fetchHealth();
               setRefreshing(false);
             }}
-            disabled={refreshing}
-            className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="size-7"
             title="Refresh"
-          >
-            <LucideIcon
-              name="refresh"
-              className={`text-[15px] ${refreshing ? "animate-spin" : ""}`}
-            />
-          </button>
+          />
         </div>
       </div>
 
@@ -741,21 +740,19 @@ export default function HealthPage() {
                 {health.blockedModelStatus!.length} model
                 {health.blockedModelStatus!.length !== 1 ? "s" : ""} locked
               </span>
-              <button
+              <Button
+                size="icon"
+                variant="outline"
+                icon="refresh"
+                loading={refreshing}
                 onClick={async () => {
                   setRefreshing(true);
                   await fetchHealth();
                   setRefreshing(false);
                 }}
-                disabled={refreshing}
-                className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="size-7"
                 title="Refresh lockout status"
-              >
-                <LucideIcon
-                  name="refresh"
-                  className={`text-[15px] ${refreshing ? "animate-spin" : ""}`}
-                />
-              </button>
+              />
             </div>
           )}
         </SectionHeader>
@@ -779,7 +776,11 @@ export default function HealthPage() {
                     <Badge variant="error" size="sm">
                       {bm.blockedCount} locked
                     </Badge>
-                    <button
+                    <IconButton
+                      icon={clearingLock === bm.model ? "progress_activity" : "lock_open"}
+                      title="Clear lockout and recheck"
+                      variant="outline"
+                      disabled={clearingLock !== null}
                       onClick={async () => {
                         const key = `${bm.model}`;
                         setClearingLock(key);
@@ -811,15 +812,8 @@ export default function HealthPage() {
                           setClearingLock(null);
                         }
                       }}
-                      disabled={clearingLock !== null}
-                      className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Clear lockout and recheck"
-                    >
-                      <LucideIcon
-                        name={clearingLock === bm.model ? "progress_activity" : "lock_open"}
-                        className={`text-[15px] ${clearingLock === bm.model ? "animate-spin" : ""}`}
-                      />
-                    </button>
+                      className={cn("size-7", clearingLock === bm.model && "[&_svg]:animate-spin")}
+                    />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -866,21 +860,19 @@ export default function HealthPage() {
                 {health.connectionLockStatus!.length} account
                 {health.connectionLockStatus!.length !== 1 ? "s" : ""} locked
               </span>
-              <button
+              <Button
+                size="icon"
+                variant="outline"
+                icon="refresh"
+                loading={refreshing}
                 onClick={async () => {
                   setRefreshing(true);
                   await fetchHealth();
                   setRefreshing(false);
                 }}
-                disabled={refreshing}
-                className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="size-7"
                 title="Refresh account lockout status"
-              >
-                <LucideIcon
-                  name="refresh"
-                  className={`text-[15px] ${refreshing ? "animate-spin" : ""}`}
-                />
-              </button>
+              />
             </div>
           )}
         </SectionHeader>
@@ -904,7 +896,15 @@ export default function HealthPage() {
                     <Badge variant="error" size="sm">
                       lock #{acc.lockCount}
                     </Badge>
-                    <button
+                    <IconButton
+                      icon={
+                        clearingLock === `conn-${acc.connectionId}`
+                          ? "progress_activity"
+                          : "lock_open"
+                      }
+                      title="Clear account lock"
+                      variant="outline"
+                      disabled={clearingLock !== null}
                       onClick={async () => {
                         const key = `conn-${acc.connectionId}`;
                         setClearingLock(key);
@@ -923,19 +923,11 @@ export default function HealthPage() {
                           setClearingLock(null);
                         }
                       }}
-                      disabled={clearingLock !== null}
-                      className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Clear account lock"
-                    >
-                      <LucideIcon
-                        name={
-                          clearingLock === `conn-${acc.connectionId}`
-                            ? "progress_activity"
-                            : "lock_open"
-                        }
-                        className={`text-[15px] ${clearingLock === `conn-${acc.connectionId}` ? "animate-spin" : ""}`}
-                      />
-                    </button>
+                      className={cn(
+                        "size-7",
+                        clearingLock === `conn-${acc.connectionId}` && "[&_svg]:animate-spin",
+                      )}
+                    />
                   </div>
                 </div>
                 {acc.lockReason && (

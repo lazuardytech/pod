@@ -2,17 +2,18 @@
 
 ## Commands
 
-| Command                 | What                                           |
-| ----------------------- | ---------------------------------------------- |
-| `bun install`           | Install dependencies (never npm/pnpm)          |
-| `bun run dev`           | Start dev server on :20128 (Next.js Turbopack) |
-| `bun run build`         | Production build (standalone output)           |
-| `bun run start`         | Start production server                        |
-| `bun run format`        | Oxfmt format                                   |
-| `bun run check`         | Oxfmt + Oxlint + tsc                           |
-| `bun run lint`          | Oxlint linting                                 |
-| `bun run test:run`      | Vitest (verbose)                               |
-| `bun run test:coverage` | Vitest with coverage                           |
+| Command                 | What                                                                |
+| ----------------------- | ------------------------------------------------------------------- |
+| `bun install`           | Install dependencies (never npm/pnpm)                               |
+| `bun run dev`           | Start dev server on :20128 (Next.js Turbopack)                      |
+| `bun run build`         | Production build (standalone output)                                |
+| `bun run start`         | Start production server                                             |
+| `bun run format`        | Oxfmt format                                                        |
+| `bun run check`         | Lockfile oxfmt + oxlint `--deny-warnings` + tsc (not `bun x`)       |
+| `bun run lint`          | Oxlint linting                                                      |
+| `bun run test:run`      | Vitest (verbose). Default include excludes `tests/live/**` (0 skip) |
+| `bun run test:live`     | Optional live harnesses (`AG_CACHE_TEST=1` / `RUN_E2E=1`)           |
+| `bun run test:coverage` | Vitest with coverage                                                |
 
 ## Pre-Push Verification
 
@@ -37,10 +38,11 @@ bun x vitest run tests/unit/swShellCache.test.ts
 
 ## Testing
 
-- Tests live in `tests/` (unit + smoke)
-- Vitest with verbose output
+- Tests live in `tests/` (unit + smoke). Live Google/localhost harnesses are `tests/live/` (`bun run test:live`); they are excluded from `bun run test:run`.
+- Vitest with verbose output. Default `test:run` must report 0 skipped.
 - Coverage via `@vitest/coverage-v8`
 - Run specific tests: `bun run test:run -- <pattern>`
+- `test:run` needs Node ≥ 22.18 on PATH (not bun). See AGENTS.md Cursor Cloud notes.
 
 ## Git
 

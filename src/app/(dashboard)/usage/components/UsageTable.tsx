@@ -189,8 +189,8 @@ export default function UsageTable({
   const totalColSpan = columns.length + valueColumns.length;
 
   return (
-    <Card className="overflow-hidden">
-      <div className="p-4 border-b border-border bg-bg-subtle/50">
+    <Card className="overflow-hidden px-3 pb-3 pt-0" padding="none">
+      <div className="border-b border-border bg-bg-subtle/50 px-4 py-2">
         <h3 className="font-semibold">{title}</h3>
       </div>
       <div className="overflow-x-auto">

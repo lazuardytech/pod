@@ -20,7 +20,7 @@ import {
   isOpenAICompatibleProvider,
 } from "@/shared/constants/providers";
 import { extractApiKey } from "@/sse/services/auth";
-import type { ProviderModel } from "open-sse/config/providerModels.js";
+import type { ProviderModel } from "open-sse/config/providerModels.ts";
 
 type ConnectionCreds = ProviderConnection & {
   apiKey?: string;

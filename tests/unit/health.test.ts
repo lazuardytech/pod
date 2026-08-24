@@ -135,7 +135,7 @@ describe("GET /api/monitoring/health (integration)", () => {
     }));
 
     // Mock localDb functions
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => [
         { id: "conn-1", provider: "openai", enabled: true },
         { id: "conn-2", provider: "anthropic", enabled: false },
@@ -160,7 +160,7 @@ describe("GET /api/monitoring/health (integration)", () => {
       getProviderNodes: async () => [],
     }));
 
-    const mod = await import("@/app/api/monitoring/health/route.js");
+    const mod = await import("@/app/api/monitoring/health/route.ts");
     GET = mod.GET;
   });
 
@@ -287,7 +287,7 @@ describe("GET /api/monitoring/health — degraded DB", () => {
       }),
     }));
 
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => [],
       getCombos: async () => [],
       getApiKeys: async () => [],
@@ -295,7 +295,7 @@ describe("GET /api/monitoring/health — degraded DB", () => {
       getProviderNodes: async () => [],
     }));
 
-    const mod = await import("@/app/api/monitoring/health/route.js");
+    const mod = await import("@/app/api/monitoring/health/route.ts");
     GET = mod.GET;
   });
 
@@ -323,7 +323,7 @@ describe("GET /api/monitoring/health — SQLite unavailable", () => {
       },
     }));
 
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => [],
       getCombos: async () => [],
       getApiKeys: async () => [],
@@ -331,7 +331,7 @@ describe("GET /api/monitoring/health — SQLite unavailable", () => {
       getProviderNodes: async () => [],
     }));
 
-    const mod = await import("@/app/api/monitoring/health/route.js");
+    const mod = await import("@/app/api/monitoring/health/route.ts");
     GET = mod.GET;
   });
 
@@ -378,7 +378,7 @@ describe("GET /api/monitoring/health — localDb partial failure", () => {
       }),
     }));
 
-    vi.doMock("@/lib/localDb.js", () => ({
+    vi.doMock("@/lib/localDb.ts", () => ({
       getProviderConnections: async () => {
         throw new Error("db locked");
       },
@@ -388,7 +388,7 @@ describe("GET /api/monitoring/health — localDb partial failure", () => {
       getProviderNodes: async () => [],
     }));
 
-    const mod = await import("@/app/api/monitoring/health/route.js");
+    const mod = await import("@/app/api/monitoring/health/route.ts");
     GET = mod.GET;
   });
 

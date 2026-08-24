@@ -1,10 +1,10 @@
-import { PROVIDERS } from "../config/providers.js";
+import { PROVIDERS } from "../config/providers.ts";
 import {
   BaseExecutor,
   type ExecutorExecuteOptions,
   type ExecutorExecuteResult,
   type ExecutorHeaders,
-} from "./base.js";
+} from "./base.ts";
 
 const GROK_CHAT_API = PROVIDERS["grok-web"].baseUrl;
 const GROK_USER_AGENT =

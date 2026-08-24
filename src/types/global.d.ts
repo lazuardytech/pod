@@ -50,6 +50,7 @@ declare global {
   var _statsEmitter: import("node:events").EventEmitter | undefined;
   var _pendingTimers: Record<string, ReturnType<typeof setTimeout>[]> | undefined;
   var _summaryQueue: unknown[] | undefined;
+  var _usageHistoryQueue: unknown[] | undefined;
   var _logQueue: unknown[] | undefined;
   var _flushHooksRegistered: boolean | undefined;
   var __podRequestDetailsShutdownHandler: (() => Promise<void>) | undefined;

@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { DEFAULT_THINKING_VERTEX_SIGNATURE } from "../../config/defaultThinkingSignature.js";
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
-import { openaiToGeminiRequest } from "./openai-to-gemini.js";
+import { DEFAULT_THINKING_VERTEX_SIGNATURE } from "../../config/defaultThinkingSignature.ts";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
+import { openaiToGeminiRequest } from "./openai-to-gemini.ts";
 
 /**
  * Post-process a Gemini-format body for Vertex AI compatibility:

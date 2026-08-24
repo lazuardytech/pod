@@ -24,7 +24,7 @@ vi.mock("fs/promises", () => ({
   constants: { R_OK: 4 },
 }));
 
-vi.mock("@/lib/routeAuth.js", () => ({
+vi.mock("@/lib/routeAuth.ts", () => ({
   checkStrictDashboardAuth: vi.fn(async () => null),
 }));
 
@@ -105,7 +105,7 @@ describe("GET /api/oauth/cursor/auto-import", () => {
     // Force darwin so macOS-specific logic is exercised
     Object.defineProperty(process, "platform", { value: "darwin", writable: true });
     // Re-import to pick up fresh mocks each run
-    const mod = await import("../../src/app/api/oauth/cursor/auto-import/route.js");
+    const mod = await import("../../src/app/api/oauth/cursor/auto-import/route.ts");
     GET = mod.GET;
   });
 

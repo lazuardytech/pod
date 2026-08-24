@@ -19,7 +19,7 @@ Thank you for your interest in contributing. This document covers how to get sta
 
 **Requirements:**
 
-- [bun](https://bun.sh) v1.3.14+
+- [bun](https://bun.sh) v1.4.0+
 - Node.js is not required for running the app, but vitest uses it for tests
 
 ```bash
@@ -38,7 +38,7 @@ Always use `bun` — never `npm` or `pnpm`.
 ```bash
 bun run dev          # dev server
 bun run build        # production build
-bun run check        # biome format + biome lint + oxlint (run before every push)
+bun run check        # oxfmt + oxlint --deny-warnings + tsc --noEmit
 bun run test:run     # vitest (run before every push)
 ```
 
@@ -56,19 +56,19 @@ CI runs the same steps and will block merge on failure.
 
 ## Code Style
 
-- **JavaScript only** — no TypeScript. ESM import/export style.
-- Formatting and linting are enforced by [Biome](https://biomejs.dev) + ESLint. Run `bun run check` to auto-fix.
+- **TypeScript only** (`strict` + `noUncheckedIndexedAccess`). ESM import/export. Local imports use `.ts`/`.tsx` suffixes. Do not add authored `.js` — generated `public/sw.js` is the exception.
+- Formatting and linting: [oxfmt](https://oxc.rs/docs/guide/usage/formatter) + [oxlint](https://oxc.rs/docs/guide/usage/linter) + `tsc --noEmit`. Run `bun run check`.
 - Follow existing file and naming conventions:
-  - Components: `PascalCase.js`
-  - Utilities/libs: `camelCase.js`
+  - Components: `PascalCase.tsx`
+  - Utilities/libs: `camelCase.ts`
   - Next.js route segments: `kebab-case` folders
 - Use `@/` alias for `src/` imports. Use `open-sse/*` for the local engine — do not install it from npm.
-- Use `src/lib/localDb.js` and `src/lib/sqlite/connection.js` for all persistence. Do not bypass the storage facade.
+- Use `src/lib/localDb.ts` and `src/lib/sqlite/connection.ts` for all persistence. Do not bypass the storage facade.
 - Use `<ConfirmModal>` from `@/shared/components/Modal` for all confirmation dialogs — never `window.confirm()`.
 - Use `text-primary-fg` for text on `bg-primary` backgrounds — never `text-white` or `text-black`.
-- Page-level header action buttons go through `src/store/headerActionStore.js`, not inline in the Header component.
+- Page-level header action buttons go through `src/store/headerActionStore.ts`, not inline in the Header component.
 
-See [AGENTS.md](AGENTS.md) and `.agents/knowledge/06-conventions.md` for the full conventions reference.
+See [AGENTS.md](AGENTS.md) and [`.agents/knowledge/02-conventions.md`](.agents/knowledge/02-conventions.md) for the full conventions reference.
 
 ---
 
@@ -97,13 +97,13 @@ Keep the summary under 72 characters. Use the body for context if needed.
 
 ## Pull Requests
 
-1. Fork the repo and create a branch from `main`.
+1. Fork the repo and create a branch from `canary` (active development). Promote `canary` → `main` via PR only.
 2. Name your branch descriptively: `feat/semantic-cache-ttl`, `fix/sse-abort-leak`.
 3. Keep PRs focused — one concern per PR.
 4. Fill in the PR description: what changed, why, and what was tested.
 5. Bump both version fields if your change warrants a release:
    - `package.json` → `"version"`
-   - `src/shared/constants/config.js` → `displayVersion`
+   - `src/shared/constants/config.ts` → `displayVersion`
 6. All CI checks must pass before merge.
 
 ---
@@ -139,7 +139,7 @@ If you are an AI agent contributing to this repo:
 2. Read `.agents/INDEX.md` and follow links to relevant knowledge files.
 3. Use `bun` exclusively — never `npm` or `pnpm`.
 4. Run `bun run check` and `bun run test:run` before finishing any task.
-5. Never push directly to `main` — always use a branch.
+5. Never push directly to `main` — develop on `canary`; promote via PR.
 
 ---
 

@@ -1,7 +1,7 @@
-import { OAUTH_ENDPOINTS } from "../config/appConstants.js";
-import { PROVIDERS } from "../config/providers.js";
-import { type ExecutorCredentials, type ExecutorHeaders, type ExecutorLogger } from "./base.js";
-import { DefaultExecutor } from "./default.js";
+import { OAUTH_ENDPOINTS } from "../config/appConstants.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { type ExecutorCredentials, type ExecutorHeaders, type ExecutorLogger } from "./base.ts";
+import { DefaultExecutor } from "./default.ts";
 
 /** portal.qwen.ai — static fingerprint matching stable Qwen Code release */
 const QWEN_USER_AGENT = "QwenCode/0.12.3 (linux; x64)";

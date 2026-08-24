@@ -1,8 +1,8 @@
 // @ts-nocheck
 // Claude helper functions for translator
-import { DEFAULT_THINKING_CLAUDE_SIGNATURE } from "../../config/defaultThinkingSignature.js";
-import { applyCloaking } from "../../utils/claudeCloaking.js";
-import { deriveSessionId } from "../../utils/sessionManager.js";
+import { DEFAULT_THINKING_CLAUDE_SIGNATURE } from "../../config/defaultThinkingSignature.ts";
+import { applyCloaking } from "../../utils/claudeCloaking.ts";
+import { deriveSessionId } from "../../utils/sessionManager.ts";
 
 // Check if message has valid non-empty content
 export function hasValidContent(msg: unknown) {

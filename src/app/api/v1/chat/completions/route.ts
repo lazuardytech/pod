@@ -1,4 +1,4 @@
-import { initTranslators } from "open-sse/translator/index.js";
+import { initTranslators } from "open-sse/translator/index.ts";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { handleChat } from "@/sse/handlers/chat";

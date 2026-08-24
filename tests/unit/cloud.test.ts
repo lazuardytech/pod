@@ -18,7 +18,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ─── Module mocks (hoisted before imports) ────────────────────────────────────
 
-vi.mock("../../cloud/src/utils/logger.js", () => ({
+vi.mock("../../cloud/src/utils/logger.ts", () => ({
   info: vi.fn(),
   debug: vi.fn(),
   warn: vi.fn(),
@@ -27,29 +27,29 @@ vi.mock("../../cloud/src/utils/logger.js", () => ({
   response: vi.fn(),
 }));
 
-vi.mock("../../cloud/src/services/storage.js", () => ({
+vi.mock("../../cloud/src/services/storage.ts", () => ({
   getMachineData: vi.fn(),
   saveMachineData: vi.fn(),
   deleteMachineData: vi.fn(),
   updateMachineProvider: vi.fn(),
 }));
 
-vi.mock("../../cloud/src/utils/apiKey.js", () => ({
+vi.mock("../../cloud/src/utils/apiKey.ts", () => ({
   parseApiKey: vi.fn(),
   extractBearerToken: vi.fn(),
 }));
 
 // open-sse stubs so index.js can be imported without the real module
-vi.mock("open-sse/translator/index.js", () => ({ initTranslators: vi.fn() }));
-vi.mock("open-sse/config/ollamaModels.js", () => ({ ollamaModels: { models: [] } }));
-vi.mock("open-sse/utils/ollamaTransform.js", () => ({ transformToOllama: vi.fn((r) => r) }));
+vi.mock("open-sse/translator/index.ts", () => ({ initTranslators: vi.fn() }));
+vi.mock("open-sse/config/ollamaModels.ts", () => ({ ollamaModels: { models: [] } }));
+vi.mock("open-sse/utils/ollamaTransform.ts", () => ({ transformToOllama: vi.fn((r) => r) }));
 
-vi.mock("../../cloud/src/handlers/chat.js", () => ({ handleChat: vi.fn() }));
-vi.mock("../../cloud/src/handlers/embeddings.js", () => ({ handleEmbeddings: vi.fn() }));
-vi.mock("../../cloud/src/handlers/forward.js", () => ({ handleForward: vi.fn() }));
-vi.mock("../../cloud/src/handlers/forwardRaw.js", () => ({ handleForwardRaw: vi.fn() }));
-vi.mock("../../cloud/src/handlers/cache.js", () => ({ handleCacheClear: vi.fn() }));
-vi.mock("../../cloud/src/services/landingPage.js", () => ({
+vi.mock("../../cloud/src/handlers/chat.ts", () => ({ handleChat: vi.fn() }));
+vi.mock("../../cloud/src/handlers/embeddings.ts", () => ({ handleEmbeddings: vi.fn() }));
+vi.mock("../../cloud/src/handlers/forward.ts", () => ({ handleForward: vi.fn() }));
+vi.mock("../../cloud/src/handlers/forwardRaw.ts", () => ({ handleForwardRaw: vi.fn() }));
+vi.mock("../../cloud/src/handlers/cache.ts", () => ({ handleCacheClear: vi.fn() }));
+vi.mock("../../cloud/src/services/landingPage.ts", () => ({
   createLandingPageResponse: vi.fn(
     () =>
       new Response("<html>Pod</html>", {
@@ -61,17 +61,17 @@ vi.mock("../../cloud/src/services/landingPage.js", () => ({
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
-import { handleCleanup } from "../../cloud/src/handlers/cleanup.js";
-import { handleSync } from "../../cloud/src/handlers/sync.js";
-import { handleTestClaude } from "../../cloud/src/handlers/testClaude.js";
-import { handleVerify } from "../../cloud/src/handlers/verify.js";
-import worker from "../../cloud/src/index.js";
+import { handleCleanup } from "../../cloud/src/handlers/cleanup.ts";
+import { handleSync } from "../../cloud/src/handlers/sync.ts";
+import { handleTestClaude } from "../../cloud/src/handlers/testClaude.ts";
+import { handleVerify } from "../../cloud/src/handlers/verify.ts";
+import worker from "../../cloud/src/index.ts";
 import {
   deleteMachineData,
   getMachineData,
   saveMachineData,
-} from "../../cloud/src/services/storage.js";
-import { extractBearerToken, parseApiKey } from "../../cloud/src/utils/apiKey.js";
+} from "../../cloud/src/services/storage.ts";
+import { extractBearerToken, parseApiKey } from "../../cloud/src/utils/apiKey.ts";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -682,7 +682,7 @@ describe("worker index router", () => {
   });
 
   it("/v1/v1/chat/completions normalizes to /v1/chat/completions", async () => {
-    const { handleChat } = await import("../../cloud/src/handlers/chat.js");
+    const { handleChat } = await import("../../cloud/src/handlers/chat.ts");
     vi.mocked(handleChat).mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), { status: 200 }),
     );

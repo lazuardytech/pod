@@ -1,6 +1,6 @@
-import { extractBearerToken, parseApiKey } from "../utils/apiKey.js";
-import { getMachineData } from "../services/storage.js";
-import * as log from "../utils/logger.js";
+import { extractBearerToken, parseApiKey } from "../utils/apiKey.ts";
+import { getMachineData } from "../services/storage.ts";
+import * as log from "../utils/logger.ts";
 
 export async function handleCacheClear(request: Request, env: Env): Promise<Response> {
   const apiKey = extractBearerToken(request);

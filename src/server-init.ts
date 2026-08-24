@@ -60,7 +60,7 @@ async function startServer() {
   // Register tunnel cleanup hook before signal handlers
   registerShutdownHook(async () => {
     try {
-      const { killCloudflared } = await import("./lib/tunnel/cloudflared.js");
+      const { killCloudflared } = await import("./lib/tunnel/cloudflared.ts");
       killCloudflared();
     } catch {}
     try {

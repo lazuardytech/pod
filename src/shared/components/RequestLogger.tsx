@@ -282,7 +282,7 @@ export default function RequestLogger({
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <LucideIcon
               name="search"
-              size={16}
+              size={14}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
             />
             <input

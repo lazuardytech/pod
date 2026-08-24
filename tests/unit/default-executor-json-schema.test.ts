@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { DefaultExecutor } from "../../open-sse/executors/default.js";
+import { DefaultExecutor } from "../../open-sse/executors/default.ts";
 
 describe("DefaultExecutor.transformRequest — json_schema fallback", () => {
   const schema = {

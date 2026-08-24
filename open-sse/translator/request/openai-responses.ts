@@ -6,9 +6,9 @@
  * Chat API uses: { messages: [...] }
  */
 
-import { FORMATS } from "../formats.js";
-import { normalizeResponsesInput } from "../helpers/responsesApiHelper.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { normalizeResponsesInput } from "../helpers/responsesApiHelper.ts";
+import { register } from "../registry.ts";
 
 // Responses API enforces max 64 chars on call_id (#393)
 const MAX_CALL_ID_LEN = 64;

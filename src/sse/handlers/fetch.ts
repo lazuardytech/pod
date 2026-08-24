@@ -1,7 +1,11 @@
-import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
-import { handleFetchCore } from "open-sse/handlers/fetch/index.js";
-import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { HTTP_STATUS } from "open-sse/config/runtimeConfig.ts";
+import { handleFetchCore } from "open-sse/handlers/fetch/index.ts";
+import {
+  coerceNonChatComboStrategy,
+  getComboModelsFromData,
+  handleComboChat,
+} from "open-sse/services/combo.ts";
+import { errorResponse, unavailableResponse } from "open-sse/utils/error.ts";
 import { getCombos, getSettings, type Settings } from "@/lib/localDb";
 import { readBodyText } from "@/lib/parseJsonBody";
 import { getMaxRequestBodyBytes } from "@/shared/constants/config";
@@ -87,10 +91,14 @@ export async function handleFetch(request: Request): Promise<Response> {
       string,
       Record<string, unknown>
     >;
-    const comboStrategy =
+    const requestedStrategy =
       (comboStrategies[providerInput]?.fallbackStrategy as string) ||
       (settings.comboStrategy as string) ||
       "fallback";
+    const comboStrategy = coerceNonChatComboStrategy(requestedStrategy);
+    if (requestedStrategy === "fusion") {
+      log.info("FETCH", `Combo "${providerInput}" fusion coerced to fallback`);
+    }
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "FETCH",

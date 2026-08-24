@@ -5,16 +5,16 @@ const mockRefreshTokenByProvider = vi.fn();
 const mockExecute = vi.fn();
 const mockGetExecutor = vi.fn(() => ({ execute: mockExecute }));
 
-vi.mock("open-sse/index.js", () => ({
+vi.mock("open-sse/index.ts", () => ({
   getExecutor: mockGetExecutor,
   refreshTokenByProvider: mockRefreshTokenByProvider,
 }));
 
-vi.mock("@/lib/localDb.js", () => ({
+vi.mock("@/lib/localDb.ts", () => ({
   getProviderConnections: mockGetProviderConnections,
 }));
 
-const { POST } = await import("@/app/api/translator/send/route.js");
+const { POST } = await import("@/app/api/translator/send/route.ts");
 
 describe("POST /api/translator/send", () => {
   beforeEach(() => {

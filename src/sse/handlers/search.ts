@@ -1,7 +1,11 @@
-import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
-import { handleSearchCore } from "open-sse/handlers/search/index.js";
-import { getComboModelsFromData, handleComboChat } from "open-sse/services/combo.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { HTTP_STATUS } from "open-sse/config/runtimeConfig.ts";
+import { handleSearchCore } from "open-sse/handlers/search/index.ts";
+import {
+  coerceNonChatComboStrategy,
+  getComboModelsFromData,
+  handleComboChat,
+} from "open-sse/services/combo.ts";
+import { errorResponse, unavailableResponse } from "open-sse/utils/error.ts";
 import { getCombos, getSettings, type Settings } from "@/lib/localDb";
 import { readBodyText } from "@/lib/parseJsonBody";
 import { getMaxRequestBodyBytes } from "@/shared/constants/config";
@@ -79,10 +83,14 @@ export async function handleSearch(request: Request): Promise<Response> {
       string,
       Record<string, unknown>
     >;
-    const comboStrategy =
+    const requestedStrategy =
       (comboStrategies[providerInput]?.fallbackStrategy as string) ||
       (settings.comboStrategy as string) ||
       "fallback";
+    const comboStrategy = coerceNonChatComboStrategy(requestedStrategy);
+    if (requestedStrategy === "fusion") {
+      log.info("SEARCH", `Combo "${providerInput}" fusion coerced to fallback`);
+    }
     const comboStickyLimit = settings.comboStickyRoundRobinLimit as number | undefined;
     log.info(
       "SEARCH",

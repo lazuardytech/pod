@@ -20,7 +20,13 @@ import { CSS } from "@dnd-kit/utilities";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type ButtonHTMLAttributes,
+  type ChangeEvent,
+} from "react";
 import {
   Button,
   Card,
@@ -40,6 +46,7 @@ import {
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import { getModelsByProviderId } from "@/shared/constants/models";
+import { getThinkingLevels } from "open-sse/providers/thinkingLevels.ts";
 import {
   AI_PROVIDERS,
   APIKEY_PROVIDERS,
@@ -207,6 +214,12 @@ export default function ProviderDetailPage() {
       open: false,
       onConfirm: null as (() => void) | null,
     }));
+
+  const resolveThinkingSuffix = (modelId: string): string | null => {
+    if (!effortMode || effortMode === "default" || effortMode === "auto") return null;
+    const levels = getThinkingLevels(providerId, modelId);
+    return levels?.includes(effortMode) ? effortMode : null;
+  };
 
   const providerInfo = (
     providerNode
@@ -976,6 +989,7 @@ export default function ProviderDetailPage() {
           onDeleteAlias={handleDeleteAlias}
           connections={connections}
           isAnthropic={isAnthropicCompatible}
+          resolveThinkingSuffix={resolveThinkingSuffix}
         />
       );
     }
@@ -1026,6 +1040,7 @@ export default function ProviderDetailPage() {
             isTesting={testingModelIds.has(model.id)}
             isCustom
             isFree={false}
+            thinkingSuffix={resolveThinkingSuffix(model.id)}
           />
         ))}
 
@@ -1052,18 +1067,21 @@ export default function ProviderDetailPage() {
               isTesting={testingModelIds.has(model.id)}
               isFree={"isFree" in model ? Boolean(model.isFree) : false}
               onDisable={() => handleDisableModel(model.id)}
+              thinkingSuffix={resolveThinkingSuffix(model.id)}
             />
           );
         })}
 
         {/* Add model button — inline, same style as model chips */}
-        <button
+        <Button
+          variant="outline"
+          size="sm"
+          icon="add"
           onClick={() => setShowAddCustomModel(true)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 px-3 py-2 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/5 sm:w-auto"
+          className="w-full border-dashed border-primary/40 text-primary hover:border-primary hover:bg-primary/5 sm:w-auto"
         >
-          <LucideIcon name="add" className="text-sm" />
           Add Model
-        </button>
+        </Button>
 
         {/* Suggested models from provider API — show only models not yet added */}
         {suggestedModels.length > 0 &&
@@ -1082,18 +1100,20 @@ export default function ProviderDetailPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {notAdded.map((m) => (
-                    <button
+                    <Button
                       key={m.id}
+                      variant="outline"
+                      size="sm"
+                      icon="add"
                       onClick={async () => {
                         const alias = m.id.split("/").pop() || m.id;
                         await handleSetAlias(m.id, alias, providerStorageAlias);
                       }}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs text-text-muted hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                      className="h-auto px-2.5 py-1.5 text-xs text-text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
                       title={`${m.name} · ${((Number(m.contextLength) || 0) / 1000).toFixed(0)}k ctx`}
                     >
-                      <LucideIcon name="add" className="text-[13px]" />
                       {m.id.split("/").pop()}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -1108,15 +1128,17 @@ export default function ProviderDetailPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               {disabledDisplayModels.map((m) => (
-                <button
+                <Button
                   key={m.id}
+                  variant="outline"
+                  size="sm"
+                  icon="add"
                   onClick={() => handleEnableModel(m.id)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-black/10 dark:border-white/10 text-xs text-text-muted hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                  className="h-auto border-dashed px-2.5 py-1.5 text-xs text-text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
                   title="Restore model"
                 >
-                  <LucideIcon name="add" className="text-[13px]" />
                   {m.id}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -1632,16 +1654,19 @@ function SortableConnectionRow({
 
   return (
     <div ref={setNodeRef} style={style} className="flex min-w-0 items-stretch">
-      <button
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        className="flex items-center px-1.5 cursor-grab active:cursor-grabbing text-text-muted/40 hover:text-text-muted transition-colors touch-none shrink-0"
+      <Button
+        variant="ghost"
+        size="icon"
+        icon="drag_indicator"
         title="Drag to reorder"
-        tabIndex={-1}
-      >
-        <LucideIcon name="drag_indicator" className="text-[16px]" />
-      </button>
+        className="flex shrink-0 cursor-grab touch-none items-center px-1.5 text-text-muted/40 transition-colors hover:text-text-muted active:cursor-grabbing"
+        {...({
+          ref: setActivatorNodeRef,
+          ...attributes,
+          ...listeners,
+          tabIndex: -1,
+        } as ButtonHTMLAttributes<HTMLButtonElement>)}
+      />
       <div className="flex-1 min-w-0">
         <ConnectionRow
           connection={conn}

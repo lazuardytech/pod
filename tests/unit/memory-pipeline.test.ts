@@ -10,14 +10,14 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { extractFacts, extractFactsFromText } from "../../src/lib/memory/extraction.js";
+import { extractFacts, extractFactsFromText } from "../../src/lib/memory/extraction.ts";
 import {
   formatMemoryContext,
   injectMemory,
   providerSupportsSystemMessage,
   shouldInjectMemory,
-} from "../../src/lib/memory/injection.js";
-import { normalizeMemorySettings } from "../../src/lib/memory/settings.js";
+} from "../../src/lib/memory/injection.ts";
+import { normalizeMemorySettings } from "../../src/lib/memory/settings.ts";
 
 // ---------------------------------------------------------------------------
 // 1. memoryOwnerId scoping

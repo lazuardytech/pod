@@ -7,13 +7,14 @@ The open-sse engine is a local fork (never the npm package) that handles provide
 ```
 open-sse/
   config/           Provider definitions, model catalogs, runtime constants
-  executors/        Provider-specific HTTP clients (19 executors; base.ts is a base class, index.ts is a barrel)
+  executors/        20 files: 17 specialized + default.ts + base.ts + index.ts
   handlers/         Core chat handler: streaming and non-streaming paths
-  services/         Model resolution, provider metadata, credential management, token refresh
+  services/         Combo fallback/RR, Fusion panel+judge, capacity adapter, token refresh
   transformer/      Response transformation utilities
-  translator/       Request/response format translation (OpenAI ↔ Claude ↔ Gemini)
-  utils/            Stream processing, error handling, proxy fetch patch, RTK
-  rtk/              Real Talk tool_result compression subsystem
+  translator/       Request/response format translation + thinkingUnified
+  utils/            Stream processing, error handling, proxy fetch patch
+  rtk/              RTK tool_result compression, Headroom client, Caveman/Ponytail inject
+  providers/        Capability resolver (modalities + thinkingFormat overlay)
   index.ts          Public API surface — re-exports for src/sse/ consumers
 ```
 
@@ -23,12 +24,12 @@ Each provider gets its own executor in `open-sse/executors/`. They share a commo
 
 | Executor                                                                                                                                                                                          | Notable behavior                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `default.js`                                                                                                                                                                                      | Handles most OpenAI-compatible providers           |
-| `vertex.js`                                                                                                                                                                                       | GCP auth + strips `stream` field from request body |
-| `kiro.js`                                                                                                                                                                                         | Transient overload body-gating for retry           |
-| `ollama-local.js`                                                                                                                                                                                 | Local Ollama endpoint                              |
-| `codex.js`                                                                                                                                                                                        | Codex reasoning token budget normalization         |
-| `antigravity.js`, `cursor.js`, `github.js`, `grok-web.js`, `iflow.js`, `qoder.js`, `qwen.js`, `opencode.js`, `opencode-go.js`, `commandcode.js`, `gemini-cli.js`, `perplexity-web.js`, `azure.js` | Provider-specific quirks isolated per executor     |
+| `default.ts`                                                                                                                                                                                      | Handles most OpenAI-compatible providers           |
+| `vertex.ts`                                                                                                                                                                                       | GCP auth + strips `stream` field from request body |
+| `kiro.ts`                                                                                                                                                                                         | Transient overload body-gating for retry           |
+| `ollama-local.ts`                                                                                                                                                                                 | Local Ollama endpoint                              |
+| `codex.ts`                                                                                                                                                                                        | Codex reasoning token budget normalization         |
+| `antigravity.ts`, `cursor.ts`, `github.ts`, `grok-web.ts`, `iflow.ts`, `qoder.ts`, `qwen.ts`, `opencode.ts`, `opencode-go.ts`, `commandcode.ts`, `gemini-cli.ts`, `perplexity-web.ts`, `azure.ts` | Provider-specific quirks isolated per executor     |
 
 ## Translator Pipeline
 

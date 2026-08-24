@@ -25,20 +25,20 @@ import { v4 as uuidv4 } from "uuid";
 import { QODER_CHAT_URL_ENCODED, QODER_MODEL_MAP } from "@/lib/qoder/constants";
 import { buildCosyHeaders } from "@/lib/qoder/cosy";
 import { qoderEncodeBody } from "@/lib/qoder/encoding";
-import { PROVIDERS } from "../config/providers.js";
+import { PROVIDERS } from "../config/providers.ts";
 import {
   getQoderModelConfig,
   resolveQoderModels,
   type QoderCredentials,
-} from "../services/qoderModels.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+} from "../services/qoderModels.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 import {
   BaseExecutor,
   type ExecutorExecuteOptions,
   type ExecutorExecuteResult,
   type ExecutorLogger,
   type ExecutorProxyOptions,
-} from "./base.js";
+} from "./base.ts";
 
 type JsonRecord = Record<string, unknown>;
 

@@ -1,5 +1,5 @@
 // SD WebUI (AUTOMATIC1111) — local, noAuth
-import { type ImageRequestBody, nowSec } from "./_base.js";
+import { type ImageRequestBody, nowSec } from "./_base.ts";
 
 export default {
   noAuth: true,

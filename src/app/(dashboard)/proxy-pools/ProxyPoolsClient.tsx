@@ -2,9 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle } from "@/shared/components";
+import {
+  Badge,
+  Button,
+  Card,
+  CardSkeleton,
+  IconButton,
+  Input,
+  Modal,
+  Toggle,
+} from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
+import { cn } from "@/shared/utils/cn";
 
 type ProxyPoolItem = {
   id: string;
@@ -739,28 +749,24 @@ export default function ProxyPoolsPage() {
                     onChange={() => handleToggleActive(pool)}
                     title={pool.isActive ? "Disable" : "Enable"}
                   />
-                  <button
-                    onClick={() => handleTest(pool.id)}
-                    className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
+                  <IconButton
+                    icon={testingId === pool.id ? "progress_activity" : "science"}
                     title="Test proxy"
+                    size="lg"
+                    onClick={() => handleTest(pool.id)}
                     disabled={testingId === pool.id}
-                  >
-                    <LucideIcon
-                      name={testingId === pool.id ? "progress_activity" : "science"}
-                      className="text-[18px]"
-                      style={
-                        testingId === pool.id ? { animation: "spin 1s linear infinite" } : undefined
-                      }
-                    />
-                  </button>
-                  <button
-                    onClick={() => openEditModal(pool)}
-                    className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
+                    className={cn(testingId === pool.id && "[&_svg]:animate-spin")}
+                  />
+                  <IconButton
+                    icon="edit"
                     title="Edit"
-                  >
-                    <LucideIcon name="edit" className="text-[18px]" />
-                  </button>
-                  <button
+                    size="lg"
+                    onClick={() => openEditModal(pool)}
+                  />
+                  <IconButton
+                    icon="delete"
+                    title="Delete"
+                    size="lg"
                     onClick={() =>
                       openConfirm(
                         "Delete Proxy Pool",
@@ -769,11 +775,8 @@ export default function ProxyPoolsPage() {
                         "danger",
                       )
                     }
-                    className="p-2 rounded hover:bg-red-500/10 text-red-500"
-                    title="Delete"
-                  >
-                    <LucideIcon name="delete" className="text-[18px]" />
-                  </button>
+                    className="text-red-500 hover:bg-red-500/10"
+                  />
                 </div>
               </div>
             ))}

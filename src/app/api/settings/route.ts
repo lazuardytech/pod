@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { resetComboRotation } from "open-sse/services/combo.js";
+import { isAllowedHeadroomUrl } from "open-sse/rtk/headroom.ts";
+import { resetComboRotation } from "open-sse/services/combo.ts";
 import { asString } from "@/app/api/_types";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
@@ -80,6 +81,15 @@ export async function PATCH(request: Request) {
       body.password = await bcrypt.hash(asString(body.newPassword), salt);
       delete body.newPassword;
       delete body.currentPassword;
+    }
+
+    if (Object.hasOwn(body, "headroomUrl") && body.headroomUrl) {
+      if (!isAllowedHeadroomUrl(String(body.headroomUrl))) {
+        return NextResponse.json(
+          { error: "Headroom URL must be localhost, 127.0.0.1, or hostname headroom" },
+          { status: 400 },
+        );
+      }
     }
 
     const settings = await updateSettings(body);

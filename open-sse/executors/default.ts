@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mts";
-import { buildKimiHeaders, OAUTH_ENDPOINTS } from "../config/appConstants.js";
-import { PROVIDERS } from "../config/providers.js";
-import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { injectReasoningContent } from "../utils/reasoningContentInjector.js";
+import { buildKimiHeaders, OAUTH_ENDPOINTS } from "../config/appConstants.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { getCachedClaudeHeaders } from "../utils/claudeHeaderCache.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
+import { injectReasoningContent } from "../utils/reasoningContentInjector.ts";
 import {
   BaseExecutor,
   type ExecutorCredentials,
@@ -12,7 +12,7 @@ import {
   type ExecutorHeaders,
   type ExecutorLogger,
   type ExecutorProxyOptions,
-} from "./base.js";
+} from "./base.ts";
 
 type JsonRecord = Record<string, unknown>;
 type ChatMessage = JsonRecord & {

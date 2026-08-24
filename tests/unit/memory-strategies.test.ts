@@ -4,15 +4,15 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { extractFactsFromText } from "../../src/lib/memory/extraction.js";
+import { extractFactsFromText } from "../../src/lib/memory/extraction.ts";
 import {
   formatMemoryContext,
   injectMemory,
   providerSupportsSystemMessage,
   shouldInjectMemory,
-} from "../../src/lib/memory/injection.js";
-import { normalizeMemorySettings, toMemoryRetrievalConfig } from "../../src/lib/memory/settings.js";
-import { MemoryType } from "../../src/lib/memory/types.js";
+} from "../../src/lib/memory/injection.ts";
+import { normalizeMemorySettings, toMemoryRetrievalConfig } from "../../src/lib/memory/settings.ts";
+import { MemoryType } from "../../src/lib/memory/types.ts";
 
 // ─── Group 1: Settings normalization ─────────────────────────────────────────
 
@@ -324,13 +324,13 @@ describe("retrieveMemories — strategy behavior", () => {
   afterEach(() => vi.clearAllMocks());
 
   it("returns [] for empty apiKeyId", async () => {
-    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.ts");
     const result = await retrieveMemories("", { enabled: true, maxTokens: 2000 });
     expect(result).toEqual([]);
   });
 
   it("returns [] when disabled", async () => {
-    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.ts");
     const result = await retrieveMemories("user-1", { enabled: false, maxTokens: 2000 });
     expect(result).toEqual([]);
   });
@@ -344,7 +344,7 @@ describe("retrieveMemories — strategy behavior", () => {
       }),
     };
     getDatabase.mockReturnValue(mockDb);
-    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.ts");
     const result = await retrieveMemories("user-1", { enabled: true, maxTokens: 0 });
     expect(result).toEqual([]);
   });
@@ -373,7 +373,7 @@ describe("retrieveMemories — strategy behavior", () => {
       }),
     };
     getDatabase.mockReturnValue(mockDb);
-    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.ts");
     const result = await retrieveMemories("user-1", {
       enabled: true,
       maxTokens: 2000,
@@ -407,7 +407,7 @@ describe("retrieveMemories — strategy behavior", () => {
       }),
     };
     getDatabase.mockReturnValue(mockDb);
-    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.ts");
     // maxTokens=50 → only 2 entries (2 * 25 = 50)
     const result = await retrieveMemories("user-1", {
       enabled: true,
@@ -442,7 +442,7 @@ describe("retrieveMemories — strategy behavior", () => {
       }),
     };
     getDatabase.mockReturnValue(mockDb);
-    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("../../src/lib/memory/retrieval.ts");
     // maxTokens=100 but single entry is 2500 tokens — should still return it
     const result = await retrieveMemories("user-1", {
       enabled: true,

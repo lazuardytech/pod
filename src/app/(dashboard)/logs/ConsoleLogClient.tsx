@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
+import { Button, IconButton } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
 import { cn } from "@/shared/utils/cn";
@@ -89,13 +90,13 @@ function LogLine({
       <span className={cn("flex-1 text-[11px] font-mono leading-[1.6] break-all", style.text)}>
         {text}
       </span>
-      <button
+      <IconButton
+        size="sm"
+        icon={copied === idx ? "check" : "content_copy"}
         onClick={() => onCopy(line, idx)}
-        className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center size-5 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-deep-slate transition-all duration-100"
         title="Copy line"
-      >
-        <LucideIcon name={copied === idx ? "check" : "content_copy"} className="text-[12px]" />
-      </button>
+        className="shrink-0 opacity-0 group-hover:opacity-100 rounded-[3px] text-fog-grey hover:text-porcelain hover:bg-deep-slate"
+      />
     </div>
   );
 }
@@ -240,7 +241,7 @@ export default function ConsoleLogClient({
           <div className="relative">
             <LucideIcon
               name="search"
-              size={16}
+              size={14}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fog-grey"
             />
             <input
@@ -255,18 +256,20 @@ export default function ConsoleLogClient({
           </div>
           <div className="flex items-center gap-1">
             {LEVEL_FILTERS.map((f) => (
-              <button
+              <Button
                 key={f.key}
+                variant="ghost"
+                size="sm"
                 onClick={() => setLevelFilter(f.key)}
                 className={cn(
-                  "h-6 px-2.5 rounded-[4px] text-[11px] font-[510] transition-colors duration-100",
+                  "h-6 px-2.5 rounded-[4px] text-[11px] font-[510]",
                   levelFilter === f.key
                     ? "bg-porcelain/10 text-porcelain border border-porcelain/20"
                     : "text-fog-grey hover:text-storm-cloud hover:bg-deep-slate border border-transparent",
                 )}
               >
                 {f.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

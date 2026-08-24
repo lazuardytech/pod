@@ -290,52 +290,60 @@ function ConnectionRow({
         <div className="flex flex-wrap gap-1">
           {(proxyPools || []).length > 0 && (
             <div className="relative" ref={proxyDropdownRef}>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => setShowProxyDropdown((v) => !v)}
-                className={`flex flex-col items-center px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
                 disabled={updatingProxy}
+                loading={updatingProxy}
+                className={`flex flex-col items-center px-2 py-1 h-auto gap-0 rounded hover:bg-black/5 dark:hover:bg-white/5 ${hasAnyProxy ? "text-primary" : "text-text-muted hover:text-primary"}`}
               >
-                <LucideIcon
-                  name={updatingProxy ? "progress_activity" : "lan"}
-                  className="text-[18px]"
-                />
+                {!updatingProxy && <LucideIcon name="lan" className="text-[18px]" />}
                 <span className="text-[10px] leading-tight">Proxy</span>
-              </button>
+              </Button>
               {showProxyDropdown && (
                 <div className="absolute right-0 top-full mt-1 z-50 bg-bg border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
                     onClick={() => handleSelectProxy("__none__")}
-                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 ${!boundProxyPoolId ? "text-primary font-medium" : "text-text-main"}`}
+                    className={`w-full justify-start px-3 py-1.5 h-auto text-sm hover:bg-black/5 dark:hover:bg-white/5 ${!boundProxyPoolId ? "text-primary font-medium" : "text-text-main"}`}
                   >
                     None
-                  </button>
+                  </Button>
                   {(proxyPools || []).map((pool) => (
-                    <button
+                    <Button
                       key={pool.id}
+                      type="button"
+                      variant="ghost"
                       onClick={() => handleSelectProxy(pool.id)}
-                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 ${boundProxyPoolId === pool.id ? "text-primary font-medium" : "text-text-main"}`}
+                      className={`w-full justify-start px-3 py-1.5 h-auto text-sm hover:bg-black/5 dark:hover:bg-white/5 ${boundProxyPoolId === pool.id ? "text-primary font-medium" : "text-text-main"}`}
                     >
                       {pool.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
             </div>
           )}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={onEdit}
-            className="flex flex-col items-center px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
+            className="flex flex-col items-center px-2 py-1 h-auto gap-0 rounded hover:bg-black/5 dark:hover:bg-white/5 text-text-muted hover:text-primary"
           >
             <LucideIcon name="edit" className="text-[18px]" />
             <span className="text-[10px] leading-tight">Edit</span>
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
             onClick={onDelete}
-            className="flex flex-col items-center px-2 py-1 rounded hover:bg-red-500/10 text-red-500"
+            className="flex flex-col items-center px-2 py-1 h-auto gap-0 rounded hover:bg-red-500/10 text-red-500"
           >
             <LucideIcon name="delete" className="text-[18px]" />
             <span className="text-[10px] leading-tight">Delete</span>
-          </button>
+          </Button>
         </div>
         <Toggle
           size="sm"

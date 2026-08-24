@@ -1,5 +1,5 @@
 // Google Gemini embeddings — embedContent / batchEmbedContents
-import type { EmbeddingCredentials } from "./_base.js";
+import type { EmbeddingCredentials } from "./_base.ts";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 

@@ -5,18 +5,18 @@ import {
   DETECT_WINDOW,
   READ_NUMBERED_MIN_HIT_RATIO,
   SMART_TRUNCATE_MIN_LINES,
-} from "./constants.js";
-import { buildOutput } from "./filters/buildOutput.js";
-import { dedupLog } from "./filters/dedupLog.js";
-import { find } from "./filters/find.js";
-import { gitDiff } from "./filters/gitDiff.js";
-import { gitStatus } from "./filters/gitStatus.js";
-import { grep } from "./filters/grep.js";
-import { ls } from "./filters/ls.js";
-import { READ_NUMBERED_LINE_RE, readNumbered } from "./filters/readNumbered.js";
-import { SEARCH_LIST_HEADER_RE, searchList } from "./filters/searchList.js";
-import { smartTruncate } from "./filters/smartTruncate.js";
-import { tree } from "./filters/tree.js";
+} from "./constants.ts";
+import { buildOutput } from "./filters/buildOutput.ts";
+import { dedupLog } from "./filters/dedupLog.ts";
+import { find } from "./filters/find.ts";
+import { gitDiff } from "./filters/gitDiff.ts";
+import { gitStatus } from "./filters/gitStatus.ts";
+import { grep } from "./filters/grep.ts";
+import { ls } from "./filters/ls.ts";
+import { READ_NUMBERED_LINE_RE, readNumbered } from "./filters/readNumbered.ts";
+import { SEARCH_LIST_HEADER_RE, searchList } from "./filters/searchList.ts";
+import { smartTruncate } from "./filters/smartTruncate.ts";
+import { tree } from "./filters/tree.ts";
 
 const RE_GIT_DIFF = /^diff --git /m;
 const RE_GIT_DIFF_HUNK = /^@@ /m;

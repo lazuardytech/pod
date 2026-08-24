@@ -12,7 +12,7 @@ import {
   CLOUD_CODE_API,
   LOAD_CODE_ASSIST_HEADERS,
   LOAD_CODE_ASSIST_METADATA,
-} from "../config/appConstants.js";
+} from "../config/appConstants.ts";
 
 type ProjectIdCacheEntry = {
   fetchedAt: number;

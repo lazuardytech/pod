@@ -4,8 +4,8 @@
  * Converts streaming chunks from Chat Completions to Responses API events
  */
 
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 /**
  * Translate OpenAI chunk to Responses API events

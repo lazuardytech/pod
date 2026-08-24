@@ -1,9 +1,9 @@
 // RTK port: compress tool_result content in LLM request bodies
 // Injected at the top of translateRequest (before any format translation)
 
-import { safeApply, type RtkFilterFn } from "./applyFilter.js";
-import { autoDetectFilter } from "./autodetect.js";
-import { MIN_COMPRESS_SIZE, RAW_CAP } from "./constants.js";
+import { safeApply, type RtkFilterFn } from "./applyFilter.ts";
+import { autoDetectFilter } from "./autodetect.ts";
+import { MIN_COMPRESS_SIZE, RAW_CAP } from "./constants.ts";
 
 type JsonRecord = Record<string, unknown>;
 

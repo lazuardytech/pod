@@ -1,4 +1,4 @@
-import * as log from "../utils/logger.js";
+import * as log from "../utils/logger.ts";
 
 const RETENTION_DAYS = 7;
 

@@ -1,6 +1,7 @@
 "use client";
-import type { HTMLAttributes } from "react";
+import type { ChangeEvent, HTMLAttributes } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/utils/cn";
 
 type PaginationProps = {
@@ -45,7 +46,6 @@ export default function Pagination({
       )}
       {...rest}
     >
-      {/* Info */}
       {totalItems > 0 && (
         <p className="text-[12px] text-fog-grey tracking-[-0.1px]">
           <span className="text-storm-cloud">
@@ -56,15 +56,16 @@ export default function Pagination({
       )}
 
       <div className="flex items-center gap-3">
-        {/* Page size */}
         {onPageSizeChange && (
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-fog-grey">Rows</span>
             <select
               aria-label="Rows per page"
               value={pageSize}
-              onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="h-7 px-2 rounded-[6px] border border-charcoal-grey bg-gunmetal text-[12px] text-porcelain focus:outline-none focus:border-porcelain/50 cursor-pointer"
+              onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                onPageSizeChange(Number(e.target.value))
+              }
+              className="h-7 pl-2 pr-7 rounded-[6px] border border-charcoal-grey bg-gunmetal text-[12px] text-porcelain focus:outline-none focus:border-porcelain/50 cursor-pointer"
               style={{ colorScheme: "dark" }}
               name="page-size"
             >
@@ -77,67 +78,39 @@ export default function Pagination({
           </div>
         )}
 
-        {/* Pages */}
-        {totalPages > 1 && onPageChange && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="flex items-center justify-center size-7 rounded-[6px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-100"
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange?.(currentPage - 1)}
+            aria-label="Previous page"
+          >
+            <LucideIcon name="chevron_left" className="text-[14px]" />
+          </Button>
+
+          {pageNumbers.map((page) => (
+            <Button
+              key={page}
+              variant={page === currentPage ? "secondary" : "ghost"}
+              size="sm"
+              className="min-w-7 h-7 px-2 text-[12px]"
+              onClick={() => onPageChange?.(page)}
             >
-              <LucideIcon name="chevron_left" className="text-[14px]" />
-            </button>
+              {page}
+            </Button>
+          ))}
 
-            {pageNumbers[0]! > 1 && (
-              <>
-                <button
-                  onClick={() => onPageChange(1)}
-                  className="flex items-center justify-center size-7 rounded-[6px] text-[12px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
-                >
-                  1
-                </button>
-                {pageNumbers[0]! > 2 && <span className="text-[12px] text-fog-grey px-0.5">…</span>}
-              </>
-            )}
-
-            {pageNumbers.map((page) => (
-              <button
-                key={page}
-                onClick={() => onPageChange(page)}
-                className={cn(
-                  "flex items-center justify-center size-7 rounded-[6px] text-[12px] transition-colors duration-100",
-                  currentPage === page
-                    ? "bg-porcelain text-pitch-black font-[590]"
-                    : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
-                )}
-              >
-                {page}
-              </button>
-            ))}
-
-            {pageNumbers[pageNumbers.length - 1]! < totalPages && (
-              <>
-                {pageNumbers[pageNumbers.length - 1]! < totalPages - 1 && (
-                  <span className="text-[12px] text-fog-grey px-0.5">…</span>
-                )}
-                <button
-                  onClick={() => onPageChange(totalPages)}
-                  className="flex items-center justify-center size-7 rounded-[6px] text-[12px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="flex items-center justify-center size-7 rounded-[6px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-100"
-            >
-              <LucideIcon name="chevron_right" className="text-[14px]" />
-            </button>
-          </div>
-        )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange?.(currentPage + 1)}
+            aria-label="Next page"
+          >
+            <LucideIcon name="chevron_right" className="text-[14px]" />
+          </Button>
+        </div>
       </div>
     </div>
   );

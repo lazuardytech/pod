@@ -11,7 +11,7 @@
  * invoked directly.
  *
  * Run (requires the SW handlers exposed in public/sw.js per audit §5):
- *   bun x vitest run tests/unit/swShellCache.test.js --reporter=verbose
+ *   bun x vitest run tests/unit/swShellCache.test.ts --reporter=verbose
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

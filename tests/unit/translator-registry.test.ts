@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { FORMATS } from "../../open-sse/translator/formats.js";
+import { FORMATS } from "../../open-sse/translator/formats.ts";
 import {
   getRegisteredRequestTranslatorKeys,
   getRegisteredResponseTranslatorKeys,
-} from "../../open-sse/translator/index.js";
+} from "../../open-sse/translator/index.ts";
 
 function key(from: string, to: string) {
   return `${from}:${to}`;

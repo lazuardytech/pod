@@ -6,7 +6,7 @@ import {
   type ProviderCredentials,
   nowSec,
   urlToBase64,
-} from "./_base.js";
+} from "./_base.ts";
 
 const BASE_URL = "https://api.cloudflare.com/client/v4/accounts";
 

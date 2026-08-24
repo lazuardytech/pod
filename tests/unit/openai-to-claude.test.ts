@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.js";
+import { openaiToClaudeRequest } from "../../open-sse/translator/request/openai-to-claude.ts";
 
 describe("openaiToClaudeRequest", () => {
   describe("response_format handling", () => {

@@ -17,10 +17,10 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { PROVIDER_MODELS } from "../../open-sse/config/providerModels.js";
-import { PROVIDERS } from "../../open-sse/config/providers.js";
-import { getExecutor } from "../../open-sse/executors/index.js";
-import { getEmbeddingAdapter } from "../../open-sse/handlers/embeddingProviders/index.js";
+import { PROVIDER_MODELS } from "../../open-sse/config/providerModels.ts";
+import { PROVIDERS } from "../../open-sse/config/providers.ts";
+import { getExecutor } from "../../open-sse/executors/index.ts";
+import { getEmbeddingAdapter } from "../../open-sse/handlers/embeddingProviders/index.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_PROVIDERS_DIR = path.resolve(__dirname, "../../public/providers");

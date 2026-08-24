@@ -25,7 +25,7 @@ describe("Kiro OAuth Token Refresh", () => {
   beforeAll(async () => {
     fetchMock = vi.fn();
     global.fetch = fetchMock;
-    const mod = await import("../../open-sse/services/tokenRefresh.js");
+    const mod = await import("../../open-sse/services/tokenRefresh.ts");
     refreshKiroToken = mod.refreshKiroToken;
   });
 
@@ -194,7 +194,7 @@ describe("Kiro OAuth Token Refresh", () => {
   describe("getRefreshLeadMs", () => {
     it("returns default buffer for kiro (no custom lead)", async () => {
       const { getRefreshLeadMs, TOKEN_EXPIRY_BUFFER_MS } =
-        await import("../../open-sse/services/tokenRefresh.js");
+        await import("../../open-sse/services/tokenRefresh.ts");
 
       expect(getRefreshLeadMs("kiro")).toBe(TOKEN_EXPIRY_BUFFER_MS);
     });

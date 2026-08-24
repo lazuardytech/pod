@@ -4,8 +4,8 @@
  * CursorExecutor already emits OpenAI format - this is a passthrough
  */
 
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 /**
  * Convert Cursor response to OpenAI format

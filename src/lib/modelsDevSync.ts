@@ -2,6 +2,10 @@
 // pricing data in the local SQLite DB. Runs on a configurable interval and
 // survives Next.js HMR via globalThis singleton.
 
+import {
+  registerModelsDevModalities,
+  type ModelCapabilities,
+} from "open-sse/providers/capabilities.ts";
 import { getDatabase } from "@/lib/sqlite/connection";
 import { info, error as logError, warn } from "@/sse/utils/logger";
 
@@ -215,6 +219,64 @@ export function transformModelsDevToPricing(raw: unknown): ModelsDevPricingData 
   return result;
 }
 
+function modalitiesFromInput(input: unknown): Partial<ModelCapabilities> | null {
+  if (!Array.isArray(input)) return null;
+  const set = new Set(input.map((s) => String(s).toLowerCase()));
+  return {
+    vision: set.has("image") || set.has("vision"),
+    audioInput: set.has("audio"),
+    videoInput: set.has("video"),
+    pdf: set.has("pdf") || set.has("document"),
+  };
+}
+
+export function extractModelsDevModalities(
+  raw: unknown,
+): Record<string, Record<string, Partial<ModelCapabilities>>> {
+  const result: Record<string, Record<string, Partial<ModelCapabilities>>> = {};
+  const entries: unknown[] = Array.isArray(raw)
+    ? raw
+    : Object.entries((raw as Record<string, unknown>) || {});
+
+  for (const entry of entries) {
+    let providerId: string | undefined;
+    let providerData: Record<string, unknown> | undefined;
+    if (Array.isArray(entry)) {
+      const [id, data] = entry as [string, Record<string, unknown>];
+      providerId = id;
+      providerData = data;
+    } else if (entry && typeof entry === "object") {
+      const obj = entry as { id?: unknown; provider?: unknown };
+      providerId =
+        typeof obj.id === "string"
+          ? obj.id
+          : typeof obj.provider === "string"
+            ? obj.provider
+            : undefined;
+      providerData = entry as Record<string, unknown>;
+    } else {
+      continue;
+    }
+    if (!providerId || typeof providerData !== "object") continue;
+    const podProvider =
+      MODELS_DEV_PROVIDER_MAP[String(providerId).toLowerCase()] ?? String(providerId).toLowerCase();
+    const modelsRaw = providerData.models;
+    if (!modelsRaw) continue;
+    const modelEntries: Array<[string, unknown]> = Array.isArray(modelsRaw)
+      ? (modelsRaw as Array<{ id?: string; name?: string }>).map((m) => [m.id ?? m.name ?? "", m])
+      : Object.entries(modelsRaw as Record<string, unknown>);
+    for (const [modelId, modelDataRaw] of modelEntries) {
+      if (!modelId || !modelDataRaw || typeof modelDataRaw !== "object") continue;
+      const modalities = (modelDataRaw as { modalities?: { input?: unknown } }).modalities;
+      const caps = modalitiesFromInput(modalities?.input);
+      if (!caps) continue;
+      if (!result[podProvider]) result[podProvider] = {};
+      result[podProvider]![String(modelId)] = caps;
+    }
+  }
+  return result;
+}
+
 /**
  * Normalize a pricing value to $/1M tokens.
  * models.dev already uses $/1M, but guard against null/undefined/string.
@@ -314,6 +376,7 @@ async function _doSync(opts: { signal?: AbortSignal } = {}): Promise<SyncResult>
   try {
     info("modelsDevSync", "Starting sync...");
     const raw = await fetchModelsDev(opts.signal);
+    registerModelsDevModalities(extractModelsDevModalities(raw));
     const pricing = transformModelsDevToPricing(raw);
 
     const providerCount = Object.keys(pricing).length;

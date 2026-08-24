@@ -10,7 +10,7 @@ vi.mock("@/lib/sqlite/connection.ts", () => ({
   }),
 }));
 
-vi.mock("./src/lib/cacheLayer.js", () => ({
+vi.mock("./src/lib/cacheLayer.ts", () => ({
   LRUCache: class {
     get() {
       return null;
@@ -24,7 +24,7 @@ vi.mock("./src/lib/cacheLayer.js", () => ({
   },
 }));
 
-vi.mock("@/lib/cacheLayer.js", () => ({
+vi.mock("@/lib/cacheLayer.ts", () => ({
   LRUCache: class {
     get() {
       return null;
@@ -40,7 +40,7 @@ vi.mock("@/lib/cacheLayer.js", () => ({
 
 // Import after mocks
 const { generateSignature, isCacheableForRead, isCacheableForWrite } =
-  await import("../../src/lib/semanticCache.js");
+  await import("../../src/lib/semanticCache.ts");
 
 // MAX_SEMANTIC_CACHE_BYTES is not exported — test it via isSmallEnoughForSemanticCache
 // which is local to chatCore. We test the constant indirectly by checking the

@@ -1,6 +1,6 @@
 // Port of filter_tree_output (rtk/src/cmds/system/tree.rs:65-94)
 // Removes summary line (e.g. "5 directories, 23 files") and trailing blanks.
-import { TREE_MAX_LINES } from "../constants.js";
+import { TREE_MAX_LINES } from "../constants.ts";
 
 export function tree(input: string) {
   const lines = input.split("\n");

@@ -36,7 +36,7 @@ afterAll(async () => {
 const KEY = "mem-test";
 
 beforeEach(async () => {
-  const { clearMemories } = await import("@/lib/memory/store.js");
+  const { clearMemories } = await import("@/lib/memory/store.ts");
   await clearMemories(KEY);
   await clearMemories("mem-test-2");
   await clearMemories("mem-route");
@@ -46,7 +46,7 @@ beforeEach(async () => {
 
 describe("createMemory / getMemory", () => {
   it("creates and retrieves a memory by id", async () => {
-    const { createMemory, getMemory } = await import("@/lib/memory/store.js");
+    const { createMemory, getMemory } = await import("@/lib/memory/store.ts");
     const mem = await createMemory({
       apiKeyId: KEY,
       sessionId: "s1",
@@ -62,7 +62,7 @@ describe("createMemory / getMemory", () => {
   });
 
   it("upserts when same key exists for same apiKeyId", async () => {
-    const { createMemory, getMemory } = await import("@/lib/memory/store.js");
+    const { createMemory, getMemory } = await import("@/lib/memory/store.ts");
     const first = await createMemory({
       apiKeyId: KEY,
       sessionId: "s1",
@@ -83,22 +83,22 @@ describe("createMemory / getMemory", () => {
   });
 
   it("returns null for unknown id", async () => {
-    const { getMemory } = await import("@/lib/memory/store.js");
+    const { getMemory } = await import("@/lib/memory/store.ts");
     expect(await getMemory("nonexistent-id")).toBeNull();
   });
 
   it("throws when apiKeyId missing", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
     await expect(createMemory({ content: "x", type: "factual" })).rejects.toThrow(/apiKeyId/i);
   });
 
   it("throws when content missing", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
     await expect(createMemory({ apiKeyId: KEY, type: "factual" })).rejects.toThrow(/content/i);
   });
 
   it("defaults invalid type to factual", async () => {
-    const { createMemory, getMemory } = await import("@/lib/memory/store.js");
+    const { createMemory, getMemory } = await import("@/lib/memory/store.ts");
     const mem = await createMemory({ apiKeyId: KEY, type: "invalid-type", content: "test" });
     const fetched = await getMemory(mem.id);
     expect(fetched.type).toBe("factual");
@@ -107,7 +107,7 @@ describe("createMemory / getMemory", () => {
 
 describe("updateMemory", () => {
   it("updates content and type", async () => {
-    const { createMemory, updateMemory, getMemory } = await import("@/lib/memory/store.js");
+    const { createMemory, updateMemory, getMemory } = await import("@/lib/memory/store.ts");
     const mem = await createMemory({ apiKeyId: KEY, type: "factual", content: "original" });
     const ok = await updateMemory(mem.id, { content: "updated", type: "episodic" });
     expect(ok).toBe(true);
@@ -117,12 +117,12 @@ describe("updateMemory", () => {
   });
 
   it("returns false for unknown id", async () => {
-    const { updateMemory } = await import("@/lib/memory/store.js");
+    const { updateMemory } = await import("@/lib/memory/store.ts");
     expect(await updateMemory("nonexistent", { content: "x" })).toBe(false);
   });
 
   it("returns false when no fields provided", async () => {
-    const { createMemory, updateMemory } = await import("@/lib/memory/store.js");
+    const { createMemory, updateMemory } = await import("@/lib/memory/store.ts");
     const mem = await createMemory({ apiKeyId: KEY, type: "factual", content: "x" });
     expect(await updateMemory(mem.id, {})).toBe(false);
   });
@@ -130,21 +130,21 @@ describe("updateMemory", () => {
 
 describe("deleteMemory", () => {
   it("deletes an existing memory", async () => {
-    const { createMemory, deleteMemory, getMemory } = await import("@/lib/memory/store.js");
+    const { createMemory, deleteMemory, getMemory } = await import("@/lib/memory/store.ts");
     const mem = await createMemory({ apiKeyId: KEY, type: "factual", content: "to-delete" });
     expect(await deleteMemory(mem.id)).toBe(true);
     expect(await getMemory(mem.id)).toBeNull();
   });
 
   it("returns false for unknown id", async () => {
-    const { deleteMemory } = await import("@/lib/memory/store.js");
+    const { deleteMemory } = await import("@/lib/memory/store.ts");
     expect(await deleteMemory("nonexistent")).toBe(false);
   });
 });
 
 describe("clearMemories", () => {
   it("removes all memories for an apiKeyId", async () => {
-    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "a" });
     await createMemory({ apiKeyId: KEY, type: "factual", content: "b" });
     const removed = await clearMemories(KEY);
@@ -154,7 +154,7 @@ describe("clearMemories", () => {
   });
 
   it("does not affect other apiKeyIds", async () => {
-    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "mine" });
     await createMemory({ apiKeyId: "mem-test-2", type: "factual", content: "theirs" });
     await clearMemories(KEY);
@@ -163,7 +163,7 @@ describe("clearMemories", () => {
   });
 
   it("removes all memories when apiKeyId is omitted", async () => {
-    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "mine" });
     await createMemory({ apiKeyId: "mem-test-2", type: "factual", content: "theirs" });
     const removed = await clearMemories();
@@ -177,7 +177,7 @@ describe("clearMemories", () => {
 
 describe("listMemories", () => {
   it("filters by type", async () => {
-    const { createMemory, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "fact" });
     await createMemory({ apiKeyId: KEY, type: "episodic", content: "episode" });
     const factual = await listMemories({ apiKeyId: KEY, type: "factual" });
@@ -186,7 +186,7 @@ describe("listMemories", () => {
   });
 
   it("filters by sessionId", async () => {
-    const { createMemory, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({ apiKeyId: KEY, sessionId: "sess-A", type: "factual", content: "A" });
     await createMemory({ apiKeyId: KEY, sessionId: "sess-B", type: "factual", content: "B" });
     const result = await listMemories({ apiKeyId: KEY, sessionId: "sess-A" });
@@ -194,7 +194,7 @@ describe("listMemories", () => {
   });
 
   it("respects limit and offset", async () => {
-    const { createMemory, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, listMemories } = await import("@/lib/memory/store.ts");
     for (let i = 0; i < 5; i++) {
       await createMemory({ apiKeyId: KEY, type: "factual", content: `item-${i}` });
     }
@@ -207,7 +207,7 @@ describe("listMemories", () => {
   });
 
   it("excludes expired memories", async () => {
-    const { createMemory, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({
       apiKeyId: KEY,
       type: "factual",
@@ -221,7 +221,7 @@ describe("listMemories", () => {
   });
 
   it("returns byType breakdown", async () => {
-    const { createMemory, listMemories } = await import("@/lib/memory/store.js");
+    const { createMemory, listMemories } = await import("@/lib/memory/store.ts");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "f1" });
     await createMemory({ apiKeyId: KEY, type: "factual", content: "f2" });
     await createMemory({ apiKeyId: KEY, type: "procedural", content: "p1" });
@@ -235,19 +235,19 @@ describe("listMemories", () => {
 
 describe("retrieveMemories", () => {
   it("returns empty array when disabled", async () => {
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const result = await retrieveMemories(KEY, { enabled: false });
     expect(result).toEqual([]);
   });
 
   it("returns empty array for unknown apiKeyId", async () => {
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     expect(await retrieveMemories("nonexistent-key-xyz", { enabled: true })).toEqual([]);
   });
 
   it("exact strategy returns keyword-matching memories", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     await createMemory({
       apiKeyId: KEY,
       type: "factual",
@@ -266,8 +266,8 @@ describe("retrieveMemories", () => {
   });
 
   it("semantic strategy returns FTS-matched memories", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     await createMemory({
       apiKeyId: KEY,
       type: "factual",
@@ -286,8 +286,8 @@ describe("retrieveMemories", () => {
   });
 
   it("hybrid strategy merges FTS and keyword results", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     await createMemory({ apiKeyId: KEY, type: "factual", content: "User prefers vim editor" });
     await createMemory({
       apiKeyId: KEY,
@@ -306,8 +306,8 @@ describe("retrieveMemories", () => {
   });
 
   it("respects maxTokens budget", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     // Create many large memories
     for (let i = 0; i < 10; i++) {
       await createMemory({
@@ -328,8 +328,8 @@ describe("retrieveMemories", () => {
   });
 
   it("excludes expired memories", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     await createMemory({
       apiKeyId: KEY,
       type: "factual",
@@ -347,8 +347,8 @@ describe("retrieveMemories", () => {
   });
 
   it("scopes to session when scope=session", async () => {
-    const { createMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     await createMemory({
       apiKeyId: KEY,
       sessionId: "sess-X",
@@ -379,7 +379,7 @@ describe("retrieveMemories", () => {
 
 describe("injectMemory", () => {
   it("prepends system message for OpenAI-compatible providers", async () => {
-    const { injectMemory } = await import("@/lib/memory/injection.js");
+    const { injectMemory } = await import("@/lib/memory/injection.ts");
     const req = { model: "gpt-4o", messages: [{ role: "user", content: "hello" }] };
     const memories = [{ content: "User prefers concise answers" }];
     const result = injectMemory(req, memories, "openai");
@@ -390,7 +390,7 @@ describe("injectMemory", () => {
   });
 
   it("prepends user message for providers without system message support", async () => {
-    const { injectMemory } = await import("@/lib/memory/injection.js");
+    const { injectMemory } = await import("@/lib/memory/injection.ts");
     const req = { model: "glm-4", messages: [{ role: "user", content: "hello" }] };
     const memories = [{ content: "User prefers dark mode" }];
     const result = injectMemory(req, memories, "glm");
@@ -399,14 +399,14 @@ describe("injectMemory", () => {
   });
 
   it("returns request unchanged when memories is empty", async () => {
-    const { injectMemory } = await import("@/lib/memory/injection.js");
+    const { injectMemory } = await import("@/lib/memory/injection.ts");
     const req = { model: "gpt-4o", messages: [{ role: "user", content: "hello" }] };
     expect(injectMemory(req, [], "openai")).toBe(req);
     expect(injectMemory(req, null, "openai")).toBe(req);
   });
 
   it("injects multiple memories as single context block", async () => {
-    const { injectMemory } = await import("@/lib/memory/injection.js");
+    const { injectMemory } = await import("@/lib/memory/injection.ts");
     const req = { model: "gpt-4o", messages: [{ role: "user", content: "hi" }] };
     const memories = [{ content: "fact A" }, { content: "fact B" }];
     const result = injectMemory(req, memories, "openai");
@@ -419,7 +419,7 @@ describe("injectMemory", () => {
 
 describe("extractFactsFromText", () => {
   it("extracts English preference patterns", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("I prefer TypeScript for backend services.");
     expect(facts.length).toBeGreaterThan(0);
     expect(facts.some((f) => f.content.toLowerCase().includes("typescript"))).toBe(true);
@@ -427,46 +427,46 @@ describe("extractFactsFromText", () => {
   });
 
   it("extracts English decision patterns", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("I'll use bun for this project.");
     expect(facts.some((f) => f.content.toLowerCase().includes("bun"))).toBe(true);
     expect(facts.some((f) => f.type === "episodic")).toBe(true);
   });
 
   it("extracts English habit/pattern patterns", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("I always write tests before shipping.");
     expect(facts.some((f) => f.content.toLowerCase().includes("tests"))).toBe(true);
   });
 
   it("extracts Indonesian preference patterns", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("Saya suka menggunakan dark mode.");
     expect(facts.length).toBeGreaterThan(0);
     expect(facts.some((f) => f.content.toLowerCase().includes("dark mode"))).toBe(true);
   });
 
   it("extracts Indonesian decision patterns", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("Saya akan menggunakan PostgreSQL untuk database.");
     expect(facts.some((f) => f.content.toLowerCase().includes("postgresql"))).toBe(true);
   });
 
   it("extracts Indonesian habit patterns", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("Saya biasanya pakai vim untuk editing.");
     expect(facts.some((f) => f.content.toLowerCase().includes("vim"))).toBe(true);
   });
 
   it("deduplicates identical facts", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     const facts = extractFactsFromText("I prefer vim. I prefer vim.");
     const vimFacts = facts.filter((f) => f.content.toLowerCase().includes("vim"));
     expect(vimFacts.length).toBe(1);
   });
 
   it("returns empty array for empty/null input", async () => {
-    const { extractFactsFromText } = await import("@/lib/memory/extraction.js");
+    const { extractFactsFromText } = await import("@/lib/memory/extraction.ts");
     expect(extractFactsFromText("")).toEqual([]);
     expect(extractFactsFromText(null)).toEqual([]);
     expect(extractFactsFromText(undefined)).toEqual([]);
@@ -477,8 +477,8 @@ describe("extractFactsFromText", () => {
 
 describe("extractFacts (async store)", () => {
   it("stores extracted facts into DB asynchronously", async () => {
-    const { extractFacts } = await import("@/lib/memory/extraction.js");
-    const { listMemories } = await import("@/lib/memory/store.js");
+    const { extractFacts } = await import("@/lib/memory/extraction.ts");
+    const { listMemories } = await import("@/lib/memory/store.ts");
     const apiKeyId = "mem-test-2";
 
     extractFacts("I prefer dark mode and I'll use bun for this project.", apiKeyId, "sess-extract");
@@ -491,10 +491,10 @@ describe("extractFacts (async store)", () => {
   });
 
   it("is a no-op when text is empty", async () => {
-    const { extractFacts } = await import("@/lib/memory/extraction.js");
-    const { listMemories } = await import("@/lib/memory/store.js");
+    const { extractFacts } = await import("@/lib/memory/extraction.ts");
+    const { listMemories } = await import("@/lib/memory/store.ts");
     const apiKeyId = "mem-test-2";
-    await (await import("@/lib/memory/store.js")).clearMemories(apiKeyId);
+    await (await import("@/lib/memory/store.ts")).clearMemories(apiKeyId);
 
     extractFacts("", apiKeyId, "sess-empty");
     await new Promise((r) => setTimeout(r, 30));
@@ -508,7 +508,7 @@ describe("extractFacts (async store)", () => {
 
 describe("POST /api/memory", () => {
   it("creates a memory and returns it", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
     const res = await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -530,7 +530,7 @@ describe("POST /api/memory", () => {
   });
 
   it("returns 400 when apiKeyId missing", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
     const res = await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -544,7 +544,7 @@ describe("POST /api/memory", () => {
 
 describe("GET /api/memory", () => {
   it("lists memories for apiKeyId", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
     await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -567,7 +567,7 @@ describe("GET /api/memory", () => {
 
 describe("DELETE /api/memory", () => {
   it("clears all memories and returns removed count", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
     await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -611,8 +611,8 @@ describe("DELETE /api/memory", () => {
 
 describe("GET /api/memory/[id]", () => {
   it("returns memory by id", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
-    const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
+    const memByIdRoute = await import("@/app/api/memory/[id]/route.ts");
     const postRes = await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -639,7 +639,7 @@ describe("GET /api/memory/[id]", () => {
   });
 
   it("returns 404 for unknown id", async () => {
-    const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
+    const memByIdRoute = await import("@/app/api/memory/[id]/route.ts");
     const res = await memByIdRoute.GET(new Request("http://localhost/api/memory/nope"), {
       params: { id: "nope" },
     });
@@ -649,8 +649,8 @@ describe("GET /api/memory/[id]", () => {
 
 describe("PATCH /api/memory/[id]", () => {
   it("updates content", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
-    const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
+    const memByIdRoute = await import("@/app/api/memory/[id]/route.ts");
     const postRes = await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -684,8 +684,8 @@ describe("PATCH /api/memory/[id]", () => {
 
 describe("DELETE /api/memory/[id]", () => {
   it("deletes a memory", async () => {
-    const memRoute = await import("@/app/api/memory/route.js");
-    const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
+    const memRoute = await import("@/app/api/memory/route.ts");
+    const memByIdRoute = await import("@/app/api/memory/[id]/route.ts");
     const postRes = await memRoute.POST(
       new Request("http://localhost/api/memory", {
         method: "POST",
@@ -719,7 +719,7 @@ describe("DELETE /api/memory/[id]", () => {
   });
 
   it("returns 404 for unknown id", async () => {
-    const memByIdRoute = await import("@/app/api/memory/[id]/route.js");
+    const memByIdRoute = await import("@/app/api/memory/[id]/route.ts");
     const res = await memByIdRoute.DELETE(
       new Request("http://localhost/api/memory/nope", { method: "DELETE" }),
       {

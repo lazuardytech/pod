@@ -13,7 +13,8 @@ src/
     offline/          Offline fallback page
   lib/                Backend services (storage, cache, rate limiting, auth, tunnels)
   sse/                SSE chat orchestration layer
-  shared/             UI components, Zustand stores, constants, utils
+  shared/             UI components, constants, utils, PWA/offline services
+  store/              Zustand stores (headerActionStore, theme, providers, …)
   instrumentation.ts  Next.js 16 entry point (initializeApp + signal handlers)
   server-init.ts      App initialization and global signal handlers
 ```
@@ -140,6 +141,6 @@ This layer sits between the API route and `open-sse/`. It manages the 100-connec
 ## Patterns
 
 - **Thin API routes**: Routes call into `lib/` services; no business logic in route handlers
-- **Zustand per domain**: Each domain (auth, providers, theme, notifications, header) gets its own store
+- **Zustand per domain**: Each domain (auth, providers, theme, notifications, header) gets its own store in `src/store/`
 - **PWA**: SW registration-only (no auto-update UX). `public/sw.js` is **network-first** for navigations (offline `/offline` fallback); never reject `respondWith` / never `Response.error()` on images; `ServiceWorkerRegistrar` must not blind-reload on `controllerchange`. Offline reads via `offlineJsonCache`; writes via mutation queue. See gotcha §34.
-- **Header actions**: Route through `headerActionStore`
+- **Header actions**: Route through `src/store/headerActionStore.ts`

@@ -1,5 +1,5 @@
-import { getDefaultModel } from "open-sse/config/providerModels.js";
-import { resolveOllamaLocalHost } from "open-sse/config/providers.js";
+import { getDefaultModel } from "open-sse/config/providerModels.ts";
+import { resolveOllamaLocalHost } from "open-sse/config/providers.ts";
 import { asApiRecord, asString, proxyTestError } from "@/app/api/_types";
 import { getProviderConnectionById, updateProviderConnection } from "@/lib/localDb";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
@@ -433,7 +433,7 @@ async function fetchWithConnectionProxy(
 ) {
   // Vercel relay: forward via relay URL
   if (effectiveProxy?.vercelRelayUrl) {
-    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
+    const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.ts");
     return proxyAwareFetch(
       url,
       options as never,
@@ -447,7 +447,7 @@ async function fetchWithConnectionProxy(
     return fetch(url, options);
   }
 
-  const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.js");
+  const { proxyAwareFetch } = await import("open-sse/utils/proxyFetch.ts");
   return proxyAwareFetch(
     url,
     options as never,

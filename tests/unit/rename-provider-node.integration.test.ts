@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  const { importDb } = await import("@/lib/localDb.js");
+  const { importDb } = await import("@/lib/localDb.ts");
   await importDb({
     providerConnections: [],
     providerNodes: [],
@@ -41,7 +41,7 @@ const OLD_ID = "openai-compatible-foo";
 const NEW_ID = "openai-compatible-bar";
 
 async function seedCustomNode(id = OLD_ID) {
-  const { createProviderNode } = await import("@/lib/localDb.js");
+  const { createProviderNode } = await import("@/lib/localDb.ts");
   return await createProviderNode({
     id,
     type: "openai-compatible",
@@ -55,7 +55,7 @@ async function seedCustomNode(id = OLD_ID) {
 describe("renameProviderNode — basic node table update", () => {
   it("updates provider_nodes.id and records previousIds", async () => {
     await seedCustomNode();
-    const { renameProviderNode, getProviderNodeById } = await import("@/lib/localDb.js");
+    const { renameProviderNode, getProviderNodeById } = await import("@/lib/localDb.ts");
 
     const updated = await renameProviderNode(OLD_ID, NEW_ID);
     expect(updated.id).toBe(NEW_ID);
@@ -72,7 +72,7 @@ describe("renameProviderNode — basic node table update", () => {
 
   it("accumulates previousIds across multiple renames", async () => {
     await seedCustomNode("openai-compatible-a");
-    const { renameProviderNode, getProviderNodeById } = await import("@/lib/localDb.js");
+    const { renameProviderNode, getProviderNodeById } = await import("@/lib/localDb.ts");
 
     await renameProviderNode("openai-compatible-a", "openai-compatible-b");
     await renameProviderNode("openai-compatible-b", "openai-compatible-c");
@@ -84,13 +84,13 @@ describe("renameProviderNode — basic node table update", () => {
   it("rejects rename when newId already exists", async () => {
     await seedCustomNode(OLD_ID);
     await seedCustomNode(NEW_ID);
-    const { renameProviderNode } = await import("@/lib/localDb.js");
+    const { renameProviderNode } = await import("@/lib/localDb.ts");
 
     await expect(renameProviderNode(OLD_ID, NEW_ID)).rejects.toThrow(/already in use/i);
   });
 
   it("rejects when source node missing", async () => {
-    const { renameProviderNode } = await import("@/lib/localDb.js");
+    const { renameProviderNode } = await import("@/lib/localDb.ts");
     await expect(renameProviderNode("openai-compatible-missing", NEW_ID)).rejects.toThrow(
       /not found/i,
     );
@@ -98,7 +98,7 @@ describe("renameProviderNode — basic node table update", () => {
 
   it("rejects when oldId === newId", async () => {
     await seedCustomNode();
-    const { renameProviderNode } = await import("@/lib/localDb.js");
+    const { renameProviderNode } = await import("@/lib/localDb.ts");
     await expect(renameProviderNode(OLD_ID, OLD_ID)).rejects.toThrow(/must differ/i);
   });
 });
@@ -107,7 +107,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
   it("rewrites provider_connections.provider", async () => {
     await seedCustomNode();
     const { createProviderConnection, getProviderConnections, renameProviderNode } =
-      await import("@/lib/localDb.js");
+      await import("@/lib/localDb.ts");
     const conn = await createProviderConnection({
       provider: OLD_ID,
       authType: "apikey",
@@ -127,7 +127,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
   it("rewrites custom_models.provider_alias", async () => {
     await seedCustomNode();
     const { addCustomModel, getCustomModels, renameProviderNode } =
-      await import("@/lib/localDb.js");
+      await import("@/lib/localDb.ts");
     await addCustomModel({ providerAlias: OLD_ID, id: "my-model", name: "My Model" });
 
     await renameProviderNode(OLD_ID, NEW_ID);
@@ -138,7 +138,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
 
   it("rewrites combos.models entries that reference the renamed provider", async () => {
     await seedCustomNode();
-    const { createCombo, getComboById, renameProviderNode } = await import("@/lib/localDb.js");
+    const { createCombo, getComboById, renameProviderNode } = await import("@/lib/localDb.ts");
     const combo = await createCombo({
       name: "test-combo",
       models: [
@@ -162,7 +162,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
 
   it("rewrites model_aliases.target", async () => {
     await seedCustomNode();
-    const { setModelAlias, getModelAliases, renameProviderNode } = await import("@/lib/localDb.js");
+    const { setModelAlias, getModelAliases, renameProviderNode } = await import("@/lib/localDb.ts");
     await setModelAlias("my-shortcut", `${OLD_ID}/gpt-4`);
     await setModelAlias("other", "openai/gpt-3.5");
 
@@ -175,7 +175,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
 
   it("rewrites settings.providerStrategies and settings.providerThinking keys", async () => {
     await seedCustomNode();
-    const { updateSettings, getSettings, renameProviderNode } = await import("@/lib/localDb.js");
+    const { updateSettings, getSettings, renameProviderNode } = await import("@/lib/localDb.ts");
     await updateSettings({
       providerStrategies: {
         [OLD_ID]: { fallbackStrategy: "round-robin" },
@@ -196,7 +196,7 @@ describe("renameProviderNode — cascades to dependent tables", () => {
 
   it("rewrites usage_history.provider and request_log.provider rows", async () => {
     await seedCustomNode();
-    const { renameProviderNode } = await import("@/lib/localDb.js");
+    const { renameProviderNode } = await import("@/lib/localDb.ts");
     const { getDatabase } = await import("@/lib/sqlite/connection.ts");
     const db = getDatabase();
 
@@ -252,7 +252,7 @@ describe("renameProviderNode — atomicity", () => {
     await seedCustomNode(OLD_ID);
     await seedCustomNode(NEW_ID);
     const { renameProviderNode, getProviderConnections, createProviderConnection } =
-      await import("@/lib/localDb.js");
+      await import("@/lib/localDb.ts");
 
     await createProviderConnection({
       provider: OLD_ID,

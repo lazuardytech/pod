@@ -6,12 +6,12 @@ import {
   ANTIGRAVITY_HEADERS,
   INTERNAL_REQUEST_HEADER,
   OAUTH_ENDPOINTS,
-} from "../config/appConstants.js";
-import { PROVIDERS } from "../config/providers.js";
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { cleanJSONSchemaForAntigravity } from "../translator/helpers/geminiHelper.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { deriveSessionId } from "../utils/sessionManager.js";
+} from "../config/appConstants.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { cleanJSONSchemaForAntigravity } from "../translator/helpers/geminiHelper.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
+import { deriveSessionId } from "../utils/sessionManager.ts";
 import {
   BaseExecutor,
   type ExecutorCredentials,
@@ -19,7 +19,7 @@ import {
   type ExecutorHeaders,
   type ExecutorLogger,
   type ExecutorProxyOptions,
-} from "./base.js";
+} from "./base.ts";
 
 type JsonRecord = Record<string, unknown>;
 type FunctionDeclaration = JsonRecord & {

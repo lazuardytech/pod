@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, Card, Input, ModelSelectModal, Toggle } from "@/shared/components";
+import { Button, Card, IconButton, Input, ModelSelectModal, Toggle } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
@@ -473,29 +473,40 @@ export default function ComboDetailPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-0.5">
-                    <button
+                    <IconButton
+                      icon="arrow_upward"
+                      title="Move up"
+                      size="sm"
+                      variant="ghost"
                       onClick={() => handleMove(idx, -1)}
                       disabled={idx === 0}
-                      className={`p-1 rounded ${idx === 0 ? "text-text-muted/20" : "text-text-muted hover:text-primary hover:bg-black/5"}`}
-                      title="Move up"
-                    >
-                      <LucideIcon name="arrow_upward" className="text-[16px]" />
-                    </button>
-                    <button
+                      className={
+                        idx === 0
+                          ? "text-text-muted/20"
+                          : "text-text-muted hover:text-primary hover:bg-black/5"
+                      }
+                    />
+                    <IconButton
+                      icon="arrow_downward"
+                      title="Move down"
+                      size="sm"
+                      variant="ghost"
                       onClick={() => handleMove(idx, 1)}
                       disabled={idx === providers.length - 1}
-                      className={`p-1 rounded ${idx === providers.length - 1 ? "text-text-muted/20" : "text-text-muted hover:text-primary hover:bg-black/5"}`}
-                      title="Move down"
-                    >
-                      <LucideIcon name="arrow_downward" className="text-[16px]" />
-                    </button>
-                    <button
-                      onClick={() => handleRemoveProvider(idx)}
-                      className="p-1 rounded text-text-muted hover:text-red-500 hover:bg-red-500/10"
+                      className={
+                        idx === providers.length - 1
+                          ? "text-text-muted/20"
+                          : "text-text-muted hover:text-primary hover:bg-black/5"
+                      }
+                    />
+                    <IconButton
+                      icon="close"
                       title="Remove"
-                    >
-                      <LucideIcon name="close" className="text-[16px]" />
-                    </button>
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveProvider(idx)}
+                      className="text-text-muted hover:text-red-500 hover:bg-red-500/10"
+                    />
                   </div>
                 </div>
               );

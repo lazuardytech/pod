@@ -73,3 +73,7 @@ Three failure classes look similar in the browser but need different fixes:
 2. **Idle browser ↔ Cloudflare connection** — Next.js RSC fetches (`?_rsc=`) and most `fetch()` calls are **not** handled by the SW. Soft reload can fail with `(failed)` and no HTTP status while hard reload opens a fresh connection. Classify in DevTools by request type and whether Size shows `from ServiceWorker`.
 
 3. **Canary cold-start vs prod warm** — `pod-canary.zeabur.app` can cold-start 15–30s after idle (see §32). Prod `pod.lazuardy.tech` is usually warm; correlate with `curl /api/health` at failure time before blaming the SW.
+
+## 35. Zeabur kubelet probes `GET /` (1s), not Docker HEALTHCHECK
+
+Docker HEALTHCHECK curls `/api/health`. Zeabur/k3s readiness on this host was `httpGet path=/ timeoutSeconds=1`, which hits the dashboard SSR page. Under concurrent large combo SSE the Bun event loop stalls, the probe exceeds 1s, and the pod is marked NotReady even though the process is alive. Durable fix: Zeabur dashboard **Settings → Health Check → `/api/health`** (prefer timeout ≥5s). k3s patches are overwritten on the next Zeabur deploy. Do not special-case kubelet User-Agent on `/`.

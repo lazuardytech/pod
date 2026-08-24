@@ -1,13 +1,14 @@
 // @ts-nocheck
 import { createHash } from "node:crypto";
 import { getConsistentMachineId } from "../../src/shared/utils/machineId";
-import { CODEX_DEFAULT_INSTRUCTIONS } from "../config/codexInstructions.js";
-import { getModelUpstreamId } from "../config/providerModels.js";
-import { PROVIDERS } from "../config/providers.js";
-import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.js";
-import { fetchImageAsBase64 } from "../translator/helpers/imageHelper.js";
-import { normalizeResponsesInput } from "../translator/helpers/responsesApiHelper.js";
-import { dbg } from "../utils/debugLog.js";
+import { CODEX_DEFAULT_INSTRUCTIONS } from "../config/codexInstructions.ts";
+import { getModelUpstreamId } from "../config/providerModels.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { DEFAULT_RETRY_CONFIG, resolveRetryEntry } from "../config/runtimeConfig.ts";
+import { stripThinkingSuffix } from "../translator/concerns/thinkingUnified.ts";
+import { fetchImageAsBase64 } from "../translator/helpers/imageHelper.ts";
+import { normalizeResponsesInput } from "../translator/helpers/responsesApiHelper.ts";
+import { dbg } from "../utils/debugLog.ts";
 import {
   BaseExecutor,
   type ExecutorCredentials,
@@ -15,7 +16,7 @@ import {
   type ExecutorExecuteOptions,
   type ExecutorExecuteResult,
   type ExecutorHeaders,
-} from "./base.js";
+} from "./base.ts";
 
 type MutableRecord = Record<string, unknown>;
 
@@ -602,10 +603,12 @@ export class CodexExecutor extends BaseExecutor {
       "cx",
       typeof body.model === "string" ? body.model : model,
     );
+    requestModel =
+      typeof requestModel === "string" ? stripThinkingSuffix(requestModel) : requestModel;
     body.model = requestModel;
 
-    // Extract thinking level from model name suffix
-    // e.g., gpt-5.3-codex-high -> high, gpt-5.3-codex -> medium (default)
+    // Extract thinking level from hyphen suffix after paren strip
+    // e.g., gpt-5.3-codex-high -> high; gpt-5.3-codex(high) already cleaned above
     const effortLevels = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
     let modelEffort: string | null = null;
     for (const level of effortLevels) {

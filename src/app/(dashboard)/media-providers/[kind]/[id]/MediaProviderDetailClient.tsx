@@ -2,8 +2,8 @@
 
 import { notFound, useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { GOOGLE_TTS_LANGUAGES } from "open-sse/config/googleTtsLanguages.js";
-import { getTtsVoicesForModel } from "open-sse/config/ttsModels.js";
+import { GOOGLE_TTS_LANGUAGES } from "open-sse/config/googleTtsLanguages.ts";
+import { getTtsVoicesForModel } from "open-sse/config/ttsModels.ts";
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import ConnectionsCard from "@/app/(dashboard)/providers/components/ConnectionsCard";
 import ModelsCard from "@/app/(dashboard)/providers/components/ModelsCard";
@@ -12,8 +12,11 @@ import {
   Badge,
   Button,
   Card,
+  IconButton,
+  Input,
   NoAuthProxyCard,
   ProviderInfoCard,
+  Select,
 } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
@@ -409,108 +412,113 @@ function EmbeddingExampleCard({
         {/* Model — text input for custom node, dropdown otherwise */}
         <Row label="Model">
           {isCustom ? (
-            <input
+            <Input
               aria-label="Model"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="e.g. voyage-3, embed-english-v3.0, text-embedding-3-small"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              inputClassName="font-mono"
               name="model"
+              className="w-full"
             />
           ) : (
-            <select
+            <Select
               aria-label="Model"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={embeddingModels.map((m: ProviderModel) => ({
+                value: m.id,
+                label: m.name || m.id,
+              }))}
               name="model"
-            >
-              {embeddingModels.map((m: ProviderModel) => (
-                <option key={m.id} value={m.id}>
-                  {m.name || m.id}
-                </option>
-              ))}
-            </select>
+              className="w-full"
+            />
           )}
         </Row>
 
         {/* Endpoint */}
         <Row label="Endpoint">
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <input
+            <Input
               aria-label="Endpoint"
               value={endpoint}
               onChange={(e) =>
                 useTunnel ? setTunnelEndpoint(e.target.value) : setLocalEndpoint(e.target.value)
               }
-              className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              inputClassName="font-mono"
               placeholder="http://localhost:3000"
               name="endpoint"
+              className="w-full min-w-0 flex-1"
             />
-            {/* Tunnel toggle — only show if tunnel URL is available */}
             {tunnelEndpoint && (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                icon="wifi_tethering"
                 onClick={() => setUseTunnel((v) => !v)}
                 title={useTunnel ? "Using tunnel" : "Using local"}
-                className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
+                className={`shrink-0 ${
                   useTunnel
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-text-muted hover:text-primary"
                 }`}
               >
-                <LucideIcon name="wifi_tethering" className="text-[14px]" />
                 Tunnel
-              </button>
+              </Button>
             )}
           </div>
         </Row>
 
         {/* API Key */}
         <Row label="API Key">
-          <input
+          <Input
             aria-label="API Key"
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="sk-..."
-            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+            inputClassName="font-mono"
             name="api-key"
+            className="w-full"
           />
         </Row>
 
         {/* Input */}
         <Row label="Input">
           <div className="relative">
-            <input
+            <Input
               aria-label="Input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              inputClassName="pr-7"
               name="input-text"
+              className="w-full"
             />
             {input && (
-              <button
+              <IconButton
                 type="button"
+                icon="close"
+                size="sm"
+                variant="ghost"
                 onClick={() => setInput("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-              >
-                <LucideIcon name="close" className="text-[14px]" />
-              </button>
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                title="Clear"
+              />
             )}
           </div>
         </Row>
 
         {/* Dimensions (optional) — truncate embedding vector length */}
         <Row label="Dimensions">
-          <input
+          <Input
             aria-label="Dimensions"
             type="number"
             min="1"
             value={dimensions}
             onChange={(e) => setDimensions(e.target.value)}
             placeholder="optional, e.g. 512, 1024 (leave empty for default)"
-            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
             name="dimensions"
+            className="w-full"
           />
         </Row>
 
@@ -521,29 +529,25 @@ function EmbeddingExampleCard({
               Request
             </span>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copiedCurl ? "check" : "content_copy"}
                 onClick={() => copyCurl(curlSnippet)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="text-xs text-text-muted hover:text-primary"
               >
-                <LucideIcon
-                  name={copiedCurl ? "check" : "content_copy"}
-                  size={12}
-                  className="shrink-0"
-                />
                 {copiedCurl ? "Copied" : "Copy"}
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
+                icon="play_arrow"
+                loading={running}
                 onClick={handleRun}
                 disabled={running || !input.trim() || !modelFull}
-                className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto"
               >
-                <LucideIcon
-                  name={running ? "progress_activity" : "play_arrow"}
-                  size={12}
-                  className={running ? "shrink-0 animate-spin" : "shrink-0"}
-                />
                 {running ? "Running..." : "Run"}
-              </button>
+              </Button>
             </div>
           </div>
           <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all">
@@ -564,17 +568,15 @@ function EmbeddingExampleCard({
               )}
             </span>
             {result && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copiedRes ? "check" : "content_copy"}
                 onClick={() => copyRes(resultJson)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="text-xs text-text-muted hover:text-primary"
               >
-                <LucideIcon
-                  name={copiedRes ? "check" : "content_copy"}
-                  size={12}
-                  className="shrink-0"
-                />
                 {copiedRes ? "Copied" : "Copy"}
-              </button>
+              </Button>
             )}
           </div>
           <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all opacity-70">
@@ -846,18 +848,20 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                 {endpoint}/v1/audio/speech
               </span>
               {tunnelEndpoint && (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon="wifi_tethering"
                   onClick={() => setUseTunnel((v) => !v)}
                   title={useTunnel ? "Using tunnel" : "Using local"}
-                  className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
+                  className={`shrink-0 ${
                     useTunnel
                       ? "border-primary/40 bg-primary/10 text-primary"
                       : "border-border text-text-muted hover:text-primary"
                   }`}
                 >
-                  <LucideIcon name="wifi_tethering" className="text-[14px]" />
                   Tunnel
-                </button>
+                </Button>
               )}
             </div>
           </Row>
@@ -875,43 +879,41 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
           {config.hasModelSelector &&
             (config.modelKey || AI_PROVIDERS[providerId]?.ttsConfig?.models?.length) && (
               <Row label="Model">
-                <select
+                <Select
                   aria-label="Model"
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-                  name="model"
-                >
-                  {(
+                  options={(
                     (AI_PROVIDERS[providerId]?.ttsConfig?.models?.length
                       ? AI_PROVIDERS[providerId].ttsConfig.models
                       : getModelsByProviderId(config.modelKey)) || []
-                  ).map((m: ProviderModel) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name || m.id}
-                    </option>
-                  ))}
-                </select>
+                  ).map((m: ProviderModel) => ({
+                    value: m.id,
+                    label: m.name || m.id,
+                  }))}
+                  name="model"
+                  className="w-full"
+                />
               </Row>
             )}
 
           {/* Language hint dropdown (Gemini) — sends body.language to guide pronunciation */}
           {config.hasLanguageHint && (
             <Row label="Language">
-              <select
+              <Select
                 aria-label="Language"
                 value={languageHint}
                 onChange={(e) => setLanguageHint(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                options={[
+                  { value: "", label: "Auto-detect" },
+                  ...GOOGLE_TTS_LANGUAGES.map((l: { id: string; name: string }) => ({
+                    value: l.name,
+                    label: l.name,
+                  })),
+                ]}
                 name="language"
-              >
-                <option value="">Auto-detect</option>
-                {GOOGLE_TTS_LANGUAGES.map((l: { id: string; name: string }) => (
-                  <option key={l.id} value={l.name}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+                className="w-full"
+              />
             </Row>
           )}
 
@@ -919,9 +921,10 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
           {config.hasBrowseButton && (
             <Row label="Language">
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                <button
+                <Button
+                  variant="outline"
                   onClick={openModal}
-                  className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background font-mono truncate text-left hover:border-primary/40 transition-colors"
+                  className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm font-mono truncate justify-start hover:border-primary/40"
                 >
                   {selectedLang ? (
                     <span className="text-text-main">
@@ -931,14 +934,16 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                   ) : (
                     <span className="text-text-muted">No language selected</span>
                   )}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon="language"
                   onClick={openModal}
-                  className="flex w-full items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border text-text-muted hover:text-primary hover:border-primary/40 transition-colors sm:w-auto sm:shrink-0"
+                  className="w-full sm:w-auto sm:shrink-0 text-text-muted hover:text-primary hover:border-primary/40"
                 >
-                  <LucideIcon name="language" className="text-[14px]" />
                   Select language
-                </button>
+                </Button>
               </div>
             </Row>
           )}
@@ -948,14 +953,16 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
             <Row label="Voice">
               <div className="flex flex-wrap gap-1.5">
                 {countryVoices.map((v: TtsVoice) => (
-                  <button
+                  <Button
                     key={v.id}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setSelectedVoice(v.id);
                       setSelectedVoiceName(v.name);
                       if (config.hasVoiceIdInput) setVoiceId(v.id);
                     }}
-                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                    className={`px-2.5 py-1 h-auto rounded-full text-xs border ${
                       selectedVoice === v.id
                         ? "bg-primary/15 border-primary/40 text-primary font-medium"
                         : "border-border text-text-muted hover:text-primary hover:border-primary/40"
@@ -973,7 +980,7 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                         Paid
                       </span>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </Row>
@@ -984,7 +991,7 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
             <Row label="Voice ID">
               <div className="flex flex-col gap-1">
                 <div className="relative">
-                  <input
+                  <Input
                     aria-label="Voice ID"
                     value={voiceId}
                     onChange={(e) => {
@@ -992,20 +999,23 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                       setSelectedVoice(e.target.value);
                     }}
                     placeholder="e.g. CwhRBWXzGAHq8TQ4Fs17"
-                    className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+                    inputClassName="font-mono pr-7"
                     name="voice-id"
+                    className="w-full"
                   />
                   {voiceId && (
-                    <button
+                    <IconButton
                       type="button"
+                      icon="close"
+                      size="sm"
+                      variant="ghost"
                       onClick={() => {
                         setVoiceId("");
                         setSelectedVoice("");
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-                    >
-                      <LucideIcon name="close" className="text-[14px]" />
-                    </button>
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      title="Clear"
+                    />
                   )}
                 </div>
               </div>
@@ -1015,7 +1025,7 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
           {/* Google TTS: Language dropdown */}
           {config.hasLanguageDropdown && (
             <Row label="Language">
-              <select
+              <Select
                 aria-label="Language"
                 value={selectedVoice}
                 name="language"
@@ -1026,53 +1036,55 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                   setSelectedVoice(e.target.value);
                   setSelectedVoiceName(m?.name || e.target.value);
                 }}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-              >
-                {getModelsByProviderId(providerId)
+                options={getModelsByProviderId(providerId)
                   .filter((m: ProviderModel) => m.type === "tts")
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name || m.id}
-                    </option>
-                  ))}
-              </select>
+                  .map((m) => ({
+                    value: m.id,
+                    label: m.name || m.id,
+                  }))}
+                className="w-full"
+              />
             </Row>
           )}
 
           {/* Input */}
           <Row label="Input">
             <div className="relative">
-              <input
+              <Input
                 aria-label="Input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                inputClassName="pr-7"
                 name="input-text"
+                className="w-full"
               />
               {input && (
-                <button
+                <IconButton
                   type="button"
+                  icon="close"
+                  size="sm"
+                  variant="ghost"
                   onClick={() => setInput("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-                >
-                  <LucideIcon name="close" className="text-[14px]" />
-                </button>
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  title="Clear"
+                />
               )}
             </div>
           </Row>
 
           {/* Output Format */}
           <Row label="Output Format">
-            <select
+            <Select
               aria-label="Output format"
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={[
+                { value: "mp3", label: "MP3 (Binary)" },
+                { value: "json", label: "JSON (Base64)" },
+              ]}
               name="output-format"
-            >
-              <option value="mp3">MP3 (Binary)</option>
-              <option value="json">JSON (Base64)</option>
-            </select>
+              className="w-full"
+            />
           </Row>
 
           {/* Curl + Run */}
@@ -1082,29 +1094,25 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                 Request
               </span>
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={copiedCurl ? "check" : "content_copy"}
                   onClick={() => copyCurl(curlSnippet)}
-                  className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                  className="text-xs text-text-muted hover:text-primary"
                 >
-                  <LucideIcon
-                    name={copiedCurl ? "check" : "content_copy"}
-                    size={12}
-                    className="shrink-0"
-                  />
                   {copiedCurl ? "Copied" : "Copy"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  size="sm"
+                  icon="play_arrow"
+                  loading={running}
                   onClick={handleRun}
                   disabled={running || !input.trim() || !modelFull}
-                  className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto"
                 >
-                  <LucideIcon
-                    name={running ? "progress_activity" : "play_arrow"}
-                    size={12}
-                    className={running ? "shrink-0 animate-spin" : "shrink-0"}
-                  />
                   {running ? "Generating..." : "Run"}
-                </button>
+                </Button>
               </div>
             </div>
             <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all">
@@ -1184,24 +1192,26 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-xl">
               <h3 className="text-sm font-semibold">Select Language</h3>
-              <button
+              <IconButton
+                icon="close"
+                size="lg"
+                variant="ghost"
                 onClick={() => setModalOpen(false)}
-                className="text-text-muted hover:text-primary transition-colors"
-              >
-                <LucideIcon name="close" className="text-[20px]" />
-              </button>
+                title="Close"
+                className="text-text-muted hover:text-primary"
+              />
             </div>
 
             {/* Search */}
             <div className="px-4 py-2.5 border-b border-border shrink-0">
-              <input
+              <Input
                 aria-label="Search language"
                 autoFocus
                 value={modalSearch}
                 onChange={(e) => setModalSearch(e.target.value)}
                 placeholder="Search language..."
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                 name="search"
+                className="w-full"
               />
             </div>
 
@@ -1213,10 +1223,11 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
               ) : (
                 <div className="flex flex-col gap-0.5">
                   {filteredLanguages.map((c: TtsLang) => (
-                    <button
+                    <Button
                       key={c.code}
+                      variant="ghost"
                       onClick={() => handlePickLanguage(c)}
-                      className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-left hover:bg-sidebar transition-colors ${
+                      className={`flex h-auto items-center justify-between w-full px-3 py-2 rounded-lg text-left hover:bg-sidebar ${
                         selectedLang === c.code ? "bg-primary/10 text-primary" : ""
                       }`}
                     >
@@ -1227,7 +1238,7 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
                           <LucideIcon name="check" className="text-[16px] text-primary" />
                         )}
                       </div>
-                    </button>
+                    </Button>
                   ))}
                   {filteredLanguages.length === 0 && (
                     <p className="text-xs text-text-muted px-2 py-3">No languages found.</p>
@@ -1497,29 +1508,28 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
         {/* Model selector — dropdown if presets exist, else manual input for media kinds */}
         {kindModels.length > 0 ? (
           <Row label="Model">
-            <select
+            <Select
               aria-label="Model"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={kindModels.map((m: ProviderModel) => ({
+                value: m.id,
+                label: m.name || m.id,
+              }))}
               name="model"
-            >
-              {kindModels.map((m: ProviderModel) => (
-                <option key={m.id} value={m.id}>
-                  {m.name || m.id}
-                </option>
-              ))}
-            </select>
+              className="w-full"
+            />
           </Row>
         ) : allowManualModel ? (
           <Row label="Model">
-            <input
+            <Input
               aria-label="Model"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="Enter model id (provider-specific)"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              inputClassName="font-mono"
               name="model"
+              className="w-full"
             />
           </Row>
         ) : null}
@@ -1532,18 +1542,20 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
               {apiPath}
             </span>
             {tunnelEndpoint && (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                icon="wifi_tethering"
                 onClick={() => setUseTunnel((v) => !v)}
                 title={useTunnel ? "Using tunnel" : "Using local"}
-                className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
+                className={`shrink-0 ${
                   useTunnel
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-text-muted hover:text-primary"
                 }`}
               >
-                <LucideIcon name="wifi_tethering" className="text-[14px]" />
                 Tunnel
-              </button>
+              </Button>
             )}
           </div>
         </Row>
@@ -1562,47 +1574,49 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
         {/* Connection picker - only show when 2+ connections (or any with email) */}
         {connections.length > 0 && (
           <Row label="Connection">
-            <select
+            <Select
               aria-label="Connection"
               value={pinnedConnectionId}
               onChange={(e) => setPinnedConnectionId(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={[
+                { value: "", label: "Auto (by priority)" },
+                ...connections.map((c: ProviderConnection) => {
+                  const plan = c.providerSpecificData?.chatgptPlanType;
+                  const label = c.email || c.name || c.id.slice(0, 8);
+                  return {
+                    value: c.id,
+                    label: `${label}${plan ? ` [${plan}]` : ""}`,
+                  };
+                }),
+              ]}
               name="connection"
-            >
-              <option value="">Auto (by priority)</option>
-              {connections.map((c: ProviderConnection) => {
-                const plan = c.providerSpecificData?.chatgptPlanType;
-                const label = c.email || c.name || c.id.slice(0, 8);
-                return (
-                  <option key={c.id} value={c.id}>
-                    {label}
-                    {plan ? ` [${plan}]` : ""}
-                  </option>
-                );
-              })}
-            </select>
+              className="w-full"
+            />
           </Row>
         )}
 
         {/* Input */}
         <Row label={exConfig.inputLabel}>
           <div className="relative">
-            <input
+            <Input
               aria-label="Input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={exConfig.inputPlaceholder}
-              className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              inputClassName="pr-7"
               name="input-text"
+              className="w-full"
             />
             {input && (
-              <button
+              <IconButton
                 type="button"
+                icon="close"
+                size="sm"
+                variant="ghost"
                 onClick={() => setInput("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-              >
-                <LucideIcon name="close" className="text-[14px]" />
-              </button>
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                title="Clear"
+              />
             )}
           </div>
         </Row>
@@ -1612,22 +1626,25 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
           <Row label="Ref Image (URL)">
             <div className="flex flex-col gap-2">
               <div className="relative">
-                <input
+                <Input
                   aria-label="Reference image URL"
                   value={refImage}
                   onChange={(e) => setRefImage(e.target.value)}
                   placeholder={imageEditDefaults.image || "https://example.com/source.png"}
-                  className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  inputClassName="pr-7"
                   name="ref-image"
+                  className="w-full"
                 />
                 {refImage && (
-                  <button
+                  <IconButton
                     type="button"
+                    icon="close"
+                    size="sm"
+                    variant="ghost"
                     onClick={() => setRefImage("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-                  >
-                    <LucideIcon name="close" className="text-[14px]" />
-                  </button>
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    title="Clear"
+                  />
                 )}
               </div>
               {refImagePreviewSrc && (
@@ -1655,22 +1672,25 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
           <Row label="Mask (URL)">
             <div className="flex flex-col gap-2">
               <div className="relative">
-                <input
+                <Input
                   aria-label="Mask image URL"
                   value={maskImage}
                   onChange={(e) => setMaskImage(e.target.value)}
                   placeholder={imageEditDefaults.mask_image || "https://example.com/mask.png"}
-                  className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  inputClassName="pr-7"
                   name="mask-image"
+                  className="w-full"
                 />
                 {maskImage && (
-                  <button
+                  <IconButton
                     type="button"
+                    icon="close"
+                    size="sm"
+                    variant="ghost"
                     onClick={() => setMaskImage("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-                  >
-                    <LucideIcon name="close" className="text-[14px]" />
-                  </button>
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    title="Clear"
+                  />
                 )}
               </div>
               {maskImagePreviewSrc && (
@@ -1704,29 +1724,27 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
           .map((f: ExtraField) => (
             <Row key={f.key} label={f.label}>
               {f.type === "select" ? (
-                <select
+                <Select
                   aria-label="Parameter value"
-                  value={extraValues[f.key] ?? ""}
+                  value={String(extraValues[f.key] ?? "")}
                   onChange={(e) =>
                     setExtraValues((s: Record<string, string | number>) => ({
                       ...s,
                       [f.key]: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  options={(f.options || []).map((opt: string) => ({
+                    value: opt,
+                    label: opt === "" ? "(default)" : opt,
+                  }))}
                   name={`param-${f.key}`}
-                >
-                  {(f.options || []).map((opt: string) => (
-                    <option key={opt} value={opt}>
-                      {opt === "" ? "(default)" : opt}
-                    </option>
-                  ))}
-                </select>
+                  className="w-full"
+                />
               ) : f.type === "text" ? (
-                <input
+                <Input
                   aria-label="Parameter value"
                   type="text"
-                  value={extraValues[f.key] ?? ""}
+                  value={String(extraValues[f.key] ?? "")}
                   placeholder={f.placeholder}
                   onChange={(e) =>
                     setExtraValues((s: Record<string, string | number>) => ({
@@ -1734,11 +1752,11 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
                       [f.key]: e.target.value,
                     }))
                   }
-                  className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
+                  className="w-full"
                 />
               ) : (
-                <input
+                <Input
                   aria-label="Parameter value"
                   type="number"
                   value={extraValues[f.key] ?? ""}
@@ -1750,8 +1768,8 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
                       [f.key]: e.target.value === "" ? "" : Number(e.target.value),
                     }))
                   }
-                  className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
                   name={`param-${f.key}`}
+                  className="w-full"
                 />
               )}
             </Row>
@@ -1759,14 +1777,14 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
 
         {supportsBaseUrlOverride && (
           <Row label="Base URL">
-            <input
+            <Input
               aria-label="Provider base URL"
               type="text"
               value={baseUrlOverride}
               placeholder={defaultBaseUrl}
               onChange={(e) => setBaseUrlOverride(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="provider-base-url"
+              className="w-full"
             />
           </Row>
         )}
@@ -1774,16 +1792,17 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
         {/* Output Format toggle (image only) — last */}
         {kind === "image" && (
           <Row label="Output Format">
-            <select
+            <Select
               aria-label="Output format"
               value={imageOutputFormat}
               onChange={(e) => setImageOutputFormat(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={[
+                { value: "json", label: "JSON (Base64)" },
+                { value: "binary", label: "Binary File" },
+              ]}
               name="output-format"
-            >
-              <option value="json">JSON (Base64)</option>
-              <option value="binary">Binary File</option>
-            </select>
+              className="w-full"
+            />
           </Row>
         )}
 
@@ -1794,29 +1813,25 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
               Request
             </span>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copiedCurl ? "check" : "content_copy"}
                 onClick={() => copyCurl(curlSnippet)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="text-xs text-text-muted hover:text-primary"
               >
-                <LucideIcon
-                  name={copiedCurl ? "check" : "content_copy"}
-                  size={12}
-                  className="shrink-0"
-                />
                 {copiedCurl ? "Copied" : "Copy"}
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
+                icon="play_arrow"
+                loading={running}
                 onClick={handleRun}
                 disabled={running || !input.trim() || !modelFull}
-                className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto"
               >
-                <LucideIcon
-                  name={running ? "progress_activity" : "play_arrow"}
-                  size={12}
-                  className={running ? "shrink-0 animate-spin" : "shrink-0"}
-                />
                 {running ? "Running..." : "Run"}
-              </button>
+              </Button>
             </div>
           </div>
           <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all">
@@ -1871,17 +1886,15 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
               )}
             </span>
             {result && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copiedRes ? "check" : "content_copy"}
                 onClick={() => copyRes(resultJson)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="text-xs text-text-muted hover:text-primary"
               >
-                <LucideIcon
-                  name={copiedRes ? "check" : "content_copy"}
-                  size={12}
-                  className="shrink-0"
-                />
                 {copiedRes ? "Copied" : "Copy"}
-              </button>
+              </Button>
             )}
           </div>
           <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all opacity-70">
@@ -2072,29 +2085,28 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         {/* Model */}
         {sttModels.length > 0 ? (
           <Row label="Model">
-            <select
+            <Select
               aria-label="Model"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={sttModels.map((m: ProviderModel) => ({
+                value: m.id,
+                label: m.name || m.id,
+              }))}
               name="model"
-            >
-              {sttModels.map((m: ProviderModel) => (
-                <option key={m.id} value={m.id}>
-                  {m.name || m.id}
-                </option>
-              ))}
-            </select>
+              className="w-full"
+            />
           </Row>
         ) : (
           <Row label="Model">
-            <input
+            <Input
               aria-label="Model"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="Enter model id"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              inputClassName="font-mono"
               name="model"
+              className="w-full"
             />
           </Row>
         )}
@@ -2106,18 +2118,20 @@ function SttExampleCard({ providerId }: { providerId: string }) {
               {endpoint}/v1/audio/transcriptions
             </span>
             {tunnelEndpoint && (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                icon="wifi_tethering"
                 onClick={() => setUseTunnel((v) => !v)}
                 title={useTunnel ? "Using tunnel" : "Using local"}
-                className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border shrink-0 transition-colors ${
+                className={`shrink-0 ${
                   useTunnel
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-text-muted hover:text-primary"
                 }`}
               >
-                <LucideIcon name="wifi_tethering" className="text-[14px]" />
                 Tunnel
-              </button>
+              </Button>
             )}
           </div>
         </Row>
@@ -2136,12 +2150,14 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         {/* Audio file */}
         <Row label="Audio File">
           <div className="flex flex-col gap-2">
-            <input
+            <Input
               aria-label="Audio file"
               type="file"
               accept="audio/*,video/mp4,.m4a,.mp3,.wav,.ogg,.flac,.webm,.opus"
               onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-              className="w-full text-xs text-text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border file:border-border file:bg-background file:text-text-main hover:file:bg-sidebar file:cursor-pointer"
+              inputClassName="w-full text-xs text-text-muted file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border file:border-border file:bg-background file:text-text-main hover:file:bg-sidebar file:cursor-pointer"
+              name="audio-file"
+              className="w-full"
             />
             {audioFile && (
               <span className="text-xs text-text-muted font-mono">
@@ -2154,13 +2170,14 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         {/* Language (if model supports) */}
         {allowedParams.includes("language") && (
           <Row label="Language">
-            <input
+            <Input
               aria-label="Language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               placeholder="e.g. en, vi, ja (auto-detect if empty)"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              inputClassName="font-mono"
               name="language"
+              className="w-full"
             />
           </Row>
         )}
@@ -2168,13 +2185,13 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         {/* Prompt (if model supports) */}
         {allowedParams.includes("prompt") && (
           <Row label="Prompt">
-            <input
+            <Input
               aria-label="Prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="optional context to improve accuracy"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="prompt"
+              className="w-full"
             />
           </Row>
         )}
@@ -2182,7 +2199,7 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         {/* Temperature (if model supports) */}
         {allowedParams.includes("temperature") && (
           <Row label="Temperature">
-            <input
+            <Input
               aria-label="Temperature"
               type="number"
               step="0.1"
@@ -2191,8 +2208,8 @@ function SttExampleCard({ providerId }: { providerId: string }) {
               value={temperature}
               onChange={(e) => setTemperature(e.target.value)}
               placeholder="0 - 1 (default 0)"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
               name="temperature"
+              className="w-full"
             />
           </Row>
         )}
@@ -2200,19 +2217,20 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         {/* Response format (if model supports) */}
         {allowedParams.includes("response_format") && (
           <Row label="Response Format">
-            <select
+            <Select
               aria-label="Response format"
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              options={[
+                { value: "json", label: "json" },
+                { value: "text", label: "text" },
+                { value: "srt", label: "srt" },
+                { value: "verbose_json", label: "verbose_json" },
+                { value: "vtt", label: "vtt" },
+              ]}
               name="response-format"
-            >
-              <option value="json">json</option>
-              <option value="text">text</option>
-              <option value="srt">srt</option>
-              <option value="verbose_json">verbose_json</option>
-              <option value="vtt">vtt</option>
-            </select>
+              className="w-full"
+            />
           </Row>
         )}
 
@@ -2223,29 +2241,25 @@ function SttExampleCard({ providerId }: { providerId: string }) {
               Request
             </span>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copiedCurl ? "check" : "content_copy"}
                 onClick={() => copyCurl(curlSnippet)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="text-xs text-text-muted hover:text-primary"
               >
-                <LucideIcon
-                  name={copiedCurl ? "check" : "content_copy"}
-                  size={12}
-                  className="shrink-0"
-                />
                 {copiedCurl ? "Copied" : "Copy"}
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
+                icon="play_arrow"
+                loading={running}
                 onClick={handleRun}
                 disabled={running || !audioFile || !modelFull}
-                className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-primary text-primary-fg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto"
               >
-                <LucideIcon
-                  name={running ? "progress_activity" : "play_arrow"}
-                  size={12}
-                  className={running ? "shrink-0 animate-spin" : "shrink-0"}
-                />
                 {running ? "Transcribing..." : "Run"}
-              </button>
+              </Button>
             </div>
           </div>
           <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all">
@@ -2265,17 +2279,15 @@ function SttExampleCard({ providerId }: { providerId: string }) {
               )}
             </span>
             {result !== null && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={copiedRes ? "check" : "content_copy"}
                 onClick={() => copyRes(resultStr)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="text-xs text-text-muted hover:text-primary"
               >
-                <LucideIcon
-                  name={copiedRes ? "check" : "content_copy"}
-                  size={12}
-                  className="shrink-0"
-                />
                 {copiedRes ? "Copied" : "Copy"}
-              </button>
+              </Button>
             )}
           </div>
           <pre className="bg-sidebar rounded-lg px-3 py-2.5 text-xs font-mono text-text-main overflow-x-auto whitespace-pre-wrap break-all opacity-70">

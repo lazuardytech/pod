@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG BUN_IMAGE=oven/bun:1.3.14-alpine
+ARG BUN_IMAGE=oven/bun:1.4.0-alpine
 FROM ${BUN_IMAGE} AS builder
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY . ./
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN bun run build
 
-FROM oven/bun:1.3.14-alpine AS runner
+FROM ${BUN_IMAGE} AS runner
 WORKDIR /app
 
 LABEL org.opencontainers.image.title="pod"

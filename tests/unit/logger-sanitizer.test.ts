@@ -9,7 +9,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { debug, error, info, maskKey, sanitizeForLog } from "../../src/sse/utils/logger.js";
+import { debug, error, info, maskKey, sanitizeForLog } from "../../src/sse/utils/logger.ts";
 
 describe("logger sanitizer", () => {
   describe("maskKey()", () => {

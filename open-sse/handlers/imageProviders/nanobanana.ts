@@ -10,7 +10,7 @@ import {
   POLL_TIMEOUT_MS,
   sizeToAspectRatio,
   sleep,
-} from "./_base.js";
+} from "./_base.ts";
 
 const SUBMIT_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana/generate";
 const POLL_BASE = "https://api.nanobananaapi.ai/api/v1/nanobanana/record-info";

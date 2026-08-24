@@ -5,7 +5,7 @@ import type {
   ImageRequestBody,
   JsonObject,
   ProviderCredentials,
-} from "./_base.js";
+} from "./_base.ts";
 
 const ENDPOINTS: Record<string, string> = {
   openai: "https://api.openai.com/v1/images/generations",

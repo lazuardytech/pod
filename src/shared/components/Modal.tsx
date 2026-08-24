@@ -1,9 +1,24 @@
 "use client";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
-import LucideIcon from "@/shared/components/LucideIcon";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { cn } from "@/shared/utils/cn";
-import Button from "./Button";
+import Button from "./Button.tsx";
 
 type ModalProps = {
   isOpen?: boolean;
@@ -17,6 +32,14 @@ type ModalProps = {
   className?: string;
 };
 
+const sizes: Record<string, string> = {
+  sm: "sm:max-w-sm",
+  md: "sm:max-w-md",
+  lg: "sm:max-w-lg",
+  xl: "sm:max-w-xl",
+  full: "sm:max-w-4xl",
+};
+
 export default function Modal({
   isOpen,
   onClose,
@@ -24,92 +47,44 @@ export default function Modal({
   children,
   footer,
   size = "md",
-  closeOnOverlay = true,
+  closeOnOverlay: _closeOnOverlay = true,
   showCloseButton = true,
   className,
 }: ModalProps) {
-  const sizes: Record<string, string> = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    full: "max-w-4xl",
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose?.();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-[2px] fade-in"
-        onClick={closeOnOverlay ? onClose : undefined}
-      />
-
-      {/* Modal content */}
-      <div
+    <Dialog
+      open={!!isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
+    >
+      <DialogContent
+        showCloseButton={showCloseButton}
         className={cn(
-          "relative w-full bg-graphite",
-          "border border-charcoal-grey",
-          "rounded-[6px] shadow-[var(--shadow-xl)]",
-          "fade-in",
+          "bg-graphite border-charcoal-grey rounded-[6px] p-0 gap-0",
           sizes[size],
           className,
         )}
       >
-        {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-grey">
-            <div className="flex items-center gap-3">
-              {title && (
-                <h2 className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">
-                  {title}
-                </h2>
-              )}
-            </div>
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center size-6 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
-              >
-                <LucideIcon name="close" className="text-[15px]" />
-              </button>
+          <DialogHeader className="px-4 py-3 border-b border-charcoal-grey">
+            {title && (
+              <DialogTitle className="text-[13px] font-[510] text-porcelain tracking-[-0.12px]">
+                {title}
+              </DialogTitle>
             )}
-          </div>
+          </DialogHeader>
         )}
-
-        {/* Body */}
         <div className="p-4 max-h-[calc(85vh-100px)] overflow-y-auto custom-scrollbar">
           {children}
         </div>
-
-        {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-charcoal-grey">
+          <DialogFooter className="px-4 py-3 border-t border-charcoal-grey bg-transparent rounded-none">
             {footer}
-          </div>
+          </DialogFooter>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -137,23 +112,32 @@ export function ConfirmModal({
   loading = false,
 }: ConfirmModalProps) {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      size="sm"
-      footer={
-        <>
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>
-            {cancelText}
-          </Button>
-          <Button variant={variant} size="sm" onClick={onConfirm} loading={loading}>
-            {confirmText}
-          </Button>
-        </>
-      }
+    <AlertDialog
+      open={!!isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
     >
-      <p className="text-[13px] text-storm-cloud leading-[1.6]">{message}</p>
-    </Modal>
+      <AlertDialogContent className="bg-graphite border-charcoal-grey rounded-[6px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-[13px] font-[510] text-porcelain">
+            {title}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-[13px] text-storm-cloud leading-[1.6]">
+            {message}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel render={<Button variant="ghost" size="sm" disabled={loading} />}>
+            {cancelText}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            render={<Button variant={variant} size="sm" loading={loading} onClick={onConfirm} />}
+          >
+            {confirmText}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

@@ -1,5 +1,5 @@
 // ComfyUI — local, noAuth (placeholder; full graph workflow not implemented)
-import type { ImageRequestBody } from "./_base.js";
+import type { ImageRequestBody } from "./_base.ts";
 
 export default {
   noAuth: true,

@@ -5,7 +5,7 @@ import {
   type ImageRequestBody,
   type ProviderCredentials,
   nowSec,
-} from "./_base.js";
+} from "./_base.ts";
 
 const CODEX_RESPONSES_URL = "https://chatgpt.com/backend-api/codex/responses";
 const CODEX_USER_AGENT = "codex-imagen/0.2.6";

@@ -1,10 +1,10 @@
-import { PROVIDERS } from "../config/providers.js";
+import { PROVIDERS } from "../config/providers.ts";
 import {
   BaseExecutor,
   type ExecutorExecuteOptions,
   type ExecutorExecuteResult,
   type ExecutorHeaders,
-} from "./base.js";
+} from "./base.ts";
 
 const PPLX_SSE_ENDPOINT = PROVIDERS["perplexity-web"].baseUrl;
 const PPLX_API_VERSION = "2.18";

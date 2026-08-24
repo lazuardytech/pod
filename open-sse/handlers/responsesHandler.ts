@@ -3,10 +3,10 @@
  * Converts Chat Completions to Codex Responses API format
  */
 
-import { createResponsesApiTransformStream } from "../transformer/responsesTransformer.js";
-import { convertResponsesStreamToJson } from "../transformer/streamToJsonConverter.js";
-import { convertResponsesApiFormat } from "../translator/helpers/responsesApiHelper.js";
-import { handleChatCore } from "./chatCore.js";
+import { createResponsesApiTransformStream } from "../transformer/responsesTransformer.ts";
+import { convertResponsesStreamToJson } from "../transformer/streamToJsonConverter.ts";
+import { convertResponsesApiFormat } from "../translator/helpers/responsesApiHelper.ts";
+import { handleChatCore } from "./chatCore.ts";
 
 type JsonRecord = Record<string, unknown>;
 

@@ -1,6 +1,7 @@
 "use client";
-import type { HTMLAttributes, ReactNode } from "react";
+import type { ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/components/ui/toggle-group";
 import { cn } from "@/shared/utils/cn";
 
 export type SegmentedOption = {
@@ -16,7 +17,8 @@ type SegmentedControlProps = {
   size?: string;
   iconSize?: number;
   className?: string;
-} & Omit<HTMLAttributes<HTMLDivElement>, "onChange" | "children">;
+  "aria-label"?: string;
+};
 
 export default function SegmentedControl({
   options = [],
@@ -25,38 +27,41 @@ export default function SegmentedControl({
   size = "md",
   iconSize = 14,
   className,
-  ...rest
+  "aria-label": ariaLabel,
 }: SegmentedControlProps) {
-  const sizes: Record<string, string> = {
-    sm: "h-7 text-[12px]",
-    md: "h-9 text-sm",
-    lg: "h-11 text-base",
-  };
+  const uiSize = size === "sm" ? "sm" : size === "lg" ? "lg" : "default";
 
   return (
-    <div
-      className={cn(
-        "inline-flex items-center p-1 rounded-[10px] overflow-x-auto bg-surface-2 border border-charcoal-grey",
-        className,
-      )}
-      {...rest}
+    <ToggleGroup
+      value={value ? [value] : []}
+      onValueChange={(next) => {
+        const picked = next[0];
+        if (picked) onChange?.(picked);
+      }}
+      variant="outline"
+      size={uiSize}
+      spacing={0}
+      aria-label={ariaLabel}
+      className={cn("inline-flex items-center overflow-x-auto", className)}
     >
       {options.map((option) => (
-        <button
+        <ToggleGroupItem
           key={option.value}
-          onClick={() => onChange?.(option.value)}
+          value={option.value}
           className={cn(
-            "shrink-0 px-4 rounded-[8px] font-[510] transition-all flex items-center gap-1.5",
-            sizes[size],
-            value === option.value
-              ? "bg-surface text-text-main shadow-sm"
-              : "text-text-muted hover:text-text-main",
+            "shrink-0 rounded-[8px] font-[510] text-text-muted",
+            "data-pressed:bg-primary data-pressed:text-primary-fg data-pressed:hover:bg-primary",
+            "aria-pressed:bg-primary aria-pressed:text-primary-fg aria-pressed:hover:bg-primary",
+            "data-[state=on]:bg-primary data-[state=on]:text-primary-fg",
+            size === "sm" && "h-7 px-3 text-[12px]",
+            size === "md" && "h-9 px-4 text-sm",
+            size === "lg" && "h-11 px-4 text-base",
           )}
         >
           {option.icon && <LucideIcon name={option.icon} size={iconSize} />}
           {option.label}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }

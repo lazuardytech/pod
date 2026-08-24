@@ -82,6 +82,8 @@ declare module "open-sse/*" {
     comboName?: string;
     comboStrategy?: string;
     comboStickyLimit?: number | string;
+    judgeModel?: string;
+    tuning?: { minPanel?: number; stragglerGraceMs?: number; panelHardTimeoutMs?: number };
   }): Promise<Response>;
   export function refreshTokenByProvider(
     provider: string,

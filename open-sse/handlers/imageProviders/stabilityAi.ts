@@ -5,7 +5,7 @@ import {
   type ProviderCredentials,
   nowSec,
   sizeToAspectRatio,
-} from "./_base.js";
+} from "./_base.ts";
 
 const BASE_URL = "https://api.stability.ai/v2beta/stable-image/generate";
 

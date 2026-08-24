@@ -565,29 +565,24 @@ export default function ProfilePage() {
           <SettingRow label="Theme" description="Choose how the interface looks">
             <div className="flex items-center gap-1 p-1 rounded-[6px] border border-charcoal-grey bg-pitch-black/60">
               {(["light", "dark", "system"] as const).map((option) => (
-                <button
+                <Button
                   key={option}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setTheme(option)}
+                  icon={
+                    option === "light" ? "light_mode" : option === "dark" ? "dark_mode" : "contrast"
+                  }
                   className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-[12px] font-[510] transition-colors duration-100 capitalize",
+                    "flex items-center gap-1.5 px-2.5 py-1 h-auto rounded-[4px] text-[12px] font-[510] transition-colors duration-100 capitalize",
                     theme === option
                       ? "bg-deep-slate text-porcelain"
                       : "text-fog-grey hover:text-storm-cloud",
                   )}
                 >
-                  <LucideIcon
-                    name={
-                      option === "light"
-                        ? "light_mode"
-                        : option === "dark"
-                          ? "dark_mode"
-                          : "contrast"
-                    }
-                    className="text-[14px]"
-                  />
                   {option}
-                </button>
+                </Button>
               ))}
             </div>
           </SettingRow>

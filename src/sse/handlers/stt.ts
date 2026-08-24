@@ -1,6 +1,6 @@
-import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
-import { handleSttCore } from "open-sse/handlers/sttCore.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { HTTP_STATUS } from "open-sse/config/runtimeConfig.ts";
+import { handleSttCore } from "open-sse/handlers/sttCore.ts";
+import { errorResponse, unavailableResponse } from "open-sse/utils/error.ts";
 import { getSettings } from "@/lib/localDb";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 import {

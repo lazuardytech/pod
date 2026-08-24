@@ -1,18 +1,18 @@
 // @ts-nocheck
-import { ANTIGRAVITY_DEFAULT_SYSTEM } from "../../config/appConstants.js";
+import { ANTIGRAVITY_DEFAULT_SYSTEM } from "../../config/appConstants.ts";
 import {
   DEFAULT_THINKING_AG_SIGNATURE,
   DEFAULT_THINKING_GEMINI_CLI_SIGNATURE,
-} from "../../config/defaultThinkingSignature.js";
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
-import { openaiToClaudeRequestForAntigravity } from "./openai-to-claude.js";
+} from "../../config/defaultThinkingSignature.ts";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
+import { openaiToClaudeRequestForAntigravity } from "./openai-to-claude.ts";
 
 function generateUUID() {
   return crypto.randomUUID();
 }
 
-import { deriveSessionId } from "../../utils/sessionManager.js";
+import { deriveSessionId } from "../../utils/sessionManager.ts";
 import {
   cleanJSONSchemaForAntigravity,
   convertOpenAIContentToParts,
@@ -22,7 +22,7 @@ import {
   generateRequestId,
   generateSessionId,
   tryParseJSON,
-} from "../helpers/geminiHelper.js";
+} from "../helpers/geminiHelper.ts";
 
 // Sanitize function names for Gemini API.
 // Gemini requires: starts with [a-zA-Z_], followed by [a-zA-Z0-9_.:\-], max 64 chars.

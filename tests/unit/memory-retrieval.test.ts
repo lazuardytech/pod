@@ -41,8 +41,8 @@ describe('strategy: "exact" / "recent"', () => {
   });
 
   it("returns memories ordered by createdAt DESC", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -77,8 +77,8 @@ describe('strategy: "exact" / "recent"', () => {
   });
 
   it('"recent" alias works identically to "exact"', async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m = await createMemory({
@@ -108,9 +108,9 @@ describe('strategy: "exact" / "recent"', () => {
   });
 
   it("respects retentionDays cutoff — old memories excluded", async () => {
-    const { deleteMemory } = await import("@/lib/memory/store.js");
+    const { deleteMemory } = await import("@/lib/memory/store.ts");
     const { getDatabase } = await import("@/lib/sqlite/connection.ts");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     // Insert a memory with created_at 40 days ago directly via SQL
@@ -135,8 +135,8 @@ describe('strategy: "exact" / "recent"', () => {
   });
 
   it("filters expired memories (expiresAt in the past)", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const expired = await createMemory({
@@ -168,7 +168,7 @@ describe('strategy: "exact" / "recent"', () => {
   });
 
   it("returns empty array when no memories exist for apiKeyId", async () => {
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const results = await retrieveMemories(uid(), {
       enabled: true,
       retrievalStrategy: "exact",
@@ -183,8 +183,8 @@ describe('strategy: "exact" / "recent"', () => {
 
 describe('strategy: "hybrid"', () => {
   it("returns merged FTS + recency results without duplicates", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -227,8 +227,8 @@ describe('strategy: "hybrid"', () => {
   });
 
   it("deduplicates entries that appear in both FTS and recency", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     // Single memory that would match both FTS and recency
@@ -254,8 +254,8 @@ describe('strategy: "hybrid"', () => {
   });
 
   it("falls back to recency when no query text provided", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -289,8 +289,8 @@ describe('strategy: "hybrid"', () => {
   });
 
   it("query text improves relevance — matching memory ranked higher", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -328,8 +328,8 @@ describe('strategy: "hybrid"', () => {
 
 describe('strategy: "semantic"', () => {
   it("uses FTS5 MATCH and returns relevant memories for query", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -361,8 +361,8 @@ describe('strategy: "semantic"', () => {
   });
 
   it("returns empty array when query matches nothing", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m = await createMemory({
@@ -386,8 +386,8 @@ describe('strategy: "semantic"', () => {
   });
 
   it("falls back to recency when no query text provided", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m = await createMemory({
@@ -418,8 +418,8 @@ describe('strategy: "semantic"', () => {
 
 describe("token budget", () => {
   it("respects maxTokens limit — stops adding when budget exceeded", async () => {
-    const { createMemory, clearMemories } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, clearMemories } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     // Each memory is 200 chars → ~50 tokens
@@ -448,8 +448,8 @@ describe("token budget", () => {
   });
 
   it("always returns at least 1 memory even if single entry exceeds budget", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     // 8000 chars → ~2000 tokens, well over any small maxTokens
@@ -474,7 +474,7 @@ describe("token budget", () => {
   });
 
   it("returns empty array when no memories exist (not forced to return 1)", async () => {
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const results = await retrieveMemories(uid(), {
       enabled: true,
       retrievalStrategy: "exact",
@@ -489,8 +489,8 @@ describe("token budget", () => {
 
 describe("keyword scoring", () => {
   it("exact phrase match scores higher than single-token match", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     // m1: contains exact phrase "dark mode"
@@ -526,8 +526,8 @@ describe("keyword scoring", () => {
   });
 
   it("memories with score=0 are filtered out when query is present", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const irrelevant = await createMemory({
@@ -560,8 +560,8 @@ describe("keyword scoring", () => {
   });
 
   it("results sorted by score DESC then createdAt DESC", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     // m1: older, high score (exact phrase + multiple tokens)
@@ -601,8 +601,8 @@ describe("keyword scoring", () => {
 
 describe("scope filtering", () => {
   it('scope="apiKey" returns all memories for apiKeyId regardless of session', async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -637,8 +637,8 @@ describe("scope filtering", () => {
   });
 
   it('scope="session" returns only memories for the given sessionId', async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId = uid();
 
     const m1 = await createMemory({
@@ -674,8 +674,8 @@ describe("scope filtering", () => {
   });
 
   it("different apiKeyId memories are not returned", async () => {
-    const { createMemory, deleteMemory } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, deleteMemory } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
     const apiKeyId1 = uid();
     const apiKeyId2 = uid();
 

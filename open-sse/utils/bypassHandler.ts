@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { SKIP_PATTERNS } from "../config/runtimeConfig.js";
-import { detectFormat } from "../services/provider.js";
-import { FORMATS } from "../translator/formats.js";
-import { initState, translateResponse } from "../translator/index.js";
-import { formatSSE } from "./stream.js";
+import { SKIP_PATTERNS } from "../config/runtimeConfig.ts";
+import { detectFormat } from "../services/provider.ts";
+import { FORMATS } from "../translator/formats.ts";
+import { initState, translateResponse } from "../translator/index.ts";
+import { formatSSE } from "./stream.ts";
 
 type BypassResult = { success: true; response: Response };
 type JsonRecord = Record<string, unknown>;

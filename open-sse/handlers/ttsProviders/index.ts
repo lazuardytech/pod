@@ -1,14 +1,14 @@
 // TTS provider registry
 
-import { parseModelVoice } from "./_base.js";
-import edgeTts, { fetchEdgeTtsVoices } from "./edgeTts.js";
-import elevenlabs, { fetchElevenLabsVoices } from "./elevenlabs.js";
-import gemini, { fetchGeminiVoices } from "./gemini.js";
-import { FORMAT_HANDLERS } from "./genericFormats.js";
-import googleTts from "./googleTts.js";
-import localDevice, { fetchLocalDeviceVoices } from "./localDevice.js";
-import openai from "./openai.js";
-import openrouter from "./openrouter.js";
+import { parseModelVoice } from "./_base.ts";
+import edgeTts, { fetchEdgeTtsVoices } from "./edgeTts.ts";
+import elevenlabs, { fetchElevenLabsVoices } from "./elevenlabs.ts";
+import gemini, { fetchGeminiVoices } from "./gemini.ts";
+import { FORMAT_HANDLERS } from "./genericFormats.ts";
+import googleTts from "./googleTts.ts";
+import localDevice, { fetchLocalDeviceVoices } from "./localDevice.ts";
+import openai from "./openai.ts";
+import openrouter from "./openrouter.ts";
 
 type TtsAdapterResult =
   | { base64: string; format: string; success?: undefined }

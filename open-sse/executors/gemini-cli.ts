@@ -2,15 +2,15 @@ import {
   GEMINI_CLI_API_CLIENT,
   geminiCLIUserAgent,
   OAUTH_ENDPOINTS,
-} from "../config/appConstants.js";
-import { PROVIDERS } from "../config/providers.js";
+} from "../config/appConstants.ts";
+import { PROVIDERS } from "../config/providers.ts";
 import {
   BaseExecutor,
   type ExecutorConfigInput,
   type ExecutorCredentials,
   type ExecutorHeaders,
   type ExecutorLogger,
-} from "./base.js";
+} from "./base.ts";
 
 export class GeminiCLIExecutor extends BaseExecutor {
   private _currentModel: string | null = null;

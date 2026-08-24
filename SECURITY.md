@@ -56,9 +56,9 @@ Out of scope:
 
 These are known design decisions relevant to security:
 
-- **API key auth** is optional and controlled by `settings.requireApiKey`. When disabled, all `/v1/*` endpoints are unauthenticated by design (intended for trusted internal networks).
+- **API key auth** is on by default (`settings.requireApiKey`). When disabled, all `/v1/*` endpoints are unauthenticated by design (intended for trusted internal networks).
 - **API key comparison** uses timing-safe comparison (`validateApiKey`) to prevent timing attacks.
-- **Dashboard auth** is session-based (JWT/cookie) via `dashboardGuard.js`.
+- **Dashboard auth** is session-based (JWT/cookie) via `src/lib/routeAuth.ts`. `dashboardGuard.ts` / `proxy.ts` / `middleware.ts` are not registered.
 - **SQLite** stores API keys, provider credentials, and usage data. The data directory (`DATA_DIR`) should be protected at the OS level.
 - **Proxy fetch** supports `HTTPS_PROXY` / `HTTP_PROXY` env vars. Ensure these are set to trusted proxies only.
 - **Tailscale and Cloudflare tunnel** integrations expose the dashboard externally. Secure with API key auth and strong credentials when using tunnels.

@@ -7,7 +7,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { EditConnectionModal } from "@/shared/components";
+import { Button, EditConnectionModal, IconButton, ShadcnSelect } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { ConfirmModal } from "@/shared/components/Modal";
 import ProviderIcon from "@/shared/components/ProviderIcon";
@@ -123,7 +123,6 @@ export default function ProviderLimits() {
   const [proxyPools, setProxyPools] = useState<ProxyPool[]>([]);
   const [providerFilter, setProviderFilter] = useState("all");
   const [expiringFirst, setExpiringFirst] = useState(false);
-  const [providerMenuOpen, setProviderMenuOpen] = useState(false);
   const [bulkToggling, setBulkToggling] = useState(false);
   const [collapseAll, setCollapseAll] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
@@ -610,8 +609,6 @@ export default function ProviderLimits() {
   const providerOptions = Array.from(
     new Set<string>(filteredConnections.map((conn: UsageConnection) => conn.provider)),
   ).sort();
-  const selectedProviderLabel = providerFilter === "all" ? "All providers" : providerFilter;
-
   // Calculate summary stats
   const _totalProviders = sortedConnections.length;
   const _activeWithLimits = Object.values(quotaData).filter(
@@ -676,96 +673,26 @@ export default function ProviderLimits() {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1.5">
-        {/* Provider filter */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setProviderMenuOpen((prev: boolean) => !prev)}
-            className="h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:text-porcelain hover:bg-deep-slate transition-colors flex items-center gap-1.5"
-            aria-haspopup="menu"
-            aria-expanded={providerMenuOpen}
-            title="Filter quota providers"
-          >
-            {providerFilter === "all" ? (
-              <LucideIcon name="apps" className="text-[13px]" />
-            ) : (
-              <ProviderIcon
-                src={`/providers/${providerFilter}.png`}
-                alt={providerFilter}
-                size={14}
-                className="size-[14px] rounded object-contain"
-                fallbackText={providerFilter.slice(0, 2).toUpperCase()}
-              />
-            )}
-            <span className="capitalize hidden lg:inline">{selectedProviderLabel}</span>
-            <LucideIcon name="expand_more" className="text-[13px]" />
-          </button>
+        <ShadcnSelect
+          ariaLabel="Filter quota providers"
+          value={providerFilter}
+          onValueChange={setProviderFilter}
+          options={[
+            { value: "all", label: "All providers" },
+            ...providerOptions.map((provider: string) => ({
+              value: provider,
+              label: provider.charAt(0).toUpperCase() + provider.slice(1),
+            })),
+          ]}
+          triggerClassName="h-7 w-[140px] rounded-[4px] bg-deep-slate px-2 text-[11px] shadow-none capitalize"
+          name="filter-provider"
+        />
 
-          {providerMenuOpen && (
-            <>
-              <button
-                type="button"
-                className="fixed inset-0 z-30 bg-transparent"
-                aria-label="Close provider filter"
-                onClick={() => setProviderMenuOpen(false)}
-              />
-              <div className="absolute left-0 z-40 mt-1 w-52 overflow-hidden rounded-[6px] border border-charcoal-grey bg-graphite p-1 shadow-xl shadow-black/30">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProviderFilter("all");
-                    setProviderMenuOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 rounded-[4px] px-2.5 py-1.5 text-left text-[12px] transition-colors ${
-                    providerFilter === "all"
-                      ? "bg-deep-slate text-porcelain"
-                      : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
-                  }`}
-                >
-                  <LucideIcon name="apps" className="text-[14px]" />
-                  <span>All providers</span>
-                  {providerFilter === "all" && (
-                    <LucideIcon name="check" className="ml-auto text-[13px]" />
-                  )}
-                </button>
-                <div className="my-1 h-px bg-charcoal-grey" />
-                <div className="max-h-60 overflow-y-auto">
-                  {providerOptions.map((provider: string) => (
-                    <button
-                      key={provider}
-                      type="button"
-                      onClick={() => {
-                        setProviderFilter(provider);
-                        setProviderMenuOpen(false);
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-[4px] px-2.5 py-1.5 text-left text-[12px] transition-colors ${
-                        providerFilter === provider
-                          ? "bg-deep-slate text-porcelain"
-                          : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
-                      }`}
-                    >
-                      <ProviderIcon
-                        src={`/providers/${provider}.png`}
-                        alt={provider}
-                        size={16}
-                        className="size-4 rounded object-contain"
-                        fallbackText={provider.slice(0, 2).toUpperCase()}
-                      />
-                      <span className="capitalize">{provider}</span>
-                      {providerFilter === provider && (
-                        <LucideIcon name="check" className="ml-auto text-[13px]" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Collapse All */}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
+          icon="unfold_less"
           onClick={() => {
             const next = !collapseAll;
             setCollapseAll(next);
@@ -782,96 +709,92 @@ export default function ProviderLimits() {
             }
           }}
           className={cn(
-            "h-7 px-2.5 rounded-[4px] border text-[11px] transition-colors flex items-center gap-1",
-            collapseAll
-              ? "border-white/20 bg-white/8 text-white hover:bg-white/15"
-              : "border-charcoal-grey text-storm-cloud hover:text-porcelain hover:bg-deep-slate",
+            "h-7 text-[11px]",
+            collapseAll &&
+              "border-white/20 bg-white/8 text-white hover:bg-white/15 hover:text-white",
           )}
           title="Collapse all rows"
         >
-          <LucideIcon name="unfold_less" className="text-[13px]" />
           <span className="hidden sm:inline">Collapse all</span>
-        </button>
+        </Button>
 
-        {/* Expiring first */}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
+          icon="hourglass_top"
           onClick={() => setExpiringFirst((prev: boolean) => !prev)}
           className={cn(
-            "h-7 px-2.5 rounded-[4px] border text-[11px] transition-colors flex items-center gap-1",
-            expiringFirst
-              ? "border-white/20 bg-white/8 text-white hover:bg-white/15"
-              : "border-charcoal-grey text-storm-cloud hover:text-porcelain hover:bg-deep-slate",
+            "h-7 text-[11px]",
+            expiringFirst &&
+              "border-white/20 bg-white/8 text-white hover:bg-white/15 hover:text-white",
           )}
           title="Sort accounts by earliest quota reset time"
         >
-          <LucideIcon name="hourglass_top" className="text-[13px]" />
           <span className="hidden sm:inline">Expiring first</span>
-        </button>
+        </Button>
 
-        {/* Hide disabled */}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
+          icon="visibility_off"
           onClick={() => setHideDisabled((prev: boolean) => !prev)}
           className={cn(
-            "h-7 px-2.5 rounded-[4px] border text-[11px] transition-colors flex items-center gap-1",
-            hideDisabled
-              ? "border-white/20 bg-white/8 text-white hover:bg-white/15"
-              : "border-charcoal-grey text-storm-cloud hover:text-porcelain hover:bg-deep-slate",
+            "h-7 text-[11px]",
+            hideDisabled &&
+              "border-white/20 bg-white/8 text-white hover:bg-white/15 hover:text-white",
           )}
           title="Hide disabled connections"
         >
-          <LucideIcon name="visibility_off" className="text-[13px]" />
           <span className="hidden sm:inline">Hide disabled</span>
-        </button>
+        </Button>
 
-        {/* Bulk: disable depleted */}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
+          icon="block"
           onClick={handleDisableDepleted}
           disabled={bulkToggling}
-          className="h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:text-porcelain hover:bg-deep-slate transition-colors flex items-center gap-1 disabled:opacity-50"
+          className="h-7 text-[11px]"
           title="Disable connections with depleted quota"
         >
-          <LucideIcon name="block" className="text-[13px]" />
           <span className="hidden sm:inline">Turn off Empty</span>
-        </button>
+        </Button>
 
-        {/* Bulk: enable available */}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
+          icon="check_circle"
           onClick={handleEnableAvailable}
           disabled={bulkToggling}
-          className="h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:text-porcelain hover:bg-deep-slate transition-colors flex items-center gap-1 disabled:opacity-50"
+          className="h-7 text-[11px]"
           title="Enable connections that still have quota"
         >
-          <LucideIcon name="check_circle" className="text-[13px]" />
           <span className="hidden sm:inline">Turn on Available</span>
-        </button>
+        </Button>
 
-        {/* Refresh all button */}
-        <button
+        <Button
           type="button"
+          size="icon"
+          variant="outline"
+          icon="refresh"
+          loading={refreshingAll}
           onClick={refreshAll}
-          disabled={refreshingAll}
-          className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="size-7"
           title="Refresh all"
-        >
-          <LucideIcon
-            name="refresh"
-            className={`text-[15px] ${refreshingAll ? "animate-spin" : ""}`}
-          />
-        </button>
+        />
 
-        {/* Live toggle */}
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
           onClick={() => setAutoRefresh((prev: boolean) => !prev)}
           className={cn(
-            "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
-            autoRefresh
-              ? "border-emerald/30 bg-emerald/8 text-emerald hover:bg-emerald/15"
-              : "border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
+            "h-7 gap-1.5 text-[11px] font-[510]",
+            autoRefresh && "border-emerald/30 bg-emerald/8 text-emerald hover:bg-emerald/15",
           )}
           title={autoRefresh ? `Live — refreshes every ${countdown}s` : "Enable live auto-refresh"}
         >
@@ -882,7 +805,7 @@ export default function ProviderLimits() {
             )}
           />
           {autoRefresh ? "Live" : "Paused"}
-        </button>
+        </Button>
       </div>
 
       {/* Grouped table */}
@@ -1165,32 +1088,28 @@ export default function ProviderLimits() {
                               className="flex items-center justify-end gap-0.5"
                               onClick={(e: ReactMouseEvent) => e.stopPropagation()}
                             >
-                              <button
-                                type="button"
+                              <IconButton
+                                icon="refresh"
+                                size="sm"
+                                title="Refresh quota"
                                 onClick={() => refreshProvider(conn.id, conn.provider)}
                                 disabled={isLoading || rowBusy}
-                                className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-charcoal-grey hover:text-porcelain transition-colors duration-100 disabled:opacity-40"
-                                title="Refresh quota"
-                              >
-                                <LucideIcon
-                                  name="refresh"
-                                  className={`text-[14px] ${isLoading ? "animate-spin" : ""}`}
-                                />
-                              </button>
-                              <button
-                                type="button"
+                                className={cn(isLoading && "[&_svg]:animate-spin")}
+                              />
+                              <IconButton
+                                icon="edit"
+                                size="sm"
+                                title="Edit connection"
                                 onClick={() => {
                                   setSelectedConnection(conn);
                                   setShowEditModal(true);
                                 }}
                                 disabled={rowBusy}
-                                className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-charcoal-grey hover:text-porcelain transition-colors duration-100 disabled:opacity-40"
-                                title="Edit connection"
-                              >
-                                <LucideIcon name="edit" className="text-[14px]" />
-                              </button>
-                              <button
-                                type="button"
+                              />
+                              <IconButton
+                                icon="delete"
+                                size="sm"
+                                title="Delete connection"
                                 onClick={() =>
                                   openConfirm(
                                     "Delete Connection",
@@ -1200,14 +1119,11 @@ export default function ProviderLimits() {
                                   )
                                 }
                                 disabled={rowBusy}
-                                className="flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-warning-red/10 hover:text-warning-red transition-colors duration-100 disabled:opacity-40"
-                                title="Delete connection"
-                              >
-                                <LucideIcon
-                                  name="delete"
-                                  className={`text-[14px] ${deletingId === conn.id ? "animate-pulse" : ""}`}
-                                />
-                              </button>
+                                className={cn(
+                                  "hover:bg-warning-red/10 hover:text-warning-red",
+                                  deletingId === conn.id && "[&_svg]:animate-pulse",
+                                )}
+                              />
                               <div className="pl-0.5">
                                 <Toggle
                                   size="sm"

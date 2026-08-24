@@ -1,5 +1,5 @@
-import { DefaultExecutor } from "./default.js";
-import type { ExecutorCredentials, ExecutorHeaders } from "./base.js";
+import { DefaultExecutor } from "./default.ts";
+import type { ExecutorCredentials, ExecutorHeaders } from "./base.ts";
 
 export class AzureExecutor extends DefaultExecutor {
   constructor() {

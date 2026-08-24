@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { getRotatedModels, resetComboRotation } from "../../open-sse/services/combo.js";
+import { getRotatedModels, resetComboRotation } from "../../open-sse/services/combo.ts";
 
 describe("combo round-robin routing", () => {
   beforeEach(() => {

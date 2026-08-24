@@ -1,6 +1,6 @@
-import { GITHUB_COPILOT, OAUTH_ENDPOINTS, REFRESH_LEAD_MS } from "../config/appConstants.js";
-import { PROVIDERS } from "../config/providers.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+import { GITHUB_COPILOT, OAUTH_ENDPOINTS, REFRESH_LEAD_MS } from "../config/appConstants.ts";
+import { PROVIDERS } from "../config/providers.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 
 // Default token expiry buffer (refresh if expires within 5 minutes)
 export const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000;

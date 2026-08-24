@@ -25,7 +25,7 @@ afterAll(async () => {
 describe("semantic cache", () => {
   it("stores and retrieves cached response by signature", async () => {
     const { clearCache, generateSignature, getCachedResponse, setCachedResponse } =
-      await import("@/lib/semanticCache.js");
+      await import("@/lib/semanticCache.ts");
     clearCache();
 
     const payload = {
@@ -56,7 +56,7 @@ describe("semantic cache", () => {
       invalidateByModel,
       invalidateBySignature,
       setCachedResponse,
-    } = await import("@/lib/semanticCache.js");
+    } = await import("@/lib/semanticCache.ts");
     clearCache();
 
     const sigA = generateSignature("m/a", [{ role: "user", content: "A" }], 0, 1);
@@ -73,7 +73,7 @@ describe("semantic cache", () => {
   });
 
   it("applies cacheability rules correctly", async () => {
-    const { isCacheableForRead, isCacheableForWrite } = await import("@/lib/semanticCache.js");
+    const { isCacheableForRead, isCacheableForWrite } = await import("@/lib/semanticCache.ts");
     const baseBody = {
       stream: false,
       temperature: 0,

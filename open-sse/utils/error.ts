@@ -1,4 +1,4 @@
-import { DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "../config/errorConfig.js";
+import { DEFAULT_ERROR_MESSAGES, ERROR_TYPES } from "../config/errorConfig.ts";
 
 type ErrorTypeInfo = { type: string; code: string };
 

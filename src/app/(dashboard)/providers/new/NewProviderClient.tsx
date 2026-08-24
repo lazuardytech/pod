@@ -143,19 +143,20 @@ export default function NewProviderPage() {
             </label>
             <div className="flex gap-3">
               {authMethodOptions.map((method) => (
-                <button
+                <Button
                   key={method.value}
                   type="button"
+                  variant={formData.authMethod === method.value ? "primary" : "outline"}
                   onClick={() => handleChange("authMethod", method.value)}
-                  className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border transition-all ${
+                  icon={method.value === "apikey" ? "key" : "lock"}
+                  className={`flex-1 p-4 h-auto ${
                     formData.authMethod === method.value
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <LucideIcon name={method.value === "apikey" ? "key" : "lock"} className="" />
                   <span className="font-medium">{method.label}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

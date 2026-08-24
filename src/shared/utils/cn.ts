@@ -1,6 +1,6 @@
-// Utility function to merge class names
-// Handles conditional classes and removes duplicates
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-export function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }

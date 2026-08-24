@@ -1,19 +1,19 @@
 import { generateDetailId, saveRequestDetail } from "@/lib/usageDb";
-import { HTTP_STATUS } from "../../config/runtimeConfig.js";
-import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.js";
-import { FORMATS } from "../../translator/formats.js";
-import { needsTranslation } from "../../translator/index.js";
-import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.js";
-import { decloakToolNames } from "../../utils/claudeCloaking.js";
-import { createErrorResult } from "../../utils/error.js";
-import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.js";
+import { HTTP_STATUS } from "../../config/runtimeConfig.ts";
+import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.ts";
+import { FORMATS } from "../../translator/formats.ts";
+import { needsTranslation } from "../../translator/index.ts";
+import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.ts";
+import { decloakToolNames } from "../../utils/claudeCloaking.ts";
+import { createErrorResult } from "../../utils/error.ts";
+import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.ts";
 import {
   buildRequestDetail,
   extractRequestConfig,
   extractUsageFromResponse,
   saveUsageStats,
-} from "./requestDetail.js";
-import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
+} from "./requestDetail.ts";
+import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.ts";
 
 type JsonRecord = Record<string, unknown>;
 

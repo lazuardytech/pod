@@ -13,7 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GrokWebExecutor } from "../../open-sse/executors/grok-web.js";
+import { GrokWebExecutor } from "../../open-sse/executors/grok-web.ts";
 
 const originalFetch = global.fetch;
 

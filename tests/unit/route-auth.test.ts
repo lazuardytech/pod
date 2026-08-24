@@ -30,7 +30,7 @@ vi.mock("@/shared/utils/machineId", () => ({
 }));
 
 const extractApiKeyMock = vi.fn();
-vi.mock("@/sse/services/auth.js", () => ({
+vi.mock("@/sse/services/auth.ts", () => ({
   extractApiKey: extractApiKeyMock,
 }));
 
@@ -58,7 +58,7 @@ describe("routeAuth", () => {
   });
 
   it("strict dashboard auth rejects unauthenticated requests", async () => {
-    const { checkStrictDashboardAuth } = await import("@/lib/routeAuth.js");
+    const { checkStrictDashboardAuth } = await import("@/lib/routeAuth.ts");
 
     const response = await checkStrictDashboardAuth(createRequest());
 
@@ -67,7 +67,7 @@ describe("routeAuth", () => {
   });
 
   it("strict dashboard auth accepts the local CLI token", async () => {
-    const { checkStrictDashboardAuth, CLI_TOKEN_HEADER } = await import("@/lib/routeAuth.js");
+    const { checkStrictDashboardAuth, CLI_TOKEN_HEADER } = await import("@/lib/routeAuth.ts");
 
     const response = await checkStrictDashboardAuth(
       createRequest({
@@ -81,7 +81,7 @@ describe("routeAuth", () => {
   });
 
   it("dashboard API auth can allow requests when requireLogin=false", async () => {
-    const { checkDashboardApiAuth } = await import("@/lib/routeAuth.js");
+    const { checkDashboardApiAuth } = await import("@/lib/routeAuth.ts");
     getSettingsMock.mockResolvedValue({ requireLogin: false });
 
     const response = await checkDashboardApiAuth(createRequest());
@@ -90,7 +90,7 @@ describe("routeAuth", () => {
   });
 
   it("requireValidApiKey rejects missing API keys", async () => {
-    const { requireValidApiKey } = await import("@/lib/routeAuth.js");
+    const { requireValidApiKey } = await import("@/lib/routeAuth.ts");
 
     const result = await requireValidApiKey(createRequest());
 
@@ -100,7 +100,7 @@ describe("routeAuth", () => {
   });
 
   it("requireValidApiKey accepts validated API keys", async () => {
-    const { requireValidApiKey } = await import("@/lib/routeAuth.js");
+    const { requireValidApiKey } = await import("@/lib/routeAuth.ts");
     extractApiKeyMock.mockReturnValue("sk-valid");
     validateApiKeyMock.mockResolvedValue(true);
 

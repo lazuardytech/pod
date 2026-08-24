@@ -19,7 +19,7 @@ import {
   PerplexityWebExecutor,
   parseOpenAIMessages,
   sessionKey,
-} from "../../open-sse/executors/perplexity-web.js";
+} from "../../open-sse/executors/perplexity-web.ts";
 
 const originalFetch = global.fetch;
 

@@ -24,7 +24,7 @@ afterAll(async () => {
 
 describe("cache/memory routes integration", () => {
   it("updates and returns cache config settings", async () => {
-    const cacheConfigRoute = await import("@/app/api/settings/cache-config/route.js");
+    const cacheConfigRoute = await import("@/app/api/settings/cache-config/route.ts");
 
     const putReq = new Request("http://localhost/api/settings/cache-config", {
       method: "PUT",
@@ -51,7 +51,7 @@ describe("cache/memory routes integration", () => {
   });
 
   it("updates and returns memory settings", async () => {
-    const memorySettingsRoute = await import("@/app/api/settings/memory/route.js");
+    const memorySettingsRoute = await import("@/app/api/settings/memory/route.ts");
 
     const putReq = new Request("http://localhost/api/settings/memory", {
       method: "PUT",
@@ -81,8 +81,8 @@ describe("cache/memory routes integration", () => {
   });
 
   it("supports memory CRUD via API routes", async () => {
-    const memoryRoute = await import("@/app/api/memory/route.js");
-    const memoryByIdRoute = await import("@/app/api/memory/[id]/route.js");
+    const memoryRoute = await import("@/app/api/memory/route.ts");
+    const memoryByIdRoute = await import("@/app/api/memory/[id]/route.ts");
 
     const postReq = new Request("http://localhost/api/memory", {
       method: "POST",
@@ -136,8 +136,8 @@ describe("cache/memory routes integration", () => {
   });
 
   it("returns cache stats endpoint shape", async () => {
-    const cacheRoute = await import("@/app/api/cache/route.js");
-    const { generateSignature, setCachedResponse } = await import("@/lib/semanticCache.js");
+    const cacheRoute = await import("@/app/api/cache/route.ts");
+    const { generateSignature, setCachedResponse } = await import("@/lib/semanticCache.ts");
 
     const signature = generateSignature(
       "test/model",

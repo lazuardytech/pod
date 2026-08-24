@@ -1,9 +1,9 @@
 import { generateDetailId, saveRequestDetail } from "@/lib/usageDb";
-import { HTTP_STATUS } from "../../config/runtimeConfig.js";
-import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.js";
-import { FORMATS } from "../../translator/formats.js";
-import { createErrorResult } from "../../utils/error.js";
-import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.js";
+import { HTTP_STATUS } from "../../config/runtimeConfig.ts";
+import { convertResponsesStreamToJson } from "../../transformer/streamToJsonConverter.ts";
+import { FORMATS } from "../../translator/formats.ts";
+import { createErrorResult } from "../../utils/error.ts";
+import { buildRequestDetail, extractRequestConfig, saveUsageStats } from "./requestDetail.ts";
 
 type ForcedSSEToJsonResult =
   | { success: true; response: Response }

@@ -35,7 +35,7 @@ describe("Qwen OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshQwenToken("old-refresh", null);
 
       expect(result.accessToken).toBe("new-qwen-access");
@@ -54,7 +54,7 @@ describe("Qwen OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshQwenToken("original-refresh", null);
 
       expect(result.refreshToken).toBe("original-refresh");
@@ -73,7 +73,7 @@ describe("Qwen OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshQwenToken("old-refresh", null);
 
       expect(result.providerSpecificData).toEqual({
@@ -92,7 +92,7 @@ describe("Qwen OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshQwenToken("old-refresh", null);
 
       expect(result.providerSpecificData).toBeUndefined();
@@ -105,7 +105,7 @@ describe("Qwen OAuth Token Refresh", () => {
         text: () => Promise.resolve('{"error":"invalid_grant"}'),
       });
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshQwenToken("bad-token", null);
 
       expect(result).toBeNull();
@@ -114,7 +114,7 @@ describe("Qwen OAuth Token Refresh", () => {
     it("returns null on network error", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("timeout"));
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshQwenToken("some-token", null);
 
       expect(result).toBeNull();
@@ -132,7 +132,7 @@ describe("Qwen OAuth Token Refresh", () => {
       });
       global.fetch = fetchMock;
 
-      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshQwenToken } = await import("../../open-sse/services/tokenRefresh.ts");
       await refreshQwenToken("rt-456", null);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -148,7 +148,7 @@ describe("Qwen OAuth Token Refresh", () => {
 
   describe("getRefreshLeadMs", () => {
     it("returns 20 minutes for qwen", async () => {
-      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.ts");
       expect(getRefreshLeadMs("qwen")).toBe(20 * 60 * 1000);
     });
   });

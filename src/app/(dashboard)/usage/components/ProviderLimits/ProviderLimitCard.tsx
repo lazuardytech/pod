@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Badge from "@/shared/components/Badge";
+import { IconButton } from "@/shared/components";
 import Card from "@/shared/components/Card";
 import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
@@ -95,17 +96,16 @@ export default function ProviderLimitCard({
         </div>
 
         {/* Refresh Button */}
-        <button
+        <IconButton
+          icon="refresh"
+          title="Refresh quota"
+          size="lg"
+          variant="ghost"
           onClick={handleRefresh}
           disabled={refreshing || loading}
-          className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Refresh quota"
-        >
-          <LucideIcon
-            name="refresh"
-            className={`text-[20px] text-text-muted ${refreshing || loading ? "animate-spin" : ""}`}
-          />
-        </button>
+          loading={refreshing || loading}
+          className="rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-muted disabled:opacity-50"
+        />
       </div>
 
       {/* Loading State */}

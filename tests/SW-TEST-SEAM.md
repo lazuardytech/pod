@@ -7,7 +7,7 @@ code seam; QA supplies the tests.
 
 ## Files added (QA)
 
-- `tests/unit/swShellCache.test.js` — 4 unit tests (audit §5.1–§5.4).
+- `tests/unit/swShellCache.test.ts` — 4 unit tests (audit §5.1–§5.4).
 - `tests/e2e/swDeployRegression.e2e.spec.ts` — deploy-regression e2e scaffold (§5.5).
 - `tests/SW-TEST-SEAM.md` — this file.
 
@@ -85,7 +85,7 @@ both on one origin so the SW cache-name collision reproduces audit §2).
 
 ```bash
 # Unit — after seam §1–§4 landed
-bun x vitest run tests/unit/swShellCache.test.js --reporter=verbose
+bun x vitest run tests/unit/swShellCache.test.ts --reporter=verbose
 
 # E2E — after §5 harness wired
 bun x playwright test tests/e2e/swDeployRegression.e2e.spec.ts

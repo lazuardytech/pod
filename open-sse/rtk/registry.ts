@@ -1,16 +1,16 @@
-import { FILTERS } from "./constants.js";
-import type { RtkFilterFn } from "./applyFilter.js";
-import { buildOutput } from "./filters/buildOutput.js";
-import { dedupLog } from "./filters/dedupLog.js";
-import { find } from "./filters/find.js";
-import { gitDiff } from "./filters/gitDiff.js";
-import { gitStatus } from "./filters/gitStatus.js";
-import { grep } from "./filters/grep.js";
-import { ls } from "./filters/ls.js";
-import { readNumbered } from "./filters/readNumbered.js";
-import { searchList } from "./filters/searchList.js";
-import { smartTruncate } from "./filters/smartTruncate.js";
-import { tree } from "./filters/tree.js";
+import { FILTERS } from "./constants.ts";
+import type { RtkFilterFn } from "./applyFilter.ts";
+import { buildOutput } from "./filters/buildOutput.ts";
+import { dedupLog } from "./filters/dedupLog.ts";
+import { find } from "./filters/find.ts";
+import { gitDiff } from "./filters/gitDiff.ts";
+import { gitStatus } from "./filters/gitStatus.ts";
+import { grep } from "./filters/grep.ts";
+import { ls } from "./filters/ls.ts";
+import { readNumbered } from "./filters/readNumbered.ts";
+import { searchList } from "./filters/searchList.ts";
+import { smartTruncate } from "./filters/smartTruncate.ts";
+import { tree } from "./filters/tree.ts";
 
 const REGISTRY: Record<string, RtkFilterFn> = {
   [FILTERS.GIT_DIFF]: gitDiff as RtkFilterFn,

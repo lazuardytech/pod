@@ -1,19 +1,19 @@
 import zlib from "node:zlib";
 import type { IncomingHttpHeaders } from "node:http2";
-import { PROVIDERS } from "../config/providers.js";
-import { HTTP_STATUS } from "../config/runtimeConfig.js";
-import { FORMATS } from "../translator/formats.js";
-import { buildCursorHeaders } from "../utils/cursorChecksum.js";
-import { extractTextFromResponse, generateCursorBody } from "../utils/cursorProtobuf.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
-import { estimateUsage } from "../utils/usageTracking.js";
+import { PROVIDERS } from "../config/providers.ts";
+import { HTTP_STATUS } from "../config/runtimeConfig.ts";
+import { FORMATS } from "../translator/formats.ts";
+import { buildCursorHeaders } from "../utils/cursorChecksum.ts";
+import { extractTextFromResponse, generateCursorBody } from "../utils/cursorProtobuf.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
+import { estimateUsage } from "../utils/usageTracking.ts";
 import {
   BaseExecutor,
   type ExecutorCredentials,
   type ExecutorExecuteOptions,
   type ExecutorHeaders,
   type ExecutorProxyOptions,
-} from "./base.js";
+} from "./base.ts";
 
 type EdgeRuntimeGlobal = typeof globalThis & { EdgeRuntime?: unknown };
 type Http2Module = typeof import("node:http2");

@@ -1,20 +1,20 @@
-import { initTranslators } from "open-sse/translator/index.js";
-import { ollamaModels } from "open-sse/config/ollamaModels.js";
-import { transformToOllama } from "open-sse/utils/ollamaTransform.js";
-import { initApiKeySecret } from "./utils/apiKey.js";
-import * as log from "./utils/logger.js";
+import { initTranslators } from "open-sse/translator/index.ts";
+import { ollamaModels } from "open-sse/config/ollamaModels.ts";
+import { transformToOllama } from "open-sse/utils/ollamaTransform.ts";
+import { initApiKeySecret } from "./utils/apiKey.ts";
+import * as log from "./utils/logger.ts";
 
 // Static imports for handlers (avoid dynamic import CPU cost)
-import { handleCleanup } from "./handlers/cleanup.js";
-import { handleCacheClear } from "./handlers/cache.js";
-import { handleSync } from "./handlers/sync.js";
-import { handleChat } from "./handlers/chat.js";
-import { handleVerify } from "./handlers/verify.js";
-import { handleTestClaude } from "./handlers/testClaude.js";
-import { handleForward } from "./handlers/forward.js";
-import { handleForwardRaw } from "./handlers/forwardRaw.js";
-import { handleEmbeddings } from "./handlers/embeddings.js";
-import { createLandingPageResponse } from "./services/landingPage.js";
+import { handleCleanup } from "./handlers/cleanup.ts";
+import { handleCacheClear } from "./handlers/cache.ts";
+import { handleSync } from "./handlers/sync.ts";
+import { handleChat } from "./handlers/chat.ts";
+import { handleVerify } from "./handlers/verify.ts";
+import { handleTestClaude } from "./handlers/testClaude.ts";
+import { handleForward } from "./handlers/forward.ts";
+import { handleForwardRaw } from "./handlers/forwardRaw.ts";
+import { handleEmbeddings } from "./handlers/embeddings.ts";
+import { createLandingPageResponse } from "./services/landingPage.ts";
 
 // Initialize translators at module load (static imports)
 initTranslators();

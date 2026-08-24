@@ -4,7 +4,7 @@ import {
   msUntilMidnightVN,
   msUntilNextMinute,
   TRANSIENT_COOLDOWN_MS,
-} from "../../open-sse/config/errorConfig.js";
+} from "../../open-sse/config/errorConfig.ts";
 import {
   buildClearModelLocksUpdate,
   buildModelLockUpdate,
@@ -20,7 +20,7 @@ import {
   isModelLockActive,
   MODEL_LOCK_ALL,
   MODEL_LOCK_PREFIX,
-} from "../../open-sse/services/accountFallback.js";
+} from "../../open-sse/services/accountFallback.ts";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;

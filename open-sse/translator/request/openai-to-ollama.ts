@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 /**
  * Convert OpenAI request to Ollama format

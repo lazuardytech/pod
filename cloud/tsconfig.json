@@ -11,8 +11,8 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "allowJs": true,
-    "checkJs": false,
+    "allowImportingTsExtensions": true,
+    "allowJs": false,
     "types": ["@cloudflare/workers-types"],
     "baseUrl": ".",
     "paths": {

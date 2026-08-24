@@ -1,11 +1,11 @@
-import { PROVIDERS } from "../config/providers.js";
-import { injectReasoningContent } from "../utils/reasoningContentInjector.js";
+import { PROVIDERS } from "../config/providers.ts";
+import { injectReasoningContent } from "../utils/reasoningContentInjector.ts";
 import {
   BaseExecutor,
   type ExecutorConfigInput,
   type ExecutorCredentials,
   type ExecutorHeaders,
-} from "./base.js";
+} from "./base.ts";
 
 // Models that use /zen/go/v1/messages (Anthropic/Claude format + x-api-key auth)
 const CLAUDE_FORMAT_MODELS = new Set(["minimax-m2.5", "minimax-m2.7"]);

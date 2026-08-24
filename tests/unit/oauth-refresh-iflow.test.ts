@@ -41,7 +41,7 @@ describe("iFlow OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshIflowToken("old-refresh", null);
 
       expect(result.accessToken).toBe("new-iflow-access");
@@ -59,7 +59,7 @@ describe("iFlow OAuth Token Refresh", () => {
           }),
       });
 
-      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshIflowToken("original-refresh", null);
 
       expect(result.refreshToken).toBe("original-refresh");
@@ -72,7 +72,7 @@ describe("iFlow OAuth Token Refresh", () => {
         text: () => Promise.resolve('{"error":"invalid_grant"}'),
       });
 
-      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshIflowToken("bad-token", null);
 
       expect(result).toBeNull();
@@ -81,7 +81,7 @@ describe("iFlow OAuth Token Refresh", () => {
     it("returns null on network error", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("connection refused"));
 
-      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshIflowToken("some-token", null);
 
       expect(result).toBeNull();
@@ -98,7 +98,7 @@ describe("iFlow OAuth Token Refresh", () => {
       });
       global.fetch = fetchMock;
 
-      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.ts");
       await refreshIflowToken("rt-789", null);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -117,7 +117,7 @@ describe("iFlow OAuth Token Refresh", () => {
       const fetchMock = vi.fn();
       global.fetch = fetchMock;
 
-      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.js");
+      const { refreshIflowToken } = await import("../../open-sse/services/tokenRefresh.ts");
       const result = await refreshIflowToken("rt-missing", null);
 
       expect(result).toBeNull();
@@ -127,7 +127,7 @@ describe("iFlow OAuth Token Refresh", () => {
 
   describe("getRefreshLeadMs", () => {
     it("returns 24 hours for iflow", async () => {
-      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.js");
+      const { getRefreshLeadMs } = await import("../../open-sse/services/tokenRefresh.ts");
       expect(getRefreshLeadMs("iflow")).toBe(24 * 60 * 60 * 1000);
     });
   });

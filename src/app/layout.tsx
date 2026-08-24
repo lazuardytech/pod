@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { DM_Sans, IBM_Plex_Mono, Inter } from "next/font/google";
+import { DM_Sans, Geist, IBM_Plex_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import OfflineMutationProcessor from "@/shared/components/OfflineMutationProcessor";
@@ -7,9 +7,12 @@ import OfflineSyncStatus from "@/shared/components/OfflineSyncStatus";
 import PWAInstallPrompt from "@/shared/components/PWAInstallPrompt";
 import ServiceWorkerRegistrar from "@/shared/components/ServiceWorkerRegistrar";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
-const inter = Inter({
+import { TooltipProvider } from "@/shared/components/ui/tooltip";
+import { cn } from "@/shared/utils/cn";
+
+const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-geist-sans",
   display: "swap",
 });
 
@@ -68,7 +71,10 @@ const themeInitScript = `
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} ${dmSans.variable} dark`}>
+    <html
+      lang="en"
+      className={cn("dark font-sans", geist.variable, ibmPlexMono.variable, dmSans.variable)}
+    >
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
@@ -91,11 +97,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="h-full bg-pitch-black text-porcelain custom-scrollbar">
         <ThemeProvider>
-          <ServiceWorkerRegistrar />
-          <OfflineMutationProcessor />
-          <OfflineSyncStatus />
-          <PWAInstallPrompt />
-          {children}
+          <TooltipProvider>
+            <ServiceWorkerRegistrar />
+            <OfflineMutationProcessor />
+            <OfflineSyncStatus />
+            <PWAInstallPrompt />
+            {children}
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

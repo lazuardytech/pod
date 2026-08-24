@@ -1,4 +1,4 @@
-import { GOOGLE_TTS_LANGUAGES } from "./googleTtsLanguages.js";
+import { GOOGLE_TTS_LANGUAGES } from "./googleTtsLanguages.ts";
 
 // ── Voice definitions (DRY — reused across providers) ──────────────────────
 const VOICES = {

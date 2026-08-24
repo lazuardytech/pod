@@ -8,7 +8,7 @@
 //   ? Untracked: N files
 //   conflicts: N files
 //   clean — nothing to commit
-import { STATUS_MAX_FILES, STATUS_MAX_UNTRACKED } from "../constants.js";
+import { STATUS_MAX_FILES, STATUS_MAX_UNTRACKED } from "../constants.ts";
 
 export function gitStatus(input: string) {
   const lines = input.split("\n");

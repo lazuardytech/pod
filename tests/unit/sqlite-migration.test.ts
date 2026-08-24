@@ -155,7 +155,7 @@ describe("SQLite migration from legacy JSON", () => {
   });
 
   it("surfaces provider connections with original shape", async () => {
-    const { getProviderConnections } = await import("@/lib/localDb.js");
+    const { getProviderConnections } = await import("@/lib/localDb.ts");
     const list = await getProviderConnections({ provider: "openai" });
     expect(list).toHaveLength(1);
     const c = list[0];
@@ -169,7 +169,7 @@ describe("SQLite migration from legacy JSON", () => {
   });
 
   it("preserves model aliases, combos, api keys", async () => {
-    const { getModelAliases, getCombos, validateApiKey } = await import("@/lib/localDb.js");
+    const { getModelAliases, getCombos, validateApiKey } = await import("@/lib/localDb.ts");
     const aliases = await getModelAliases();
     expect(aliases["alias-a"]).toBe("openai/gpt-4o-mini");
 
@@ -183,7 +183,7 @@ describe("SQLite migration from legacy JSON", () => {
   });
 
   it("round-trips settings and pricing", async () => {
-    const { getSettings, getPricingForModel } = await import("@/lib/localDb.js");
+    const { getSettings, getPricingForModel } = await import("@/lib/localDb.ts");
     const settings = await getSettings();
     expect(settings.requireLogin).toBe(true);
     expect(settings.providerStrategies).toEqual({ openai: "round_robin" });
@@ -193,7 +193,7 @@ describe("SQLite migration from legacy JSON", () => {
   });
 
   it("migrates usage history and lifetime counter", async () => {
-    const { getUsageHistory, getUsageStats } = await import("@/lib/usageDb.js");
+    const { getUsageHistory, getUsageStats } = await import("@/lib/usageDb.ts");
     const hist = await getUsageHistory();
     expect(hist.length).toBeGreaterThanOrEqual(1);
 
@@ -202,7 +202,7 @@ describe("SQLite migration from legacy JSON", () => {
   });
 
   it("migrates request-details records", async () => {
-    const { getRequestDetails } = await import("@/lib/requestDetailsDb.js");
+    const { getRequestDetails } = await import("@/lib/requestDetailsDb.ts");
     const { details, pagination } = await getRequestDetails({});
     expect(pagination.totalItems).toBeGreaterThanOrEqual(1);
     expect(details[0].id).toBe("2026-04-01T10:00:00.000Z-abc123-gpt-4o-mini");
@@ -210,7 +210,7 @@ describe("SQLite migration from legacy JSON", () => {
   });
 
   it("supports fresh CRUD on an already-migrated DB", async () => {
-    const { createCombo, deleteCombo, getComboByName } = await import("@/lib/localDb.js");
+    const { createCombo, deleteCombo, getComboByName } = await import("@/lib/localDb.ts");
     const created = await createCombo({ name: "test-combo", models: ["a", "b"] });
     expect(created.id).toBeDefined();
     const fetched = await getComboByName("test-combo");

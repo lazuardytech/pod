@@ -24,8 +24,8 @@ afterAll(async () => {
 
 describe("memory integration", () => {
   it("creates/lists memories and retrieves with semantic strategy", async () => {
-    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.js");
-    const { retrieveMemories } = await import("@/lib/memory/retrieval.js");
+    const { createMemory, clearMemories, listMemories } = await import("@/lib/memory/store.ts");
+    const { retrieveMemories } = await import("@/lib/memory/retrieval.ts");
 
     const apiKeyId = "test-key-1";
     await clearMemories(apiKeyId);
@@ -66,7 +66,7 @@ describe("memory integration", () => {
   });
 
   it("injects memory context into outgoing messages", async () => {
-    const { injectMemory } = await import("@/lib/memory/injection.js");
+    const { injectMemory } = await import("@/lib/memory/injection.ts");
     const request = {
       model: "test-model",
       messages: [{ role: "user", content: "hello" }],
@@ -80,8 +80,8 @@ describe("memory integration", () => {
   });
 
   it("extracts facts asynchronously and stores them", async () => {
-    const { clearMemories, listMemories } = await import("@/lib/memory/store.js");
-    const { extractFacts } = await import("@/lib/memory/extraction.js");
+    const { clearMemories, listMemories } = await import("@/lib/memory/store.ts");
+    const { extractFacts } = await import("@/lib/memory/extraction.ts");
     const apiKeyId = "test-key-2";
     await clearMemories(apiKeyId);
 

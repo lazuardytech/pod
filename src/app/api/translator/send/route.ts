@@ -1,5 +1,5 @@
-import type { ExecutorCredentials } from "open-sse/executors/base.js";
-import { getExecutor, refreshTokenByProvider } from "open-sse/index.js";
+import type { ExecutorCredentials } from "open-sse/executors/base.ts";
+import { getExecutor, refreshTokenByProvider } from "open-sse/index.ts";
 import { asApiRecord, asOptionalString, asString } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";

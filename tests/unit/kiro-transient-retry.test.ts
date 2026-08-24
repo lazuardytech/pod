@@ -21,8 +21,8 @@ let isTransientErrorBody;
 let KiroExecutor;
 
 beforeAll(async () => {
-  ({ isTransientErrorBody } = await import("../../open-sse/config/errorConfig.js"));
-  ({ KiroExecutor } = await import("../../open-sse/executors/kiro.js"));
+  ({ isTransientErrorBody } = await import("../../open-sse/config/errorConfig.ts"));
+  ({ KiroExecutor } = await import("../../open-sse/executors/kiro.ts"));
 });
 
 describe("isTransientErrorBody — body classification", () => {
@@ -169,7 +169,7 @@ describe("KiroExecutor.execute — body-gated 500 retry", () => {
 
 describe("ERROR_RULES — checkFallbackError handles transient body patterns", () => {
   it("treats MODEL_TEMPORARILY_UNAVAILABLE as backoff (not flat 30s transient)", async () => {
-    const { checkFallbackError } = await import("../../open-sse/services/accountFallback.js");
+    const { checkFallbackError } = await import("../../open-sse/services/accountFallback.ts");
     const result = checkFallbackError(500, "MODEL_TEMPORARILY_UNAVAILABLE: high load", 0);
     expect(result.shouldFallback).toBe(true);
     expect(result.newBackoffLevel).toBe(1);
@@ -178,7 +178,7 @@ describe("ERROR_RULES — checkFallbackError handles transient body patterns", (
   });
 
   it('treats "unexpectedly high load" as backoff', async () => {
-    const { checkFallbackError } = await import("../../open-sse/services/accountFallback.js");
+    const { checkFallbackError } = await import("../../open-sse/services/accountFallback.ts");
     const result = checkFallbackError(
       500,
       "Encountered unexpectedly high load when processing the request",
@@ -188,7 +188,7 @@ describe("ERROR_RULES — checkFallbackError handles transient body patterns", (
   });
 
   it("backoff escalates on consecutive failures", async () => {
-    const { checkFallbackError } = await import("../../open-sse/services/accountFallback.js");
+    const { checkFallbackError } = await import("../../open-sse/services/accountFallback.ts");
     const r1 = checkFallbackError(500, "model_temporarily_unavailable", 0);
     const r2 = checkFallbackError(500, "model_temporarily_unavailable", r1.newBackoffLevel);
     const r3 = checkFallbackError(500, "model_temporarily_unavailable", r2.newBackoffLevel);

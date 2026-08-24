@@ -1,6 +1,6 @@
 // Custom/OpenAI-compatible embedding node adapter
-import type { EmbeddingCredentials } from "./_base.js";
-import createOpenAIEmbeddingAdapter from "./openai.js";
+import type { EmbeddingCredentials } from "./_base.ts";
+import createOpenAIEmbeddingAdapter from "./openai.ts";
 
 const base = createOpenAIEmbeddingAdapter("openai");
 

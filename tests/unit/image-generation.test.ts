@@ -10,7 +10,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { handleImageGenerationCore } from "../../open-sse/handlers/imageGenerationCore.js";
+import { handleImageGenerationCore } from "../../open-sse/handlers/imageGenerationCore.ts";
 
 const originalFetch = global.fetch;
 

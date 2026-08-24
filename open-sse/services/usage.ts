@@ -2,8 +2,8 @@
  * Usage Fetcher - Get usage data from provider APIs
  */
 
-import { CLIENT_METADATA, getPlatformUserAgent } from "../config/appConstants.js";
-import { proxyAwareFetch } from "../utils/proxyFetch.js";
+import { CLIENT_METADATA, getPlatformUserAgent } from "../config/appConstants.ts";
+import { proxyAwareFetch } from "../utils/proxyFetch.ts";
 
 type ProxyOptions = Record<string, unknown> | null;
 type QuotaMap = Record<string, unknown>;

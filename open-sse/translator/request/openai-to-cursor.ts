@@ -8,8 +8,8 @@
  * structured text blocks in user messages.
  */
 
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 function extractContent(content: unknown) {
   if (typeof content === "string") return content;

@@ -5,8 +5,8 @@
  */
 
 import { v4 as uuidv4 } from "uuid";
-import { FORMATS } from "../formats.js";
-import { register } from "../registry.js";
+import { FORMATS } from "../formats.ts";
+import { register } from "../registry.ts";
 
 /**
  * Convert OpenAI messages to Kiro format

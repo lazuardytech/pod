@@ -23,7 +23,7 @@ import {
   isCacheableForWrite,
   setCachedResponse,
   setInFlight,
-} from "../../src/lib/semanticCache.js";
+} from "../../src/lib/semanticCache.ts";
 
 afterEach(() => {
   clearCache();

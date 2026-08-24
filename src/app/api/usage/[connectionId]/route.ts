@@ -1,9 +1,9 @@
-import type { ExecutorCredentials } from "open-sse/executors/base.js";
+import type { ExecutorCredentials } from "open-sse/executors/base.ts";
 // Ensure proxyFetch is loaded to patch (globalThis as Record<string, any>).fetch
-import "open-sse/index.js";
+import "open-sse/index.ts";
 
-import { getExecutor } from "open-sse/executors/index.js";
-import { getUsageForProvider } from "open-sse/services/usage.js";
+import { getExecutor } from "open-sse/executors/index.ts";
+import { getUsageForProvider } from "open-sse/services/usage.ts";
 import {
   getProviderConnectionById,
   updateProviderConnection,

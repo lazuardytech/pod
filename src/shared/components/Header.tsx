@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import PropTypes from "prop-types";
 import { useMemo } from "react";
+import { Button, IconButton } from "@/shared/components";
 import HeaderMenu from "@/shared/components/HeaderMenu";
 import LucideIcon from "@/shared/components/LucideIcon";
 import ProviderIcon from "@/shared/components/ProviderIcon";
@@ -230,12 +231,13 @@ export default function Header({
         {/* Mobile only */}
         {showMenuButton && (
           <div className="lg:hidden">
-            <button
+            <IconButton
+              icon="menu"
+              title="Menu"
+              variant="ghost"
               onClick={onMenuClick}
-              className="flex items-center justify-center size-7 rounded-[4px] text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
-            >
-              <LucideIcon name="menu" className="text-[18px]" />
-            </button>
+              className="text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100"
+            />
           </div>
         )}
       </div>
@@ -303,11 +305,13 @@ function HeaderAction() {
   const action = useHeaderActionStore((s) => s.action);
   if (!action) return null;
   return (
-    <button
+    <Button
       type="button"
       onClick={action.onClick}
       title={action.title || action.label}
-      className={`flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100 ${
+      variant="ghost"
+      size="sm"
+      className={`gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100 ${
         action.active
           ? "border-emerald/30 bg-emerald/8 text-emerald"
           : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain"
@@ -319,7 +323,7 @@ function HeaderAction() {
         action.icon
       )}
       <span className="hidden sm:inline">{action.label}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -347,14 +351,14 @@ function HeaderSearch() {
         name="search"
       />
       {query && (
-        <button
-          type="button"
+        <IconButton
+          icon="close"
+          title="Clear search"
+          variant="ghost"
+          size="sm"
           onClick={() => setQuery("")}
           className="absolute right-1.5 top-1/2 -translate-y-1/2 text-storm-cloud hover:text-porcelain transition-colors"
-          aria-label="Clear search"
-        >
-          <LucideIcon name="close" className="text-[13px]" />
-        </button>
+        />
       )}
     </div>
   );

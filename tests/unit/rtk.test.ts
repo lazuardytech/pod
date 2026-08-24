@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { safeApply } from "../../open-sse/rtk/applyFilter.js";
-import { autoDetectFilter } from "../../open-sse/rtk/autodetect.js";
-import { dedupLog } from "../../open-sse/rtk/filters/dedupLog.js";
-import { find } from "../../open-sse/rtk/filters/find.js";
-import { gitDiff } from "../../open-sse/rtk/filters/gitDiff.js";
-import { gitStatus } from "../../open-sse/rtk/filters/gitStatus.js";
-import { grep } from "../../open-sse/rtk/filters/grep.js";
-import { ls } from "../../open-sse/rtk/filters/ls.js";
-import { readNumbered } from "../../open-sse/rtk/filters/readNumbered.js";
-import { searchList } from "../../open-sse/rtk/filters/searchList.js";
-import { smartTruncate } from "../../open-sse/rtk/filters/smartTruncate.js";
-import { tree } from "../../open-sse/rtk/filters/tree.js";
-import { compressMessages, formatRtkLog } from "../../open-sse/rtk/index.js";
+import { safeApply } from "../../open-sse/rtk/applyFilter.ts";
+import { autoDetectFilter } from "../../open-sse/rtk/autodetect.ts";
+import { dedupLog } from "../../open-sse/rtk/filters/dedupLog.ts";
+import { find } from "../../open-sse/rtk/filters/find.ts";
+import { gitDiff } from "../../open-sse/rtk/filters/gitDiff.ts";
+import { gitStatus } from "../../open-sse/rtk/filters/gitStatus.ts";
+import { grep } from "../../open-sse/rtk/filters/grep.ts";
+import { ls } from "../../open-sse/rtk/filters/ls.ts";
+import { readNumbered } from "../../open-sse/rtk/filters/readNumbered.ts";
+import { searchList } from "../../open-sse/rtk/filters/searchList.ts";
+import { smartTruncate } from "../../open-sse/rtk/filters/smartTruncate.ts";
+import { tree } from "../../open-sse/rtk/filters/tree.ts";
+import { compressMessages, formatRtkLog } from "../../open-sse/rtk/index.ts";
 
 function makeLongDiff() {
   const lines = [
@@ -337,6 +337,39 @@ describe("compressMessages (enabled)", () => {
   it("skips when body has no messages", () => {
     expect(compressMessages({}, true)).toBeNull();
     expect(compressMessages({ messages: null }, true)).toBeNull();
+  });
+
+  it("compresses OpenAI Responses function_call_output string", () => {
+    const big = makeLongDiff();
+    const body = { input: [{ type: "function_call_output", call_id: "c1", output: big }] };
+    const stats = compressMessages(body, true);
+    expect(stats).not.toBeNull();
+    expect(stats?.hits.length).toBeGreaterThan(0);
+    expect(body.input[0]?.output.length).toBeLessThan(big.length);
+    const line = formatRtkLog(stats);
+    expect(line).toContain("saved");
+    expect(line).toContain("git-diff");
+  });
+
+  it("compresses OpenAI Responses function_call_output input_text array", () => {
+    const big = makeLongDiff();
+    const body = {
+      input: [
+        {
+          type: "function_call_output",
+          call_id: "c1",
+          output: [{ type: "input_text", text: big }],
+        },
+      ],
+    };
+    const stats = compressMessages(body, true);
+    expect(stats).not.toBeNull();
+    expect(stats?.hits.length).toBeGreaterThan(0);
+    const part = body.input[0]?.output[0];
+    expect(part?.text.length).toBeLessThan(big.length);
+    const line = formatRtkLog(stats);
+    expect(line).toContain("saved");
+    expect(line).toContain("git-diff");
   });
 
   it("handles mix of messages without crashing", () => {

@@ -1,5 +1,5 @@
-import * as log from "../utils/logger.js";
-import { getMachineData, saveMachineData, deleteMachineData } from "../services/storage.js";
+import * as log from "../utils/logger.ts";
+import { getMachineData, saveMachineData, deleteMachineData } from "../services/storage.ts";
 
 const CORS_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
@@ -82,6 +82,8 @@ interface SyncBody {
   modelAliases?: Record<string, string>;
   combos?: Array<unknown>;
   apiKeys?: Array<unknown>;
+  comboStrategies?: Record<string, unknown>;
+  comboStrategy?: string;
 }
 
 /**
@@ -143,6 +145,8 @@ async function handlePost(request: Request, machineId: string, env: Env): Promis
     modelAliases: body.modelAliases || (existingData.modelAliases as Record<string, string>) || {},
     combos: body.combos || (existingData.combos as Array<unknown>) || [],
     apiKeys: body.apiKeys || (existingData.apiKeys as Array<unknown>) || [],
+    comboStrategies: body.comboStrategies || existingData.comboStrategies || {},
+    comboStrategy: body.comboStrategy || existingData.comboStrategy || "fallback",
     updatedAt: new Date().toISOString(),
   };
 

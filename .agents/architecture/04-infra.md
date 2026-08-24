@@ -2,20 +2,20 @@
 
 ## Runtime Stack
 
-| Component  | Choice                                                          |
-| ---------- | --------------------------------------------------------------- |
-| Runtime    | Bun + Next.js 16 (standalone mode, Turbopack)                   |
-| Language   | TypeScript (strict mode); `open-sse/` is included in root `tsc` |
-| Primary DB | SQLite at `~/.pod/pod.sqlite`                                   |
-| Cache DB   | Optional Redis (when `REDIS_URL` is set)                        |
-| Tunnel     | Optional Cloudflared                                            |
-| Mesh       | Optional Tailscale                                              |
+| Component  | Choice                                                                                                                       |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Runtime    | Bun + Next.js 16 (standalone mode, Turbopack)                                                                                |
+| Language   | TypeScript default (strict); authored `.ts`/`.tsx` only. Generated JS: `public/sw.js`. `open-sse/` is included in root `tsc` |
+| Primary DB | SQLite at `~/.pod/pod.sqlite`                                                                                                |
+| Cache DB   | Optional Redis (when `REDIS_URL` is set)                                                                                     |
+| Tunnel     | Optional Cloudflared                                                                                                         |
+| Mesh       | Optional Tailscale                                                                                                           |
 
 ## Deployment
 
 ### Docker (Recommended)
 
-Multi-stage build using `oven/bun:1.3.14-alpine`.
+Multi-stage build using `oven/bun:1.4.0-alpine`.
 
 ```bash
 docker run -d --name pod -p 20128:20128 -v pod-data:/app/data lazuardytech/pod:latest
@@ -30,6 +30,12 @@ Includes Redis (rate limiting) and SearXNG (private web search).
 
 ```bash
 cd docker && docker compose up -d
+```
+
+Optional Headroom sidecar overlay (`docker/docker-compose.headroom.yml`): hostname `headroom`, fail-open. Local Python spawn is loopback-only (`/api/headroom/start`). Zeabur = `HEADROOM_URL` only (no sidecar).
+
+```bash
+cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml up -d
 ```
 
 ### Zeabur

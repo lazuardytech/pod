@@ -1,6 +1,7 @@
 "use client";
 import type { HTMLAttributes, ReactNode } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { Card as UiCard } from "@/shared/components/ui/card";
 import { cn } from "@/shared/utils/cn";
 
 type CardProps = {
@@ -44,10 +45,10 @@ export default function Card({
       : "bg-graphite shadow-[var(--shadow-sm)]";
 
   return (
-    <div
+    <UiCard
       className={cn(
         bg,
-        "rounded-[6px] border border-charcoal-grey",
+        "rounded-[6px] border-charcoal-grey gap-0 py-0",
         hover &&
           "hover:border-muted-ash hover:bg-deep-slate transition-colors duration-100 cursor-pointer",
         paddings[padding],
@@ -80,7 +81,7 @@ export default function Card({
         </div>
       )}
       {children}
-    </div>
+    </UiCard>
   );
 }
 

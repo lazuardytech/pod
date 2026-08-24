@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button, IconButton } from "@/shared/components";
 import LucideIcon from "@/shared/components/LucideIcon";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
@@ -336,14 +337,15 @@ export default function Sidebar({
 
           {/* Collapse toggle — desktop only, expanded mode only */}
           {onToggleCollapse && !collapsed && (
-            <button
+            <IconButton
               type="button"
-              onClick={onToggleCollapse}
+              icon="left_panel_close"
               title="Collapse sidebar"
-              className="hidden lg:flex items-center justify-center size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 shrink-0"
-            >
-              <LucideIcon name="left_panel_close" className="text-[15px]" />
-            </button>
+              variant="ghost"
+              size="sm"
+              onClick={onToggleCollapse}
+              className="hidden lg:flex size-6 rounded-[4px] text-fog-grey hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 shrink-0"
+            />
           )}
         </div>
 
@@ -373,10 +375,12 @@ export default function Sidebar({
               <MediaFlyout isMediaActive={isMediaActive} pathname={pathname} onClose={onClose} />
             ) : (
               <>
-                <button
+                <Button
+                  type="button"
                   onClick={() => setMediaOpen((v: boolean) => !v)}
+                  variant="ghost"
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[2px] transition-colors duration-100 group",
+                    "w-full h-auto justify-start flex items-center gap-2.5 px-3 py-1.5 rounded-[2px] transition-colors duration-100 group",
                     isMediaActive
                       ? "bg-porcelain/8 text-porcelain"
                       : "text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
@@ -401,7 +405,7 @@ export default function Sidebar({
                     className="text-fog-grey transition-transform duration-150"
                     style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}
                   />
-                </button>
+                </Button>
 
                 {mediaOpen && (
                   <div className="pl-3 space-y-0.5">
@@ -501,22 +505,27 @@ export default function Sidebar({
           )}
           <div className={cn("flex items-center", collapsed ? "flex-col gap-1" : "gap-1.5")}>
             {collapsed && onToggleCollapse && (
-              <button
+              <IconButton
                 type="button"
-                onClick={onToggleCollapse}
+                icon="left_panel_open"
                 title="Expand sidebar"
+                variant="ghost"
+                onClick={onToggleCollapse}
                 className={cn(
                   "hidden lg:flex items-center justify-center transition-colors duration-100",
                   collapsedFooterButtonClass,
                 )}
-              >
-                <LucideIcon name="left_panel_open" size={SIDEBAR_ICON_SIZES.collapsed} />
-              </button>
+              />
             )}
-            <button
+            <Button
+              type="button"
               onClick={handleRestart}
               disabled={isRestarting}
+              loading={isRestarting}
+              icon={!isRestarting ? "restart_alt" : undefined}
               title="Restart"
+              variant="ghost"
+              size="sm"
               className={cn(
                 "flex items-center justify-center gap-1.5 rounded-[6px] disabled:opacity-40 transition-colors duration-100 text-[12px]",
                 collapsed
@@ -524,27 +533,15 @@ export default function Sidebar({
                   : "flex-1 h-7 border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
               )}
             >
-              {isRestarting ? (
-                <LucideIcon
-                  name="progress_activity"
-                  size={
-                    collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded
-                  }
-                  className="animate-spin"
-                />
-              ) : (
-                <LucideIcon
-                  name="restart_alt"
-                  size={
-                    collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded
-                  }
-                />
-              )}
               {!collapsed && "Restart"}
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
               onClick={() => setShowShutdownModal(true)}
+              icon="power_settings_new"
               title="Shutdown"
+              variant="ghost"
+              size="sm"
               className={cn(
                 "flex items-center justify-center gap-1.5 rounded-[6px] transition-colors duration-100 text-[12px]",
                 collapsed
@@ -552,12 +549,8 @@ export default function Sidebar({
                   : "flex-1 h-7 border border-charcoal-grey text-storm-cloud hover:bg-warning-red/10 hover:border-warning-red/30 hover:text-warning-red",
               )}
             >
-              <LucideIcon
-                name="power_settings_new"
-                size={collapsed ? SIDEBAR_ICON_SIZES.collapsed : SIDEBAR_ICON_SIZES.footerExpanded}
-              />
               {!collapsed && "Shutdown"}
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -584,12 +577,15 @@ export default function Sidebar({
               Server Disconnected
             </h2>
             <p className="text-[12px] text-storm-cloud mb-5">The proxy server has been stopped.</p>
-            <button
+            <Button
+              type="button"
               onClick={() => globalThis.location.reload()}
+              variant="outline"
+              size="sm"
               className="h-8 px-4 rounded-[6px] bg-gunmetal border border-charcoal-grey text-[12px] text-porcelain hover:bg-deep-slate transition-colors duration-100"
             >
               Reload Page
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -10,7 +10,7 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from "react";
-import LucideIcon from "@/shared/components/LucideIcon";
+import { Button } from "@/shared/components";
 import RequestLogger from "@/shared/components/RequestLogger";
 import SegmentedControl from "@/shared/components/SegmentedControl";
 import ShadcnSelect from "@/shared/components/ShadcnSelect";
@@ -82,19 +82,24 @@ function RequestLogsToolbar({
         contentClassName="min-w-[120px]"
         name="sort-by"
       />
-      <button
+      <Button
+        variant="outline"
+        size="icon"
+        icon="refresh"
+        loading={refreshing}
         onClick={onRefresh}
         disabled={refreshing}
-        className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
-      >
-        <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
-      </button>
-      <button
+        aria-label="Refresh"
+        className="size-7 rounded-[4px] border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
+      />
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setRecording((v) => !v)}
         title={recording ? "Pause recording" : "Resume recording"}
         className={cn(
-          "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
+          "h-7 gap-1.5 px-2.5 rounded-[4px] text-[11px] font-[510]",
           recording
             ? "border-emerald/30 bg-emerald/8 text-emerald hover:bg-emerald/15"
             : "border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
@@ -107,7 +112,7 @@ function RequestLogsToolbar({
           )}
         />
         {recording ? "Live" : "Paused"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -142,19 +147,24 @@ function ProxyLogsToolbar({
         contentClassName="min-w-[120px]"
         name="sort-by"
       />
-      <button
+      <Button
+        variant="outline"
+        size="icon"
+        icon="refresh"
+        loading={refreshing}
         onClick={onRefresh}
         disabled={refreshing}
-        className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
-      >
-        <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
-      </button>
-      <button
+        aria-label="Refresh"
+        className="size-7 rounded-[4px] border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
+      />
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setLive((v) => !v)}
         title={live ? "Pause live" : "Resume live"}
         className={cn(
-          "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
+          "h-7 gap-1.5 px-2.5 rounded-[4px] text-[11px] font-[510]",
           live
             ? "border-emerald/30 bg-emerald/8 text-emerald hover:bg-emerald/15"
             : "border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain",
@@ -164,7 +174,7 @@ function ProxyLogsToolbar({
           className={cn("size-1.5 rounded-full", live ? "bg-emerald animate-pulse" : "bg-fog-grey")}
         />
         {live ? "Live" : "Paused"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -188,19 +198,24 @@ function ConsoleToolbar({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <button
+      <Button
+        variant="outline"
+        size="icon"
+        icon="refresh"
+        loading={refreshing}
         onClick={onRefresh}
         disabled={refreshing}
-        className="flex items-center justify-center size-7 rounded-[4px] border border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Refresh"
-      >
-        <LucideIcon name="refresh" size={24} className={cn(refreshing && "animate-spin")} />
-      </button>
-      <button
+        aria-label="Refresh"
+        className="size-7 rounded-[4px] border-charcoal-grey text-storm-cloud hover:bg-deep-slate hover:text-porcelain"
+      />
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setLive((v) => !v)}
         title={live ? "Pause live" : "Resume live"}
         className={cn(
-          "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
+          "h-7 gap-1.5 px-2.5 rounded-[4px] text-[11px] font-[510]",
           live
             ? "border-emerald/30 bg-emerald/8 text-emerald"
             : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain",
@@ -210,27 +225,31 @@ function ConsoleToolbar({
           className={cn("size-1.5 rounded-full", live ? "bg-emerald animate-pulse" : "bg-fog-grey")}
         />
         {live ? "Live" : "Paused"}
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        icon="vertical_align_bottom"
         onClick={() => setAutoScroll((v) => !v)}
         title={autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"}
         className={cn(
-          "flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border text-[11px] font-[510] transition-colors duration-100",
+          "h-7 gap-1.5 px-2.5 rounded-[4px] text-[11px] font-[510]",
           autoScroll
             ? "border-aether-blue/30 bg-aether-blue/8 text-aether-blue"
             : "border-charcoal-grey text-fog-grey hover:bg-deep-slate hover:text-porcelain",
         )}
       >
-        <LucideIcon name="vertical_align_bottom" className="text-[13px]" />
         Auto-scroll
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        icon="delete"
         onClick={onClear}
-        className="flex items-center gap-1.5 h-7 px-2.5 rounded-[4px] border border-charcoal-grey text-[11px] text-storm-cloud hover:bg-warning-red/8 hover:border-warning-red/30 hover:text-warning-red transition-colors duration-100"
+        className="h-7 gap-1.5 px-2.5 rounded-[4px] text-[11px] text-storm-cloud hover:bg-warning-red/8 hover:border-warning-red/30 hover:text-warning-red"
       >
-        <LucideIcon name="delete" className="text-[13px]" />
         Clear
-      </button>
+      </Button>
     </div>
   );
 }
@@ -324,7 +343,7 @@ function LogsInner() {
           value={activeTab}
           onChange={setTab}
           size="sm"
-          iconSize={20}
+          iconSize={14}
           className="w-full sm:w-auto"
         />
 

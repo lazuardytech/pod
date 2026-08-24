@@ -1,5 +1,5 @@
 // Google Translate TTS (no auth) — scrape token + batchexecute RPC
-import { UA } from "./_base.js";
+import { UA } from "./_base.ts";
 
 const REFRESH_MS = 11 * 60 * 1000;
 type GoogleTtsToken = { "f.sid": string; bl: string };

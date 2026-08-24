@@ -2,12 +2,10 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 import LucideIcon from "@/shared/components/LucideIcon";
+import { Input as UiInput } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
 import { cn } from "@/shared/utils/cn";
 
-/**
- * Slugify a label for use as a form field name when no explicit `name` prop is provided.
- * Returns "" for falsy input so the caller can decide to omit the attribute entirely.
- */
 function deriveName(label: unknown) {
   if (typeof label !== "string" || !label) return "";
   return label
@@ -62,7 +60,6 @@ export default function Input({
   name,
   ...props
 }: InputProps) {
-  // Stable, deterministic per-instance ID for label association and browser autofill.
   const reactId = useId();
   const inputId = id || `input-${reactId}`;
   const inputName = name || deriveName(label) || inputId;
@@ -70,21 +67,22 @@ export default function Input({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label
+        <Label
           htmlFor={inputId}
           className="text-[12px] font-[510] text-storm-cloud tracking-[-0.1px]"
         >
           {label}
           {required && <span className="text-warning-red ml-1">*</span>}
-        </label>
+        </Label>
       )}
       <div className="relative">
         {icon && (
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pr-2 pointer-events-none text-storm-cloud">
-            <LucideIcon name={icon} className="text-[16px]" />
-          </div>
+          <LucideIcon
+            name={icon}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-storm-cloud pointer-events-none"
+          />
         )}
-        <input
+        <UiInput
           id={inputId}
           name={inputName}
           type={type}
@@ -92,27 +90,18 @@ export default function Input({
           value={value}
           onChange={onChange}
           disabled={disabled}
+          required={required}
+          aria-invalid={Boolean(error)}
           className={cn(
-            "h-9 w-full px-3.5 text-[13px] text-porcelain bg-gunmetal",
-            "rounded-[6px] border border-charcoal-grey",
-            "placeholder:text-fog-grey",
-            "focus:outline-none focus:border-porcelain/50 focus:ring-1 focus:ring-porcelain/25",
-            "transition-colors duration-100",
-            "disabled:opacity-40 disabled:cursor-not-allowed",
-            "text-[16px] sm:text-[13px]",
+            "h-9 text-[13px] bg-gunmetal border-charcoal-grey text-porcelain rounded-[6px]",
             icon && "pl-9",
-            !!error && "border-warning-red focus:border-warning-red focus:ring-warning-red/25",
+            error && "border-warning-red",
             inputClassName,
           )}
           {...props}
         />
       </div>
-      {error && (
-        <p className="text-[11px] text-warning-red flex items-center gap-1">
-          <LucideIcon name="error" className="text-[13px]" />
-          {error}
-        </p>
-      )}
+      {error && <p className="text-[11px] text-warning-red">{error}</p>}
       {hint && !error && <p className="text-[11px] text-fog-grey">{hint}</p>}
     </div>
   );

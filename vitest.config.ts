@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
@@ -14,6 +14,7 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.{js,mjs,ts}"],
+    exclude: [...configDefaults.exclude, "tests/live/**"],
     environment: "node",
     testTimeout: 20000,
     hookTimeout: 30000,

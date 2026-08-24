@@ -1,8 +1,8 @@
 # Release Rollup: v0.0.80 → v0.0.82
 
 **Date range:** 2026-07-07 → 2026-07-11 (v0.0.80, v0.0.81, v0.0.82)
-**Stack:** Bun + Next.js 16 (TS strict) + open-sse (local JS fork) + SQLite + Redis (optional)
-**Note:** No per-version rollup existed for this gap; this consolidates v0.0.80–v0.0.82.
+**Stack:** Bun + Next.js 16 (TS strict) + open-sse (typed local fork) + SQLite + Redis (optional)
+**Note:** No per-version rollup existed for this gap; this consolidates v0.0.80–v0.0.82. **Correction (2026-08-20):** `open-sse/` is TypeScript and included in root `tsc` — the “frozen as JS” line in the summary below is historical.
 
 ## Summary
 
