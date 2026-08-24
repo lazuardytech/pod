@@ -148,7 +148,7 @@ function buildCompressEndpoint(url: string) {
     parsed.hash = "";
     return parsed.toString();
   } catch {
-    const raw = String(url).split("#", 1)[0];
+    const raw = String(url).split("#", 1)[0] ?? "";
     const [base, query = ""] = raw.split("?", 2);
     const endpoint = `${(base ?? "").replace(/\/$/, "").replace(/\/v1\/compress$/, "")}/v1/compress`;
     return query ? `${endpoint}?${query}` : endpoint;
