@@ -2,14 +2,16 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { disableDashboardLogin } from "../helpers/apiRouteHarness.ts";
 
 let tempDir;
 let originalDataDir;
 
-beforeAll(() => {
+beforeAll(async () => {
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pod-routes-test-"));
   originalDataDir = process.env.DATA_DIR;
   process.env.DATA_DIR = tempDir;
+  await disableDashboardLogin();
 });
 
 afterAll(async () => {

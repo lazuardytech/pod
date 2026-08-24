@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections, updateProviderConnection } from "@/models";
 import { invalidateConnectionsCache } from "@/sse/services/auth";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const CONN_LOCK_UNTIL_KEY = "connectionLockUntil";
 const CONN_LOCK_COUNT_KEY = "connectionLockCount";
@@ -8,7 +9,10 @@ const CONN_LOCK_REASON_KEY = "connectionLockReason";
 
 // POST /api/provider-nodes/[id]/clear-connection-lock
 // Clears the connection-level lock for a specific connection.
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
 

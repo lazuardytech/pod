@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/sqlite/connection";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 type RequestLogRow = {
   id: string;
@@ -36,6 +37,9 @@ type RequestDetailsRow = Record<string, unknown> & {
  * 3. Fuzzy match by timestamp only within ±5min window (no model filter)
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const db = getDatabase();

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // GET /api/providers/client - List all connections for client (includes sensitive fields for sync)
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     await backfillCodexEmails();
     const connections = await getProviderConnections();

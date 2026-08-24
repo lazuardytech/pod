@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRequestDetails } from "@/lib/usageDb";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,6 +10,9 @@ export const revalidate = 0;
  * Query parameters: page, pageSize (1-100), provider, model, connectionId, status, startDate, endDate
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
 

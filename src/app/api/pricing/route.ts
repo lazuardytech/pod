@@ -3,12 +3,16 @@ import { getPricing, resetAllPricing, resetPricing, updatePricing } from "@/lib/
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getDefaultPricing } from "@/shared/constants/pricing";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 /**
  * GET /api/pricing
  * Get current pricing configuration (merged user + defaults)
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const pricing = await getPricing();
     return NextResponse.json(pricing);
@@ -24,6 +28,9 @@ export async function GET() {
  * Body: { provider: { model: { input: number, output: number, cached: number, ... } } }
  */
 export async function PATCH(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -86,6 +93,9 @@ export async function PATCH(request: Request) {
  * Query params: ?provider=xxx&model=yyy (optional)
  */
 export async function DELETE(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get("provider");

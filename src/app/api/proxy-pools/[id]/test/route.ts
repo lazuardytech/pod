@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { testProxyUrl } from "@/lib/network/proxyTest";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProxyPoolById, updateProxyPool } from "@/models";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 function buildRelayHeaders(proxyPool: Record<string, unknown>) {
   const headers: Record<string, string> = {
@@ -49,6 +50,9 @@ async function testVercelRelay(proxyPool: Record<string, unknown>, timeoutMs: nu
 
 // POST /api/proxy-pools/[id]/test - Test proxy pool entry
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const proxyPool = await getProxyPoolById(id);

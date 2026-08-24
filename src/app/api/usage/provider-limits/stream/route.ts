@@ -3,6 +3,7 @@ import { getProviderConnections } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { USAGE_APIKEY_PROVIDERS, USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/usage/provider-limits/stream";
@@ -88,6 +89,9 @@ async function buildProviderLimitsSnapshot(request: Request) {
  * SSE stream for provider quota snapshot updates.
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;
 

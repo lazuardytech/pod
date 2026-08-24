@@ -2,15 +2,29 @@
 
 ## Active Items
 
-| #   | Issue                         | Risk   | Notes                                                                                                                |
-| --- | ----------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Provider API drift**        | High   | OAuth and cookie-based providers change frequently. Regular re-verification needed.                                  |
-| 2   | **Route auth sync**           | Medium | `routeAuth.ts` matchers must cover all protected routes. No middleware registered — internal APIs self-authenticate. |
-| 3   | **Relay behavior**            | Medium | Cold starts, timeout races (relay timeout = pod timeout - 5s). First request after idle may be slow.                 |
-| 4   | **Multi-instance readiness**  | Low    | SQLite concurrent access, Redis dependency, lock semantics. Current design is single-instance.                       |
-| 5   | **Offline queue correctness** | Medium | Only safe idempotent mutations queued. Verify correctness after any store change.                                    |
-| 6   | **SSRF protection**           | Medium | Must block `0.0.0.0` and DNS-rebinding hosts. Re-verify after proxy changes.                                         |
-| 7   | **Fork divergence**           | Low    | Pod intentionally diverged from upstream (9Router). No safe direct merges.                                           |
+| #   | Issue                         | Risk   | Notes                                                                                                                                                |
+| --- | ----------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Provider API drift**        | High   | OAuth and cookie-based providers change frequently. See checklist below. No live OAuth cron.                                                         |
+| 2   | **Route auth sync**           | Medium | No middleware. Routes self-authenticate via `routeAuth.ts` helpers. Some dashboard mutations still unguarded (hardening wave 1).                     |
+| 3   | **Relay behavior**            | Medium | Cold starts, timeout races (relay timeout = pod timeout - 5s). First request after idle may be slow.                                                 |
+| 4   | **Multi-instance readiness**  | Low    | **Replicas: 1.** Canary ≠ replica (separate service + volume). Redis is rate-limit only (`pod:` / `pod-canary:`). SQLite is not horizontally shared. |
+| 5   | **Offline queue correctness** | Medium | Enqueue allowlist: `PATCH /api/settings`, `PUT /api/providers/:id` only. Re-verify after any store change.                                           |
+| 6   | **SSRF protection**           | Medium | `validateFetchUrl` blocks `0.0.0.0` (tests in `tests/unit/url-guardrails.test.ts`). Re-verify after proxy changes.                                   |
+| 7   | **Fork divergence**           | Low    | Last reviewed: 9router **v0.4.62**. No direct merges. Selective port only. See `.agents/reports/9router-*`.                                          |
+
+## Provider drift checklist
+
+High-churn providers. Re-verify after upstream/OAuth changes. Existing unit tests only — no live OAuth cron.
+
+| Provider       | What to re-check                   | Existing tests                                                                     |
+| -------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
+| cursor         | OAuth + cookie auto-import         | `tests/unit/oauth-cursor-auto-import.test.ts`                                      |
+| kiro           | refresh + transient overload retry | `tests/unit/oauth-refresh-kiro.test.ts`, `tests/unit/kiro-transient-retry.test.ts` |
+| iflow          | cookie/OAuth refresh               | `tests/unit/oauth-refresh-iflow.test.ts`                                           |
+| grok-web       | cookie web session                 | `tests/unit/grok-web.test.ts`                                                      |
+| perplexity-web | cookie web session                 | `tests/unit/perplexity-web.test.ts`                                                |
+
+Also run the dashboard test-models / test-batch flow after provider-side API changes.
 
 ## Historical Context
 

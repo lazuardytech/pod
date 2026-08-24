@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const DEFAULTS = {
   semanticCacheEnabled: false,
@@ -16,7 +17,10 @@ function toPositiveInt(value: unknown) {
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const settings = await getSettings();
     const config: Record<string, unknown> = {};
@@ -30,6 +34,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

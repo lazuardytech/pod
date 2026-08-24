@@ -1,5 +1,7 @@
-import { sanitizeError } from "@/lib/sanitizeError";
+import { getSettings } from "@/lib/localDb";
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
+import { sanitizeError } from "@/lib/sanitizeError";
+import { extractApiKey, isValidApiKey } from "@/sse/services/auth";
 
 export async function OPTIONS() {
   return new Response(null, {
@@ -19,6 +21,22 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
   return await withApiKeyRateLimit(request, async () => {
     try {
+      const settings = await getSettings();
+      if (settings.requireApiKey) {
+        const apiKey = extractApiKey(request);
+        if (!apiKey) {
+          return Response.json(
+            { error: { message: "Missing API key", type: "authentication_error", param: null } },
+            { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
+          );
+        }
+        if (!(await isValidApiKey(apiKey))) {
+          return Response.json(
+            { error: { message: "Invalid API key", type: "authentication_error", param: null } },
+            { status: 401, headers: { "Access-Control-Allow-Origin": "*" } },
+          );
+        }
+      }
       const id = `modr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
       return Response.json(

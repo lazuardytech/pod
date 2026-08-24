@@ -12,6 +12,7 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { invalidateConnectionsCache } from "@/sse/services/auth";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,9 @@ function isCustomNode(node: { id?: string; type?: string; apiType?: string } | n
 
 // PATCH /api/provider-nodes/[id]/rename - Rename a custom provider node's identifier
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id: oldId } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);

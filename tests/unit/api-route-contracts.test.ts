@@ -263,6 +263,14 @@ describe("v1 route contracts", () => {
 describe("api route contracts", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.doMock("@/lib/routeAuth", () => ({
+      checkDashboardApiAuth: vi.fn(async () => null),
+      checkStrictDashboardAuth: vi.fn(async () => null),
+    }));
+    vi.doMock("@/lib/routeAuth.ts", () => ({
+      checkDashboardApiAuth: vi.fn(async () => null),
+      checkStrictDashboardAuth: vi.fn(async () => null),
+    }));
   });
 
   afterEach(() => {
@@ -374,6 +382,14 @@ describe("api route contracts", () => {
 describe("usage route contracts", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.doMock("@/lib/routeAuth", () => ({
+      checkDashboardApiAuth: vi.fn(async () => null),
+      checkStrictDashboardAuth: vi.fn(async () => null),
+    }));
+    vi.doMock("@/lib/routeAuth.ts", () => ({
+      checkDashboardApiAuth: vi.fn(async () => null),
+      checkStrictDashboardAuth: vi.fn(async () => null),
+    }));
   });
 
   afterEach(() => {
@@ -489,6 +505,202 @@ describe("usage route contracts", () => {
       const req = makeRequest("/api/usage/request-logs?limit=50");
       const res = await GET(req);
       expect(res.status).toBe(200);
+    });
+  });
+});
+
+function mockPassThroughRateLimit() {
+  vi.doMock("@/lib/rateLimit", () => ({
+    withApiKeyRateLimit: async (_req, fn) => fn(),
+  }));
+}
+
+describe("PATCH /api/settings auth", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.doUnmock("@/lib/routeAuth");
+    vi.doUnmock("@/lib/routeAuth.ts");
+    const localDb = {
+      getSettings: vi.fn().mockResolvedValue({ requireLogin: true }),
+      updateSettings: vi.fn(),
+      validateApiKey: vi.fn(),
+    };
+    vi.doMock("@/lib/localDb", () => localDb);
+    vi.doMock("@/lib/localDb.ts", () => localDb);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns 401 when requireLogin=true and no cookie", async () => {
+    const { PATCH } = await import("@/app/api/settings/route.ts");
+    const req = makeJsonRequest("/api/settings", { foo: 1 }, { method: "PATCH" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("v1 stub auth contracts", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe("POST /v1/images/edits", () => {
+    it("returns 401 without API key when requireApiKey=true", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/lib/localDb", () => ({
+        getSettings: vi.fn().mockResolvedValue({ requireApiKey: true }),
+      }));
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue(null),
+        isValidApiKey: vi.fn(),
+      }));
+      const { POST } = await import("@/app/api/v1/images/edits/route.ts");
+      const res = await POST(makeJsonRequest("/v1/images/edits", {}));
+      expect(res.status).toBe(401);
+    });
+
+    it("returns 501 with a valid API key", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/lib/localDb", () => ({
+        getSettings: vi.fn().mockResolvedValue({ requireApiKey: true }),
+      }));
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue("sk-test"),
+        isValidApiKey: vi.fn().mockResolvedValue(true),
+      }));
+      const { POST } = await import("@/app/api/v1/images/edits/route.ts");
+      const res = await POST(makeJsonRequest("/v1/images/edits", {}));
+      expect(res.status).toBe(501);
+    });
+  });
+
+  describe("POST /v1/images/variations", () => {
+    it("returns 401 without API key when requireApiKey=true", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/lib/localDb", () => ({
+        getSettings: vi.fn().mockResolvedValue({ requireApiKey: true }),
+      }));
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue(null),
+        isValidApiKey: vi.fn(),
+      }));
+      const { POST } = await import("@/app/api/v1/images/variations/route.ts");
+      const res = await POST(makeJsonRequest("/v1/images/variations", {}));
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("POST /v1/files", () => {
+    it("returns 401 without API key when requireApiKey=true", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/lib/localDb", () => ({
+        getSettings: vi.fn().mockResolvedValue({ requireApiKey: true }),
+      }));
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue(null),
+        isValidApiKey: vi.fn(),
+      }));
+      const { POST } = await import("@/app/api/v1/files/route.ts");
+      const res = await POST(makeJsonRequest("/v1/files", {}));
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("GET /v1/files", () => {
+    it("returns 401 for an invalid API key", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue("sk-bad"),
+        isValidApiKey: vi.fn().mockResolvedValue(false),
+      }));
+      const { GET } = await import("@/app/api/v1/files/route.ts");
+      const res = await GET(makeRequest("/v1/files"));
+      expect(res.status).toBe(401);
+    });
+
+    it("returns empty list for a valid API key", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue("sk-ok"),
+        isValidApiKey: vi.fn().mockResolvedValue(true),
+      }));
+      const { GET } = await import("@/app/api/v1/files/route.ts");
+      const res = await GET(makeRequest("/v1/files"));
+      expect(res.status).toBe(200);
+      const json = await readJson(res);
+      expect(json).toEqual({ object: "list", data: [] });
+    });
+  });
+
+  describe("GET/DELETE /v1/files/{id}", () => {
+    it("returns 401 for GET with an invalid API key before 404", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue("sk-bad"),
+        isValidApiKey: vi.fn().mockResolvedValue(false),
+      }));
+      const { GET } = await import("@/app/api/v1/files/[file_id]/route.ts");
+      const res = await GET(makeRequest("/v1/files/file-1"), {
+        params: Promise.resolve({ file_id: "file-1" }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it("returns 404 for DELETE with a valid API key", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue("sk-ok"),
+        isValidApiKey: vi.fn().mockResolvedValue(true),
+      }));
+      const { DELETE } = await import("@/app/api/v1/files/[file_id]/route.ts");
+      const res = await DELETE(makeRequest("/v1/files/file-1", { method: "DELETE" }), {
+        params: Promise.resolve({ file_id: "file-1" }),
+      });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /v1/moderations", () => {
+    it("returns 401 without API key when requireApiKey=true", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/lib/localDb", () => ({
+        getSettings: vi.fn().mockResolvedValue({ requireApiKey: true }),
+      }));
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue(null),
+        isValidApiKey: vi.fn(),
+      }));
+      const { POST } = await import("@/app/api/v1/moderations/route.ts");
+      const res = await POST(makeJsonRequest("/v1/moderations", { input: "hi" }));
+      expect(res.status).toBe(401);
+    });
+
+    it("returns a mock body with a valid API key", async () => {
+      vi.resetModules();
+      mockPassThroughRateLimit();
+      vi.doMock("@/lib/localDb", () => ({
+        getSettings: vi.fn().mockResolvedValue({ requireApiKey: true }),
+      }));
+      vi.doMock("@/sse/services/auth", () => ({
+        extractApiKey: vi.fn().mockReturnValue("sk-ok"),
+        isValidApiKey: vi.fn().mockResolvedValue(true),
+      }));
+      const { POST } = await import("@/app/api/v1/moderations/route.ts");
+      const res = await POST(makeJsonRequest("/v1/moderations", { input: "hi" }));
+      expect(res.status).toBe(200);
+      const json = await readJson(res);
+      expect(json.results[0].flagged).toBe(false);
     });
   });
 });

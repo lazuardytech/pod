@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getChartData } from "@/lib/usageDb";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const VALID_PERIODS = new Set(["24h", "7d", "30d", "90d"]);
 
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "7d";

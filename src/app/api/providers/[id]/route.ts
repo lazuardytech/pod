@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { asApiRecord } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import {
   deleteProviderConnection,
   getProviderConnectionById,
@@ -69,6 +70,9 @@ function shouldMergeProviderSpecificData(
 
 // GET /api/providers/[id] - Get single connection
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);
@@ -93,6 +97,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 // PUT /api/providers/[id] - Update connection
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -185,6 +192,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE /api/providers/[id] - Delete connection
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
 

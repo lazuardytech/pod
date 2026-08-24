@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { disableModels, enableModels, getDisabledModels } from "@/lib/disabledModelsDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/models/disabled?providerAlias=xxx
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const providerAlias = searchParams.get("providerAlias");
@@ -21,6 +25,9 @@ export async function GET(request: Request) {
 
 // POST /api/models/disabled  body: { providerAlias, ids: [...] }
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -39,6 +46,9 @@ export async function POST(request: Request) {
 
 // DELETE /api/models/disabled?providerAlias=xxx[&id=yyy]
 export async function DELETE(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const providerAlias = searchParams.get("providerAlias");

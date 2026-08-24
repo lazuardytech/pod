@@ -89,6 +89,16 @@ describe("routeAuth", () => {
     expect(response).toBe(null);
   });
 
+  it("dashboard API auth rejects when requireLogin=true and no cookie", async () => {
+    const { checkDashboardApiAuth } = await import("@/lib/routeAuth.ts");
+    getSettingsMock.mockResolvedValue({ requireLogin: true });
+
+    const response = await checkDashboardApiAuth(createRequest());
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Unauthorized");
+  });
+
   it("requireValidApiKey rejects missing API keys", async () => {
     const { requireValidApiKey } = await import("@/lib/routeAuth.ts");
 

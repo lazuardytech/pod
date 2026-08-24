@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { addCustomModel, deleteCustomModel, getCustomModels } from "@/models";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/models/custom - List all custom models
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const models = await getCustomModels();
     return NextResponse.json({ models });
@@ -18,6 +22,9 @@ export async function GET() {
 
 // POST /api/models/custom - Add custom model
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -41,6 +48,9 @@ export async function POST(request: Request) {
 
 // DELETE /api/models/custom?providerAlias=xxx&id=yyy&type=zzz
 export async function DELETE(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const providerAlias = searchParams.get("providerAlias");

@@ -2,6 +2,7 @@ import { sanitizeError } from "@/lib/sanitizeError";
 import { getDownloadStatus } from "@/lib/tunnel/downloadState";
 import { getTailscaleStatus, getTunnelStatus } from "@/lib/tunnel/tunnelManager";
 import { releaseSSESlot, tryAcquireSSESlot } from "../../../monitoring/_sseConnectionCap";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 export const dynamic = "force-dynamic";
 
 const ROUTE_PATH = "/api/tunnel/status/stream";
@@ -20,6 +21,9 @@ async function buildStatusPayload() {
  * SSE stream for tunnel/tailscale status updates.
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   const slot = tryAcquireSSESlot(ROUTE_PATH);
   if (!slot.allowed) return slot.response;
 

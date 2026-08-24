@@ -1,5 +1,5 @@
 import { withApiKeyRateLimit } from "@/lib/rateLimit";
-import { extractApiKey } from "@/sse/services/auth";
+import { extractApiKey, isValidApiKey } from "@/sse/services/auth";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +20,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
     if (!apiKey) {
       return Response.json(
         { error: { message: "Missing API key", type: "authentication_error", param: null } },
+        { status: 401, headers: CORS_HEADERS },
+      );
+    }
+    if (!(await isValidApiKey(apiKey))) {
+      return Response.json(
+        { error: { message: "Invalid API key", type: "authentication_error", param: null } },
         { status: 401, headers: CORS_HEADERS },
       );
     }
@@ -50,6 +56,12 @@ export async function DELETE(
     if (!apiKey) {
       return Response.json(
         { error: { message: "Missing API key", type: "authentication_error", param: null } },
+        { status: 401, headers: CORS_HEADERS },
+      );
+    }
+    if (!(await isValidApiKey(apiKey))) {
+      return Response.json(
+        { error: { message: "Invalid API key", type: "authentication_error", param: null } },
         { status: 401, headers: CORS_HEADERS },
       );
     }

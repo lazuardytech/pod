@@ -3,9 +3,13 @@ import { getApiKeys } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { validateFetchUrl } from "@/lib/validateUrl";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // POST /api/models/test - Ping a single model via internal completions or embeddings
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

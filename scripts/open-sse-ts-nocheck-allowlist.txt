@@ -1,0 +1,36 @@
+# Frozen @ts-nocheck paths under open-sse/. New files fail `bun run check`.
+# Translator helpers were removed in wave 4.
+open-sse/executors/antigravity.ts
+open-sse/executors/codex.ts
+open-sse/executors/default.ts
+open-sse/executors/github.ts
+open-sse/executors/kiro.ts
+open-sse/handlers/chatCore.ts
+open-sse/services/projectId.ts
+open-sse/services/provider.ts
+open-sse/transformer/responsesTransformer.ts
+open-sse/transformer/streamToJsonConverter.ts
+open-sse/translator/formats.ts
+open-sse/translator/index.ts
+open-sse/translator/request/antigravity-to-openai.ts
+open-sse/translator/request/claude-to-openai.ts
+open-sse/translator/request/gemini-to-openai.ts
+open-sse/translator/request/openai-responses.ts
+open-sse/translator/request/openai-to-claude.ts
+open-sse/translator/request/openai-to-commandcode.ts
+open-sse/translator/request/openai-to-cursor.ts
+open-sse/translator/request/openai-to-gemini.ts
+open-sse/translator/request/openai-to-kiro.ts
+open-sse/translator/request/openai-to-ollama.ts
+open-sse/translator/request/openai-to-vertex.ts
+open-sse/translator/response/claude-to-openai.ts
+open-sse/translator/response/commandcode-to-openai.ts
+open-sse/translator/response/cursor-to-openai.ts
+open-sse/translator/response/gemini-to-openai.ts
+open-sse/translator/response/kiro-to-openai.ts
+open-sse/translator/response/ollama-to-openai.ts
+open-sse/translator/response/openai-responses.ts
+open-sse/translator/response/openai-to-antigravity.ts
+open-sse/translator/response/openai-to-claude.ts
+open-sse/utils/bypassHandler.ts
+open-sse/utils/stream.ts

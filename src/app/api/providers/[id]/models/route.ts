@@ -5,6 +5,7 @@ import { GEMINI_CONFIG } from "@/lib/oauth/constants/oauth";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getProviderConnectionById } from "@/models";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import {
   isAnthropicCompatibleProvider,
   isOpenAICompatibleProvider,
@@ -231,6 +232,9 @@ const PROVIDER_MODELS_CONFIG = {
  * GET /api/providers/[id]/models - Get models list from provider
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);

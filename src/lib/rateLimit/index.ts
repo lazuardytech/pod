@@ -1,15 +1,11 @@
 // Public API for rate limiting — Redis-backed when REDIS_URL is set, in-memory fallback.
 // Replaces previous @/app/api/v1/_utils/apiKeyRateLimit.js
 
+import { RATE_LIMIT_EXPOSE_HEADERS } from "open-sse/utils/error.ts";
 import { getApiKeyByKey } from "@/lib/localDb";
 import { extractApiKey } from "@/sse/services/auth";
 import { getBackend, initRateLimit } from "./backend";
-export { initRateLimit };
-
-// ponytail: duplicated in open-sse/utils/error.js; tsc excludes open-sse/, so
-// cross-boundary import won't resolve. Inline here until open-sse is under tsc.
-export const RATE_LIMIT_EXPOSE_HEADERS =
-  "Retry-After, x-ratelimit-limit-requests, x-ratelimit-remaining-requests, x-ratelimit-reset-requests";
+export { initRateLimit, RATE_LIMIT_EXPOSE_HEADERS };
 
 // ======== Response helpers (shared across backends) ========
 

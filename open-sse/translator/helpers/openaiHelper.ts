@@ -1,4 +1,3 @@
-// @ts-nocheck
 // OpenAI helper functions for translator
 
 // Valid OpenAI content block types
@@ -19,10 +18,10 @@ export const VALID_OPENAI_MESSAGE_TYPES = [
 
 // Filter messages to OpenAI standard format
 // Remove: thinking, redacted_thinking, signature, and other non-OpenAI blocks
-export function filterToOpenAIFormat(body: unknown) {
+export function filterToOpenAIFormat(body: any) {
   if (!body.messages || !Array.isArray(body.messages)) return body;
 
-  body.messages = body.messages.map((msg: unknown) => {
+  body.messages = body.messages.map((msg: any) => {
     // Normalize developer role to system (many providers don't support developer)
     if (msg.role === "developer") msg = { ...msg, role: "system" };
 
@@ -37,7 +36,7 @@ export function filterToOpenAIFormat(body: unknown) {
 
     // Handle array content
     if (Array.isArray(msg.content)) {
-      const filteredContent = [];
+      const filteredContent: any[] = [];
 
       for (const block of msg.content) {
         // Skip thinking blocks
@@ -61,10 +60,10 @@ export function filterToOpenAIFormat(body: unknown) {
         filteredContent.push({ type: "text", text: "" });
       }
 
-      const allText = filteredContent.every((b: unknown) => b.type === "text");
+      const allText = filteredContent.every((b: any) => b.type === "text");
       return {
         ...msg,
-        content: allText ? filteredContent.map((b: unknown) => b.text).join("\n") : filteredContent,
+        content: allText ? filteredContent.map((b: any) => b.text).join("\n") : filteredContent,
       };
     }
 
@@ -74,7 +73,7 @@ export function filterToOpenAIFormat(body: unknown) {
   // Filter out messages with only empty text (but NEVER filter tool messages
   // or user messages — removing a user message can leave two assistant messages
   // adjacent, causing upstream "Cannot continue from message role: assistant").
-  body.messages = body.messages.filter((msg: unknown) => {
+  body.messages = body.messages.filter((msg: any) => {
     // Always keep tool messages
     if (msg.role === "tool") return true;
     // Always keep assistant messages with tool_calls
@@ -85,7 +84,7 @@ export function filterToOpenAIFormat(body: unknown) {
     if (typeof msg.content === "string") return msg.content.trim() !== "";
     if (Array.isArray(msg.content)) {
       return msg.content.some(
-        (b: unknown) => (b.type === "text" && b.text?.trim()) || b.type !== "text",
+        (b: any) => (b.type === "text" && b.text?.trim()) || b.type !== "text",
       );
     }
     return true;
@@ -98,7 +97,7 @@ export function filterToOpenAIFormat(body: unknown) {
 
   // Normalize tools to OpenAI format (from Claude, Gemini, etc.)
   if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
-    body.tools = body.tools.flatMap((tool: unknown) => {
+    body.tools = body.tools.flatMap((tool: any) => {
       // Already OpenAI format
       if (tool.type === "function" && tool.function) return tool;
 
@@ -116,7 +115,7 @@ export function filterToOpenAIFormat(body: unknown) {
 
       // Gemini format: {functionDeclarations: [{name, description, parameters}]}
       if (tool.functionDeclarations && Array.isArray(tool.functionDeclarations)) {
-        return tool.functionDeclarations.map((fn: unknown) => ({
+        return tool.functionDeclarations.map((fn: any) => ({
           type: "function",
           function: {
             name: fn.name,

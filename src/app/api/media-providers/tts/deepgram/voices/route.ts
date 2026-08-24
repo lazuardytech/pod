@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
 
@@ -11,6 +12,9 @@ const langNames = new Intl.DisplayNames(["en"], { type: "language" });
  * Each Deepgram voice = one model (canonical_name like "aura-2-thalia-en")
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const langFilter = searchParams.get("lang");

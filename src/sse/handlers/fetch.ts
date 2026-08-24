@@ -8,6 +8,7 @@ import {
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.ts";
 import { getCombos, getSettings, type Settings } from "@/lib/localDb";
 import { readBodyText } from "@/lib/parseJsonBody";
+import { validateFetchUrl } from "@/lib/validateUrl";
 import { getMaxRequestBodyBytes } from "@/shared/constants/config";
 import {
   AI_PROVIDERS,
@@ -75,11 +76,10 @@ export async function handleFetch(request: Request): Promise<Response> {
     log.warn("FETCH", "Missing url");
     return errorResponse(HTTP_STATUS.BAD_REQUEST, "Missing required field: url");
   }
-  try {
-    new URL(targetUrl);
-  } catch {
-    log.warn("FETCH", "Invalid URL", { url: targetUrl });
-    return errorResponse(HTTP_STATUS.BAD_REQUEST, "Invalid URL format");
+  const urlCheck = validateFetchUrl(targetUrl);
+  if (!urlCheck.ok) {
+    log.warn("FETCH", "Invalid or blocked URL", { url: targetUrl });
+    return errorResponse(HTTP_STATUS.BAD_REQUEST, urlCheck.error);
   }
   const combos = await getCombos();
   const comboModels = getComboModelsFromData(

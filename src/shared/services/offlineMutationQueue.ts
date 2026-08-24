@@ -245,7 +245,16 @@ export type EnqueueOfflineMutationInput = {
 
 export type EnqueueOfflineMutationResult =
   | { ok: true; id: number; queueLength: number }
-  | { ok: false; reason: "missing_url" | "idb_unavailable" | "write_failed" };
+  | { ok: false; reason: "missing_url" | "not_allowed" | "idb_unavailable" | "write_failed" };
+
+/** PATCH /api/settings and PUT /api/providers/:id — the only current callers. */
+export function isAllowedOfflineMutation(method: string, url: string): boolean {
+  const path = (url.split("?")[0] ?? "").replace(/^https?:\/\/[^/]+/i, "");
+  return (
+    (method === "PATCH" && path === "/api/settings") ||
+    (method === "PUT" && /^\/api\/providers\/[^/]+$/.test(path))
+  );
+}
 
 export async function enqueueOfflineMutation(
   {
@@ -257,10 +266,13 @@ export async function enqueueOfflineMutation(
   }: EnqueueOfflineMutationInput = { url: "" },
 ): Promise<EnqueueOfflineMutationResult> {
   if (!url) return { ok: false, reason: "missing_url" };
+  const normalizedMethod = normalizeMethod(method);
+  if (!isAllowedOfflineMutation(normalizedMethod, url)) {
+    return { ok: false, reason: "not_allowed" };
+  }
   const db = await getDb();
   if (!db) return { ok: false, reason: "idb_unavailable" };
 
-  const normalizedMethod = normalizeMethod(method);
   const normalizedHeaders = normalizeHeaders(headers);
   const now = Date.now();
 

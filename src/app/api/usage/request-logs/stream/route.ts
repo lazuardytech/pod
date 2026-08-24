@@ -1,4 +1,5 @@
 import { getRecentLogsStructured } from "@/lib/usageDb";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
  * Detects: new entries (maxId change) AND status changes (PENDING → SUCCESS/FAILED).
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   let closed = false;
   let lastSig = "";
 

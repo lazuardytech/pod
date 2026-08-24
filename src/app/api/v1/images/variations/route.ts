@@ -1,3 +1,7 @@
+import { withApiKeyRateLimit } from "@/lib/rateLimit";
+import { getSettings } from "@/lib/localDb";
+import { extractApiKey, isValidApiKey } from "@/sse/services/auth";
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -8,20 +12,43 @@ export async function OPTIONS() {
   return new Response(null, { headers: CORS_HEADERS });
 }
 
+async function rejectIfApiKeyRequired(request: Request) {
+  const settings = await getSettings();
+  if (!settings.requireApiKey) return null;
+  const apiKey = extractApiKey(request);
+  if (!apiKey) {
+    return Response.json(
+      { error: { message: "Missing API key", type: "authentication_error", param: null } },
+      { status: 401, headers: CORS_HEADERS },
+    );
+  }
+  if (!(await isValidApiKey(apiKey))) {
+    return Response.json(
+      { error: { message: "Invalid API key", type: "authentication_error", param: null } },
+      { status: 401, headers: CORS_HEADERS },
+    );
+  }
+  return null;
+}
+
 /**
  * POST /v1/images/variations - Create an image variation
  * ponytail: returns 501 until image variation implementation is needed
  */
-export async function POST() {
-  return Response.json(
-    {
-      error: {
-        message: "Image variations are not yet supported",
-        type: "invalid_request_error",
-        param: null,
-        code: "not_implemented",
+export async function POST(request: Request) {
+  return await withApiKeyRateLimit(request, async () => {
+    const denied = await rejectIfApiKeyRequired(request);
+    if (denied) return denied;
+    return Response.json(
+      {
+        error: {
+          message: "Image variations are not yet supported",
+          type: "invalid_request_error",
+          param: null,
+          code: "not_implemented",
+        },
       },
-    },
-    { status: 501, headers: CORS_HEADERS },
-  );
+      { status: 501, headers: CORS_HEADERS },
+    );
+  });
 }

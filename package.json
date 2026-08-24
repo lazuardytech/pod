@@ -10,7 +10,7 @@
     "gen:sw-version": "bun run scripts/gen-sw-version.ts",
     "start": "NODE_ENV=production bun ./.next/standalone/server.js",
     "format": "oxfmt --write .",
-    "check": "oxfmt --write . && oxlint . --deny-warnings && tsc --noEmit",
+    "check": "bun scripts/check-open-sse-ts-nocheck.ts && oxfmt --write . && oxlint . --deny-warnings && tsc --noEmit",
     "lint": "oxlint . --deny-warnings",
     "test:run": "vitest run --reporter=verbose",
     "test:live": "vitest run --config vitest.live.config.ts --reporter=verbose",

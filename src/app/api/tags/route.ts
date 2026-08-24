@@ -1,4 +1,5 @@
 import { ollamaModels } from "open-sse/config/ollamaModels.ts";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,10 @@ export async function OPTIONS() {
   return new Response(null, { headers: CORS_HEADERS });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   return new Response(JSON.stringify(ollamaModels), {
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });

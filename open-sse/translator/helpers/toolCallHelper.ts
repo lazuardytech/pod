@@ -1,28 +1,23 @@
-// @ts-nocheck
 // Tool call helper functions for translator
 
 // Anthropic tool_use.id must match: ^[a-zA-Z0-9_-]+$
 const TOOL_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 // Generate deterministic tool call ID from position + tool name (cache-friendly)
-export function generateToolCallId(
-  msgIndex: unknown = 0,
-  tcIndex: unknown = 0,
-  toolName: unknown = "",
-) {
+export function generateToolCallId(msgIndex: any = 0, tcIndex: any = 0, toolName: any = "") {
   const name = toolName ? `_${toolName.replace(/[^a-zA-Z0-9_-]/g, "")}` : "";
   return `call_msg${msgIndex}_tc${tcIndex}${name}`;
 }
 
 // Sanitize ID to match Anthropic pattern: keep only alphanumeric, underscore, hyphen
-function sanitizeToolId(id: unknown) {
+function sanitizeToolId(id: any) {
   if (!id || typeof id !== "string") return null;
   const sanitized = id.replace(/[^a-zA-Z0-9_-]/g, "");
   return sanitized.length > 0 ? sanitized : null;
 }
 
 // Ensure all tool_calls have valid id field and arguments is string (some providers require it)
-export function ensureToolCallIds(body: unknown) {
+export function ensureToolCallIds(body: any) {
   if (!body.messages || !Array.isArray(body.messages)) return body;
 
   for (let i = 0; i < body.messages.length; i++) {
@@ -76,10 +71,10 @@ export function ensureToolCallIds(body: unknown) {
 }
 
 // Get tool_call ids from assistant message (OpenAI format: tool_calls, Claude format: tool_use in content)
-export function getToolCallIds(msg: unknown) {
+export function getToolCallIds(msg: any) {
   if (msg.role !== "assistant") return [];
 
-  const ids = [];
+  const ids: any[] = [];
 
   // OpenAI format: tool_calls array
   if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
@@ -101,7 +96,7 @@ export function getToolCallIds(msg: unknown) {
 }
 
 // Check if user message has tool_result for given ids (OpenAI format: role=tool, Claude format: tool_result in content)
-export function hasToolResults(msg: unknown, toolCallIds: unknown) {
+export function hasToolResults(msg: any, toolCallIds: any) {
   if (!msg || !toolCallIds.length) return false;
 
   // OpenAI format: role = "tool" with tool_call_id
@@ -122,10 +117,10 @@ export function hasToolResults(msg: unknown, toolCallIds: unknown) {
 }
 
 // Fix missing tool responses - insert empty tool_result if assistant has tool_use but next message has no tool_result
-export function fixMissingToolResponses(body: unknown) {
+export function fixMissingToolResponses(body: any) {
   if (!body.messages || !Array.isArray(body.messages)) return body;
 
-  const newMessages = [];
+  const newMessages: any[] = [];
 
   for (let i = 0; i < body.messages.length; i++) {
     const msg = body.messages[i];

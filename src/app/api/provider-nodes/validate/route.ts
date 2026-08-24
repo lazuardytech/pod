@@ -3,6 +3,7 @@ import { asString, fetchUrlError } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { validateFetchUrl } from "@/lib/validateUrl";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // Fetch with timeout wrapper
 const fetchWithTimeout = (
@@ -65,6 +66,9 @@ const getChatErrorMessage = (status: number) => {
 
 // POST /api/provider-nodes/validate - Validate API key against base URL
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

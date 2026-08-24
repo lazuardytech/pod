@@ -10,6 +10,7 @@ import {
   OPENAI_COMPATIBLE_PREFIX,
 } from "@/shared/constants/providers";
 import { testSingleConnection } from "../[id]/test/testUtils";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 function getAuthGroup(providerId: string, connection?: { authType?: string; provider?: string }) {
   // Prioritize authType from connection if available
@@ -45,6 +46,9 @@ function isCompatibleProvider(providerId: string) {
 
 // POST /api/providers/test-batch - Test multiple connections by group
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

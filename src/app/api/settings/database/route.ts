@@ -3,7 +3,11 @@ import { exportDb, getSettings, importDb } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
-export async function GET() {
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const payload = await exportDb();
     return NextResponse.json(payload);
@@ -14,6 +18,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [payload, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

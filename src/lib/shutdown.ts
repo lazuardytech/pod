@@ -2,6 +2,7 @@
 // Subsystems register cleanup hooks; the orchestrator runs them in reverse
 // registration order when SIGINT or SIGTERM is received.
 
+import { closeDatabase } from "@/lib/sqlite/connection";
 import { killCloudflared } from "@/lib/tunnel/cloudflared";
 import { stopDaemon, stopFunnel } from "@/lib/tunnel/tailscale";
 
@@ -44,6 +45,10 @@ async function runShutdown(): Promise<void> {
 
   try {
     await stopDaemon(null as unknown as string);
+  } catch {}
+
+  try {
+    closeDatabase();
   } catch {}
 
   console.log("[Shutdown] Cleanup complete, exiting");

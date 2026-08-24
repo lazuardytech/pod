@@ -4,7 +4,11 @@ import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

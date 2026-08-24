@@ -3,6 +3,7 @@ import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.ts";
 import { asApiRecord, asString } from "@/app/api/_types";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // Map locale code → country name
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
@@ -33,6 +34,9 @@ function langName(code: string | undefined) {
  *   ?apiKey=xxx  (required for elevenlabs)
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get("provider") || "edge-tts";

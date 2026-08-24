@@ -44,6 +44,16 @@ export function validateStartupSecrets(env: NodeJS.ProcessEnv = process.env): vo
       `[SECURITY] API_KEY_SECRET must be set to a strong random value before starting the server. Example: ${SECRET_GEN_EXAMPLE}`,
     );
   }
+
+  if (env.NODE_ENV === "production" && !env.REDIS_URL?.trim()) {
+    console.warn("[ops] REDIS_URL unset in production; rate limits are in-memory only");
+  }
+  const replicas = Number.parseInt(env.POD_REPLICA_COUNT ?? "1", 10);
+  if (Number.isFinite(replicas) && replicas > 1) {
+    const msg = `[ops] POD_REPLICA_COUNT=${replicas}; SQLite is single-replica — do not scale this service horizontally`;
+    console.warn(msg);
+    if (env.NODE_ENV === "production") throw new Error(msg);
+  }
 }
 
 /**

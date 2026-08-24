@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import {
   deleteProxyPool,
   getProviderConnections,
@@ -64,6 +65,9 @@ function countBoundConnections(connections: unknown[] = [], proxyPoolId: unknown
 
 // GET /api/proxy-pools/[id] - Get proxy pool
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const proxyPool = await getProxyPoolById(id);
@@ -83,6 +87,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 // PUT /api/proxy-pools/[id] - Update proxy pool
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const existing = await getProxyPoolById(id);
@@ -110,6 +117,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE /api/proxy-pools/[id] - Delete proxy pool
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const existing = await getProxyPoolById(id);

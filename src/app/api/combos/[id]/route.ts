@@ -3,12 +3,16 @@ import { resetComboRotation } from "open-sse/services/combo.ts";
 import { asString } from "@/app/api/_types";
 import { deleteCombo, getComboById, getComboByName, updateCombo } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
 // GET /api/combos/[id] - Get combo by ID
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const combo = await getComboById(id);
@@ -26,6 +30,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 // PUT /api/combos/[id] - Update combo
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -124,6 +131,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE /api/combos/[id] - Delete combo
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const prev = await getComboById(id);

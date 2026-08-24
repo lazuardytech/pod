@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 function sanitizeProxyPool(pool: Record<string, unknown> | null | undefined) {
   if (!pool) return pool;
@@ -54,6 +55,9 @@ function buildUsageMap(connections: unknown[] = []) {
 
 // GET /api/proxy-pools - List proxy pools
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const isActive = toBoolean(searchParams.get("isActive"));
@@ -87,6 +91,9 @@ export async function GET(request: Request) {
 
 // POST /api/proxy-pools - Create proxy pool
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

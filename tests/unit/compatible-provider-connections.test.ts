@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { disableDashboardLogin } from "../helpers/apiRouteHarness.ts";
 
 const originalDataDir = process.env.DATA_DIR;
 
@@ -24,6 +25,7 @@ async function setupTestContext(nodeData) {
   const { createProviderNode, getProviderConnections } = await import("@/models/index.ts");
 
   const node = await createProviderNode(nodeData);
+  await disableDashboardLogin();
 
   return {
     node,
@@ -185,7 +187,7 @@ describe("compatible provider connections API", () => {
     const createResponse = await ctx.POST(makeRequest(ctx.node.id, { name: "Production Key" }));
     expect(createResponse.status).toBe(201);
 
-    const listResponse = await ctx.GET();
+    const listResponse = await ctx.GET(new Request("https://pod.local/api/providers"));
     const body = await listResponse.json();
     expect(listResponse.status).toBe(200);
     expect(body.connections).toEqual(
