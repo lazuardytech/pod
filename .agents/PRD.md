@@ -1,6 +1,6 @@
 # Pod — Product Requirements Document
 
-**Version:** v0.0.86 | **Status:** Active development | **Last reviewed:** 2026-08-24
+**Version:** v0.0.86 | **Status:** Active development | **Last reviewed:** 2026-08-25
 
 ## Overview
 
@@ -18,7 +18,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 ### Provider Unification
 
 - OpenAI-compatible `/v1/*` endpoints: chat/completions, responses, embeddings, audio (speech, transcriptions, translations), images/generations, models (list, detail). See [compatibility-matrix.md](compatibility-matrix.md).
-- Stubs / partial: `POST /v1/images/edits` and `/variations` **501**; `POST /v1/files` **501**; `GET /v1/files` empty list; `GET`/`DELETE /v1/files/{id}` **404** `file_not_found`; moderations mock (always unflagged)
+- Stubs / partial: `POST /v1/images/edits` and `/variations` **501**; `POST /v1/files` **501**; `GET /v1/files` empty list; `GET`/`DELETE /v1/files/{id}` **404** `file_not_found`; moderations mock (always unflagged). All of these still run `withApiKeyRateLimit`. `GET`/`DELETE /v1/files*` always require a valid API key (not gated by `requireApiKey`).
 - Gemini-compatible `GET /v1beta/models` (and `/v1beta/models/{path}`) — `requireApiKey` applies
 - Anthropic `/v1/messages` and `/v1/messages/count_tokens` (char-based estimate)
 - Ollama `/v1/api/chat` endpoint
@@ -93,7 +93,8 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 - Model diagnostics and testing
 - Quota tracking with 3-level expand/collapse
 - Cache and memory management
-- Settings and auth config
+- Settings and auth config (`requireLogin` defaults **true**; dashboard `/api/*` mutations need JWT cookie or `x-9r-cli-token` unless login is disabled)
+- Offline enqueue allowlist only: `PATCH /api/settings`, `PUT /api/providers/:id`
 - Combo management with drag-to-reorder
 - Endpoint Token Saver: local loopback Headroom spawn (Python CLI on PATH); Docker/Zeabur stay URL-only
 

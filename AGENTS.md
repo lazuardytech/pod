@@ -6,25 +6,25 @@ Operational rules for AI agents working on the **Pod** project.
 
 - Uses `/ponytail lite|full|ultra` heavily (default full; `ultra` = delete-before-add, challenge scope). "stop ponytail" / "normal mode" reverts. Leverages parallel subagents for multi-phase work (explore → audit → plan → build → verify).
 - Communicates operational/planning requests in Indonesian; expects concise, no-essay responses for routine ops, full detail when explicitly asked for a report/walkthrough.
-- Wants zero leftover uncommitted changes — after substantive work, commit and push ALL uncommitted changes to `origin canary` so nothing drifts. Never leave changes unpushed.
-- Before any Zeabur deploy, user expects all env vars on every service (pod/pod-canary) verified complete and valid to avoid build/runtime failures.
+- Wants zero leftover uncommitted changes — after substantive work, commit and push ALL uncommitted changes to `origin canary` so nothing drifts. Never leave changes unpushed. After canary is green, promote via PR to main, merge when checks pass, and keep canary/main on the same commit.
+- Before any Zeabur deploy, user expects all env vars on every service (pod/pod-canary) verified complete and valid to avoid build/runtime failures. After push to canary or merge to main, confirm GitHub workflow plus both Zeabur services deployed the latest commit.
 - Prefers docs kept concise and structured in English; wants `.agents/INDEX.md` as a clean, accurate map of all docs and AGENTS/.agents refreshed together after repo changes. Keep DESIGN.md aligned with the shadcn dashboard visual system, and keep PRD stating authored source is TypeScript (only generated JS is `public/sw.js`).
 - Interactive dashboard controls (buttons, icon buttons, button groups) must use shadcn-backed shared components (`@/shared/components`); segmented tab controls are not wrapped in Card.
-- Default `bun run test:run` must report zero skipped tests; live/network harnesses belong in `tests/live/` (`bun run test:live`). Mock in the default suite instead of `it.skip`.
+- Default `bun run test:run` must report zero skipped tests; live/network harnesses belong in `tests/live/` (`bun run test:live`). Mock in the default suite instead of `it.skip`. Dashboard route unit tests that hit `checkDashboardApiAuth` must call `disableDashboardLogin()` from `tests/helpers/apiRouteHarness.ts` (`requireLogin` defaults true)—do not add JWT/CLI tokens to every Request, and do not leave a failing suite half-fixed.
 
 ## Learned Workspace Facts
 
 - `/api/monitoring/health` + `/api/monitoring/health/stream` are PUBLIC reads (auth guard removed, `src/app/api/monitoring/health/_auth.tsx` deleted) — consistent with `/api/health`. Health dashboard `/health` fetches them unauthenticated; the old 401 caused the "Network unavailable. Showing cached health snapshot." toast on prod.
 - `changelogUrl` in `src/shared/constants/config.ts` uses `refs/heads/canary` (never `master` — dead branch 404s).
 - Zeabur git source: service `pod` tracks `main`; service `pod-canary` tracks `canary`.
-- Rate-limit env: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
-- `bun run format` / `check` / `lint` must use lockfile binaries (`oxfmt`, `oxlint`, `tsc`) — never `bun x oxlint`, which floats past bun.lock (1.79+ enables `react(set-state-in-effect)`). oxlint `--deny-warnings` treats warnings as errors (exit non-zero); without it, warnings print but check still passes.
+- Rate-limit env: `RATELIMIT_KEY_PREFIX` (Redis namespace isolation: `local:` locally, `pod:` / `pod-canary:` on Zeabur) and `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000) — must appear in README env table.
+- `bun run format` / `check` / `lint` must use lockfile binaries (`oxfmt`, `oxlint`, `tsc`) — never `bun x oxlint`, which floats past bun.lock (1.79+ enables `react(set-state-in-effect)`). oxlint `--deny-warnings` treats warnings as errors (exit non-zero); without it, warnings print but check still passes. `bun run check` also runs `scripts/check-open-sse-ts-nocheck.ts` (new `@ts-nocheck` under `open-sse/` fails; current files are allowlisted).
 - `.gitignore` ignores agent-tool dirs: `.codegraph`, `.astro`, `.mimocode`, `.opencode`, `mastracode`, `.rwx` (plus `.cursor`, `.commandcode`, `.pi`, `.claude`); do not commit those dirs.
 - open-sse/executors/ is 20 `.ts` files: 17 specialized executors + `default.ts` + `base.ts` + `index.ts`. `getExecutor()` registers 19 map keys (`cu` aliases cursor; Vertex covers `vertex` and `vertex-partner`); unknown providers get `DefaultExecutor`. Do not count the file total as "provider count". Executors/translators live in the typed `open-sse/` fork, not `src/lib/`.
 - HTTPS git push of `.github/workflows` can fail without GitHub `workflow` scope; SSH push works.
 - Chrome `ERR_FAILED` interstitial after idle (fixed by hard reload) is often SW-side: `public/sw.js` must keep network-first navigation, never reject `respondWith`, and avoid `Response.error()` (esp. images); `ServiceWorkerRegistrar` must not blind `location.reload()` on every `controllerchange`. RSC/`?_rsc=` fetches are not SW-intercepted (idle CF/TLS is a separate failure mode).
 - `next.config.ts` sets `turbopack.root` to `import.meta.dirname` so Next does not infer `/home/ubuntu` from a home-level `pnpm-lock.yaml`.
-- `.env` is gitignored; `JWT_SECRET` and `API_KEY_SECRET` are required at process start even in development — generate local values, never copy Zeabur prod secrets. `.env.example` is local-first (`PORT=20128`); Zeabur uses `PORT=20140`, `DATA_DIR=/app/data`, and in-project Redis via `REDIS_URL` (`REDIS_HOST` is unused). SQLite stays the primary store (one volume per service); do not migrate to Postgres or Kafka. Redis is rate-limit only — local Redis for tests, Zeabur in-project Redis for deploy.
+- `.env` is gitignored; `JWT_SECRET` and `API_KEY_SECRET` are required at process start even in development — generate local values, never copy Zeabur prod secrets. `.env.example` is local-first (`PORT=20128`); Zeabur uses `PORT=20140`, `DATA_DIR=/app/data`, and in-project Redis via `REDIS_URL` (`REDIS_HOST` is unused). SQLite stays the primary store (one volume per service); do not migrate to Postgres or Kafka. Redis is rate-limit only — local Redis for tests (`docker/docker-compose.yml` publishes 6379), Zeabur in-project Redis for deploy.
 - Primary upstream reference is 9router (`decolua/9router`, last cloned ~0.4.x); OmniRoute (`diegosouzapw/OmniRoute`) is secondary. Do not reintroduce features Pod dropped (e.g. MITM). OmniRoute Vision Bridge / 14-engine compression is not in 9router and is not ported.
 
 ## Project Identity
@@ -63,7 +63,7 @@ Operational rules for AI agents working on the **Pod** project.
 5. /api/monitoring/health and /api/monitoring/health/stream are public reads (no auth), like /api/health. /api/health stays public.
 6. /api/restart and /api/shutdown require SHUTDOWN_SECRET; return 403 in production (NODE_ENV=production).
 7. validateStartupSecrets throws in production if API_KEY_SECRET or JWT_SECRET is missing/default.
-8. Stateful internal APIs self-authenticate via routeAuth.ts — dashboardGuard.ts and proxy.ts were removed (no middleware.ts registered).
+8. Stateful internal APIs self-authenticate via `routeAuth.ts` (no middleware.ts). `checkDashboardApiAuth` allows unauthenticated access when `requireLogin` is false (default **true**); JWT cookie or `x-9r-cli-token` otherwise. `checkStrictDashboardAuth` always requires a token (OAuth import, tunnel, cloud auth). Public: health, login/logout, `GET /api/settings/require-login`. Stub `/v1` 501/404/mock routes still go through `withApiKeyRateLimit` (`GET /v1/files*` always requires an API key even if `requireApiKey=false`).
 9. SSRF protection must block 0.0.0.0 and DNS-rebinding-style hosts.
 10. Authored source is TypeScript (`strict` + `noUncheckedIndexedAccess`). Do not add authored `.js`/`.jsx`. Generated JS is only `public/sw.js` (from `src/sw/sw.ts`). Local imports use `.ts`/`.tsx` suffixes.
 11. cloud/ has its own tsconfig.json with @cloudflare/workers-types.

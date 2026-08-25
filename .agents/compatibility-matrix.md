@@ -4,29 +4,29 @@ OpenAI-compatible and Anthropic-compatible behavior is Pod's primary sacred obje
 
 ## OpenAI Compatibility
 
-| Endpoint                        | Status    | Notes                                                                            |
-| ------------------------------- | --------- | -------------------------------------------------------------------------------- |
-| `GET /v1/models`                | Supported | CORS, auth, JSON shape                                                           |
-| `GET /v1/models/{slug}`         | Supported | Single model lookup                                                              |
-| `POST /v1/chat/completions`     | Supported | Streaming + non-streaming, tools, JSON mode                                      |
-| `POST /v1/responses`            | Supported | Maps to same handler as chat; CORS on non-streaming; `400` on unsupported shapes |
-| `POST /v1/responses/compact`    | Supported | Compact mode flag                                                                |
-| `POST /v1/embeddings`           | Supported |                                                                                  |
-| `POST /v1/audio/speech`         | Supported | TTS passthrough                                                                  |
-| `POST /v1/audio/transcriptions` | Supported | STT passthrough                                                                  |
-| `POST /v1/audio/translations`   | Supported | Same as transcriptions                                                           |
-| `POST /v1/images/generations`   | Supported | Passthrough to provider                                                          |
-| `POST /v1/images/edits`         | **501**   | Not implemented                                                                  |
-| `POST /v1/images/variations`    | **501**   | Not implemented                                                                  |
-| `POST /v1/moderations`          | Supported | Mock — always unflagged                                                          |
-| `GET /v1/files`                 | Supported | Returns empty list                                                               |
-| `POST /v1/files`                | **501**   | Not implemented                                                                  |
-| `GET /v1/files/{file_id}`       | Supported | Returns 404 `file_not_found`                                                     |
-| `DELETE /v1/files/{file_id}`    | Supported | Returns 404 `file_not_found` (no file store)                                     |
-| `GET /v1beta/models`            | Supported | Gemini-compatible model list; honors `requireApiKey`                             |
-| `GET /v1beta/models/{path}`     | Supported | Gemini-compatible model detail                                                   |
-| `POST /v1/web/fetch`            | Supported | Web fetch utility                                                                |
-| `POST /v1/search`               | Supported | Web search utility                                                               |
+| Endpoint                        | Status    | Notes                                                                                  |
+| ------------------------------- | --------- | -------------------------------------------------------------------------------------- |
+| `GET /v1/models`                | Supported | CORS, auth, JSON shape                                                                 |
+| `GET /v1/models/{slug}`         | Supported | Single model lookup                                                                    |
+| `POST /v1/chat/completions`     | Supported | Streaming + non-streaming, tools, JSON mode                                            |
+| `POST /v1/responses`            | Supported | Maps to same handler as chat; CORS on non-streaming; `400` on unsupported shapes       |
+| `POST /v1/responses/compact`    | Supported | Compact mode flag                                                                      |
+| `POST /v1/embeddings`           | Supported |                                                                                        |
+| `POST /v1/audio/speech`         | Supported | TTS passthrough                                                                        |
+| `POST /v1/audio/transcriptions` | Supported | STT passthrough                                                                        |
+| `POST /v1/audio/translations`   | Supported | Same as transcriptions                                                                 |
+| `POST /v1/images/generations`   | Supported | Passthrough to provider                                                                |
+| `POST /v1/images/edits`         | **501**   | Not implemented. Still `withApiKeyRateLimit`                                           |
+| `POST /v1/images/variations`    | **501**   | Not implemented. Still `withApiKeyRateLimit`                                           |
+| `POST /v1/moderations`          | Supported | Mock — always unflagged                                                                |
+| `GET /v1/files`                 | Supported | Empty list. **Always requires API key** (even if `requireApiKey=false`). Rate-limited. |
+| `POST /v1/files`                | **501**   | Not implemented. `withApiKeyRateLimit`; key required only when `requireApiKey`         |
+| `GET /v1/files/{file_id}`       | Supported | 404 `file_not_found`. **Always requires API key**                                      |
+| `DELETE /v1/files/{file_id}`    | Supported | 404 `file_not_found` (no file store). **Always requires API key**                      |
+| `GET /v1beta/models`            | Supported | Gemini-compatible model list; honors `requireApiKey`                                   |
+| `GET /v1beta/models/{path}`     | Supported | Gemini-compatible model detail                                                         |
+| `POST /v1/web/fetch`            | Supported | Web fetch utility                                                                      |
+| `POST /v1/search`               | Supported | Web search utility                                                                     |
 
 ### OpenAI Error Shape
 

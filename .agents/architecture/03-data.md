@@ -4,19 +4,20 @@
 
 Pod uses a local-first storage model:
 
-| Layer              | Technology                   | When                         |
-| ------------------ | ---------------------------- | ---------------------------- |
-| Primary store      | SQLite (`~/.pod/pod.sqlite`) | Always                       |
-| Distributed cache  | Redis (`REDIS_URL` set)      | Optional, for multi-instance |
-| In-memory fallback | Node.js Map/Set              | When Redis unavailable       |
-| Browser offline    | offlineJsonCache (IndexedDB) | Client disconnected          |
+| Layer              | Technology                   | When                                              |
+| ------------------ | ---------------------------- | ------------------------------------------------- |
+| Primary store      | SQLite (`~/.pod/pod.sqlite`) | Always                                            |
+| Rate-limit backend | Redis (`REDIS_URL` set)      | Optional; **rate limits only** (not a data store) |
+| In-memory fallback | Node.js Map/Set              | When Redis unavailable                            |
+| Browser offline    | offlineJsonCache (IndexedDB) | Client disconnected                               |
 
 ## Key Files
 
 | File                           | Role                                                  |
 | ------------------------------ | ----------------------------------------------------- |
 | `src/lib/localDb.ts`           | Primary database access layer (preferred entry point) |
-| `src/lib/sqlite/connection.ts` | Connection management, transaction helpers            |
+| `src/lib/sqlite/connection.ts` | Connection management, WAL checkpoint on close        |
+| `scripts/sqlite-backup.ts`     | `VACUUM INTO` backup under `$DATA_DIR/backups`        |
 | `src/lib/sqlite/schema.ts`     | Table definitions and migrations                      |
 | `src/lib/usageDb.ts`           | Usage tracking and billing data                       |
 | `src/lib/requestDetailsDb.ts`  | Observability request-detail storage                  |
@@ -48,10 +49,10 @@ Pod uses a local-first storage model:
 
 ## Rate Limiting (`src/lib/rateLimit/`)
 
-| Backend   | When              | Scope                                 |
-| --------- | ----------------- | ------------------------------------- |
-| Redis     | `REDIS_URL` set   | Distributed (shared across instances) |
-| In-memory | Redis unavailable | Single-instance only                  |
+| Backend   | When              | Scope                                                                                         |
+| --------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| Redis     | `REDIS_URL` set   | Rate-limit keys only; isolate with `RATELIMIT_KEY_PREFIX` (`local:` / `pod:` / `pod-canary:`) |
+| In-memory | Redis unavailable | Single process                                                                                |
 
 ### Backend Selection Rules
 
@@ -59,7 +60,8 @@ Pod uses a local-first storage model:
 - Redis RPM entries must stay unique per hit
 - If concurrent admission fails after RPM admission, release the RPM slot
 - Per-op Redis timeout via `RATELIMIT_REDIS_TIMEOUT_MS` (default 1000ms) — bounds each Redis call so a slow/hung Redis fails fast to the in-memory fallback
-- Redis key isolation via `RATELIMIT_KEY_PREFIX` — namespaces rate-limit keys so multiple Pod instances can share one Redis without colliding
+- Redis key isolation via `RATELIMIT_KEY_PREFIX` — namespaces rate-limit keys so prod and canary (or local tests) can share one Redis without colliding
+- Replicas: **1**. `POD_REPLICA_COUNT>1` warns; throws in production. Backup: `bun scripts/sqlite-backup.ts` (`VACUUM INTO`). Shutdown runs `PRAGMA wal_checkpoint(TRUNCATE)`.
 
 ### Rate Limit Scope
 
@@ -75,8 +77,8 @@ Pod uses a local-first storage model:
 
 ## Offline Mutation Queue
 
-- Only safe, idempotent dashboard mutations are queued
-- Non-idempotent operations are refused when offline
+- Enqueue allowlist only: `PATCH /api/settings`, `PUT /api/providers/:id`
+- Non-idempotent / other paths are refused when offline (`not_allowed`)
 - Queue replays when connectivity returns
 - Reads use `offlineJsonCache`; writes use the mutation queue
 

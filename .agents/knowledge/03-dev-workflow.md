@@ -2,18 +2,19 @@
 
 ## Commands
 
-| Command                 | What                                                                |
-| ----------------------- | ------------------------------------------------------------------- |
-| `bun install`           | Install dependencies (never npm/pnpm)                               |
-| `bun run dev`           | Start dev server on :20128 (Next.js Turbopack)                      |
-| `bun run build`         | Production build (standalone output)                                |
-| `bun run start`         | Start production server                                             |
-| `bun run format`        | Oxfmt format                                                        |
-| `bun run check`         | Lockfile oxfmt + oxlint `--deny-warnings` + tsc (not `bun x`)       |
-| `bun run lint`          | Oxlint linting                                                      |
-| `bun run test:run`      | Vitest (verbose). Default include excludes `tests/live/**` (0 skip) |
-| `bun run test:live`     | Optional live harnesses (`AG_CACHE_TEST=1` / `RUN_E2E=1`)           |
-| `bun run test:coverage` | Vitest with coverage                                                |
+| Command                        | What                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `bun install`                  | Install dependencies (never npm/pnpm)                                                                     |
+| `bun run dev`                  | Start dev server on :20128 (Next.js Turbopack)                                                            |
+| `bun run build`                | Production build (standalone output)                                                                      |
+| `bun run start`                | Start production server                                                                                   |
+| `bun run format`               | Oxfmt format                                                                                              |
+| `bun run check`                | `scripts/check-open-sse-ts-nocheck.ts` then lockfile oxfmt + oxlint `--deny-warnings` + tsc (not `bun x`) |
+| `bun scripts/sqlite-backup.ts` | `VACUUM INTO` SQLite snapshot (`$DATA_DIR/backups/`)                                                      |
+| `bun run lint`                 | Oxlint linting                                                                                            |
+| `bun run test:run`             | Vitest (verbose). Default include excludes `tests/live/**` (0 skip)                                       |
+| `bun run test:live`            | Optional live harnesses (`AG_CACHE_TEST=1` / `RUN_E2E=1`)                                                 |
+| `bun run test:coverage`        | Vitest with coverage                                                                                      |
 
 ## Pre-Push Verification
 

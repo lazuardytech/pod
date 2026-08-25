@@ -2,15 +2,15 @@
 
 ## Active Items
 
-| #   | Issue                         | Risk   | Notes                                                                                                                                                |
-| --- | ----------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Provider API drift**        | High   | OAuth and cookie-based providers change frequently. See checklist below. No live OAuth cron.                                                         |
-| 2   | **Route auth sync**           | Medium | No middleware. Routes self-authenticate via `routeAuth.ts` helpers. Some dashboard mutations still unguarded (hardening wave 1).                     |
-| 3   | **Relay behavior**            | Medium | Cold starts, timeout races (relay timeout = pod timeout - 5s). First request after idle may be slow.                                                 |
-| 4   | **Multi-instance readiness**  | Low    | **Replicas: 1.** Canary ≠ replica (separate service + volume). Redis is rate-limit only (`pod:` / `pod-canary:`). SQLite is not horizontally shared. |
-| 5   | **Offline queue correctness** | Medium | Enqueue allowlist: `PATCH /api/settings`, `PUT /api/providers/:id` only. Re-verify after any store change.                                           |
-| 6   | **SSRF protection**           | Medium | `validateFetchUrl` blocks `0.0.0.0` (tests in `tests/unit/url-guardrails.test.ts`). Re-verify after proxy changes.                                   |
-| 7   | **Fork divergence**           | Low    | Last reviewed: 9router **v0.4.62**. No direct merges. Selective port only. See `.agents/reports/9router-*`.                                          |
+| #   | Issue                         | Risk   | Notes                                                                                                                                                                                                                           |
+| --- | ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Provider API drift**        | High   | OAuth and cookie-based providers change frequently. See checklist below. No live OAuth cron.                                                                                                                                    |
+| 2   | **Route auth sync**           | Low    | No middleware. Dashboard `/api/*` uses `checkDashboardApiAuth` / `checkStrictDashboardAuth`. Remaining unguarded routes are intentional (health, login, shutdown secret, `/v1/*`). `GET /api/settings/require-login` is public. |
+| 3   | **Relay behavior**            | Medium | Cold starts, timeout races (relay timeout = pod timeout - 5s). First request after idle may be slow.                                                                                                                            |
+| 4   | **Multi-instance readiness**  | Low    | **Replicas: 1.** Canary ≠ replica (separate service + volume). Redis is rate-limit only (`pod:` / `pod-canary:`). SQLite is not horizontally shared.                                                                            |
+| 5   | **Offline queue correctness** | Medium | Enqueue allowlist: `PATCH /api/settings`, `PUT /api/providers/:id` only. Re-verify after any store change.                                                                                                                      |
+| 6   | **SSRF protection**           | Medium | `validateFetchUrl` blocks `0.0.0.0` (tests in `tests/unit/url-guardrails.test.ts`). Re-verify after proxy changes.                                                                                                              |
+| 7   | **Fork divergence**           | Low    | Last reviewed: 9router **v0.4.62**. No direct merges. Selective port only. See `.agents/reports/9router-*`.                                                                                                                     |
 
 ## Provider drift checklist
 
