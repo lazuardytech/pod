@@ -5,6 +5,7 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { createProxyPool } from "@/models";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const VERCEL_API = "https://api.vercel.com";
 
@@ -103,6 +104,9 @@ async function pollDeployment(
 
 // POST /api/proxy-pools/vercel-deploy
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

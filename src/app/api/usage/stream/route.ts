@@ -1,8 +1,12 @@
 import { getActiveRequests, getUsageStats, statsEmitter } from "@/lib/usageDb";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   const encoder = new TextEncoder();
   const state: {
     closed: boolean;

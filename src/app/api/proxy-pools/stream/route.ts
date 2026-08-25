@@ -1,4 +1,5 @@
 import { getProxyPools } from "@/lib/localDb";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,9 @@ export const dynamic = "force-dynamic";
  * SSE stream that pushes proxy pool updates every 3s.
  */
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   let closed = false;
   let lastSig = "";
 

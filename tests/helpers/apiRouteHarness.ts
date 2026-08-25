@@ -94,6 +94,12 @@ export async function setRequireApiKey(enabled) {
   await updateSettings({ requireApiKey: enabled });
 }
 
+/** Dashboard APIs 401 when requireLogin defaults true; tests that skip cookies must opt out. */
+export async function disableDashboardLogin() {
+  const { updateSettings } = await import("@/lib/localDb");
+  await updateSettings({ requireLogin: false });
+}
+
 /**
  * Make a request to a Next.js route handler.
  * @param {string} path - URL path (e.g. "/v1/chat/completions")

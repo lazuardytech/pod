@@ -21,4 +21,14 @@ describe("validateFetchUrl", () => {
     const result = validateFetchUrl("https://example.com/health");
     expect(result.ok).toBe(true);
   });
+
+  it("blocks https://0.0.0.0/", () => {
+    const result = validateFetchUrl("https://0.0.0.0/");
+    expect(result.ok).toBe(false);
+  });
+
+  it("blocks http://0.0.0.0:8080", () => {
+    const result = validateFetchUrl("http://0.0.0.0:8080");
+    expect(result.ok).toBe(false);
+  });
 });

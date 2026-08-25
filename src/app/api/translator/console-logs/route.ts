@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { clearConsoleLogs, getConsoleLogs, initConsoleLogCapture } from "@/lib/consoleLogBuffer";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 initConsoleLogCapture();
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const logs = getConsoleLogs();
     return NextResponse.json({ success: true, logs });
@@ -15,7 +19,10 @@ export async function GET() {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     clearConsoleLogs();
     return NextResponse.json({ success: true });

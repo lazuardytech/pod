@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import {
   clearCache,
   getCacheStats,
@@ -9,7 +10,10 @@ import {
   invalidateStale,
 } from "@/lib/semanticCache";
 
-export async function GET(_request: Request) {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const settings = await getSettings();
     return NextResponse.json({
@@ -26,6 +30,9 @@ export async function GET(_request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const model = searchParams.get("model");

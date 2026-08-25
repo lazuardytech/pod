@@ -3,8 +3,12 @@ import { asString } from "@/app/api/_types";
 import { deleteApiKey, getApiKeyById, updateApiKey } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 // GET /api/keys/[id] - Get single key
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const key = await getApiKeyById(id);
@@ -20,6 +24,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 // PUT /api/keys/[id] - Update key
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -84,6 +91,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE /api/keys/[id] - Delete API key
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
 

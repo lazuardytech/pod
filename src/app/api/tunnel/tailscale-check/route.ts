@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { SpawnSyncReturns } from "node:child_process";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 type SpawnSyncFn = (
   command: string,
@@ -145,7 +146,10 @@ function isDaemonRunning(spawnSync: SpawnSyncFn, execSync: ExecSyncFn) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { execSync, spawnSync } = await import("node:child_process");
     const installed = isTailscaleInstalled(spawnSync);

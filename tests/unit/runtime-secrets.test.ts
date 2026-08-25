@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_API_KEY_SECRET,
   DEFAULT_JWT_SECRET,
@@ -13,6 +13,7 @@ describe("runtime secret policy", () => {
         NODE_ENV: "production",
         JWT_SECRET: "super-strong-jwt-secret",
         API_KEY_SECRET: "super-strong-api-key-secret",
+        REDIS_URL: "redis://127.0.0.1:6379",
       }),
     ).not.toThrow();
   });
@@ -51,5 +52,32 @@ describe("runtime secret policy", () => {
   it("provides a deterministic fallback secret for test env only", () => {
     expect(resolveApiKeySecret({ NODE_ENV: "test" })).toBe("test-api-key-secret");
     expect(resolveApiKeySecret({ NODE_ENV: "development" })).toBeNull();
+  });
+
+  it("warns when production REDIS_URL is unset", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(() =>
+      validateStartupSecrets({
+        NODE_ENV: "production",
+        JWT_SECRET: "super-strong-jwt-secret",
+        API_KEY_SECRET: "super-strong-api-key-secret",
+      }),
+    ).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/REDIS_URL/));
+    warn.mockRestore();
+  });
+
+  it("throws in production when POD_REPLICA_COUNT>1", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(() =>
+      validateStartupSecrets({
+        NODE_ENV: "production",
+        JWT_SECRET: "super-strong-jwt-secret",
+        API_KEY_SECRET: "super-strong-api-key-secret",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        POD_REPLICA_COUNT: "2",
+      }),
+    ).toThrow(/POD_REPLICA_COUNT/);
+    warn.mockRestore();
   });
 });

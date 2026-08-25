@@ -9,11 +9,15 @@ import { NextResponse } from "next/server";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { DATA_DIR, getDatabase } from "@/lib/sqlite/connection";
 import { migrateFromJson } from "@/lib/sqlite/migrate-from-json";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const CONFIG_FILE = "db.json";
 const LOG_FILES = ["usage.json", "request-details.json"];
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const configPresent = fs.existsSync(path.join(/*turbopackIgnore: true*/ DATA_DIR, CONFIG_FILE));
     return NextResponse.json({
@@ -29,7 +33,10 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const db = getDatabase();
 

@@ -12,6 +12,7 @@ import {
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { USAGE_APIKEY_PROVIDERS } from "@/shared/constants/providers";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // Detect auth-expired messages returned by usage providers instead of throwing
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
@@ -125,6 +126,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ connectionId: string }> },
 ) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   let connection;
   try {
     const { connectionId } = await params;

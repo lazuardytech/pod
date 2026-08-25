@@ -1,7 +1,7 @@
-// SQLite connection singleton. Opens one shared better-sqlite3 Database per
-// process, applies pragmas, runs schema.sql, triggers auto-migration from
-// legacy JSON on first boot. Only runs in the Node.js path (`!isCloud`);
-// cloud/Workers callers must not import this file.
+// SQLite connection singleton. Opens one shared Database per process
+// (`bun:sqlite` under Bun, `better-sqlite3` under Node), applies pragmas,
+// runs schema.sql, auto-migrates from legacy JSON on first boot.
+// Node.js path only (`!isCloud`); cloud/Workers must not import this file.
 
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -231,6 +231,9 @@ export function getDatabase(): SqliteDatabase {
 
 export function closeDatabase() {
   if (dbInstance) {
+    try {
+      dbInstance.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+    } catch {}
     try {
       dbInstance.close();
     } catch {}

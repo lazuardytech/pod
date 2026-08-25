@@ -12,6 +12,7 @@ vi.mock("open-sse/index.ts", () => ({
 
 vi.mock("@/lib/localDb.ts", () => ({
   getProviderConnections: mockGetProviderConnections,
+  getSettings: async () => ({ requireLogin: false }),
 }));
 
 const { POST } = await import("@/app/api/translator/send/route.ts");

@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { getProviderNodes } from "@/lib/localDb";
 import { getRequestDetails } from "@/lib/requestDetailsDb";
 import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 /**
  * GET /api/usage/providers
  * Returns list of unique providers from request details
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { details } = await getRequestDetails({ pageSize: 9999 });
 

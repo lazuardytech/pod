@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { getModelAliases, validateApiKey } from "@/models";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // Resolve model alias to provider/model
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {

@@ -9,8 +9,12 @@ import {
 import { readBodyText } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
 import { getMaxRequestBodyBytes } from "@/shared/constants/config";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 // GET — return current sync status
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const status = getSyncStatus();
     return NextResponse.json({ success: true, ...status });
@@ -22,6 +26,9 @@ export async function GET() {
 // POST — trigger immediate sync or control periodic sync
 // Body (optional): { action: "start" | "stop" | "sync", intervalMs?: number }
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     let body: Record<string, unknown> = {};
     const bodyResult = await readBodyText(request as Request, {

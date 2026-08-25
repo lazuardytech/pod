@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchUrlError } from "@/app/api/_types";
 import { validateFetchUrl } from "@/lib/validateUrl";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,9 @@ const FILTERS = {
 };
 
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
   const type = searchParams.get("type");

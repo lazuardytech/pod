@@ -1,26 +1,28 @@
-// @ts-nocheck
+import { validateFetchUrl } from "@/lib/validateUrl";
+
+type FetchImageOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+};
+
 /**
  * Fetch a remote image URL and return it as a base64 data URI.
  * Used when upstream providers (Codex, etc.) require inline base64 images
  * instead of remote URLs they cannot fetch.
  * Returns null if fetch fails.
- *
- * @param {string} imageUrl - HTTP(S) URL of the image
- * @param {object} options - { signal, timeoutMs }
- * @returns {Promise<{url: string, mimeType: string}|null>}
  */
-export async function fetchImageAsBase64(imageUrl: unknown, options: unknown = {}) {
-  const { signal, timeoutMs = 10000 } = options;
-  if (!imageUrl || (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://"))) {
-    return null;
-  }
+export async function fetchImageAsBase64(imageUrl: unknown, options: FetchImageOptions = {}) {
+  if (typeof imageUrl !== "string") return null;
+  const urlCheck = validateFetchUrl(imageUrl);
+  if (!urlCheck.ok) return null;
 
+  const timeoutMs = options.timeoutMs ?? 10000;
   const controller = new AbortController();
-  const timeout = signal ? null : setTimeout(() => controller.abort(), timeoutMs);
-  const fetchSignal = signal || controller.signal;
+  const timeout = options.signal ? null : setTimeout(() => controller.abort(), timeoutMs);
+  const fetchSignal = options.signal ?? controller.signal;
 
   try {
-    const response = await fetch(imageUrl, { signal: fetchSignal });
+    const response = await fetch(urlCheck.url, { signal: fetchSignal });
     if (!response.ok) return null;
 
     const mimeType = response.headers.get("Content-Type") || "image/jpeg";

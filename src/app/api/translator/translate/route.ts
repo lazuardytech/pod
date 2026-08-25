@@ -9,7 +9,11 @@ import { asApiRecord, asOptionalString, asString } from "@/app/api/_types";
 import { getProviderConnections } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [json, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

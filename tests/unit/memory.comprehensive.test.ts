@@ -13,6 +13,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { disableDashboardLogin } from "../helpers/apiRouteHarness.ts";
 
 let tempDir;
 let originalDataDir;
@@ -40,6 +41,7 @@ beforeEach(async () => {
   await clearMemories(KEY);
   await clearMemories("mem-test-2");
   await clearMemories("mem-route");
+  await disableDashboardLogin();
 });
 
 // ── store CRUD ────────────────────────────────────────────────────────────────

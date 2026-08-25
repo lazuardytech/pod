@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const KILO_MODELS_URL = "https://api.kilo.ai/api/gateway/models";
 
@@ -9,7 +10,10 @@ let cachedModels: Array<{ id: string; name: string }> | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   const now = Date.now();
 
   // Return cached result if still valid

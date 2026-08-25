@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Gemini helper functions for translator
 
 // Unsupported JSON Schema constraints that should be removed for Antigravity
@@ -66,8 +65,8 @@ export const DEFAULT_SAFETY_SETTINGS = [
 ];
 
 // Convert OpenAI content to Gemini parts
-export function convertOpenAIContentToParts(content: unknown) {
-  const parts = [];
+export function convertOpenAIContentToParts(content: any) {
+  const parts: any[] = [];
 
   if (typeof content === "string") {
     parts.push({ text: content });
@@ -120,19 +119,19 @@ export function convertOpenAIContentToParts(content: unknown) {
 }
 
 // Extract text content from OpenAI content
-export function extractTextContent(content: unknown) {
+export function extractTextContent(content: any) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
-      .filter((c: unknown) => c.type === "text")
-      .map((c: unknown) => c.text)
+      .filter((c: any) => c.type === "text")
+      .map((c: any) => c.text)
       .join("");
   }
   return "";
 }
 
 // Try parse JSON safely
-export function tryParseJSON(str: unknown) {
+export function tryParseJSON(str: any) {
   if (typeof str !== "string") return str;
   try {
     return JSON.parse(str);
@@ -162,7 +161,7 @@ export function generateProjectId() {
 
 // Helper: Remove unsupported keywords recursively from object/array
 // Also strips all vendor extension fields (x- prefixed) not supported by Gemini
-function removeUnsupportedKeywords(obj: unknown, keywords: unknown) {
+function removeUnsupportedKeywords(obj: any, keywords: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (Array.isArray(obj)) {
@@ -186,7 +185,7 @@ function removeUnsupportedKeywords(obj: unknown, keywords: unknown) {
 }
 
 // Convert const to enum
-function convertConstToEnum(obj: unknown) {
+function convertConstToEnum(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (obj.const !== undefined && !obj.enum) {
@@ -202,11 +201,11 @@ function convertConstToEnum(obj: unknown) {
 }
 
 // Convert enum values to strings (Gemini requires string enum values + explicit type:"string")
-function convertEnumValuesToStrings(obj: unknown) {
+function convertEnumValuesToStrings(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (obj.enum && Array.isArray(obj.enum)) {
-    obj.enum = obj.enum.map((v: unknown) => String(v));
+    obj.enum = obj.enum.map((v: any) => String(v));
     // Gemini API requires type:"string" when enum is present — without it returns 400
     if (!obj.type) {
       obj.type = "string";
@@ -221,11 +220,11 @@ function convertEnumValuesToStrings(obj: unknown) {
 }
 
 // Merge allOf schemas
-function mergeAllOf(obj: unknown) {
+function mergeAllOf(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (obj.allOf && Array.isArray(obj.allOf)) {
-    const merged: Record<string, unknown> = {};
+    const merged: Record<string, any> = {};
 
     for (const item of obj.allOf) {
       if (item.properties) {
@@ -255,7 +254,7 @@ function mergeAllOf(obj: unknown) {
 }
 
 // Select best schema from anyOf/oneOf
-function selectBest(items: unknown) {
+function selectBest(items: any) {
   let bestIdx = 0;
   let bestScore = -1;
 
@@ -282,11 +281,11 @@ function selectBest(items: unknown) {
 }
 
 // Flatten anyOf/oneOf
-function flattenAnyOfOneOf(obj: unknown) {
+function flattenAnyOfOneOf(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (obj.anyOf && Array.isArray(obj.anyOf) && obj.anyOf.length > 0) {
-    const nonNullSchemas = obj.anyOf.filter((s: unknown) => s && s.type !== "null");
+    const nonNullSchemas = obj.anyOf.filter((s: any) => s && s.type !== "null");
     if (nonNullSchemas.length > 0) {
       const bestIdx = selectBest(nonNullSchemas);
       const selected = nonNullSchemas[bestIdx];
@@ -296,7 +295,7 @@ function flattenAnyOfOneOf(obj: unknown) {
   }
 
   if (obj.oneOf && Array.isArray(obj.oneOf) && obj.oneOf.length > 0) {
-    const nonNullSchemas = obj.oneOf.filter((s: unknown) => s && s.type !== "null");
+    const nonNullSchemas = obj.oneOf.filter((s: any) => s && s.type !== "null");
     if (nonNullSchemas.length > 0) {
       const bestIdx = selectBest(nonNullSchemas);
       const selected = nonNullSchemas[bestIdx];
@@ -313,11 +312,11 @@ function flattenAnyOfOneOf(obj: unknown) {
 }
 
 // Flatten type arrays
-function flattenTypeArrays(obj: unknown) {
+function flattenTypeArrays(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (obj.type && Array.isArray(obj.type)) {
-    const nonNullTypes = obj.type.filter((t: unknown) => t !== "null");
+    const nonNullTypes = obj.type.filter((t: any) => t !== "null");
     obj.type = nonNullTypes.length > 0 ? nonNullTypes[0] : "string";
   }
 
@@ -330,7 +329,7 @@ function flattenTypeArrays(obj: unknown) {
 
 // Ensure schemas with properties but no type get type:"object"
 // Prevents Gemini API errors with tool schemas that omit the type field
-function ensureObjectType(obj: unknown) {
+function ensureObjectType(obj: any) {
   if (!obj || typeof obj !== "object") return;
 
   if (Array.isArray(obj)) {
@@ -370,11 +369,11 @@ export function cleanJSONSchemaForAntigravity<T>(schema: T): T {
   removeUnsupportedKeywords(cleaned, UNSUPPORTED_SCHEMA_CONSTRAINTS);
 
   // Phase 4: Cleanup required fields recursively
-  function cleanupRequired(obj: unknown) {
+  function cleanupRequired(obj: any) {
     if (!obj || typeof obj !== "object") return;
 
     if (obj.required && Array.isArray(obj.required) && obj.properties) {
-      const validRequired = obj.required.filter((field: unknown) =>
+      const validRequired = obj.required.filter((field: any) =>
         Object.hasOwn(obj.properties, field),
       );
       if (validRequired.length === 0) {
@@ -395,7 +394,7 @@ export function cleanJSONSchemaForAntigravity<T>(schema: T): T {
   cleanupRequired(cleaned);
 
   // Phase 5: Add placeholder for empty object schemas (Antigravity requirement)
-  function addPlaceholders(obj: unknown) {
+  function addPlaceholders(obj: any) {
     if (!obj || typeof obj !== "object") return;
 
     if (obj.type === "object") {

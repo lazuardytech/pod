@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import {
   deleteProviderConnectionsByProvider,
   deleteProviderNode,
@@ -12,6 +13,9 @@ import {
 
 // PUT /api/provider-nodes/[id] - Update provider node
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const [rawBody, _parseErr] = await parseJsonBody(request);
@@ -104,6 +108,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 // DELETE /api/provider-nodes/[id] - Delete provider node and its connections
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const node = await getProviderNodeById(id);

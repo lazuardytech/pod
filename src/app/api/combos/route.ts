@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { asString } from "@/app/api/_types";
 import { createCombo, getComboByName, getCombos, reorderCombos } from "@/lib/localDb";
 import { parseJsonBody } from "@/lib/parseJsonBody";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,10 @@ export const dynamic = "force-dynamic";
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
 
 // GET /api/combos - Get all combos
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const combos = await getCombos();
     return NextResponse.json({ combos });
@@ -21,6 +25,9 @@ export async function GET() {
 
 // PATCH /api/combos - Reorder combos
 export async function PATCH(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -41,6 +48,9 @@ export async function PATCH(request: Request) {
 
 // POST /api/combos - Create new combo
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

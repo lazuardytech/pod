@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { asApiRecord } from "@/app/api/_types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { normalizeProviderId, normalizeProviderSpecificData } from "@/lib/providerNormalization";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import { sanitizeError } from "@/lib/sanitizeError";
 import {
   createProviderConnection,
@@ -62,7 +63,10 @@ async function normalizeProxyPoolId(proxyPoolId: unknown) {
 }
 
 // GET /api/providers - List all connections
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const connections = await getProviderConnections();
 
@@ -106,6 +110,9 @@ export async function GET() {
 
 // POST /api/providers - Create new connection (API Key only, OAuth via separate flow)
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

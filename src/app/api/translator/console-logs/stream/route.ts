@@ -1,10 +1,14 @@
 import { getConsoleEmitter, getConsoleLogs, initConsoleLogCapture } from "@/lib/consoleLogBuffer";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 export const dynamic = "force-dynamic";
 
 initConsoleLogCapture();
 
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   const encoder = new TextEncoder();
   const emitter = getConsoleEmitter();
   const state: {

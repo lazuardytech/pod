@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/providerModels.ts";
 import { getApiKeys, getProviderConnectionById } from "@/lib/localDb";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 import {
   isAnthropicCompatibleProvider,
   isOpenAICompatibleProvider,
@@ -55,6 +56,9 @@ async function pingModel(modelId: string, baseUrl: string, apiKey: string | null
  * Actual requests go through /api/v1/chat/completions (open-sse handles everything).
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const connection = await getProviderConnectionById(id);

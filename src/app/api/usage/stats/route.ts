@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getUsageStats } from "@/lib/usageDb";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 const VALID_PERIODS = new Set(["24h", "7d", "30d", "60d", "90d", "all"]);
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "7d";

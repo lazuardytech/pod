@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { testSingleConnection } from "./testUtils";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // POST /api/providers/[id]/test - Test connection
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const result = (await testSingleConnection(id)) as Record<string, unknown>;

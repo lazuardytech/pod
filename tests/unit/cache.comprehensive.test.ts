@@ -9,6 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { disableDashboardLogin } from "../helpers/apiRouteHarness.ts";
 
 let tempDir;
 let originalDataDir;
@@ -32,6 +33,7 @@ afterAll(async () => {
 beforeEach(async () => {
   const { clearCache } = await import("@/lib/semanticCache.ts");
   clearCache();
+  await disableDashboardLogin();
 });
 
 // ── helpers ──────────────────────────────────────────────────────────────────

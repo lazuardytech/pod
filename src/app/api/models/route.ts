@@ -5,9 +5,13 @@ import { parseJsonBody } from "@/lib/parseJsonBody";
 import { getModelAliases, setModelAlias } from "@/models";
 import { AI_MODELS } from "@/shared/constants/config";
 import { getProviderAlias } from "@/shared/constants/providers";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 // GET /api/models - Get models with aliases
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const modelAliases = await getModelAliases();
     const disabled = await getDisabledModels();
@@ -34,6 +38,9 @@ export async function GET() {
 
 // PUT /api/models - Update model alias
 export async function PUT(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

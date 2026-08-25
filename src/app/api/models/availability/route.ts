@@ -9,8 +9,12 @@ import {
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { validateFetchUrl } from "@/lib/validateUrl";
 import { getModelAvailabilityPayload, MODEL_LOCK_PREFIX } from "./_availability";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const payload = await getModelAvailabilityPayload();
     return NextResponse.json(payload);
@@ -21,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

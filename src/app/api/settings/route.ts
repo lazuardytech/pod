@@ -7,6 +7,7 @@ import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -14,7 +15,10 @@ const SETTINGS_RESPONSE_HEADERS = {
   "Cache-Control": "no-store",
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const settings = await getSettings();
     const { password, ...safeSettings } = settings ?? ({} as { password?: string });
@@ -50,6 +54,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

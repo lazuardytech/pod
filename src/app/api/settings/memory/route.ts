@@ -4,6 +4,7 @@ import { getSettings, updateSettings } from "@/lib/localDb";
 import { normalizeMemorySettings, toMemorySettingsUpdates } from "@/lib/memory/settings";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 function toBooleanOrNull(value: unknown) {
   if (typeof value === "boolean") return value;
@@ -18,7 +19,10 @@ function toBoundedIntOrNull(value: unknown, min: number, max: number) {
   return rounded;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const settings = await getSettings();
     return NextResponse.json(normalizeMemorySettings(settings));
@@ -28,6 +32,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;

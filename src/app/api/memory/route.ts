@@ -4,6 +4,7 @@ import { clearMemories, createMemory, listMemories } from "@/lib/memory/store";
 import { MemoryType } from "@/lib/memory/types";
 import { parseJsonBody } from "@/lib/parseJsonBody";
 import { sanitizeError } from "@/lib/sanitizeError";
+import { checkDashboardApiAuth } from "@/lib/routeAuth";
 
 function parsePositiveInt(value: unknown, fallback: number) {
   const parsed = Number(value);
@@ -11,6 +12,9 @@ function parsePositiveInt(value: unknown, fallback: number) {
 }
 
 export async function GET(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const limit = parsePositiveInt(searchParams.get("limit"), 50);
@@ -44,6 +48,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const [rawBody, _parseErr] = await parseJsonBody(request);
     if (_parseErr) return _parseErr;
@@ -79,6 +86,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const denied = await checkDashboardApiAuth(request);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(request.url);
     const apiKeyIdRaw = searchParams.get("apiKeyId");
