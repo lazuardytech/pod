@@ -8,7 +8,11 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { releaseSSESlot, tryAcquireSSESlot } from "@/app/api/monitoring/_sseConnectionCap";
+import {
+  DEFAULT_MAX_CONCURRENT,
+  releaseSSESlot,
+  tryAcquireSSESlot,
+} from "@/app/api/monitoring/_sseConnectionCap";
 
 describe("SSE connection cap", () => {
   beforeEach(() => {
@@ -22,20 +26,21 @@ describe("SSE connection cap", () => {
   });
 
   function releaseAllSlots(routePath: string) {
-    // Drain the module-level counter back to zero across tests.
-    for (let i = 0; i < 200; i++) {
+    // Drain the module-level counter back to zero across tests. No test
+    // acquires more than the cap, so draining cap times always resets it.
+    for (let i = 0; i < DEFAULT_MAX_CONCURRENT; i++) {
       releaseSSESlot(routePath);
     }
   }
 
-  it("allows up to 100 concurrent connections", () => {
-    for (let i = 0; i < 100; i++) {
+  it(`allows up to ${DEFAULT_MAX_CONCURRENT} concurrent connections`, () => {
+    for (let i = 0; i < DEFAULT_MAX_CONCURRENT; i++) {
       expect(tryAcquireSSESlot("/api/monitoring/health/stream").allowed).toBe(true);
     }
   });
 
-  it("rejects the 101st connection with a 503 overload response", async () => {
-    for (let i = 0; i < 100; i++) {
+  it(`rejects the ${DEFAULT_MAX_CONCURRENT + 1}st connection with a 503 overload response`, async () => {
+    for (let i = 0; i < DEFAULT_MAX_CONCURRENT; i++) {
       tryAcquireSSESlot("/api/monitoring/health/stream");
     }
 
@@ -52,7 +57,7 @@ describe("SSE connection cap", () => {
   });
 
   it("frees a slot when released", () => {
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < DEFAULT_MAX_CONCURRENT; i++) {
       tryAcquireSSESlot("/api/monitoring/health/stream");
     }
     expect(tryAcquireSSESlot("/api/monitoring/health/stream").allowed).toBe(false);
@@ -62,7 +67,7 @@ describe("SSE connection cap", () => {
   });
 
   it("tracks slots per route path", () => {
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < DEFAULT_MAX_CONCURRENT; i++) {
       tryAcquireSSESlot("/api/monitoring/health/stream");
     }
 
