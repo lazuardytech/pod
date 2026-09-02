@@ -33,16 +33,20 @@ bun run test:run -- tests/unit/embeddingsCore.test.ts tests/unit/embeddings.clou
 
 ## Test Files
 
-| File                                   | What it tests                                                                           |
-| -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `unit/embeddingsCore.test.ts`          | `open-sse/handlers/embeddingsCore.ts` — body builder, URL router, headers, handler flow |
-| `unit/embeddings.cloud.test.ts`        | `cloud/src/handlers/embeddings.ts` — auth, validation, rate limits, CORS                |
-| `unit/antigravity-cache.test.ts`       | Mocked AG cache harness (content-keyed `cachedContentTokenCount`)                       |
-| `unit/rtk.test.ts`                     | RTK filters + `compressMessages` including Responses `function_call_output`             |
-| `unit/rtk-translator-compress.test.ts` | `translateRequest` then `compressMessages` per provider route                           |
-| `live/*`                               | Real Google / live Pod; `bun run test:live` only                                        |
+| File                                    | What it tests                                                                           |
+| --------------------------------------- | --------------------------------------------------------------------------------------- |
+| `unit/embeddingsCore.test.ts`           | `open-sse/handlers/embeddingsCore.ts` — body builder, URL router, headers, handler flow |
+| `unit/embeddings.cloud.test.ts`         | `cloud/src/handlers/embeddings.ts` — auth, validation, rate limits, CORS                |
+| `unit/antigravity-cache.test.ts`        | Mocked AG cache harness (content-keyed `cachedContentTokenCount`)                       |
+| `unit/rtk.test.ts`                      | RTK filters + `compressMessages` including Responses `function_call_output`             |
+| `unit/rtk-translator-compress.test.ts`  | `translateRequest` then `compressMessages` per provider route                           |
+| `unit/redis-rate-limit-backend.test.ts` | `src/lib/rateLimit/redis.ts` — sliding-window RPM, concurrent permits, timeouts         |
+| `unit/web-fetch-handler.test.ts`        | `open-sse/handlers/fetch` — firecrawl/jina/tavily/exa dispatch, errors, truncation      |
+| `unit/sse-connection-cap.test.ts`       | `src/app/api/monitoring/_sseConnectionCap.ts` — 100-connection cap + 503 overload       |
+| `unit/anthropic-error-response.test.ts` | `src/lib/anthropicError.ts` — Anthropic error taxonomy + headers                        |
+| `live/*`                                | Real Google / live Pod; `bun run test:live` only                                        |
 
-## Coverage Summary (59 tests)
+## Coverage Summary (107 tests)
 
 ### `embeddingsCore.test.ts` (36 tests)
 
@@ -63,3 +67,29 @@ bun run test:run -- tests/unit/embeddingsCore.test.ts tests/unit/embeddings.clou
 - Rate limiting: all accounts rate-limited → 503 + Retry-After, no credentials → 400
 - Error propagation: non-fallback errors passed through, 429 exhausts accounts
 - machineId override: validates key, rejects wrong key
+
+### `redis-rate-limit-backend.test.ts` (14 tests)
+
+- Sliding-window RPM: permit under limit, deny at/over limit with retry-after, unique same-ms members, reset math
+- Cleanup ops (`zremrangebyscore`/`zcard`/`expire`/`zadd`/`zrange`) and error envelopes on Redis failures
+- `releaseRpm`: exact member via `zrem`, newest-entry fallback via `zpopmax`, no-op when disconnected
+- Concurrent permits: grant + idempotent release, deny-and-decrement over max, expire-failure DECR undo
+- Redis op timeout wraps into a fail-closed `error` envelope
+
+### `web-fetch-handler.test.ts` (17 tests)
+
+- Validation: missing `url`, missing `provider`, unsupported provider
+- Firecrawl: POST shape + bearer auth, markdown/html/text fallback, title, truncation, upstream error passthrough, malformed JSON fallback
+- Jina: URL encoding, GET + bearer, H1 title parsing, error body slice, no auth when credentialless
+- Tavily/Exa: request bodies, header styles (`authorization` vs `x-api-key`), first-result mapping
+- Transport: timeout → 504, network failure → 502
+
+### `sse-connection-cap.test.ts` (5 tests)
+
+- 100 concurrent slots allowed, 101st rejected with 503 + Retry-After
+- Slot release frees capacity; per-route counters; release past zero tolerated
+
+### `anthropic-error-response.test.ts` (12 tests)
+
+- Status → Anthropic error type mapping (10 statuses), unmapped → `api_error`
+- Response shape, `anthropic-version` header, CORS headers
