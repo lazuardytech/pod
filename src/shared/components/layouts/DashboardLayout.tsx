@@ -1,18 +1,64 @@
 "use client";
 import type { ReactNode } from "react";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { cn } from "@/shared/utils/cn";
 import Header from "../Header";
 import Sidebar from "../Sidebar";
 
+type AuthState = "loading" | "ok" | "redirect";
+
 export default function DashboardLayout({ children }: { children?: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>("loading");
   const pathname = usePathname();
+  const router = useRouter();
 
   const isChat = pathname === "/basic-chat";
+
+  useEffect(() => {
+    let cancelled = false;
+    const hasAuthCookie = document.cookie.split("; ").some((c) => c.startsWith("auth_token="));
+    if (hasAuthCookie) {
+      setAuthState("ok");
+      return;
+    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    fetch("/api/settings/require-login", { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : { requireLogin: true }))
+      .then((data: { requireLogin?: boolean }) => {
+        clearTimeout(timeoutId);
+        if (cancelled) return;
+        if (data.requireLogin === false) {
+          setAuthState("ok");
+        } else {
+          setAuthState("redirect");
+          router.replace("/login");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        clearTimeout(timeoutId);
+        setAuthState("redirect");
+        router.replace("/login");
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [router]);
+
+  if (authState === "loading" || authState === "redirect") {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-pitch-black">
+        <div className="size-6 rounded-full border-2 border-storm-cloud/30 border-t-storm-cloud animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-pitch-black">
@@ -33,7 +79,6 @@ export default function DashboardLayout({ children }: { children?: ReactNode }) 
         }}
       />
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 lg:hidden"
@@ -41,7 +86,6 @@ export default function DashboardLayout({ children }: { children?: ReactNode }) 
         />
       )}
 
-      {/* Sidebar — Desktop */}
       <div
         className={cn(
           "hidden lg:flex transition-all duration-200",
@@ -54,7 +98,6 @@ export default function DashboardLayout({ children }: { children?: ReactNode }) 
         />
       </div>
 
-      {/* Sidebar — Mobile */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-200 ease-out",
@@ -64,7 +107,6 @@ export default function DashboardLayout({ children }: { children?: ReactNode }) 
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Main */}
       <main className="flex flex-col flex-1 h-full min-w-0 overflow-hidden">
         <Header
           key={pathname}
