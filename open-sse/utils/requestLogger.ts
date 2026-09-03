@@ -91,7 +91,7 @@ async function createLogSession(sourceFormat: string, targetFormat: string, mode
   if (!fs || !path || !LOGS_DIR) return null;
 
   try {
-    if (!fs.existsSync(LOGS_DIR)) {
+    if (!fs.existsSync(/* turbopackIgnore: true */ LOGS_DIR)) {
       fs.mkdirSync(LOGS_DIR, { recursive: true });
     }
 
@@ -302,7 +302,7 @@ export function logError(provider: string, { error, url, model, requestBody }: E
   if (!fs || !path || !LOGS_DIR) return;
 
   try {
-    if (!fs.existsSync(LOGS_DIR)) {
+    if (!fs.existsSync(/* turbopackIgnore: true */ LOGS_DIR)) {
       fs.mkdirSync(LOGS_DIR, { recursive: true });
     }
 
