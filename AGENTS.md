@@ -185,16 +185,3 @@ bun run build   # NODE_ENV=production next build (turbopack)
 | CONTRIBUTING.md                 | Dev workflow, PR conventions                  |
 | SECURITY.md                     | Vulnerability reporting                       |
 | CHANGELOG.md                    | Release history                               |
-
-## Open Debt (actionable only)
-
-- **CHANGELOG header** — still `[Unreleased]`; cut to `## [0.0.86] - 2026-09-03` on next release.
-- **CI is disabled (`if: false` since 2026-09-02 GitHub Actions billing failure)** — `.github/workflows/ci.yml:14` and the workflow only triggers on `main` (not `canary`). When billing is restored, also add `canary` to the push trigger.
-- **Dependabot disabled** — `.github/dependabot.yml` has `updates: []`. Re-enable for `bun.lock` + `package.json` when desired.
-- **Dead-code in `src/shared/services/initializeCloudSync.ts`** — file is 31 lines, the actual scheduler code is fully commented out, only `cleanupProviderConnections()` runs. Strip the dead `/* ========== */` blocks (or delete the file).
-- **Multi-instance scaling** — `plan/optimizing-pod-for-multiple-instance.md` still planning. Single SQLite volume per service is the current constraint.
-- **Doc drift (low-priority cleanup)**:
-  - `plan/openai-compat-fixes.md` header still says "v0.0.82".
-  - `reports/release-rollup-v0.0.80-v0.0.82.md` L9 still says "open-sse/ intentionally frozen as JS" (the file has an inline correction but the wording is misleading).
-  - `issues/NEW_SECURITY_ISSUES_2026-06-07.md` + `REMAINING_ISSUES_2026-06-07.md` are empty "Historical Note" stubs.
-- **Rollup v0.0.83 → v0.0.86** — three releases have no `release-rollup-v0.0.83-v0.0.86.md`; only CHANGELOG covers them. INDEX.md L81 flags this.
