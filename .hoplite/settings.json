@@ -21,6 +21,15 @@
         "cwd": ".",
         "env": {"CODEGRAPH_TELEMETRY": "0"}
       }
+    },
+    {
+      "name": "pagespeed",
+      "enabled": true,
+      "config": {
+        "transport": "stdio",
+        "command": "npx",
+        "args": ["-y", "pagespeed-mcp-server"]
+      }
     }
   ]
 }
