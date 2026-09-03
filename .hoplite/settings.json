@@ -2,7 +2,10 @@
   "version": 1,
   "ports": {"preview": 3000, "additional": {}},
   "scripts": {
-    "setup": {"enabled": true, "command": "bash scripts/hoplite-setup.sh"},
+    "setup": {
+      "enabled": true,
+      "command": "set -eu; version=v1.6.0; root=/usr/local/lib/codegraph; bin=/usr/local/bin; command -v git-lfs >/dev/null 2>&1 || (apt-get update -q && apt-get install -y -q git-lfs); command -v curl >/dev/null 2>&1 || (apt-get update -q && apt-get install -y -q curl); case \"$(uname -m)\" in x86_64|amd64) arch=x64 ;; arm64|aarch64) arch=arm64 ;; *) printf 'Unsupported CodeGraph architecture: %s\\n' \"$(uname -m)\" >&2; exit 1 ;; esac; expected=\"${version#v}\"; installed=''; if [ -x \"$bin/codegraph\" ]; then installed=\"$($bin/codegraph --version 2>/dev/null || true)\"; fi; if [ \"$installed\" != \"$expected\" ]; then archive=\"$(mktemp)\"; destination=\"$root/versions/$version\"; curl -fsSL \"https://github.com/colbymchenry/codegraph/releases/download/$version/codegraph-linux-$arch.tar.gz\" -o \"$archive\"; rm -rf \"$destination\"; mkdir -p \"$destination\" \"$bin\"; tar -xzf \"$archive\" -C \"$destination\" --strip-components=1; ln -sfn \"$destination\" \"$root/current\"; ln -sfn \"$destination/bin/codegraph\" \"$bin/codegraph\"; rm -f \"$archive\"; fi; \"$bin/codegraph\" telemetry off >/dev/null; if [ ! -f .codegraph/codegraph.db ]; then \"$bin/codegraph\" init -y; fi"
+    },
     "run": {"enabled": true, "command": null},
     "archive": {"enabled": true, "command": null},
     "check": {"enabled": true, "command": null}
