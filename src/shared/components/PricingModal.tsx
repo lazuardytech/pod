@@ -49,12 +49,6 @@ export default function PricingModal({
       onConfirm: null,
     }));
 
-  useEffect(() => {
-    if (isOpen) {
-      loadPricing();
-    }
-  }, [isOpen]);
-
   const loadPricing = async () => {
     setLoading(true);
     try {
@@ -75,6 +69,12 @@ export default function PricingModal({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadPricing();
+    }
+  }, [isOpen]);
 
   const handlePricingChange = (provider: string, model: string, field: string, value: string) => {
     const numValue = parseFloat(value);

@@ -387,7 +387,7 @@ export default function HealthPage() {
           {health.status === "healthy" ? "All systems operational" : "Issues detected"}
         </span>
         <span className="ml-auto text-[11px] text-fog-grey">
-          {new Date(health.timestamp ?? Date.now()).toLocaleTimeString()}
+          {new Date(health.timestamp ?? 0).toLocaleTimeString()}
         </span>
       </div>
 
@@ -949,7 +949,7 @@ export default function HealthPage() {
                     })()}
                   </span>
                   <span className="text-fog-grey/70 text-[10px]">
-                    {new Date(acc.lockedUntil ?? Date.now()).toLocaleTimeString()}
+                    {new Date(acc.lockedUntil ?? 0).toLocaleTimeString()}
                   </span>
                 </div>
               </div>

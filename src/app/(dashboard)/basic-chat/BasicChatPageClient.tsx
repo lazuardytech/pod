@@ -726,15 +726,13 @@ export default function BasicChatPageClient() {
     }
 
     const converted = await Promise.all(
-      images.map(
-        async (file: File): Promise<ChatAttachment> => ({
-          id: createId(),
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          dataUrl: await fileToDataUrl(file),
-        }),
-      ),
+      images.map(async (file: File): Promise<ChatAttachment> => ({
+        id: createId(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: await fileToDataUrl(file),
+      })),
     );
 
     setAttachments((prev) => [...prev, ...converted]);

@@ -223,10 +223,6 @@ export default function CombosPage() {
       onConfirm: null,
     }));
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const applyCombos = (data: unknown) => {
     const payload = data as { combos?: ComboItem[] };
     setCombos((payload?.combos || []).filter((c) => !c.kind));
@@ -282,6 +278,10 @@ export default function CombosPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleCreate = async (data: ComboFormData) => {
     try {
