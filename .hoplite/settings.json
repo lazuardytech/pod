@@ -2,13 +2,22 @@
   "version": 1,
   "ports": {"preview": 3000, "additional": {}},
   "scripts": {
-    "setup": {
-      "enabled": true,
-      "command": "command -v git-lfs >/dev/null 2>&1 || (apt-get update -q && apt-get install -y -q git-lfs)"
-    },
+    "setup": {"enabled": true, "command": "bash scripts/hoplite-setup.sh"},
     "run": {"enabled": true, "command": null},
     "archive": {"enabled": true, "command": null},
     "check": {"enabled": true, "command": null}
   },
-  "mcpServers": []
+  "mcpServers": [
+    {
+      "name": "codegraph",
+      "enabled": true,
+      "config": {
+        "transport": "stdio",
+        "command": "codegraph",
+        "args": ["serve", "--mcp"],
+        "cwd": ".",
+        "env": {"CODEGRAPH_TELEMETRY": "0"}
+      }
+    }
+  ]
 }
