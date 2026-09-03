@@ -8,7 +8,8 @@
 
 const counters = new Map();
 
-const DEFAULT_MAX_CONCURRENT = 100;
+// Exported for testability so suites can size their resets to the actual cap.
+export const DEFAULT_MAX_CONCURRENT = 100;
 
 /**
  * Try to acquire an SSE connection slot for the given route path.
