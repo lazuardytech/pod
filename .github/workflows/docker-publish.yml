@@ -19,6 +19,8 @@ permissions:
 
 jobs:
   build-and-push:
+    # Temporarily disabled 2026-09-02: GitHub Actions billing failure (runners never start). Remove `if: false` to re-enable.
+    if: false
     runs-on: ubuntu-latest
 
     steps:
