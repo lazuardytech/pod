@@ -3,7 +3,7 @@
 > **pod · v0.0.86** · Bun + Next.js 16 + open-sse (typed local fork) + SQLite · port **20128** (Zeabur **20140**) · [pod.lazuardy.tech](https://pod.lazuardy.tech)
 > Self-hosted AI gateway unifying 84 built-in LLM providers behind one OpenAI-compatible endpoint.
 
-> **Last reviewed**: 2026-08-25.
+> **Last reviewed**: 2026-09-04.
 > **Freshness notes**:
 >
 > - Dashboard APIs: `checkDashboardApiAuth` / `checkStrictDashboardAuth` (`src/lib/routeAuth.ts`). `requireLogin` defaults true. Stub `/v1` files/edits/variations/moderations keep 501/404/empty/mock **and** `withApiKeyRateLimit`. `bun run check` starts with `scripts/check-open-sse-ts-nocheck.ts`. Rate-limit prefixes: `local:` / `pod:` / `pod-canary:`. Compose Redis publishes **6379**. SQLite replicas=1; backup `bun scripts/sqlite-backup.ts`.
