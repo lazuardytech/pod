@@ -114,4 +114,4 @@ Compatibility verified against:
 
 ## Version
 
-Last reviewed: 2026-07-24 | Pod v0.0.82
+Last reviewed: 2026-09-04 | Pod v0.0.86

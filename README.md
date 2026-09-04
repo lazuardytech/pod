@@ -1,6 +1,6 @@
 # Pod
 
-> **Self-hosted AI gateway and proxy** — unify 80+ LLM providers behind a single OpenAI-compatible endpoint.
+> **Self-hosted AI gateway and proxy** — unify 84 LLM providers behind a single OpenAI-compatible endpoint.
 
 v0.0.86 — active development on `canary`, stable releases on `main`.
 
