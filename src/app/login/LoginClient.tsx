@@ -4,42 +4,45 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
 import { Button, Card, Input } from "@/shared/components";
-import LucideIcon from "@/shared/components/LucideIcon";
 
 export default function LoginClient() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    async function checkAuth() {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-      try {
-        const res = await fetch(`${baseUrl}/api/settings`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    fetch("/api/settings", { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (
+          data: {
+            requireLogin?: boolean;
+            isDefaultPassword?: boolean;
+          } | null,
+        ) => {
+          clearTimeout(timeoutId);
+          if (cancelled || !data) return;
           if (data.requireLogin === false) {
             router.push("/endpoint");
             router.refresh();
             return;
           }
-          setHasPassword(!!data.hasPassword);
           setIsDefaultPassword(!!data.isDefaultPassword);
-        } else {
-          setHasPassword(true);
-        }
-      } catch {
+        },
+      )
+      .catch(() => {
         clearTimeout(timeoutId);
-        setHasPassword(true);
-      }
-    }
-    checkAuth();
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, [router]);
 
   const handleLogin = async (e: FormEvent) => {
@@ -65,17 +68,6 @@ export default function LoginClient() {
       setLoading(false);
     }
   };
-
-  if (hasPassword === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-pitch-black">
-        <LucideIcon
-          name="progress_activity"
-          className="animate-spin text-storm-cloud text-[28px]"
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-pitch-black p-4 relative overflow-hidden">

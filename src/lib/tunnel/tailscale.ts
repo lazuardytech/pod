@@ -508,7 +508,7 @@ export function startLogin(hostname: string): Promise<LoginResult> {
     // Spawn detached so process survives API request lifecycle
     const args = tsArgs("up", "--accept-routes");
     if (hostname) args.push(`--hostname=${hostname}`);
-    const child = spawn(bin, args, {
+    const child = spawn(/* turbopackIgnore: true */ bin, args, {
       stdio: ["ignore", "pipe", "pipe"],
       detached: true,
       windowsHide: true,
@@ -583,7 +583,7 @@ export async function startFunnel(port: number): Promise<FunnelResult> {
   }
 
   return new Promise((resolve, reject) => {
-    const child = spawn(bin, tsArgs("funnel", "--bg", `${port}`), {
+    const child = spawn(/* turbopackIgnore: true */ bin, tsArgs("funnel", "--bg", `${port}`), {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });

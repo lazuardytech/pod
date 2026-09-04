@@ -6,7 +6,7 @@
 
 ## Summary
 
-Three consecutive hardening releases focused on OpenAI/Anthropic compatibility correctness, streaming/body robustness (client-disconnect handling, body-size cap, large-body latency), Redis rate-limit isolation, and a full toolchain swap to the VoidZero stack (oxfmt/oxlint, Biome/ESLint removed). The JS→TS migration is complete; the repo is now TypeScript strict with `open-sse/` intentionally frozen as JS.
+Three consecutive hardening releases focused on OpenAI/Anthropic compatibility correctness, streaming/body robustness (client-disconnect handling, body-size cap, large-body latency), Redis rate-limit isolation, and a full toolchain swap to the VoidZero stack (oxfmt/oxlint, Biome/ESLint removed). The JS→TS migration is complete; `open-sse/` is TypeScript and included in root `tsc` (the older “frozen as JS” wording in this summary is historical and superseded — see the correction at the top of this file).
 
 ---
 

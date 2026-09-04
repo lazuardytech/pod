@@ -227,7 +227,7 @@ export async function spawnCloudflared(tunnelToken: string): Promise<ChildProces
     const binaryPath = await ensureCloudflared();
 
     const child = spawn(
-      binaryPath,
+      /* turbopackIgnore: true */ binaryPath,
       ["tunnel", "run", "--dns-resolver-addrs", "1.1.1.1:53", "--token", tunnelToken],
       {
         detached: false,
@@ -351,7 +351,7 @@ export async function spawnQuickTunnel(
   };
 
   const child = spawn(
-    binaryPath,
+    /* turbopackIgnore: true */ binaryPath,
     ["tunnel", "--url", `http://localhost:${localPort}`, "--config", configPath, "--no-autoupdate"],
     {
       detached: false,

@@ -50,6 +50,7 @@
 - Dashboard pages at top-level, no `/dashboard` prefix
 - `/api/health` is always public
 - `/api/monitoring/health` and `/api/monitoring/health/stream` are public reads (no auth), like `/api/health`
+- Dashboard `/api/*` mutations: `checkDashboardApiAuth` (JWT or `x-9r-cli-token`; skipped only when `requireLogin` is false). Sensitive routes: `checkStrictDashboardAuth`. Tests: `disableDashboardLogin()`
 - `/api/restart` and `/api/shutdown` require `SHUTDOWN_SECRET`
 
 ## Engine
@@ -68,5 +69,5 @@
 - Lint: `oxlint` — replaces ESLint.
 - Typecheck: `tsc --noEmit` (strict mode + `noUncheckedIndexedAccess`).
 - Test: `vitest` (`bun run test:run`).
-- Verify gate: `bun run check` (oxfmt + oxlint + `tsc --noEmit`), then `bun run test:run`, then `bun run build` (NODE_ENV=production next build). Biome and ESLint were removed.
+- Verify gate: `bun run check` (`scripts/check-open-sse-ts-nocheck.ts` + oxfmt + oxlint `--deny-warnings` + `tsc --noEmit`), then `bun run test:run`, then `bun run build`. Biome and ESLint were removed.
 - Bun only — never npm/pnpm.

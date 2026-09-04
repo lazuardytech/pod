@@ -79,8 +79,11 @@ Internal API routes self-authenticate via `routeAuth.ts`. There is no Next.js mi
 
 - `/api/health` is always public
 - `/api/monitoring/health` and `/api/monitoring/health/stream` are public reads (no auth), like `/api/health`
+- `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/settings/require-login` are unauthenticated
+- Most other `/api/*` handlers call `checkDashboardApiAuth` (skipped when `requireLogin` is false; default **true**). Sensitive routes use `checkStrictDashboardAuth` (always JWT or `x-9r-cli-token`)
 - `/api/restart` and `/api/shutdown` require `SHUTDOWN_SECRET`
-- `/v1/*` routes enforce API key auth when `requireApiKey` is enabled
+- `/v1/*` live routes honor `requireApiKey`. Stub files/edits/variations/moderations still use `withApiKeyRateLimit`; `GET`/`DELETE /v1/files*` always require an API key
+- Dashboard route tests: `disableDashboardLogin()` in `tests/helpers/apiRouteHarness.ts`
 
 ## Backend Services (`src/lib/`)
 

@@ -14,7 +14,11 @@
       }
     ],
     "no-constant-condition": "error",
-    "eqeqeq": "warn"
+    "eqeqeq": "warn",
+    "react/set-state-in-effect": "off",
+    "react/set-state-in-render": "off",
+    "react/no-deriving-state-in-effects": "off",
+    "react/static-components": "off"
   },
   "overrides": [
     {

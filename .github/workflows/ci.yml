@@ -3,9 +3,11 @@ name: Build & Test
 on:
   push:
     branches:
+      - canary
       - main
   pull_request:
     branches:
+      - canary
       - main
   workflow_dispatch:
 

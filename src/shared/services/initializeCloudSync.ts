@@ -1,31 +1,13 @@
-/* ========== CLOUD SYNC — COMMENTED OUT (replaced by Tunnel) ==========
-import { getCloudSyncScheduler } from "@/shared/services/cloudSyncScheduler";
-========== END CLOUD SYNC ========== */
 import { cleanupProviderConnections } from "@/lib/localDb";
 
 /**
- * Initialize cloud sync scheduler
- * This should be called when the application starts
+ * Cloud sync was replaced by the tunnel subsystem; the scheduler is
+ * intentionally not started. This function remains as a no-op so the
+ * import surface (used by historical cloud/ and tests) stays stable.
  */
 export async function initializeCloudSync(): Promise<null> {
-  try {
-    // Cleanup null fields from existing data
-    await cleanupProviderConnections();
-
-    /* ========== CLOUD SYNC — COMMENTED OUT (replaced by Tunnel) ==========
-    // Create scheduler instance with default 15-minute interval
-    const scheduler = await getCloudSyncScheduler(null, 15);
-
-    // Start the scheduler
-    await scheduler.start();
-
-    return scheduler;
-    ========== END CLOUD SYNC ========== */
-    return null;
-  } catch (error) {
-    console.error("[CloudSync] Error initializing scheduler:", error);
-    throw error;
-  }
+  await cleanupProviderConnections();
+  return null;
 }
 
 export default initializeCloudSync;

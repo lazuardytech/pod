@@ -334,13 +334,11 @@ export default function UsageStats({
         seen.add(c.provider as string);
         return true;
       })
-      .map(
-        (c: Record<string, unknown>): TopologyProvider => ({
-          id: typeof c.id === "string" ? c.id : undefined,
-          provider: String(c.provider),
-          name: typeof c.name === "string" ? c.name : undefined,
-        }),
-      );
+      .map((c: Record<string, unknown>): TopologyProvider => ({
+        id: typeof c.id === "string" ? c.id : undefined,
+        provider: String(c.provider),
+        name: typeof c.name === "string" ? c.name : undefined,
+      }));
 
     const noAuthProviders: TopologyProvider[] = Object.values(FREE_PROVIDERS)
       .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))

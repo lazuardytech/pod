@@ -3,8 +3,10 @@
 > **pod · v0.0.86** · Bun + Next.js 16 + open-sse (typed local fork) + SQLite · port **20128** (Zeabur **20140**) · [pod.lazuardy.tech](https://pod.lazuardy.tech)
 > Self-hosted AI gateway unifying 84 built-in LLM providers behind one OpenAI-compatible endpoint.
 
-> **Last reviewed**: 2026-08-24.
+> **Last reviewed**: 2026-09-04.
 > **Freshness notes**:
+>
+> - Dashboard APIs: `checkDashboardApiAuth` / `checkStrictDashboardAuth` (`src/lib/routeAuth.ts`). `requireLogin` defaults true. Stub `/v1` files/edits/variations/moderations keep 501/404/empty/mock **and** `withApiKeyRateLimit`. `bun run check` starts with `scripts/check-open-sse-ts-nocheck.ts`. Rate-limit prefixes: `local:` / `pod:` / `pod-canary:`. Compose Redis publishes **6379**. SQLite replicas=1; backup `bun scripts/sqlite-backup.ts`.
 >
 > - Authored source is TypeScript (`.ts`/`.tsx` import suffixes). The only committed JavaScript is generated `public/sw.js` (from `src/sw/sw.ts`). No `open-sse/**/*.js` shims. Porting 9router stays TypeScript.
 > - Combos Fusion: per-combo Fallback / RR / Fusion (parallel panel + judge). Vision Adapter still filters the panel to hard-cap-capable models. Non-chat (TTS/image/search) coerces fusion → fallback.
@@ -16,7 +18,7 @@
 > - `AI_PROVIDERS` in `src/shared/constants/providers.ts` has **84** built-in ids. Custom OpenAI/Anthropic/embedding nodes are extra.
 > - Primary UI token is alabaster (`--color-primary: #e5e5e6`), not neon-lime. Dashboard controls are shadcn adapters (`src/shared/components`) over `src/shared/components/ui`. See `DESIGN.md`.
 > - Tooling is **oxfmt + oxlint + tsc** from bun.lock (`oxlint@1.73.0`). Do not use `bun x oxlint` — it floats to 1.79+ and fails `--deny-warnings` on new React compiler rules. Branch from **`canary`**, not `main`.
-> - Compatibility: `POST /v1/images/edits`, `/images/variations`, and `POST /v1/files` are **501**. `GET`/`DELETE /v1/files/{id}` return **404**. Moderations is a mock (always unflagged). See [compatibility-matrix.md](compatibility-matrix.md).
+> - Compatibility: `POST /v1/images/edits`, `/images/variations`, and `POST /v1/files` are **501**. `GET`/`DELETE /v1/files/{id}` return **404**. Moderations is a mock (always unflagged). Stub routes still use `withApiKeyRateLimit`; `GET`/`DELETE /v1/files*` always require an API key. See [compatibility-matrix.md](compatibility-matrix.md).
 
 ---
 
@@ -76,7 +78,7 @@
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | skills/  | Cursor agent skills — ponytail suite from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (`/ponytail`, `/ponytail-review`, `/ponytail-audit`, `/ponytail-debt`, `/ponytail-gain`, `/ponytail-help`)                                                                                       |
 | issues/  | Historical audits (2026-06) — start at [issues/INDEX.md](issues/INDEX.md); verify against live code. Not a current backlog.                                                                                                                                                                                      |
-| reports/ | Release rollups and verification reports by version. Latest: [reports/release-rollup-v0.0.80-v0.0.82.md](reports/release-rollup-v0.0.80-v0.0.82.md)                                                                                                                                                              |
+| reports/ | Release rollups and verification reports by version. Latest: [reports/release-rollup-v0.0.83-v0.0.86.md](reports/release-rollup-v0.0.83-v0.0.86.md); previous: [reports/release-rollup-v0.0.80-v0.0.82.md](reports/release-rollup-v0.0.80-v0.0.82.md)                                                            |
 | plan/    | [js-to-ts-migration.md](plan/js-to-ts-migration.md) (completed; open-sse is TS), [openai-compat-fixes.md](plan/openai-compat-fixes.md) (largely shipped), [optimizing-pod-for-multiple-instance.md](plan/optimizing-pod-for-multiple-instance.md), [voidzero-adoption.md](plan/voidzero-adoption.md) (completed) |
 | tests/   | SW seams: [../tests/SW-TEST-SEAM.md](../tests/SW-TEST-SEAM.md); unit `tests/unit/swShellCache.test.ts`                                                                                                                                                                                                           |
 

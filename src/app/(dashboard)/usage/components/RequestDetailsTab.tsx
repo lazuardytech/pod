@@ -438,7 +438,7 @@ export default function RequestDetailsTab() {
                     className="border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
                   >
                     <td className="whitespace-nowrap p-4 text-sm text-text-main">
-                      {new Date(detail.timestamp ?? Date.now()).toLocaleString()}
+                      {new Date(detail.timestamp ?? 0).toLocaleString()}
                     </td>
                     <td className="max-w-[260px] truncate p-4 font-mono text-sm text-text-main">
                       {detail.model}
@@ -500,7 +500,7 @@ export default function RequestDetailsTab() {
               <div>
                 <span className="text-text-muted">Timestamp:</span>{" "}
                 <span className="text-text-main">
-                  {new Date(selectedDetail.timestamp ?? Date.now()).toLocaleString()}
+                  {new Date(selectedDetail.timestamp ?? 0).toLocaleString()}
                 </span>
               </div>
               <div>
