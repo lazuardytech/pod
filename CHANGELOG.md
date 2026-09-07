@@ -8,6 +8,7 @@
 
 ### Changed
 
+- **Vitest 4.1.11 → 5.0.0** (`vitest`, `@vitest/coverage-v8`). Requires Node ≥ 22.12 for tests (Pod floor ≥ 22.18). Removed dead nested `tests/package.json` / `tests/bun.lock`. `.gitignore` adds `.vitest/` (v5 report dir). Default suite: 1523 tests, 0 skipped.
 - Version bump **0.0.85 → 0.0.86**.
 
 ### Fixed

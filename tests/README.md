@@ -1,6 +1,6 @@
 # Pod Tests
 
-Default suite is always-on unit/smoke tests. Live Google Antigravity and localhost RTK harnesses live in `tests/live/` and are **not** collected by `bun run test:run`.
+Default suite is always-on unit/smoke tests (**Vitest 5.0.0**). Live Google Antigravity and localhost RTK harnesses live in `tests/live/` and are **not** collected by `bun run test:run`.
 
 ## Running Tests
 
