@@ -48,6 +48,18 @@
 			}
 		},
 		{
+			"name": "context7",
+			"enabled": true,
+			"config": {
+				"args": [
+					"scripts/context7-mcp.sh"
+				],
+				"command": "bash",
+				"cwd": ".",
+				"transport": "stdio"
+			}
+		},
+		{
 			"name": "pagespeed",
 			"enabled": true,
 			"config": {
