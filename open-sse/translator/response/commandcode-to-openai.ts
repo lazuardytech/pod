@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * CommandCode to OpenAI response translator
  *
@@ -20,7 +19,47 @@
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 
-function ensureState(state: unknown, model: unknown) {
+// Local shapes for the CommandCode stream events this translator consumes
+type CommandCodeUsageInfo = {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+};
+
+type CommandCodeEvent = {
+  type: string;
+  model?: string;
+  text?: string;
+  delta?: string;
+  inputTextDelta?: string;
+  id?: string;
+  toolCallId?: string;
+  toolName?: string;
+  input?: unknown;
+  finishReason?: string;
+  usage?: CommandCodeUsageInfo;
+  totalUsage?: CommandCodeUsageInfo;
+  error?: unknown;
+  message?: string;
+  object?: string; // pass-through OpenAI chunks carry object
+};
+
+// State fields this translator reads/writes (lazily initialized in ensureState)
+type CommandCodeState = {
+  responseId?: string;
+  created?: number;
+  model: string | null;
+  chunkIndex: number;
+  toolIndex: number;
+  // Keyed with `string | undefined` because delta events can lack an id
+  toolIndexById: Map<string | undefined, number>;
+  openTools: Set<string>;
+  openText: boolean;
+  finishReason: string | null;
+  usage: CommandCodeUsageInfo | null;
+};
+
+function ensureState(state: CommandCodeState, model: string | undefined) {
   if (!state.responseId) {
     state.responseId = `chatcmpl-${Date.now()}`;
     state.created = Math.floor(Date.now() / 1000);
@@ -35,7 +74,11 @@ function ensureState(state: unknown, model: unknown) {
   }
 }
 
-function makeChunk(state: unknown, delta: unknown, finishReason: unknown = null) {
+function makeChunk(
+  state: CommandCodeState,
+  delta: Record<string, unknown>,
+  finishReason: string | null = null,
+) {
   return {
     id: state.responseId,
     object: "chat.completion.chunk",
@@ -59,11 +102,14 @@ function mapFinishReason(reason: unknown) {
     case "error":
       return "stop";
     default:
-      return reason || "stop";
+      // Unknown truthy finish reasons pass through unchanged (runtime passthrough)
+      return (reason as string) || "stop";
   }
 }
 
-export function convertCommandCodeToOpenAI(chunk: unknown, state: unknown) {
+export function convertCommandCodeToOpenAI(chunkInput: unknown, stateInput: unknown) {
+  const chunk = chunkInput as CommandCodeEvent | string | null | undefined;
+  const state = stateInput as CommandCodeState;
   if (!chunk) return null;
 
   // Already-OpenAI chunk: pass through
@@ -89,7 +135,7 @@ export function convertCommandCodeToOpenAI(chunk: unknown, state: unknown) {
   if (!event || typeof event !== "object" || !event.type) return null;
 
   ensureState(state, event.model);
-  const out = [];
+  const out: unknown[] = [];
 
   switch (event.type) {
     case "text-delta": {

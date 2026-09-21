@@ -1,12 +1,78 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 
 // Prefix for Claude OAuth tool names (must match request translator)
 const CLAUDE_OAUTH_TOOL_PREFIX = "proxy_";
 
+// Local shapes for the OpenAI stream chunks this translator consumes
+type OpenAIUsageInfo = {
+  prompt_tokens?: unknown;
+  completion_tokens?: unknown;
+  prompt_tokens_details?: {
+    cached_tokens?: unknown;
+    cache_creation_tokens?: unknown;
+  };
+};
+
+type OpenAIToolCallInfo = {
+  index?: number;
+  id?: string;
+  type?: string;
+  function?: { name?: string; arguments?: string };
+};
+
+type OpenAIDeltaInfo = {
+  content?: string;
+  reasoning_content?: string;
+  reasoning?: string;
+  tool_calls?: OpenAIToolCallInfo[];
+};
+
+type OpenAIChoiceInfo = {
+  delta?: OpenAIDeltaInfo;
+  finish_reason?: string | null;
+};
+
+type OpenAIStreamChunk = {
+  id?: string;
+  model?: string;
+  usage?: OpenAIUsageInfo;
+  extend_fields?: { requestId?: string; traceId?: string };
+  choices: [OpenAIChoiceInfo];
+};
+
+type ClaudeToolCallInfo = {
+  id: string;
+  name: string;
+  blockIndex: number;
+};
+
+// Usage tracked on state; cache fields are only added when present upstream
+type ClaudeUsageState = {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
+};
+
+// State fields this translator reads/writes (created per stream by initState)
+type OpenAIToClaudeState = {
+  messageStartSent: boolean;
+  messageId: string;
+  model: string;
+  nextBlockIndex: number;
+  thinkingBlockStarted: boolean;
+  thinkingBlockIndex: number;
+  textBlockStarted: boolean;
+  textBlockClosed: boolean;
+  textBlockIndex: number;
+  toolCalls: Map<number, ClaudeToolCallInfo>;
+  usage: ClaudeUsageState | null;
+  finishReason: string | null;
+};
+
 // Helper: stop thinking block if started
-function stopThinkingBlock(state: unknown, results: unknown) {
+function stopThinkingBlock(state: OpenAIToClaudeState, results: unknown[]) {
   if (!state.thinkingBlockStarted) return;
   results.push({
     type: "content_block_stop",
@@ -16,7 +82,7 @@ function stopThinkingBlock(state: unknown, results: unknown) {
 }
 
 // Helper: stop text block if started
-function stopTextBlock(state: unknown, results: unknown) {
+function stopTextBlock(state: OpenAIToClaudeState, results: unknown[]) {
   if (!state.textBlockStarted || state.textBlockClosed) return;
   state.textBlockClosed = true;
   results.push({
@@ -27,10 +93,12 @@ function stopTextBlock(state: unknown, results: unknown) {
 }
 
 // Convert OpenAI stream chunk to Claude format
-export function openaiToClaudeResponse(chunk: unknown, state: unknown) {
+export function openaiToClaudeResponse(chunkInput: unknown, stateInput: unknown) {
+  const chunk = chunkInput as OpenAIStreamChunk | null | undefined;
+  const state = stateInput as OpenAIToClaudeState;
   if (!chunk || !chunk.choices?.[0]) return null;
 
-  const results = [];
+  const results: unknown[] = [];
   const choice = chunk.choices[0];
   const delta = choice.delta;
 
@@ -51,10 +119,11 @@ export function openaiToClaudeResponse(chunk: unknown, state: unknown) {
     // Because OpenAI's prompt_tokens includes all prompt-side tokens
     const inputTokens = promptTokens - cacheReadTokens - cacheCreateTokens;
 
-    state.usage = {
+    const usageInfo: ClaudeUsageState = {
       input_tokens: inputTokens,
       output_tokens: outputTokens,
     };
+    state.usage = usageInfo;
 
     // Add cache_read_input_tokens if present
     if (cacheReadTokens > 0) {
