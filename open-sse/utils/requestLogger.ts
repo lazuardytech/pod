@@ -8,8 +8,8 @@ const LOGGING_ENABLED =
 
 type FsModule = typeof import("node:fs");
 type PathModule = typeof import("node:path");
-type HeaderRecord = Record<string, unknown>;
-type HeadersLike = {
+export type HeaderRecord = Record<string, unknown>;
+export type HeadersLike = {
   entries: () => Iterable<[string, unknown]>;
 };
 type RequestLogger = {

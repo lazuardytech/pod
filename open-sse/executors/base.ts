@@ -89,7 +89,7 @@ export type ExecutorExecuteOptions = {
   stream: boolean;
   credentials: ExecutorCredentials;
   signal?: AbortSignal;
-  log?: ExecutorLogger;
+  log?: ExecutorLogger | null;
   proxyOptions?: ExecutorProxyOptions;
   [key: string]: unknown;
 };

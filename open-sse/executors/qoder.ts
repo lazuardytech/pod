@@ -56,7 +56,7 @@ type BuildQoderRequestArgs = {
   model: string;
   body: JsonRecord;
   credentials: QoderCredentials;
-  log?: ExecutorLogger;
+  log?: ExecutorLogger | null;
   proxyOptions?: ExecutorProxyOptions;
   signal?: AbortSignal;
 };

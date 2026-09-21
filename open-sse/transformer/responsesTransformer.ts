@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Responses API Transformer
  * Converts OpenAI Chat Completions SSE to Codex Responses API SSE format
@@ -8,8 +7,17 @@
 import fs from "node:fs";
 import path from "node:path";
 
+export type ResponsesLogger = {
+  logInput: (event: unknown) => void;
+  logOutput: (event: unknown) => void;
+  flush: () => void;
+};
+
 // Create log directory for responses (Node.js only)
-export function createResponsesLogger(model: unknown, logsDir: unknown = null) {
+export function createResponsesLogger(
+  model: string,
+  logsDir: string | null = null,
+): ResponsesLogger | null {
   // Skip logging in worker environment (no fs)
   if (typeof fs.mkdirSync !== "function") {
     return null;
@@ -41,7 +49,7 @@ export function createResponsesLogger(model: unknown, logsDir: unknown = null) {
         fs.writeFileSync(path.join(logDir, "1_input_stream.txt"), inputEvents.join("\n"));
         fs.writeFileSync(path.join(logDir, "2_output_stream.txt"), outputEvents.join("\n"));
       } catch (e: unknown) {
-        console.log("[RESPONSES] Failed to write logs:", e.message);
+        console.log("[RESPONSES] Failed to write logs:", (e as Error).message);
       }
     },
   };
@@ -52,8 +60,32 @@ export function createResponsesLogger(model: unknown, logsDir: unknown = null) {
  * @param {Object} logger - Optional logger instance
  * @returns {TransformStream}
  */
-export function createResponsesApiTransformStream(logger: unknown = null) {
-  const state: Record<string, unknown> = {
+interface ResponsesTransformState {
+  seq: number;
+  responseId: string;
+  created: number;
+  started: boolean;
+  msgTextBuf: Record<string, string>;
+  msgItemAdded: Record<string, boolean>;
+  msgContentAdded: Record<string, boolean>;
+  msgItemDone: Record<string, boolean>;
+  reasoningId: string;
+  reasoningIndex: number;
+  reasoningBuf: string;
+  reasoningPartAdded: boolean;
+  reasoningDone: boolean;
+  inThinking: boolean;
+  funcArgsBuf: Record<string, string>;
+  funcNames: Record<string, string>;
+  funcCallIds: Record<string, string>;
+  funcArgsDone: Record<string, boolean>;
+  funcItemDone: Record<string, boolean>;
+  buffer: string;
+  completedSent: boolean;
+}
+
+export function createResponsesApiTransformStream(logger: ResponsesLogger | null = null) {
+  const state: ResponsesTransformState = {
     seq: 0,
     responseId: `resp_${Date.now()}`,
     created: Math.floor(Date.now() / 1000),
@@ -80,7 +112,11 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
   const encoder = new TextEncoder();
   const nextSeq = () => ++state.seq;
 
-  const emit = (controller: unknown, eventType: unknown, data: unknown) => {
+  const emit = (
+    controller: TransformStreamDefaultController<Uint8Array>,
+    eventType: string,
+    data: Record<string, unknown>,
+  ) => {
     data.sequence_number = nextSeq();
     const output = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
     logger?.logOutput(output.trim());
@@ -88,7 +124,10 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
   };
 
   // Helper to start reasoning
-  const startReasoning = (controller: unknown, idx: unknown) => {
+  const startReasoning = (
+    controller: TransformStreamDefaultController<Uint8Array>,
+    idx: number,
+  ) => {
     if (!state.reasoningId) {
       state.reasoningId = `rs_${state.responseId}_${idx}`;
       state.reasoningIndex = idx;
@@ -114,7 +153,10 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
     }
   };
 
-  const emitReasoningDelta = (controller: unknown, text: unknown) => {
+  const emitReasoningDelta = (
+    controller: TransformStreamDefaultController<Uint8Array>,
+    text: string,
+  ) => {
     if (!text) return;
     state.reasoningBuf += text;
     emit(controller, "response.reasoning_summary_text.delta", {
@@ -126,7 +168,7 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
     });
   };
 
-  const closeReasoning = (controller: unknown) => {
+  const closeReasoning = (controller: TransformStreamDefaultController<Uint8Array>) => {
     if (state.reasoningId && !state.reasoningDone) {
       state.reasoningDone = true;
 
@@ -158,7 +200,10 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
     }
   };
 
-  const closeMessage = (controller: unknown, idx: unknown) => {
+  const closeMessage = (
+    controller: TransformStreamDefaultController<Uint8Array>,
+    idx: string | number,
+  ) => {
     if (state.msgItemAdded[idx] && !state.msgItemDone[idx]) {
       state.msgItemDone[idx] = true;
       const fullText = state.msgTextBuf[idx] || "";
@@ -167,7 +212,7 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
       emit(controller, "response.output_text.done", {
         type: "response.output_text.done",
         item_id: msgId,
-        output_index: parseInt(idx),
+        output_index: parseInt(idx as string),
         content_index: 0,
         text: fullText,
         logprobs: [],
@@ -176,14 +221,14 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
       emit(controller, "response.content_part.done", {
         type: "response.content_part.done",
         item_id: msgId,
-        output_index: parseInt(idx),
+        output_index: parseInt(idx as string),
         content_index: 0,
         part: { type: "output_text", annotations: [], logprobs: [], text: fullText },
       });
 
       emit(controller, "response.output_item.done", {
         type: "response.output_item.done",
-        output_index: parseInt(idx),
+        output_index: parseInt(idx as string),
         item: {
           id: msgId,
           type: "message",
@@ -194,7 +239,10 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
     }
   };
 
-  const closeToolCall = (controller: unknown, idx: unknown) => {
+  const closeToolCall = (
+    controller: TransformStreamDefaultController<Uint8Array>,
+    idx: string | number,
+  ) => {
     const callId = state.funcCallIds[idx];
     if (callId && !state.funcItemDone[idx]) {
       const args = state.funcArgsBuf[idx] || "{}";
@@ -202,13 +250,13 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
       emit(controller, "response.function_call_arguments.done", {
         type: "response.function_call_arguments.done",
         item_id: `fc_${callId}`,
-        output_index: parseInt(idx),
+        output_index: parseInt(idx as string),
         arguments: args,
       });
 
       emit(controller, "response.output_item.done", {
         type: "response.output_item.done",
-        output_index: parseInt(idx),
+        output_index: parseInt(idx as string),
         item: {
           id: `fc_${callId}`,
           type: "function_call",
@@ -223,7 +271,7 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
     }
   };
 
-  const sendCompleted = (controller: unknown) => {
+  const sendCompleted = (controller: TransformStreamDefaultController<Uint8Array>) => {
     if (!state.completedSent) {
       state.completedSent = true;
       emit(controller, "response.completed", {
@@ -241,7 +289,7 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
   };
 
   return new TransformStream({
-    transform(chunk: unknown, controller: unknown) {
+    transform(chunk: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
       const text = new TextDecoder().decode(chunk);
       logger?.logInput(text.trim());
       state.buffer += text;
@@ -425,7 +473,7 @@ export function createResponsesApiTransformStream(logger: unknown = null) {
       }
     },
 
-    flush(controller: unknown) {
+    flush(controller: TransformStreamDefaultController<Uint8Array>) {
       for (const i in state.msgItemAdded) closeMessage(controller, i);
       closeReasoning(controller);
       for (const i in state.funcCallIds) closeToolCall(controller, i);

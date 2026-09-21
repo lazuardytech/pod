@@ -6,6 +6,7 @@ import { needsTranslation } from "../../translator/index.ts";
 import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.ts";
 import { decloakToolNames } from "../../utils/claudeCloaking.ts";
 import { createErrorResult } from "../../utils/error.ts";
+import type { HeaderRecord, HeadersLike } from "../../utils/requestLogger.ts";
 import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.ts";
 import {
   buildRequestDetail,
@@ -140,7 +141,7 @@ type RequestLoggerLike = {
   logProviderResponse: (
     status?: unknown,
     statusText?: unknown,
-    headers?: unknown,
+    headers?: HeaderRecord | HeadersLike | null,
     body?: unknown,
   ) => void;
   logConvertedResponse: (body?: unknown) => void;

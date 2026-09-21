@@ -1,6 +1,72 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
+
+interface OpenAIToolCallDeltaFunction {
+  name?: string;
+  arguments?: string;
+}
+
+interface OpenAIToolCallDelta {
+  index?: number;
+  id?: string;
+  function?: OpenAIToolCallDeltaFunction;
+}
+
+interface OpenAIStreamDelta {
+  content?: string;
+  reasoning_content?: string;
+  tool_calls?: OpenAIToolCallDelta[];
+}
+
+interface OpenAIStreamChoice {
+  delta?: OpenAIStreamDelta;
+  finish_reason?: string | null;
+}
+
+interface OpenAIStreamUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  completion_tokens_details?: { reasoning_tokens?: number };
+  prompt_tokens_details?: { cached_tokens?: number };
+}
+
+/** OpenAI SSE chunk consumed by this translator. */
+interface OpenAIStreamChunk {
+  id?: string;
+  model?: string;
+  choices?: OpenAIStreamChoice[];
+  usage?: OpenAIStreamUsage;
+}
+
+interface AntigravityToolCallAccum {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+interface AntigravityTranslatorState {
+  _usage?: OpenAIStreamUsage;
+  _toolCallAccum?: Record<string, AntigravityToolCallAccum>;
+  _responseId?: string;
+  _modelVersion?: string;
+  toolNameMap?: Map<string, string>;
+}
+
+interface AntigravityUsageMetadata {
+  promptTokenCount: number;
+  candidatesTokenCount: number;
+  totalTokenCount: number;
+  thoughtsTokenCount?: number;
+  cachedContentTokenCount?: number;
+}
+
+interface AntigravitySseResponse {
+  candidates: Record<string, unknown>[];
+  modelVersion: string;
+  responseId: string;
+  usageMetadata?: AntigravityUsageMetadata;
+}
 
 // Convert OpenAI SSE chunk to Antigravity SSE format
 // Real Antigravity format:
@@ -9,21 +75,24 @@ import { register } from "../registry.ts";
 export function openaiToAntigravityResponse(chunk: unknown, state: unknown) {
   if (!chunk) return null;
 
-  const choice = chunk.choices?.[0];
+  const c = chunk as OpenAIStreamChunk;
+  const s = state as AntigravityTranslatorState;
+
+  const choice = c.choices?.[0];
   if (!choice) {
-    if (chunk.usage) {
-      state._usage = chunk.usage;
+    if (c.usage) {
+      s._usage = c.usage;
     }
     return null;
   }
 
-  const delta = choice.delta || {};
+  const delta: OpenAIStreamDelta = choice.delta || {};
   const finishReason = choice.finish_reason;
 
   // Init state
-  if (!state._toolCallAccum) state._toolCallAccum = {};
-  if (!state._responseId) state._responseId = chunk.id || `resp_${Date.now()}`;
-  if (!state._modelVersion) state._modelVersion = chunk.model || "";
+  if (!s._toolCallAccum) s._toolCallAccum = {};
+  if (!s._responseId) s._responseId = c.id || `resp_${Date.now()}`;
+  if (!s._modelVersion) s._modelVersion = c.model || "";
 
   const parts = [];
 
@@ -41,10 +110,10 @@ export function openaiToAntigravityResponse(chunk: unknown, state: unknown) {
   if (delta.tool_calls) {
     for (const tc of delta.tool_calls) {
       const idx = tc.index ?? 0;
-      if (!state._toolCallAccum[idx]) {
-        state._toolCallAccum[idx] = { id: "", name: "", arguments: "" };
+      if (!s._toolCallAccum[idx]) {
+        s._toolCallAccum[idx] = { id: "", name: "", arguments: "" };
       }
-      const accum = state._toolCallAccum[idx];
+      const accum = s._toolCallAccum[idx];
       if (tc.id) accum.id = tc.id;
       if (tc.function?.name) accum.name += tc.function.name;
       if (tc.function?.arguments) accum.arguments += tc.function.arguments;
@@ -55,9 +124,9 @@ export function openaiToAntigravityResponse(chunk: unknown, state: unknown) {
 
   // On finish, emit accumulated tool calls as complete functionCall parts
   if (finishReason) {
-    const indices = Object.keys(state._toolCallAccum);
+    const indices = Object.keys(s._toolCallAccum);
     for (const idx of indices) {
-      const accum = state._toolCallAccum[idx];
+      const accum = s._toolCallAccum[idx]!;
       let args = {};
       try {
         args = JSON.parse(accum.arguments);
@@ -65,7 +134,7 @@ export function openaiToAntigravityResponse(chunk: unknown, state: unknown) {
         /* empty */
       }
       // Restore original tool name if it was prefixed during cloaking
-      const originalName = state.toolNameMap?.get(accum.name) || accum.name;
+      const originalName = s.toolNameMap?.get(accum.name) || accum.name;
       parts.push({
         functionCall: {
           name: originalName,
@@ -98,14 +167,14 @@ export function openaiToAntigravityResponse(chunk: unknown, state: unknown) {
   }
 
   // Build response
-  const response: Record<string, unknown> = {
+  const response: AntigravitySseResponse = {
     candidates: [candidate],
-    modelVersion: state._modelVersion,
-    responseId: state._responseId,
+    modelVersion: s._modelVersion,
+    responseId: s._responseId,
   };
 
   // Usage metadata
-  const usage = chunk.usage || state._usage;
+  const usage = c.usage || s._usage;
   if (usage) {
     response.usageMetadata = {
       promptTokenCount: usage.prompt_tokens || 0,

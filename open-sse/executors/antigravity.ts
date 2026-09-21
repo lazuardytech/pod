@@ -1,4 +1,3 @@
-// @ts-nocheck
 import crypto from "node:crypto";
 import {
   AG_DEFAULT_TOOLS,
@@ -391,12 +390,10 @@ export class AntigravityExecutor extends BaseExecutor {
             (!retryMs || retryMs === 0) &&
             retryAttempts < MAX_AUTO_RETRIES
           ) {
-            retryAttemptsByUrl[urlIndex] = retryAttempts + 1;
+            const attempts = retryAttempts + 1;
+            retryAttemptsByUrl[urlIndex] = attempts;
             // Exponential backoff: 2s, 4s, 8s...
-            const backoffMs = Math.min(
-              1000 * 2 ** retryAttemptsByUrl[urlIndex],
-              MAX_RETRY_AFTER_MS,
-            );
+            const backoffMs = Math.min(1000 * 2 ** attempts, MAX_RETRY_AFTER_MS);
             log?.debug?.(
               "RETRY",
               `429 auto retry ${retryAttemptsByUrl[urlIndex]}/${MAX_AUTO_RETRIES} after ${backoffMs / 1000}s`,

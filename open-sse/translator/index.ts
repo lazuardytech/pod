@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { normalizeThinkingConfig } from "../services/provider.ts";
 import { cloakClaudeTools } from "../utils/claudeCloaking.ts";
 import { applyThinking, captureThinking } from "./concerns/thinkingUnified.ts";
@@ -51,27 +50,31 @@ function ensureInitialized(): void {
 }
 
 // Strip specific content types from messages (explicit opt-in via strip[] in PROVIDER_MODELS)
-function stripContentTypes(body: unknown, stripList: unknown = []) {
-  if (!stripList.length || !body.messages || !Array.isArray(body.messages)) return;
+function stripContentTypes(body: unknown, stripList: readonly unknown[] = []) {
+  const record = body as { messages?: unknown };
+  if (!stripList.length || !record.messages || !Array.isArray(record.messages)) return;
   const imageTypes = new Set(["image_url", "image"]);
   const audioTypes = new Set(["audio_url", "input_audio"]);
   const shouldStrip = (type: unknown) => {
-    if (imageTypes.has(type)) return stripList.includes("image");
-    if (audioTypes.has(type)) return stripList.includes("audio");
+    if (imageTypes.has(type as string)) return stripList.includes("image");
+    if (audioTypes.has(type as string)) return stripList.includes("audio");
     return false;
   };
-  for (const msg of body.messages) {
+  for (const msg of record.messages as { content?: unknown }[]) {
     if (!Array.isArray(msg.content)) continue;
-    msg.content = msg.content.filter((part: unknown) => !shouldStrip(part.type));
-    if (msg.content.length === 0) msg.content = "";
+    const kept = msg.content.filter(
+      (part: unknown) => !shouldStrip((part as { type?: unknown }).type),
+    );
+    msg.content = kept.length === 0 ? "" : kept;
   }
 }
 
 // Normalize 'developer' role to 'system' for providers that don't accept it
 // (DeepSeek, Groq, and other OpenAI-format providers)
 function normalizeDeveloperRole(body: unknown) {
-  if (!body.messages || !Array.isArray(body.messages)) return;
-  for (const msg of body.messages) {
+  const record = body as { messages?: unknown };
+  if (!record.messages || !Array.isArray(record.messages)) return;
+  for (const msg of record.messages as { role?: unknown }[]) {
     if (msg.role === "developer") {
       msg.role = "system";
     }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mts";
 import { buildKimiHeaders, OAUTH_ENDPOINTS } from "../config/appConstants.ts";
 import { PROVIDERS } from "../config/providers.ts";
@@ -185,7 +184,7 @@ Respond ONLY with the JSON object, no other text.`;
                   .map((f: string) => f.trim())
                   .filter(Boolean),
               );
-              const cachedBetaStr = cached[lcKey] || "";
+              const cachedBetaStr = (cached[lcKey] as string) || "";
               const cachedFlags = new Set(
                 cachedBetaStr
                   .split(",")
@@ -218,7 +217,7 @@ Respond ONLY with the JSON object, no other text.`;
       case "kimi":
       case "minimax":
       case "minimax-cn":
-        headers["x-api-key"] = credentials.apiKey || credentials.accessToken;
+        headers["x-api-key"] = (credentials.apiKey || credentials.accessToken) as string;
         break;
       case "kimi-coding":
         headers["Authorization"] = `Bearer ${credentials.accessToken}`;

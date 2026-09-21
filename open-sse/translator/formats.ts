@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Format identifiers
 export const FORMATS = {
   OPENAI: "openai",
@@ -22,7 +21,7 @@ export type FormatId = (typeof FORMATS)[keyof typeof FORMATS];
  * Detect source format from request URL pathname + body.
  * Returns null to fall back to body-based detection.
  */
-export function detectFormatByEndpoint(pathname: unknown, body: unknown) {
+export function detectFormatByEndpoint(pathname: string, body: unknown) {
   // /v1/responses is always openai-responses
   if (pathname.includes("/v1/responses")) return FORMATS.OPENAI_RESPONSES;
 
@@ -30,7 +29,10 @@ export function detectFormatByEndpoint(pathname: unknown, body: unknown) {
   if (pathname.includes("/v1/messages")) return FORMATS.CLAUDE;
 
   // /v1/chat/completions + input[] → treat as openai (Cursor CLI sends Responses body via chat endpoint)
-  if (pathname.includes("/v1/chat/completions") && Array.isArray(body?.input)) {
+  if (
+    pathname.includes("/v1/chat/completions") &&
+    Array.isArray((body as Record<string, unknown> | null | undefined)?.input)
+  ) {
     return FORMATS.OPENAI;
   }
 

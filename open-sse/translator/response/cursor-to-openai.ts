@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Cursor to OpenAI Response Translator
  * CursorExecutor already emits OpenAI format - this is a passthrough
@@ -6,6 +5,12 @@
 
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
+
+/** OpenAI-shaped fields this passthrough inspects on executor output. */
+interface CursorOpenAIChunk {
+  object?: string;
+  choices?: unknown[];
+}
 
 /**
  * Convert Cursor response to OpenAI format
@@ -15,13 +20,15 @@ import { register } from "../registry.ts";
 export function convertCursorToOpenAI(chunk: unknown, _state: unknown) {
   if (!chunk) return null;
 
+  const c = chunk as CursorOpenAIChunk;
+
   // If chunk is already in OpenAI format (from executor transform), return as-is
-  if (chunk.object === "chat.completion.chunk" && chunk.choices) {
+  if (c.object === "chat.completion.chunk" && c.choices) {
     return chunk;
   }
 
   // If chunk is a completion object (non-streaming), return as-is
-  if (chunk.object === "chat.completion" && chunk.choices) {
+  if (c.object === "chat.completion" && c.choices) {
     return chunk;
   }
 
