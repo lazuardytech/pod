@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Project ID Service - Fetch and cache real Project IDs from Google Cloud Code API
  *

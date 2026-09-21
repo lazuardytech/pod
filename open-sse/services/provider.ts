@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { buildClineHeaders } from "../../src/shared/utils/clineAuth.mts";
 import { PROVIDERS } from "../config/providers.ts";
 
