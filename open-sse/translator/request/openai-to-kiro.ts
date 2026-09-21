@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * OpenAI to Kiro Request Translator
  * Converts OpenAI Chat Completions format to Kiro/AWS CodeWhisperer format
@@ -6,15 +5,67 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { FORMATS } from "../formats.ts";
-import { register } from "../registry.ts";
+import { register, type TranslatorCredentials } from "../registry.ts";
+
+type KiroUserInputMessage = {
+  content: string;
+  modelId?: unknown;
+  origin?: unknown;
+  images?: unknown[];
+  userInputMessageContext?: {
+    toolResults?: unknown[];
+    tools?: unknown[];
+  };
+};
+type KiroUserMsg = { userInputMessage: KiroUserInputMessage };
+type KiroHistoryItem = {
+  userInputMessage?: KiroUserInputMessage;
+  assistantResponseMessage?: { content?: unknown; toolUses?: unknown[] };
+};
+type KiroTool = {
+  function?: {
+    name?: unknown;
+    description?: string;
+    parameters?: Record<string, unknown>;
+  };
+  name?: unknown;
+  description?: string;
+  parameters?: Record<string, unknown>;
+  input_schema?: Record<string, unknown>;
+};
+type KiroContentBlock = {
+  type?: unknown;
+  text?: unknown;
+  image_url?: { url?: unknown } | string;
+  source?: { type?: unknown; media_type?: unknown; data?: unknown };
+};
+type KiroToolResultBlock = { tool_use_id?: unknown; content?: unknown };
+type KiroToolCall = {
+  id?: unknown;
+  function?: { name?: unknown; arguments?: unknown };
+  name?: unknown;
+  input?: unknown;
+};
+type KiroMessage = {
+  role?: unknown;
+  content?: unknown;
+  tool_calls?: KiroToolCall[];
+  tool_call_id?: unknown;
+};
+type KiroOpenAIBody = {
+  messages?: KiroMessage[];
+  tools?: KiroTool[];
+  temperature?: unknown;
+  top_p?: unknown;
+};
 
 /**
  * Convert OpenAI messages to Kiro format
  * Rules: system/tool/user -> user role, merge consecutive same roles
  */
-function convertMessages(messages: unknown, tools: unknown, model: unknown) {
-  const history: unknown[] = [];
-  let currentMessage: unknown = null;
+function convertMessages(messages: KiroMessage[], tools: KiroTool[], model: unknown) {
+  const history: KiroHistoryItem[] = [];
+  let currentMessage: KiroUserMsg | null = null;
 
   let pendingUserContent: unknown[] = [];
   let pendingAssistantContent: unknown[] = [];
@@ -28,7 +79,7 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
   const flushPending = () => {
     if (currentRole === "user") {
       const content = pendingUserContent.join("\n\n").trim() || "continue";
-      const userMsg: Record<string, unknown> = {
+      const userMsg: KiroUserMsg = {
         userInputMessage: {
           content: content,
           modelId: "",
@@ -51,7 +102,7 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
         if (!userMsg.userInputMessage.userInputMessageContext) {
           userMsg.userInputMessage.userInputMessageContext = {};
         }
-        userMsg.userInputMessage.userInputMessageContext.tools = tools.map((t: unknown) => {
+        userMsg.userInputMessage.userInputMessageContext.tools = tools.map((t: KiroTool) => {
           const name = t.function?.name || t.name;
           let description = t.function?.description || t.description || "";
 
@@ -59,7 +110,11 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
             description = `Tool: ${name}`;
           }
 
-          const schema = t.function?.parameters || t.parameters || t.input_schema || {};
+          const schema =
+            t.function?.parameters ||
+            t.parameters ||
+            t.input_schema ||
+            ({} as Record<string, unknown>);
           // Normalize schema: Kiro requires required[] and proper type/properties
           const normalizedSchema =
             Object.keys(schema).length === 0
@@ -94,7 +149,7 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
   };
 
   for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
+    const msg = messages[i]!;
     let role = msg.role;
 
     // Normalize: system/tool -> user
@@ -142,11 +197,13 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
         content = textParts.join("\n");
 
         // Check for tool_result blocks
-        const toolResultBlocks = msg.content.filter((c: unknown) => c.type === "tool_result");
+        const toolResultBlocks = msg.content.filter(
+          (c: KiroContentBlock) => c.type === "tool_result",
+        );
         if (toolResultBlocks.length > 0) {
-          toolResultBlocks.forEach((block: unknown) => {
+          toolResultBlocks.forEach((block: KiroToolResultBlock) => {
             const text = Array.isArray(block.content)
-              ? block.content.map((c: unknown) => c.text || "").join("\n")
+              ? block.content.map((c: KiroContentBlock) => c.text || "").join("\n")
               : typeof block.content === "string"
                 ? block.content
                 : "";
@@ -174,16 +231,16 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
     } else if (role === "assistant") {
       // Extract text content and tool uses
       let textContent = "";
-      let toolUses: unknown[] = [];
+      let toolUses: KiroToolCall[] = [];
 
       if (Array.isArray(msg.content)) {
-        const textBlocks = msg.content.filter((c: unknown) => c.type === "text");
+        const textBlocks = msg.content.filter((c: KiroContentBlock) => c.type === "text");
         textContent = textBlocks
-          .map((b: unknown) => b.text)
+          .map((b: KiroContentBlock) => b.text)
           .join("\n")
           .trim();
 
-        const toolUseBlocks = msg.content.filter((c: unknown) => c.type === "tool_use");
+        const toolUseBlocks = msg.content.filter((c: KiroContentBlock) => c.type === "tool_use");
         toolUses = toolUseBlocks;
       } else if (typeof msg.content === "string") {
         textContent = msg.content.trim();
@@ -208,7 +265,7 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
 
         const lastMsg = history[history.length - 1];
         if (lastMsg?.assistantResponseMessage) {
-          lastMsg.assistantResponseMessage.toolUses = toolUses.map((tc: unknown) => {
+          lastMsg.assistantResponseMessage.toolUses = toolUses.map((tc: KiroToolCall) => {
             if (tc.function) {
               return {
                 toolUseId: tc.id || uuidv4(),
@@ -240,8 +297,8 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
 
   // Pop last userInputMessage as currentMessage (search from end, skip trailing assistant messages)
   for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].userInputMessage) {
-      currentMessage = history.splice(i, 1)[0];
+    if (history[i]!.userInputMessage) {
+      currentMessage = history.splice(i, 1)[0] as KiroUserMsg;
       break;
     }
   }
@@ -250,7 +307,7 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
   const firstHistoryTools = history[0]?.userInputMessage?.userInputMessageContext?.tools;
 
   // Clean up history for Kiro API compatibility
-  history.forEach((item: unknown) => {
+  history.forEach((item: KiroHistoryItem) => {
     if (item.userInputMessage?.userInputMessageContext?.tools) {
       delete item.userInputMessage.userInputMessageContext.tools;
     }
@@ -266,16 +323,16 @@ function convertMessages(messages: unknown, tools: unknown, model: unknown) {
   });
 
   // Merge consecutive user messages (Kiro requires alternating user/assistant)
-  const mergedHistory: unknown[] = [];
+  const mergedHistory: KiroHistoryItem[] = [];
   for (let i = 0; i < history.length; i++) {
-    const current = history[i];
+    const current = history[i]!;
     if (
       current.userInputMessage &&
       mergedHistory.length > 0 &&
-      mergedHistory[mergedHistory.length - 1].userInputMessage
+      mergedHistory[mergedHistory.length - 1]!.userInputMessage
     ) {
-      const prev = mergedHistory[mergedHistory.length - 1];
-      prev.userInputMessage.content += "\n\n" + current.userInputMessage.content;
+      const prev = mergedHistory[mergedHistory.length - 1]!;
+      prev.userInputMessage!.content += "\n\n" + current.userInputMessage.content;
     } else {
       mergedHistory.push(current);
     }
@@ -305,21 +362,23 @@ export function buildKiroPayload(
   stream: unknown,
   credentials: unknown,
 ) {
-  const messages = body.messages || [];
-  const tools = body.tools || [];
+  const req = body as KiroOpenAIBody; // trusted: registry passes OpenAI chat payloads
+  const messages = req.messages || [];
+  const tools = req.tools || [];
   const maxTokens = 32000;
-  const temperature = body.temperature;
-  const topP = body.top_p;
+  const temperature = req.temperature;
+  const topP = req.top_p;
 
   const { history, currentMessage } = convertMessages(messages, tools, model);
 
-  const profileArn = credentials?.providerSpecificData?.profileArn || "";
+  const creds = credentials as TranslatorCredentials; // trusted: registry passes credentials
+  const profileArn = creds?.providerSpecificData?.profileArn || "";
 
   let finalContent = currentMessage?.userInputMessage?.content || "";
   const timestamp = new Date().toISOString();
   finalContent = `[Context: Current time is ${timestamp}]\n\n${finalContent}`;
 
-  const payload: Record<string, unknown> = {
+  const payload: Record<string, unknown> & { inferenceConfig?: Record<string, unknown> } = {
     conversationState: {
       chatTriggerType: "MANUAL",
       conversationId: uuidv4(),

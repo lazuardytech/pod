@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Translator: OpenAI Responses API → OpenAI Chat Completions
  *
@@ -9,6 +8,36 @@
 import { FORMATS } from "../formats.ts";
 import { normalizeResponsesInput } from "../helpers/responsesApiHelper.ts";
 import { register } from "../registry.ts";
+
+type ResponsesContentPart = {
+  type?: unknown;
+  text?: unknown;
+  image_url?: { url?: unknown; detail?: unknown } | string;
+  file_id?: unknown;
+  detail?: unknown;
+};
+type ResponsesTool = {
+  function?: { name?: unknown; description?: unknown; parameters?: unknown; strict?: unknown };
+  name?: unknown;
+  description?: unknown;
+  parameters?: unknown;
+  strict?: unknown;
+};
+type ResponsesApiBody = {
+  [key: string]: unknown;
+  input?: unknown;
+  instructions?: unknown;
+  tools?: ResponsesTool[];
+};
+type ResponsesChatResult = {
+  [key: string]: unknown;
+  messages?: unknown[];
+  tools?: unknown[];
+  input?: unknown;
+  instructions?: unknown;
+  prompt_cache_key?: unknown;
+  store?: unknown;
+};
 
 // Responses API enforces max 64 chars on call_id (#393)
 const MAX_CALL_ID_LEN = 64;
@@ -24,22 +53,23 @@ export function openaiResponsesToOpenAIRequest(
   _stream: unknown,
   _credentials: unknown,
 ) {
-  if (!body.input) return body;
+  const req = body as ResponsesApiBody; // trusted: registry passes Responses API payloads
+  if (!req.input) return req;
 
-  const result = { ...body };
+  const result: ResponsesChatResult = { ...req };
   result.messages = [];
 
   // Convert instructions to system message
-  if (body.instructions) {
-    result.messages.push({ role: "system", content: body.instructions });
+  if (req.instructions) {
+    result.messages.push({ role: "system", content: req.instructions });
   }
 
   // Group items by conversation turn
-  let currentAssistantMsg: unknown = null;
+  let currentAssistantMsg: { role: string; content: null; tool_calls: unknown[] } | null = null;
   let pendingToolResults: unknown[] = [];
 
-  const inputItems = normalizeResponsesInput(body.input);
-  if (!inputItems) return body;
+  const inputItems = normalizeResponsesInput(req.input);
+  if (!inputItems) return req;
 
   for (const item of inputItems) {
     // Determine item type - Droid CLI sends role-based items without 'type' field
@@ -62,7 +92,7 @@ export function openaiResponsesToOpenAIRequest(
 
       // Convert content: input_text → text, output_text → text, input_image → image_url
       const content = Array.isArray(item.content)
-        ? item.content.map((c: unknown) => {
+        ? item.content.map((c: ResponsesContentPart) => {
             if (c.type === "input_text") return { type: "text", text: c.text };
             if (c.type === "output_text") return { type: "text", text: c.text };
             if (c.type === "input_image") {
@@ -130,9 +160,9 @@ export function openaiResponsesToOpenAIRequest(
   // explicit `name` field and cannot be represented as Chat Completions function declarations.
   // Filter them out to avoid sending nameless functionDeclarations to downstream providers
   // such as Gemini, which strictly validates function names.
-  if (body.tools && Array.isArray(body.tools)) {
-    result.tools = body.tools
-      .map((tool: unknown) => {
+  if (req.tools && Array.isArray(req.tools)) {
+    result.tools = req.tools
+      .map((tool: ResponsesTool) => {
         // Already in Chat Completions format: { type: "function", function: { name, ... } }
         if (tool.function) return tool;
         // Responses API function tool: { type: "function", name, description, parameters }
@@ -166,9 +196,41 @@ export function openaiResponsesToOpenAIRequest(
  */
 function normalizeToolParameters(params: unknown) {
   if (!params) return { type: "object", properties: {} };
-  if (params.type === "object" && !params.properties) return { ...params, properties: {} };
+  const p = params as { type?: unknown; properties?: unknown };
+  if (p.type === "object" && !p.properties) return { ...p, properties: {} };
   return params;
 }
+
+type OpenAIContentPart = {
+  type?: unknown;
+  text?: unknown;
+  content?: unknown;
+  image_url?: { url?: unknown; detail?: unknown } | string;
+};
+type OpenAIToolCall = { id?: unknown; function?: { name?: unknown; arguments?: unknown } };
+type OpenAIMessage = {
+  role?: unknown;
+  content?: unknown;
+  tool_calls?: OpenAIToolCall[];
+  tool_call_id?: unknown;
+};
+type OpenAITool = {
+  type?: unknown;
+  function?: { name?: unknown; description?: unknown; parameters?: unknown; strict?: unknown };
+};
+type ResponsesInputItem = { type?: unknown; role?: unknown; content?: unknown[] };
+type OpenAIChatBody = {
+  input?: unknown;
+  messages?: OpenAIMessage[];
+  tools?: OpenAITool[];
+  temperature?: unknown;
+  max_tokens?: unknown;
+  max_completion_tokens?: unknown;
+  top_p?: unknown;
+  reasoning?: unknown;
+  reasoning_effort?: unknown;
+  include?: unknown;
+};
 
 /**
  * Convert OpenAI Chat Completions to OpenAI Responses API format
@@ -179,10 +241,11 @@ export function openaiToOpenAIResponsesRequest(
   _stream: unknown,
   _credentials: unknown,
 ) {
+  const req = body as OpenAIChatBody; // trusted: registry passes OpenAI chat payloads
   // Body already in Responses API format (e.g. Cursor CLI calling /chat/completions with input[])
-  if (body.input) return { ...body, model, stream: true };
+  if (req.input) return { ...req, model, stream: true };
 
-  const result: Record<string, unknown> = {
+  const result: Record<string, unknown> & { input: unknown[] } = {
     model,
     input: [] as unknown[],
     stream: true,
@@ -191,7 +254,7 @@ export function openaiToOpenAIResponsesRequest(
 
   // Extract system message as instructions
   let hasSystemMessage = false;
-  const messages = body.messages || [];
+  const messages = req.messages || [];
 
   for (const msg of messages) {
     if (msg.role === "system") {
@@ -210,7 +273,7 @@ export function openaiToOpenAIResponsesRequest(
         typeof msg.content === "string"
           ? [{ type: contentType, text: msg.content }]
           : Array.isArray(msg.content)
-            ? msg.content.map((c: unknown) => {
+            ? msg.content.map((c: OpenAIContentPart) => {
                 if (c.type === "text") return { type: contentType, text: c.text };
                 // Convert Chat Completions image_url → Responses API input_image
                 // Responses API expects: { type: "input_image", image_url: "<url string>" }
@@ -220,7 +283,7 @@ export function openaiToOpenAIResponsesRequest(
                   return {
                     type: "input_image",
                     image_url: url,
-                    detail: c.image_url?.detail || "auto",
+                    detail: (c.image_url as { detail?: unknown })?.detail || "auto",
                   };
                 }
                 if (c.type === "input_image") return c;
@@ -263,7 +326,7 @@ export function openaiToOpenAIResponsesRequest(
         typeof msg.content === "string"
           ? msg.content
           : Array.isArray(msg.content)
-            ? msg.content.map((c: unknown) => c.text || JSON.stringify(c)).join("")
+            ? msg.content.map((c: OpenAIContentPart) => c.text || JSON.stringify(c)).join("")
             : JSON.stringify(msg.content);
       result.input.push({
         type: "function_call_output",
@@ -280,8 +343,8 @@ export function openaiToOpenAIResponsesRequest(
   if (result.input.length > 1) {
     const merged: unknown[] = [result.input[0]];
     for (let i = 1; i < result.input.length; i++) {
-      const prev = merged[merged.length - 1];
-      const curr = result.input[i];
+      const prev = merged[merged.length - 1] as ResponsesInputItem;
+      const curr = result.input[i] as ResponsesInputItem;
       if (prev.type === "message" && curr.type === "message" && prev.role === curr.role) {
         // Merge content arrays
         const prevContent = prev.content || [];
@@ -300,15 +363,15 @@ export function openaiToOpenAIResponsesRequest(
   }
 
   // Convert tools format
-  if (body.tools && Array.isArray(body.tools)) {
-    result.tools = body.tools.map((tool: unknown) => {
+  if (req.tools && Array.isArray(req.tools)) {
+    result.tools = req.tools.map((tool: OpenAITool) => {
       if (tool.type === "function") {
         return {
           type: "function",
-          name: tool.function.name,
-          description: String(tool.function.description || ""),
-          parameters: normalizeToolParameters(tool.function.parameters),
-          strict: tool.function.strict,
+          name: tool.function!.name,
+          description: String(tool.function!.description || ""),
+          parameters: normalizeToolParameters(tool.function!.parameters),
+          strict: tool.function!.strict,
         };
       }
       return tool;
@@ -316,18 +379,18 @@ export function openaiToOpenAIResponsesRequest(
   }
 
   // Pass through other relevant fields
-  if (body.temperature !== undefined) result.temperature = body.temperature;
-  if (body.max_tokens !== undefined) result.max_tokens = body.max_tokens;
-  if (body.max_completion_tokens !== undefined)
-    result.max_completion_tokens = body.max_completion_tokens;
-  if (body.top_p !== undefined) result.top_p = body.top_p;
+  if (req.temperature !== undefined) result.temperature = req.temperature;
+  if (req.max_tokens !== undefined) result.max_tokens = req.max_tokens;
+  if (req.max_completion_tokens !== undefined)
+    result.max_completion_tokens = req.max_completion_tokens;
+  if (req.top_p !== undefined) result.top_p = req.top_p;
 
   // Pass reasoning effort through (set by client or chatCore from model suffix)
-  if (body.reasoning !== undefined) result.reasoning = body.reasoning;
-  if (body.reasoning_effort !== undefined) result.reasoning_effort = body.reasoning_effort;
+  if (req.reasoning !== undefined) result.reasoning = req.reasoning;
+  if (req.reasoning_effort !== undefined) result.reasoning_effort = req.reasoning_effort;
 
   // Pass include through (e.g. reasoning.encrypted_content, custom fields)
-  if (body.include !== undefined) result.include = body.include;
+  if (req.include !== undefined) result.include = req.include;
 
   return result;
 }

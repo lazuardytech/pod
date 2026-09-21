@@ -1,6 +1,24 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
+
+type OllamaToolCall = {
+  id?: unknown;
+  index?: unknown;
+  function?: { name?: unknown; arguments?: unknown };
+};
+type OllamaContentBlock = {
+  type?: unknown;
+  text?: unknown;
+  image_url?: { url?: unknown } | string;
+};
+type OllamaOpenAIBody = {
+  messages?: unknown[];
+  temperature?: unknown;
+  max_tokens?: unknown;
+  top_p?: unknown;
+  tools?: unknown[];
+  tool_choice?: unknown;
+};
 
 /**
  * Convert OpenAI request to Ollama format
@@ -17,38 +35,39 @@ import { register } from "../registry.ts";
  * - tool role maps to tool (Ollama supports tool messages)
  */
 export function openaiToOllamaRequest(model: unknown, body: unknown, stream: unknown) {
-  const result: Record<string, unknown> = {
+  const req = body as OllamaOpenAIBody; // trusted: registry passes OpenAI chat payloads
+  const result: Record<string, unknown> & { options?: Record<string, unknown> } = {
     model: model,
-    messages: normalizeMessages(body.messages),
+    messages: normalizeMessages(req.messages),
     stream: stream,
   };
 
   // Temperature
-  if (body.temperature !== undefined) {
-    result.options = result.options || {};
-    result.options.temperature = body.temperature;
+  if (req.temperature !== undefined) {
+    result.options = result.options || ({} as Record<string, unknown>);
+    result.options.temperature = req.temperature;
   }
 
   // Max tokens (Ollama uses num_predict)
-  if (body.max_tokens !== undefined) {
-    result.options = result.options || {};
-    result.options.num_predict = body.max_tokens;
+  if (req.max_tokens !== undefined) {
+    result.options = result.options || ({} as Record<string, unknown>);
+    result.options.num_predict = req.max_tokens;
   }
 
   // Top_p
-  if (body.top_p !== undefined) {
-    result.options = result.options || {};
-    result.options.top_p = body.top_p;
+  if (req.top_p !== undefined) {
+    result.options = result.options || ({} as Record<string, unknown>);
+    result.options.top_p = req.top_p;
   }
 
   // Tools (Ollama supports tools in OpenAI format)
-  if (body.tools && Array.isArray(body.tools)) {
-    result.tools = body.tools;
+  if (req.tools && Array.isArray(req.tools)) {
+    result.tools = req.tools;
   }
 
   // Tool choice
-  if (body.tool_choice) {
-    result.tool_choice = body.tool_choice;
+  if (req.tool_choice) {
+    result.tool_choice = req.tool_choice;
   }
 
   return result;
@@ -100,7 +119,7 @@ function normalizeMessages(messages: unknown) {
       const content = normalizeContent(msg.content) || "";
 
       // Convert OpenAI tool_calls format to Ollama format
-      const ollamaToolCalls = msg.tool_calls.map((tc: unknown) => ({
+      const ollamaToolCalls = msg.tool_calls.map((tc: OllamaToolCall) => ({
         type: "function",
         function: {
           index: tc.index || 0,
@@ -155,8 +174,8 @@ function normalizeContent(content: unknown) {
   if (Array.isArray(content)) {
     // Extract text from content array
     const textParts = content
-      .filter((block: unknown) => block && block.type === "text" && block.text)
-      .map((block: unknown) => block.text);
+      .filter((block: OllamaContentBlock) => block && block.type === "text" && block.text)
+      .map((block: OllamaContentBlock) => block.text);
 
     return textParts.join("\n") || "";
   }
