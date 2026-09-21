@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.87] - 2026-09-21
+
+### Changed
+
+- **TypeScript debt cleared: all 34 `@ts-nocheck` files under `open-sse/` migrated to strict types** (~1,000 strict errors, type-only fixes — payload/state interfaces, entry casts, `unknown`+narrowing; zero runtime change). `scripts/open-sse-ts-nocheck-allowlist.txt` is now empty and the guard still rejects any new `@ts-nocheck`.
+- Version bump **0.0.86 → 0.0.87**.
+
+### Verified
+
+- `bun run check` (oxfmt + oxlint `--deny-warnings` + `tsc --noEmit`): 0 warnings, 0 errors. Thinking-block leak fix in `open-sse/translator/response/claude-to-openai.ts` audited intact; `<think>`/`<thinking>` literals byte-identical.
+
 ## [0.0.86] - 2026-09-03
 
 ### Added

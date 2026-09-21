@@ -2,6 +2,10 @@
 
 Status: completed — historical
 
+> **Update 2026-09-21**: the `@ts-nocheck` escape-hatch debt is fully cleared — all 34
+> open-sse files are strict-typed (v0.0.87), the nocheck allowlist is empty, and
+> `scripts/check-open-sse-ts-nocheck.ts` now rejects any regression.
+
 > **Update 2026-08-22**: generated `open-sse/**/*.js` shims are gone. Local imports use `.ts`/`.tsx` suffixes. The only committed JavaScript is `public/sw.js` (built from `src/sw/sw.ts`).
 
 > **Update 2026-08-06**: `open-sse/` and `tests/` have been migrated to TypeScript on `cursor/p1`. The freeze decision below is historical.
