@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { appendRequestLog, trackPendingRequest } from "@/lib/usageDb";
 import { CLAUDE_TOOL_SUFFIX } from "../config/appConstants.ts";
 import { FORMATS } from "../translator/formats.ts";
@@ -654,7 +653,13 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
         }
 
         if (hasValidUsage(state?.usage)) {
-          logUsage(state.provider || targetFormat, state.usage, model, connectionId, apiKey);
+          logUsage(
+            (state.provider as string | null) || targetFormat,
+            state.usage,
+            model,
+            connectionId,
+            apiKey,
+          );
         } else {
           appendRequestLog({
             model: model ?? undefined,

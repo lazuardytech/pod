@@ -44,8 +44,8 @@ type ProviderLogger = {
 type RefreshResult = Record<string, unknown> & {
   accessToken?: string;
   refreshToken?: string;
-  expiresIn?: number;
-  expiresAt?: number;
+  expiresIn?: string | number;
+  expiresAt?: string | number | Date;
   token?: string;
   error?: string;
   code?: string | null;

@@ -1,29 +1,103 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
+
+interface GeminiFunctionCall {
+  name: string;
+  args?: Record<string, unknown>;
+}
+
+interface GeminiInlineData {
+  data?: string;
+  mimeType?: string;
+  mime_type?: string;
+}
+
+interface GeminiPart {
+  text?: string;
+  thought?: boolean;
+  thoughtSignature?: unknown;
+  thought_signature?: unknown;
+  functionCall?: GeminiFunctionCall;
+  inlineData?: GeminiInlineData;
+  inline_data?: GeminiInlineData;
+}
+
+interface GeminiContent {
+  parts?: GeminiPart[];
+}
+
+interface GeminiCandidate {
+  content?: GeminiContent;
+  finishReason?: string;
+}
+
+interface GeminiUsageMetadata {
+  cachedContentTokenCount?: unknown;
+  promptTokenCount?: unknown;
+  thoughtsTokenCount?: unknown;
+  candidatesTokenCount?: unknown;
+  totalTokenCount?: unknown;
+}
+
+/** Gemini chunk, or an Antigravity wrapper carrying it under `response`. */
+interface GeminiResponseChunk {
+  response?: GeminiResponseChunk;
+  candidates?: GeminiCandidate[];
+  responseId?: string;
+  modelVersion?: string;
+  usageMetadata?: GeminiUsageMetadata;
+}
+
+interface OpenAIToolCallChunk {
+  id: string;
+  index: number;
+  type: string;
+  function: { name: string; arguments: string };
+}
+
+interface OpenAIUsageSummary {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  prompt_tokens_details?: { cached_tokens: number };
+  completion_tokens_details?: { reasoning_tokens: number };
+}
+
+interface GeminiTranslatorState {
+  messageId: string;
+  model: string;
+  functionIndex: number;
+  toolCalls: Map<number, OpenAIToolCallChunk>;
+  toolNameMap?: Map<string, string>;
+  usage?: OpenAIUsageSummary;
+  finishReason?: string;
+}
 
 // Convert Gemini response chunk to OpenAI format
 export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
   if (!chunk) return null;
 
+  const c = chunk as GeminiResponseChunk;
+  const s = state as GeminiTranslatorState;
+
   // Handle Antigravity wrapper
-  const response = chunk.response || chunk;
+  const response = c.response || c;
   if (!response || !response.candidates?.[0]) return null;
 
   const results = [];
-  const candidate = response.candidates[0];
+  const candidate = response.candidates[0] as GeminiCandidate;
   const content = candidate.content;
 
   // Initialize state
-  if (!state.messageId) {
-    state.messageId = response.responseId || `msg_${Date.now()}`;
-    state.model = response.modelVersion || "gemini";
-    state.functionIndex = 0;
+  if (!s.messageId) {
+    s.messageId = response.responseId || `msg_${Date.now()}`;
+    s.model = response.modelVersion || "gemini";
+    s.functionIndex = 0;
     results.push({
-      id: `chatcmpl-${state.messageId}`,
+      id: `chatcmpl-${s.messageId}`,
       object: "chat.completion.chunk",
       created: Math.floor(Date.now() / 1000),
-      model: state.model,
+      model: s.model,
       choices: [
         {
           index: 0,
@@ -47,10 +121,10 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
 
         if (hasTextContent) {
           results.push({
-            id: `chatcmpl-${state.messageId}`,
+            id: `chatcmpl-${s.messageId}`,
             object: "chat.completion.chunk",
             created: Math.floor(Date.now() / 1000),
-            model: state.model,
+            model: s.model,
             choices: [
               {
                 index: 0,
@@ -62,11 +136,11 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
         }
 
         if (hasFunctionCall) {
-          const rawName = part.functionCall.name;
+          const rawName = part.functionCall!.name;
           // Restore original tool name from mapping (AG cloaking)
-          const fcName = state.toolNameMap?.get(rawName) || rawName;
-          const fcArgs = part.functionCall.args || {};
-          const toolCallIndex = state.functionIndex++;
+          const fcName = s.toolNameMap?.get(rawName) || rawName;
+          const fcArgs = part.functionCall!.args || {};
+          const toolCallIndex = s.functionIndex++;
 
           const toolCall = {
             id: `${fcName}-${Date.now()}-${toolCallIndex}`,
@@ -78,13 +152,13 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
             },
           };
 
-          state.toolCalls.set(toolCallIndex, toolCall);
+          s.toolCalls.set(toolCallIndex, toolCall);
 
           results.push({
-            id: `chatcmpl-${state.messageId}`,
+            id: `chatcmpl-${s.messageId}`,
             object: "chat.completion.chunk",
             created: Math.floor(Date.now() / 1000),
-            model: state.model,
+            model: s.model,
             choices: [
               {
                 index: 0,
@@ -100,10 +174,10 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
       // Text content (non-thinking)
       if (part.text !== undefined && part.text !== "") {
         results.push({
-          id: `chatcmpl-${state.messageId}`,
+          id: `chatcmpl-${s.messageId}`,
           object: "chat.completion.chunk",
           created: Math.floor(Date.now() / 1000),
-          model: state.model,
+          model: s.model,
           choices: [
             {
               index: 0,
@@ -118,9 +192,9 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
       if (part.functionCall) {
         const rawName = part.functionCall.name;
         // Restore original tool name from mapping (AG cloaking)
-        const fcName = state.toolNameMap?.get(rawName) || rawName;
+        const fcName = s.toolNameMap?.get(rawName) || rawName;
         const fcArgs = part.functionCall.args || {};
-        const toolCallIndex = state.functionIndex++;
+        const toolCallIndex = s.functionIndex++;
 
         const toolCall = {
           id: `${fcName}-${Date.now()}-${toolCallIndex}`,
@@ -132,13 +206,13 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
           },
         };
 
-        state.toolCalls.set(toolCallIndex, toolCall);
+        s.toolCalls.set(toolCallIndex, toolCall);
 
         results.push({
-          id: `chatcmpl-${state.messageId}`,
+          id: `chatcmpl-${s.messageId}`,
           object: "chat.completion.chunk",
           created: Math.floor(Date.now() / 1000),
-          model: state.model,
+          model: s.model,
           choices: [
             {
               index: 0,
@@ -154,10 +228,10 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
       if (inlineData?.data) {
         const mimeType = inlineData.mimeType || inlineData.mime_type || "image/png";
         results.push({
-          id: `chatcmpl-${state.messageId}`,
+          id: `chatcmpl-${s.messageId}`,
           object: "chat.completion.chunk",
           created: Math.floor(Date.now() / 1000),
-          model: state.model,
+          model: s.model,
           choices: [
             {
               index: 0,
@@ -178,7 +252,7 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
   }
 
   // Usage metadata - extract before finish reason so we can include it
-  const usageMeta = response.usageMetadata || chunk.usageMetadata;
+  const usageMeta = response.usageMetadata || c.usageMetadata;
   if (usageMeta && typeof usageMeta === "object") {
     const cachedTokens =
       typeof usageMeta.cachedContentTokenCount === "number" ? usageMeta.cachedContentTokenCount : 0;
@@ -203,7 +277,7 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
     // completion_tokens = candidatesTokenCount + thoughtsTokenCount (match Go code)
     const completionTokens = candidatesTokens + thoughtsTokens;
 
-    state.usage = {
+    s.usage = {
       prompt_tokens: promptTokens,
       completion_tokens: completionTokens,
       total_tokens: totalTokens,
@@ -211,14 +285,14 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
 
     // Add prompt_tokens_details if cached tokens exist
     if (cachedTokens > 0) {
-      state.usage.prompt_tokens_details = {
+      s.usage.prompt_tokens_details = {
         cached_tokens: cachedTokens,
       };
     }
 
     // Add completion_tokens_details if reasoning tokens exist
     if (thoughtsTokens > 0) {
-      state.usage.completion_tokens_details = {
+      s.usage.completion_tokens_details = {
         reasoning_tokens: thoughtsTokens,
       };
     }
@@ -227,15 +301,15 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
   // Finish reason - include usage in final chunk
   if (candidate.finishReason) {
     let finishReason = candidate.finishReason.toLowerCase();
-    if (finishReason === "stop" && state.toolCalls.size > 0) {
+    if (finishReason === "stop" && s.toolCalls.size > 0) {
       finishReason = "tool_calls";
     }
 
     const finalChunk: Record<string, unknown> = {
-      id: `chatcmpl-${state.messageId}`,
+      id: `chatcmpl-${s.messageId}`,
       object: "chat.completion.chunk",
       created: Math.floor(Date.now() / 1000),
-      model: state.model,
+      model: s.model,
       choices: [
         {
           index: 0,
@@ -246,12 +320,12 @@ export function geminiToOpenAIResponse(chunk: unknown, state: unknown) {
     };
 
     // Include usage in final chunk for downstream translators
-    if (state.usage) {
-      finalChunk.usage = state.usage;
+    if (s.usage) {
+      finalChunk.usage = s.usage;
     }
 
     results.push(finalChunk);
-    state.finishReason = finishReason;
+    s.finishReason = finishReason;
   }
 
   return results.length > 0 ? results : null;

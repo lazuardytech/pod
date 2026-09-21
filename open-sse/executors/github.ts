@@ -1,4 +1,3 @@
-// @ts-nocheck
 import crypto from "node:crypto";
 import { GITHUB_COPILOT, OAUTH_ENDPOINTS } from "../config/appConstants.ts";
 import { PROVIDERS } from "../config/providers.ts";

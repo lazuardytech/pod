@@ -57,7 +57,7 @@ export type QoderCatalogCacheEntry = {
 
 export type ResolveQoderModelsOptions = {
   forceRefresh?: boolean;
-  log?: ExecutorLogger;
+  log?: ExecutorLogger | null;
   proxyOptions?: ExecutorProxyOptions;
   signal?: AbortSignal | null;
 };

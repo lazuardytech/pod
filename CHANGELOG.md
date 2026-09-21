@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.87] - 2026-09-21
+
+### Changed
+
+- **TypeScript debt cleared: all 34 `@ts-nocheck` files under `open-sse/` migrated to strict types** (~1,000 strict errors, type-only fixes — payload/state interfaces, entry casts, `unknown`+narrowing; zero runtime change). `scripts/open-sse-ts-nocheck-allowlist.txt` is now empty and the guard still rejects any new `@ts-nocheck`.
+- Version bump **0.0.86 → 0.0.87**.
+
+### Verified
+
+- `bun run check` (oxfmt + oxlint `--deny-warnings` + `tsc --noEmit`): 0 warnings, 0 errors. Thinking-block leak fix in `open-sse/translator/response/claude-to-openai.ts` audited intact; `<think>`/`<thinking>` literals byte-identical.
+
 ## [0.0.86] - 2026-09-03
 
 ### Added
@@ -8,6 +19,7 @@
 
 ### Changed
 
+- **Vitest 4.1.11 → 5.0.0** (`vitest`, `@vitest/coverage-v8`). Requires Node ≥ 22.12 for tests (Pod floor ≥ 22.18). Removed dead nested `tests/package.json` / `tests/bun.lock`. `.gitignore` adds `.vitest/` (v5 report dir). Default suite: 1523 tests, 0 skipped.
 - Version bump **0.0.85 → 0.0.86**.
 
 ### Fixed

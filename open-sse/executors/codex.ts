@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createHash } from "node:crypto";
 import { getConsistentMachineId } from "../../src/shared/utils/machineId";
 import { CODEX_DEFAULT_INSTRUCTIONS } from "../config/codexInstructions.ts";
@@ -602,9 +601,11 @@ export class CodexExecutor extends BaseExecutor {
     let requestModel = getModelUpstreamId(
       "cx",
       typeof body.model === "string" ? body.model : model,
-    );
+    ) as string;
     requestModel =
-      typeof requestModel === "string" ? stripThinkingSuffix(requestModel) : requestModel;
+      typeof requestModel === "string"
+        ? (stripThinkingSuffix(requestModel) as string)
+        : requestModel;
     body.model = requestModel;
 
     // Extract thinking level from hyphen suffix after paren strip

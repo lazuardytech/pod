@@ -81,10 +81,10 @@ type ChatCompletionResponse = {
 };
 
 type ForcedSSEToJsonParams = {
-  apiKey?: string;
+  apiKey?: string | null;
   appendLog: (entry: { detailsId: string; status: string; tokens: UsageInfo }) => void;
   body: Record<string, unknown>;
-  clientRawRequest?: { endpoint?: string };
+  clientRawRequest?: { endpoint?: string } | null;
   connectionId?: string;
   finalBody?: unknown;
   model: string;

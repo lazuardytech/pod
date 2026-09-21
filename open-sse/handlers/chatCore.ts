@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { appendRequestLog, saveRequestDetail, trackPendingRequest } from "@/lib/usageDb";
 import {
   getModelStrip,
@@ -11,6 +10,7 @@ import {
   isTokenSaverEnabled,
 } from "../config/runtimeConfig.ts";
 import { getExecutor } from "../executors/index.ts";
+import type { ExecutorCredentials } from "../executors/base.ts";
 import { detectFormat, getTargetFormat } from "../services/provider.ts";
 import { refreshWithRetry } from "../services/tokenRefresh.ts";
 import { applyThinking, stripThinkingSuffix } from "../translator/concerns/thinkingUnified.ts";
@@ -51,7 +51,7 @@ type MemoryRequestBody = JsonRecord & {
   messages?: { content?: string | ContentPart[]; role?: string }[];
 };
 type ProviderThinking = { effortMode?: string; mode?: string };
-type StreamContent = { content?: string; thinking?: string };
+type StreamContent = { content?: string; thinking?: string | null };
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -496,7 +496,10 @@ export async function handleChatCore({
 
   // Native passthrough: CLI tool and provider are the same ecosystem
   // Skip all translation/normalization — only model and Bearer are swapped
-  const clientTool = detectClientTool(clientRawRequest?.headers || {}, body);
+  const clientTool = detectClientTool(
+    (clientRawRequest?.headers || {}) as Record<string, string | undefined>,
+    body,
+  );
   const passthrough = isNativePassthrough(clientTool, provider);
 
   let translatedBody: JsonRecord;
@@ -741,7 +744,7 @@ export async function handleChatCore({
         model,
         body: translatedBody,
         stream,
-        credentials,
+        credentials: credentials as ExecutorCredentials,
         signal,
         log,
         proxyOptions,
@@ -851,7 +854,7 @@ export async function handleChatCore({
   ) {
     try {
       const newCredentials = await refreshWithRetry(
-        () => executor.refreshCredentials(credentials, log),
+        () => executor.refreshCredentials(credentials as ExecutorCredentials, log),
         3,
         log,
       );

@@ -85,7 +85,7 @@ both on one origin so the SW cache-name collision reproduces audit §2).
 
 ```bash
 # Unit — after seam §1–§4 landed
-bun x vitest run tests/unit/swShellCache.test.ts --reporter=verbose
+bun run test:run -- tests/unit/swShellCache.test.ts --reporter=verbose
 
 # E2E — after §5 harness wired
 bun x playwright test tests/e2e/swDeployRegression.e2e.spec.ts

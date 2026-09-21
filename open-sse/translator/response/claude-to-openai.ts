@@ -1,9 +1,88 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 
+// Local shapes for the Claude stream events this translator consumes
+type ClaudeMessageInfo = { id?: string; model?: string };
+
+type ClaudeContentBlock =
+  | { type: "server_tool_use" }
+  | { type: "text" }
+  | { type: "thinking" }
+  | { type: "tool_use"; id: string; name: string };
+
+type ClaudeDeltaInfo = {
+  type?: string;
+  text?: string;
+  thinking?: string;
+  partial_json?: string;
+  stop_reason?: string;
+};
+
+type ClaudeUsageInfo = {
+  input_tokens?: unknown;
+  output_tokens?: unknown;
+  cache_read_input_tokens?: unknown;
+  cache_creation_input_tokens?: unknown;
+};
+
+type ClaudeStreamEvent =
+  | { type: "message_start"; message?: ClaudeMessageInfo }
+  | { type: "content_block_start"; index: number; content_block?: ClaudeContentBlock }
+  | { type: "content_block_delta"; index: number; delta?: ClaudeDeltaInfo }
+  | { type: "content_block_stop"; index: number }
+  | { type: "message_delta"; delta?: ClaudeDeltaInfo; usage?: ClaudeUsageInfo }
+  | { type: "message_stop" };
+
+type ClaudeToolCallInfo = {
+  index: number;
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
+// Usage tracked on state; cache fields are only added when present upstream
+type ClaudeUsageState = {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
+};
+
+// State fields this translator reads/writes (created per stream by initState)
+type ClaudeToOpenAIState = {
+  messageId: string | null;
+  model: string | null | undefined;
+  toolCallIndex: number;
+  serverToolBlockIndex: number | undefined;
+  textBlockStarted: boolean;
+  thinkingBlockStarted: boolean;
+  inThinkingBlock: boolean;
+  currentBlockIndex: number | null;
+  toolNameMap?: Map<string, string>;
+  toolCalls: Map<number, ClaudeToolCallInfo>;
+  usage: ClaudeUsageState | null;
+  finishReason: string | null;
+  finishReasonSent: boolean;
+};
+
+type OpenAIUsageDetails = { cached_tokens?: number; cache_creation_tokens?: number };
+
+type OpenAIUsageChunk = {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  prompt_tokens_details?: OpenAIUsageDetails;
+};
+
 // Create OpenAI chunk helper
-function createChunk(state: unknown, delta: unknown, finishReason: unknown = null) {
+function createChunk(
+  state: ClaudeToOpenAIState,
+  delta: Record<string, unknown>,
+  finishReason: string | null = null,
+) {
   return {
     id: `chatcmpl-${state.messageId}`,
     object: "chat.completion.chunk",
@@ -20,10 +99,12 @@ function createChunk(state: unknown, delta: unknown, finishReason: unknown = nul
 }
 
 // Convert Claude stream chunk to OpenAI format
-export function claudeToOpenAIResponse(chunk: unknown, state: unknown) {
+export function claudeToOpenAIResponse(chunkInput: unknown, stateInput: unknown) {
+  const chunk = chunkInput as ClaudeStreamEvent | null | undefined;
+  const state = stateInput as ClaudeToOpenAIState;
   if (!chunk) return null;
 
-  const results = [];
+  const results: unknown[] = [];
   const event = chunk.type;
 
   switch (event) {
@@ -52,7 +133,7 @@ export function claudeToOpenAIResponse(chunk: unknown, state: unknown) {
         const toolCallIndex = state.toolCallIndex++;
         // Restore original tool name from mapping (Claude OAuth)
         const toolName = state.toolNameMap?.get(block.name) || block.name;
-        const toolCall = {
+        const toolCall: ClaudeToolCallInfo = {
           index: toolCallIndex,
           id: block.id,
           type: "function",
@@ -130,13 +211,14 @@ export function claudeToOpenAIResponse(chunk: unknown, state: unknown) {
         // prompt_tokens = input_tokens + cache_read + cache_creation (all prompt-side tokens)
         const promptTokens = inputTokens + cacheReadTokens + cacheCreationTokens;
 
-        state.usage = {
+        const usageInfo: ClaudeUsageState = {
           prompt_tokens: promptTokens,
           completion_tokens: outputTokens,
           total_tokens: promptTokens + outputTokens,
           input_tokens: inputTokens,
           output_tokens: outputTokens,
         };
+        state.usage = usageInfo;
 
         if (cacheReadTokens > 0) state.usage.cache_read_input_tokens = cacheReadTokens;
         if (cacheCreationTokens > 0) state.usage.cache_creation_input_tokens = cacheCreationTokens;
@@ -153,20 +235,21 @@ export function claudeToOpenAIResponse(chunk: unknown, state: unknown) {
         };
 
         if (state.usage) {
-          finalChunk.usage = {
+          const finalUsage: OpenAIUsageChunk = {
             prompt_tokens: state.usage.prompt_tokens,
             completion_tokens: state.usage.completion_tokens,
             total_tokens: state.usage.total_tokens,
           };
-
-          const cacheRead = state.usage.cache_read_input_tokens;
-          const cacheCreate = state.usage.cache_creation_input_tokens;
+          // Cache fields may be unset; `undefined > 0` is false at runtime
+          const cacheRead = state.usage.cache_read_input_tokens as number;
+          const cacheCreate = state.usage.cache_creation_input_tokens as number;
           if (cacheRead > 0 || cacheCreate > 0) {
-            finalChunk.usage.prompt_tokens_details = {};
-            if (cacheRead > 0) finalChunk.usage.prompt_tokens_details.cached_tokens = cacheRead;
-            if (cacheCreate > 0)
-              finalChunk.usage.prompt_tokens_details.cache_creation_tokens = cacheCreate;
+            const promptTokensDetails: OpenAIUsageDetails = {};
+            if (cacheRead > 0) promptTokensDetails.cached_tokens = cacheRead;
+            if (cacheCreate > 0) promptTokensDetails.cache_creation_tokens = cacheCreate;
+            finalUsage.prompt_tokens_details = promptTokensDetails;
           }
+          finalChunk.usage = finalUsage;
         }
 
         results.push(finalChunk);

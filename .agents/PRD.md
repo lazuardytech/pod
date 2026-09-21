@@ -1,6 +1,6 @@
 # Pod — Product Requirements Document
 
-**Version:** v0.0.86 | **Status:** Active development | **Last reviewed:** 2026-08-25
+**Version:** v0.0.86 | **Status:** Active development | **Last reviewed:** 2026-09-04
 
 ## Overview
 
@@ -147,5 +147,5 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 | Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES) |
 | Providers supported | 84 built-in (`AI_PROVIDERS`) + custom nodes                             |
 | Executors           | 17 specialized + `DefaultExecutor`; 20 files in `open-sse/executors/`   |
-| API route groups    | 26                                                                      |
+| API route groups    | 27 (28 entries under `src/app/api/` incl. `_types.ts`)                  |
 | Dashboard pages     | 15 in `(dashboard)` (incl. `/basic-chat`, `/settings/pricing`)          |

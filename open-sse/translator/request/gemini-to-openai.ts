@@ -1,21 +1,55 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { adjustMaxTokens } from "../helpers/maxTokensHelper.ts";
 import { register } from "../registry.ts";
 
+type GeminiTextPart = { type?: unknown; text?: unknown };
+type GeminiPart = {
+  text?: unknown;
+  inlineData?: { mimeType?: unknown; data?: unknown };
+  functionCall?: { name?: unknown; args?: unknown };
+  functionResponse?: {
+    id?: unknown;
+    name?: unknown;
+    response?: { result?: unknown };
+  };
+};
+type GeminiContent = {
+  role?: unknown;
+  parts?: GeminiPart[];
+};
+type GeminiSystemInstruction = string | { parts?: GeminiPart[] };
+type GeminiTool = {
+  functionDeclarations?: {
+    name?: unknown;
+    description?: unknown;
+    parameters?: unknown;
+  }[];
+};
+type GeminiRequestBody = {
+  generationConfig?: {
+    maxOutputTokens?: unknown;
+    temperature?: unknown;
+    topP?: unknown;
+  };
+  systemInstruction?: GeminiSystemInstruction;
+  contents?: GeminiContent[];
+  tools?: GeminiTool[];
+};
+
 // Convert Gemini request to OpenAI format
 export function geminiToOpenAIRequest(model: unknown, body: unknown, stream: unknown) {
-  const result: Record<string, unknown> = {
+  const req = body as GeminiRequestBody; // trusted: registry passes Gemini payloads
+  const result: Record<string, unknown> & { messages: unknown[]; tools?: unknown[] } = {
     model: model,
     messages: [] as unknown[],
     stream: stream,
   };
 
   // Generation config
-  if (body.generationConfig) {
-    const config = body.generationConfig;
+  if (req.generationConfig) {
+    const config = req.generationConfig;
     if (config.maxOutputTokens) {
-      const tempBody = { max_tokens: config.maxOutputTokens, tools: body.tools };
+      const tempBody = { max_tokens: config.maxOutputTokens, tools: req.tools };
       result.max_tokens = adjustMaxTokens(tempBody);
     }
     if (config.temperature !== undefined) {
@@ -27,8 +61,8 @@ export function geminiToOpenAIRequest(model: unknown, body: unknown, stream: unk
   }
 
   // System instruction
-  if (body.systemInstruction) {
-    const systemText = extractGeminiText(body.systemInstruction);
+  if (req.systemInstruction) {
+    const systemText = extractGeminiText(req.systemInstruction);
     if (systemText) {
       result.messages.push({
         role: "system",
@@ -38,8 +72,8 @@ export function geminiToOpenAIRequest(model: unknown, body: unknown, stream: unk
   }
 
   // Convert contents to messages
-  if (body.contents && Array.isArray(body.contents)) {
-    for (const content of body.contents) {
+  if (req.contents && Array.isArray(req.contents)) {
+    for (const content of req.contents) {
       const converted = convertGeminiContent(content);
       if (converted) {
         result.messages.push(converted);
@@ -48,9 +82,9 @@ export function geminiToOpenAIRequest(model: unknown, body: unknown, stream: unk
   }
 
   // Tools
-  if (body.tools && Array.isArray(body.tools)) {
+  if (req.tools && Array.isArray(req.tools)) {
     result.tools = [];
-    for (const tool of body.tools) {
+    for (const tool of req.tools) {
       if (tool.functionDeclarations) {
         for (const func of tool.functionDeclarations) {
           result.tools.push({
@@ -70,7 +104,7 @@ export function geminiToOpenAIRequest(model: unknown, body: unknown, stream: unk
 }
 
 // Convert Gemini content to OpenAI message
-function convertGeminiContent(content: unknown) {
+function convertGeminiContent(content: GeminiContent) {
   const role = content.role === "user" ? "user" : "assistant";
 
   if (!content.parts || !Array.isArray(content.parts)) {
@@ -119,7 +153,7 @@ function convertGeminiContent(content: unknown) {
   if (toolCalls.length > 0) {
     const result: Record<string, unknown> = { role: "assistant" };
     if (parts.length > 0) {
-      result.content = parts.length === 1 ? (parts[0] as unknown).text : parts;
+      result.content = parts.length === 1 ? (parts[0] as GeminiTextPart).text : parts;
     }
     result.tool_calls = toolCalls;
     return result;
@@ -129,8 +163,8 @@ function convertGeminiContent(content: unknown) {
     return {
       role,
       content:
-        parts.length === 1 && (parts[0] as unknown).type === "text"
-          ? (parts[0] as unknown).text
+        parts.length === 1 && (parts[0] as GeminiTextPart).type === "text"
+          ? (parts[0] as GeminiTextPart).text
           : parts,
     };
   }
@@ -139,10 +173,10 @@ function convertGeminiContent(content: unknown) {
 }
 
 // Extract text from Gemini content
-function extractGeminiText(content: unknown) {
+function extractGeminiText(content: GeminiSystemInstruction) {
   if (typeof content === "string") return content;
   if (content.parts && Array.isArray(content.parts)) {
-    return content.parts.map((p: unknown) => p.text || "").join("");
+    return content.parts.map((p: GeminiPart) => p.text || "").join("");
   }
   return "";
 }

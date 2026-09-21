@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Kiro to OpenAI Response Translator
  * Converts Kiro/AWS CodeWhisperer streaming events to OpenAI SSE format
@@ -7,22 +6,70 @@
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 
+// Local shapes for the Kiro stream inputs this translator consumes
+type KiroOpenAILike = {
+  object?: unknown;
+  choices?: unknown;
+};
+
+type KiroToolUseInfo = {
+  toolUseId?: string;
+  name?: string;
+  input?: unknown;
+};
+
+type KiroUsageInfo = {
+  inputTokens?: number;
+  outputTokens?: number;
+};
+
+type KiroEventData = {
+  _eventType?: string;
+  event?: string;
+  content?: string;
+  text?: string;
+  assistantResponseEvent?: { content?: string };
+  reasoningContentEvent?: { content?: string };
+  toolUseEvent?: KiroToolUseInfo;
+  messageStopEvent?: unknown;
+  usageEvent?: KiroUsageInfo;
+};
+
+type KiroUsageState = {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+};
+
+// State fields this translator reads/writes (created per stream by initState)
+type KiroToOpenAIState = {
+  responseId?: string;
+  created?: number;
+  chunkIndex: number;
+  model: string | null;
+  finishReason: string | null;
+  usage: KiroUsageState | null;
+};
+
 /**
  * Parse Kiro SSE event and convert to OpenAI format
  * Kiro events: assistantResponseEvent, codeEvent, supplementaryWebLinksEvent, etc.
  */
-export function convertKiroToOpenAI(chunk: unknown, state: unknown) {
+export function convertKiroToOpenAI(chunkInput: unknown, stateInput: unknown) {
+  const chunk = chunkInput as KiroOpenAILike | string | null | undefined;
+  const state = stateInput as KiroToOpenAIState;
   if (!chunk) return null;
 
   // If chunk is already in OpenAI format (from executor transform), return as-is
-  if (chunk.object === "chat.completion.chunk" && chunk.choices) {
+  const openaiLike = chunk as KiroOpenAILike;
+  if (openaiLike.object === "chat.completion.chunk" && openaiLike.choices) {
     return chunk;
   }
 
   // Handle string chunk (raw SSE data)
-  let data = chunk;
+  let data = chunk as KiroEventData;
   if (typeof chunk === "string") {
-    // Parse SSE format: event:xxx\ndata:xxx
+    // Parse SSE format: event:xxx
     const lines = chunk.split("\n");
     let eventType = "";
     let eventData = "";
@@ -117,7 +164,7 @@ export function convertKiroToOpenAI(chunk: unknown, state: unknown) {
 
   // Handle tool use events
   if (eventType === "toolUseEvent" || data.toolUseEvent) {
-    const toolUse = data.toolUseEvent || data;
+    const toolUse = (data.toolUseEvent || data) as KiroToolUseInfo;
     const toolCallId = toolUse.toolUseId || `call_${Date.now()}`;
     const toolName = toolUse.name || "";
     const toolInput = toolUse.input || {};
@@ -181,7 +228,7 @@ export function convertKiroToOpenAI(chunk: unknown, state: unknown) {
 
   // Handle usage events
   if (eventType === "usageEvent" || data.usageEvent) {
-    const usage = data.usageEvent || data;
+    const usage = (data.usageEvent || data) as KiroUsageInfo;
     if (usage && typeof usage === "object") {
       state.usage = {
         prompt_tokens: usage.inputTokens || 0,

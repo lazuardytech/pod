@@ -12,6 +12,9 @@ mastracode
 .rwx
 .vscode
 
+# hoplite conversation uploads (private user data)
+.hoplite/attachments/
+
 # dependencies
 /node_modules
 /.pnp
@@ -24,6 +27,7 @@ mastracode
 
 # testing
 /coverage
+.vitest/
 
 # next.js
 /.next/

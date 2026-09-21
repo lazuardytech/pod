@@ -27,7 +27,7 @@ All three must pass before pushing. No exceptions.
 SW shell-cache regression (when touching `public/sw.js` / registrar):
 
 ```bash
-bun x vitest run tests/unit/swShellCache.test.ts
+bun run test:run -- tests/unit/swShellCache.test.ts
 ```
 
 ## Workflow Rules
@@ -40,10 +40,10 @@ bun x vitest run tests/unit/swShellCache.test.ts
 ## Testing
 
 - Tests live in `tests/` (unit + smoke). Live Google/localhost harnesses are `tests/live/` (`bun run test:live`); they are excluded from `bun run test:run`.
-- Vitest with verbose output. Default `test:run` must report 0 skipped.
-- Coverage via `@vitest/coverage-v8`
+- **Vitest 5.0.0** with verbose output. Default `test:run` must report 0 skipped.
+- Coverage via `@vitest/coverage-v8` 5.0.0 (v8 provider; requires Node, not Bun)
 - Run specific tests: `bun run test:run -- <pattern>`
-- `test:run` needs Node ≥ 22.18 on PATH (not bun). See AGENTS.md Cursor Cloud notes.
+- `test:run` needs Node ≥ 22.18 on PATH (Vitest 5 requires ≥ 22.12; not bun). See AGENTS.md Cursor Cloud notes.
 
 ## Git
 

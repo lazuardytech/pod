@@ -1,6 +1,6 @@
 # Pod Design
 
-Last reviewed: 2026-08-25 · Pod v0.0.86
+Last reviewed: 2026-09-04 · Pod v0.0.86
 
 Pod uses a compact, dark-only control-panel UI inspired by Linear — technical, dense, calm, and high-signal.
 

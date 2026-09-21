@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * OpenAI to CommandCode request translator
  *
@@ -14,6 +13,40 @@
 import { randomUUID } from "node:crypto";
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
+
+type CommandCodeToolFunction = {
+  name?: unknown;
+  description?: unknown;
+  arguments?: unknown;
+  parameters?: unknown;
+};
+type CommandCodeToolCall = {
+  id?: unknown;
+  function?: CommandCodeToolFunction;
+};
+type CommandCodeTool = {
+  type?: unknown;
+  function?: CommandCodeToolFunction;
+  name?: unknown;
+  description?: unknown;
+  input_schema?: unknown;
+  parameters?: unknown;
+};
+type CommandCodeMessage = {
+  role?: unknown;
+  content?: unknown;
+  tool_call_id?: unknown;
+  name?: unknown;
+  tool_calls?: CommandCodeToolCall[];
+};
+type CommandCodeOpenAIBody = {
+  messages?: CommandCodeMessage[];
+  max_tokens?: unknown;
+  max_output_tokens?: unknown;
+  temperature?: unknown;
+  tools?: CommandCodeTool[];
+  top_p?: unknown;
+};
 
 function flattenText(content: unknown) {
   if (content === null || content === undefined) return "";
@@ -62,7 +95,7 @@ function safeParseJson(s: unknown) {
   }
 }
 
-function convertMessages(messages: unknown = []) {
+function convertMessages(messages: CommandCodeMessage[] = []) {
   const out: unknown[] = [];
   const systemTexts: unknown[] = [];
 
@@ -98,7 +131,7 @@ function convertMessages(messages: unknown = []) {
       if (text) blocks.push({ type: "text", text });
       if (Array.isArray(m.tool_calls)) {
         for (const tc of m.tool_calls) {
-          const fn = tc.function || {};
+          const fn = (tc.function || {}) as CommandCodeToolFunction;
           blocks.push({
             type: "tool-call",
             toolCallId: tc.id || "",
@@ -120,7 +153,7 @@ function convertMessages(messages: unknown = []) {
   return { messages: out, system: systemTexts.join("\n\n") };
 }
 
-function convertTools(tools: unknown) {
+function convertTools(tools: CommandCodeTool[] | undefined) {
   if (!Array.isArray(tools) || tools.length === 0) return undefined;
   const result: unknown[] = [];
   for (const t of tools) {
@@ -147,20 +180,21 @@ export function openaiToCommandCode(
   body: unknown,
   stream: unknown /* , credentials */,
 ) {
-  const { messages, system } = convertMessages(body.messages);
+  const req = body as CommandCodeOpenAIBody; // trusted: registry passes OpenAI chat payloads
+  const { messages, system } = convertMessages(req.messages);
   const params: Record<string, unknown> = {
     model,
     messages,
     stream: stream !== false,
-    max_tokens: body.max_tokens ?? body.max_output_tokens ?? 64000,
-    temperature: body.temperature ?? 0.3,
+    max_tokens: req.max_tokens ?? req.max_output_tokens ?? 64000,
+    temperature: req.temperature ?? 0.3,
   };
 
   if (system) params.system = system;
 
-  const tools = convertTools(body.tools);
+  const tools = convertTools(req.tools);
   if (tools) params.tools = tools;
-  if (body.top_p !== null && body.top_p !== undefined) params.top_p = body.top_p;
+  if (req.top_p !== null && req.top_p !== undefined) params.top_p = req.top_p;
 
   const today = new Date().toISOString().slice(0, 10);
 

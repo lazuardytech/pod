@@ -1,13 +1,47 @@
-// @ts-nocheck
 import { FORMATS } from "../formats.ts";
 import { adjustMaxTokens } from "../helpers/maxTokensHelper.ts";
 import { register } from "../registry.ts";
 
+type AntigravityPart = {
+  thought?: unknown;
+  text?: string;
+  thoughtSignature?: unknown;
+  inlineData?: { mimeType?: unknown; data?: unknown };
+  functionCall?: { id?: unknown; name?: unknown; args?: unknown };
+  functionResponse?: {
+    id?: unknown;
+    name?: unknown;
+    response?: { result?: unknown };
+  };
+};
+type AntigravityContent = {
+  role?: unknown;
+  parts?: AntigravityPart[];
+};
+type AntigravityTextPart = { type?: unknown; text?: unknown; image_url?: unknown };
+type AntigravitySystemInstruction = string | { parts?: AntigravityPart[] };
+type AntigravityRequestBody = {
+  generationConfig?: {
+    maxOutputTokens?: unknown;
+    temperature?: unknown;
+    topP?: unknown;
+    topK?: unknown;
+    thinkingConfig?: { thinkingBudget?: number };
+  };
+  systemInstruction?: AntigravitySystemInstruction;
+  contents?: AntigravityContent[];
+  tools?: {
+    functionDeclarations?: { name?: unknown; description?: unknown; parameters?: unknown }[];
+  }[];
+};
+type AntigravityEnvelope = { request?: AntigravityRequestBody };
+
 // Convert Antigravity request to OpenAI format
 // Antigravity body: { project, model, userAgent, requestType, requestId, request: { contents, systemInstruction, tools, toolConfig, generationConfig, sessionId } }
 export function antigravityToOpenAIRequest(model: unknown, body: unknown, stream: unknown) {
-  const req = body.request || body;
-  const result: Record<string, unknown> = {
+  const envelope = body as AntigravityEnvelope; // trusted: registry passes Antigravity payloads
+  const req = (envelope.request || body) as AntigravityRequestBody;
+  const result: Record<string, unknown> & { messages: unknown[]; tools?: unknown[] } = {
     model: model,
     messages: [] as unknown[],
     stream: stream,
@@ -97,7 +131,13 @@ export function antigravityToOpenAIRequest(model: unknown, body: unknown, stream
 function normalizeSchemaTypes(schema: unknown) {
   if (!schema || typeof schema !== "object") return schema;
 
-  const result: unknown = Array.isArray(schema) ? [...schema] : { ...schema };
+  type AntigravitySchema = {
+    type?: unknown;
+    enumDescriptions?: unknown;
+    properties?: Record<string, unknown>;
+    items?: unknown;
+  };
+  const result = (Array.isArray(schema) ? [...schema] : { ...schema }) as AntigravitySchema;
 
   if (typeof result.type === "string") {
     result.type = result.type.toLowerCase();
@@ -123,7 +163,7 @@ function normalizeSchemaTypes(schema: unknown) {
 
 // Convert Antigravity content to OpenAI message
 // Handles: text, thought, thoughtSignature, functionCall, functionResponse, inlineData
-function convertContent(content: unknown) {
+function convertContent(content: AntigravityContent) {
   const role =
     content.role === "model" ? "assistant" : content.role === "user" ? "user" : content.role;
 
@@ -131,7 +171,7 @@ function convertContent(content: unknown) {
     return null;
   }
 
-  const textParts: unknown[] = [];
+  const textParts: AntigravityTextPart[] = [];
   const toolCalls: unknown[] = [];
   const toolResults: unknown[] = [];
   let reasoningContent = "";
@@ -198,8 +238,8 @@ function convertContent(content: unknown) {
     const msg: Record<string, unknown> = { role: "assistant" };
     if (textParts.length > 0) {
       msg.content =
-        textParts.length === 1 && (textParts[0] as unknown).type === "text"
-          ? (textParts[0] as unknown).text
+        textParts.length === 1 && (textParts[0] as AntigravityTextPart).type === "text"
+          ? (textParts[0] as AntigravityTextPart).text
           : textParts;
     }
     if (reasoningContent) {
@@ -214,8 +254,8 @@ function convertContent(content: unknown) {
     const msg: Record<string, unknown> = { role };
     if (textParts.length > 0) {
       msg.content =
-        textParts.length === 1 && (textParts[0] as unknown).type === "text"
-          ? (textParts[0] as unknown).text
+        textParts.length === 1 && (textParts[0] as AntigravityTextPart).type === "text"
+          ? (textParts[0] as AntigravityTextPart).text
           : textParts;
     }
     if (reasoningContent) {
@@ -228,10 +268,10 @@ function convertContent(content: unknown) {
 }
 
 // Extract text from systemInstruction
-function extractText(instruction: unknown) {
+function extractText(instruction: AntigravitySystemInstruction) {
   if (typeof instruction === "string") return instruction;
   if (instruction.parts && Array.isArray(instruction.parts)) {
-    return instruction.parts.map((p: unknown) => p.text || "").join("");
+    return instruction.parts.map((p: AntigravityPart) => p.text || "").join("");
   }
   return "";
 }

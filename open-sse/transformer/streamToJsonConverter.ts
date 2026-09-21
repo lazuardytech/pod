@@ -1,22 +1,30 @@
-// @ts-nocheck
 /**
  * Stream-to-JSON Converter
  * Converts Responses API SSE stream to single JSON response
  * Used when client requests non-streaming but provider forces streaming (e.g., Codex)
  */
 
+interface ResponsesStreamState {
+  responseId: string;
+  created: number;
+  status: string;
+  usage: { input_tokens: number; output_tokens: number; total_tokens: number };
+  items: Map<number, Record<string, unknown>>;
+  nextIndex: number;
+}
+
 /**
  * Process a single SSE message and update state accordingly.
  */
-function processSSEMessage(msg: unknown, state: unknown) {
+function processSSEMessage(msg: string, state: ResponsesStreamState) {
   if (!msg.trim()) return;
 
   const eventMatch = msg.match(/^event:\s*(.+)$/m);
   const dataMatch = msg.match(/^data:\s*(.+)$/m);
   if (!eventMatch || !dataMatch) return;
 
-  const eventType = eventMatch[1].trim();
-  const dataStr = dataMatch[1].trim();
+  const eventType = eventMatch[1]!.trim();
+  const dataStr = dataMatch[1]!.trim();
   if (dataStr === "[DONE]") return;
 
   let parsed;
@@ -60,7 +68,8 @@ const EMPTY_RESPONSE = { input_tokens: 0, output_tokens: 0, total_tokens: 0 };
  * @returns {Promise<Object>} Final JSON response in Responses API format
  */
 export async function convertResponsesStreamToJson(stream: unknown) {
-  if (!stream || typeof stream.getReader !== "function") {
+  const readable = stream as { getReader?: unknown } | null | undefined;
+  if (!readable || typeof readable.getReader !== "function") {
     return {
       id: `resp_${Date.now()}`,
       object: "response",
@@ -71,7 +80,10 @@ export async function convertResponsesStreamToJson(stream: unknown) {
     };
   }
 
-  const reader = stream.getReader();
+  const reader = readable.getReader() as {
+    read: () => Promise<{ done?: boolean; value?: Uint8Array | undefined }>;
+    releaseLock: () => void;
+  };
   const decoder = new TextDecoder();
   let buffer = "";
 
@@ -80,7 +92,7 @@ export async function convertResponsesStreamToJson(stream: unknown) {
     created: Math.floor(Date.now() / 1000),
     status: "in_progress",
     usage: { ...EMPTY_RESPONSE },
-    items: new Map(),
+    items: new Map<number, Record<string, unknown>>(),
     nextIndex: 0, // Track next available index for items without output_index
   };
 
@@ -107,7 +119,7 @@ export async function convertResponsesStreamToJson(stream: unknown) {
   }
 
   // Build output array from accumulated items (ordered by index)
-  const output = [];
+  const output: Record<string, unknown>[] = [];
   const maxIndex = state.items.size > 0 ? Math.max(...state.items.keys()) : -1;
   for (let i = 0; i <= maxIndex; i++) {
     output.push(state.items.get(i) || { type: "message", content: [], role: "assistant" });

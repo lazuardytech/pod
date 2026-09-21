@@ -6,7 +6,7 @@
 src/
   app/                Next.js App Router: pages + API routes
     (dashboard)/      Dashboard pages (route group, top-level URLs)
-    api/              API routes (26 route groups)
+    api/              API routes (27 route groups; `_types.ts` is internal)
     callback/         OAuth callback handlers
     landing/          Landing page
     login/            Login page
@@ -41,7 +41,7 @@ All 15 dashboard pages are top-level — no `/dashboard` prefix.
 | Basic Chat      | `/basic-chat`       |
 | Pricing         | `/settings/pricing` |
 
-## API Routes (26 groups)
+## API Routes (27 groups)
 
 | Route group            | Purpose                                                             |
 | ---------------------- | ------------------------------------------------------------------- |
@@ -50,6 +50,8 @@ All 15 dashboard pages are top-level — no `/dashboard` prefix.
 | `/api/auth`            | Dashboard authentication                                            |
 | `/api/health`          | Public health check                                                 |
 | `/api/monitoring/*`    | Monitoring health (public reads, no auth)                           |
+| `/api/headroom/*`      | Headroom sidecar control (start/stop/restart/status/proxy/extras)   |
+| `/api/models/*`        | Model alias/availability/custom/disabled/test CRUD                  |
 | `/api/providers`       | Provider CRUD                                                       |
 | `/api/provider-nodes`  | Custom node management                                              |
 | `/api/media-providers` | Media provider management                                           |

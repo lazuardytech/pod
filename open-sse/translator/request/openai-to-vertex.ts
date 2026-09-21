@@ -1,8 +1,19 @@
-// @ts-nocheck
 import { DEFAULT_THINKING_VERTEX_SIGNATURE } from "../../config/defaultThinkingSignature.ts";
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 import { openaiToGeminiRequest } from "./openai-to-gemini.ts";
+
+type VertexFunctionCall = { id?: unknown };
+type VertexPart = {
+  thoughtSignature?: unknown;
+  functionCall?: VertexFunctionCall;
+  functionResponse?: VertexFunctionCall;
+};
+type VertexTurn = { parts?: VertexPart[] };
+type VertexGeminiBody = {
+  contents?: VertexTurn[];
+  stream?: unknown;
+};
 
 /**
  * Post-process a Gemini-format body for Vertex AI compatibility:
@@ -10,10 +21,11 @@ import { openaiToGeminiRequest } from "./openai-to-gemini.ts";
  * 1. Replace all synthetic thoughtSignatures with Vertex-native signature.
  * 2. Strip `id` from functionCall and functionResponse (Vertex rejects these).
  */
-function postProcessForVertex(body: unknown) {
-  if (!body?.contents) return body;
+function postProcessForVertex(body: unknown): VertexGeminiBody {
+  const geminiBody = body as VertexGeminiBody; // trusted: output of openaiToGeminiRequest
+  if (!geminiBody?.contents) return geminiBody;
 
-  for (const turn of body.contents) {
+  for (const turn of geminiBody.contents) {
     if (!Array.isArray(turn.parts)) continue;
 
     for (const part of turn.parts) {
@@ -32,7 +44,7 @@ function postProcessForVertex(body: unknown) {
     }
   }
 
-  return body;
+  return geminiBody;
 }
 
 export function openaiToVertexRequest(
@@ -42,7 +54,7 @@ export function openaiToVertexRequest(
   credentials: unknown,
 ) {
   // todo(ts): request translator registry may pass credentials to JS-era translators.
-  const gemini = (openaiToGeminiRequest as unknown)(model, body, stream, credentials);
+  const gemini = openaiToGeminiRequest(model, body, stream, credentials);
   const processed = postProcessForVertex(gemini);
   // Vertex AI does not accept `stream` in the request body — streaming is
   // controlled via the action suffix (:streamGenerateContent) and ?alt=sse.

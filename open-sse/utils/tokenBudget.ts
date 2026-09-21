@@ -10,7 +10,7 @@ type TokenBudgetOptions = {
   provider?: string;
   model?: string;
   targetFormat?: string;
-  log?: TokenBudgetLog;
+  log?: TokenBudgetLog | null;
 };
 
 function configuredMinimum() {
@@ -31,7 +31,7 @@ function raiseTokenField(
   body: TokenBudgetBody,
   field: string,
   minimum: number,
-  log: TokenBudgetLog | undefined,
+  log: TokenBudgetLog | null | undefined,
   provider: unknown,
   model: unknown,
 ) {

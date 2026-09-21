@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Translator: OpenAI Chat Completions → OpenAI Responses API (response)
  * Converts streaming chunks from Chat Completions to Responses API events
@@ -7,11 +6,120 @@
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 
+type EmitFn = (eventType: string, data: Record<string, unknown>) => void;
+
+// Trusted shapes: state comes from initState(FORMATS.OPENAI_RESPONSES) in translator/index.ts.
+interface ResponsesStreamState {
+  seq: number;
+  responseId: string;
+  created: number;
+  started: boolean;
+  inThinking: boolean;
+  reasoningId: string;
+  reasoningIndex: number;
+  reasoningBuf: string;
+  reasoningPartAdded: boolean;
+  reasoningDone: boolean;
+  msgItemAdded: Record<number | string, boolean>;
+  msgContentAdded: Record<number | string, boolean>;
+  msgItemDone: Record<number | string, boolean>;
+  msgTextBuf: Record<number | string, string>;
+  funcArgsBuf: Record<number | string, string>;
+  funcNames: Record<number | string, string>;
+  funcCallIds: Record<number | string, string>;
+  funcArgsDone: Record<number | string, boolean>;
+  funcItemDone: Record<number | string, boolean>;
+  completedSent: boolean;
+  // Not in initState; tracked lazily when tool calls lack an index.
+  toolCallIndex?: number;
+}
+
+// Trusted shapes: initState base state, extended on the first Responses chunk below.
+interface ChatStreamState {
+  started?: boolean;
+  chatId: string;
+  created: number;
+  model: string | null;
+  toolCallIndex?: number;
+  currentToolCallId: string | null;
+  maxOutputIndex: number;
+  outputIndexToToolCallIndex: Map<number, number>;
+  nextToolCallIndex: number;
+  finishReason: string | null;
+  finishReasonSent: boolean;
+  usage?: ChatUsageState | null;
+  error?: ResponsesError | null;
+}
+
+interface ChatUsageState {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  prompt_tokens_details?: { cached_tokens: number };
+}
+
+interface OpenAIChatChunk {
+  id?: string | null;
+  choices?: OpenAIChatChoice[] | null;
+}
+
+interface OpenAIChatChoice {
+  index?: number | null;
+  delta?: OpenAIChatDelta | null;
+  finish_reason?: string | null;
+}
+
+interface OpenAIChatDelta {
+  content?: string | null;
+  reasoning_content?: string | null;
+  tool_calls?: OpenAIChatToolCall[] | null;
+}
+
+interface OpenAIChatToolCall {
+  index?: number | null;
+  id?: string | null;
+  function?: { name?: string | null; arguments?: string | null } | null;
+}
+
+// Covers both the bare event object and the SSE wrapper form ({ event, data }).
+interface ResponsesEvent {
+  type?: string | null;
+  event?: string | null;
+  data?: ResponsesEvent | null;
+  delta?: string | null;
+  item?: ResponsesOutputItem | null;
+  output_index?: number | null;
+  response?: { usage?: ResponsesUsage | null; error?: ResponsesError | null } | null;
+  error?: ResponsesError | null;
+}
+
+interface ResponsesOutputItem {
+  type?: string | null;
+  call_id?: string | null;
+  name?: string | null;
+}
+
+interface ResponsesUsage {
+  input_tokens?: number | null;
+  prompt_tokens?: number | null;
+  output_tokens?: number | null;
+  completion_tokens?: number | null;
+  cache_read_input_tokens?: number | null;
+  input_tokens_details?: { cached_tokens?: number | null } | null;
+}
+
+interface ResponsesError {
+  message?: string | null;
+}
+
 /**
  * Translate OpenAI chunk to Responses API events
  * @returns {Array} Array of events with { event, data } structure
  */
-export function openaiToOpenAIResponsesResponse(chunk: unknown, state: unknown) {
+export function openaiToOpenAIResponsesResponse(rawChunk: unknown, rawState: unknown) {
+  // Registered as (unknown, unknown); cast to the trusted shapes at the entry.
+  const chunk = rawChunk as OpenAIChatChunk | null;
+  const state = rawState as ResponsesStreamState;
   if (!chunk) {
     return flushEvents(state);
   }
@@ -21,14 +129,15 @@ export function openaiToOpenAIResponsesResponse(chunk: unknown, state: unknown) 
   const events: unknown[] = [];
   const nextSeq = () => ++state.seq;
 
-  const emit = (eventType: unknown, data: unknown) => {
+  const emit: EmitFn = (eventType, data) => {
     data.sequence_number = nextSeq();
     events.push({ event: eventType, data });
   };
 
-  const choice = chunk.choices[0];
+  // choices[0] is guaranteed by the length check above.
+  const choice = chunk.choices[0] as OpenAIChatChoice;
   const idx = choice.index || 0;
-  const delta = choice.delta || {};
+  const delta: OpenAIChatDelta = choice.delta || {};
 
   // Emit initial events
   if (!state.started) {
@@ -115,7 +224,7 @@ export function openaiToOpenAIResponsesResponse(chunk: unknown, state: unknown) 
 }
 
 // Helper functions
-function startReasoning(state: unknown, emit: unknown, idx: unknown) {
+function startReasoning(state: ResponsesStreamState, emit: EmitFn, idx: number) {
   if (!state.reasoningId) {
     state.reasoningId = `rs_${state.responseId}_${idx}`;
     state.reasoningIndex = idx;
@@ -137,7 +246,7 @@ function startReasoning(state: unknown, emit: unknown, idx: unknown) {
   }
 }
 
-function emitReasoningDelta(state: unknown, emit: unknown, text: unknown) {
+function emitReasoningDelta(state: ResponsesStreamState, emit: EmitFn, text: string) {
   if (!text) return;
   state.reasoningBuf += text;
   emit("response.reasoning_summary_text.delta", {
@@ -149,7 +258,7 @@ function emitReasoningDelta(state: unknown, emit: unknown, text: unknown) {
   });
 }
 
-function closeReasoning(state: unknown, emit: unknown) {
+function closeReasoning(state: ResponsesStreamState, emit: EmitFn) {
   if (state.reasoningId && !state.reasoningDone) {
     state.reasoningDone = true;
 
@@ -181,7 +290,7 @@ function closeReasoning(state: unknown, emit: unknown) {
   }
 }
 
-function emitTextContent(state: unknown, emit: unknown, idx: unknown, content: unknown) {
+function emitTextContent(state: ResponsesStreamState, emit: EmitFn, idx: number, content: string) {
   if (!state.msgItemAdded[idx]) {
     state.msgItemAdded[idx] = true;
     const msgId = `msg_${state.responseId}_${idx}`;
@@ -218,7 +327,7 @@ function emitTextContent(state: unknown, emit: unknown, idx: unknown, content: u
   state.msgTextBuf[idx] += content;
 }
 
-function closeMessage(state: unknown, emit: unknown, idx: unknown) {
+function closeMessage(state: ResponsesStreamState, emit: EmitFn, idx: number | string) {
   if (state.msgItemAdded[idx] && !state.msgItemDone[idx]) {
     state.msgItemDone[idx] = true;
     const fullText = state.msgTextBuf[idx] || "";
@@ -227,7 +336,7 @@ function closeMessage(state: unknown, emit: unknown, idx: unknown) {
     emit("response.output_text.done", {
       type: "response.output_text.done",
       item_id: msgId,
-      output_index: parseInt(idx),
+      output_index: parseInt(String(idx)),
       content_index: 0,
       text: fullText,
       logprobs: [],
@@ -236,14 +345,14 @@ function closeMessage(state: unknown, emit: unknown, idx: unknown) {
     emit("response.content_part.done", {
       type: "response.content_part.done",
       item_id: msgId,
-      output_index: parseInt(idx),
+      output_index: parseInt(String(idx)),
       content_index: 0,
       part: { type: "output_text", annotations: [], logprobs: [], text: fullText },
     });
 
     emit("response.output_item.done", {
       type: "response.output_item.done",
-      output_index: parseInt(idx),
+      output_index: parseInt(String(idx)),
       item: {
         id: msgId,
         type: "message",
@@ -254,7 +363,7 @@ function closeMessage(state: unknown, emit: unknown, idx: unknown) {
   }
 }
 
-function emitToolCall(state: unknown, emit: unknown, tc: unknown) {
+function emitToolCall(state: ResponsesStreamState, emit: EmitFn, tc: OpenAIChatToolCall) {
   // Use tc.index if provided, otherwise fallback to state's tracked toolCallIndex
   // This fixes Codex streaming freeze where tool calls may not have explicit index
   let tcIdx = tc.index;
@@ -301,7 +410,7 @@ function emitToolCall(state: unknown, emit: unknown, tc: unknown) {
   }
 }
 
-function closeToolCall(state: unknown, emit: unknown, idx: unknown) {
+function closeToolCall(state: ResponsesStreamState, emit: EmitFn, idx: number | string) {
   const callId = state.funcCallIds[idx];
   if (callId && !state.funcItemDone[idx]) {
     const args = state.funcArgsBuf[idx] || "{}";
@@ -309,13 +418,13 @@ function closeToolCall(state: unknown, emit: unknown, idx: unknown) {
     emit("response.function_call_arguments.done", {
       type: "response.function_call_arguments.done",
       item_id: `fc_${callId}`,
-      output_index: parseInt(idx),
+      output_index: parseInt(String(idx)),
       arguments: args,
     });
 
     emit("response.output_item.done", {
       type: "response.output_item.done",
-      output_index: parseInt(idx),
+      output_index: parseInt(String(idx)),
       item: {
         id: `fc_${callId}`,
         type: "function_call",
@@ -330,7 +439,7 @@ function closeToolCall(state: unknown, emit: unknown, idx: unknown) {
   }
 }
 
-function sendCompleted(state: unknown, emit: unknown) {
+function sendCompleted(state: ResponsesStreamState, emit: EmitFn) {
   if (!state.completedSent) {
     state.completedSent = true;
     emit("response.completed", {
@@ -347,12 +456,12 @@ function sendCompleted(state: unknown, emit: unknown) {
   }
 }
 
-function flushEvents(state: unknown) {
+function flushEvents(state: ResponsesStreamState) {
   if (state.completedSent) return [];
 
   const events: unknown[] = [];
   const nextSeq = () => ++state.seq;
-  const emit = (eventType: unknown, data: unknown) => {
+  const emit: EmitFn = (eventType, data) => {
     data.sequence_number = nextSeq();
     events.push({ event: eventType, data });
   };
@@ -367,7 +476,7 @@ function flushEvents(state: unknown) {
 
 // currentToolCallId is intentionally sticky for the current turn so flush/completion
 // can still finalize as tool_calls even if the tool call was emitted before stream end.
-function computeFinishReason(state: unknown) {
+function computeFinishReason(state: ChatStreamState) {
   return state.nextToolCallIndex > 0 || state.currentToolCallId ? "tool_calls" : "stop";
 }
 
@@ -375,7 +484,10 @@ function computeFinishReason(state: unknown) {
  * Translate OpenAI Responses API chunk to OpenAI Chat Completions format
  * This is for when Codex returns data and we need to send it to an OpenAI-compatible client
  */
-export function openaiResponsesToOpenAIResponse(chunk: unknown, state: unknown) {
+export function openaiResponsesToOpenAIResponse(rawChunk: unknown, rawState: unknown) {
+  // Registered as (unknown, unknown); cast to the trusted shapes at the entry.
+  const chunk = rawChunk as ResponsesEvent | null;
+  const state = rawState as ChatStreamState;
   if (!chunk) {
     // Flush: send final chunk with finish_reason
     if (state.finishReasonSent || !state.started) return null;

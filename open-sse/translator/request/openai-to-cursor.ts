@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * OpenAI to Cursor Request Translator
  * Converts OpenAI messages to Cursor ask/agent format.
@@ -11,21 +10,51 @@
 import { FORMATS } from "../formats.ts";
 import { register } from "../registry.ts";
 
+type CursorContentPart = {
+  type?: unknown;
+  text?: unknown;
+  id?: unknown;
+  name?: unknown;
+  input?: unknown;
+  tool_use_id?: unknown;
+  content?: unknown;
+};
+type CursorToolCall = {
+  id?: unknown;
+  index?: unknown;
+  function?: { name?: unknown };
+};
+type CursorMessage = {
+  role?: unknown;
+  content?: unknown;
+  tool_calls?: CursorToolCall[];
+  tool_call_id?: unknown;
+  name?: unknown;
+};
+type CursorOpenAIBody = {
+  messages?: CursorMessage[];
+  user?: unknown;
+  metadata?: unknown;
+  tool_choice?: unknown;
+  stream_options?: unknown;
+  system?: unknown;
+};
+
 function extractContent(content: unknown) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
-      .filter((part: unknown) => {
+      .filter((part: CursorContentPart) => {
         if (!part || typeof part !== "object") return false;
         return part.type === "text" && typeof part.text === "string";
       })
-      .map((part: unknown) => part.text || "")
+      .map((part: CursorContentPart) => part.text || "")
       .join("");
   }
   return "";
 }
 
-function sanitizeToolResultText(text: unknown) {
+function sanitizeToolResultText(text: string) {
   // Strip non-printable control chars that can produce backend request errors.
   let clean = "";
   for (let i = 0; i < text.length; i++) {
@@ -37,16 +66,16 @@ function sanitizeToolResultText(text: unknown) {
   return clean;
 }
 
-function escapeXml(text: unknown) {
+function escapeXml(text: string) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function buildToolResultBlock(toolName: unknown, toolCallId: unknown, resultText: unknown) {
-  const cleanResult = sanitizeToolResultText(resultText || "");
+  const cleanResult = sanitizeToolResultText((resultText || "") as string);
   return [
     "<tool_result>",
-    `<tool_name>${escapeXml(toolName || "tool")}</tool_name>`,
-    `<tool_call_id>${escapeXml(toolCallId || "")}</tool_call_id>`,
+    `<tool_name>${escapeXml((toolName || "tool") as string)}</tool_name>`,
+    `<tool_call_id>${escapeXml((toolCallId || "") as string)}</tool_call_id>`,
     `<result>${escapeXml(cleanResult)}</result>`,
     "</tool_result>",
   ].join("\n");
@@ -56,7 +85,7 @@ function normalizeToolCallId(id: unknown) {
   return typeof id === "string" ? id.split("\n")[0] : "";
 }
 
-function convertMessages(messages: unknown) {
+function convertMessages(messages: CursorMessage[]) {
   const result: unknown[] = [];
 
   // Build a map of tool_call_id -> tool name from assistant tool calls
@@ -86,7 +115,7 @@ function convertMessages(messages: unknown) {
   }
 
   for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
+    const msg = messages[i]!;
 
     if (msg.role === "system") {
       result.push({
@@ -99,7 +128,7 @@ function convertMessages(messages: unknown) {
     if (msg.role === "tool") {
       const toolContent = extractContent(msg.content);
       const toolCallId = msg.tool_call_id || "";
-      const toolMeta = toolCallMetaMap.get(toolCallId) || {};
+      const toolMeta = (toolCallMetaMap.get(toolCallId) || {}) as { name?: unknown };
       const toolName = msg.name || toolMeta.name || "tool";
       result.push({
         role: "user",
@@ -121,9 +150,10 @@ function convertMessages(messages: unknown) {
           }
           if (block.type === "tool_result") {
             const toolCallId = block.tool_use_id || "";
-            const toolMeta =
-              toolCallMetaMap.get(toolCallId) ||
-              toolCallMetaMap.get(normalizeToolCallId(toolCallId));
+            const toolMeta = (toolCallMetaMap.get(toolCallId) ||
+              toolCallMetaMap.get(normalizeToolCallId(toolCallId))) as
+              | { name?: unknown }
+              | undefined;
             const toolName = toolMeta?.name || "tool";
             const toolContent = extractContent(block.content);
             parts.push(buildToolResultBlock(toolName, toolCallId, toolContent));
@@ -138,15 +168,15 @@ function convertMessages(messages: unknown) {
 
       if (msg.role === "assistant" && msg.tool_calls && msg.tool_calls.length > 0) {
         const assistantMsg: Record<string, unknown> = { role: "assistant", content: content || "" };
-        assistantMsg.tool_calls = msg.tool_calls.map((tc: unknown) => {
+        assistantMsg.tool_calls = msg.tool_calls.map((tc: CursorToolCall) => {
           const { index: _index, ...rest } = tc || {};
           return rest;
         });
         result.push(assistantMsg);
       } else if (msg.role === "assistant" && Array.isArray(msg.content)) {
         const extractedToolCalls = msg.content
-          .filter((b: unknown) => b?.type === "tool_use")
-          .map((b: unknown) => ({
+          .filter((b: CursorContentPart) => b?.type === "tool_use")
+          .map((b: CursorContentPart) => ({
             id: b.id || "",
             type: "function",
             function: {
@@ -154,7 +184,7 @@ function convertMessages(messages: unknown) {
               arguments: JSON.stringify(b.input || {}),
             },
           }))
-          .filter((tc: unknown) => tc.id);
+          .filter((tc: { id?: unknown }) => tc.id);
 
         if (extractedToolCalls.length > 0) {
           result.push({
@@ -182,7 +212,8 @@ export function buildCursorRequest(
   _stream: unknown,
   _credentials: unknown,
 ) {
-  const messages = convertMessages(body.messages || []);
+  const req = body as CursorOpenAIBody; // trusted: registry passes OpenAI chat payloads
+  const messages = convertMessages(req.messages || []);
 
   // Strip fields irrelevant to Cursor (OpenAI/Anthropic-specific)
   const {
@@ -192,7 +223,7 @@ export function buildCursorRequest(
     stream_options: _stream_options,
     system: _system,
     ...rest
-  } = body;
+  } = req;
 
   return {
     ...rest,

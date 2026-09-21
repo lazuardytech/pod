@@ -14,4 +14,4 @@ This document captured a broader stability review across runtime, provider behav
 
 ## Current Status
 
-Use this file as background context. The active watchlist is kept shorter in `knowledge/10-open-issues.md`.
+Use this file as background context. The active watchlist is kept shorter in `knowledge/05-open-issues.md`.
