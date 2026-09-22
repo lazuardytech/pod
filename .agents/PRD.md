@@ -1,6 +1,6 @@
 # Pod — Product Requirements Document
 
-**Version:** v0.0.86 | **Status:** Active development | **Last reviewed:** 2026-09-04
+**Version:** v0.0.87 | **Status:** Active development | **Last reviewed:** 2026-09-22
 
 ## Overview
 
@@ -139,7 +139,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 
 | Metric              | Value                                                                   |
 | ------------------- | ----------------------------------------------------------------------- |
-| Version             | v0.0.86                                                                 |
+| Version             | v0.0.87                                                                 |
 | Default port        | 20128                                                                   |
 | Zeabur port         | 20140                                                                   |
 | SSE connection cap  | 100 concurrent                                                          |
@@ -149,3 +149,20 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 | Executors           | 17 specialized + `DefaultExecutor`; 20 files in `open-sse/executors/`   |
 | API route groups    | 27 (28 entries under `src/app/api/` incl. `_types.ts`)                  |
 | Dashboard pages     | 15 in `(dashboard)` (incl. `/basic-chat`, `/settings/pricing`)          |
+
+## Technical Debt
+
+Full-repo scan 2026-09-22 (canary @ `073a91a9`). Baseline gates green: `bun run check` 0/0, 1523/1523 tests, `bun run build` OK, zero `@ts-nocheck`.
+
+| #   | Debt                                                                                                  | Location                                                                                                                                 | Severity      | Fix path                                                                                |
+| --- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------- |
+| T1  | 62 `: any` escape hatches in 5 translator helpers                                                     | `open-sse/translator/helpers/` (gemini 21, claude 18, openai 9, toolCall 8, responsesApi 6)                                              | Medium        | Type-only migration, same as the 34 files cleared in v0.0.87                            |
+| T2  | `cloud/` typecheck fails: 32 errors, invisible to `bun run check` (excluded from root tsc)            | `cloud/tsconfig.json` missing `@/*` paths alias (18× TS2307) + 14 type drifts in `cloud/src/handlers/`, `open-sse/*` under workers-types | Medium        | Add paths alias; fix drift type-only; wire `cd cloud && bun install && tsc` into a gate |
+| T3  | Prod deploy stuck: `pod.lazuardy.tech` still v0.0.86 >7h after main merge (canary healthy at v0.0.87) | Zeabur service `pod` (tracks `main`)                                                                                                     | High (ops)    | Inspect Zeabur deploy logs (needs `ZEABUR_TOKEN`) / retrigger deploy                    |
+| T4  | CI workflow disabled (`if: false` — Actions billing); only the Zeabur check gates PRs                 | `.github/workflows/ci.yml`                                                                                                               | Medium        | Remove `if: false` once billing is fixed                                                |
+| T5  | 20 stale `eslint-disable` directives (ESLint removed from toolchain)                                  | `src/app/(dashboard)/**` (react-hooks/exhaustive-deps)                                                                                   | Low           | Confirm oxlint has no matching rule, then delete                                        |
+| T6  | 5 `: any` in test mocks                                                                               | `tests/`                                                                                                                                 | Low           | Type the mocks                                                                          |
+| T7  | SW deploy-regression e2e scaffold unrunnable (Playwright not installed)                               | `tests/e2e/swDeployRegression.e2e.spec.ts` (TODO SW-ENG)                                                                                 | Low (pending) | Keep spec in `tests/SW-TEST-SEAM.md`; wire harness when adopting Playwright             |
+| T8  | Coverage floors at 1%/0%                                                                              | `vitest.config.ts` thresholds                                                                                                            | Low           | Raise gradually as coverage improves                                                    |
+
+Tracked as **not debt** (deliberate, documented): 15 `ponytail:` ceiling markers (each names an upgrade path), env-gated `tests/live/` skips, 4 justified `@ts-expect-error` FFI edges (styled-jsx attrs; no `@types` for chalk-animation/figlet/gradient-string; device-flow PKCE shadow), stub `/v1` routes (product surface).
