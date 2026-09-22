@@ -4,7 +4,7 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [alias]
-"@/lib/usageDb.js" = "./src/stubs/usageDb.ts"
+"@/lib/usageDb" = "./src/stubs/usageDb.ts"
 
 # Step 3: Paste your KV & D1 IDs here
 [[kv_namespaces]]

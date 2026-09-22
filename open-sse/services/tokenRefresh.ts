@@ -634,7 +634,7 @@ export async function refreshCopilotToken(githubAccessToken: string, log: Provid
       return null;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { token?: string; expires_at?: number };
 
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed Copilot token", {
       hasToken: !!data.token,

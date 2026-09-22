@@ -3,28 +3,55 @@
 // Anthropic tool_use.id must match: ^[a-zA-Z0-9_-]+$
 const TOOL_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
+// Pipeline messages are trusted records from asRequestBody() (OpenAI/Claude chat payloads)
+type PipelineMessage = {
+  role?: unknown;
+  content?: unknown;
+  tool_calls?: unknown;
+  tool_call_id?: string;
+};
+
+type ToolCallRecord = {
+  id?: string;
+  type?: string;
+  function?: { name?: string; arguments?: unknown } | undefined;
+};
+
+type ContentBlockRecord = {
+  type?: unknown;
+  id?: string;
+  name?: string;
+  tool_use_id?: string;
+};
+
 // Generate deterministic tool call ID from position + tool name (cache-friendly)
-export function generateToolCallId(msgIndex: any = 0, tcIndex: any = 0, toolName: any = "") {
+export function generateToolCallId(
+  msgIndex: number = 0,
+  tcIndex: number = 0,
+  toolName: string = "",
+) {
   const name = toolName ? `_${toolName.replace(/[^a-zA-Z0-9_-]/g, "")}` : "";
   return `call_msg${msgIndex}_tc${tcIndex}${name}`;
 }
 
 // Sanitize ID to match Anthropic pattern: keep only alphanumeric, underscore, hyphen
-function sanitizeToolId(id: any) {
+function sanitizeToolId(id: unknown) {
   if (!id || typeof id !== "string") return null;
   const sanitized = id.replace(/[^a-zA-Z0-9_-]/g, "");
   return sanitized.length > 0 ? sanitized : null;
 }
 
 // Ensure all tool_calls have valid id field and arguments is string (some providers require it)
-export function ensureToolCallIds(body: any) {
+export function ensureToolCallIds(body: Record<string, unknown>): Record<string, unknown> {
   if (!body.messages || !Array.isArray(body.messages)) return body;
 
-  for (let i = 0; i < body.messages.length; i++) {
-    const msg = body.messages[i];
+  const messages = body.messages as PipelineMessage[];
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i]!;
     if (msg.role === "assistant" && msg.tool_calls && Array.isArray(msg.tool_calls)) {
-      for (let j = 0; j < msg.tool_calls.length; j++) {
-        const tc = msg.tool_calls[j];
+      const toolCalls = msg.tool_calls as ToolCallRecord[];
+      for (let j = 0; j < toolCalls.length; j++) {
+        const tc = toolCalls[j]!;
         // Validate or regenerate ID for Anthropic compatibility
         if (!tc.id || !TOOL_ID_PATTERN.test(tc.id)) {
           const sanitized = sanitizeToolId(tc.id);
@@ -48,8 +75,9 @@ export function ensureToolCallIds(body: any) {
 
     // Also validate tool_use blocks in content (Claude format)
     if (Array.isArray(msg.content)) {
-      for (let k = 0; k < msg.content.length; k++) {
-        const block = msg.content[k];
+      const blocks = msg.content as ContentBlockRecord[];
+      for (let k = 0; k < blocks.length; k++) {
+        const block = blocks[k]!;
         if (block.type === "tool_use" && block.id && !TOOL_ID_PATTERN.test(block.id)) {
           const sanitized = sanitizeToolId(block.id);
           block.id = sanitized || generateToolCallId(i, k, block.name);
@@ -71,21 +99,23 @@ export function ensureToolCallIds(body: any) {
 }
 
 // Get tool_call ids from assistant message (OpenAI format: tool_calls, Claude format: tool_use in content)
-export function getToolCallIds(msg: any) {
+export function getToolCallIds(msg: PipelineMessage): string[] {
   if (msg.role !== "assistant") return [];
 
-  const ids: any[] = [];
+  const ids: string[] = [];
 
   // OpenAI format: tool_calls array
   if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-    for (const tc of msg.tool_calls) {
+    const toolCalls = msg.tool_calls as ToolCallRecord[];
+    for (const tc of toolCalls) {
       if (tc.id) ids.push(tc.id);
     }
   }
 
   // Claude format: tool_use blocks in content
   if (Array.isArray(msg.content)) {
-    for (const block of msg.content) {
+    const blocks = msg.content as ContentBlockRecord[];
+    for (const block of blocks) {
       if (block.type === "tool_use" && block.id) {
         ids.push(block.id);
       }
@@ -96,7 +126,10 @@ export function getToolCallIds(msg: any) {
 }
 
 // Check if user message has tool_result for given ids (OpenAI format: role=tool, Claude format: tool_result in content)
-export function hasToolResults(msg: any, toolCallIds: any) {
+export function hasToolResults(
+  msg: PipelineMessage | null | undefined,
+  toolCallIds: unknown[],
+): boolean {
   if (!msg || !toolCallIds.length) return false;
 
   // OpenAI format: role = "tool" with tool_call_id
@@ -106,7 +139,8 @@ export function hasToolResults(msg: any, toolCallIds: any) {
 
   // Claude format: tool_result blocks in user message content
   if (msg.role === "user" && Array.isArray(msg.content)) {
-    for (const block of msg.content) {
+    const blocks = msg.content as ContentBlockRecord[];
+    for (const block of blocks) {
       if (block.type === "tool_result" && toolCallIds.includes(block.tool_use_id)) {
         return true;
       }
@@ -117,14 +151,15 @@ export function hasToolResults(msg: any, toolCallIds: any) {
 }
 
 // Fix missing tool responses - insert empty tool_result if assistant has tool_use but next message has no tool_result
-export function fixMissingToolResponses(body: any) {
+export function fixMissingToolResponses(body: Record<string, unknown>): Record<string, unknown> {
   if (!body.messages || !Array.isArray(body.messages)) return body;
 
-  const newMessages: any[] = [];
+  const messages = body.messages as PipelineMessage[];
+  const newMessages: PipelineMessage[] = [];
 
-  for (let i = 0; i < body.messages.length; i++) {
-    const msg = body.messages[i];
-    const nextMsg = body.messages[i + 1];
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i]!;
+    const nextMsg = messages[i + 1];
 
     newMessages.push(msg);
 

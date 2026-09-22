@@ -29,14 +29,16 @@ export default defineConfig({
       reporter: ["text", "html", "json-summary"],
       reportsDirectory: "coverage",
       include: ["src/**/*.{ts,tsx}"],
-      // Start with low floors — raise as coverage improves.
+      // Floors ratcheted from the 2026-09-22 baseline (global 12.4/8.9/9.4/11.8,
+      // lib 28.9/26.9/23.7/27.9, api 15.7/18.4/10.8/14.8) — set at ~70% of
+      // measured to allow variance while blocking coverage regressions.
       thresholds: {
-        lines: 1,
-        functions: 1,
-        branches: 1,
-        statements: 1,
-        "src/lib/**": { lines: 3, functions: 3, branches: 2, statements: 3 },
-        "src/app/api/**": { lines: 0, functions: 0, branches: 0, statements: 0 },
+        lines: 10,
+        functions: 7,
+        branches: 7,
+        statements: 10,
+        "src/lib/**": { lines: 20, functions: 18, branches: 16, statements: 20 },
+        "src/app/api/**": { lines: 10, functions: 12, branches: 7, statements: 10 },
       },
     },
   },

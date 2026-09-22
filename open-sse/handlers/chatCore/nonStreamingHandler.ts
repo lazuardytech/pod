@@ -415,7 +415,7 @@ export async function handleNonStreamingResponse({
   reqLogger.logProviderResponse(
     providerResponse.status,
     providerResponse.statusText,
-    providerResponse.headers,
+    providerResponse.headers as unknown as HeaderRecord,
     responseBody,
   );
   if (onRequestSuccess) await onRequestSuccess();

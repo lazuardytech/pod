@@ -14,6 +14,7 @@ import { parseApiKey, extractBearerToken, type ParsedApiKey } from "../utils/api
 import { getMachineData, saveMachineData } from "../services/storage.ts";
 
 interface CredentialsResult {
+  [key: string]: unknown;
   id: string;
   apiKey?: string;
   accessToken?: string;
@@ -41,7 +42,7 @@ interface ChatCoreResult {
   response: Response;
   status?: number;
   error?: string;
-  resetsAtMs?: number;
+  resetsAtMs?: number | null;
 }
 
 /**

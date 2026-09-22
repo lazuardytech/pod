@@ -413,7 +413,6 @@ export default function ProviderLimits() {
   }, [fetchConnections, fetchQuota]);
 
   // Initial load: fetch connections first so cards render immediately, then fetch quotas
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const initializeData = async () => {
       setConnectionsLoading(true);
@@ -437,7 +436,6 @@ export default function ProviderLimits() {
 
     initializeData();
   }, []);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Persist auto-refresh preference
   useEffect(() => {

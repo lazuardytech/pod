@@ -1,8 +1,8 @@
 // Stub for cloud worker - no-op async functions
-export async function saveRequestUsage(): Promise<void> {}
-export async function saveRequestDetail(): Promise<void> {}
-export function trackPendingRequest(): void {}
-export async function appendRequestLog(): Promise<void> {}
+export async function saveRequestUsage(..._args: unknown[]): Promise<void> {}
+export async function saveRequestDetail(..._args: unknown[]): Promise<void> {}
+export function trackPendingRequest(..._args: unknown[]): void {}
+export async function appendRequestLog(..._args: unknown[]): Promise<void> {}
 export function generateDetailId(model = "unknown"): string {
   return `${Date.now()}-${model}-${Math.random().toString(36).slice(2, 8)}`;
 }

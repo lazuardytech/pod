@@ -3,12 +3,42 @@ import { DEFAULT_THINKING_CLAUDE_SIGNATURE } from "../../config/defaultThinkingS
 import { applyCloaking } from "../../utils/claudeCloaking.ts";
 import { deriveSessionId } from "../../utils/sessionManager.ts";
 
+// Request bodies reach these helpers as unvalidated JSON records from the
+// translator pipeline; the types below describe the Claude wire shapes it emits.
+type JsonRecord = Record<string, unknown>;
+
+type ClaudeContentBlock = {
+  type?: string;
+  text?: string;
+  thinking?: string;
+  signature?: string;
+  cache_control?: unknown;
+  [key: string]: unknown;
+};
+
+type ClaudeMessage = {
+  role?: string;
+  content?: string | ClaudeContentBlock[];
+  [key: string]: unknown;
+};
+
+type ClaudeTool = {
+  type?: string;
+  cache_control?: unknown;
+  [key: string]: unknown;
+};
+
+type ClaudeThinkingConfig = {
+  type?: unknown;
+  [key: string]: unknown;
+};
+
 // Check if message has valid non-empty content
-export function hasValidContent(msg: any) {
+export function hasValidContent(msg: ClaudeMessage) {
   if (typeof msg.content === "string" && msg.content.trim()) return true;
   if (Array.isArray(msg.content)) {
     return msg.content.some(
-      (block: any) =>
+      (block) =>
         (block.type === "text" && block.text?.trim()) ||
         block.type === "tool_use" ||
         block.type === "tool_result",
@@ -20,16 +50,16 @@ export function hasValidContent(msg: any) {
 // Fix tool_use/tool_result ordering for Claude API
 // 1. Assistant message with tool_use: remove text AFTER tool_use (Claude doesn't allow)
 // 2. Merge consecutive same-role messages
-export function fixToolUseOrdering(messages: any) {
+export function fixToolUseOrdering(messages: ClaudeMessage[]) {
   if (messages.length <= 1) return messages;
 
   // Pass 1: Fix assistant messages with tool_use - remove text after tool_use
   for (const msg of messages) {
     if (msg.role === "assistant" && Array.isArray(msg.content)) {
-      const hasToolUse = msg.content.some((b: any) => b.type === "tool_use");
+      const hasToolUse = msg.content.some((b) => b.type === "tool_use");
       if (hasToolUse) {
         // Keep only: thinking blocks + tool_use blocks (remove text blocks after tool_use)
-        const newContent: any[] = [];
+        const newContent: ClaudeContentBlock[] = [];
         let foundToolUse = false;
 
         for (const block of msg.content) {
@@ -51,34 +81,34 @@ export function fixToolUseOrdering(messages: any) {
   }
 
   // Pass 2: Merge consecutive same-role messages
-  const merged: any[] = [];
+  const merged: ClaudeMessage[] = [];
 
   for (const msg of messages) {
     const last = merged[merged.length - 1];
 
     if (last && last.role === msg.role) {
       // Merge content arrays
-      const lastContent = Array.isArray(last.content)
+      const lastContent: ClaudeContentBlock[] = Array.isArray(last.content)
         ? last.content
         : [{ type: "text", text: last.content }];
-      const msgContent = Array.isArray(msg.content)
+      const msgContent: ClaudeContentBlock[] = Array.isArray(msg.content)
         ? msg.content
         : [{ type: "text", text: msg.content }];
 
       // Put tool_result first, then other content
       const toolResults = [
-        ...lastContent.filter((b: any) => b.type === "tool_result"),
-        ...msgContent.filter((b: any) => b.type === "tool_result"),
+        ...lastContent.filter((b) => b.type === "tool_result"),
+        ...msgContent.filter((b) => b.type === "tool_result"),
       ];
       const otherContent = [
-        ...lastContent.filter((b: any) => b.type !== "tool_result"),
-        ...msgContent.filter((b: any) => b.type !== "tool_result"),
+        ...lastContent.filter((b) => b.type !== "tool_result"),
+        ...msgContent.filter((b) => b.type !== "tool_result"),
       ];
 
       last.content = [...toolResults, ...otherContent];
     } else {
       // Ensure content is array
-      const content = Array.isArray(msg.content)
+      const content: ClaudeContentBlock[] = Array.isArray(msg.content)
         ? msg.content
         : [{ type: "text", text: msg.content }];
       merged.push({ role: msg.role, content: [...content] });
@@ -97,22 +127,24 @@ const CLAUDE_FORMAT_PROVIDERS_WITHOUT_OUTPUT_CONFIG = new Set(["minimax", "minim
 // - Fix tool_use/tool_result ordering
 // - Apply cloaking (billing header + fake user ID) for OAuth tokens
 export function prepareClaudeRequest(
-  body: any,
-  provider: any = null,
-  apiKey: any = null,
-  connectionId: any = null,
+  body: JsonRecord,
+  provider: string | null = null,
+  apiKey: string | null = null,
+  connectionId: string | null = null,
 ) {
   // MiniMax exposes a Claude-compatible endpoint but rejects Anthropic's extended
   // structured output parameter with a generic 400 "invalid params" response.
-  if (CLAUDE_FORMAT_PROVIDERS_WITHOUT_OUTPUT_CONFIG.has(provider)) {
+  // provider may be null; Set.has(null) is always false, so this cast is type-only.
+  if (CLAUDE_FORMAT_PROVIDERS_WITHOUT_OUTPUT_CONFIG.has(provider as string)) {
     delete body.output_config;
   }
 
   // 1. System: remove all cache_control, add only to last block with ttl 1h
   if (body.system && Array.isArray(body.system)) {
-    body.system = body.system.map((block: any, i: any) => {
+    const system = body.system as ClaudeContentBlock[];
+    body.system = system.map((block, i) => {
       const { cache_control: _cache_control, ...rest } = block;
-      if (i === body.system.length - 1) {
+      if (i === system.length - 1) {
         return { ...rest, cache_control: { type: "ephemeral", ttl: "1h" } };
       }
       return rest;
@@ -121,12 +153,13 @@ export function prepareClaudeRequest(
 
   // 2. Messages: process in optimized passes
   if (body.messages && Array.isArray(body.messages)) {
-    const len = body.messages.length;
-    let filtered: any[] = [];
+    const messages = body.messages as ClaudeMessage[];
+    const len = messages.length;
+    let filtered: ClaudeMessage[] = [];
 
     // Pass 1: remove cache_control + filter empty messages
     for (let i = 0; i < len; i++) {
-      const msg = body.messages[i];
+      const msg = messages[i] as ClaudeMessage;
 
       // Remove cache_control from content blocks
       if (Array.isArray(msg.content)) {
@@ -151,19 +184,21 @@ export function prepareClaudeRequest(
     // Check if thinking is enabled AND last message is from user
     const lastMessage = filtered[filtered.length - 1];
     const lastMessageIsUser = lastMessage?.role === "user";
-    const thinkingEnabled = body.thinking?.type === "enabled" && lastMessageIsUser;
+    const thinkingEnabled =
+      (body.thinking as ClaudeThinkingConfig | null | undefined)?.type === "enabled" &&
+      lastMessageIsUser;
 
     // Pass 2 (reverse): add cache_control to last assistant + handle thinking for Anthropic
     let lastAssistantProcessed = false;
     for (let i = filtered.length - 1; i >= 0; i--) {
-      const msg = filtered[i];
+      const msg = filtered[i] as ClaudeMessage;
 
       if (msg.role === "assistant" && Array.isArray(msg.content)) {
         // Add cache_control to last non-thinking block of first (from end) assistant with content
         // thinking/redacted_thinking blocks do not support cache_control
         if (!lastAssistantProcessed && msg.content.length > 0) {
           for (let j = msg.content.length - 1; j >= 0; j--) {
-            const block = msg.content[j];
+            const block = msg.content[j] as ClaudeContentBlock;
             if (block.type !== "thinking" && block.type !== "redacted_thinking") {
               block.cache_control = { type: "ephemeral" };
               break;
@@ -201,21 +236,24 @@ export function prepareClaudeRequest(
 
   // 3. Tools: filter built-in tools for non-Anthropic providers, then handle cache_control
   if (body.tools && Array.isArray(body.tools)) {
+    let tools = body.tools as ClaudeTool[];
+
     // Strip built-in tools (e.g. web_search_20250305) for providers that don't support them
     if (provider !== "claude") {
-      body.tools = body.tools.filter((tool: any) => !tool.type || tool.type === "function");
+      tools = tools.filter((tool) => !tool.type || tool.type === "function");
     }
 
-    body.tools = body.tools.map((tool: any, i: any) => {
+    tools = tools.map((tool, i) => {
       const { cache_control: _cache_control, ...rest } = tool;
-      if (i === body.tools.length - 1) {
+      if (i === tools.length - 1) {
         return { ...rest, cache_control: { type: "ephemeral", ttl: "1h" } };
       }
       return rest;
     });
+    body.tools = tools;
 
     // Remove tools array and tool_choice if empty after filtering
-    if (body.tools.length === 0) {
+    if (tools.length === 0) {
       delete body.tools;
       delete body.tool_choice;
     }

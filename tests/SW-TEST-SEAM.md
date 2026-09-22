@@ -8,7 +8,9 @@ code seam; QA supplies the tests.
 ## Files added (QA)
 
 - `tests/unit/swShellCache.test.ts` — 4 unit tests (audit §5.1–§5.4).
-- `tests/e2e/swDeployRegression.e2e.spec.ts` — deploy-regression e2e scaffold (§5.5).
+- `tests/e2e/swDeployRegression.e2e.spec.ts` — deleted 2026-09-22 (unrunnable scaffold:
+  Playwright not installed, `buildAndServe` threw). The §5.5 assertion spec is inlined
+  below; re-create the spec file when wiring the §5 harness.
 - `tests/SW-TEST-SEAM.md` — this file.
 
 ## 1. Expose sw.js handlers (SW Engineer, BLOCKER for unit tests)
@@ -76,10 +78,21 @@ bun add -D @playwright/test
 bun x playwright install --with-deps
 ```
 
-Add a `playwright.config.ts` pointing `webServer` at a two-build harness
-(`buildAndServe` in `tests/e2e/swDeployRegression.e2e.spec.ts` is a TODO the harness
-must fill: build v1 and v2 at the same `displayVersion`, different `BUILD_ID`, serve
-both on one origin so the SW cache-name collision reproduces audit §2).
+Add a `playwright.config.ts` pointing `webServer` at a two-build harness: build v1 and
+v2 at the same `displayVersion`, different `BUILD_ID`, serve both on one origin so the
+SW cache-name collision reproduces audit §2.
+
+### §5.5 assertion spec (formerly the e2e scaffold)
+
+1. Boot at v1 (`networkidle`), wait `navigator.serviceWorker?.controller !== null`.
+2. Capture v1 chunk hashes from served HTML: `/_next/static/([^/"]+)/` via `matchAll`.
+3. Swap server to v2 WITHOUT closing the tab (`page.goto(v2.baseURL, "domcontentloaded")`),
+   wait for controller + `networkidle` (SW update + controllerchange reload settled).
+4. Normal reload (NOT hard-reload); assert zero `requestfailed` URLs matching `/_next/static/`.
+5. Collect `/_next/static/` responses across another normal reload; assert all are 200.
+6. Served-HTML hash set vs v1: the original scaffold asserted v2 CONTAINS every v1 hash —
+   flagged ambiguous in review (containment reads as a stale shell; §4–§5 are the
+   healthy-shell proof). Decide contains vs not-contains before reviving this spec.
 
 ## Run commands (QA)
 
@@ -87,6 +100,5 @@ both on one origin so the SW cache-name collision reproduces audit §2).
 # Unit — after seam §1–§4 landed
 bun run test:run -- tests/unit/swShellCache.test.ts --reporter=verbose
 
-# E2E — after §5 harness wired
-bun x playwright test tests/e2e/swDeployRegression.e2e.spec.ts
+# E2E — after §5 harness wired (re-create the spec from §5.5 above first)
 ```

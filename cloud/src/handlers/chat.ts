@@ -32,6 +32,7 @@ async function getModelInfo(
 }
 
 interface CredentialsResult {
+  [key: string]: unknown;
   id: string;
   apiKey?: string;
   accessToken?: string;
@@ -60,7 +61,7 @@ interface ChatCoreResult {
   response: Response;
   status?: number;
   error?: string;
-  resetsAtMs?: number;
+  resetsAtMs?: number | null;
 }
 
 type FusionTuning = {
@@ -156,7 +157,10 @@ export async function handleChat(
 
   // Check if model is a combo
   const data = await getMachineData(machineId, env);
-  const comboModels = getComboModelsFromData(modelStr, (data?.combos as Array<unknown>) || []);
+  const comboModels = getComboModelsFromData(
+    modelStr,
+    ((data?.combos as Array<unknown>) || []) as Parameters<typeof getComboModelsFromData>[1],
+  );
 
   if (comboModels) {
     const { comboStrategy, comboStickyLimit, judgeModel, tuning } = getComboStrategyFields(
@@ -282,6 +286,7 @@ async function handleSingleModelChat(
       body,
       modelInfo: { provider, model },
       credentials: refreshedCredentials,
+      connectionId: "",
       log,
       onCredentialsRefreshed: async (newCreds: Record<string, unknown>) => {
         await updateCredentials(machineId, credResult.id, newCreds, env);
@@ -340,12 +345,13 @@ async function checkAndRefreshToken(
       newCredentials as unknown as Record<string, unknown>,
       env,
     );
+    const nc = newCredentials as { refreshToken?: string; expiresIn?: number };
     return {
       ...credentials,
       accessToken: newCredentials.accessToken as string,
-      refreshToken: (newCredentials.refreshToken as string) || credentials.refreshToken,
-      expiresAt: newCredentials.expiresIn
-        ? new Date(Date.now() + (newCredentials.expiresIn as number) * 1000).toISOString()
+      refreshToken: (nc.refreshToken as string) || credentials.refreshToken,
+      expiresAt: nc.expiresIn
+        ? new Date(Date.now() + (nc.expiresIn as number) * 1000).toISOString()
         : credentials.expiresAt,
     };
   }

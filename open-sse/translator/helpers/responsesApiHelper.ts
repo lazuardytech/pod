@@ -1,4 +1,28 @@
 /**
+ * Responses API input item (trusted shape from Responses API payloads)
+ */
+type ResponsesInputItem = {
+  type?: unknown;
+  role?: unknown;
+  content?: unknown;
+  name?: unknown;
+  call_id?: unknown;
+  arguments?: unknown;
+  output?: unknown;
+};
+
+type ResponsesContentPart = {
+  type?: unknown;
+  text?: unknown;
+  image_url?: unknown;
+  file_id?: unknown;
+  detail?: unknown;
+};
+
+// Chat-completions body while messages are being rebuilt from Responses input
+type ResponsesMessagesBody = Record<string, unknown> & { messages: unknown[] };
+
+/**
  * Normalize Responses API input to array format.
  * Accepts string or array, returns array of message items.
  * An empty array is treated like an empty string — providers require at least one user
@@ -6,7 +30,7 @@
  * @param {string|Array} input - raw input from Responses API body
  * @returns {Array|null} normalized array or null if invalid
  */
-export function normalizeResponsesInput(input: any) {
+export function normalizeResponsesInput(input: unknown): ResponsesInputItem[] | null {
   if (typeof input === "string") {
     const text = input.trim() === "" ? "..." : input;
     return [{ type: "message", role: "user", content: [{ type: "input_text", text }] }];
@@ -16,7 +40,7 @@ export function normalizeResponsesInput(input: any) {
     if (input.length === 0) {
       return [{ type: "message", role: "user", content: [{ type: "input_text", text: "..." }] }];
     }
-    return input;
+    return input as ResponsesInputItem[];
   }
   return null;
 }
@@ -26,10 +50,10 @@ export function normalizeResponsesInput(input: any) {
  * Responses API uses: { input: [...], instructions: "..." }
  * Chat API uses: { messages: [...] }
  */
-export function convertResponsesApiFormat(body: any) {
+export function convertResponsesApiFormat(body: Record<string, unknown>): Record<string, unknown> {
   if (!body.input) return body;
 
-  const result = { ...body };
+  const result = { ...body } as ResponsesMessagesBody;
   result.messages = [];
 
   // Convert instructions to system message
@@ -38,9 +62,9 @@ export function convertResponsesApiFormat(body: any) {
   }
 
   // Group items by conversation turn
-  let currentAssistantMsg: any = null;
-  const _pendingToolCalls: any[] = [];
-  let pendingToolResults: any[] = [];
+  let currentAssistantMsg: { role: string; content: null; tool_calls: unknown[] } | null = null;
+  const _pendingToolCalls: unknown[] = [];
+  let pendingToolResults: unknown[] = [];
 
   const inputItems = normalizeResponsesInput(body.input);
   if (!inputItems) return body;
@@ -66,7 +90,7 @@ export function convertResponsesApiFormat(body: any) {
 
       // Convert content: input_text → text, output_text → text, input_image → image_url
       const content = Array.isArray(item.content)
-        ? item.content.map((c: any) => {
+        ? (item.content as ResponsesContentPart[]).map((c) => {
             if (c.type === "input_text") return { type: "text", text: c.text };
             if (c.type === "output_text") return { type: "text", text: c.text };
             if (c.type === "input_image") {

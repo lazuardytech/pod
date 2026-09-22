@@ -31,6 +31,9 @@ import {
 import { TTS_PROVIDER_CONFIG } from "@/shared/constants/ttsProviders";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
+// Module-scope clock: keeps Date.now() out of the render context (react compiler purity).
+const nowMs = () => Date.now();
+
 function errMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (typeof e === "string") return e;
@@ -362,7 +365,7 @@ function EmbeddingExampleCard({
     setRunning(true);
     setError("");
     setResult(null);
-    const start = Date.now();
+    const start = nowMs();
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
@@ -371,7 +374,7 @@ function EmbeddingExampleCard({
         headers,
         body: JSON.stringify(buildBody()),
       });
-      const latencyMs = Date.now() - start;
+      const latencyMs = nowMs() - start;
       const data = await res.json();
       if (!res.ok) {
         setError(data?.error?.message || data?.error || `HTTP ${res.status}`);
@@ -634,7 +637,6 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
   // Language hint (e.g. Gemini): controls the spoken language without affecting voice selection
   const [languageHint, setLanguageHint] = useState("");
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     setLocalEndpoint(window.location.origin);
     fetch("/api/keys")
@@ -688,10 +690,8 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
     // config (nvidia, hyperbolic, deepgram, huggingface, cartesia, playht, coqui, tortoise, inworld, qwen):
     // use ttsConfig.models for model selector; voice is empty by default (backend uses provider default)
   }, [providerId]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Update voices when model changes (voicesPerModel providers)
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!config.voicesPerModel || !selectedModel) return;
     const voices = getTtsVoicesForModel(providerId, selectedModel) || [];
@@ -702,7 +702,6 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
       setSelectedVoiceName(firstVoice.name || firstVoice.id);
     }
   }, [selectedModel]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Open modal — load language list
   const openModal = async (): Promise<void> => {
@@ -802,7 +801,7 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
     setError("");
     setAudioUrl("");
     setJsonResponse(null);
-    const start = Date.now();
+    const start = nowMs();
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
@@ -812,7 +811,7 @@ function TtsExampleCard({ providerId }: { providerId: string }) {
         headers,
         body: JSON.stringify({ ...ttsBody, input: input.trim() }),
       });
-      setLatency(Date.now() - start);
+      setLatency(nowMs() - start);
       if (!res.ok) {
         const d = await res.json().catch((): Record<string, unknown> => ({}));
         setError(d?.error?.message || d?.error || `HTTP ${res.status}`);
@@ -1405,7 +1404,7 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
       } catch {}
       setBinaryImageUrl("");
     }
-    const start = Date.now();
+    const start = nowMs();
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
@@ -1430,7 +1429,7 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
         setBinaryImageUrl(objUrl);
         setResult({
           data: { binary: true, mime: ctype, size: blob.size },
-          latencyMs: Date.now() - start,
+          latencyMs: nowMs() - start,
         });
         return;
       }
@@ -1468,7 +1467,7 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
             } catch {}
           }
         }
-        const latencyMs = Date.now() - start;
+        const latencyMs = nowMs() - start;
         if (streamErr) {
           setError(streamErr);
           return;
@@ -1476,7 +1475,7 @@ function GenericExampleCard({ providerId, kind }: { providerId: string; kind: st
         if (finalData) setResult({ data: finalData, latencyMs });
       } else {
         const data = await res.json();
-        const latencyMs = Date.now() - start;
+        const latencyMs = nowMs() - start;
         setResult({ data, latencyMs });
       }
     } catch (e) {
@@ -2029,7 +2028,7 @@ function SttExampleCard({ providerId }: { providerId: string }) {
     setRunning(true);
     setError("");
     setResult(null);
-    const start = Date.now();
+    const start = nowMs();
     try {
       const fd = new FormData();
       fd.append("file", audioFile);
@@ -2047,7 +2046,7 @@ function SttExampleCard({ providerId }: { providerId: string }) {
         headers,
         body: fd,
       });
-      setLatency(Date.now() - start);
+      setLatency(nowMs() - start);
       const ct = res.headers.get("content-type") || "";
       const data = ct.includes("application/json") ? await res.json() : await res.text();
       if (!res.ok) {
