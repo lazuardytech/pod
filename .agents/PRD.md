@@ -1,6 +1,6 @@
 # Pod — Product Requirements Document
 
-**Version:** v0.0.87 | **Status:** Active development | **Last reviewed:** 2026-09-22
+**Version:** v0.0.88 | **Status:** Active development | **Last reviewed:** 2026-09-22
 
 ## Overview
 
@@ -139,7 +139,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 
 | Metric              | Value                                                                   |
 | ------------------- | ----------------------------------------------------------------------- |
-| Version             | v0.0.87                                                                 |
+| Version             | v0.0.88                                                                 |
 | Default port        | 20128                                                                   |
 | Zeabur port         | 20140                                                                   |
 | SSE connection cap  | 100 concurrent                                                          |
@@ -172,3 +172,11 @@ Tracked as **not debt** (deliberate, documented): 15 `ponytail:` ceiling markers
 - **T1, T2, T5, T6, T7, T8 — Fixed.** T1: 62 `: any` removed type-only. T2: cloud tsc 42→0, `bun run check:cloud` gate wired into `bun run check`, stale wrangler alias key repaired. T5: 22 directives deleted; the 10 oxlint warnings they had been masking were fixed properly (not re-suppressed). T6: casts typed. T7: scaffold deleted, §5.5 spec inlined in `tests/SW-TEST-SEAM.md`. T8: floors ratcheted to ~70% of measured baseline (global 10/7/7/10, lib 20/18/16/20, api 10/12/7/10).
 - **T4 — Blocked on credentials:** GitHub App token lacks `workflows` permission (HTTPS push of `.github/workflows` refused; no SSH key in sandbox). Re-enable probe is a 2-line commit on local branch `t4-ci-enable` — apply it with a workflows-scoped credential, then watch whether Actions runners start.
 - **T3 — Open (ops):** prod Zeabur rollout needs deploy-log inspection or manual retrigger (no `ZEABUR_TOKEN` in sandbox).
+
+### Rescan (2026-09-22, post-v0.0.88)
+
+Authored code fully clean: 0 `@ts-nocheck`, 0 `: any`/`as any`, 0 stale lint directives, 0 authored TODO/FIXME, oxlint `--deny-warnings` 0/0, root + cloud tsc 0, 1523/1523 tests. Remaining open items:
+
+- **T3 (ops)** — `pod.lazuardy.tech` still serving 0.0.86 >2h after PR #39 merged main (canary healthy at 0.0.88). Zeabur deploy automation for service `pod` is not firing; needs dashboard/token inspection.
+- **T4 (credential-blocked)** — evidence upgrade: Dependabot dynamic workflows ran successfully on main at 2026-09-22T04:40 (Actions runners are healthy again), so removing `if: false` is low-risk. The only blocker is pushing `.github/workflows`: the checkout's GitHub App token lacks `workflows` permission. Probe commit ready on local branch `t4-ci-enable`.
+- **Routine maintenance (not debt):** open Dependabot PRs #35/#36/#37 (vitest 5.0.1, @vitest/coverage-v8 5.0.1, oxfmt 0.68.0) awaiting merge — they predate the v0.0.88 squash and need rebase.
