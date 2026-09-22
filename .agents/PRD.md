@@ -166,3 +166,9 @@ Full-repo scan 2026-09-22 (canary @ `073a91a9`). Baseline gates green: `bun run 
 | T8  | Coverage floors at 1%/0%                                                                              | `vitest.config.ts` thresholds                                                                                                            | Low           | Raise gradually as coverage improves                                                    |
 
 Tracked as **not debt** (deliberate, documented): 15 `ponytail:` ceiling markers (each names an upgrade path), env-gated `tests/live/` skips, 4 justified `@ts-expect-error` FFI edges (styled-jsx attrs; no `@types` for chalk-animation/figlet/gradient-string; device-flow PKCE shadow), stub `/v1` routes (product surface).
+
+### Fix status (2026-09-22, v0.0.88)
+
+- **T1, T2, T5, T6, T7, T8 — Fixed.** T1: 62 `: any` removed type-only. T2: cloud tsc 42→0, `bun run check:cloud` gate wired into `bun run check`, stale wrangler alias key repaired. T5: 22 directives deleted; the 10 oxlint warnings they had been masking were fixed properly (not re-suppressed). T6: casts typed. T7: scaffold deleted, §5.5 spec inlined in `tests/SW-TEST-SEAM.md`. T8: floors ratcheted to ~70% of measured baseline (global 10/7/7/10, lib 20/18/16/20, api 10/12/7/10).
+- **T4 — Blocked on credentials:** GitHub App token lacks `workflows` permission (HTTPS push of `.github/workflows` refused; no SSH key in sandbox). Re-enable probe is a 2-line commit on local branch `t4-ci-enable` — apply it with a workflows-scoped credential, then watch whether Actions runners start.
+- **T3 — Open (ops):** prod Zeabur rollout needs deploy-log inspection or manual retrigger (no `ZEABUR_TOKEN` in sandbox).

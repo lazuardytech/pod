@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.88] - 2026-09-22
+
+### Changed
+
+- **Technical debt T1–T8 cleared** (scan + status in `.agents/PRD.md`): all 62 `: any` removed from the 5 translator helpers (type-only); `cloud/` typecheck 42→0 errors with a new `bun run check:cloud` gate wired into `bun run check` (stale wrangler alias key `@/lib/usageDb.js` → `@/lib/usageDb` repaired); 22 inert `eslint-disable` directives deleted, unmasking 10 hidden oxlint react-compiler warnings — all fixed properly (ref-prop rename, refs/impure reads moved out of render, effect ordering, module-scope clock); test casts typed; unrunnable SW e2e scaffold deleted with its §5.5 spec inlined into `tests/SW-TEST-SEAM.md`; coverage floors ratcheted to ~70% of the measured baseline.
+- Version bump **0.0.87 → 0.0.88**.
+
+### Open
+
+- T4 (CI `if: false`, Actions billing): re-enable probe ready on branch `t4-ci-enable` — the sandbox credential cannot push `.github/workflows` (GitHub App lacks `workflows` permission).
+- T3 (ops): prod Zeabur rollout needs deploy-log inspection (no `ZEABUR_TOKEN` in sandbox).
+
 ## [0.0.87] - 2026-09-21
 
 ### Changed
