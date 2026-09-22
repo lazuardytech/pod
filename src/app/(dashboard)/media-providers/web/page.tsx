@@ -256,7 +256,6 @@ export default function WebProvidersPage() {
     window.localStorage.setItem("web-providers:connectedOnly", String(next));
   };
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     registerAction({
       label: "Connected only",
@@ -267,7 +266,6 @@ export default function WebProvidersPage() {
     });
     return () => unregisterAction();
   }, [showConnectedOnly, registerAction, unregisterAction]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   const matchConnected = (providerId: string) => {
     if (!showConnectedOnly) return true;

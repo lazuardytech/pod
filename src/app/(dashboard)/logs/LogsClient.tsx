@@ -405,7 +405,7 @@ function LogsInner() {
             setSortBy={setProxySortBy}
             live={proxyLive}
             setLive={setProxyLive}
-            onRefresh={proxyRefreshRef}
+            refreshRef={proxyRefreshRef}
             onCountChange={setProxyCount}
           />
         </div>

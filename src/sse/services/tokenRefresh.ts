@@ -45,9 +45,10 @@ export const refreshIflowToken = (refreshToken: string): Promise<AnyCreds | null
   _refreshIflowToken(refreshToken, log);
 export const refreshGitHubToken = (refreshToken: string): Promise<AnyCreds | null> =>
   _refreshGitHubToken(refreshToken, log);
+// Returns optional fields when GitHub omits them — callers guard on truthiness.
 export const refreshCopilotToken = (
   githubAccessToken: string,
-): Promise<{ token: string; expiresAt: number } | null> =>
+): Promise<{ token?: string; expiresAt?: number } | null> =>
   _refreshCopilotToken(githubAccessToken, log);
 export const refreshKiroToken = (
   refreshToken: string,

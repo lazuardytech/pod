@@ -14,6 +14,20 @@ type OpenSseCoreResult = {
   resetsAtMs?: number;
 };
 
+// Global shims for node-coupled modules pulled into the workers typecheck.
+var Bun: unknown;
+declare global {
+  var __modelsDevSync:
+    | {
+        timer: ReturnType<typeof setInterval> | null;
+        lastSync: string | null;
+        lastSyncModelCount: number;
+        intervalMs: number;
+        syncPromise: Promise<unknown> | null;
+      }
+    | undefined;
+}
+
 // Workers compile must not typecheck the app-coupled open-sse source graph.
 // The wildcard keeps bundling resolution intact while typing only cloud-used exports.
 declare module "open-sse/*" {

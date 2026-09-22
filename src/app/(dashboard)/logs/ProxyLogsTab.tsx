@@ -75,7 +75,7 @@ type ProxyLogsTabProps = {
   setSortBy?: Dispatch<SetStateAction<string>>;
   live?: boolean;
   setLive?: Dispatch<SetStateAction<boolean>>;
-  onRefresh?: MutableRefObject<(() => Promise<void>) | null>;
+  refreshRef?: MutableRefObject<(() => Promise<void>) | null>;
   onCountChange?: (count: number) => void;
 };
 
@@ -84,7 +84,7 @@ export default function ProxyLogsTab({
   setSortBy: _setSortBy,
   live,
   setLive: _setLive,
-  onRefresh,
+  refreshRef,
   onCountChange,
 }: ProxyLogsTabProps) {
   const [loading, setLoading] = useState(true);
@@ -120,11 +120,10 @@ export default function ProxyLogsTab({
 
   // Expose fetchPools to parent via ref
   useEffect(() => {
-    if (onRefresh) onRefresh.current = fetchPools;
-  }, [onRefresh, fetchPools]);
+    if (refreshRef) refreshRef.current = fetchPools;
+  }, [refreshRef, fetchPools]);
 
   // SSE connection
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const connect = () => {
       if (esRef.current) {
@@ -175,7 +174,6 @@ export default function ProxyLogsTab({
       }
     };
   }, []);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   const handleTest = async (pool: ProxyPool) => {
     setTesting(pool.id);

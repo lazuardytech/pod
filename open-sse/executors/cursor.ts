@@ -232,7 +232,11 @@ export class CursorExecutor extends BaseExecutor {
 
     return {
       status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
+      headers: Object.fromEntries(
+        (
+          response.headers as unknown as { entries: () => IterableIterator<[string, string]> }
+        ).entries(),
+      ),
       body: Buffer.from(await response.arrayBuffer()),
     };
   }

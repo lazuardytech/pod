@@ -203,13 +203,6 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
     if (tsLogRef.current) tsLogRef.current.scrollTop = tsLogRef.current.scrollHeight;
   }, [tsInstallLog]);
 
-  /* eslint-disable react-hooks/exhaustive-deps */
-  useEffect(() => {
-    fetchData();
-    loadSettings();
-  }, []);
-  /* eslint-enable react-hooks/exhaustive-deps */
-
   const applyTunnelStatus = useCallback((data: unknown) => {
     if (!data || typeof data !== "object") return;
     const d = data as TunnelStatusPayload;
@@ -631,6 +624,11 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
     };
     check().catch(() => {});
   };
+
+  useEffect(() => {
+    fetchData();
+    loadSettings();
+  }, []);
 
   const handleEnableTunnel = async () => {
     setShowEnableTunnelModal(false);

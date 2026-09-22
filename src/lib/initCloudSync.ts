@@ -3,7 +3,6 @@ import initializeApp from "@/shared/services/initializeApp";
 type CloudSyncInitState = { initialized: boolean; inProgress: Promise<boolean> | null };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __cloudSyncInit: CloudSyncInitState | undefined;
 }
 

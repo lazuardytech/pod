@@ -138,7 +138,6 @@ export default function ConnectionRow({
       .filter((v) => !!v)
       .sort()[0] || null;
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const checkCooldown = () => {
       const until =
@@ -156,7 +155,6 @@ export default function ConnectionRow({
       if (interval) clearInterval(interval);
     };
   }, [modelLockUntil]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Determine effective status (override unavailable if cooldown expired)
   const effectiveStatus =

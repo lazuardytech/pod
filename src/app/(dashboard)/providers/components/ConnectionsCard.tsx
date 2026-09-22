@@ -171,7 +171,6 @@ function ConnectionRow({
       .filter(Boolean)
       .sort()[0] || null;
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const check = () => {
       const until =
@@ -188,7 +187,6 @@ function ConnectionRow({
       if (t) clearInterval(t);
     };
   }, [modelLockUntil]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!showProxyDropdown) {

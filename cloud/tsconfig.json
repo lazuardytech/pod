@@ -16,8 +16,8 @@
     "types": ["@cloudflare/workers-types"],
     "baseUrl": ".",
     "paths": {
-      "open-sse": ["../open-sse"],
-      "open-sse/*": ["../open-sse/*"]
+      "@/lib/usageDb": ["./src/stubs/usageDb.ts"],
+      "@/*": ["../src/*"]
     }
   },
   "include": ["src/**/*.ts"],

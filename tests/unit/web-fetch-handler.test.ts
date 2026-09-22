@@ -119,8 +119,12 @@ describe("handleFetchCore — firecrawl", () => {
       credentials: null,
     });
 
-    expect(htmlResult.success && (htmlResult.data as any).content.text).toBe("<p>raw html</p>");
-    expect(textResult.success && (textResult.data as any).content.text).toBe("plain text");
+    expect(
+      htmlResult.success && (htmlResult.data as { content: { text: string } }).content.text,
+    ).toBe("<p>raw html</p>");
+    expect(
+      textResult.success && (textResult.data as { content: { text: string } }).content.text,
+    ).toBe("plain text");
   });
 
   it("truncates content when maxCharacters is set", async () => {
@@ -192,7 +196,7 @@ describe("handleFetchCore — firecrawl", () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect((result.data as Record<string, unknown>).title).toBeNull();
-    expect((result.data as any).content.text).toBe("");
+    expect((result.data as { content: { text: string } }).content.text).toBe("");
   });
 });
 
@@ -307,7 +311,7 @@ describe("handleFetchCore — tavily", () => {
 
     expect(result.success).toBe(true);
     if (!result.success) return;
-    expect((result.data as any).content.text).toBe("");
+    expect((result.data as { content: { text: string } }).content.text).toBe("");
   });
 });
 
@@ -339,7 +343,7 @@ describe("handleFetchCore — exa", () => {
 
     expect(result.success).toBe(true);
     if (!result.success) return;
-    expect((result.data as any).content.text).toBe("exa result");
+    expect((result.data as { content: { text: string } }).content.text).toBe("exa result");
   });
 });
 

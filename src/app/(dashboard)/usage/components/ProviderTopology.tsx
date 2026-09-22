@@ -406,21 +406,18 @@ export default function ProviderTopology({
     return () => clearInterval(id);
   }, [rawActiveSet]);
 
-  /* eslint-disable react-hooks/exhaustive-deps */
-  const activeSet = useMemo(() => {
+  const [activeSet, setActiveSet] = useState<Set<string>>(() => new Set<string>());
+  useEffect(() => {
     const now = Date.now();
     const filtered = new Set<string>();
     for (const p of rawActiveSet) {
       const ts = firstSeenRef.current[p];
       if (!ts || now - ts < FE_ACTIVE_TIMEOUT_MS) filtered.add(p);
     }
-    return filtered;
+    setActiveSet(filtered);
   }, [rawActiveSet, tick]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   const { nodes, edges } = useMemo(
-    /* eslint-enable react-hooks/exhaustive-deps */
     () => buildLayout(providers, activeSet, lastSet, errorSet),
     [providers, activeSet, lastKey, errorKey],
   );
@@ -440,7 +437,6 @@ export default function ProviderTopology({
   const fitOpts = { padding: 0.2, duration: 200 };
   const savedViewport = useRef(loadViewport());
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   const onInit = useCallback((instance: ReactFlowInstance<TopologyNode, TopologyEdge>) => {
     rfInstance.current = instance;
     if (savedViewport.current) {
@@ -450,7 +446,6 @@ export default function ProviderTopology({
       setTimeout(() => instance.fitView(fitOpts), 50);
     }
   }, []);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   const onMoveEnd = useCallback((_: unknown, viewport: Viewport) => {
     saveViewport(viewport);
@@ -458,7 +453,6 @@ export default function ProviderTopology({
   }, []);
 
   // Re-fit on container resize — only when no saved viewport
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) {
@@ -470,7 +464,6 @@ export default function ProviderTopology({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Re-fit when node count/layout changes — only when no saved viewport
   useEffect(() => {

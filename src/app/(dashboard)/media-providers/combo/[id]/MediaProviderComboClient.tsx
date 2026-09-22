@@ -64,6 +64,9 @@ const KIND_LABELS: Record<string, string> = {
   tts: "Text To Speech",
 };
 
+// Module-scope clock: keeps Date.now() out of the render context (react compiler purity).
+const nowMs = () => Date.now();
+
 const EXAMPLE_PATHS: Record<string, string> = {
   webSearch: "/v1/search",
   webFetch: "/v1/web/fetch",
@@ -171,11 +174,9 @@ export default function ComboDetailPage() {
     setLoading(false);
   };
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     fetchAll();
   }, [id]);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   const validateName = (v: string): boolean => {
     if (!v.trim()) {
@@ -291,7 +292,7 @@ export default function ComboDetailPage() {
         URL.revokeObjectURL(testResult.imageUrl);
       } catch {}
     }
-    const start = Date.now();
+    const start = nowMs();
     try {
       const path = EXAMPLE_PATHS[combo.kind];
       const bodyFn = EXAMPLE_BODIES[combo.kind];
@@ -304,7 +305,7 @@ export default function ComboDetailPage() {
         headers,
         body: JSON.stringify(body),
       });
-      const latencyMs = Date.now() - start;
+      const latencyMs = nowMs() - start;
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         setTestError(d?.error?.message || d?.error || `HTTP ${res.status}`);
