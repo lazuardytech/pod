@@ -68,7 +68,6 @@ export async function register(): Promise<void> {
       /* ignore */
     }
     try {
-      // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
       if (typeof removeAllDNSEntriesSync === "function") removeAllDNSEntriesSync();
     } catch {
       /* ignore */
