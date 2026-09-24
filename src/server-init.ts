@@ -64,7 +64,6 @@ async function startServer() {
       killCloudflared();
     } catch {}
     try {
-      // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
       if (typeof removeAllDNSEntriesSync === "function") removeAllDNSEntriesSync();
     } catch {}
   });

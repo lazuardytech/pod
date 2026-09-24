@@ -19,7 +19,6 @@ type ModelsDevSyncState = {
   syncPromise: Promise<unknown> | null;
 };
 
-// biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
 const g: ModelsDevSyncState = (globalThis.__modelsDevSync ??= {
   timer: null,
   lastSync: null,

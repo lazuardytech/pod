@@ -23,7 +23,6 @@ import { error as logError, info as logInfo } from "@/sse/utils/logger";
 process.setMaxListeners(20);
 
 // Survive Next.js hot reload
-// biome-ignore lint/suspicious/noAssignInExpressions: globalThis singleton pattern for HMR survival
 const g = (global.__appSingleton ??= {
   signalHandlersRegistered: false,
   watchdogInterval: null as ReturnType<typeof setInterval> | null,
@@ -74,7 +73,6 @@ export async function initializeApp(): Promise<void> {
       // Keep the exit handler for DNS cleanup as a safety net.
       process.on("exit", () => {
         try {
-          // biome-ignore lint/correctness/noUndeclaredVariables: runtime-injected global
           removeAllDNSEntriesSync();
         } catch {
           /* ignore */
