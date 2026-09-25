@@ -20,19 +20,16 @@ export default function DashboardLayout({ children }: { children?: ReactNode }) 
 
   useEffect(() => {
     let cancelled = false;
-    const hasAuthCookie = document.cookie.split("; ").some((c) => c.startsWith("auth_token="));
-    if (hasAuthCookie) {
-      setAuthState("ok");
-      return;
-    }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-    fetch("/api/settings/require-login", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : { requireLogin: true }))
-      .then((data: { requireLogin?: boolean }) => {
+    // auth_token is HttpOnly — document.cookie can never see it. Ask the
+    // server (single round-trip) for the authenticated + requireLogin state.
+    fetch("/api/auth/session", { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : { authenticated: false, requireLogin: true }))
+      .then((data: { authenticated?: boolean; requireLogin?: boolean }) => {
         clearTimeout(timeoutId);
         if (cancelled) return;
-        if (data.requireLogin === false) {
+        if (data.authenticated === true || data.requireLogin === false) {
           setAuthState("ok");
         } else {
           setAuthState("redirect");
