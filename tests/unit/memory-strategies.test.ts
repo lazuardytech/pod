@@ -318,6 +318,7 @@ describe("providerSupportsSystemMessage", () => {
 
 vi.mock("../../src/lib/sqlite/connection.ts", () => ({
   getDatabase: vi.fn(),
+  prepared: (db: { prepare: (sql: string) => unknown }, sql: string) => db.prepare(sql),
 }));
 
 describe("retrieveMemories — strategy behavior", () => {

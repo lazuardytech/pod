@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.89] - 2026-09-25
+
+### Changed
+
+- **Concurrency/performance pass** (audited findings, zero behavior change; scan notes in `.agents/PRD.md`):
+  - SQLite: `prepared()` statement cache (`bun:sqlite` recompiles on every `prepare()` — 1.3× measured overhead); per-request `api_keys.last_access_at` UPDATE throttled to 1 write/min/key (was a synchronous write on every admission); `getSettings()` 1s TTL cache with invalidation at all writers (was 1–3 full-table reads + JSON.parse per request); semantic-cache metrics accumulate and flush in one transaction every 5s (was 1–3 inline writes per cache-enabled request); new `idx_reqlog_pending` index kills the table scan inside the request_log flush transaction.
+  - SSE hot path: memoized translator pair lookup per `${target}:${source}` (was per-chunk string key + 2 registry gets); `decloakSSELine` skips the JSON round-trip when no tool map and no suffix fallback; passthrough computes the line payload once; merged the two passes over SSE lines into one.
+  - Memory retrieval: `hasTable` positive-cache (was a sqlite_master query per request); keyword scoring compiles one regex per token and reuses it across haystacks (was per token × haystack × row).
+  - Rate limit (in-memory backend): minute-counter trim now time-gated like the concurrent trim (was an O(all-keys) scan per request).
+  - Fixed: Redis RPM `x-ratelimit-reset-requests` was `NaN` (member format is `${ts}:${uuid}`) — new `parseMemberTimestamp` with unit tests.
+- Version bump **0.0.88 → 0.0.89**.
+
+### Verified
+
+- `bun run check` 0/0 · `bun run test:run` **1526/1526** (1523 + 3 new) · `bun run build` EXIT=0.
+
 ## [0.0.88] - 2026-09-22
 
 ### Changed

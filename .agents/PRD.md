@@ -191,3 +191,24 @@ Full rescan + dead-code purge on canary. Gates: `bun run check` (incl. cloud) 0/
 - **Dev deps bumped to Dependabot targets** (vitest 5.0.1, @vitest/coverage-v8 5.0.1, oxfmt ^0.68.0) — supersedes PRs #35/#36/#37; those should auto-close.
 
 Net: **-1,091 lines, +34** (dep pins). No runtime change (deletions of unreferenced code only).
+
+### Performance pass (2026-09-25, v0.0.89)
+
+Concurrency-focused optimization for the enterprise LLM-router use case on Bun. Two read-only audits (SSE streaming path; storage/admission path) produced ranked findings with line evidence; the safe set was implemented (zero behavior change, type-safe):
+
+| Area                   | Change                                                                                                                                                            | Why it matters under load                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| SQLite statements      | New `prepared(db, sql)` WeakMap cache in `connection.ts`; used by api_keys SELECT/UPDATE, settings SELECT, semantic-cache SELECT/INSERT/UPDATE, retrieval queries | `bun:sqlite` recompiles on every `prepare()` (measured 1.3× overhead per op)                                       |
+| api_keys writes        | `last_access_at` UPDATE throttled to 1 write/min/key                                                                                                              | Was a synchronous write per admission — serialized all requests on SQLite's single writer for a cosmetic timestamp |
+| Settings               | 1s TTL cache (structuredClone on read) invalidated by all writers                                                                                                 | Was 1–3 full-table reads + JSON.parse per request                                                                  |
+| Semantic cache metrics | In-memory accumulate + 5s single-transaction flush; reads include pending deltas                                                                                  | Was 1–3 inline writes per cache-enabled request                                                                    |
+| request_log flush      | New `idx_reqlog_pending(model, provider, status)` index                                                                                                           | Flush UPDATE was a table scan inside the write transaction                                                         |
+| SSE translate          | Memoized `${target}:${source}` translator pair (was per-chunk key alloc + 2 registry gets)                                                                        | Runs per SSE chunk                                                                                                 |
+| SSE passthrough        | decloak JSON round-trip skipped when no tool map/no fallback; line payload computed once; two passes over lines merged into one                                   | The per-line hot loop                                                                                              |
+| Memory retrieval       | `hasTable` positive cache; keyword regexes compiled per token, reused across rows/haystacks                                                                       | Was sqlite_master query per request + RegExp per token×haystack×row                                                |
+| Rate limit (memory)    | Minute-counter trim time-gated 60s like the concurrent trim                                                                                                       | Was O(all-keys) scan per request                                                                                   |
+| Correctness            | Redis RPM `x-ratelimit-reset-requests` was `NaN` (member `${ts}:${uuid}`); new `parseMemberTimestamp` + unit tests                                                | Header correctness                                                                                                 |
+
+Deliberately skipped (risky/low value, documented in audit): Redis admission pipelining (atomicity semantics), batched stream enqueue (backpressure timing), `hasValuableContent` trim gate (subtle edge), request-logger static import (cloud bundling), appendFileSync buffering when `ENABLE_REQUEST_LOGS` (env-gated, default off).
+
+Gates: `bun run check` 0/0 · `bun run test:run` **1526/1526** (1523 + 3 new) · `bun run build` EXIT=0.

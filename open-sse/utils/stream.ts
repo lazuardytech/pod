@@ -91,6 +91,10 @@ function stripClaudeToolSuffixes(node: unknown): unknown {
 
 function decloakSSELine(line: string, toolNameMap: unknown, allowSuffixFallback = false) {
   if (!line.includes("tool_use")) return line;
+  // Without a populated map decloakToolNames is a no-op, and the suffix strip
+  // only runs when allowSuffixFallback — skip the JSON round-trip entirely.
+  const map = toolNameMap as Map<string, string> | null | undefined;
+  if (!map?.size && !allowSuffixFallback) return line;
 
   const isDataLine = line.startsWith("data:");
   const payload = isDataLine ? line.slice(5).trim() : line.trim();
@@ -275,10 +279,7 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
         buffer = lines.pop() || "";
 
         for (let i = 0; i < lines.length; i++) {
-          lines[i] = decloakSSELine(lines[i] ?? "", toolNameMap, allowSuffixFallback);
-        }
-
-        for (const line of lines) {
+          const line = decloakSSELine(lines[i] ?? "", toolNameMap, allowSuffixFallback);
           const trimmed = line.trim();
 
           // Passthrough mode: normalize and forward
@@ -286,7 +287,8 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
             let output = "";
             let injectedUsage = false;
 
-            if (trimmed.startsWith("data:") && trimmed.slice(5).trim() !== "[DONE]") {
+            const payload = trimmed.startsWith("data:") ? trimmed.slice(5).trim() : "";
+            if (payload && payload !== "[DONE]") {
               if (
                 passthroughNeedsJsonParse(trimmed, {
                   includeUsage,
@@ -294,7 +296,7 @@ export function createSSEStream(options: SSEStreamOptions = {}) {
                 })
               ) {
                 try {
-                  const parsed = JSON.parse(trimmed.slice(5).trim());
+                  const parsed = JSON.parse(payload);
 
                   const idFixed = fixInvalidId(parsed);
 
