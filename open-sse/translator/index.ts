@@ -8,6 +8,7 @@ import { ensureToolCallIds, fixMissingToolResponses } from "./helpers/toolCallHe
 import type {
   TranslatedResponseResults,
   TranslatorCredentials,
+  TranslatorResponseFn,
   TranslatorRequestPayload,
   TranslatorResponseChunk,
   TranslatorResponseResult,
@@ -28,6 +29,15 @@ export { getRegisteredRequestTranslatorKeys, getRegisteredResponseTranslatorKeys
 type RequestPipelineBody = TranslatorRequestPayload & {
   _toolNameMap?: Map<string, string>;
 };
+
+// translateResponse runs per SSE chunk; building the `${target}:${source}` key
+// and hitting both registries every chunk allocates and re-hashes. Memoize the
+// resolved pair once per format combination.
+type ResponsePair = {
+  toOpenAI: TranslatorResponseFn | undefined;
+  fromOpenAI: TranslatorResponseFn | undefined;
+};
+const responsePairCache = new Map<string, ResponsePair>();
 
 type RequestLogger = {
   logOpenAIRequest?: (body: TranslatorRequestPayload) => void;
@@ -200,33 +210,43 @@ export function translateResponse(
   let results: TranslatedResponseResults = [chunk] as TranslatedResponseResults;
   let openaiResults: TranslatorResponseChunk[] | null = null; // Store OpenAI intermediate results
 
+  const cacheKey = `${targetFormat}:${sourceFormat}`;
+  let pair = responsePairCache.get(cacheKey);
+  if (!pair) {
+    pair = {
+      toOpenAI:
+        targetFormat !== FORMATS.OPENAI
+          ? responseRegistry.get(`${targetFormat}:${FORMATS.OPENAI}`)
+          : undefined,
+      fromOpenAI:
+        sourceFormat !== FORMATS.OPENAI
+          ? responseRegistry.get(`${FORMATS.OPENAI}:${sourceFormat}`)
+          : undefined,
+    };
+    responsePairCache.set(cacheKey, pair);
+  }
+
   // Step 1: target -> openai (if target is not openai)
-  if (targetFormat !== FORMATS.OPENAI) {
-    const toOpenAI = responseRegistry.get(`${targetFormat}:${FORMATS.OPENAI}`);
-    if (toOpenAI) {
-      const converted = toOpenAI(chunk, state);
-      if (converted) {
-        results = asTranslatedResponseResults(converted);
-        openaiResults = results; // Store OpenAI intermediate
-      } else {
-        results = [] as TranslatedResponseResults;
-      }
+  if (pair.toOpenAI) {
+    const converted = pair.toOpenAI(chunk, state);
+    if (converted) {
+      results = asTranslatedResponseResults(converted);
+      openaiResults = results; // Store OpenAI intermediate
+    } else {
+      results = [] as TranslatedResponseResults;
     }
   }
 
   // Step 2: openai -> source (if source is not openai)
-  if (sourceFormat !== FORMATS.OPENAI) {
-    const fromOpenAI = responseRegistry.get(`${FORMATS.OPENAI}:${sourceFormat}`);
-    if (fromOpenAI) {
-      const finalResults = [] as TranslatedResponseResults;
-      for (const r of results) {
-        const converted = fromOpenAI(r, state);
-        if (converted) {
-          finalResults.push(...asTranslatedResponseResults(converted));
-        }
+  if (pair.fromOpenAI) {
+    const finalResults = [] as TranslatedResponseResults;
+    for (const r of results) {
+      const converted = pair.fromOpenAI(r, state);
+      if (converted) {
+        finalResults.push(...asTranslatedResponseResults(converted));
       }
-      results = finalResults;
     }
+    results = finalResults;
   }
 
   // Attach OpenAI intermediate results for logging

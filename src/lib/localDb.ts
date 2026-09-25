@@ -5,7 +5,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { Low } from "lowdb";
 import { v4 as uuidv4 } from "uuid";
-import { getDatabase, type SqliteDatabase, tx } from "./sqlite/connection.ts";
+import { getDatabase, prepared, type SqliteDatabase, tx } from "./sqlite/connection.ts";
 
 // ===== Types =============================================================
 
@@ -1127,6 +1127,7 @@ export async function renameProviderNode(oldId: string, newId: string): Promise<
       settingsStmt.run(k, JSON.stringify(v));
     }
   })();
+  invalidateSettingsCache();
 
   return updatedNode;
 }
@@ -1655,21 +1656,43 @@ export async function getApiKeyByKey(key: string): Promise<ApiKey | null> {
     if (found) found.lastAccessAt = nowIso();
     return found;
   }
-  const r = db()
-    .prepare("SELECT * FROM api_keys WHERE key = ? AND is_active != 0 LIMIT 1")
-    .get(key) as ApiKeyRow | undefined;
+  const r = prepared(db(), "SELECT * FROM api_keys WHERE key = ? AND is_active != 0 LIMIT 1").get(
+    key,
+  ) as ApiKeyRow | undefined;
   if (!r) return null;
   const now = nowIso();
-  db().prepare("UPDATE api_keys SET last_access_at = ? WHERE id = ?").run(now, r.id);
+  // last_access_at is dashboard-only freshness. A synchronous UPDATE per request
+  // serializes every request on SQLite's single writer for a cosmetic timestamp,
+  // so throttle to one write per key per minute.
+  const lastWrite = apiKeyLastAccessWrites.get(r.id) ?? 0;
+  if (Date.now() - lastWrite > 60_000) {
+    apiKeyLastAccessWrites.set(r.id, Date.now());
+    prepared(db(), "UPDATE api_keys SET last_access_at = ? WHERE id = ?").run(now, r.id);
+  }
   return rowToApiKey({ ...r, last_access_at: now });
 }
 
 // ===== Settings ==========================================================
 
+// getSettings() is called 1-3x per chat request (full table read + JSON.parse
+// per row). Short TTL cache; invalidated by every settings writer below.
+// structuredClone on read so callers can never mutate the cached copy.
+let settingsCache: { value: Settings; at: number } | null = null;
+const SETTINGS_CACHE_TTL_MS = 1_000;
+
+function invalidateSettingsCache(): void {
+  settingsCache = null;
+}
+
+const apiKeyLastAccessWrites = new Map<string, number>();
+
 export async function getSettings(): Promise<Settings> {
   if (isCloud) {
     const d = await getCloudDb();
     return (d.data.settings as Settings) || ({ cloudEnabled: false } as Settings);
+  }
+  if (settingsCache && Date.now() - settingsCache.at < SETTINGS_CACHE_TTL_MS) {
+    return structuredClone(settingsCache.value);
   }
   const rows = db().prepare("SELECT key, value FROM settings").all() as {
     key: string;
@@ -1683,6 +1706,7 @@ export async function getSettings(): Promise<Settings> {
       out[r.key] = r.value;
     }
   }
+  settingsCache = { value: out, at: Date.now() };
   return out;
 }
 
@@ -1699,6 +1723,7 @@ export async function updateSettings(updates: Record<string, unknown>): Promise<
     }
   });
   runAll(updates);
+  invalidateSettingsCache();
   return await getSettings();
 }
 
@@ -1936,6 +1961,7 @@ export async function importDb(payload: Record<string, unknown>): Promise<CloudD
     }
   });
   run(next);
+  invalidateSettingsCache();
   return next;
 }
 

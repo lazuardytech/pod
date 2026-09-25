@@ -4,7 +4,7 @@ const inFlightRequests = new Map<string, Promise<unknown>>();
 
 import crypto from "node:crypto";
 import { LRUCache } from "@/lib/cacheLayer";
-import { getDatabase } from "@/lib/sqlite/connection";
+import { getDatabase, prepared } from "@/lib/sqlite/connection";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -39,26 +39,53 @@ function ensureCacheMetricsTable(): void {
   }
 }
 
+// Metrics are incremented on every cache-enabled request. Writing SQLite
+// inline per hit/miss serializes requests on the single writer lock for
+// counters nobody reads on the hot path — accumulate and flush periodically.
+const pendingMetrics = new Map<string, number>();
+let metricsFlushTimer: ReturnType<typeof setInterval> | null = null;
+
 function incrementMetric(metric: string, amount: number = 1): void {
+  pendingMetrics.set(metric, (pendingMetrics.get(metric) ?? 0) + amount);
+  if (metricsFlushTimer) return;
+  metricsFlushTimer = setInterval(() => {
+    flushMetrics();
+    if (pendingMetrics.size === 0) {
+      clearInterval(metricsFlushTimer ?? undefined);
+      metricsFlushTimer = null;
+    }
+  }, 5_000);
+  metricsFlushTimer.unref?.();
+}
+
+function flushMetrics(): void {
+  if (pendingMetrics.size === 0) return;
+  const batch = [...pendingMetrics.entries()];
+  pendingMetrics.clear();
   try {
     const db = getDatabase();
-    db.prepare(
+    const stmt = prepared(
+      db,
       `UPDATE cache_metrics SET value = value + ?, updated_at = datetime('now') WHERE key = ?`,
-    ).run(amount, metric);
+    );
+    db.transaction(() => {
+      for (const [metric, amount] of batch) stmt.run(amount, metric);
+    })();
   } catch {
-    // ignore
+    // ignore — counters are best-effort
   }
 }
 
 function getMetricValue(metric: string): number {
   try {
     const db = getDatabase();
-    const row = db.prepare(`SELECT value FROM cache_metrics WHERE key = ?`).get(metric) as
+    const row = prepared(db, `SELECT value FROM cache_metrics WHERE key = ?`).get(metric) as
       | { value?: number }
       | undefined;
-    return row ? toNumber(asRecord(row).value, 0) : 0;
+    const stored = row ? toNumber(asRecord(row).value, 0) : 0;
+    return stored + (pendingMetrics.get(metric) ?? 0);
   } catch {
-    return 0;
+    return pendingMetrics.get(metric) ?? 0;
   }
 }
 
@@ -168,11 +195,10 @@ export function getCachedResponse(signature: string): unknown {
 
   try {
     const db = getDatabase();
-    const row = db
-      .prepare(
-        "SELECT response, tokens_saved, model, expires_at FROM semantic_cache WHERE signature = ? AND expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
-      )
-      .get(signature) as
+    const row = prepared(
+      db,
+      "SELECT response, tokens_saved, model, expires_at FROM semantic_cache WHERE signature = ? AND expires_at > strftime('%Y-%m-%dT%H:%M:%SZ', 'now')",
+    ).get(signature) as
       | { response?: string; tokens_saved?: number; model?: string; expires_at?: string }
       | undefined;
 
@@ -197,7 +223,7 @@ export function getCachedResponse(signature: string): unknown {
     }
     const modelName = typeof record.model === "string" ? record.model : "";
     getMemoryCache().set(signature, { response: parsed, tokensSaved, model: modelName }, memoryTtl);
-    db.prepare("UPDATE semantic_cache SET hit_count = hit_count + 1 WHERE signature = ?").run(
+    prepared(db, "UPDATE semantic_cache SET hit_count = hit_count + 1 WHERE signature = ?").run(
       signature,
     );
 
@@ -227,7 +253,8 @@ export function setCachedResponse(
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + ttl).toISOString();
 
-    db.prepare(
+    prepared(
+      db,
       `INSERT OR REPLACE INTO semantic_cache
       (id, signature, model, prompt_hash, response, tokens_saved, hit_count, created_at, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
@@ -239,6 +266,7 @@ export function setCachedResponse(
 
 export function clearCache(): number {
   getMemoryCache().clear();
+  pendingMetrics.clear();
   let removed = 0;
   try {
     const db = getDatabase();

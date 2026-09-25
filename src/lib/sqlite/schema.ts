@@ -2,8 +2,7 @@
 // avoids fs.readFileSync against a sibling file, which breaks under Next's
 // standalone output (file tracing skips non-JS assets).
 //
-// Source of truth is still `schema.sql` next to this file; if you edit one,
-// keep the other in sync. The SQL text below is identical to schema.sql.
+// This file is the single source of truth for the schema.
 
 export const SCHEMA_SQL: string = `
 -- Pod SQLite schema v1
@@ -169,6 +168,9 @@ CREATE TABLE IF NOT EXISTS request_log (
   combo             TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_reqlog_id_desc ON request_log(id DESC);
+-- Pending-status lookup used by the request_log flush queue (model+provider+status);
+-- without it each flush does a table scan inside the write transaction.
+CREATE INDEX IF NOT EXISTS idx_reqlog_pending ON request_log(model, provider, status);
 
 -- Semantic cache ----------------------------------------------------------
 

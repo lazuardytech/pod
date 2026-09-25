@@ -1,4 +1,4 @@
-import { getDatabase } from "@/lib/sqlite/connection";
+import { getDatabase, prepared } from "@/lib/sqlite/connection";
 
 function estimateTokens(text: string | null | undefined): number {
   if (!text || typeof text !== "string") return 0;
@@ -63,34 +63,49 @@ function keywordScore(memory: RetrievedMemory, query: string): number {
     .trim()
     .toLowerCase();
   if (!normalizedQuery) return 0;
+  const keyLower = String(memory.key || "").toLowerCase();
   const haystacks = [
     String(memory.content || "").toLowerCase(),
-    String(memory.key || "").toLowerCase(),
+    keyLower,
     JSON.stringify(memory.metadata || {}).toLowerCase(),
   ];
   const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  // One compiled regex per token, reused across all haystacks/rows —
+  // compiling per (token × haystack × row) dominated scoring cost.
+  const tokenRes = tokens.map((token) => ({
+    token,
+    re: new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+  }));
   let score = 0;
   for (const haystack of haystacks) {
     if (haystack.includes(normalizedQuery)) score += 20;
-    for (const token of tokens) {
-      if (!token) continue;
-      if (haystack === String(memory.key || "").toLowerCase() && haystack.includes(token)) {
+    for (const { token, re } of tokenRes) {
+      if (haystack === keyLower && haystack.includes(token)) {
         score += 6;
         continue;
       }
-      const matches = haystack.match(new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"));
+      const matches = haystack.match(re);
       score += (matches?.length || 0) * 3;
     }
   }
   return score;
 }
 
+// Table existence is fixed after boot (schema creates them); cache positive
+// results so the request path skips the sqlite_master point query.
+const knownTables = new Set<string>();
+
 function hasTable(tableName: string): boolean {
+  if (knownTables.has(tableName)) return true;
   const db = getDatabase();
-  const row = db
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
-    .get(tableName) as { name?: string } | undefined;
-  return row?.name === tableName;
+  const row = prepared(db, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(
+    tableName,
+  ) as { name?: string } | undefined;
+  if (row?.name === tableName) {
+    knownTables.add(tableName);
+    return true;
+  }
+  return false;
 }
 
 export type RetrievalConfig = {
@@ -139,26 +154,25 @@ export async function retrieveMemories(
 
   if ((strategy === "semantic" || strategy === "hybrid") && queryText && ftsAvailable) {
     try {
-      rows = db
-        .prepare(
-          `SELECT m.* FROM memories m
+      rows = prepared(
+        db,
+        `SELECT m.* FROM memories m
            JOIN memory_fts f ON m.rowid = f.rowid
            WHERE f.memory_fts MATCH ?
              AND m.api_key_id = ?
              AND (m.expires_at IS NULL OR datetime(m.expires_at) > datetime('now'))
            ORDER BY m.created_at DESC
            LIMIT 100`,
-        )
-        .all(queryText, apiKeyId) as MemoryRow[];
+      ).all(queryText, apiKeyId) as MemoryRow[];
     } catch {
       rows = [];
     }
   }
 
   if (rows.length === 0 || strategy === "exact" || strategy === "hybrid") {
-    const keywordRows = db
-      .prepare(`${baseQuery} ORDER BY created_at DESC LIMIT 100`)
-      .all(...baseParams) as MemoryRow[];
+    const keywordRows = prepared(db, `${baseQuery} ORDER BY created_at DESC LIMIT 100`).all(
+      ...baseParams,
+    ) as MemoryRow[];
     if (strategy === "hybrid" && rows.length > 0) {
       const seen = new Set(rows.map((r) => String(r.id)));
       for (const row of keywordRows) {

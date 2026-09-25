@@ -89,6 +89,25 @@ export interface SqliteDatabase {
 let dbInstance: SqliteDatabase | null = null;
 let schemaReady = false;
 
+// bun:sqlite does NOT cache `prepare()` results (each call recompiles), and
+// better-sqlite3 doesn't either. Hot per-request statements must be reused.
+// WeakMap keyed by Database instance so a close/reopen cycle stays correct.
+const statementCache = new WeakMap<SqliteDatabase, Map<string, SqliteStatement>>();
+
+export function prepared(db: SqliteDatabase, sql: string): SqliteStatement {
+  let perDb = statementCache.get(db);
+  if (!perDb) {
+    perDb = new Map();
+    statementCache.set(db, perDb);
+  }
+  let stmt = perDb.get(sql);
+  if (!stmt) {
+    stmt = db.prepare(sql);
+    perDb.set(sql, stmt);
+  }
+  return stmt;
+}
+
 function applyPragmas(db: SqliteDatabase) {
   // bun:sqlite has no `.pragma()` shorthand — fall back to exec.
   const setPragma =

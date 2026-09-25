@@ -14,6 +14,15 @@ const CONC_KEY_PREFIX = `${KEY_PREFIX}ratelimit:conc:`;
 export function getRateLimitKeyPrefix(): string {
   return process.env.RATELIMIT_KEY_PREFIX ?? "";
 }
+
+/**
+ * RPM members are `${ts}:${uuid}` — `Number(member)` would be NaN. Parses the
+ * timestamp prefix; falls back to `fallback` on malformed input.
+ */
+export function parseMemberTimestamp(member: string, fallback: number): number {
+  const ts = Number(member.split(":", 1)[0]);
+  return Number.isFinite(ts) ? ts : fallback;
+}
 const WINDOW_MS = 60000;
 const CLEANUP_TTL = 120;
 const CONC_SAFETY_TTL = 60;
@@ -91,7 +100,7 @@ export class RedisBackend {
       if (count >= maxRpm) {
         // Get the oldest entry for retry-after calculation
         const oldest = await withTimeout(this.client.zrange(key, 0, 0), "zrange");
-        const oldestTs = oldest && oldest.length > 0 ? Number(oldest[0]) : now;
+        const oldestTs = oldest?.[0] ? parseMemberTimestamp(oldest[0], now) : now;
         const retryAfterSeconds = Math.max(1, Math.ceil((oldestTs + WINDOW_MS - now) / 1000));
         return { ok: false, retryAfterSeconds, type: "rpm" };
       }
@@ -102,7 +111,7 @@ export class RedisBackend {
       await withTimeout(this.client.zadd(key, now, member), "zadd");
       const remaining = Math.max(0, maxRpm - count);
       const oldest = await withTimeout(this.client.zrange(key, 0, 0), "zrange");
-      const oldestTs = oldest && oldest.length > 0 ? Number(oldest[0]) : now;
+      const oldestTs = oldest?.[0] ? parseMemberTimestamp(oldest[0], now) : now;
       const resetSeconds = Math.max(1, Math.ceil((oldestTs + WINDOW_MS - now) / 1000));
       return { ok: true, member, remaining, resetSeconds };
     } catch (err) {

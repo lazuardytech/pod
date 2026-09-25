@@ -6,6 +6,7 @@ const concurrentCounters = new Map<string, { count: number; lastAccess: number }
 const COUNTER_TTL_MS = 120000;
 let lastConcurrentTrim = Date.now();
 const CONCURRENT_TRIM_INTERVAL_MS = 60000;
+let lastMinuteTrim = Date.now();
 
 function trimConcurrentCounters(nowMs: number): void {
   if (nowMs - lastConcurrentTrim < CONCURRENT_TRIM_INTERVAL_MS) return;
@@ -57,7 +58,10 @@ export class MemoryBackend {
   }
 
   maybeTrimCounterMaps(nowMs: number): void {
-    // Periodic time-based trim for all entries beyond TTL (not just when >10k)
+    // Periodic time-based trim, gated like trimConcurrentCounters: without the
+    // gate this is an O(all-keys) scan on every request.
+    if (nowMs - lastMinuteTrim < CONCURRENT_TRIM_INTERVAL_MS) return;
+    lastMinuteTrim = nowMs;
     const expired: string[] = [];
     for (const [keyId, entry] of minuteCounters.entries()) {
       if (nowMs - entry.updatedAt > COUNTER_TTL_MS) {
