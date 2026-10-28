@@ -114,7 +114,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 ## Deployment & Branches
 
 - `canary` = active development; `main` = stable (promote via PR only)
-- Dokploy (GHCR image, `Build Image` → `Deploy to Production`): `pod` → `pod.lazuardy.tech` (port 20140); `pod-canary` → `pod-canary.lazuardy.tech`
+- Dokploy (builds from git, autoDeploy on push; `main` → `pod`, `canary` → `pod-canary`): `pod` → `pod.lazuardy.tech` (port 20140); `pod-canary` → `pod-canary.lazuardy.tech`
 - Compatibility gate: [compatibility-matrix.md](compatibility-matrix.md)
 - Health: `/api/health` and `/api/monitoring/health*` are public reads
 
