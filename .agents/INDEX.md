@@ -1,6 +1,6 @@
 # Pod — Documentation Index
 
-> **pod · v0.0.86** · Bun + Next.js 16 + open-sse (typed local fork) + SQLite · port **20128** (Zeabur **20140**) · [pod.lazuardy.tech](https://pod.lazuardy.tech)
+> **pod · v0.0.86** · Bun + Next.js 16 + open-sse (typed local fork) + SQLite · port **20128** (Dokploy **20140**) · [pod.lazuardy.tech](https://pod.lazuardy.tech)
 > Self-hosted AI gateway unifying 84 built-in LLM providers behind one OpenAI-compatible endpoint.
 
 > **Last reviewed**: 2026-09-07.
@@ -42,7 +42,7 @@
 | [architecture/01-app.md](architecture/01-app.md)             | Next.js pages, API routes, routeAuth, PWA, stores              |
 | [architecture/02-providers.md](architecture/02-providers.md) | Provider config, auth types, executors, translators, retry     |
 | [architecture/03-data.md](architecture/03-data.md)           | SQLite, Redis, offline cache, mutation queue                   |
-| [architecture/04-infra.md](architecture/04-infra.md)         | Docker, Zeabur, Cloudflare, networking                         |
+| [architecture/04-infra.md](architecture/04-infra.md)         | Docker, Dokploy, Cloudflare, networking                        |
 | [architecture/05-flow.md](architecture/05-flow.md)           | End-to-end request flow: streaming, non-streaming, failure     |
 
 ---
@@ -67,7 +67,7 @@
 | ------------------------------------------------------------ | -------------------------------------------------- |
 | [knowledge/01-overview.md](knowledge/01-overview.md)         | Quick facts, repo layout, three-layer architecture |
 | [knowledge/02-conventions.md](knowledge/02-conventions.md)   | Coding, naming, body parsing, modal rules          |
-| [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) | Commands, pre-push verification, Zeabur deploy     |
+| [knowledge/03-dev-workflow.md](knowledge/03-dev-workflow.md) | Commands, pre-push verification, Dokploy deploy    |
 | [knowledge/04-gotchas.md](knowledge/04-gotchas.md)           | Common traps (parser, Turbopack, abort, SW §34)    |
 | [knowledge/05-open-issues.md](knowledge/05-open-issues.md)   | Active watchlist                                   |
 

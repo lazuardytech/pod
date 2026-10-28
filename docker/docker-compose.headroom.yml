@@ -1,7 +1,7 @@
 # Optional Headroom compress sidecar. Pod talks HTTP only (fail-open); it never spawns Python.
 # Usage: cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml up -d
 # Hostname `headroom` is allowlisted by Pod's Headroom client.
-# Zeabur: set HEADROOM_URL only — do not deploy this service.
+# Dokploy: headroom is a separate internal app (alias `headroom`); this overlay is for local use.
 
 services:
   headroom:

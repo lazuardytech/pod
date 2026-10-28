@@ -3,7 +3,7 @@
  *
  *   bun scripts/sqlite-backup.ts [dest]
  *
- * Source: $DATA_DIR/pod.sqlite (default ~/.pod). Zeabur: DATA_DIR=/app/data.
+ * Source: $DATA_DIR/pod.sqlite (default ~/.pod). Dokploy: DATA_DIR=/app/data.
  * Default dest: $DATA_DIR/backups/pod-<timestamp>.sqlite
  * Optional sidecar/cron; do not scale replicas to share this file.
  */

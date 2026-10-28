@@ -6,10 +6,10 @@
 | ----------- | ---------------------------------------------------------------------------- |
 | Version     | v0.0.86                                                                      |
 | Stack       | Bun + Next.js 16 (TypeScript default) + open-sse (typed local fork) + SQLite |
-| Port        | 20128 local / 20140 Zeabur                                                   |
+| Port        | 20128 local / 20140 Dokploy                                                  |
 | Providers   | 84 built-in (`AI_PROVIDERS`) + custom nodes                                  |
 | Executors   | 17 specialized + DefaultExecutor (20 files in `open-sse/executors/`)         |
-| Deployed at | pod.lazuardy.tech (Zeabur, Cloudflare DNS)                                   |
+| Deployed at | pod.lazuardy.tech (Dokploy, Cloudflare DNS)                                  |
 | Data dir    | `~/.pod/pod.sqlite`                                                          |
 | Health      | `GET /api/health` + `/api/monitoring/health*` (public)                       |
 | License     | MIT                                                                          |
