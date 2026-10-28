@@ -56,7 +56,7 @@ Source is `$DATA_DIR/pod.sqlite` (local default `~/.pod`; Dokploy `DATA_DIR=/app
 
 ### Dokploy
 
-Production deployment at **pod.lazuardy.tech** (port 20140). Canary at **pod-canary.lazuardy.tech**. Each app: 1 replica, own SQLite volume (`pod-data`, `pod-canary-data`), `DATA_DIR=/app/data`. Images come from GHCR via GitHub Actions.
+Production deployment at **pod.lazuardy.tech** (port 20140). Canary at **pod-canary.lazuardy.tech**. Each app: 1 replica, own SQLite volume (`pod-data`, `pod-canary-data`), `DATA_DIR=/app/data`. Dokploy builds from git (Dockerfile; `main` → `pod`, `canary` → `pod-canary`), autoDeploy on push. Headroom is reached via a Dokploy-managed network alias `headroom` (Dokploy app networkSwarm, re-applied on every deploy), because `open-sse/rtk/headroom.ts` allowlists that hostname.
 
 ### Local Development
 
