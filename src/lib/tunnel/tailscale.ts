@@ -65,7 +65,7 @@ function runTailscaleJson(
 }
 
 // ponytail: cache `which tailscale` result — avoids 3s spawnSync on every request
-// when tailscale is not installed (e.g. Zeabur containers)
+// when tailscale is not installed (e.g. hosted containers)
 let _cachedBin: string | null | undefined;
 
 // Prefer system tailscale, fallback to local bin, then Windows default path

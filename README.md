@@ -54,7 +54,7 @@ docker run -d --name pod -p 20128:20128 -v pod-data:/app/data --env-file .env la
 
 Pod calls `POST {HEADROOM_URL}/v1/compress` and **fails open** if the sidecar is down. Allowed compress hosts: `localhost`, `127.0.0.1`, `::1`, `headroom`.
 
-**Local spawn** (Python `headroom` CLI on PATH): Endpoint Token Saver can start/stop/restart a loopback proxy (`POST /api/headroom/start|stop|restart`). Spawn refuses non-loopback URLs. Docker image has no Python — use the compose overlay instead. Zeabur: set `HEADROOM_URL` only; do not add a Headroom service.
+**Local spawn** (Python `headroom` CLI on PATH): Endpoint Token Saver can start/stop/restart a loopback proxy (`POST /api/headroom/start|stop|restart`). Spawn refuses non-loopback URLs. Docker image has no Python — use the compose overlay instead. Dokploy: set `HEADROOM_URL` only; do not add a Headroom service.
 
 Local CLI:
 

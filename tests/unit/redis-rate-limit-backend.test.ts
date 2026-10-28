@@ -2,7 +2,7 @@
  * Unit tests for the Redis rate-limit backend (src/lib/rateLimit/redis.ts).
  *
  * The Redis backend is the production path — it is selected whenever
- * REDIS_URL is set (Zeabur deploys an in-project Redis). The backend is
+ * REDIS_URL is set (Dokploy deploys an in-project Redis). The backend is
  * exercised through a fake client injected after construction, so no real
  * Redis connection is required.
  */

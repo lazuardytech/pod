@@ -56,13 +56,13 @@ When a client disconnects mid-request (browser tab close, network drop, cancelle
 4. If abort detected after body read (during upstream `fetch`) → `controller.close()` in SSE wrapper, global handler classifies as `[ClientDisconnect]`, dedupes if more than 5 in 1s.
 5. Server stays up. No `unhandledRejection`. No `[FATAL]` log.
 
-## 32. Large body latency on canary (Zeabur cold-start)
+## 32. Large body latency on canary (cold-start, historical Zeabur)
 
-The canary service at `pod-canary.zeabur.app` scales down to zero idle replicas. Cold start takes 15-30s for the first request. Subsequent requests are 0.3-0.5s. Prod (`pod.lazuardy.tech`) stays warm from constant traffic. Mitigation: add a cron/uptime monitor hitting `/api/health` every 5 minutes to keep the container warm, or disable scale-to-zero in Zeabur service config. Sidebar `prefetch` is enabled for all routes except `/usage` (see d422698); with `prefetch={false}` everywhere, soft nav after cold start waits for RSC + route chunks only on click.
+On the old Zeabur host, the canary service scaled down to zero idle replicas; on Dokploy (`pod-canary.lazuardy.tech`) it stays running. Cold start takes 15-30s for the first request. Subsequent requests are 0.3-0.5s. Prod (`pod.lazuardy.tech`) stays warm from constant traffic. Mitigation: add a cron/uptime monitor hitting `/api/health` every 5 minutes to keep the container warm, or disable scale-to-zero in Zeabur service config. Sidebar `prefetch` is enabled for all routes except `/usage` (see d422698); with `prefetch={false}` everywhere, soft nav after cold start waits for RSC + route chunks only on click.
 
 ## 33. `readBodyTextStream` vs `request.text()`
 
-Avoid raw `request.text()` for bodies > 1MB on Zeabur/Bun. The Node.js HTTP body parser can stall for 9-15s on large payloads, especially with `curl/8.x` User-Agent. Use `readBodyTextStream()` from `@/lib/parseJsonBody` instead — it reads chunk-by-chunk with an explicit size cap and returns 413 mid-stream on overflow.
+Avoid raw `request.text()` for bodies > 1MB on Bun. The Node.js HTTP body parser can stall for 9-15s on large payloads, especially with `curl/8.x` User-Agent. Use `readBodyTextStream()` from `@/lib/parseJsonBody` instead — it reads chunk-by-chunk with an explicit size cap and returns 413 mid-stream on overflow.
 
 ## 34. ERR_FAILED after idle (SW vs network)
 
@@ -72,8 +72,8 @@ Three failure classes look similar in the browser but need different fixes:
 
 2. **Idle browser ↔ Cloudflare connection** — Next.js RSC fetches (`?_rsc=`) and most `fetch()` calls are **not** handled by the SW. Soft reload can fail with `(failed)` and no HTTP status while hard reload opens a fresh connection. Classify in DevTools by request type and whether Size shows `from ServiceWorker`.
 
-3. **Canary cold-start vs prod warm** — `pod-canary.zeabur.app` can cold-start 15–30s after idle (see §32). Prod `pod.lazuardy.tech` is usually warm; correlate with `curl /api/health` at failure time before blaming the SW.
+3. **Canary cold-start vs prod warm** — `pod-canary.lazuardy.tech` could cold-start (old Zeabur host) 15–30s after idle (see §32). Prod `pod.lazuardy.tech` is usually warm; correlate with `curl /api/health` at failure time before blaming the SW.
 
-## 35. Zeabur kubelet probes `GET /` (1s), not Docker HEALTHCHECK
+## 35. Health probe must hit `/api/health`, not `GET /` (historical Zeabur kubelet)
 
-Docker HEALTHCHECK curls `/api/health`. Zeabur/k3s readiness on this host was `httpGet path=/ timeoutSeconds=1`, which hits the dashboard SSR page. Under concurrent large combo SSE the Bun event loop stalls, the probe exceeds 1s, and the pod is marked NotReady even though the process is alive. Durable fix: Zeabur dashboard **Settings → Health Check → `/api/health`** (prefer timeout ≥5s). k3s patches are overwritten on the next Zeabur deploy. Do not special-case kubelet User-Agent on `/`.
+Docker HEALTHCHECK curls `/api/health`. The old Zeabur/k3s readiness probe was `httpGet path=/ timeoutSeconds=1`, which hits the dashboard SSR page. Under concurrent large combo SSE the Bun event loop stalls, the probe exceeds 1s, and the pod is marked NotReady even though the process is alive. Durable fix: set the Dokploy health check to `/api/health` (timeout ≥5s). Do not special-case kubelet User-Agent on `/`.
