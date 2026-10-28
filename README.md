@@ -69,13 +69,13 @@ Docker Compose overlay (hostname `headroom`):
 cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml up -d
 ```
 
-Zeabur: set `HEADROOM_URL` only — do not add a Headroom service.
+Dokploy: `headroom` runs as its own internal app (`ghcr.io/headroomlabs-ai/headroom:0.37.0`, network alias `headroom`); Pod gets `HEADROOM_URL=http://headroom:8787`.
 
 ### Local Development
 
 Requires [bun](https://bun.sh) v1.4.0+.
 
-> Production deploy on Zeabur uses **port 20140** (overridden via `PORT` env). Local dev and Docker default to **port 20128**.
+> Production deploy on Dokploy uses **port 20140** (overridden via `PORT` env). Local dev and Docker default to **port 20128**.
 
 ```bash
 bun install
@@ -119,7 +119,7 @@ bun run dev # starts on http://localhost:20128
 | `PROMPT_CACHE_MAX_SIZE`           | `50`                                    | Prompt cache max entries                                                                 |
 | `PROMPT_CACHE_TTL_MS`             | `300000`                                | Prompt cache TTL (ms)                                                                    |
 | `REDIS_URL`                       | _(none)_                                | Redis URL for **rate limits only** (in-memory if unset). Local: `redis://127.0.0.1:6379` |
-| `RATELIMIT_KEY_PREFIX`            | _(empty in code)_                       | Redis key namespace. Set `local:` locally; Zeabur `pod:` / `pod-canary:`                 |
+| `RATELIMIT_KEY_PREFIX`            | _(empty in code)_                       | Redis key namespace. Set `local:` locally; Dokploy `pod:` / `pod-canary:`                |
 | `RATELIMIT_REDIS_TIMEOUT_MS`      | `1000`                                  | Per-operation timeout (ms) wrapper for Redis rate-limit calls                            |
 | `POD_MAX_REQUEST_BODY_BYTES`      | `52428800` (50MB)                       | Max request body bytes for non-chat routes                                               |
 | `POD_MAX_CHAT_BODY_BYTES`         | inherits `POD_MAX_REQUEST_BODY_BYTES`   | Max request body bytes for chat/completions routes                                       |

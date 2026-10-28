@@ -6,7 +6,7 @@
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Runtime    | Bun + Next.js 16 (standalone mode, Turbopack)                                                                                |
 | Language   | TypeScript default (strict); authored `.ts`/`.tsx` only. Generated JS: `public/sw.js`. `open-sse/` is included in root `tsc` |
-| Primary DB | SQLite at `~/.pod/pod.sqlite` (Zeabur: `$DATA_DIR/pod.sqlite`, `DATA_DIR=/app/data`)                                         |
+| Primary DB | SQLite at `~/.pod/pod.sqlite` (Dokploy: `$DATA_DIR/pod.sqlite`, `DATA_DIR=/app/data`)                                        |
 | Cache DB   | Optional Redis (when `REDIS_URL` is set) — **rate limits only**                                                              |
 | Tunnel     | Optional Cloudflared                                                                                                         |
 | Mesh       | Optional Tailscale                                                                                                           |
@@ -33,7 +33,7 @@ cd docker && docker compose up -d redis   # local rate-limit Redis only
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Optional Headroom sidecar overlay (`docker/docker-compose.headroom.yml`): hostname `headroom`, fail-open. Local Python spawn is loopback-only (`/api/headroom/start`). Zeabur = `HEADROOM_URL` only (no sidecar).
+Optional Headroom sidecar overlay (`docker/docker-compose.headroom.yml`): hostname `headroom`, fail-open. Local Python spawn is loopback-only (`/api/headroom/start`). Dokploy = separate internal `headroom` app with alias `headroom`, plus `HEADROOM_URL`.
 
 ```bash
 cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml up -d
@@ -44,7 +44,7 @@ cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml
 - **Replicas: 1** per service. Do not scale `pod` or `pod-canary` horizontally. SQLite WAL is process-local.
 - **Canary ≠ replica.** `pod` and `pod-canary` are isolated gateways with separate volumes. They share rate-limit Redis only, namespaced by `RATELIMIT_KEY_PREFIX` (`pod:` / `pod-canary:`).
 - `POD_REPLICA_COUNT` defaults to `1`. Startup **warns**, and **throws in production**, if set `>1`.
-- Production without `REDIS_URL` **warns** (in-memory rate limits). Never copy Zeabur `REDIS_URL` into git.
+- Production without `REDIS_URL` **warns** (in-memory rate limits). Never copy the production `REDIS_URL` into git.
 
 ### SQLite backup
 
@@ -52,11 +52,11 @@ cd docker && docker compose -f docker-compose.yml -f docker-compose.headroom.yml
 bun scripts/sqlite-backup.ts [dest]
 ```
 
-Source is `$DATA_DIR/pod.sqlite` (local default `~/.pod`; Zeabur `DATA_DIR=/app/data`). Default dest: `$DATA_DIR/backups/pod-<timestamp>.sqlite`. Run as a one-shot or cron/sidecar against that volume. No Litestream in this wave.
+Source is `$DATA_DIR/pod.sqlite` (local default `~/.pod`; Dokploy `DATA_DIR=/app/data`). Default dest: `$DATA_DIR/backups/pod-<timestamp>.sqlite`. Run as a one-shot or cron/sidecar against that volume. No Litestream in this wave.
 
-### Zeabur
+### Dokploy
 
-Production deployment at **pod.lazuardy.tech** (port 20140). Canary at **pod-canary.zeabur.app**. Each service: 1 replica, own SQLite volume, `DATA_DIR=/app/data`.
+Production deployment at **pod.lazuardy.tech** (port 20140). Canary at **pod-canary.lazuardy.tech**. Each app: 1 replica, own SQLite volume (`pod-data`, `pod-canary-data`), `DATA_DIR=/app/data`. Images come from GHCR via GitHub Actions.
 
 ### Local Development
 
@@ -82,7 +82,7 @@ Cloudflare handles TLS termination, DDoS protection, and edge caching.
 | `src/lib/tunnel/`          | Cloudflared tunnel management                                   |
 | `src/lib/network/`         | Network utilities                                               |
 | `docker/`                  | Dockerfile and docker-compose.yml                               |
-| `scripts/sqlite-backup.ts` | SQLite `VACUUM INTO` snapshot (`DATA_DIR=/app/data` on Zeabur)  |
+| `scripts/sqlite-backup.ts` | SQLite `VACUUM INTO` snapshot (`DATA_DIR=/app/data` on Dokploy) |
 | `cloud/`                   | Cloudflare Worker backend                                       |
 
 ## Rules

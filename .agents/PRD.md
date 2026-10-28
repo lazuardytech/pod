@@ -96,7 +96,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 - Settings and auth config (`requireLogin` defaults **true**; dashboard `/api/*` mutations need JWT cookie or `x-9r-cli-token` unless login is disabled)
 - Offline enqueue allowlist only: `PATCH /api/settings`, `PUT /api/providers/:id`
 - Combo management with drag-to-reorder
-- Endpoint Token Saver: local loopback Headroom spawn (Python CLI on PATH); Docker/Zeabur stay URL-only
+- Endpoint Token Saver: local loopback Headroom spawn (Python CLI on PATH); Docker/Dokploy stay URL-only
 
 ### Offline and PWA
 
@@ -114,7 +114,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 ## Deployment & Branches
 
 - `canary` = active development; `main` = stable (promote via PR only)
-- Zeabur: `pod` → `pod.lazuardy.tech` (port 20140); `pod-canary` → `pod-canary.zeabur.app`
+- Dokploy (GHCR image, `Build Image` → `Deploy to Production`): `pod` → `pod.lazuardy.tech` (port 20140); `pod-canary` → `pod-canary.lazuardy.tech`
 - Compatibility gate: [compatibility-matrix.md](compatibility-matrix.md)
 - Health: `/api/health` and `/api/monitoring/health*` are public reads
 
@@ -141,7 +141,7 @@ Pod is a self-hosted AI gateway that unifies 84 built-in LLM providers (plus cus
 | ------------------- | ----------------------------------------------------------------------- |
 | Version             | v0.0.88                                                                 |
 | Default port        | 20128                                                                   |
-| Zeabur port         | 20140                                                                   |
+| Dokploy port        | 20140                                                                   |
 | SSE connection cap  | 100 concurrent                                                          |
 | SSE idle timeout    | 5 minutes                                                               |
 | Body cap            | 50MB default (env: POD_MAX_REQUEST_BODY_BYTES, POD_MAX_CHAT_BODY_BYTES) |
