@@ -1458,7 +1458,7 @@ export default function APIPageClient({ machineId: _machineId }: { machineId: st
                         ? " · running"
                         : " · stopped"
                   }`
-                : "Local Python CLI not on PATH — spawn is local-only (no Docker/Zeabur sidecar)"}
+                : "Local Python CLI not on PATH — spawn is local-only (no Docker sidecar)"}
             </p>
             <Button
               size="sm"

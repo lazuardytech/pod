@@ -36,7 +36,7 @@ let CACHE = makeCacheNames(SW_VERSION);
 
 const OFFLINE_FALLBACK_URL = "/offline";
 const IMAGE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 31;
-// ponytail: 5s is enough — 15s made cold-start pain unbearable on idle Zeabur canary
+// ponytail: 5s is enough — 15s made cold-start pain unbearable on an idle canary
 const NAVIGATION_NETWORK_TIMEOUT_MS = 5000;
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico"];
 const SENSITIVE_SEARCH_PARAMS = new Set([

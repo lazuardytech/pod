@@ -62,16 +62,6 @@
         "command": "npx",
         "transport": "stdio"
       }
-    },
-    {
-      "name": "zeabur",
-      "enabled": true,
-      "config": {
-        "args": ["scripts/zeabur-mcp.sh"],
-        "command": "bash",
-        "cwd": ".",
-        "transport": "stdio"
-      }
     }
   ]
 }
