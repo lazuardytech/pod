@@ -58,7 +58,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitest/coverage-v8": "5.0.1",
     "better-sqlite3": "^13.0.3",
-    "oxfmt": "^0.68.0",
+    "oxfmt": "^0.69.0",
     "oxlint": "^1.81.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
