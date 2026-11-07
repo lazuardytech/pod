@@ -1,0 +1,61 @@
+on:
+  github:
+    push:
+      init:
+        commit-sha: ${{ event.git.sha }}
+        branch: ${{ event.git.branch }}
+
+concurrency-pools:
+  - id: lazuardytech/pod:main
+    if: ${{ init.branch == 'main' }}
+    capacity: 1
+    on-overflow: cancel-waiting
+
+defaults:
+  runner:
+    cpus: 4
+    memory: 16gb
+
+tool-cache:
+  vault: default
+
+base:
+  image: ubuntu:26.04
+  config: rwx/base 1.2.1
+
+tasks:
+  - key: code
+    call: git/clone 2.4.0
+    with:
+      repository: https://github.com/lazuardytech/pod.git
+      ref: ${{ init.commit-sha }}
+      github-token: ${{ github.token }}
+
+  - key: docker-build
+    use: code
+    docker: preserve-data
+    tool-cache: docker-build
+    run: |
+      docker build -f Dockerfile \
+        -t ghcr.io/lazuardytech/pod:${{ init.commit-sha }} \
+        -t ghcr.io/lazuardytech/pod:main .
+
+  - key: push-image
+    use: docker-build
+    docker: true
+    run: |
+      echo "$GHCR_PAT" | docker login ghcr.io -u lazuardytech-dev --password-stdin
+      docker push ghcr.io/lazuardytech/pod:${{ init.commit-sha }}
+      docker push ghcr.io/lazuardytech/pod:main
+    env:
+      GHCR_PAT: ${{ secrets.ghcr_push }}
+
+  - key: trigger-deploy
+    use: push-image
+    run: |
+      curl -X POST "https://dokploy.lazuardy.tech/api/application.deploy" \
+        -H "x-api-key: $DOKPLOY_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d '{"applicationId":"UToI6mbAgrlN6PlukLure"}'
+    env:
+      DOKPLOY_API_KEY: ${{ secrets.dokploy_token }}
