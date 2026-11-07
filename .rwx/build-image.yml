@@ -4,6 +4,9 @@ on:
       init:
         commit-sha: ${{ event.git.sha }}
         branch: ${{ event.git.branch }}
+  cli:
+    init:
+      commit-sha: ${{ event.git.sha }}
 
 concurrency-pools:
   - id: lazuardytech/pod:main
@@ -29,7 +32,7 @@ tasks:
     with:
       repository: https://github.com/lazuardytech/pod.git
       ref: ${{ init.commit-sha }}
-      github-token: ${{ github.token }}
+      github-token: ${{ secrets.gh_pat_ro }}
 
   - key: docker-build
     use: code
