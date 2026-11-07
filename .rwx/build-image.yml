@@ -26,7 +26,7 @@ tasks:
     with:
       repository: https://github.com/lazuardytech/pod.git
       ref: ${{ init.commit-sha }}
-      github-token: ${{ secrets.gh_pat_ro }}
+      github-token: ${{ github.token }}
 
   - key: docker-build
     use: code
