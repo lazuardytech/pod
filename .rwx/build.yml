@@ -1,80 +1,61 @@
-# RWX Run Configuration - Full Build Pipeline
-# format + lint + test + build for pod
-# Usage: rwx run .rwx/build.yml --wait
-
 on:
-  cli:
-    init:
-      commit-sha: ${{ event.git.sha }}
+  github:
+    push:
+      init:
+        commit-sha: ${{ event.git.sha }}
+        branch: ${{ event.git.branch }}
+
+concurrency-pools:
+  - id: lazuardytech/pod:main
+    if: ${{ init.branch == 'main' }}
+    capacity: 1
+    on-overflow: cancel-waiting
+
+defaults:
+  runner:
+    cpus: 4
+    memory: 16gb
+
+tool-cache:
+  vault: default
 
 base:
-  image: ubuntu:24.04
-  config: rwx/base 1.0.2
+  image: ubuntu:26.04
+  config: rwx/base 1.2.1
 
 tasks:
   - key: code
-    call: git/clone 2.0.7
+    call: git/clone 2.4.0
     with:
       repository: https://github.com/lazuardytech/pod.git
       ref: ${{ init.commit-sha }}
       github-token: ${{ github.token }}
 
-  - key: bun
-    call: nodejs/install 1.1.14
-    with:
-      node-version: 22.14.0
-
-  - key: bun-install
-    use: [code, bun]
+  - key: docker-build
+    use: code
+    docker: preserve-data
+    tool-cache: docker-build
     run: |
-      curl -fsSL https://bun.sh/install | bash
-      export PATH="$HOME/.bun/bin:$PATH"
-      bun install --frozen-lockfile
-    filter:
-      - package.json
-      - bun.lock
+      docker build -f Dockerfile \
+        -t ghcr.io/lazuardytech/pod:${{ init.commit-sha }} \
+        -t ghcr.io/lazuardytech/pod:main .
 
-  - key: run-check
-    use: [bun-install]
+  - key: push-image
+    use: docker-build
+    docker: true
     run: |
-      export PATH="$HOME/.bun/bin:$PATH"
-      bun run check
-    timeout: 5m
-
-  - key: run-tests
-    use: [bun-install]
-    run: |
-      export PATH="$HOME/.bun/bin:$PATH"
-      bun run test:run
-    timeout: 10m
-
-  - key: build-fe
-    use: [bun-install]
-    run: |
-      export PATH="$HOME/.bun/bin:$PATH"
-      bun run build
+      echo "$GHCR_PAT" | docker login ghcr.io -u lazuardytech-dev --password-stdin
+      docker push ghcr.io/lazuardytech/pod:${{ init.commit-sha }}
+      docker push ghcr.io/lazuardytech/pod:main
     env:
-      NEXT_TELEMETRY_DISABLED: "1"
-    timeout: 15m
+      GHCR_PAT: ${{ secrets.ghcr_push }}
 
-  - key: verify-build-artifacts
-    use: [build-fe]
+  - key: trigger-deploy
+    use: push-image
     run: |
-      if [ ! -d ".next" ]; then
-        echo "Build failed: .next directory not found"
-        exit 1
-      fi
-      echo "Build artifacts OK"
-    timeout: 1m
-
-  - key: final-summary
-    use: [run-check, run-tests, verify-build-artifacts]
-    run: |
-      echo "================================================"
-      echo "  RWX BUILD PIPELINE - COMPLETE"
-      echo "================================================"
-      echo "  Format + Lint (check): PASSED"
-      echo "  Unit Tests:            PASSED"
-      echo "  Build:                 PASSED"
-      echo "  Build Artifacts:       VERIFIED"
-      echo "================================================"
+      curl -X POST "https://dokploy.lazuardy.tech/api/application.deploy" \
+        -H "x-api-key: $DOKPLOY_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d '{"applicationId":"UToI6mbAgrlN6PlukLure"}'
+    env:
+      DOKPLOY_API_KEY: ${{ secrets.dokploy_token }}
