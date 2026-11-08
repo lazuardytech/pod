@@ -25,6 +25,7 @@ tasks:
     call: git/clone 2.4.0
     with:
       repository: https://github.com/lazuardytech/pod.git
+      github-token: ${{ github['lazuardytech'].token }}
       ref: ${{ init.commit-sha }}
 
   - key: docker-build
